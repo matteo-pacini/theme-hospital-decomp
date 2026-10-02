@@ -130,7 +130,7 @@ extern "C" {
 
 extern char **room_names;
 extern char **object_names;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern u8 redraw_panel;
 extern TbSprite *game_panel_data;
 extern TbSprite *end_game_panel;
@@ -351,8 +351,8 @@ void panel_l_button(const u16 icon)
     } else if (icon != 0x63) {
         switch (icon) {
         case 0:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 6;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 6;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 2:
@@ -360,7 +360,7 @@ void panel_l_button(const u16 icon)
                   gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT ||
                   gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
-                D_001549d0[player].type = EV_OPEN_BUILD_ROOM;
+                player_events[player].type = EV_OPEN_BUILD_ROOM;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
@@ -371,7 +371,7 @@ void panel_l_button(const u16 icon)
                   gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT ||
                   gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
-                D_001549d0[player].type = EV_OPEN_HIRE_STAFF;
+                player_events[player].type = EV_OPEN_HIRE_STAFF;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
@@ -395,15 +395,15 @@ void panel_l_button(const u16 icon)
                   gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT ||
                   gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
-                D_001549d0[player].type = EV_OPEN_FURNISH_CORRIDOR;
+                player_events[player].type = EV_OPEN_FURNISH_CORRIDOR;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 6:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 5;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 5;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 7:
@@ -416,32 +416,32 @@ void panel_l_button(const u16 icon)
             }
             break;
         case 8:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 1;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 1;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 9:
             if (listhead[player].rooms[ROOM_RESEARCH]) {
-                D_001549d0[player].type = EV_OPEN_SCREEN;
-                D_001549d0[player].value = 3;
+                player_events[player].type = EV_OPEN_SCREEN;
+                player_events[player].value = 3;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 10:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 7;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 7;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 11:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 4;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 4;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 12:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 2;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 2;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 1:
@@ -463,13 +463,13 @@ void panel_r_button(const u16 icon)
     } else if (icon != 0x63) {
         switch (icon) {
         case 0:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 0;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 0;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 5:
-            D_001549d0[player].type = EV_OPEN_SCREEN;
-            D_001549d0[player].value = 5;
+            player_events[player].type = EV_OPEN_SCREEN;
+            player_events[player].value = 5;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         default:

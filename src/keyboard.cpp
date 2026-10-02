@@ -27,7 +27,7 @@ void process_keys(u8 modifiers, u8 key)
 }
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 s32 nth_other_active_player(s32 nth);
 void record_mappos(u8 key);
 }
@@ -62,17 +62,17 @@ void process_game_keys(u8 modifiers, u8 key)
         return;
     }
     if (lbKeyOn[KC_NUMPAD8] || lbKeyOn[KC_UP])
-        D_001549d0[player].flags |= 1;
+        player_events[player].flags |= 1;
     if (lbKeyOn[KC_NUMPAD4] || lbKeyOn[KC_LEFT])
-        D_001549d0[player].flags |= 4;
+        player_events[player].flags |= 4;
     if (lbKeyOn[KC_NUMPAD2] || lbKeyOn[KC_DOWN])
-        D_001549d0[player].flags |= 2;
+        player_events[player].flags |= 2;
     if (lbKeyOn[KC_NUMPAD6] || lbKeyOn[KC_RIGHT])
-        D_001549d0[player].flags |= 8;
-    if ((D_001549d0[player].flags & 1) && (D_001549d0[player].flags & 2))
-        D_001549d0[player].flags &= ~3;
-    if ((D_001549d0[player].flags & 4) && (D_001549d0[player].flags & 8))
-        D_001549d0[player].flags &= ~0xc;
+        player_events[player].flags |= 8;
+    if ((player_events[player].flags & 1) && (player_events[player].flags & 2))
+        player_events[player].flags &= ~3;
+    if ((player_events[player].flags & 4) && (player_events[player].flags & 8))
+        player_events[player].flags &= ~0xc;
     switch (key) {
     case KC_1:
         if (statvar.num_players > 1 && (modifiers & MOD_ALT)) {
@@ -81,18 +81,18 @@ void process_game_keys(u8 modifiers, u8 key)
                     othervar.net_text_to = 1 << nth_other_active_player(1);
                     othervar.net_text_entering = 1;
                     net_text[player].text = 0;
-                    D_001549d0[player].type = EV_NET_TEXT_START;
+                    player_events[player].type = EV_NET_TEXT_START;
                 }
             }
         } else if (!(modifiers & MOD_SHIFT) && gamevar.rat_fest_level == 0) {
-            D_001549d0[player].type = EV_VARY_SPEED;
-            D_001549d0[player].value = 10;
+            player_events[player].type = EV_VARY_SPEED;
+            player_events[player].value = 10;
             lbInkey = 0;
         } else if (modifiers & MOD_SHIFT) {
             if (othervar.cheats_enabled) {
-                D_001549d0[player].type = 0x17;
-                D_001549d0[player].value = othervar.mouse_cell;
-                D_001549d0[player].arg = (u16)othervar.cur_player;
+                player_events[player].type = 0x17;
+                player_events[player].value = othervar.mouse_cell;
+                player_events[player].arg = (u16)othervar.cur_player;
                 lbInkey = 0;
             }
         }
@@ -104,12 +104,12 @@ void process_game_keys(u8 modifiers, u8 key)
                     othervar.net_text_to = 1 << nth_other_active_player(2);
                     othervar.net_text_entering = 1;
                     net_text[player].text = 0;
-                    D_001549d0[player].type = EV_NET_TEXT_START;
+                    player_events[player].type = EV_NET_TEXT_START;
                 }
             }
         } else if (gamevar.rat_fest_level == 0) {
-            D_001549d0[player].type = EV_VARY_SPEED;
-            D_001549d0[player].value = 0x14;
+            player_events[player].type = EV_VARY_SPEED;
+            player_events[player].value = 0x14;
         }
         lbInkey = 0;
         break;
@@ -120,12 +120,12 @@ void process_game_keys(u8 modifiers, u8 key)
                     othervar.net_text_to = 1 << nth_other_active_player(3);
                     othervar.net_text_entering = 1;
                     net_text[player].text = 0;
-                    D_001549d0[player].type = EV_NET_TEXT_START;
+                    player_events[player].type = EV_NET_TEXT_START;
                 }
             }
         } else {
-            D_001549d0[player].type = EV_VARY_SPEED;
-            D_001549d0[player].value = 0x1e;
+            player_events[player].type = EV_VARY_SPEED;
+            player_events[player].value = 0x1e;
         }
         lbInkey = 0;
         break;
@@ -140,18 +140,18 @@ void process_game_keys(u8 modifiers, u8 key)
                 }
                 othervar.net_text_entering = 1;
                 net_text[player].text = 0;
-                D_001549d0[player].type = EV_NET_TEXT_START;
+                player_events[player].type = EV_NET_TEXT_START;
             }
             break;
         } else {
-            D_001549d0[player].type = EV_VARY_SPEED;
-            D_001549d0[player].value = 0x28;
+            player_events[player].type = EV_VARY_SPEED;
+            player_events[player].value = 0x28;
             lbInkey = 0;
         }
         break;
     case KC_5:
-        D_001549d0[player].type = EV_VARY_SPEED;
-        D_001549d0[player].value = 0x32;
+        player_events[player].type = EV_VARY_SPEED;
+        player_events[player].value = 0x32;
         lbInkey = 0;
         break;
     case KC_Q:
@@ -168,11 +168,11 @@ void process_game_keys(u8 modifiers, u8 key)
     case KC_ESCAPE:
         if ((modifiers & MOD_SHIFT) && ((modifiers & MOD_CTRL) || lbKeyOn[KC_TAB])) {
             if (statvar.num_players > 1)
-                D_001549d0[player].type = EV_LEAVE_NET_GAME;
+                player_events[player].type = EV_LEAVE_NET_GAME;
             else
-                D_001549d0[player].type = EV_QUIT_GAME;
-            D_001549d0[player].value = 0;
-            D_001549d0[player].arg = 0;
+                player_events[player].type = EV_QUIT_GAME;
+            player_events[player].value = 0;
+            player_events[player].arg = 0;
         } else if (modifiers & MOD_SHIFT) {
             sprintf(othervar.yesno_msg, "%s", yesno_text[0]);
             if (statvar.num_players > 1)
@@ -185,7 +185,7 @@ void process_game_keys(u8 modifiers, u8 key)
         lbInkey = 0;
         break;
     case KC_P:
-        D_001549d0[player].type = EV_PAUSE;
+        player_events[player].type = EV_PAUSE;
         lbInkey = 0;
         break;
     case KC_T:
@@ -196,7 +196,7 @@ void process_game_keys(u8 modifiers, u8 key)
         if (!gamevar.paused) {
             if (!(modifiers & MOD_SHIFT)) {
                 if (resvars.game_mode == SCREEN_MODE_13)
-                    D_001549d0[player].type = EV_OPEN_JUKEBOX;
+                    player_events[player].type = EV_OPEN_JUKEBOX;
                 lbInkey = 0;
             }
         }
@@ -211,8 +211,8 @@ void process_game_keys(u8 modifiers, u8 key)
             } else if (listhead[player].rooms[ROOM_RESEARCH] == 0) {
                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             } else {
-                D_001549d0[player].type = EV_OPEN_SCREEN;
-                D_001549d0[player].value = (u16)key - KC_F1;
+                player_events[player].type = EV_OPEN_SCREEN;
+                player_events[player].value = (u16)key - KC_F1;
             }
             lbInkey = 0;
         }
@@ -231,8 +231,8 @@ void process_game_keys(u8 modifiers, u8 key)
             } else if (modifiers & MOD_CTRL) {
                 recall_mappos(key - KC_F1);
             } else {
-                D_001549d0[player].type = EV_OPEN_SCREEN;
-                D_001549d0[player].value = (u16)key - KC_F1;
+                player_events[player].type = EV_OPEN_SCREEN;
+                player_events[player].value = (u16)key - KC_F1;
             }
             lbInkey = 0;
         }
@@ -259,15 +259,15 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     case KC_S:
         if (modifiers & MOD_ALT) {
-            D_001549d0[player].type = EV_SAVE_GAME;
-            D_001549d0[player].value = (u16)debug.save_slot;
+            player_events[player].type = EV_SAVE_GAME;
+            player_events[player].value = (u16)debug.save_slot;
             lbInkey = 0;
         }
         break;
     case KC_L:
         if (modifiers & MOD_ALT) {
-            D_001549d0[player].type = EV_LOAD_GAME;
-            D_001549d0[player].value = (u16)debug.save_slot;
+            player_events[player].type = EV_LOAD_GAME;
+            player_events[player].value = (u16)debug.save_slot;
             lbInkey = 0;
         }
         break;
@@ -291,7 +291,7 @@ void process_game_keys(u8 modifiers, u8 key)
     case KC_Y:
         if (modifiers & MOD_CTRL) {
             if (othervar.cheats_enabled) {
-                D_001549d0[player].type = EV_CHEAT_END_YEAR;
+                player_events[player].type = EV_CHEAT_END_YEAR;
                 lbInkey = 0;
             }
         }
@@ -299,7 +299,7 @@ void process_game_keys(u8 modifiers, u8 key)
     case KC_M:
         if (modifiers & MOD_CTRL) {
             if (othervar.cheats_enabled) {
-                D_001549d0[player].type = EV_CHEAT_END_MONTH;
+                player_events[player].type = EV_CHEAT_END_MONTH;
                 lbInkey = 0;
             }
         }

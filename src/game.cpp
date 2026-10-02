@@ -4,7 +4,7 @@ extern "C" {
 
 extern u32 menu_turn;
 extern u8 new_game;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern u8 *palette;
 extern u8 redraw_panel;
 
@@ -412,21 +412,21 @@ void start_turn(void)
         if (room->being_edited && is_room_empty(&room_info[allhosps[player].edited_room])) {
             if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
                 if (room_info[allhosps[player].edited_room].first == 0) {
-                    D_001549d0[player].type = EV_SETUP_PLACE_OBJECT_REQUESTER;
+                    player_events[player].type = EV_SETUP_PLACE_OBJECT_REQUESTER;
                 }
             } else {
-                D_001549d0[player].type = EV_CANCEL_EDIT_ROOM;
+                player_events[player].type = EV_CANCEL_EDIT_ROOM;
             }
         }
     }
     if (statvar.num_players > 1) {
         switch (othervar.net_result) {
         case 1:
-            D_001549d0[player].type = EV_LEAVE_NET_GAME;
-            D_001549d0[player].value = 1;
+            player_events[player].type = EV_LEAVE_NET_GAME;
+            player_events[player].value = 1;
             break;
         case 2:
-            D_001549d0[player].type = EV_NET_WIN;
+            player_events[player].type = EV_NET_WIN;
             break;
         default:
             break;
@@ -506,7 +506,7 @@ void do_charts(void)
     case 11:
     case 12:
     default:
-        D_001549d0[player].type = EV_CLOSE_SCREEN;
+        player_events[player].type = EV_CLOSE_SCREEN;
         break;
     }
 }
@@ -579,12 +579,12 @@ void check_if_active(void)
     if (statvar.num_players > 1) {
         if (LbIsActive() && othervar.lost_focus[player] != 0) {
             othervar.full_swap_frames = 0xf;
-            D_001549d0[player].type = EV_NETWORK_GAINED_FOCUS;
+            player_events[player].type = EV_NETWORK_GAINED_FOCUS;
             if (othervar.music_playing) {
                 AIL_resume_sequence(GetSongHandle());
             }
         } else if (!LbIsActive() && othervar.lost_focus[player] == 0) {
-            D_001549d0[player].type = EV_NETWORK_LOST_FOCUS;
+            player_events[player].type = EV_NETWORK_LOST_FOCUS;
             if (has_any_player_lost_focus()) {
                 othervar.lost_focus[player] = 2;
             } else {

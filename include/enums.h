@@ -705,7 +705,7 @@ enum {
     TX_REPLACEMENT_MACHINE = 36
 };
 
-// Event.type: a player's command for the turn (D_001549d0), carried out by
+// Event.type: a player's command for the turn (player_events), carried out by
 // process_turn. Named after the routine that carries it out; ORDER_ ones set
 // a staff member's orders.
 enum {
@@ -1124,7 +1124,7 @@ enum {
     SFX_WINLOSE_TYPE = 0xee
 };
 
-// crequester.id, D_001581b2[].kind and open_requester's idx: a requester
+// crequester.id, irequester_slots[].kind and open_requester's idx: a requester
 // window, its window_list index (its button sprites are hires_req_filenames,
 // same index). Named after the routine that handles its clicks.
 enum {

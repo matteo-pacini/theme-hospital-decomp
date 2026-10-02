@@ -19,7 +19,7 @@ struct ComputerBucket {
 
 extern "C" {
 extern Menu choice;
-extern Event D_001549d0[];
+extern Event player_events[];
 }
 
 extern ComputerBucket (*comp_buckets)[12];
@@ -667,14 +667,14 @@ u8 check_net_criteria(const u8 owner)
     swap_criteria_packets(fail, active);
     if (owner == player) {
         if (evaluate_criteria(owner) >= 100) {
-            D_001549d0[player].type = EV_NET_WIN;
+            player_events[player].type = EV_NET_WIN;
             othervar.net_result = 2;
             othervar.net_won = 1;
             return 0;
         }
         if (check_criteria(1, owner)) {
-            D_001549d0[player].type = EV_LEAVE_NET_GAME;
-            D_001549d0[player].value = 1;
+            player_events[player].type = EV_LEAVE_NET_GAME;
+            player_events[player].value = 1;
             othervar.net_result = 1;
             return 0;
         }

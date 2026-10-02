@@ -52,7 +52,7 @@ struct Req2Layout {
 };
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 extern Picture loaded_face;
 extern u8 *face_buffer;
 void open_face_file(void);
@@ -83,32 +83,32 @@ void req2(Window *win)
         if (button->flags & 6) {
             debug.last_button = i;
             if (i == resvars.requester_buttons[2]) {
-                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
-                D_001549d0[player].value = 1;
+                player_events[player].type = EV_HIRE_SELECT_KIND;
+                player_events[player].value = 1;
                 if (crequester.arg != 1 || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[3]) {
-                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
-                D_001549d0[player].value = 0;
+                player_events[player].type = EV_HIRE_SELECT_KIND;
+                player_events[player].value = 0;
                 if (crequester.arg != 0 || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[5]) {
-                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
-                D_001549d0[player].value = 3;
+                player_events[player].type = EV_HIRE_SELECT_KIND;
+                player_events[player].value = 3;
                 if (crequester.arg != 3 || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[4]) {
-                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
-                D_001549d0[player].value = 2;
+                player_events[player].type = EV_HIRE_SELECT_KIND;
+                player_events[player].value = 2;
                 if (crequester.arg != 2 || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[8]) {
                 if (crequester.arg2) {
                     if (crequester.mode == 2) {
                         if (allhosps[player].balance >= thing[crequester.arg2].salary && allhosps[player].balance > 0) {
-                            D_001549d0[player].type = EV_MARK_EMPLOYING;
-                            D_001549d0[player].value = crequester.arg;
-                            D_001549d0[player].arg = crequester.arg2;
+                            player_events[player].type = EV_MARK_EMPLOYING;
+                            player_events[player].value = crequester.arg;
+                            player_events[player].arg = crequester.arg2;
                             play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                         } else {
                             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
@@ -127,8 +127,8 @@ void req2(Window *win)
                         if (id == old) {
                             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                         } else {
-                            D_001549d0[player].type = EV_HIRE_NEXT_APPLICANT;
-                            D_001549d0[player].value = 0;
+                            player_events[player].type = EV_HIRE_NEXT_APPLICANT;
+                            player_events[player].value = 0;
                             play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
                         }
                     } else {
@@ -145,8 +145,8 @@ void req2(Window *win)
                         if (id == old) {
                             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                         } else {
-                            D_001549d0[player].type = EV_HIRE_NEXT_APPLICANT;
-                            D_001549d0[player].value = 1;
+                            player_events[player].type = EV_HIRE_NEXT_APPLICANT;
+                            player_events[player].value = 1;
                             play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
                         }
                     } else {
@@ -554,30 +554,30 @@ void req12(Window *win)
                 play_sound(SNDSRC_GENERAL, SFX_BONUS2, -1, -1);
                 switch (crequester.kind) {
                 case 2:
-                    D_001549d0[player].type = EV_REFUSE_STAFF_DEMAND;
-                    D_001549d0[player].value = crequester.arg;
+                    player_events[player].type = EV_REFUSE_STAFF_DEMAND;
+                    player_events[player].value = crequester.arg;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 case 3:
                 case 5:
                 case 8:
-                    D_001549d0[player].type = EV_GIVE_STAFF_BONUS;
-                    D_001549d0[player].value = crequester.arg;
-                    D_001549d0[player].arg = crequester.arg2;
+                    player_events[player].type = EV_GIVE_STAFF_BONUS;
+                    player_events[player].value = crequester.arg;
+                    player_events[player].arg = crequester.arg2;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 case 4:
                 case 6:
                 case 7:
-                    D_001549d0[player].type = EV_RAISE_STAFF_SALARY;
-                    D_001549d0[player].value = crequester.arg;
-                    D_001549d0[player].arg = crequester.arg2;
+                    player_events[player].type = EV_RAISE_STAFF_SALARY;
+                    player_events[player].value = crequester.arg;
+                    player_events[player].arg = crequester.arg2;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 case 9:
-                    D_001549d0[player].type = EV_RAISE_STAFF_SALARY;
-                    D_001549d0[player].value = crequester.arg;
-                    D_001549d0[player].arg = thing[crequester.arg].salary * 2;
+                    player_events[player].type = EV_RAISE_STAFF_SALARY;
+                    player_events[player].value = crequester.arg;
+                    player_events[player].arg = thing[crequester.arg].salary * 2;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 }
@@ -912,11 +912,11 @@ void req12_help_if_research(void)
 void req12_clicked_sack(void)
 {
     if (crequester.kind == 9) {
-        D_001549d0[player].type = EV_STAFF_JOIN_NEW_EMPLOYER;
-        D_001549d0[player].value = crequester.arg;
-        D_001549d0[player].arg = crequester.arg2;
+        player_events[player].type = EV_STAFF_JOIN_NEW_EMPLOYER;
+        player_events[player].value = crequester.arg;
+        player_events[player].arg = crequester.arg2;
     } else {
-        D_001549d0[player].type = EV_REFUSE_STAFF_DEMAND;
-        D_001549d0[player].value = crequester.arg;
+        player_events[player].type = EV_REFUSE_STAFF_DEMAND;
+        player_events[player].value = crequester.arg;
     }
 }

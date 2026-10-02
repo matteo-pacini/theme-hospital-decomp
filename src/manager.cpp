@@ -15,7 +15,7 @@ struct ManagerHelp {
 };
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 
 void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
@@ -54,8 +54,8 @@ void display_manager(void)
         process_bank_panel();
         break;
     case 2:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         break;
     }
     if (lbDisplay.rleft_button) {
@@ -274,7 +274,7 @@ void process_bank_button(u8 button)
     switch (button) {
     case 0:
         if (myhosp->balance >= 5000 && myhosp->loan > 0) {
-            D_001549d0[player].type = EV_REPAY_LOAN;
+            player_events[player].type = EV_REPAY_LOAN;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else {
             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
@@ -282,7 +282,7 @@ void process_bank_button(u8 button)
         break;
     case 1:
         if (myhosp->loan <= myhosp->max_loan - 5000) {
-            D_001549d0[player].type = EV_TAKE_LOAN;
+            player_events[player].type = EV_TAKE_LOAN;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else {
             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);

@@ -29,9 +29,9 @@ struct Slot {
 
 extern "C" {
 extern Picture loaded_face;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **slist_text;
-extern Slot D_001581b2[];
+extern Slot irequester_slots[];
 }
 
 u16 get_slist_staff(const u8 dir);
@@ -135,14 +135,14 @@ void display_slist(void)
         process_slist_panel();
         break;
     case 2:
-        D_001549d0[player].type = EV_RETURN_TO_THING_WINDOW;
-        D_001549d0[player].value = 0;
-        D_001549d0[player].arg = slist.value;
+        player_events[player].type = EV_RETURN_TO_THING_WINDOW;
+        player_events[player].value = 0;
+        player_events[player].arg = slist.value;
         cancel_helpmsg();
         break;
     case 3:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         cancel_helpmsg();
         break;
     default:
@@ -563,7 +563,7 @@ void process_slist_panel(void)
                          resvars.screen_list_pos_SlistAreap->y1 - resvars.screen_list_pos_SlistAreap->y0)) {
             if (slist.value) {
                 othervar.center_on_slot = 2;
-                D_001581b2[2].value = slist.value;
+                irequester_slots[2].value = slist.value;
                 othervar.full_redraw = 1;
                 slist.state = 2;
                 close_irequesters();
@@ -642,17 +642,17 @@ void process_slist_button(u8 button)
         break;
     case 5:
         if (slist.value) {
-            D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
-            D_001549d0[player].value = thing[slist.value].salary / 10;
-            D_001549d0[player].arg = slist.value;
+            player_events[player].type = EV_INCREASE_STAFF_SALARIES;
+            player_events[player].value = thing[slist.value].salary / 10;
+            player_events[player].arg = slist.value;
             play_sound(SNDSRC_GENERAL, SFX_BONUSAL2, -1, -1);
         }
         break;
     case 6:
         if (slist.value) {
-            D_001549d0[player].type = EV_PAY_STAFF_BONUS;
-            D_001549d0[player].value = thing[slist.value].salary / 10;
-            D_001549d0[player].arg = slist.value;
+            player_events[player].type = EV_PAY_STAFF_BONUS;
+            player_events[player].value = thing[slist.value].salary / 10;
+            player_events[player].arg = slist.value;
             play_sound(SNDSRC_GENERAL, SFX_BONUS2, -1, -1);
         }
         break;
@@ -687,16 +687,16 @@ void process_slist_button(u8 button)
         play_sound(SNDSRC_GENERAL, sound, -1, -1);
         break;
     case 10:
-        D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
-        D_001549d0[player].value = 500;
-        D_001549d0[player].arg = 0;
+        player_events[player].type = EV_INCREASE_STAFF_SALARIES;
+        player_events[player].value = 500;
+        player_events[player].arg = 0;
         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 11:
         if (slist.value) {
-            D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
-            D_001549d0[player].value = 500;
-            D_001549d0[player].arg = slist.value;
+            player_events[player].type = EV_INCREASE_STAFF_SALARIES;
+            player_events[player].value = 500;
+            player_events[player].arg = slist.value;
         }
         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;

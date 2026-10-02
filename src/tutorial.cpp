@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 extern Event old_packet[];
 extern u8 tutorial_display_flags[];
 }
@@ -40,7 +40,7 @@ s8 tutorial(void)
         break;
     case 0x28:
         if (tutorial_display_flags[11] != 2) {
-            if (D_001549d0[player].type == EV_CANCEL_BUY_OBJECTS) {
+            if (player_events[player].type == EV_CANCEL_BUY_OBJECTS) {
                 tutorial_display_flags[0] = 0;
                 tutorial_display_flags[11] = 0;
                 advisor.tutorial_step = 0x1d;
@@ -78,7 +78,7 @@ s8 tutorial(void)
         break;
     case 0x2a:
         if (tutorial_display_flags[13] != 2) {
-            if (D_001549d0[player].type == EV_CANCEL_BUY_OBJECTS) {
+            if (player_events[player].type == EV_CANCEL_BUY_OBJECTS) {
                 tutorial_display_flags[0] = 0;
                 tutorial_display_flags[11] = 0;
                 tutorial_display_flags[13] = 0;
@@ -118,7 +118,7 @@ s8 tutorial(void)
         break;
     case 0x29:
         if (tutorial_display_flags[12] != 2) {
-            if (D_001549d0[player].type == EV_CANCEL_BUILD) {
+            if (player_events[player].type == EV_CANCEL_BUILD) {
                 tutorial_display_flags[12] = 0;
                 tutorial_display_flags[13] = 0;
                 tutorial_display_flags[11] = 0;

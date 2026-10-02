@@ -27,7 +27,7 @@ struct TownView {
 };
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **town_names;
 extern char **town_details;
 extern u8 redraw_panel;
@@ -243,12 +243,12 @@ void process_mouse_town_select(void)
             if (myhosp->balance > land_amount[plot] * gbv.land_cost_per_tile) {
                 play_sound(SNDSRC_GENERAL, SFX_CASHREG, -1, -1);
                 if (statvar.num_players > 1) {
-                    D_001549d0[player].type = EV_SETUP_TOWN_BID;
-                    D_001549d0[player].value = plot;
+                    player_events[player].type = EV_SETUP_TOWN_BID;
+                    player_events[player].value = plot;
                     othervar.town_map_dirty = 1;
                 } else {
-                    D_001549d0[player].type = EV_BUY_LAND;
-                    D_001549d0[player].value = plot;
+                    player_events[player].type = EV_BUY_LAND;
+                    player_events[player].value = plot;
                     othervar.town_map_dirty = 1;
                 }
             }
@@ -1098,8 +1098,8 @@ void process_town_button(u8 button)
         break;
     case 6:
         if (myhosp->heating_level < 10) {
-            D_001549d0[player].type = EV_SET_HEATING;
-            D_001549d0[player].value = (u16)myhosp->heating_level + 1;
+            player_events[player].type = EV_SET_HEATING;
+            player_events[player].value = (u16)myhosp->heating_level + 1;
             othervar.pending_heating_level = myhosp->heating_level + 1;
             othervar.f6b = 0x32;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
@@ -1108,8 +1108,8 @@ void process_town_button(u8 button)
         break;
     case 5:
         if (myhosp->heating_level > 1) {
-            D_001549d0[player].type = EV_SET_HEATING;
-            D_001549d0[player].value = (u16)myhosp->heating_level - 1;
+            player_events[player].type = EV_SET_HEATING;
+            player_events[player].value = (u16)myhosp->heating_level - 1;
             othervar.pending_heating_level = myhosp->heating_level - 1;
             othervar.f6b = 0x32;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
@@ -1162,7 +1162,7 @@ void process_bid_button(u8 button)
     case 0:
     case 1:
         if (myhosp->balance >= plotbid.price) {
-            D_001549d0[player].type = EV_PLOT_BID_MONEY;
+            player_events[player].type = EV_PLOT_BID_MONEY;
             play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         } else {
             play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
@@ -1294,8 +1294,8 @@ void process_bid_time(void)
         if (plotbid.bidder != 0x63) {
             LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
             if (plotbid.bidder == player) {
-                D_001549d0[player].type = EV_BUY_LAND;
-                D_001549d0[player].value = (u16)othervar.bid_plot;
+                player_events[player].type = EV_BUY_LAND;
+                player_events[player].value = (u16)othervar.bid_plot;
             } else {
                 town.state = 1;
             }

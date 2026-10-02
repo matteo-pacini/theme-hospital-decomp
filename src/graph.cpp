@@ -22,7 +22,7 @@ extern "C" {
 extern GraphLabel GraphTextPos[];
 extern s16 NumText;
 extern u8 colour[];
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **report_text;
 void insert_graph_label(s16 kind, s16 value, s32 data);
 void spread_graph_labels(u16 gap);
@@ -122,8 +122,8 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             graphs.state = 2;
         break;
     case 2:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         break;
     }
     set_font_from_cache(0xb);

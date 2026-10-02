@@ -31,7 +31,7 @@ extern "C" {
 
 extern char **pulldown_text;
 extern u16 last_p, selected_option;
-extern Event D_001549d0[];
+extern Event player_events[];
 void FadeMusic(u32 rate, u8 volume);
 extern CompElement *end_elements;
 extern Picture loaded_face;
@@ -454,8 +454,8 @@ extern "C" void pulldown_load(void)
     slot = othervar.pulldown_item + 1;
     if (slot < 10) {
         debug.last_action = slot;
-        D_001549d0[player].type = EV_LOAD_GAME;
-        D_001549d0[player].value = slot;
+        player_events[player].type = EV_LOAD_GAME;
+        player_events[player].value = slot;
     }
 }
 
@@ -472,8 +472,8 @@ extern "C" void pulldown_save(void)
         sprintf(othervar.yesno_msg, "%s", yesno_text[3]);
         open_yes_no_requester(EV_SAVE_GAME, (u16)slot, 0, EV_CLOSE_SAVE_YES_NO, 0x63, 0);
     } else {
-        D_001549d0[player].type = EV_SAVE_GAME;
-        D_001549d0[player].value = slot;
+        player_events[player].type = EV_SAVE_GAME;
+        player_events[player].value = slot;
         if (slot < 10)
             othervar.save_slot_used[slot] = 1;
     }
@@ -612,8 +612,8 @@ extern "C" void pulldown_vary_speed(void)
             othervar.speed_checked[i] = 0;
         othervar.speed_checked[sel] = 1;
         myplayer.speed_choice = sel;
-        D_001549d0[player].type = EV_VARY_SPEED;
-        D_001549d0[player].value = othervar.pulldown_arg;
+        player_events[player].type = EV_VARY_SPEED;
+        player_events[player].value = othervar.pulldown_arg;
     }
 }
 

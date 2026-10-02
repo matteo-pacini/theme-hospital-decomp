@@ -89,7 +89,7 @@ struct ScreenPacket {
 
 extern "C" {
 extern u8 host_player;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern u8 *palette;
 extern u8 session_index;
 extern u8 first_login_exchange;
@@ -2705,20 +2705,20 @@ void process_nettext_keys(u8 shift, u8 key)
         if (statvar.num_players <= 1) {
             if (!cheat_mode(NET_TEXT(othervar.cur_player))) {
                 othervar.net_text_entering = 0;
-                D_001549d0[player].type = EV_NET_TEXT_DISPLAY;
-                D_001549d0[player].value = (u16)othervar.net_text_to;
+                player_events[player].type = EV_NET_TEXT_DISPLAY;
+                player_events[player].value = (u16)othervar.net_text_to;
             } else {
                 othervar.net_text_entering = 0;
             }
         } else {
             othervar.net_text_entering = 0;
-            D_001549d0[player].type = EV_NET_TEXT_DISPLAY;
-            D_001549d0[player].value = (u16)othervar.net_text_to;
+            player_events[player].type = EV_NET_TEXT_DISPLAY;
+            player_events[player].value = (u16)othervar.net_text_to;
         }
         break;
     case KC_BACKSPACE:
     case KC_DECIMAL:
-        D_001549d0[player].type = EV_NET_TEXT_DELETE;
+        player_events[player].type = EV_NET_TEXT_DELETE;
         break;
     case KC_NUMPAD4:
     case KC_NUMPAD6:
@@ -2726,10 +2726,10 @@ void process_nettext_keys(u8 shift, u8 key)
     default:
         if (lib_strlen(NET_TEXT(player)) < 0x32) {
             if (key < 0x7f) {
-                D_001549d0[player].type = EV_NET_TEXT_KEYPRESS;
-                D_001549d0[player].value = (u16)(key & 0x7f);
+                player_events[player].type = EV_NET_TEXT_KEYPRESS;
+                player_events[player].value = (u16)(key & 0x7f);
                 if (shift & MOD_SHIFT)
-                    D_001549d0[player].value |= 0x80;
+                    player_events[player].value |= 0x80;
             }
         }
         break;

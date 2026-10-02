@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **room_names;
 extern char **req1_help;
 extern char **department_names;
@@ -27,23 +27,23 @@ void req10(Window *win)
             if (button->flags & 6) {
                 debug.last_action = i;
                 if (i == resvars.requester_buttons[0x17]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 3;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 3;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x18]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 4;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 4;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x19]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 5;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 5;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x1a]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 6;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 6;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x25]) {
-                    D_001549d0[player].type = EV_CLOSE_REQUESTERS;
+                    player_events[player].type = EV_CLOSE_REQUESTERS;
                     play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 }
             }
@@ -55,20 +55,20 @@ void req10(Window *win)
             if (button->flags & 6) {
                 debug.last_action = i;
                 if (i == resvars.requester_buttons[0x17]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 3;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 3;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x18]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 4;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 4;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x19]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 5;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 5;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x1a]) {
-                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
-                    D_001549d0[player].value = 6;
+                    player_events[player].type = EV_REQ1_RESET_ROOMS;
+                    player_events[player].value = 6;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x1b] || i == resvars.requester_buttons[0x1c] ||
                            i == resvars.requester_buttons[0x1d] || i == resvars.requester_buttons[0x1e] ||
@@ -85,9 +85,9 @@ void req10(Window *win)
                             total += allhosps[player].object_stats[obj].cost;
                         }
                         if (rooms[room].cost + total < allhosps[player].balance) {
-                            D_001549d0[player].type = EV_INIT_BLUEPRINT;
-                            D_001549d0[player].value = crequester.kind;
-                            D_001549d0[player].arg = crequester.kind;
+                            player_events[player].type = EV_INIT_BLUEPRINT;
+                            player_events[player].value = crequester.kind;
+                            player_events[player].arg = crequester.kind;
                             play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                         } else {
                             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
@@ -95,7 +95,7 @@ void req10(Window *win)
                     }
                     play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x25]) {
-                    D_001549d0[player].type = EV_CLOSE_REQUESTERS;
+                    player_events[player].type = EV_CLOSE_REQUESTERS;
                     play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 }
             }

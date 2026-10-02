@@ -16,7 +16,7 @@ struct SortEntry {
 extern "C" {
 
 extern char filename[];
-extern Event D_001549d0[];
+extern Event player_events[];
 extern u8 error_number;
 extern Coord LoresCoords[], HiresCoords[];
 extern u8 record_replay, play_replay, replay_number;
@@ -793,14 +793,14 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
 void setup_abort_all_requesters(void)
 {
     if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
-        D_001549d0[player].type = EV_CANCEL_EDIT_ROOM;
+        player_events[player].type = EV_CANCEL_EDIT_ROOM;
         return;
     }
     switch (crequester.id) {
     case 10:
         if (crequester.arg3) {
-            D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
-            D_001549d0[player].value = 1;
+            player_events[player].type = EV_BACK_TO_PLACE_OBJECT;
+            player_events[player].value = 1;
             othervar.editing_room = 1;
             return;
         }
@@ -812,11 +812,11 @@ void setup_abort_all_requesters(void)
                 open_yes_no_requester(EV_DELETE_ROOM, 0, 0, EV_CLOSE_YES_NO, 1, MM_BLUEPRINT);
                 return;
             }
-            D_001549d0[player].type = EV_DELETE_ROOM;
+            player_events[player].type = EV_DELETE_ROOM;
             return;
         }
         if (crequester.kind != 3) {
-            D_001549d0[player].type = EV_EDIT_BLUEPRINT;
+            player_events[player].type = EV_EDIT_BLUEPRINT;
             return;
         }
         break;
@@ -824,13 +824,13 @@ void setup_abort_all_requesters(void)
         req12_clicked_sack();
         return;
     }
-    D_001549d0[player].type = EV_CANCEL_BUILD;
+    player_events[player].type = EV_CANCEL_BUILD;
     if (gamevar.held_staff) {
-        D_001549d0[player].value = gamevar.held_staff;
+        player_events[player].value = gamevar.held_staff;
     } else {
-        D_001549d0[player].value = 0;
+        player_events[player].value = 0;
     }
-    D_001549d0[player].arg = gamevar.mouse_mode;
+    player_events[player].arg = gamevar.mouse_mode;
 }
 
 // Copies the whole screen from src (a background) to the back buffer.

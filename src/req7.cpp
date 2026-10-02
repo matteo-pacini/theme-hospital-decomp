@@ -49,7 +49,7 @@ struct QueueButtons {
 
 extern "C" {
 extern char **queue_text;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern s16 frame_bounds[8];
 
 void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
@@ -80,21 +80,21 @@ void req7(Window *win)
         if (button->flags & 6) {
             debug.last_button = button_no;
             if (button_no == resvars.requester_buttons_QueueButtonsp->capacity_down_button) {
-                D_001549d0[player].type = EV_QUEUE_CAPACITY_DOWN;
-                D_001549d0[player].value = othervar.queue_win_room;
-                if (room_info[D_001549d0[player].value].queue_capacity)
+                player_events[player].type = EV_QUEUE_CAPACITY_DOWN;
+                player_events[player].value = othervar.queue_win_room;
+                if (room_info[player_events[player].value].queue_capacity)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 else
                     play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             } else if (button_no == resvars.requester_buttons_QueueButtonsp->capacity_up_button) {
-                D_001549d0[player].type = EV_QUEUE_CAPACITY_UP;
-                D_001549d0[player].value = othervar.queue_win_room;
-                if (room_info[D_001549d0[player].value].queue_capacity < 30)
+                player_events[player].type = EV_QUEUE_CAPACITY_UP;
+                player_events[player].value = othervar.queue_win_room;
+                if (room_info[player_events[player].value].queue_capacity < 30)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 else
                     play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             } else if (button_no == resvars.requester_buttons_QueueButtonsp->close_button) {
-                D_001549d0[player].type = EV_CLOSE_QUEUE_WINDOW;
+                player_events[player].type = EV_CLOSE_QUEUE_WINDOW;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
         }
@@ -223,7 +223,7 @@ void req7_overdraw(Window *win)
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes_QueueLayoutp->r[3].x,
                              oy + resvars.boxes_QueueLayoutp->r[3].y, resvars.boxes_QueueLayoutp->r[3].w,
                              resvars.boxes_QueueLayoutp->r[3].h)) {
-                D_001549d0[player].type = EV_CLOSE_QUEUE_WINDOW;
+                player_events[player].type = EV_CLOSE_QUEUE_WINDOW;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 break;
             }
@@ -231,9 +231,9 @@ void req7_overdraw(Window *win)
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes_QueueLayoutp->r[0].x,
                                  oy + resvars.boxes_QueueLayoutp->r[0].y, resvars.boxes_QueueLayoutp->r[0].w,
                                  resvars.boxes_QueueLayoutp->r[0].h)) {
-                    D_001549d0[player].type = EV_FRONT_QUEUE;
-                    D_001549d0[player].value = othervar.queue_win_room;
-                    D_001549d0[player].arg = othervar.queue_pos;
+                    player_events[player].type = EV_FRONT_QUEUE;
+                    player_events[player].value = othervar.queue_win_room;
+                    player_events[player].arg = othervar.queue_pos;
                     display_queue_people(ox, oy, othervar.queue_win_room, othervar.queue_pos);
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     break;
@@ -241,9 +241,9 @@ void req7_overdraw(Window *win)
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes_QueueLayoutp->r[2].x,
                                  oy + resvars.boxes_QueueLayoutp->r[2].y, resvars.boxes_QueueLayoutp->r[2].w,
                                  resvars.boxes_QueueLayoutp->r[2].h)) {
-                    D_001549d0[player].type = EV_BACK_QUEUE;
-                    D_001549d0[player].value = othervar.queue_win_room;
-                    D_001549d0[player].arg = othervar.queue_pos;
+                    player_events[player].type = EV_BACK_QUEUE;
+                    player_events[player].value = othervar.queue_win_room;
+                    player_events[player].arg = othervar.queue_pos;
                     display_queue_people(ox, oy, othervar.queue_win_room, othervar.queue_pos);
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     break;
@@ -270,9 +270,9 @@ void req7_overdraw(Window *win)
                         }
                     }
                     if (dest) {
-                        D_001549d0[player].type = EV_QUEUE_PERSON_TO_NEW_QUEUE;
-                        D_001549d0[player].value = dest - room_info;
-                        D_001549d0[player].arg = gamevar.queue_selected_person;
+                        player_events[player].type = EV_QUEUE_PERSON_TO_NEW_QUEUE;
+                        player_events[player].value = dest - room_info;
+                        player_events[player].arg = gamevar.queue_selected_person;
                         set_mouse_mode(MM_NORMAL);
                         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     }
@@ -290,9 +290,9 @@ void req7_overdraw(Window *win)
                                  qx - resvars.boxes_QueueLayoutp->r[4].x + resvars.boxes_QueueLayoutp->r[7].x,
                                  qy + resvars.boxes_QueueLayoutp->r[4].y + resvars.boxes_QueueLayoutp->r[7].y,
                                  resvars.boxes_QueueLayoutp->r[7].w, resvars.boxes_QueueLayoutp->r[7].h)) {
-                    D_001549d0[player].type = EV_QUEUE_PERSON_GO_RECEPTION;
-                    D_001549d0[player].value = othervar.queue_win_room;
-                    D_001549d0[player].arg = othervar.queue_pos;
+                    player_events[player].type = EV_QUEUE_PERSON_GO_RECEPTION;
+                    player_events[player].value = othervar.queue_win_room;
+                    player_events[player].arg = othervar.queue_pos;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     break;
                 }
@@ -300,9 +300,9 @@ void req7_overdraw(Window *win)
                                  qx - resvars.boxes_QueueLayoutp->r[4].x + resvars.boxes_QueueLayoutp->r[8].x,
                                  qy + resvars.boxes_QueueLayoutp->r[4].y + resvars.boxes_QueueLayoutp->r[8].y,
                                  resvars.boxes_QueueLayoutp->r[8].w, resvars.boxes_QueueLayoutp->r[8].h)) {
-                    D_001549d0[player].type = EV_QUEUE_PERSON_GO_HOME;
-                    D_001549d0[player].value = othervar.queue_win_room;
-                    D_001549d0[player].arg = othervar.queue_pos;
+                    player_events[player].type = EV_QUEUE_PERSON_GO_HOME;
+                    player_events[player].value = othervar.queue_win_room;
+                    player_events[player].arg = othervar.queue_pos;
                     play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
                     break;
                 }
@@ -323,14 +323,14 @@ void req7_overdraw(Window *win)
                                     resvars.boxes_QueueLayoutp->r[24].w, resvars.boxes_QueueLayoutp->r[24].h)) {
                                 play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
                                 if (statvar.num_players > 1) {
-                                    D_001549d0[player].type = EV_REFER_TO_PLAYER;
-                                    D_001549d0[player].value =
+                                    player_events[player].type = EV_REFER_TO_PLAYER;
+                                    player_events[player].value =
                                         get_queue_person(othervar.queue_win_room, othervar.queue_pos);
-                                    D_001549d0[player].arg = nth_active_player(i + 1);
+                                    player_events[player].arg = nth_active_player(i + 1);
                                 } else {
-                                    D_001549d0[player].type = EV_QUEUE_PERSON_GO_HOME;
-                                    D_001549d0[player].value = othervar.queue_win_room;
-                                    D_001549d0[player].arg = othervar.queue_pos;
+                                    player_events[player].type = EV_QUEUE_PERSON_GO_HOME;
+                                    player_events[player].value = othervar.queue_win_room;
+                                    player_events[player].arg = othervar.queue_pos;
                                 }
                                 break;
                             }

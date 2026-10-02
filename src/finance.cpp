@@ -44,7 +44,7 @@ struct StatItem {
 };
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 // demo: banktext
 StatItem banktext[] = {
     {1, 32, 8},  {2, 8, 24},  {3, 2, 40},   {4, 11, 40},  {5, 40, 40},
@@ -364,8 +364,8 @@ void bank_statement(void)
         process_stat_panel();
         break;
     case 2:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         break;
     }
     set_font_from_cache(0x1c);

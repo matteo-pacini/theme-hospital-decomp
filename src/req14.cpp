@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 s32 hilighted_object = -1;
 extern char **object_names;
 extern char **misc_text;
@@ -32,7 +32,7 @@ void req14(Window *win)
             setup_abort_all_requesters();
             play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         } else if (resvars.requester_buttons[0x50] == i) {
-            D_001549d0[player].type = EV_FURNISH_EDITED_ROOM;
+            player_events[player].type = EV_FURNISH_EDITED_ROOM;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else if (resvars.requester_buttons[0x51] == i) {
             set_mouse_mode(MM_PICK_UP_OBJECT);
@@ -42,17 +42,17 @@ void req14(Window *win)
         } else if (resvars.requester_buttons[0x52] == i) {
             switch (crequester.mode) {
             case 0:
-                D_001549d0[player].type = EV_COMMIT_BLUEPRINT;
+                player_events[player].type = EV_COMMIT_BLUEPRINT;
                 set_mouse_mode(MM_NORMAL);
                 break;
             case 4:
-                D_001549d0[player].type = EV_COMMIT_DOORS;
-                D_001549d0[player].value = crequester.kind;
+                player_events[player].type = EV_COMMIT_DOORS;
+                player_events[player].value = crequester.kind;
                 play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 break;
             case 6:
             case 8:
-                D_001549d0[player].type = EV_OPEN_ROOM;
+                player_events[player].type = EV_OPEN_ROOM;
                 play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 break;
             case 1:

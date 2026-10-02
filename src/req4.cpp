@@ -18,8 +18,8 @@ struct MenuItem {
 };
 
 extern "C" {
-extern Slot D_001581b2[];
-extern Event D_001549d0[];
+extern Slot irequester_slots[];
+extern Event player_events[];
 }
 
 void remove_window_from_list(const u8 win);
@@ -30,7 +30,7 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
 void draw_face(Picture *face, const u16 x, const u16 y);
 void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u16 y, TbSprite *spr);
 
-// Staff window clicks (staff D_001581b2[2].value): close, sack (asks to
+// Staff window clicks (staff irequester_slots[2].value): close, sack (asks to
 // confirm), pick up (event EV_PICK_UP_STAFF), and for a handyman the three priority
 // buttons (EV_ADJUST_HANDYMAN_VALUES).
 // FUNCTION: 0x00086c10
@@ -41,7 +41,7 @@ void req4(Window *win)
     u16 i;
 
     button = win->buttons;
-    staff = &thing[D_001581b2[2].value];
+    staff = &thing[irequester_slots[2].value];
     switch (staff->subtype) {
     case STAFF_HANDYMAN:
         for (i = 1; button; button = button->next) {
@@ -49,30 +49,30 @@ void req4(Window *win)
                 debug.last_button = i;
                 debug.last_action = button->flags;
                 if (i == resvars.requester_buttons[0x26]) {
-                    D_001549d0[player].type = EV_CLOSE_QUERY;
-                    D_001549d0[player].value = 2;
+                    player_events[player].type = EV_CLOSE_QUERY;
+                    player_events[player].value = 2;
                     play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 } else if (i == resvars.requester_buttons[0x27]) {
-                    D_001549d0[player].type = EV_ADJUST_HANDYMAN_VALUES;
-                    D_001549d0[player].value = D_001581b2[2].value;
-                    D_001549d0[player].arg = resvars.requester_buttons[0x27];
+                    player_events[player].type = EV_ADJUST_HANDYMAN_VALUES;
+                    player_events[player].value = irequester_slots[2].value;
+                    player_events[player].arg = resvars.requester_buttons[0x27];
                 } else if (i == resvars.requester_buttons[0x28]) {
-                    D_001549d0[player].type = EV_ADJUST_HANDYMAN_VALUES;
-                    D_001549d0[player].value = D_001581b2[2].value;
-                    D_001549d0[player].arg = resvars.requester_buttons[0x28];
+                    player_events[player].type = EV_ADJUST_HANDYMAN_VALUES;
+                    player_events[player].value = irequester_slots[2].value;
+                    player_events[player].arg = resvars.requester_buttons[0x28];
                 } else if (i == resvars.requester_buttons[0x29]) {
-                    D_001549d0[player].type = EV_ADJUST_HANDYMAN_VALUES;
-                    D_001549d0[player].value = D_001581b2[2].value;
-                    D_001549d0[player].arg = resvars.requester_buttons[0x29];
+                    player_events[player].type = EV_ADJUST_HANDYMAN_VALUES;
+                    player_events[player].value = irequester_slots[2].value;
+                    player_events[player].arg = resvars.requester_buttons[0x29];
                 } else if (i == resvars.requester_buttons[0x2a]) {
                     close_query(2);
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
-                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value,
-                                          0);
+                    open_yes_no_requester(EV_SACK_STAFF, irequester_slots[2].value, 0, EV_CANCEL_SACK,
+                                          irequester_slots[2].value, 0);
                 } else if (i == resvars.requester_buttons[0x2b]) {
-                    D_001549d0[player].type = EV_PICK_UP_STAFF;
-                    D_001549d0[player].value = D_001581b2[2].value;
+                    player_events[player].type = EV_PICK_UP_STAFF;
+                    player_events[player].value = irequester_slots[2].value;
                     play_sound(SNDSRC_GENERAL, SFX_PICKUP, -1, -1);
                 }
             }
@@ -84,18 +84,18 @@ void req4(Window *win)
             if (button->flags & 6) {
                 debug.last_button = i;
                 if (i == resvars.requester_buttons[0x2c]) {
-                    D_001549d0[player].type = EV_CLOSE_QUERY;
-                    D_001549d0[player].value = 2;
+                    player_events[player].type = EV_CLOSE_QUERY;
+                    player_events[player].value = 2;
                     play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 } else if (i == resvars.requester_buttons[0x2d]) {
                     close_query(2);
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
-                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value,
-                                          0);
+                    open_yes_no_requester(EV_SACK_STAFF, irequester_slots[2].value, 0, EV_CANCEL_SACK,
+                                          irequester_slots[2].value, 0);
                 } else if (i == resvars.requester_buttons[0x2e]) {
-                    D_001549d0[player].type = EV_PICK_UP_STAFF;
-                    D_001549d0[player].value = D_001581b2[2].value;
+                    player_events[player].type = EV_PICK_UP_STAFF;
+                    player_events[player].value = irequester_slots[2].value;
                     play_sound(SNDSRC_GENERAL, SFX_PICKUP, -1, -1);
                 }
             }
@@ -129,7 +129,7 @@ void req4_overdraw(Window *win)
     x = win->x - lbDisplay.graphics_window_x;
     y = win->y - lbDisplay.graphics_window_y;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    staff = &thing[D_001581b2[2].value];
+    staff = &thing[irequester_slots[2].value];
     switch (staff->subtype) {
     case STAFF_HANDYMAN:
         compute_help_text(0, 0, 0xc);
@@ -147,15 +147,15 @@ void req4_overdraw(Window *win)
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x,
                              y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w, resvars.boxes[0x5d].h)) {
                 othervar.slist_staff = staff - thing;
-                D_001549d0[player].type = EV_OPEN_SCREEN;
-                D_001549d0[player].value = 5;
+                player_events[player].type = EV_OPEN_SCREEN;
+                player_events[player].value = 5;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             }
         }
         if (lbDisplay.mright_button && !othervar.right_button_was_down) {
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x,
                              y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w, resvars.boxes[0x4e].h)) {
-                D_001581b2[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
+                irequester_slots[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
                 play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
             }
         }
@@ -207,8 +207,8 @@ void req4_overdraw(Window *win)
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x,
                              y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w, resvars.boxes[0x5d].h)) {
                 othervar.slist_staff = staff - thing;
-                D_001549d0[player].type = EV_OPEN_SCREEN;
-                D_001549d0[player].value = 5;
+                player_events[player].type = EV_OPEN_SCREEN;
+                player_events[player].value = 5;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             }
         }
@@ -216,9 +216,9 @@ void req4_overdraw(Window *win)
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4d].x,
                              y + resvars.boxes[0x4d].y, resvars.boxes[0x4d].w, resvars.boxes[0x4d].h)) {
                 if (staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON)
-                    D_001581b2[2].value = find_next_thing(staff, THING_STAFF, STAFF_DOCTOR, STAFF_SURGEON);
+                    irequester_slots[2].value = find_next_thing(staff, THING_STAFF, STAFF_DOCTOR, STAFF_SURGEON);
                 else
-                    D_001581b2[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
+                    irequester_slots[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
                 play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
             }
         }
@@ -368,7 +368,7 @@ void req4_help_if_doctor(void)
 {
     Thing *staff;
 
-    staff = &thing[D_001581b2[2].value];
+    staff = &thing[irequester_slots[2].value];
     if (staff > thing && staff->skills & SKILL_DOCTOR)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
@@ -379,7 +379,7 @@ void req4_help_if_surgeon(void)
 {
     Thing *staff;
 
-    staff = &thing[D_001581b2[2].value];
+    staff = &thing[irequester_slots[2].value];
     if (staff > thing && staff->skills & SKILL_SURGEON)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
@@ -390,7 +390,7 @@ void req4_help_if_shrink(void)
 {
     Thing *staff;
 
-    staff = &thing[D_001581b2[2].value];
+    staff = &thing[irequester_slots[2].value];
     if (staff > thing && staff->skills & SKILL_PSYCHIATRIST)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
@@ -401,7 +401,7 @@ void req4_help_if_research(void)
 {
     Thing *staff;
 
-    staff = &thing[D_001581b2[2].value];
+    staff = &thing[irequester_slots[2].value];
     if (staff > thing && staff->skills & SKILL_RESEARCHER)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }

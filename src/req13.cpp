@@ -10,7 +10,7 @@ struct Req13Layout {
 
 extern "C" {
 
-extern Event D_001549d0[];
+extern Event player_events[];
 }
 
 void req13_no_pressed(void);
@@ -30,9 +30,9 @@ void req13(Window *win)
                 req13_no_pressed();
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             } else if (i == resvars.requester_buttons[0]) {
-                D_001549d0[player].type = othervar.yes_type;
-                D_001549d0[player].value = othervar.yes_value;
-                D_001549d0[player].arg = othervar.yes_arg;
+                player_events[player].type = othervar.yes_type;
+                player_events[player].value = othervar.yes_value;
+                player_events[player].arg = othervar.yes_arg;
                 play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
             }
         }
@@ -72,7 +72,7 @@ void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, 
     othervar.no_type = no_type;
     othervar.no_value = no_value;
     othervar.no_arg = no_arg;
-    D_001549d0[player].type = EV_OPEN_YES_NO;
+    player_events[player].type = EV_OPEN_YES_NO;
 }
 
 // Closes the yes/no requester if it is open, and with reopen set reopens the
@@ -98,9 +98,9 @@ void close_yes_no_requester(u8 reopen)
 // FUNCTION: 0x0006fe88
 void req13_no_pressed(void)
 {
-    D_001549d0[player].type = othervar.no_type;
-    D_001549d0[player].value = othervar.no_value;
-    D_001549d0[player].arg = othervar.no_arg;
+    player_events[player].type = othervar.no_type;
+    player_events[player].value = othervar.no_value;
+    player_events[player].arg = othervar.no_arg;
 }
 
 // Answers no to the open yes/no requester on Escape or a right click outside

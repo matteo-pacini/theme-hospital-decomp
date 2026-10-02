@@ -492,7 +492,7 @@
 001549c4 W?actual_game_turn$nul 4
 001549c8 W?version$nus 4
 001549cc W?packet$n[]$Packet$$ 4
-001549d0 _D_001549d0 3c
+001549d0 _player_events 3c
 00154a0c _old_packet 3c
 00154a48 _year_packet 110
 00154b58 W?player$nul 4
@@ -550,7 +550,7 @@
 00158198 W?crequester$n$Req$$ c
 001581a4 W?prequester$n$Req$$ c
 001581b0 W?irequester$n[]$Req$$ 2
-001581b2 _D_001581b2 2c
+001581b2 _irequester_slots 2c
 001581e8 _replay_file 1
 001581ec _record_replay 1
 001581ed _play_replay 1

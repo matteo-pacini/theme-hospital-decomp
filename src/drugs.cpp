@@ -8,7 +8,7 @@ struct MenuItem {
 
 extern "C" {
 
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **cabinet_text, **illness_text;
 extern char **skill_names;
 
@@ -67,8 +67,8 @@ void display_drugs(void)
         othervar.drug_pct_display_time = 0;
         break;
     case 1:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         break;
     case 2:
         copy_screen_to_wscreen(bscreen);
@@ -328,9 +328,9 @@ void process_drug_panel(void)
 void price_up(void)
 {
     if (othervar.clock_ms - othervar.repeat_time > 0xfa || othervar.repeat_step == 0x100) {
-        D_001549d0[player].type = EV_PRICE_UP;
-        D_001549d0[player].value = othervar.repeat_step >> 8;
-        D_001549d0[player].arg = othervar.selected_illness;
+        player_events[player].type = EV_PRICE_UP;
+        player_events[player].value = othervar.repeat_step >> 8;
+        player_events[player].arg = othervar.selected_illness;
         if (othervar.repeat_step < 0xa00) {
             othervar.repeat_step += 0x10;
         } else {
@@ -351,9 +351,9 @@ void price_up(void)
 void price_down(void)
 {
     if (othervar.clock_ms - othervar.repeat_time > 0xfa || othervar.repeat_step == 0x100) {
-        D_001549d0[player].type = EV_PRICE_DOWN;
-        D_001549d0[player].value = othervar.repeat_step >> 8;
-        D_001549d0[player].arg = othervar.selected_illness;
+        player_events[player].type = EV_PRICE_DOWN;
+        player_events[player].value = othervar.repeat_step >> 8;
+        player_events[player].arg = othervar.selected_illness;
         if (othervar.repeat_step < 0xa00) {
             othervar.repeat_step += 0x10;
         } else {
@@ -446,8 +446,8 @@ void process_drug_button(u8 action)
         play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case 5:
-        D_001549d0[player].type = EV_CONCENTRATE_RESEARCH;
-        D_001549d0[player].value = othervar.selected_illness;
+        player_events[player].type = EV_CONCENTRATE_RESEARCH;
+        player_events[player].value = othervar.selected_illness;
         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     }

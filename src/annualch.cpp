@@ -18,7 +18,7 @@ extern char **trophy_text;
 extern char **bad_awards_text;
 extern char **good_awards_text;
 extern char **trophy_bonus_messages;
-extern Event D_001549d0[];
+extern Event player_events[];
 
 void conv_string(void *dst, char *src, int mode);
 
@@ -195,7 +195,7 @@ extern "C" void display_year_charts(void)
         if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
             lbInkey = 0;
             if (!exit_the_yearend_screen) {
-                D_001549d0[player].type = EV_PAUSE;
+                player_events[player].type = EV_PAUSE;
                 exit_the_yearend_screen = 1;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
@@ -209,7 +209,7 @@ extern "C" void display_year_charts(void)
         if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
             lbInkey = 0;
             if (!exit_the_yearend_screen) {
-                D_001549d0[player].type = EV_PAUSE;
+                player_events[player].type = EV_PAUSE;
                 exit_the_yearend_screen = 1;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
@@ -319,7 +319,7 @@ void process_yearend_buttons(u8 button)
     case 0:
         play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         if (!exit_the_yearend_screen) {
-            D_001549d0[player].type = EV_PAUSE;
+            player_events[player].type = EV_PAUSE;
             exit_the_yearend_screen = 1;
         }
         break;

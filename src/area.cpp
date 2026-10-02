@@ -14,7 +14,7 @@ struct AreaLayout {
 };
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 extern u8 *palette;
 extern u8 redraw_panel;
 extern void *smack_draw_callback;
@@ -179,7 +179,7 @@ void process_keys_area_select(void)
         area.state = 0;
         display_mode = DM_MAIN_MENU;
         mainmenu.state = MMS_UNLOAD_GAME;
-        D_001549d0[player].value = 0;
+        player_events[player].value = 0;
         set_mouse_mode(MM_NORMAL);
         break;
     case KC_C:

@@ -7,7 +7,7 @@ extern char **show_help_text_0;
 extern char **level_text;
 extern char **net_mission_text;
 extern char **beta_demo_text_short;
-extern Event D_001549d0[];
+extern Event player_events[];
 
 int strcmp(const char *a, const char *b);
 u32 lib_strlen(char *s);
@@ -516,8 +516,8 @@ void finish_composite_help(void)
             break;
         case 3:
             if (othervar.help_sub == 2) {
-                D_001549d0[player].type = EV_LEAVE_NET_GAME;
-                D_001549d0[player].value = 1;
+                player_events[player].type = EV_LEAVE_NET_GAME;
+                player_events[player].value = 1;
             }
             break;
         }

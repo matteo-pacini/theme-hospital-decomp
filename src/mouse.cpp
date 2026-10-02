@@ -10,8 +10,8 @@ struct Slot {
 };
 
 extern "C" {
-extern Event D_001549d0[];
-extern Slot D_001581b2[];
+extern Event player_events[];
+extern Slot irequester_slots[];
 }
 
 extern u8 clicked_icon;
@@ -85,7 +85,7 @@ void process_mouse(void)
     else if (lbDisplay.mmouse_y >= resvars.coords[0xa8].y)
         scroll |= 2;
     if (scroll > 0)
-        D_001549d0[player].flags = scroll;
+        player_events[player].flags = scroll;
     othervar.pickup_thing = 0;
     othervar.advisor_right_click = 0;
     if (othervar.menu_bar_active && !othervar.hovered_popup_icon) {
@@ -314,7 +314,7 @@ void process_left_button(u16 icon)
                                      resvars.coords[0x86].y, watch[13].width, watch[13].height)) {
                         if (othervar.epidemic_patient) {
                             othervar.center_on_slot = 1;
-                            D_001581b2[1].value = othervar.epidemic_patient;
+                            irequester_slots[1].value = othervar.epidemic_patient;
                             othervar.full_redraw = 1;
                             play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
                         }
@@ -324,7 +324,7 @@ void process_left_button(u16 icon)
                 if (myhosp->opening_countdown) {
                     if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x,
                                      resvars.coords[0x86].y, watch[14].width, watch[14].height)) {
-                        D_001549d0[player].type = EV_OPEN_HOSPITAL;
+                        player_events[player].type = EV_OPEN_HOSPITAL;
                         play_sound(SNDSRC_GENERAL, SFX_FANFARE, -1, -1);
                         break;
                     }
@@ -334,7 +334,7 @@ void process_left_button(u16 icon)
                                      resvars.coords[0x84].y, watch[13].width, watch[13].height)) {
                         if (othervar.emergency_patient) {
                             othervar.center_on_slot = 1;
-                            D_001581b2[1].value = othervar.emergency_patient;
+                            irequester_slots[1].value = othervar.emergency_patient;
                             othervar.full_redraw = 1;
                             play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
                         }
@@ -356,16 +356,16 @@ void process_left_button(u16 icon)
                                 receptionist = &thing[clicked->user];
                                 if (receptionist > thing) {
                                     if (receptionist->room) {
-                                        D_001549d0[player].type = EV_OPEN_QUEUE_WINDOW;
-                                        D_001549d0[player].value = receptionist->room - room_info;
+                                        player_events[player].type = EV_OPEN_QUEUE_WINDOW;
+                                        player_events[player].value = receptionist->room - room_info;
                                     }
                                 }
                                 break;
                             }
                             default:
                                 if (!(objects[clicked->subtype].flags & 4)) {
-                                    D_001549d0[player].type = EV_OPEN_THING_WINDOW;
-                                    D_001549d0[player].value = othervar.panel_thing;
+                                    player_events[player].type = EV_OPEN_THING_WINDOW;
+                                    player_events[player].value = othervar.panel_thing;
                                 }
                                 break;
                             }
@@ -376,8 +376,8 @@ void process_left_button(u16 icon)
                                 if (PARTNER(&thing[othervar.panel_thing]) &&
                                     thing[PARTNER(&thing[othervar.panel_thing])].subtype == OBJ_RECEPTION_DESK) {
                                     if (thing[othervar.panel_thing].room) {
-                                        D_001549d0[player].type = EV_OPEN_QUEUE_WINDOW;
-                                        D_001549d0[player].value = thing[othervar.panel_thing].room - room_info;
+                                        player_events[player].type = EV_OPEN_QUEUE_WINDOW;
+                                        player_events[player].value = thing[othervar.panel_thing].room - room_info;
                                         break;
                                     }
                                 }
@@ -385,12 +385,12 @@ void process_left_button(u16 icon)
                                 if (crequester.id == REQ_NONE) {
                                     close_irequesters();
                                     if ((clicked->orders & ORD_RESIGN) && clicked->playercall) {
-                                        D_001549d0[player].type = EV_ANSWER_PLAYERCALL;
-                                        D_001549d0[player].value = 1;
-                                        D_001549d0[player].arg = clicked->playercall;
+                                        player_events[player].type = EV_ANSWER_PLAYERCALL;
+                                        player_events[player].value = 1;
+                                        player_events[player].arg = clicked->playercall;
                                     } else {
-                                        D_001549d0[player].type = EV_OPEN_THING_WINDOW;
-                                        D_001549d0[player].value = othervar.panel_thing;
+                                        player_events[player].type = EV_OPEN_THING_WINDOW;
+                                        player_events[player].value = othervar.panel_thing;
                                     }
                                 }
                                 break;
@@ -400,22 +400,22 @@ void process_left_button(u16 icon)
                             if (crequester.id == REQ_NONE) {
                                 close_irequesters();
                                 if ((clicked->flags1 & (PF_NEEDS_DIAGNOSIS_ROOM >> 8)) && clicked->playercall) {
-                                    D_001549d0[player].type = EV_ANSWER_PLAYERCALL;
-                                    D_001549d0[player].value = 8;
-                                    D_001549d0[player].arg = clicked->playercall;
+                                    player_events[player].type = EV_ANSWER_PLAYERCALL;
+                                    player_events[player].value = 8;
+                                    player_events[player].arg = clicked->playercall;
                                 } else if ((clicked->flags0 & PF_AWAITING_DECISION) && clicked->playercall) {
-                                    D_001549d0[player].type = EV_ANSWER_PLAYERCALL;
-                                    D_001549d0[player].value = 4;
-                                    D_001549d0[player].arg = clicked->playercall;
+                                    player_events[player].type = EV_ANSWER_PLAYERCALL;
+                                    player_events[player].value = 4;
+                                    player_events[player].arg = clicked->playercall;
                                 } else {
-                                    D_001549d0[player].type = EV_OPEN_THING_WINDOW;
-                                    D_001549d0[player].value = othervar.panel_thing;
+                                    player_events[player].type = EV_OPEN_THING_WINDOW;
+                                    player_events[player].value = othervar.panel_thing;
                                 }
                             }
                             break;
                         default:
-                            D_001549d0[player].type = EV_OPEN_THING_WINDOW;
-                            D_001549d0[player].value = othervar.panel_thing;
+                            player_events[player].type = EV_OPEN_THING_WINDOW;
+                            player_events[player].value = othervar.panel_thing;
                             break;
                         }
                     } else if (statvar.num_players > 1 && clicked->type == THING_STAFF && clicked->owner != 0x63) {
@@ -425,17 +425,17 @@ void process_left_button(u16 icon)
                         } else if (clicked->discontent_s < gbv.resign_max / 4) {
                             advisor.forced_advice_id = 0x10;
                         } else {
-                            D_001549d0[player].type = EV_POACH_STAFF;
-                            D_001549d0[player].value = clicked - thing;
+                            player_events[player].type = EV_POACH_STAFF;
+                            player_events[player].value = clicked - thing;
                             advisor.forced_advice_id = 0x11;
                         }
                     }
                     break;
                 case 4:
                     if (thing[othervar.panel_thing].owner == player) {
-                        D_001549d0[player].type = EV_OPEN_QUEUE_WINDOW;
-                        D_001549d0[player].value = thing[othervar.panel_thing].room_id;
-                        D_001549d0[player].arg =
+                        player_events[player].type = EV_OPEN_QUEUE_WINDOW;
+                        player_events[player].value = thing[othervar.panel_thing].room_id;
+                        player_events[player].arg =
                             (thing[othervar.panel_thing].y.tile << 7) + thing[othervar.panel_thing].x.tile;
                         compute_room_pointed(othervar.mouse_cell);
                     }
@@ -443,13 +443,13 @@ void process_left_button(u16 icon)
                 case 5:
                 case 6:
                     if (!gamevar.paused) {
-                        D_001549d0[player].type = EV_SHOOT_RAT;
-                        D_001549d0[player].value = othervar.pointed_rat;
-                        D_001549d0[player].argb[0] = gamevar.rat_fest_powerup;
+                        player_events[player].type = EV_SHOOT_RAT;
+                        player_events[player].value = othervar.pointed_rat;
+                        player_events[player].argb[0] = gamevar.rat_fest_powerup;
                         if (othervar.pointed_rat)
-                            D_001549d0[player].argb[1] = 1;
+                            player_events[player].argb[1] = 1;
                         else
-                            D_001549d0[player].argb[1] = 0;
+                            player_events[player].argb[1] = 0;
                         if (othervar.rat_powerup_shots) {
                             othervar.rat_powerup_shots--;
                             if (othervar.rat_powerup_shots <= 0) {
@@ -464,16 +464,16 @@ void process_left_button(u16 icon)
                     if (crequester.id == REQ_NONE) {
                         close_irequesters();
                         if (othervar.hovered_popup_icon) {
-                            D_001549d0[player].type = EV_ANSWER_PLAYERCALL;
-                            D_001549d0[player].value = (u16)othervar.hovered_popup_icon;
-                            D_001549d0[player].arg = 0;
+                            player_events[player].type = EV_ANSWER_PLAYERCALL;
+                            player_events[player].value = (u16)othervar.hovered_popup_icon;
+                            player_events[player].arg = 0;
                         }
                     }
                     lbDisplay.left_button = lbDisplay.right_button = 0;
                     break;
                 case 1:
-                    D_001549d0[player].type = EV_TOGGLE_VACCINATION;
-                    D_001549d0[player].value = othervar.vaccine_target;
+                    player_events[player].type = EV_TOGGLE_VACCINATION;
+                    player_events[player].value = othervar.vaccine_target;
                     break;
                 case 2:
                 default:
@@ -481,42 +481,42 @@ void process_left_button(u16 icon)
                 }
                 break;
             case MM_BLUEPRINT:
-                D_001549d0[player].type = EV_MODIFY_BLUEPRINT;
-                D_001549d0[player].value = othervar.mouse_cell;
+                player_events[player].type = EV_MODIFY_BLUEPRINT;
+                player_events[player].value = othervar.mouse_cell;
                 break;
             case MM_PLACE_DOOR:
-                D_001549d0[player].type = EV_PLACE_BP_DOOR;
-                D_001549d0[player].value = 0;
+                player_events[player].type = EV_PLACE_BP_DOOR;
+                player_events[player].value = 0;
                 break;
             case MM_PLACE_STAFF:
                 draw_staff_cursor();
                 if (gamevar.staff_place_ok) {
-                    D_001549d0[player].type = EV_PLACE_STAFF;
-                    D_001549d0[player].value = othervar.mouse_cell;
-                    D_001549d0[player].arg = gamevar.held_staff;
+                    player_events[player].type = EV_PLACE_STAFF;
+                    player_events[player].value = othervar.mouse_cell;
+                    player_events[player].arg = gamevar.held_staff;
                 }
                 break;
             case MM_PLACE_OBJECT:
                 draw_object_cursor();
                 if (gamevar.place_ok) {
-                    D_001549d0[player].type = EV_PLACE_OBJECT;
-                    D_001549d0[player].value = gamevar.place_tile;
-                    D_001549d0[player].argb[0] = gamevar.place_kind;
-                    D_001549d0[player].argb[1] = gamevar.place_dir;
+                    player_events[player].type = EV_PLACE_OBJECT;
+                    player_events[player].value = gamevar.place_tile;
+                    player_events[player].argb[0] = gamevar.place_kind;
+                    player_events[player].argb[1] = gamevar.place_dir;
                 }
                 break;
             case MM_PLACE_SMALL_THING:
-                D_001549d0[player].type = EV_PLACE_SMALL_THING;
-                D_001549d0[player].value = othervar.mouse_cell;
-                D_001549d0[player].arg = (u16)gamevar.place_blueprint;
+                player_events[player].type = EV_PLACE_SMALL_THING;
+                player_events[player].value = othervar.mouse_cell;
+                player_events[player].arg = (u16)gamevar.place_blueprint;
                 break;
             case MM_PICK_UP_OBJECT:
                 othervar.pickup_thing = compute_object_pointed(&room_info[allhosps[player].edited_room]);
                 if (othervar.pickup_thing) {
                     if (thing[othervar.pickup_thing].room_id == allhosps[player].edited_room) {
-                        D_001549d0[player].type = EV_PICK_UP_OBJECT;
-                        D_001549d0[player].value = othervar.pickup_thing;
-                        D_001549d0[player].arg = 1;
+                        player_events[player].type = EV_PICK_UP_OBJECT;
+                        player_events[player].value = othervar.pickup_thing;
+                        player_events[player].arg = 1;
                     }
                 }
                 break;
@@ -535,8 +535,8 @@ void process_left_button(u16 icon)
                     }
                 }
                 if (gamevar.hover_action == 1) {
-                    D_001549d0[player].type = EV_TOGGLE_VACCINATION;
-                    D_001549d0[player].value = othervar.vaccine_target;
+                    player_events[player].type = EV_TOGGLE_VACCINATION;
+                    player_events[player].value = othervar.vaccine_target;
                 }
                 break;
             case MM_MOVE_QUEUE_PERSON: {
@@ -556,9 +556,9 @@ void process_left_button(u16 icon)
                     }
                 }
                 if (room) {
-                    D_001549d0[player].type = EV_QUEUE_PERSON_TO_NEW_QUEUE;
-                    D_001549d0[player].value = room - room_info;
-                    D_001549d0[player].arg = gamevar.queue_selected_person;
+                    player_events[player].type = EV_QUEUE_PERSON_TO_NEW_QUEUE;
+                    player_events[player].value = room - room_info;
+                    player_events[player].arg = gamevar.queue_selected_person;
                     set_mouse_mode(MM_NORMAL);
                 }
                 break;
@@ -593,11 +593,11 @@ void process_mleft_button(u16 icon)
     switch (icon) {
     case 0x27:
         if (display_mode == DM_GAME) {
-            if (D_001549d0[player].type == EV_NONE) {
+            if (player_events[player].type == EV_NONE) {
                 switch (gamevar.mouse_mode) {
                 case MM_BLUEPRINT:
-                    D_001549d0[player].type = EV_MODIFY_BLUEPRINT;
-                    D_001549d0[player].value = othervar.mouse_cell;
+                    player_events[player].type = EV_MODIFY_BLUEPRINT;
+                    player_events[player].value = othervar.mouse_cell;
                     break;
                 case MM_NORMAL:
                 case MM_VACCINATE:
@@ -611,7 +611,7 @@ void process_mleft_button(u16 icon)
                                          resvars.coords[0x84].y, watch[13].width, watch[13].height)) {
                             if (othervar.emergency_patient) {
                                 othervar.center_on_slot = 1;
-                                D_001581b2[1].value = othervar.emergency_patient;
+                                irequester_slots[1].value = othervar.emergency_patient;
                                 othervar.full_redraw = 1;
                             }
                             break;
@@ -667,12 +667,12 @@ void process_right_button(u16 icon)
                                          resvars.coords[0x86].y, watch[13].width, watch[13].height)) {
                             othervar.epidemic_patient = find_next_emergency_person(othervar.emergency_patient, 0x20);
                             if (othervar.epidemic_patient) {
-                                D_001549d0[player].type = EV_OPEN_THING_WINDOW;
-                                D_001549d0[player].value = othervar.epidemic_patient;
+                                player_events[player].type = EV_OPEN_THING_WINDOW;
+                                player_events[player].value = othervar.epidemic_patient;
                                 play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
                             } else {
-                                D_001549d0[player].type = EV_CLOSE_QUERY;
-                                D_001549d0[player].value = 1;
+                                player_events[player].type = EV_CLOSE_QUERY;
+                                player_events[player].value = 1;
                                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                             }
                             break;
@@ -683,12 +683,12 @@ void process_right_button(u16 icon)
                                          resvars.coords[0x84].y, watch[13].width, watch[13].height)) {
                             othervar.emergency_patient = find_next_emergency_person(othervar.emergency_patient, 0x40);
                             if (othervar.emergency_patient) {
-                                D_001549d0[player].type = EV_OPEN_THING_WINDOW;
-                                D_001549d0[player].value = othervar.emergency_patient;
+                                player_events[player].type = EV_OPEN_THING_WINDOW;
+                                player_events[player].value = othervar.emergency_patient;
                                 play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
                             } else {
-                                D_001549d0[player].type = EV_CLOSE_QUERY;
-                                D_001549d0[player].value = 1;
+                                player_events[player].type = EV_CLOSE_QUERY;
+                                player_events[player].value = 1;
                                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                             }
                             break;
@@ -709,8 +709,8 @@ void process_right_button(u16 icon)
                                         check_object_right_click_in_room_edit();
                                     } else if (gamevar.hover_action == 3 && hovered > thing &&
                                                hovered->type == THING_STAFF) {
-                                        D_001549d0[player].type = EV_PICK_UP_STAFF;
-                                        D_001549d0[player].value = othervar.pointed_thing;
+                                        player_events[player].type = EV_PICK_UP_STAFF;
+                                        player_events[player].value = othervar.pointed_thing;
                                         play_sound(SNDSRC_GENERAL, SFX_PICKUP, -1, -1);
                                     } else {
                                         pick_up_object_right_click();
@@ -738,8 +738,8 @@ void process_right_button(u16 icon)
                     }
                     break;
                 case MM_PLACE_DOOR:
-                    D_001549d0[player].type = EV_PLACE_BP_DOOR;
-                    D_001549d0[player].value = 1;
+                    player_events[player].type = EV_PLACE_BP_DOOR;
+                    player_events[player].value = 1;
                     break;
                 case MM_PLACE_OBJECT:
                     if (gamevar.place_mode != 1) {
@@ -755,7 +755,7 @@ void process_right_button(u16 icon)
                         process_keys(0, 1);
                     break;
                 case MM_EDIT_ROOM_WAIT:
-                    D_001549d0[player].type = EV_CANCEL_EDIT_ROOM;
+                    player_events[player].type = EV_CANCEL_EDIT_ROOM;
                     break;
                 }
             }
@@ -795,15 +795,15 @@ void process_no_button(u16 icon)
                 }
                 break;
             case MM_BLUEPRINT:
-                if (D_001549d0[player].type == EV_NONE) {
-                    D_001549d0[player].type = EV_HOVER_BLUEPRINT;
-                    D_001549d0[player].value = othervar.mouse_cell;
+                if (player_events[player].type == EV_NONE) {
+                    player_events[player].type = EV_HOVER_BLUEPRINT;
+                    player_events[player].value = othervar.mouse_cell;
                 }
                 break;
             case MM_PLACE_DOOR:
-                D_001549d0[player].type = EV_TEMP_PLACE_DOOR;
-                D_001549d0[player].value = othervar.prev_mouse_cell;
-                D_001549d0[player].arg = 0;
+                player_events[player].type = EV_TEMP_PLACE_DOOR;
+                player_events[player].value = othervar.prev_mouse_cell;
+                player_events[player].arg = 0;
                 break;
             case MM_PLACE_STAFF:
                 draw_staff_cursor();

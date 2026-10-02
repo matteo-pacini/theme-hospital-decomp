@@ -28,7 +28,7 @@ extern char **room_names;
 extern char **skill_names;
 void strcat(char *dst, char *src);
 extern Menu choice;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern EmergencyDef emergency_control[];
 }
 
@@ -308,12 +308,12 @@ void process_emergency_start_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        D_001549d0[player].type = EV_CHOICE_RESULT;
-        D_001549d0[player].value = CH_EMERGENCY_ACCEPT;
+        player_events[player].type = EV_CHOICE_RESULT;
+        player_events[player].value = CH_EMERGENCY_ACCEPT;
         break;
     case 1:
-        D_001549d0[player].type = EV_CHOICE_RESULT;
-        D_001549d0[player].value = CH_EMERGENCY_REFUSE;
+        player_events[player].type = EV_CHOICE_RESULT;
+        player_events[player].value = CH_EMERGENCY_REFUSE;
         break;
     }
 }

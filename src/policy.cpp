@@ -9,7 +9,7 @@ struct PolicyRect {
 
 extern "C" {
 
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **policy_names;
 
 void process_policy_panel(void);
@@ -40,8 +40,8 @@ void display_policy(void)
         pol.state = 3;
         break;
     case 3:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         break;
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -81,15 +81,15 @@ void process_policy_button(u8 action)
     debug.last_action = action;
     switch (action) {
     case 0:
-        D_001549d0[player].type = EV_SET_POLICY;
-        D_001549d0[player].value = 5;
-        D_001549d0[player].arg = 1;
+        player_events[player].type = EV_SET_POLICY;
+        player_events[player].value = 5;
+        player_events[player].arg = 1;
         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 1:
-        D_001549d0[player].type = EV_SET_POLICY;
-        D_001549d0[player].value = 5;
-        D_001549d0[player].arg = 0;
+        player_events[player].type = EV_SET_POLICY;
+        player_events[player].value = 5;
+        player_events[player].arg = 0;
         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 2:
@@ -203,16 +203,16 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 100)
                     x = 100;
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 2;
-                D_001549d0[player].arg = x;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 2;
+                player_events[player].arg = x;
                 pol.value = 2;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x25].x,
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 2;
-                D_001549d0[player].arg = 0;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 2;
+                player_events[player].arg = 0;
                 pol.value = 2;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y,
@@ -222,9 +222,9 @@ void process_policy_sliders(void)
                              lbDisplay.graphics_screen_width -
                                  (screen_sprites_tab_start[2].width / 2 + resvars.screen_boxes_PolicyRectp[0x25].w),
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 2;
-                D_001549d0[player].arg = 100;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 2;
+                player_events[player].arg = 100;
                 pol.value = 2;
             }
         }
@@ -240,16 +240,16 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 100)
                     x = 100;
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 1;
-                D_001549d0[player].arg = x;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 1;
+                player_events[player].arg = x;
                 pol.value = 1;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x26].x,
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 1;
-                D_001549d0[player].arg = 0;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 1;
+                player_events[player].arg = 0;
                 pol.value = 1;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y,
@@ -259,9 +259,9 @@ void process_policy_sliders(void)
                              lbDisplay.graphics_screen_width -
                                  (screen_sprites_tab_start[1].width / 2 + resvars.screen_boxes_PolicyRectp[0x26].w),
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 1;
-                D_001549d0[player].arg = 100;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 1;
+                player_events[player].arg = 100;
                 pol.value = 1;
             }
         }
@@ -277,16 +277,16 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 1000)
                     x = 1000;
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 3;
-                D_001549d0[player].arg = x + 1000;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 3;
+                player_events[player].arg = x + 1000;
                 pol.value = 3;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x27].x,
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 3;
-                D_001549d0[player].arg = 1000;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 3;
+                player_events[player].arg = 1000;
                 pol.value = 3;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y,
@@ -296,9 +296,9 @@ void process_policy_sliders(void)
                              lbDisplay.graphics_screen_width -
                                  (screen_sprites_tab_start[3].width / 2 + resvars.screen_boxes_PolicyRectp[0x27].w),
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 3;
-                D_001549d0[player].arg = 2000;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 3;
+                player_events[player].arg = 2000;
                 pol.value = 3;
             }
         }
@@ -314,16 +314,16 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 1000)
                     x = 1000;
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 4;
-                D_001549d0[player].arg = x;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 4;
+                player_events[player].arg = x;
                 pol.value = 4;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x28].x,
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 4;
-                D_001549d0[player].arg = 0;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 4;
+                player_events[player].arg = 0;
                 pol.value = 4;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y,
@@ -333,9 +333,9 @@ void process_policy_sliders(void)
                              lbDisplay.graphics_screen_width -
                                  (screen_sprites_tab_start[3].width / 2 + resvars.screen_boxes_PolicyRectp[0x28].w),
                              lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = EV_SET_POLICY;
-                D_001549d0[player].value = 4;
-                D_001549d0[player].arg = 1000;
+                player_events[player].type = EV_SET_POLICY;
+                player_events[player].value = 4;
+                player_events[player].arg = 1000;
                 pol.value = 4;
             }
         }

@@ -22,7 +22,7 @@ extern s16 around24[];
 
 extern "C" {
 
-extern Event D_001549d0[];
+extern Event player_events[];
 
 s32 remove_object(Thing *obj, u8 owner);
 #pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
@@ -2006,16 +2006,16 @@ void clicked_for_edit(void)
             if (thing[othervar.pickup_thing].room_id != room)
                 return;
         }
-        D_001549d0[player].arg = edit;
+        player_events[player].arg = edit;
         if (thing[othervar.pickup_thing].type == THING_OBJECT) {
-            D_001549d0[player].value = othervar.pickup_thing;
+            player_events[player].value = othervar.pickup_thing;
         } else {
-            D_001549d0[player].value = thing[othervar.pickup_thing].object;
+            player_events[player].value = thing[othervar.pickup_thing].object;
         }
-        D_001549d0[player].type = EV_PICK_UP_OBJECT;
+        player_events[player].type = EV_PICK_UP_OBJECT;
     } else if (room) {
-        D_001549d0[player].type = EV_INIT_EDIT_ROOM;
-        D_001549d0[player].value = room;
+        player_events[player].type = EV_INIT_EDIT_ROOM;
+        player_events[player].value = room;
         set_mouse_mode(MM_NORMAL);
     }
 }
@@ -2029,9 +2029,9 @@ void check_object_right_click_in_room_edit(void)
 
     obj = &thing[othervar.pointed_thing];
     if (obj > thing && obj->type == THING_OBJECT && obj->room_id == allhosps[player].edited_room) {
-        D_001549d0[player].type = EV_PICK_UP_OBJECT;
-        D_001549d0[player].value = othervar.pointed_thing;
-        D_001549d0[player].arg = 1;
+        player_events[player].type = EV_PICK_UP_OBJECT;
+        player_events[player].value = othervar.pointed_thing;
+        player_events[player].arg = 1;
     }
 }
 

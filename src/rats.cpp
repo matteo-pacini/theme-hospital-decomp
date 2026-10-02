@@ -12,7 +12,7 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills);
 extern Menu area;
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 void nav_init(Thing *person);
 }
 
@@ -387,7 +387,7 @@ void rat_fest_control(void)
             gamevar.rat_fest_rats += count;
         }
         if (myhosp->litter_count <= 4 || actual_game_turn >= 9000) {
-            D_001549d0[player].type = EV_CANCEL_BUILD;
+            player_events[player].type = EV_CANCEL_BUILD;
             level_number = othervar.level_after_bonus;
             myhosp->level = level_number;
             area.state = 6;

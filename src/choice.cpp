@@ -49,7 +49,7 @@ extern Menu choice;
 extern s16 choice_mouse_position;
 extern u32 choice_actual_game_turn;
 extern u8 fax_no[];
-extern Event D_001549d0[];
+extern Event player_events[];
 }
 
 FaxNo cheat_numbers[] = {
@@ -393,9 +393,9 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
 // FUNCTION: 0x000a4168
 void packet_choice_result(u8 button)
 {
-    D_001549d0[player].type = EV_CHOICE_RESULT;
-    D_001549d0[player].value = button;
-    D_001549d0[player].arg = choice_spare_data;
+    player_events[player].type = EV_CHOICE_RESULT;
+    player_events[player].value = button;
+    player_events[player].arg = choice_spare_data;
 }
 
 // Saves the display mode and fax state for restore_display_screen.

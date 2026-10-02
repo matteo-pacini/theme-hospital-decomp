@@ -16,7 +16,7 @@ struct ScreenBox {
 
 extern "C" {
 extern Menu overview;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **overview_text;
 extern char **win_criteria_help;
 
@@ -122,8 +122,8 @@ void display_peep_overview(void)
         draw_piechart();
         break;
     case 2:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         cancel_helpmsg();
         break;
     }

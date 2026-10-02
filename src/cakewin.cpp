@@ -19,7 +19,7 @@ struct ScrollLayout {
 };
 
 extern "C" {
-extern TrackSlot D_001581b2[];
+extern TrackSlot irequester_slots[];
 extern u8 redraw_panel;
 }
 
@@ -41,7 +41,7 @@ void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h);
 void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1);
 
 // Scrolls each view window that follows a thing (othervar.track_window[i], thing
-// D_001581b2[i].value) and the main view (othervar.center_on_slot) to centre on that
+// irequester_slots[i].value) and the main view (othervar.center_on_slot) to centre on that
 // thing, once each; if the thing is beyond the scroll limit the requesters are
 // closed instead. The main view's limit test uses the layout's x offset
 // (track_offset_x) for y too.
@@ -53,7 +53,7 @@ void process_tracking_windows(void)
 
     for (i = 0; i < 4; i++) {
         if (othervar.track_window[i]) {
-            tracked = &thing[D_001581b2[i].value];
+            tracked = &thing[irequester_slots[i].value];
             give_absolute_xy_of_cell_at_column_row(tracked->x.tile, tracked->y.tile);
             if (!check_if_point_beyond_scroll_limit(
                     info.cell_x - resvars.coords_ScrollLayoutp->track_offset_x +
@@ -78,7 +78,7 @@ void process_tracking_windows(void)
         }
     }
     if (othervar.center_on_slot) {
-        tracked = &thing[D_001581b2[othervar.center_on_slot].value];
+        tracked = &thing[irequester_slots[othervar.center_on_slot].value];
         give_absolute_xy_of_cell_at_column_row(tracked->x.tile, tracked->y.tile);
         if (!check_if_point_beyond_scroll_limit(
                 info.cell_x - resvars.coords_ScrollLayoutp->track_offset_x +

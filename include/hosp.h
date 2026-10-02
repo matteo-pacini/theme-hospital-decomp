@@ -1873,10 +1873,10 @@ struct CurrentText {
 };
 
 /*
- * The four bytes before D_001549d0 (the players' Events). packet is the base
+ * The four bytes before player_events (the players' Events). packet is the base
  * of the per-player 0xf-byte block exchanged over the network and recorded or
  * played back each turn, so player p's block starts 4 bytes before
- * D_001549d0[p].
+ * player_events[p].
  */
 struct Packet {
     u8 unknown0[4];
@@ -3855,7 +3855,7 @@ struct MemRegion {
 };
 
 /*
- * A player's command for the turn (D_001549d0[player]), carried out by
+ * A player's command for the turn (player_events[player]), carried out by
  * process_turn.
  */
 struct Event {

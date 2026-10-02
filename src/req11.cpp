@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 extern u8 redraw_panel;
 extern char **object_names;
 extern char **req1_help;
@@ -38,20 +38,20 @@ void req11(Window *win)
                 clicked_buy_objects(i - resvars.requester_buttons[0x3b], 2);
             } else if (i == resvars.requester_buttons[0x2f]) {
                 if (crequester.arg == 1) {
-                    D_001549d0[player].type = EV_PLACE_NEXT_OBJECT;
+                    player_events[player].type = EV_PLACE_NEXT_OBJECT;
                 } else if (crequester.arg3) {
-                    D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
-                    D_001549d0[player].value = 0;
+                    player_events[player].type = EV_BACK_TO_PLACE_OBJECT;
+                    player_events[player].value = 0;
                 }
                 play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
             } else if (i == resvars.requester_buttons[0x3a]) {
                 if (crequester.arg3) {
-                    D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
-                    D_001549d0[player].value = 1;
+                    player_events[player].type = EV_BACK_TO_PLACE_OBJECT;
+                    player_events[player].value = 1;
                 } else {
                     while (--k >= 0)
                         gamevar.buy_count[k] = 0;
-                    D_001549d0[player].type = EV_CANCEL_BUY_OBJECTS;
+                    player_events[player].type = EV_CANCEL_BUY_OBJECTS;
                 }
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
@@ -192,9 +192,9 @@ void clicked_buy_objects(const s32 idx, const u8 button)
             if (cost_of_all_selected_objects() + allhosps[player].object_stats[obj].cost * amount <=
                     (u32)allhosps[player].balance &&
                 allhosps[player].balance > 0) {
-                D_001549d0[player].type = EV_BUY_OBJECT;
-                D_001549d0[player].value = obj;
-                D_001549d0[player].arg = amount;
+                player_events[player].type = EV_BUY_OBJECT;
+                player_events[player].value = obj;
+                player_events[player].arg = amount;
                 if (gamevar.buy_count[obj] + amount < 0x63)
                     play_sound(SNDSRC_GENERAL, SFX_ADDITEMJ, -1, -1);
                 else
@@ -205,9 +205,9 @@ void clicked_buy_objects(const s32 idx, const u8 button)
             }
         } else {
             if (gamevar.buy_count[obj] >= amount) {
-                D_001549d0[player].type = EV_SELL_OBJECT;
-                D_001549d0[player].value = obj;
-                D_001549d0[player].arg = amount;
+                player_events[player].type = EV_SELL_OBJECT;
+                player_events[player].value = obj;
+                player_events[player].arg = amount;
                 play_sound(SNDSRC_GENERAL, SFX_DELITEMJ, -1, -1);
             } else {
                 play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);

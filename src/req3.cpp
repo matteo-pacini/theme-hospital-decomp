@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 /*
- * A tracked-window slot (D_001581b2[]); see io.cpp.
+ * A tracked-window slot (irequester_slots[]); see io.cpp.
  */
 struct Slot {
     // 0x0: Requester shown (REQ_).
@@ -48,8 +48,8 @@ struct ReqLayout {
 };
 
 extern "C" {
-extern Slot D_001581b2[];
-extern Event D_001549d0[];
+extern Slot irequester_slots[];
+extern Event player_events[];
 extern char **illness_text;
 void conv_string(char *dst, char *src, u8 mode);
 void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
@@ -63,7 +63,7 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2);
 void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const long max, const long min,
                 const long range, const u8 up);
 
-// Patient window clicks (patient D_001581b2[1].value): close, the casebook
+// Patient window clicks (patient irequester_slots[1].value): close, the casebook
 // for their illness once diagnosed, send home, their queue's window, and
 // force a cure (EV_FORCE_CURE) when diagnosed and the cure is known.
 // FUNCTION: 0x00072d60
@@ -75,14 +75,14 @@ void req3(Window *win)
     u16 i;
 
     button = win->buttons;
-    patient = &thing[D_001581b2[1].value];
+    patient = &thing[irequester_slots[1].value];
     for (i = 1; button; button = button->next) {
         if (button->flags & 6) {
             debug.last_button = i;
             debug.last_action = i;
             if (i == resvars.requester_buttons[0xd]) {
-                D_001549d0[player].type = EV_CLOSE_QUERY;
-                D_001549d0[player].value = 1;
+                player_events[player].type = EV_CLOSE_QUERY;
+                player_events[player].value = 1;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             } else if (i == resvars.requester_buttons[0xe]) {
                 if (patient->diagnosis >= gbv.diagnosis_complete) {
@@ -96,16 +96,16 @@ void req3(Window *win)
             } else if (i == resvars.requester_buttons[0xf]) {
                 if (!(patient->flags & PF_CURED || patient->flags & PF_SENT_HOME)) {
                     if (patient->health > 0) {
-                        D_001549d0[player].type = EV_PERSON_GO_HOME;
-                        D_001549d0[player].value = D_001581b2[1].value;
+                        player_events[player].type = EV_PERSON_GO_HOME;
+                        player_events[player].value = irequester_slots[1].value;
                         play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
                     }
                 }
             } else if (i == resvars.requester_buttons[0x10]) {
                 if (patient->queue_room) {
-                    D_001549d0[player].type = EV_OPEN_QUEUE_WINDOW;
-                    D_001549d0[player].value = patient->queue_room;
-                    D_001549d0[player].arg = 0;
+                    player_events[player].type = EV_OPEN_QUEUE_WINDOW;
+                    player_events[player].value = patient->queue_room;
+                    player_events[player].arg = 0;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (i == resvars.requester_buttons[0x11]) {
@@ -114,8 +114,8 @@ void req3(Window *win)
                     patient->diagnosis >= gbv.diagnosis_complete) {
                     if (!(patient->treatment == 0 || patient->flags & PF_GUESSED)) {
                         if (patient->health > 0) {
-                            D_001549d0[player].type = EV_FORCE_CURE;
-                            D_001549d0[player].value = D_001581b2[1].value;
+                            player_events[player].type = EV_FORCE_CURE;
+                            player_events[player].value = irequester_slots[1].value;
                             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                         }
                     }
@@ -139,7 +139,7 @@ void req3_overdraw(Window *win)
     s32 y;
     s32 n;
 
-    patient = &thing[D_001581b2[1].value];
+    patient = &thing[irequester_slots[1].value];
     n = 0x3e;
     LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
                               window.clip_y1 - window.clip_y0);
@@ -148,8 +148,8 @@ void req3_overdraw(Window *win)
     set_font_from_cache(1);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     othervar.track_window_1 = window.window_count - 1;
-    if (D_001581b2[1].toggle_delay)
-        D_001581b2[1].toggle_delay--;
+    if (irequester_slots[1].toggle_delay)
+        irequester_slots[1].toggle_delay--;
     if (patient->diagnosis < gbv.diagnosis_complete) {
         LbDrawBox(x + resvars.boxes_ReqLayoutp->box_a.x, y + resvars.boxes_ReqLayoutp->box_a.y,
                   resvars.boxes_ReqLayoutp->box_a.w, resvars.boxes_ReqLayoutp->box_a.h, 0x46);
@@ -175,7 +175,7 @@ void req3_overdraw(Window *win)
     draw_gauge((s16)patient->warmth, x + resvars.coords_ReqLayoutp->gauge3_x, y + resvars.coords_ReqLayoutp->gauge3_y,
                (u16)resvars.boxes_ReqLayoutp->gauge_len, &button_sprite[resvars.requester_sprites[0x11]], 100, 0, 100,
                1);
-    if (D_001581b2[1].show_graph)
+    if (irequester_slots[1].show_graph)
         draw_health_graph(patient, x, y, color.red);
     else
         draw_diagnosis(patient, x, y);
@@ -188,9 +188,9 @@ void req3_overdraw(Window *win)
         } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->diag.x,
                                 y + resvars.boxes_ReqLayoutp->diag.y, resvars.boxes_ReqLayoutp->diag.w,
                                 resvars.boxes_ReqLayoutp->diag.h)) {
-            if (!D_001581b2[1].toggle_delay) {
-                D_001581b2[1].show_graph = !D_001581b2[1].show_graph ? 1 : 0;
-                D_001581b2[1].toggle_delay = 5;
+            if (!irequester_slots[1].toggle_delay) {
+                irequester_slots[1].show_graph = !irequester_slots[1].show_graph ? 1 : 0;
+                irequester_slots[1].toggle_delay = 5;
             }
         }
     }
@@ -200,9 +200,9 @@ void req3_overdraw(Window *win)
                          resvars.boxes_ReqLayoutp->next.h)) {
             u16 old;
 
-            old = D_001581b2[1].value;
-            D_001581b2[1].value = find_next_thing(patient, THING_PATIENT, -1, -1);
-            if (old != D_001581b2[1].value)
+            old = irequester_slots[1].value;
+            irequester_slots[1].value = find_next_thing(patient, THING_PATIENT, -1, -1);
+            if (old != irequester_slots[1].value)
                 play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
         }
     }
@@ -215,12 +215,12 @@ void req3_overdraw(Window *win)
     compute_help_text(0, 0, 9);
 }
 
-// Closes the query window in slot i (D_001581b2[i]).
+// Closes the query window in slot i (irequester_slots[i]).
 // FUNCTION: 0x000736d4
 void close_query(u8 i)
 {
     close_irequesters();
-    D_001581b2[i].kind = REQ_NONE;
+    irequester_slots[i].kind = REQ_NONE;
 }
 
 // Draws patient's recorded health (health_history[1-9]) as a line graph at
@@ -410,7 +410,7 @@ extern "C" void req3_help_if_diagnosed(void)
 {
     Thing *patient;
 
-    patient = &thing[D_001581b2[1].value];
+    patient = &thing[irequester_slots[1].value];
     if (patient->diagnosis >= gbv.diagnosis_complete)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
@@ -422,7 +422,7 @@ extern "C" void req3_help_if_curable(void)
 {
     Thing *patient;
 
-    patient = &thing[D_001581b2[1].value];
+    patient = &thing[irequester_slots[1].value];
     if (patient->treatment != 0 && !(patient->flags & PF_GUESSED) && !(patient->flags & PF_FED_UP) &&
         patient->illness != patient->known_illness && patient->diagnosis >= gbv.diagnosis_complete)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
@@ -435,7 +435,7 @@ extern "C" void req3_help_if_queueing(void)
 {
     Thing *patient;
 
-    patient = &thing[D_001581b2[1].value];
+    patient = &thing[irequester_slots[1].value];
     if (patient->queue_room)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }

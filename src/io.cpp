@@ -25,7 +25,7 @@ struct Struct_001602a0 {
 };
 
 /*
- * A tracked-window slot (D_001581b2[]): which requester and thing it shows,
+ * A tracked-window slot (irequester_slots[]): which requester and thing it shows,
  * and the patient window's view state.
  */
 struct Slot {
@@ -52,7 +52,7 @@ struct Rect {
 extern "C" {
 extern u8 host_player;
 
-extern Event D_001549d0[];
+extern Event player_events[];
 extern Event old_packet[];
 extern MemRegion save[];
 extern u32 block_checksums_size;
@@ -69,7 +69,7 @@ extern u8 redraw_panel;
 extern u8 last_saved;
 extern u8 need_a_save;
 extern Menu overview;
-extern Slot D_001581b2[];
+extern Slot irequester_slots[];
 extern PlayerCall popup_store[][9];
 
 int LbScreenLock(void);
@@ -282,8 +282,8 @@ void resync_network_game(void)
     if (host_player == player) {
         value = 1;
         for (i = 0; i < 4; i++) {
-            if (D_001549d0[i].checksum != 0) {
-                if (D_001549d0[player].checksum != D_001549d0[i].checksum) {
+            if (player_events[i].checksum != 0) {
+                if (player_events[player].checksum != player_events[i].checksum) {
                     draw_sync_progress(0);
                     sync_done_bytes = 0;
                     tries = 0;
@@ -300,7 +300,7 @@ void resync_network_game(void)
             }
         }
         for (i = 0; i < 4; i++) {
-            if (i == player || D_001549d0[i].checksum == 0) {
+            if (i == player || player_events[i].checksum == 0) {
                 continue;
             }
             tries = 0;
@@ -311,7 +311,7 @@ void resync_network_game(void)
             }
         }
     } else {
-        if (D_001549d0[player].checksum != D_001549d0[host_player].checksum) {
+        if (player_events[player].checksum != player_events[host_player].checksum) {
             draw_sync_progress(0);
             sync_done_bytes = 0;
             value = 0;
@@ -369,27 +369,27 @@ void process_turn(void)
         LbFileWrite(replay_file, &gamevar, 0x178);
         LbFileWrite(replay_file, &seed, 4);
     }
-    if (D_001549d0[player].flags && !pmenu.open_pulldown) {
-        if (D_001549d0[player].flags & 1) {
+    if (player_events[player].flags && !pmenu.open_pulldown) {
+        if (player_events[player].flags & 1) {
             scroll.up = 1;
-        } else if (D_001549d0[player].flags & 2) {
+        } else if (player_events[player].flags & 2) {
             scroll.down = 1;
         }
-        if (D_001549d0[player].flags & 4) {
+        if (player_events[player].flags & 4) {
             scroll.left = 1;
-        } else if (D_001549d0[player].flags & 8) {
+        } else if (player_events[player].flags & 8) {
             scroll.right = 1;
         }
-        if (D_001549d0[player].flags & 0x10) {
+        if (player_events[player].flags & 0x10) {
             goto_column_row_in_window(window.current_window, level->camera_start[player] % 128,
                                       level->camera_start[player] / 128);
             othervar.full_redraw = 1;
         }
-        old_packet[player].flags = D_001549d0[player].flags;
-        D_001549d0[player].flags = 0;
+        old_packet[player].flags = player_events[player].flags;
+        player_events[player].flags = 0;
     }
     if (statvar.num_players > 1) {
-        D_001549d0[player].checksum = check_sum();
+        player_events[player].checksum = check_sum();
         sprintf(buf, "size of pac %ld", 0xf);
         if (!end_game_if_alone()) {
             LbNetwork_ChangeExchangeBuffer(packet, 0xf);
@@ -402,13 +402,13 @@ void process_turn(void)
             }
             changed = 0;
             for (j = 0; j < 4; j++) {
-                if (player_info[j].active && D_001549d0[j].checksum) {
-                    if (D_001549d0[host_player].checksum != D_001549d0[j].checksum) {
-                        if (D_001549d0[j].type != EV_NETWORK_GAINED_FOCUS &&
-                            D_001549d0[j].type != EV_NETWORK_LOST_FOCUS) {
-                            D_001549d0[j].type = EV_NONE;
-                            D_001549d0[j].value = 0;
-                            D_001549d0[j].arg = 0;
+                if (player_info[j].active && player_events[j].checksum) {
+                    if (player_events[host_player].checksum != player_events[j].checksum) {
+                        if (player_events[j].type != EV_NETWORK_GAINED_FOCUS &&
+                            player_events[j].type != EV_NETWORK_LOST_FOCUS) {
+                            player_events[j].type = EV_NONE;
+                            player_events[j].value = 0;
+                            player_events[j].arg = 0;
                         }
                         changed = 1;
                     }
@@ -424,7 +424,7 @@ void process_turn(void)
         for (i = 0; i < 4; i++) {
             u8 handled = 0;
 
-            switch (D_001549d0[i].type) {
+            switch (player_events[i].type) {
             case EV_NETWORK_LOST_FOCUS:
                 network_lost_focus(i);
                 handled = 1;
@@ -435,9 +435,9 @@ void process_turn(void)
                 break;
             }
             if (handled) {
-                D_001549d0[i].type = EV_NONE;
-                D_001549d0[i].value = 0;
-                D_001549d0[i].arg = 0;
+                player_events[i].type = EV_NONE;
+                player_events[i].value = 0;
+                player_events[i].arg = 0;
                 return;
             }
         }
@@ -445,7 +445,7 @@ void process_turn(void)
     for (i = 0; i < 4; i++) {
         othervar.cur_player = i;
         if (allhosps[i].playing != 2) {
-            switch (D_001549d0[i].type) {
+            switch (player_events[i].type) {
             case EV_QUIT_GAME:
             case EV_LEAVE_NET_GAME:
                 goto dispatch;
@@ -453,14 +453,14 @@ void process_turn(void)
             goto copy;
         }
     dispatch:
-        switch (D_001549d0[i].type) {
+        switch (player_events[i].type) {
         case EV_NONE:
             break;
         case EV_OPEN_ROOM:
             open_room(i);
             break;
         case EV_MODIFY_BLUEPRINT:
-            modify_blueprint(i, 1, D_001549d0[i].value);
+            modify_blueprint(i, 1, player_events[i].value);
             break;
         case EV_COMMIT_BLUEPRINT:
             if (commit_blueprint(i)) {
@@ -486,7 +486,7 @@ void process_turn(void)
             }
             break;
         case EV_PLACE_BP_DOOR:
-            place_bp_door(i, (u8)D_001549d0[i].value);
+            place_bp_door(i, (u8)player_events[i].value);
             break;
         case EV_COMMIT_DOORS:
             if (i == player) {
@@ -497,9 +497,10 @@ void process_turn(void)
         case EV_PLACE_STAFF: {
             u8 empty = !allhosps[i].held_staff;
 
-            if (place_staff_on_map(D_001549d0[i].value, D_001549d0[i].arg, 0, i)) {
+            if (place_staff_on_map(player_events[i].value, player_events[i].arg, 0, i)) {
                 if (empty) {
-                    change_balance(TX_HIRE_STAFF, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.cur_player);
+                    change_balance(TX_HIRE_STAFF, -(thing[player_events[i].arg].salary * 12) / 10, 0,
+                                   othervar.cur_player);
                 }
                 if (i == player) {
                     play_sound(SNDSRC_GENERAL, SFX_PLAC_ST2, -1, -1);
@@ -509,7 +510,7 @@ void process_turn(void)
             break;
         }
         case EV_PLACE_OBJECT:
-            if (place_object(D_001549d0[i].value, D_001549d0[i].argb[0], D_001549d0[i].argb[1], i) != 0) {
+            if (place_object(player_events[i].value, player_events[i].argb[0], player_events[i].argb[1], i) != 0) {
                 if (i == player) {
                     play_sound(SNDSRC_GENERAL, SFX_PLACE_R, -1, -1);
                     object_placed();
@@ -517,18 +518,18 @@ void process_turn(void)
             }
             break;
         case EV_HOVER_BLUEPRINT:
-            modify_blueprint(i, 0, D_001549d0[i].value);
+            modify_blueprint(i, 0, player_events[i].value);
             break;
         case EV_QUEUE_PERSON_TO_NEW_QUEUE:
-            queue_person_to_new_queue(D_001549d0[i].value, D_001549d0[i].arg);
+            queue_person_to_new_queue(player_events[i].value, player_events[i].arg);
             break;
         case EV_ANSWER_PLAYERCALL:
             if (i == player) {
                 compute_whether_user_not_busy();
             }
-            switch (D_001549d0[i].value) {
+            switch (player_events[i].value) {
             case 1:
-                j = get_playercall(1, D_001549d0[i].arg, i);
+                j = get_playercall(1, player_events[i].arg, i);
                 if (j) {
                     if (i == player && othervar.user_idle) {
                         open_staff_resign_requester(&thing[j]);
@@ -551,7 +552,7 @@ void process_turn(void)
                 }
                 break;
             case 4:
-                j = get_playercall(4, D_001549d0[i].arg, i);
+                j = get_playercall(4, player_events[i].arg, i);
                 if (j) {
                     display_choice_screen(i, 7, j, 0);
                 }
@@ -586,7 +587,7 @@ void process_turn(void)
                 display_choice_screen(i, 4, j, 0);
                 break;
             case 8:
-                j = get_playercall(8, D_001549d0[i].arg, i);
+                j = get_playercall(8, player_events[i].arg, i);
                 if (j) {
                     display_choice_screen(i, 10, j, 0);
                 }
@@ -594,14 +595,14 @@ void process_turn(void)
             }
             break;
         case EV_PLACE_SMALL_THING:
-            place_small_thing(D_001549d0[i].value, D_001549d0[i].arg, 0);
+            place_small_thing(player_events[i].value, player_events[i].arg, 0);
             if (i == player) {
                 play_sound(SNDSRC_GENERAL, SFX_PLACE_R, -1, -1);
             }
             break;
         case EV_SAVE_GAME:
             if (i == player) {
-                if (othervar.save_slot_used[D_001549d0[i].value] == 1) {
+                if (othervar.save_slot_used[player_events[i].value] == 1) {
                     if (allhosps[i].held_staff) {
                         place_staff_on_map(allhosps[i].held_staff_tile, allhosps[i].held_staff, 1, i);
                     } else if (gamevar.held_staff) {
@@ -611,36 +612,36 @@ void process_turn(void)
                     set_mouse_mode(MM_NORMAL);
                     lbDisplay.left_button = 0;
                 }
-                save_game((s8)D_001549d0[i].value, -1);
+                save_game((s8)player_events[i].value, -1);
                 check_save_games();
             }
             break;
         case EV_LOAD_GAME:
             if (i == player) {
-                load_game((s8)D_001549d0[i].value, -1);
+                load_game((s8)player_events[i].value, -1);
             }
             break;
         case EV_VARY_SPEED:
-            vary_speed((s16)D_001549d0[i].value);
+            vary_speed((s16)player_events[i].value);
             break;
         case 0x17:
             break;
         case 0x18:
             break;
         case EV_TEMP_PLACE_DOOR:
-            temp_place_door(D_001549d0[i].value, i);
+            temp_place_door(player_events[i].value, i);
             break;
         case EV_REQ1_RESET_ROOMS:
             if (i == player) {
-                crequester.arg = D_001549d0[i].value;
+                crequester.arg = player_events[i].value;
                 crequester.mode = 4;
                 req1_reset_rooms(crequester.arg);
             }
             break;
         case EV_INIT_BLUEPRINT:
-            init_blueprint(i, D_001549d0[i].value);
+            init_blueprint(i, player_events[i].value);
             if (i == player) {
-                crequester.kind = D_001549d0[i].value;
+                crequester.kind = player_events[i].value;
                 set_buyable_items(crequester.kind);
                 buy_compulsory_items(crequester.kind);
                 close_crequester(crequester.id);
@@ -649,7 +650,7 @@ void process_turn(void)
                 set_edit_room_requester_mode(0);
                 pmenu.disabled = 0;
             }
-            allocate_roominfo(i, D_001549d0[i].value);
+            allocate_roominfo(i, player_events[i].value);
             break;
         case EV_QUIT_GAME:
             if (i == player) {
@@ -694,7 +695,7 @@ void process_turn(void)
             break;
         case EV_LOAD_GAME_AT_START:
             if (i == player) {
-                if (load_game((s8)D_001549d0[i].value, -1) == 0) {
+                if (load_game((s8)player_events[i].value, -1) == 0) {
                     goto_cell_in_window(0, get_room_info(ROOM_ENTRANCE, 0x65, othervar.cur_player)->door_tile);
                     othervar.full_redraw = 1;
                 }
@@ -751,7 +752,7 @@ void process_turn(void)
             break;
         case EV_BUY_OBJECT:
             if (i == player) {
-                req1_buy_object(D_001549d0[i].value, D_001549d0[i].arg);
+                req1_buy_object(player_events[i].value, player_events[i].arg);
             }
             break;
         case EV_PLACE_NEXT_OBJECT:
@@ -789,26 +790,26 @@ void process_turn(void)
         case EV_HIRE_SELECT_KIND:
             if (i == player) {
                 crequester.mode = 2;
-                crequester.arg = D_001549d0[i].value;
+                crequester.arg = player_events[i].value;
                 crequester.arg2 = req2_alter_staff(1, 0, crequester.arg);
             }
             break;
         case EV_MARK_EMPLOYING:
             if (i == player) {
-                if (thing[D_001549d0[i].arg].state != PS_WAITS_FOR_DECISION) {
+                if (thing[player_events[i].arg].state != PS_WAITS_FOR_DECISION) {
                     close_crequester(crequester.id);
-                    gamevar.held_staff_kind = D_001549d0[i].value;
-                    gamevar.held_staff = D_001549d0[i].arg;
+                    gamevar.held_staff_kind = player_events[i].value;
+                    gamevar.held_staff = player_events[i].arg;
                     gamevar.drawn_staff_kind = 0xffff;
                     set_mouse_mode(MM_PLACE_STAFF);
                     pmenu.disabled = 0;
                 }
             }
-            req2_mark_employing(D_001549d0[i].arg);
+            req2_mark_employing(player_events[i].arg);
             break;
         case EV_HIRE_NEXT_APPLICANT:
             if (i == player) {
-                crequester.arg2 = req2_alter_staff((u8)D_001549d0[i].value, crequester.arg2, crequester.arg);
+                crequester.arg2 = req2_alter_staff((u8)player_events[i].value, crequester.arg2, crequester.arg);
             }
             break;
         case EV_CLOSE_SCREEN:
@@ -830,7 +831,7 @@ void process_turn(void)
             update_cure_costs();
             if (i == player) {
                 display_mode = DM_CHARTS;
-                chart_type = D_001549d0[i].value;
+                chart_type = player_events[i].value;
                 switch (chart_type) {
                 case 0:
                     bank.state = 0;
@@ -879,7 +880,7 @@ void process_turn(void)
             if (statvar.num_players > 1) {
                 town.state = 1;
             }
-            buy_land(D_001549d0[i].value);
+            buy_land(player_events[i].value);
             satisfied_net_criteria(3, i);
             break;
         case EV_OPEN_BUILD_ROOM:
@@ -901,7 +902,7 @@ void process_turn(void)
             break;
         case EV_OPEN_QUEUE_WINDOW:
             if (i == player) {
-                if (crequester.id == REQ_NONE && &room_info[D_001549d0[i].value] > room_info) {
+                if (crequester.id == REQ_NONE && &room_info[player_events[i].value] > room_info) {
                     crequester.id = REQ_QUEUE;
                     crequester.mode = 0;
                     crequester.arg = 0;
@@ -913,23 +914,23 @@ void process_turn(void)
                     open_requester(crequester.id, 1);
                     set_mouse_sprite(PTR_DEFAULT);
                     othervar.queue_pos = 0;
-                    othervar.queue_win_room = D_001549d0[i].value;
-                    othervar.queue_win_cell = D_001549d0[i].arg;
+                    othervar.queue_win_room = player_events[i].value;
+                    othervar.queue_win_cell = player_events[i].arg;
                     pmenu.disabled = 1;
                 }
             }
             break;
         case EV_FRONT_QUEUE:
-            front_queue(D_001549d0[i].value, D_001549d0[i].arg);
+            front_queue(player_events[i].value, player_events[i].arg);
             break;
         case EV_BACK_QUEUE:
-            back_queue(D_001549d0[i].value, D_001549d0[i].arg);
+            back_queue(player_events[i].value, player_events[i].arg);
             break;
         case EV_CANCEL_BUILD:
             if (allhosps[i].held_staff) {
                 place_staff_on_map(allhosps[i].held_staff_tile, allhosps[i].held_staff, 1, i);
-            } else if (D_001549d0[i].value) {
-                req2_exit_employing(D_001549d0[i].value);
+            } else if (player_events[i].value) {
+                req2_exit_employing(player_events[i].value);
             }
             clear_build_objects(i);
             if (i == player) {
@@ -960,41 +961,41 @@ void process_turn(void)
                 int kind = 0;
                 u8 slot = 0;
 
-                obj = &thing[D_001549d0[i].value];
+                obj = &thing[player_events[i].value];
                 if (obj->owner == player) {
                     switch (obj->type) {
                     case THING_PATIENT:
                         slot = 1;
-                        D_001581b2[slot].kind = REQ_PATIENT;
-                        D_001581b2[slot].show_graph = 1;
-                        D_001581b2[slot].toggle_delay = 0;
+                        irequester_slots[slot].kind = REQ_PATIENT;
+                        irequester_slots[slot].show_graph = 1;
+                        irequester_slots[slot].toggle_delay = 0;
                         kind = 0x22;
                         break;
                     case THING_STAFF:
                         switch (obj->subtype) {
                         case STAFF_HANDYMAN:
                             slot = 2;
-                            D_001581b2[slot].kind = REQ_HANDYMAN;
+                            irequester_slots[slot].kind = REQ_HANDYMAN;
                             kind = 0x21;
                             break;
                         default:
                             slot = 2;
-                            D_001581b2[slot].kind = REQ_STAFF;
+                            irequester_slots[slot].kind = REQ_STAFF;
                             kind = 0x20;
                             break;
                         }
                         break;
                     case THING_OBJECT:
                         slot = 3;
-                        D_001581b2[slot].kind = REQ_MACHINE;
+                        irequester_slots[slot].kind = REQ_MACHINE;
                         break;
                     }
                 }
                 if (slot) {
                     close_irequesters();
                     othervar.irequester_slot = slot;
-                    open_requester(D_001581b2[slot].kind, 1);
-                    D_001581b2[slot].value = D_001549d0[i].value;
+                    open_requester(irequester_slots[slot].kind, 1);
+                    irequester_slots[slot].value = player_events[i].value;
                     set_mouse_sprite(PTR_DEFAULT);
                 }
                 if (kind) {
@@ -1010,17 +1011,17 @@ void process_turn(void)
             break;
         case EV_CLOSE_QUERY:
             if (i == player) {
-                close_query((u8)D_001549d0[i].value);
+                close_query((u8)player_events[i].value);
             }
             break;
         case EV_PICK_UP_OBJECT:
-            pick_up_object(D_001549d0[i].value, D_001549d0[i].arg);
+            pick_up_object(player_events[i].value, player_events[i].arg);
             if (i == player) {
                 play_sound(SNDSRC_GENERAL, SFX_PICKUPSM, -1, -1);
             }
             break;
         case EV_SACK_STAFF:
-            sack_staff(&thing[D_001549d0[i].value], D_001549d0[i].arg);
+            sack_staff(&thing[player_events[i].value], player_events[i].arg);
             if (i == player) {
                 close_yes_no_requester(1);
                 close_irequesters();
@@ -1033,20 +1034,20 @@ void process_turn(void)
             edit_blueprint(i);
             break;
         case EV_PAY_STAFF_BONUS:
-            if (D_001549d0[i].arg) {
-                if (allhosps[i].balance >= D_001549d0[i].value && allhosps[i].balance > 0) {
-                    pay_staff_bonus(&thing[D_001549d0[i].arg], D_001549d0[i].value, 0, 1, i);
+            if (player_events[i].arg) {
+                if (allhosps[i].balance >= player_events[i].value && allhosps[i].balance > 0) {
+                    pay_staff_bonus(&thing[player_events[i].arg], player_events[i].value, 0, 1, i);
                 }
             } else {
-                if (allhosps[i].balance >= pay_staff_bonus(0, D_001549d0[i].value, 0, 0, i) &&
+                if (allhosps[i].balance >= pay_staff_bonus(0, player_events[i].value, 0, 0, i) &&
                     allhosps[i].balance > 0) {
-                    pay_staff_bonus(0, D_001549d0[i].value, 0, 1, i);
+                    pay_staff_bonus(0, player_events[i].value, 0, 1, i);
                 }
             }
             break;
         case EV_INIT_EDIT_ROOM:
             othervar.editing_room = 1;
-            init_edit_room(&room_info[D_001549d0[i].value]);
+            init_edit_room(&room_info[player_events[i].value]);
             break;
         case EV_OPEN_JUKEBOX:
             if (i == player) {
@@ -1075,7 +1076,7 @@ void process_turn(void)
             }
             break;
         case EV_NET_TEXT_DISPLAY:
-            if (D_001549d0[i].value & (1 << player)) {
+            if (player_events[i].value & (1 << player)) {
                 net_text_display(i);
             }
             net_text[i].text = 0;
@@ -1084,7 +1085,7 @@ void process_turn(void)
             net_text_delete(i);
             break;
         case EV_NET_TEXT_KEYPRESS:
-            net_text_keypress(D_001549d0[i].value, i);
+            net_text_keypress(player_events[i].value, i);
             break;
         case EV_NET_TEXT_START:
             net_text[i].text = 0;
@@ -1094,33 +1095,33 @@ void process_turn(void)
             break;
         case EV_SET_HEATING:
             if (allhosps[i].heating_broken == 0) {
-                allhosps[i].heating_level = D_001549d0[i].value;
+                allhosps[i].heating_level = player_events[i].value;
             }
             break;
         case EV_ALTER_RESEARCH:
-            alter_research(D_001549d0[i].value, D_001549d0[i].arg, i);
+            alter_research(player_events[i].value, player_events[i].arg, i);
             break;
         case EV_QUEUE_PERSON_GO_HOME:
-            queue_person_go_home(D_001549d0[i].value, D_001549d0[i].arg);
+            queue_person_go_home(player_events[i].value, player_events[i].arg);
             if (i == player) {
                 play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
             }
             break;
         case EV_QUEUE_CAPACITY_UP:
-            if (room_info[D_001549d0[i].value].queue_capacity < 0x1e) {
-                room_info[D_001549d0[i].value].queue_capacity++;
+            if (room_info[player_events[i].value].queue_capacity < 0x1e) {
+                room_info[player_events[i].value].queue_capacity++;
             }
             break;
         case EV_QUEUE_CAPACITY_DOWN:
-            if (room_info[D_001549d0[i].value].queue_capacity) {
-                room_info[D_001549d0[i].value].queue_capacity--;
+            if (room_info[player_events[i].value].queue_capacity) {
+                room_info[player_events[i].value].queue_capacity--;
             }
             break;
         case EV_QUEUE_PERSON_GO_RECEPTION:
-            queue_person_go_reception(D_001549d0[i].value, D_001549d0[i].arg);
+            queue_person_go_reception(player_events[i].value, player_events[i].arg);
             break;
         case EV_STAFF_JOIN_NEW_EMPLOYER:
-            staff_join_new_employer(D_001549d0[i].value, D_001549d0[i].arg);
+            staff_join_new_employer(player_events[i].value, player_events[i].arg);
             if (i == player) {
                 display_mode = DM_GAME;
                 close_crequester(REQ_STAFF_DEMAND);
@@ -1134,16 +1135,16 @@ void process_turn(void)
             setup_town_bid();
             display_mode = DM_TOWN_BID;
             town.state = 0xb;
-            othervar.bid_plot = D_001549d0[i].value;
+            othervar.bid_plot = player_events[i].value;
             break;
         case EV_PLOT_BID_MONEY:
             plot_bid_money(i);
             break;
         case EV_INCREASE_STAFF_SALARIES:
-            if (D_001549d0[i].arg) {
-                increase_staff_salaries(&thing[D_001549d0[i].arg], D_001549d0[i].value, 0, i);
+            if (player_events[i].arg) {
+                increase_staff_salaries(&thing[player_events[i].arg], player_events[i].value, 0, i);
             } else {
-                increase_staff_salaries(0, D_001549d0[i].value, 0, i);
+                increase_staff_salaries(0, player_events[i].value, 0, i);
             }
             break;
         case EV_FURNISH_EDITED_ROOM:
@@ -1164,26 +1165,26 @@ void process_turn(void)
             break;
         case EV_BACK_TO_PLACE_OBJECT:
             if (i == player) {
-                go_back_to_place_object_requester(D_001549d0[i].value);
+                go_back_to_place_object_requester(player_events[i].value);
             }
             break;
         case EV_ORDER_REST:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             employee->orders &= 0xf0;
             employee->orders |= ORD_REST;
             break;
         case EV_ORDER_TRAIN:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             employee->orders &= 0xf0;
             employee->orders |= ORD_TRAIN;
             break;
         case 0x60:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             employee->orders &= 0xf0;
             employee->orders |= 2;
             break;
         case EV_ORDER_LEAVE_ROOM:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             employee->orders &= 0xf0;
             employee->orders |= ORD_LEAVE_ROOM;
             break;
@@ -1207,7 +1208,7 @@ void process_turn(void)
             break;
         case EV_SELL_OBJECT:
             if (i == player) {
-                req11_sell_object(D_001549d0[i].value, D_001549d0[i].arg);
+                req11_sell_object(player_events[i].value, player_events[i].arg);
             }
             break;
         case EV_CANCEL_BUY_OBJECTS:
@@ -1232,24 +1233,24 @@ void process_turn(void)
             }
             break;
         case EV_REFER_TO_PLAYER:
-            patient = &thing[D_001549d0[i].value];
+            patient = &thing[player_events[i].value];
             allhosps[patient->owner].rooms[patient->illness].turned_away++;
             if (patient->flags0 & PF_CONTAGIOUS) {
                 allhosps[patient->owner].epidemic_timer = 0;
             }
-            refer_patient(patient, D_001549d0[i].arg);
+            refer_patient(patient, player_events[i].arg);
             if (i == player) {
                 close_query(1);
                 play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
             }
             break;
         case EV_PICK_UP_STAFF:
-            employee = &thing[D_001549d0[i].value];
-            allhosps[i].held_staff = D_001549d0[i].value;
+            employee = &thing[player_events[i].value];
+            allhosps[i].held_staff = player_events[i].value;
             if (!(employee->orders & ORD_RESIGN)) {
                 if (surgeon_screen_free(employee)) {
                     interrupt_staff(employee);
-                    staff_picked_up(&thing[D_001549d0[i].value]);
+                    staff_picked_up(&thing[player_events[i].value]);
                 }
             }
             if (i == player) {
@@ -1257,12 +1258,12 @@ void process_turn(void)
             }
             break;
         case EV_STAFF_PICKED_UP:
-            staff_picked_up(&thing[D_001549d0[i].value]);
+            staff_picked_up(&thing[player_events[i].value]);
             break;
         case EV_SHOOT_RAT: {
-            Thing *rat = &thing[D_001549d0[i].value];
+            Thing *rat = &thing[player_events[i].value];
 
-            switch (D_001549d0[i].argb[0]) {
+            switch (player_events[i].argb[0]) {
             case 1:
                 if (i == player) {
                     play_sound(SNDSRC_GENERAL, SFX_UZIBRST, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
@@ -1284,7 +1285,7 @@ void process_turn(void)
             }
             award_counts.rat_shots++;
             allhosps[i].rat_shots++;
-            if (D_001549d0[i].argb[1]) {
+            if (player_events[i].argb[1]) {
                 award_counts.rats_killed++;
                 if (i == player) {
                     play_sound(SNDSRC_GENERAL, SFX_DEADRAT2, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
@@ -1297,15 +1298,15 @@ void process_turn(void)
             break;
         }
         case EV_REFUSE_STAFF_DEMAND:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             if (employee > thing) {
                 if (old_newrand() % (employee->resign_count + 1)) {
-                    sack_staff(&thing[D_001549d0[i].value], 1);
+                    sack_staff(&thing[player_events[i].value], 1);
                 } else {
                     employee->orders &= ~ORD_RESIGN;
                     advisor.event_flags &= 0xfe;
                     employee->discontent = 0;
-                    reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
+                    reset_icon_value(&thing[player_events[i].value], ICON_LEAVING);
                 }
                 if (i == player) {
                     display_mode = DM_GAME;
@@ -1317,14 +1318,14 @@ void process_turn(void)
             }
             break;
         case EV_RAISE_STAFF_SALARY:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             if (employee > thing) {
                 employee->orders &= ~ORD_RESIGN;
                 advisor.event_flags &= 0xfe;
-                employee->salary += D_001549d0[i].arg;
+                employee->salary += player_events[i].arg;
                 employee->happiness = 100;
                 employee->discontent = 0;
-                reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
+                reset_icon_value(&thing[player_events[i].value], ICON_LEAVING);
             }
             if (i == player) {
                 display_mode = DM_GAME;
@@ -1335,14 +1336,14 @@ void process_turn(void)
             }
             break;
         case EV_GIVE_STAFF_BONUS:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             if (employee > thing) {
                 employee->orders &= ~ORD_RESIGN;
                 advisor.event_flags &= 0xfe;
-                pay_staff_bonus(employee, D_001549d0[i].arg, 0, 1, i);
+                pay_staff_bonus(employee, player_events[i].arg, 0, 1, i);
                 employee->happiness = 100;
                 employee->discontent = 0;
-                reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
+                reset_icon_value(&thing[player_events[i].value], ICON_LEAVING);
             }
             if (i == player) {
                 display_mode = DM_GAME;
@@ -1353,11 +1354,11 @@ void process_turn(void)
             }
             break;
         case EV_PRICE_UP: {
-            int illness = D_001549d0[i].arg;
+            int illness = player_events[i].arg;
             int max_price = max_price_for_treatment(illness, i);
 
             if (allhosps[i].rooms[illness].price_scale < 20000) {
-                allhosps[i].rooms[illness].price_scale += D_001549d0[i].value * 100;
+                allhosps[i].rooms[illness].price_scale += player_events[i].value * 100;
                 if (allhosps[i].rooms[illness].price_scale < 5000) {
                     allhosps[i].rooms[illness].price_scale = 5000;
                 } else if (allhosps[i].rooms[illness].price_scale > 20000) {
@@ -1368,11 +1369,11 @@ void process_turn(void)
             break;
         }
         case EV_PRICE_DOWN: {
-            int illness = D_001549d0[i].arg;
+            int illness = player_events[i].arg;
             int max_price = max_price_for_treatment(illness, i);
 
             if (allhosps[i].rooms[illness].price_scale > 5000) {
-                allhosps[i].rooms[illness].price_scale -= D_001549d0[i].value * 100;
+                allhosps[i].rooms[illness].price_scale -= player_events[i].value * 100;
                 if (allhosps[i].rooms[illness].price_scale < 5000) {
                     allhosps[i].rooms[illness].price_scale = 5000;
                 } else if (allhosps[i].rooms[illness].price_scale > 20000) {
@@ -1385,38 +1386,38 @@ void process_turn(void)
         case EV_RETURN_FROM_SCREEN:
             if (othervar.cur_player == player) {
                 lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
-                return_from_screen(D_001549d0[i].value, 1, 1);
+                return_from_screen(player_events[i].value, 1, 1);
             }
             break;
         case EV_SET_POLICY:
-            switch (D_001549d0[i].value) {
+            switch (player_events[i].value) {
             case 1:
-                if (D_001549d0[i].arg <= allhosps[i].guess_cure_threshold) {
-                    allhosps[i].send_home_threshold = D_001549d0[i].arg;
+                if (player_events[i].arg <= allhosps[i].guess_cure_threshold) {
+                    allhosps[i].send_home_threshold = player_events[i].arg;
                 } else {
                     allhosps[i].send_home_threshold = allhosps[i].guess_cure_threshold;
                 }
                 break;
             case 2:
-                if (D_001549d0[i].arg >= allhosps[i].send_home_threshold) {
-                    allhosps[i].guess_cure_threshold = D_001549d0[i].arg;
+                if (player_events[i].arg >= allhosps[i].send_home_threshold) {
+                    allhosps[i].guess_cure_threshold = player_events[i].arg;
                 } else {
                     allhosps[i].guess_cure_threshold = allhosps[i].send_home_threshold;
                 }
                 break;
             case 3:
-                allhosps[i].diag_threshold = D_001549d0[i].arg;
+                allhosps[i].diag_threshold = player_events[i].arg;
                 break;
             case 4:
-                allhosps[i].rest_threshold = D_001549d0[i].arg;
+                allhosps[i].rest_threshold = player_events[i].arg;
                 break;
             case 5:
-                allhosps[i].staff_leave_rooms = D_001549d0[i].arg;
+                allhosps[i].staff_leave_rooms = player_events[i].arg;
                 break;
             }
             break;
         case EV_CONCENTRATE_RESEARCH:
-            if (D_001549d0[i].value ==
+            if (player_events[i].value ==
                 (statvar.num_players > 1 ? allhosps[i].hospital_open : gamevar.research_illness)) {
                 if (statvar.num_players > 1) {
                     allhosps[i].hospital_open = 0;
@@ -1425,17 +1426,17 @@ void process_turn(void)
                 }
             } else {
                 if (statvar.num_players > 1) {
-                    allhosps[i].hospital_open = D_001549d0[i].value;
+                    allhosps[i].hospital_open = player_events[i].value;
                 } else {
-                    gamevar.research_illness = D_001549d0[i].value;
+                    gamevar.research_illness = player_events[i].value;
                 }
             }
             break;
         case EV_ADJUST_HANDYMAN_VALUES:
-            adjust_handyman_values(D_001549d0[i].value, D_001549d0[i].argb[0]);
+            adjust_handyman_values(player_events[i].value, player_events[i].argb[0]);
             break;
         case EV_PERSON_GO_HOME:
-            patient = &thing[D_001549d0[i].value];
+            patient = &thing[player_events[i].value];
             patient->treatment = 0;
             allhosps[patient->owner].rooms[patient->illness].turned_away++;
             person_go_home(patient);
@@ -1445,8 +1446,8 @@ void process_turn(void)
             }
             break;
         case EV_THINGPAGE_REQUEST:
-            thingpage_request(&allhosps[i].repair_pager, D_001549d0[i].value, 0xff);
-            set_icon_value(&thing[D_001549d0[i].value], ICON_NEEDS_REPAIR);
+            thingpage_request(&allhosps[i].repair_pager, player_events[i].value, 0xff);
+            set_icon_value(&thing[player_events[i].value], ICON_NEEDS_REPAIR);
             break;
         case EV_OPEN_YES_NO:
             if (i == player) {
@@ -1467,7 +1468,7 @@ void process_turn(void)
             break;
         case EV_CLOSE_YES_NO:
             if (i == player) {
-                close_yes_no_requester((u8)D_001549d0[i].value);
+                close_yes_no_requester((u8)player_events[i].value);
                 if (othervar.no_arg) {
                     set_mouse_mode((u8)othervar.no_arg);
                     lbDisplay.left_button = 0;
@@ -1478,23 +1479,23 @@ void process_turn(void)
             close_yes_no_requester(0);
             clear_build_objects(i);
             delete_blueprint_room(i);
-            D_001549d0[i].type = EV_CANCEL_BUILD;
-            D_001549d0[i].arg = gamevar.mouse_mode;
+            player_events[i].type = EV_CANCEL_BUILD;
+            player_events[i].arg = gamevar.mouse_mode;
             goto dispatch;
         case EV_CANCEL_EDIT_ROOM:
             cancel_room_edit(i);
-            D_001549d0[i].type = EV_CANCEL_BUILD;
-            D_001549d0[i].value = 0;
+            player_events[i].type = EV_CANCEL_BUILD;
+            player_events[i].value = 0;
             goto dispatch;
         case EV_REFER_PATIENT:
-            refer_patient(&thing[D_001549d0[i].value], D_001549d0[i].arg);
+            refer_patient(&thing[player_events[i].value], player_events[i].arg);
             break;
         case EV_CHOICE_RESULT: {
             u8 quiet = 0;
 
-            switch (D_001549d0[i].value) {
+            switch (player_events[i].value) {
             case CH_TREAT_SEND_HOME:
-                patient = &thing[D_001549d0[i].arg];
+                patient = &thing[player_events[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
                     allhosps[patient->owner].rooms[patient->illness].turned_away++;
@@ -1506,7 +1507,7 @@ void process_turn(void)
                 }
                 break;
             case CH_TREAT_WAIT:
-                patient = &thing[D_001549d0[i].arg];
+                patient = &thing[player_events[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->flags0 &= ~PF_AWAITING_DECISION;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
@@ -1518,7 +1519,7 @@ void process_turn(void)
                 }
                 break;
             case CH_TREAT_RESEARCH:
-                patient = &thing[D_001549d0[i].arg];
+                patient = &thing[player_events[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = ILL_AUTOPSY;
                     patient->flags0 &= ~PF_AWAITING_DECISION;
@@ -1546,7 +1547,7 @@ void process_turn(void)
                 if (i == player) {
                     play_sound(SNDSRC_GENERAL, SFX_EPIDEMIC_START, -1, -1);
                 }
-                quiet = D_001549d0[i].arg;
+                quiet = player_events[i].arg;
                 break;
             case CH_VIP_REFUSE:
                 allhosps[i].mayor_state = 0;
@@ -1562,10 +1563,10 @@ void process_turn(void)
                 break;
             case CH_EMERGENCY_ACCEPT:
                 give_emergency_stats(popup_store[player][2].id, i);
-                D_001549d0[i].type = EV_START_EMERGENCY;
+                player_events[i].type = EV_START_EMERGENCY;
                 goto dispatch;
             case CH_DIAG_SEND_HOME:
-                patient = &thing[D_001549d0[i].arg];
+                patient = &thing[player_events[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
                     allhosps[patient->owner].rooms[patient->illness].turned_away++;
@@ -1577,7 +1578,7 @@ void process_turn(void)
                 }
                 break;
             case CH_DIAG_GUESS:
-                patient = &thing[D_001549d0[i].arg];
+                patient = &thing[player_events[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->flags0 &= ~PF_AWAITING_DECISION;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
@@ -1590,7 +1591,7 @@ void process_turn(void)
                 }
                 break;
             case CH_DIAG_WAIT:
-                patient = &thing[D_001549d0[i].arg];
+                patient = &thing[player_events[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->flags0 &= ~PF_AWAITING_DECISION;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
@@ -1612,7 +1613,7 @@ void process_turn(void)
         }
         case EV_LEAVE_NET_GAME:
             finish_composite_help();
-            switch (D_001549d0[i].value) {
+            switch (player_events[i].value) {
             case 0:
                 break;
             case 1:
@@ -1642,7 +1643,7 @@ void process_turn(void)
                         }
                     }
                     allhosps[i].playing = 0;
-                    D_001549d0[i].checksum = 0;
+                    player_events[i].checksum = 0;
                     if (i == player) {
                         close_yes_no_requester(0);
                         LbNetwork_Stop();
@@ -1671,27 +1672,27 @@ void process_turn(void)
             }
             break;
         case EV_PATIENT_WAITS_FOR_ROOM:
-            patient = &thing[D_001549d0[i].value];
+            patient = &thing[player_events[i].value];
             patient->flags0 &= ~PF_AWAITING_DECISION;
             reset_icon_value(patient, ICON_AWAITING_DECISION);
             patient->flags0 |= PF_WAITING_FOR_ROOM;
             patient->timer = othervar.cur_turn;
             break;
         case EV_PATIENT_TO_RESEARCH:
-            patient = &thing[D_001549d0[i].value];
+            patient = &thing[player_events[i].value];
             patient->treatment = ILL_AUTOPSY;
             patient->flags0 &= ~PF_AWAITING_DECISION;
             reset_icon_value(patient, ICON_AWAITING_DECISION);
             patient->state = PS_GO_FOR_TREATMENT;
             break;
         case EV_POACH_STAFF:
-            employee = &thing[D_001549d0[i].value];
+            employee = &thing[player_events[i].value];
             if (employee > thing) {
                 employee->poach_offers = 1 << (u8)i;
             }
             break;
         case EV_TOGGLE_VACCINATION:
-            patient = &thing[D_001549d0[i].value];
+            patient = &thing[player_events[i].value];
             if (patient->flags0 & PF_VACCINE_REQUESTED) {
                 if (i == player) {
                     play_sound(SNDSRC_GENERAL, SFX_DEVACCIN, -1, -1);
@@ -1730,44 +1731,44 @@ void process_turn(void)
         case 0x85:
             break;
         case EV_FORCE_CURE:
-            force_peep_to_be_cured(&thing[D_001549d0[i].value]);
+            force_peep_to_be_cured(&thing[player_events[i].value]);
             break;
         case EV_RETURN_TO_THING_WINDOW:
             if (othervar.cur_player == player) {
                 lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
-                return_from_screen(D_001549d0[i].value, 1, 1);
+                return_from_screen(player_events[i].value, 1, 1);
                 if (i == player) {
                     Thing *obj;
                     int kind = 0;
                     u8 slot = 0;
 
-                    obj = &thing[D_001549d0[i].arg];
+                    obj = &thing[player_events[i].arg];
                     if (obj->owner == player) {
                         switch (obj->type) {
                         case THING_PATIENT:
                             slot = 1;
-                            D_001581b2[slot].kind = REQ_PATIENT;
-                            D_001581b2[slot].show_graph = 1;
-                            D_001581b2[slot].toggle_delay = 0;
+                            irequester_slots[slot].kind = REQ_PATIENT;
+                            irequester_slots[slot].show_graph = 1;
+                            irequester_slots[slot].toggle_delay = 0;
                             kind = 0x22;
                             break;
                         case THING_STAFF:
                             switch (obj->subtype) {
                             case STAFF_HANDYMAN:
                                 slot = 2;
-                                D_001581b2[slot].kind = REQ_HANDYMAN;
+                                irequester_slots[slot].kind = REQ_HANDYMAN;
                                 kind = 0x21;
                                 break;
                             default:
                                 slot = 2;
-                                D_001581b2[slot].kind = REQ_STAFF;
+                                irequester_slots[slot].kind = REQ_STAFF;
                                 kind = 0x20;
                                 break;
                             }
                             break;
                         case THING_OBJECT:
                             slot = 3;
-                            D_001581b2[slot].kind = REQ_MACHINE;
+                            irequester_slots[slot].kind = REQ_MACHINE;
                             break;
                         }
                     }
@@ -1778,8 +1779,8 @@ void process_turn(void)
                             break;
                         }
                         othervar.irequester_slot = slot;
-                        open_requester(D_001581b2[slot].kind, 1);
-                        D_001581b2[slot].value = D_001549d0[i].arg;
+                        open_requester(irequester_slots[slot].kind, 1);
+                        irequester_slots[slot].value = player_events[i].arg;
                         set_mouse_sprite(PTR_DEFAULT);
                     }
                     if (kind) {
@@ -1806,17 +1807,17 @@ void process_turn(void)
                     set_mouse_mode((u8)othervar.no_arg);
                     lbDisplay.left_button = 0;
                 }
-                obj = &thing[D_001549d0[i].value];
+                obj = &thing[player_events[i].value];
                 if (obj->owner == player) {
                     switch (obj->subtype) {
                     case STAFF_HANDYMAN:
                         slot = 2;
-                        D_001581b2[slot].kind = REQ_HANDYMAN;
+                        irequester_slots[slot].kind = REQ_HANDYMAN;
                         kind = 0x21;
                         break;
                     default:
                         slot = 2;
-                        D_001581b2[slot].kind = REQ_STAFF;
+                        irequester_slots[slot].kind = REQ_STAFF;
                         kind = 0x20;
                         break;
                     }
@@ -1824,8 +1825,8 @@ void process_turn(void)
                 if (slot) {
                     close_irequesters();
                     othervar.irequester_slot = slot;
-                    open_requester(D_001581b2[slot].kind, 1);
-                    D_001581b2[slot].value = D_001549d0[i].value;
+                    open_requester(irequester_slots[slot].kind, 1);
+                    irequester_slots[slot].value = player_events[i].value;
                     set_mouse_sprite(PTR_DEFAULT);
                 }
                 if (kind) {
@@ -1848,7 +1849,7 @@ void process_turn(void)
             if (i == player) {
                 close_yes_no_requester(0);
             }
-            replace_machine(&thing[D_001549d0[i].value]);
+            replace_machine(&thing[player_events[i].value]);
             break;
         case EV_OPEN_HOSPITAL:
             allhosps[i].opening_countdown = 0;
@@ -1861,7 +1862,7 @@ void process_turn(void)
             break;
         case EV_CLOSE_SAVE_YES_NO:
             if (i == player) {
-                close_yes_no_requester((u8)D_001549d0[i].value);
+                close_yes_no_requester((u8)player_events[i].value);
                 if (othervar.no_arg) {
                     set_mouse_mode((u8)othervar.no_arg);
                     lbDisplay.left_button = 0;
@@ -1887,13 +1888,13 @@ void process_turn(void)
             break;
         }
     copy:
-        old_packet[i].type = D_001549d0[i].type;
-        old_packet[i].value = D_001549d0[i].value;
-        old_packet[i].arg = D_001549d0[i].arg;
-        old_packet[i].checksum = D_001549d0[i].checksum;
-        D_001549d0[i].type = EV_NONE;
-        D_001549d0[i].value = 0;
-        D_001549d0[i].arg = 0;
+        old_packet[i].type = player_events[i].type;
+        old_packet[i].value = player_events[i].value;
+        old_packet[i].arg = player_events[i].arg;
+        old_packet[i].checksum = player_events[i].checksum;
+        player_events[i].type = EV_NONE;
+        player_events[i].value = 0;
+        player_events[i].arg = 0;
     }
     othervar.cur_player = player;
     check_autosave();

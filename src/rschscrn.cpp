@@ -8,7 +8,7 @@ struct ChoiceBox {
 };
 
 extern "C" {
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **research_names;
 extern char **misc_text;
 void StopSample(u32 source_id, u32 number);
@@ -45,8 +45,8 @@ void display_research(void)
         copy_screen_to_wscreen(bscreen);
         break;
     case 2:
-        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
-        D_001549d0[player].value = 0;
+        player_events[player].type = EV_RETURN_FROM_SCREEN;
+        player_events[player].value = 0;
         StopSample(0xc, 0x75);
         break;
     default:
@@ -207,16 +207,16 @@ void process_res_button(u8 button)
             i = myhosp->research_alloc[button - 1];
             if (i > 0) {
                 if (othervar.clock_ms - othervar.repeat_time > 0xfa || othervar.repeat_step == 0x100) {
-                    D_001549d0[player].type = EV_ALTER_RESEARCH;
-                    D_001549d0[player].value = button - 1;
-                    D_001549d0[player].arg = myhosp->research_alloc[button - 1];
+                    player_events[player].type = EV_ALTER_RESEARCH;
+                    player_events[player].value = button - 1;
+                    player_events[player].arg = myhosp->research_alloc[button - 1];
                     if (othervar.repeat_step < 0xa00)
                         othervar.repeat_step += 0x10;
                     else
                         othervar.repeat_step = 0xa00;
-                    D_001549d0[player].arg -= othervar.repeat_step >> 8;
-                    if ((s16)D_001549d0[player].arg < 0)
-                        D_001549d0[player].arg = 0;
+                    player_events[player].arg -= othervar.repeat_step >> 8;
+                    if ((s16)player_events[player].arg < 0)
+                        player_events[player].arg = 0;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (!research.value) {
@@ -241,16 +241,16 @@ void process_res_button(u8 button)
             i = myhosp->research_alloc[button - 6];
             if (i + total < 100) {
                 if (othervar.clock_ms - othervar.repeat_time > 0xfa || othervar.repeat_step == 0x100) {
-                    D_001549d0[player].type = EV_ALTER_RESEARCH;
-                    D_001549d0[player].value = button - 6;
-                    D_001549d0[player].arg = myhosp->research_alloc[button - 6];
+                    player_events[player].type = EV_ALTER_RESEARCH;
+                    player_events[player].value = button - 6;
+                    player_events[player].arg = myhosp->research_alloc[button - 6];
                     if (othervar.repeat_step < 0xa00)
                         othervar.repeat_step += 0x10;
                     else
                         othervar.repeat_step = 0xa00;
-                    D_001549d0[player].arg += othervar.repeat_step >> 8;
-                    if (D_001549d0[player].arg + total > 100)
-                        D_001549d0[player].arg = 100 - total;
+                    player_events[player].arg += othervar.repeat_step >> 8;
+                    if (player_events[player].arg + total > 100)
+                        player_events[player].arg = 100 - total;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (!research.value) {

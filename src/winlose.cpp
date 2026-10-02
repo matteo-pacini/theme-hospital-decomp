@@ -20,7 +20,7 @@ extern s8 anim_choice;
 extern s8 text_choice;
 extern void *smack_draw_callback;
 extern u8 *palette;
-extern Event D_001549d0[];
+extern Event player_events[];
 extern char **win_lose;
 extern char **win_text;
 extern char **town_names;
@@ -185,7 +185,7 @@ void play_winlose(void)
             display_mode = DM_MAIN_MENU;
             clear_loading_screen(0);
             setup_lores_screen();
-            D_001549d0[player].value = 0;
+            player_events[player].value = 0;
             set_mouse_mode(MM_NORMAL);
         }
         break;
@@ -273,7 +273,7 @@ void play_winlose(void)
                              resvars.screen_coords[0xcf].y, screen_sprites_tab_start[1].width,
                              screen_sprites_tab_start[1].height)) {
                 if (level_number != 0xc) {
-                    D_001549d0[player].type = EV_CANCEL_BUILD;
+                    player_events[player].type = EV_CANCEL_BUILD;
                     area.state = 0;
                     level_number++;
                     if (othervar.bonus_level && resvars.game_mode == SCREEN_MODE_13) {
@@ -285,7 +285,7 @@ void play_winlose(void)
                     myhosp->score = othervar.next_level_offer_s;
                     display_mode = DM_AREA_SELECT;
                 } else {
-                    D_001549d0[player].type = EV_CANCEL_BUILD;
+                    player_events[player].type = EV_CANCEL_BUILD;
                     level_number = myhosp->level = 0;
                     myhosp->score = othervar.next_level_offer_s;
                     display_mode = DM_AREA_SELECT;

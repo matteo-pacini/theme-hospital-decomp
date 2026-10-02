@@ -8,7 +8,7 @@ struct SelectionState {
 
 extern "C" {
 
-extern SelectionState D_001581b2;
+extern SelectionState irequester_slots;
 extern PlayerCall popup_store[][9];
 extern Menu choice;
 extern char **real_room_names;
@@ -287,7 +287,7 @@ void remove_person(Thing *person)
     abandon_complex(person);
     remove_person_from_room_list(person);
     cancel_vaccination_request(person);
-    if (&thing[D_001581b2.widget] == person) {
+    if (&thing[irequester_slots.widget] == person) {
         close_irequesters();
     }
     remove_thing(person);

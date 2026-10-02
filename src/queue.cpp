@@ -2,7 +2,7 @@
 
 extern "C" {
 
-extern Event D_001549d0[];
+extern Event player_events[];
 extern u32 last_flag_turn;
 extern RoomInfo *last_flag_room;
 
@@ -198,38 +198,38 @@ void process_queue_button(u8 button)
     switch (button) {
     case 0:
         if (othervar.queue_pos) {
-            D_001549d0[player].type = EV_FRONT_QUEUE;
-            D_001549d0[player].value = othervar.queue_win_room;
-            D_001549d0[player].arg = othervar.queue_pos;
+            player_events[player].type = EV_FRONT_QUEUE;
+            player_events[player].value = othervar.queue_win_room;
+            player_events[player].arg = othervar.queue_pos;
         }
         break;
     case 1:
         if (othervar.queue_pos) {
-            D_001549d0[player].type = EV_BACK_QUEUE;
-            D_001549d0[player].value = othervar.queue_win_room;
-            D_001549d0[player].arg = othervar.queue_pos;
+            player_events[player].type = EV_BACK_QUEUE;
+            player_events[player].value = othervar.queue_win_room;
+            player_events[player].arg = othervar.queue_pos;
         }
         break;
     case 2:
-        D_001549d0[player].type = EV_QUEUE_CAPACITY_UP;
-        D_001549d0[player].value = othervar.queue_win_room;
+        player_events[player].type = EV_QUEUE_CAPACITY_UP;
+        player_events[player].value = othervar.queue_win_room;
         break;
     case 3:
-        D_001549d0[player].type = EV_QUEUE_CAPACITY_DOWN;
-        D_001549d0[player].value = othervar.queue_win_room;
+        player_events[player].type = EV_QUEUE_CAPACITY_DOWN;
+        player_events[player].value = othervar.queue_win_room;
         break;
     case 4:
         if (othervar.queue_pos) {
-            D_001549d0[player].type = EV_QUEUE_PERSON_GO_HOME;
-            D_001549d0[player].value = othervar.queue_win_room;
-            D_001549d0[player].arg = othervar.queue_pos;
+            player_events[player].type = EV_QUEUE_PERSON_GO_HOME;
+            player_events[player].value = othervar.queue_win_room;
+            player_events[player].arg = othervar.queue_pos;
         }
         break;
     case 5:
         if (othervar.queue_pos) {
-            D_001549d0[player].type = EV_QUEUE_PERSON_GO_RECEPTION;
-            D_001549d0[player].value = othervar.queue_win_room;
-            D_001549d0[player].arg = othervar.queue_pos;
+            player_events[player].type = EV_QUEUE_PERSON_GO_RECEPTION;
+            player_events[player].value = othervar.queue_win_room;
+            player_events[player].arg = othervar.queue_pos;
         }
         break;
     case 6:
@@ -244,9 +244,9 @@ void process_queue_button(u8 button)
     case 8:
         if (statvar.num_players > 1) {
             if (othervar.queue_pos) {
-                D_001549d0[player].type = EV_REFER_PATIENT;
-                D_001549d0[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
-                D_001549d0[player].arg = nth_other_active_player(1);
+                player_events[player].type = EV_REFER_PATIENT;
+                player_events[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
+                player_events[player].arg = nth_other_active_player(1);
                 othervar.queue_pos = 0;
             }
         }
@@ -254,9 +254,9 @@ void process_queue_button(u8 button)
     case 9:
         if (statvar.num_players > 2) {
             if (othervar.queue_pos) {
-                D_001549d0[player].type = EV_REFER_PATIENT;
-                D_001549d0[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
-                D_001549d0[player].arg = nth_other_active_player(2);
+                player_events[player].type = EV_REFER_PATIENT;
+                player_events[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
+                player_events[player].arg = nth_other_active_player(2);
                 othervar.queue_pos = 0;
             }
         }
@@ -264,9 +264,9 @@ void process_queue_button(u8 button)
     case 10:
         if (statvar.num_players > 3) {
             if (othervar.queue_pos) {
-                D_001549d0[player].type = EV_REFER_PATIENT;
-                D_001549d0[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
-                D_001549d0[player].arg = nth_other_active_player(3);
+                player_events[player].type = EV_REFER_PATIENT;
+                player_events[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
+                player_events[player].arg = nth_other_active_player(3);
                 othervar.queue_pos = 0;
             }
         }

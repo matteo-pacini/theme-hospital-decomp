@@ -12,7 +12,7 @@ extern u8 *palette;
 extern char **show_help_text_0, **level_text, **win_text, **net_mission_text, **beta_demo_text_short;
 extern u8 xs[], ys[];
 extern u8 new_game;
-extern Event D_001549d0[];
+extern Event player_events[];
 void setup_interactions(void);
 }
 
@@ -85,13 +85,13 @@ extern "C" void start_game(void)
         load_player_details();
         othervar.pending_palette = palette;
         if (!new_game) {
-            D_001549d0[player].type = EV_LOAD_GAME_AT_START;
-            D_001549d0[player].value = debug.save_slot;
+            player_events[player].type = EV_LOAD_GAME_AT_START;
+            player_events[player].value = debug.save_slot;
         } else {
-            D_001549d0[player].type = EV_GOTO_COLUMN_ROW;
+            player_events[player].type = EV_GOTO_COLUMN_ROW;
         }
     } else {
-        D_001549d0[player].type = EV_GOTO_COLUMN_ROW;
+        player_events[player].type = EV_GOTO_COLUMN_ROW;
     }
 }
 
