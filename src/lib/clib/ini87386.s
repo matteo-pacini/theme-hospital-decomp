@@ -45,9 +45,9 @@
 .type "emu_install_int7",@function
 "emu_install_int7":
     mov byte ptr [__8087], 3
-    mov byte ptr [_D_00151b54], 1
-    .byte 0x66; .byte 0x0f; .byte 0x01; .byte 0x25; .long _D_00151b52  # smsw word ptr [0x31b52]
-    and word ptr [_D_00151b52], 6
+    mov byte ptr ["hooked"], 1
+    .byte 0x66; .byte 0x0f; .byte 0x01; .byte 0x25; .long "msw"  # smsw word ptr [0x31b52]
+    and word ptr ["msw"], 6
     sub esp, 8
     sidt [esp]
     mov ebx, dword ptr [esp + 2]
@@ -56,7 +56,7 @@
     cmp byte ptr ["__X32VM"], 0
     je .L000ef12a
     call "emu_int7_gate"
-    .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_0014d5da  # mov es, word ptr [0x2d5da]
+    .byte 0x66; .byte 0x8e; .byte 0x05; .long "__x386_zero_base_selector"  # mov es, word ptr [0x2d5da]
     mov dword ptr es:[ebx], edx
     mov dword ptr es:[ebx + 4], ecx
     call "pharlap_set_cr0_em"
@@ -132,8 +132,8 @@
     mov cl, 7
     mov ax, 0x2502
     int 0x21
-    mov dword ptr [_D_00151b4c], ebx
-    .byte 0x66; .byte 0x8c; .byte 0x05; .long _D_00151b50  # mov word ptr [0x31b50], es
+    mov dword ptr ["old7off"], ebx
+    .byte 0x66; .byte 0x8c; .byte 0x05; .long "old7seg"  # mov word ptr [0x31b50], es
     cmp byte ptr ["__Extender"], 3
     mov cl, 7
     mov ax, 0x2504
@@ -166,11 +166,11 @@
 .type "pharlap_set_cr0_em",@function
 "pharlap_set_cr0_em":
     xor ebx, ebx
-    lea edx, [_D_00151b0c]
+    lea edx, ["sysregs"]
     mov ax, 0x2535
     int 0x21
-    or dword ptr [_D_00151b0c], 4
-    and dword ptr [_D_00151b0c], 0xfffffffd
+    or dword ptr ["sysregs"], 4
+    and dword ptr ["sysregs"], 0xfffffffd
     inc ebx
     int 0x21
     ret
@@ -183,7 +183,7 @@
 .globl "__sys_fini_387_emulator"
 .type "__sys_fini_387_emulator",@function
 "__sys_fini_387_emulator":
-    cmp byte ptr [_D_00151b54], 1
+    cmp byte ptr ["hooked"], 1
     je .L000ef237
     ret
 .L000ef237:
@@ -206,7 +206,7 @@
 .L000ef268:
     cmp al, 0
     jne .L000ef278
-    mov ax, word ptr [_D_00151b52]
+    mov ax, word ptr ["msw"]
     mov ah, 0xf3
     int 0x21
     jmp .L000ef29c
@@ -224,7 +224,7 @@
     je .L000ef29c
     call "pharlap_remove_emu"
 .L000ef29c:
-    mov byte ptr [_D_00151b54], 0
+    mov byte ptr ["hooked"], 0
     pop edx
     pop ebx
     pop ecx
@@ -240,9 +240,9 @@
 "pharlap_remove_emu":
     mov cl, 7
     mov ax, 0x2504
-    mov edx, dword ptr [_D_00151b4c]
+    mov edx, dword ptr ["old7off"]
     push ds
-    .byte 0x66; .byte 0x8e; .byte 0x1d; .long _D_00151b50  # mov ds, word ptr [0x31b50]
+    .byte 0x66; .byte 0x8e; .byte 0x1d; .long "old7seg"  # mov ds, word ptr [0x31b50]
     int 0x21
     pop ds
     cmp byte ptr ["__Extender"], 3
@@ -252,7 +252,7 @@
 .L000ef2ce:
     mov ecx, cr0
     and ecx, 0xfffffff9
-    mov dx, word ptr [_D_00151b52]
+    mov dx, word ptr ["msw"]
     or cx, dx
     mov cr0, ecx
 .L000ef2e1:
@@ -267,12 +267,12 @@
 .type "pharlap_restore_cr0",@function
 "pharlap_restore_cr0":
     xor ebx, ebx
-    lea edx, [_D_00151b0c]
+    lea edx, ["sysregs"]
     mov ax, 0x2535
     int 0x21
     xor ecx, ecx
-    mov cx, word ptr [_D_00151b52]
-    mov dword ptr [_D_00151b0c], ecx
+    mov cx, word ptr ["msw"]
+    mov dword ptr ["sysregs"], ecx
     inc ebx
     int 0x21
     ret

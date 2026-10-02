@@ -693,6 +693,5 @@
 0018d69c 0018a030     1 runtime      4 __doserrno
 0018daa0 0018a474    21 bflib     4090 W?com_dev$n[]$ComHandlerInfo$$
 00191b30 0018e504     7 bflib     433c W?SerialCommHandler$n$SerialHandler$$
-00192840 00192840     3 runtime      0 _FPArea
 00195eec 0018a434     1 runtime     24 _The_time
 00195f10 0018a458     1 runtime     1c _result

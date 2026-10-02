@@ -400,7 +400,7 @@
     and ebx, 0x38
     {load} or bl, al
     call "__GETDS"
-    lea ebp, [_D_001529fc]
+    lea ebp, ["my87"]
     mov edi, dword ptr ds:[ebp + 4]
     and edi, 0x3800
     shr edi, 0xb
@@ -465,7 +465,7 @@
 .L000f7a91:
     mov dword ptr [ebp + 0x38], esi
     call "__GETDS"
-    lea ebp, [_D_001529fc]
+    lea ebp, ["my87"]
     {load} mov dl, ah
     and edx, 0x38
     {load} or dl, al

@@ -31,9 +31,9 @@
 .L0010943a:
     mov dword ptr [esp + 0x2c], esi
     mov dword ptr [esp + 0x30], edi
-    lea ebp, [eax*8 + _D_001a0004]
+    lea ebp, [eax*8 + "_xsteps_array"]
     mov dword ptr [esp + 4], ebp
-    lea edi, [edx*8 + _D_001a0804]
+    lea edi, [edx*8 + "_ysteps_array"]
     mov eax, dword ptr ["_lbSpriteReMapPtr"]
     mov dword ptr [esp + 0x20], eax
     mov ecx, dword ptr [esp + 0x28]
@@ -55,7 +55,7 @@
     add esi, dword ptr [ebp + 4]
     dec esi
 .L00109496:
-    mov eax, dword ptr [_D_001a0000]
+    mov eax, dword ptr ["_scale_up"]
     {load} or eax, eax
     jne .L0010a308
     mov ax, word ptr ["_lbDisplay"+0x60]
@@ -3330,7 +3330,7 @@
     jg .L0010b343
     {load} xor ebp, ebp
 .L0010b343:
-    mov dword ptr [_D_001a0000], ebp
+    mov dword ptr ["_scale_up"], ebp
     mov ebp, dword ptr ["_lbDisplay"+0x30]
     mov dword ptr [esp + 0x18], ebp
     mov ebp, dword ptr ["_lbDisplay"+0x34]
@@ -3354,7 +3354,7 @@
     shl eax, 0x10
     {load} xor edx, edx
     idiv ebx
-    lea edx, [_D_001a0004]
+    lea edx, ["_xsteps_array"]
     mov ecx, dword ptr [esp + 8]
     {load} mov ebx, eax
     sar ebx, 1
@@ -3451,7 +3451,7 @@
     shl eax, 0x10
     {load} xor edx, edx
     idiv ebx
-    lea edx, [_D_001a0004]
+    lea edx, ["_xsteps_array"]
     mov ecx, dword ptr [esp + 8]
     {load} mov ebx, eax
     sar ebx, 1
@@ -3498,7 +3498,7 @@
     shl eax, 0x10
     {load} xor edx, edx
     idiv ebx
-    lea edx, [_D_001a0804]
+    lea edx, ["_ysteps_array"]
     mov ecx, dword ptr [esp + 0xc]
     {load} mov ebx, eax
     sar ebx, 1
@@ -3595,7 +3595,7 @@
     shl eax, 0x10
     {load} xor edx, edx
     idiv ebx
-    lea edx, [_D_001a0804]
+    lea edx, ["_ysteps_array"]
     mov ecx, dword ptr [esp + 0xc]
     {load} mov ebx, eax
     sar ebx, 1

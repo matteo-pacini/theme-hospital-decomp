@@ -8,8 +8,8 @@
 .type "_harderr_",@function
 "_harderr_":
     push edx
-    mov dword ptr [_D_001505ca], eax
-    mov word ptr [_D_001505ce], dx
+    mov dword ptr ["int24ip"], eax
+    mov word ptr ["int24cs"], dx
     push ds
     mov ax, cs
     mov ds, eax
@@ -49,14 +49,14 @@
     .byte 0xe8; .long "__GETDS"-.-4
     .byte 0x66; .byte 0x8c; .byte 0xd8
     .byte 0x8e; .byte 0xc0
-    .byte 0x89; .byte 0x25; .long _D_001505c4
-    .byte 0x66; .byte 0x8c; .byte 0x15; .long _D_001505c8
+    .byte 0x89; .byte 0x25; .long "oldsp"
+    .byte 0x66; .byte 0x8c; .byte 0x15; .long "oldss"
     .byte 0x8b; .byte 0x0d; .long "__STACKLOW"
-    .byte 0x89; .byte 0x0d; .long _D_001505d0
-    .byte 0x3e; .byte 0x8d; .byte 0x0d; .long _D_0018a784
+    .byte 0x89; .byte 0x0d; .long "oldstklow"
+    .byte 0x3e; .byte 0x8d; .byte 0x0d; .long "temp_stacklow"
     .byte 0x89; .byte 0x0d; .long "__STACKLOW"
     .byte 0x8e; .byte 0xd0
-    .byte 0x3e; .byte 0x8d; .byte 0x25; .long "_lbVesaBytesPerLine"
+    .byte 0x3e; .byte 0x8d; .byte 0x25; .long "temp_stacklow"+0x400
     .byte 0x29; .byte 0xdb
     .byte 0x66; .byte 0x89; .byte 0xeb
     .byte 0xc1; .byte 0xe3; .byte 0x04
@@ -85,9 +85,9 @@
     .byte 0x52
     .byte 0x50
     .byte 0x29; .byte 0xed
-    .byte 0xff; .byte 0x1d; .long _D_001505ca
-    .byte 0x0f; .byte 0xb2; .byte 0x25; .long _D_001505c4
-    .byte 0x8b; .byte 0x0d; .long _D_001505d0
+    .byte 0xff; .byte 0x1d; .long "int24ip"
+    .byte 0x0f; .byte 0xb2; .byte 0x25; .long "oldsp"
+    .byte 0x8b; .byte 0x0d; .long "oldstklow"
     .byte 0x89; .byte 0x0d; .long "__STACKLOW"
     .byte 0x5b
     .byte 0x5b

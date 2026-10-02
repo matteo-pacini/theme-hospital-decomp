@@ -89,7 +89,7 @@ and comparing against the original.
   that segment name, and a `config/symbols.txt` entry naming a global
   symbol in a section places that section. COMDAT data (`$Wvf...` vtables,
   `$Wts...` type signatures, `$Wcm...`) and a second section of one segment
-  name (`fpeint.s`'s `_D_00153ae0`) need the latter; a section with only
+  name (`fpeint.s`'s `TInf`) need the latter; a section with only
   statics (`.mod_init` in `XI`) the former. Otherwise `tools/relink.py`
   places it where the EXE's fixups point and counts it ("data segments
   placed from a reference"), and `tools/lewrite.py --strict` fails.

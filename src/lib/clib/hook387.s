@@ -48,7 +48,7 @@
     mov ah, 0xfa
     int 0x2f
     mov eax, cs
-    .byte 0xbb; .long _D_00195e6c  # mov ebx, 0x75e6c
+    .byte 0xbb; .long "_FPArea"  # mov ebx, 0x75e6c
     mov edx, eax
     mov ecx, ebx
     mov al, 0x20

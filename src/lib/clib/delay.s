@@ -31,7 +31,7 @@
     inc esi
     cmp bl, dh
     je .L000eb71f
-    mov dword ptr [_D_0018cfa4], esi
+    mov dword ptr ["_loop_count"], esi
     pop esi
     pop edx
     pop ecx
@@ -52,7 +52,7 @@
     push esi
     test eax, eax
     je .L000eb764
-    imul eax, dword ptr [_D_0018cfa4]
+    imul eax, dword ptr ["_loop_count"]
     mov ebx, 0x3e8
     add eax, 0x1f4
     xor edx, edx

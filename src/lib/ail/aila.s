@@ -8,7 +8,7 @@
 .globl "_AIL_API_lock"
 .type "_AIL_API_lock",@function
 "_AIL_API_lock":
-    inc dword ptr [_D_001509fa]
+    inc dword ptr ["_timer_lock"]
     ret
 .size "_AIL_API_lock",.-"_AIL_API_lock"
 
@@ -19,7 +19,7 @@
 .globl "_AIL_API_unlock"
 .type "_AIL_API_unlock",@function
 "_AIL_API_unlock":
-    dec dword ptr [_D_001509fa]
+    dec dword ptr ["_timer_lock"]
     ret
 .size "_AIL_API_unlock",.-"_AIL_API_unlock"
 
@@ -34,16 +34,16 @@
 .type "_AIL_ms_count",@function
 "_AIL_ms_count":
     push ebx
-    cmp dword ptr [_D_001509dc], 0
+    cmp dword ptr ["_VTD_entry"], 0
     jne .L000ddfaa
-    cmp word ptr [_D_001509e0], 0
+    cmp word ptr ["_VTD_entry"+0x4], 0
     je .L000ddfb7
 .L000ddfaa:
     mov eax, 0x101
-    .byte 0xff; .byte 0x1d; .long _D_001509dc  # call ptr [0x309dc]
+    .byte 0xff; .byte 0x1d; .long "_VTD_entry"  # call ptr [0x309dc]
     jmp .L000de018
 .L000ddfb7:
-    mov ecx, dword ptr [_D_001509cc]
+    mov ecx, dword ptr ["_timer_int_count"]
     {load} xor al, al
     out 0x43, al
     jmp .L000ddfc3
@@ -54,11 +54,11 @@
 .L000ddfc9:
     in al, 0x40
     xchg ah, al
-    cmp ecx, dword ptr [_D_001509cc]
+    cmp ecx, dword ptr ["_timer_int_count"]
     jne .L000ddfb7
     and eax, 0xffff
     je .L000de000
-    mov ebx, dword ptr [_D_001509ee]
+    mov ebx, dword ptr ["_PIT_divisor"]
     cmp ebx, 0
     jne .L000ddfec
     mov ebx, 0x10000
@@ -73,18 +73,18 @@
     div ebx
 .L000de000:
     {load} mov ebx, eax
-    mov eax, dword ptr [_D_001509f2]
+    mov eax, dword ptr ["_PIT_period"]
     mul ecx
     mov ecx, 0x3e8
     div ecx
     {load} add eax, ebx
-    add eax, dword ptr [_D_001509d4]
+    add eax, dword ptr ["_ms_count_base"]
 .L000de018:
-    cmp eax, dword ptr [_D_001509d0]
+    cmp eax, dword ptr ["_last_ms_count"]
     jae .L000de025
-    mov eax, dword ptr [_D_001509d0]
+    mov eax, dword ptr ["_last_ms_count"]
 .L000de025:
-    mov dword ptr [_D_001509d0], eax
+    mov dword ptr ["_last_ms_count"], eax
     pop ebx
     ret
 .size "_AIL_ms_count",.-"_AIL_ms_count"
@@ -98,11 +98,11 @@
 .globl "_setup_ms_count"
 .type "_setup_ms_count",@function
 "_setup_ms_count":
-    cmp dword ptr [_D_001509d0], 0
+    cmp dword ptr ["_last_ms_count"], 0
     je .L000de049
     call "_AIL_ms_count"
-    mov dword ptr [_D_001509cc], 0
-    mov dword ptr [_D_001509d4], eax
+    mov dword ptr ["_timer_int_count"], 0
+    mov dword ptr ["_ms_count_base"], eax
 .L000de049:
     ret
 .size "_setup_ms_count",.-"_setup_ms_count"
@@ -122,9 +122,9 @@
 .type "_API_timer",@function
 "_API_timer":
     push ds
-    .byte 0x66; .byte 0x2e; .byte 0x8e; .byte 0x1d; .long _D_001509fe  # mov ds, word ptr cs:[0x309fe]
-    inc dword ptr [_D_001509cc]
-    cmp dword ptr [_D_001509f6], 0
+    .byte 0x66; .byte 0x2e; .byte 0x8e; .byte 0x1d; .long "_timer_DS"  # mov ds, word ptr cs:[0x309fe]
+    inc dword ptr ["_timer_int_count"]
+    cmp dword ptr ["_timer_busy"], 0
     ja .L000de1e5
     .byte 0x60  # pushal
     push es
@@ -132,39 +132,39 @@
     push gs
     {load} mov ebp, esp
     cld
-    .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_001509fe  # mov es, word ptr [0x309fe]
-    inc dword ptr [_D_001509f6]
-    mov word ptr [_D_00151410], ss
-    mov dword ptr [_D_00151414], esp
+    .byte 0x66; .byte 0x8e; .byte 0x05; .long "_timer_DS"  # mov es, word ptr [0x309fe]
+    inc dword ptr ["_timer_busy"]
+    mov word ptr ["_timer_old_SS"], ss
+    mov dword ptr ["_timer_old_ESP"], esp
     mov ax, ds
     .byte 0x66; .byte 0x8e; .byte 0xd0  # mov ss, ax
-    .byte 0xbc; .long _D_00151410  # mov esp, 0x31410
-    cmp dword ptr [_D_001509dc], 0
+    .byte 0xbc; .long "_timer_stack"+0x800  # mov esp, 0x31410
+    cmp dword ptr ["_VTD_entry"], 0
     jne .L000de0a6
-    cmp word ptr [_D_001509e0], 0
+    cmp word ptr ["_VTD_entry"+0x4], 0
     je .L000de0cc
 .L000de0a6:
     mov eax, 0x101
-    .byte 0xff; .byte 0x1d; .long _D_001509dc  # call ptr [0x309dc]
+    .byte 0xff; .byte 0x1d; .long "_VTD_entry"  # call ptr [0x309dc]
     mov ecx, 0x3e8
-    cmp dword ptr [_D_001509d8], 0
+    cmp dword ptr ["_last_timer_time"], 0
     jne .L000de0ed
-    mov edx, dword ptr [_D_001509f2]
-    mov dword ptr [_D_001509d8], eax
+    mov edx, dword ptr ["_PIT_period"]
+    mov dword ptr ["_last_timer_time"], eax
     jmp .L000de10d
 .L000de0cc:
-    mov eax, dword ptr [_D_001509cc]
-    cmp dword ptr [_D_001509d8], 0
+    mov eax, dword ptr ["_timer_int_count"]
+    cmp dword ptr ["_last_timer_time"], 0
     jne .L000de0e7
-    mov edx, dword ptr [_D_001509f2]
-    mov dword ptr [_D_001509d8], eax
+    mov edx, dword ptr ["_PIT_period"]
+    mov dword ptr ["_last_timer_time"], eax
     jmp .L000de10d
 .L000de0e7:
-    mov ecx, dword ptr [_D_001509f2]
+    mov ecx, dword ptr ["_PIT_period"]
 .L000de0ed:
     {load} mov edx, eax
-    sub eax, dword ptr [_D_001509d8]
-    mov dword ptr [_D_001509d8], edx
+    sub eax, dword ptr ["_last_timer_time"]
+    mov dword ptr ["_last_timer_time"], edx
     {load} xor edx, edx
     mul ecx
     {load} mov edx, eax
@@ -174,18 +174,18 @@
 .L000de10d:
     mov edi, 0
 .L000de112:
-    cmp dword ptr [edi + _D_0015088c], 2
+    cmp dword ptr [edi + "_timer_status"], 2
     jne .L000de13f
-    mov eax, dword ptr [edi + _D_001508cc]
+    mov eax, dword ptr [edi + "_timer_elapsed"]
     {load} add eax, edx
 .L000de123:
-    cmp eax, dword ptr [edi + _D_0015090c]
+    cmp eax, dword ptr [edi + "_timer_period"]
     jb .L000de139
-    sub eax, dword ptr [edi + _D_0015090c]
-    inc dword ptr [edi + _D_0015094c]
+    sub eax, dword ptr [edi + "_timer_period"]
+    inc dword ptr [edi + "_timer_pending"]
     jmp .L000de123
 .L000de139:
-    mov dword ptr [edi + _D_001508cc], eax
+    mov dword ptr [edi + "_timer_elapsed"], eax
 .L000de13f:
     add edi, 4
     cmp edi, 0x40
@@ -193,30 +193,30 @@
     mov al, 0x20
     out 0x20, al
     sti
-    cmp dword ptr [_D_001509fa], 0
+    cmp dword ptr ["_timer_lock"], 0
     jg .L000de180
     mov edi, 0
 .L000de15a:
-    cmp dword ptr [edi + _D_0015094c], 0
+    cmp dword ptr [edi + "_timer_pending"], 0
     je .L000de178
-    dec dword ptr [edi + _D_0015094c]
-    mov eax, dword ptr [edi + _D_0015098c]
+    dec dword ptr [edi + "_timer_pending"]
+    mov eax, dword ptr [edi + "_timer_user"]
     push eax
-    call dword ptr [edi + _D_0015084c]
+    call dword ptr [edi + "_timer_callback"]
     jmp .L000de15a
 .L000de178:
     add edi, 4
     cmp edi, 0x3c
     jb .L000de15a
 .L000de180:
-    cmp dword ptr [_D_00150988], 0
+    cmp dword ptr ["_timer_pending"+0x3c], 0
     je .L000de1c9
-    dec dword ptr [_D_00150988]
-    mov ss, word ptr [_D_00151410]
-    mov esp, dword ptr [_D_00151414]
-    dec dword ptr [_D_001509f6]
-    mov ecx, dword ptr [_D_001509e2]
-    movzx eax, word ptr [_D_001509e6]
+    dec dword ptr ["_timer_pending"+0x3c]
+    mov ss, word ptr ["_timer_old_SS"]
+    mov esp, dword ptr ["_timer_old_ESP"]
+    dec dword ptr ["_timer_busy"]
+    mov ecx, dword ptr ["_old_PM_timer"]
+    movzx eax, word ptr ["_old_PM_timer"+0x4]
     {load} mov esp, ebp
     mov ds, word ptr [ebp + 0x2c]
     mov dword ptr [ebp + 0x2c], eax
@@ -234,9 +234,9 @@
     pop ecx
     retf
 .L000de1c9:
-    mov ss, word ptr [_D_00151410]
-    mov esp, dword ptr [_D_00151414]
-    dec dword ptr [_D_001509f6]
+    mov ss, word ptr ["_timer_old_SS"]
+    mov esp, dword ptr ["_timer_old_ESP"]
+    dec dword ptr ["_timer_busy"]
     {load} mov esp, ebp
     pop gs
     pop fs
@@ -268,7 +268,7 @@
     mov al, 0x34
     out 0x43, al
     mov eax, dword ptr [ebp + 8]
-    mov dword ptr [_D_001509ee], eax
+    mov dword ptr ["_PIT_divisor"], eax
     jmp .L000de200
 .L000de200:
     out 0x40, al
@@ -335,9 +335,9 @@
     mov ecx, 0xffffffff
     mov edi, 0
 .L000de25a:
-    cmp dword ptr [edi + _D_0015088c], 0
+    cmp dword ptr [edi + "_timer_status"], 0
     je .L000de26f
-    mov eax, dword ptr [edi + _D_0015090c]
+    mov eax, dword ptr [edi + "_timer_period"]
     {load} cmp eax, ecx
     jae .L000de26f
     {load} mov ecx, eax
@@ -345,14 +345,14 @@
     add edi, 4
     cmp edi, 0x40
     jb .L000de25a
-    cmp ecx, dword ptr [_D_001509f2]
+    cmp ecx, dword ptr ["_PIT_period"]
     je .L000de2a4
-    mov dword ptr [_D_001509f2], ecx
+    mov dword ptr ["_PIT_period"], ecx
     push ecx
     call "_set_PIT_period"
     add esp, 4
     mov eax, 0
-    .byte 0xbf; .long _D_001508cc  # mov edi, 0x308cc
+    .byte 0xbf; .long "_timer_elapsed"  # mov edi, 0x308cc
     mov ecx, 0x10
     rep stosd dword ptr es:[edi], eax
     call "_setup_ms_count"
@@ -381,24 +381,24 @@
     push ds
     pop es
     cld
-    .byte 0x66; .byte 0x8c; .byte 0x1d; .long _D_001509fe  # mov word ptr [0x309fe], ds
-    .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_001509fe  # mov es, word ptr [0x309fe]
+    .byte 0x66; .byte 0x8c; .byte 0x1d; .long "_timer_DS"  # mov word ptr [0x309fe], ds
+    .byte 0x66; .byte 0x8e; .byte 0x05; .long "_timer_DS"  # mov es, word ptr [0x309fe]
     call "_AILA_VMM_lock"
-    mov dword ptr [_D_001509f6], 0
-    mov dword ptr [_D_001509fa], 0
-    mov dword ptr [_D_001509f2], 0xffffffff
-    mov dword ptr [_D_00150a02], 0xffffffff
+    mov dword ptr ["_timer_busy"], 0
+    mov dword ptr ["_timer_lock"], 0
+    mov dword ptr ["_PIT_period"], 0xffffffff
+    mov dword ptr ["_USE16_IRQ"], 0xffffffff
     mov eax, 0
-    .byte 0xbf; .long _D_0015088c  # mov edi, 0x3088c
+    .byte 0xbf; .long "_timer_status"  # mov edi, 0x3088c
     mov ecx, 0x10
     rep stosd dword ptr es:[edi], eax
-    .byte 0xbf; .long _D_001508cc  # mov edi, 0x308cc
+    .byte 0xbf; .long "_timer_elapsed"  # mov edi, 0x308cc
     mov ecx, 0x10
     rep stosd dword ptr es:[edi], eax
-    .byte 0xbf; .long _D_0015090c  # mov edi, 0x3090c
+    .byte 0xbf; .long "_timer_period"  # mov edi, 0x3090c
     mov ecx, 0x10
     rep stosd dword ptr es:[edi], eax
-    .byte 0xbf; .long _D_0015094c  # mov edi, 0x3094c
+    .byte 0xbf; .long "_timer_pending"  # mov edi, 0x3094c
     mov ecx, 0x10
     rep stosd dword ptr es:[edi], eax
     push es
@@ -407,9 +407,9 @@
     {load} xor edi, edi
     .byte 0x66; .byte 0x8e; .byte 0xc7  # mov es, di
     int 0x2f
-    mov word ptr [_D_001509dc], di
-    mov word ptr [_D_001509de], 0
-    .byte 0x66; .byte 0x8c; .byte 0x05; .long _D_001509e0  # mov word ptr [0x309e0], es
+    mov word ptr ["_VTD_entry"], di
+    mov word ptr ["_VTD_entry"+0x2], 0
+    .byte 0x66; .byte 0x8c; .byte 0x05; .long "_VTD_entry"+0x4  # mov word ptr [0x309e0], es
     pop es
     mov eax, 8
     push eax
@@ -426,9 +426,9 @@
     mov dx, es
     pop es
     pop ecx
-    mov dword ptr [_D_001509e2], ebx
-    mov word ptr [_D_001509e6], dx
-    mov dword ptr [_D_001509ea], ecx
+    mov dword ptr ["_old_PM_timer"], ebx
+    mov word ptr ["_old_PM_timer"+0x4], dx
+    mov dword ptr ["_old_real_timer"], ecx
     mov eax, 8
     .byte 0xba; .long "_API_timer"  # mov edx, 0xce04a
     mov bx, cs
@@ -437,7 +437,7 @@
     .byte 0x66; .byte 0x8e; .byte 0xdb  # mov ds, bx
     int 0x21
     pop ds
-    mov dword ptr [_D_001508c8], 2
+    mov dword ptr ["_timer_status"+0x3c], 2
     push 0xd68d
     push 0x3c
     call "_AIL_set_timer_period"
@@ -472,8 +472,8 @@
     call "_set_PIT_divisor"
     add esp, 4
     mov eax, 8
-    mov edx, dword ptr [_D_001509e2]
-    movzx ebx, word ptr [_D_001509e6]
+    mov edx, dword ptr ["_old_PM_timer"]
+    movzx ebx, word ptr ["_old_PM_timer"+0x4]
     mov ah, 0x25
     push ds
     .byte 0x66; .byte 0x8e; .byte 0xdb  # mov ds, bx
@@ -612,7 +612,7 @@
     push esi
     push edi
     push es
-    cmp dword ptr [_D_00150a02], -1
+    cmp dword ptr ["_USE16_IRQ"], -1
     jne .L000de6a9
     mov edx, dword ptr [ebp + 0xc]
     {load} mov eax, edx
@@ -671,9 +671,9 @@
     int 0x31
     and eax, 0xffff
     mov dword ptr [ebp - 0x10], eax
-    .byte 0xb9; .long _D_00150a10  # mov ecx, 0x30a10
+    .byte 0xb9; .long "_thunk_stack"  # mov ecx, 0x30a10
     and ecx, 0xfffffff0
-    .byte 0xb8; .long _D_00150a10  # mov eax, 0x30a10
+    .byte 0xb8; .long "_thunk_stack"  # mov eax, 0x30a10
     {load} sub eax, ecx
     mov dword ptr [ebp - 0x14], eax
     mov eax, 7
@@ -738,7 +738,7 @@
     add eax, dword ptr [ebp - 0x1c]
     mov word ptr ["_thunk_proc"+0x32], ax
     mov ebx, dword ptr [ebp + 8]
-    mov dword ptr [_D_00150a02], ebx
+    mov dword ptr ["_USE16_IRQ"], ebx
     cmp ebx, 8
     jb .L000de67e
     add ebx, 0x60
@@ -748,8 +748,8 @@
     mov eax, 0x204
     int 0x31
     and ecx, 0xffff
-    mov dword ptr [_D_00150a06], ecx
-    mov dword ptr [_D_00150a0a], edx
+    mov dword ptr ["_old_USE16_sel"], ecx
+    mov dword ptr ["_old_USE16_off"], edx
     pop ebx
     mov eax, 0x205
     mov ecx, dword ptr [ebp - 0x18]
@@ -781,7 +781,7 @@
     mov ebx, dword ptr [ebp + 8]
     cmp ebx, -1
     je .L000de6ee
-    cmp ebx, dword ptr [_D_00150a02]
+    cmp ebx, dword ptr ["_USE16_IRQ"]
     jne .L000de6ee
     cmp ebx, 8
     jb .L000de6ce
@@ -789,10 +789,10 @@
 .L000de6ce:
     add ebx, 8
     mov eax, 0x205
-    mov ecx, dword ptr [_D_00150a06]
-    mov edx, dword ptr [_D_00150a0a]
+    mov ecx, dword ptr ["_old_USE16_sel"]
+    mov edx, dword ptr ["_old_USE16_off"]
     int 0x31
-    mov dword ptr [_D_00150a02], 0xffffffff
+    mov dword ptr ["_USE16_IRQ"], 0xffffffff
 .L000de6ee:
     pop es
     pop edi
@@ -989,7 +989,7 @@
 .globl "_AIL_API_background"
 .type "_AIL_API_background",@function
 "_AIL_API_background":
-    mov eax, dword ptr [_D_001509f6]
+    mov eax, dword ptr ["_timer_busy"]
     ret
 .size "_AIL_API_background",.-"_AIL_API_background"
 
@@ -1007,7 +1007,7 @@
     call "_AIL_lock"
     mov eax, 0
 .L000de84c:
-    cmp dword ptr [eax + _D_0015088c], 0
+    cmp dword ptr [eax + "_timer_status"], 0
     je .L000de864
     add eax, 4
     cmp eax, 0x3c
@@ -1015,9 +1015,9 @@
     mov eax, 0xffffffff
     jmp .L000de877
 .L000de864:
-    mov dword ptr [eax + _D_0015088c], 1
+    mov dword ptr [eax + "_timer_status"], 1
     mov ecx, dword ptr [ebp + 8]
-    mov dword ptr [eax + _D_0015084c], ecx
+    mov dword ptr [eax + "_timer_callback"], ecx
 .L000de877:
     push eax
     call "_AIL_unlock"
@@ -1041,7 +1041,7 @@
     cmp ecx, -1
     je .L000de899
     mov eax, dword ptr [ebp + 0xc]
-    xchg dword ptr [ecx + _D_0015098c], eax
+    xchg dword ptr [ecx + "_timer_user"], eax
 .L000de899:
     push eax
     call "_AIL_unlock"
@@ -1063,7 +1063,7 @@
     mov eax, dword ptr [ebp + 8]
     cmp eax, -1
     je .L000de8bc
-    mov dword ptr [eax + _D_0015088c], 0
+    mov dword ptr [eax + "_timer_status"], 0
 .L000de8bc:
     call "_AIL_unlock"
     leave
@@ -1104,9 +1104,9 @@
     mov ecx, dword ptr [ebp + 8]
     cmp ecx, -1
     je .L000de906
-    cmp dword ptr [ecx + _D_0015088c], 1
+    cmp dword ptr [ecx + "_timer_status"], 1
     jne .L000de906
-    mov dword ptr [ecx + _D_0015088c], 2
+    mov dword ptr [ecx + "_timer_status"], 2
 .L000de906:
     call "_AIL_unlock"
     leave
@@ -1147,9 +1147,9 @@
     mov ecx, dword ptr [ebp + 8]
     cmp ecx, -1
     je .L000de950
-    cmp dword ptr [ecx + _D_0015088c], 2
+    cmp dword ptr [ecx + "_timer_status"], 2
     jne .L000de950
-    mov dword ptr [ecx + _D_0015088c], 1
+    mov dword ptr [ecx + "_timer_status"], 1
 .L000de950:
     call "_AIL_unlock"
     leave
@@ -1193,8 +1193,8 @@
     call "_AIL_lock"
     mov ecx, dword ptr [ebp + 8]
     mov eax, dword ptr [ebp + 0xc]
-    mov dword ptr [ecx + _D_0015090c], eax
-    mov dword ptr [ecx + _D_001508cc], 0
+    mov dword ptr [ecx + "_timer_period"], eax
+    mov dword ptr [ecx + "_timer_elapsed"], 0
     call "_program_timers"
     call "_AIL_unlock"
     pop edi
@@ -1266,7 +1266,7 @@
 .globl "_AIL_API_interrupt_divisor"
 .type "_AIL_API_interrupt_divisor",@function
 "_AIL_API_interrupt_divisor":
-    mov eax, dword ptr [_D_001509ee]
+    mov eax, dword ptr ["_PIT_divisor"]
     ret
 .size "_AIL_API_interrupt_divisor",.-"_AIL_API_interrupt_divisor"
 
@@ -1571,7 +1571,7 @@
 .type "_AILA_VMM_lock",@function
 "_AILA_VMM_lock":
     .byte 0x68; .long "_AIL_driver_directory"  # push 0x31418
-    .byte 0x68; .long _D_0015084c  # push 0x3084c
+    .byte 0x68; .long "_timer_callback"  # push 0x3084c
     call "_AIL_vmm_lock_range"
     add esp, 8
     .byte 0x68; .long "_AILA_VMM_lock"  # push 0xceb91

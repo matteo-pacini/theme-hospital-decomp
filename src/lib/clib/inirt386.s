@@ -68,7 +68,7 @@
     mov dl, al
 .L000d0603:
     .byte 0x3e; .byte 0xbe; .long "___wcpp_2_data_module_dtor_ref_"  # mov esi, 0x33dc4
-    .byte 0x3e; .byte 0xbf; .long _D_00153dd6  # mov edi, 0x33dd6
+    .byte 0x3e; .byte 0xbf; .long "__End_YI"  # mov edi, 0x33dd6
     mov ebx, edi
     mov al, dl
 .L000d0613:
@@ -138,7 +138,7 @@
     .byte 0x8b; .byte 0x35; .long "__LpCmdLine"
     .byte 0x01; .byte 0xc8
     .byte 0x89; .byte 0xef
-    .byte 0xa3; .long _D_0014d5e0
+    .byte 0xa3; .long "__argv"
     .byte 0x06
     .byte 0x8c; .byte 0xd8
     .byte 0x8e; .byte 0xc0
@@ -151,26 +151,26 @@
     .byte 0xf2; .byte 0xa4
     .byte 0x5f
     .byte 0x07
-    .byte 0x8b; .byte 0x0d; .long _D_0014d5e0
+    .byte 0x8b; .byte 0x0d; .long "__argv"
     .byte 0xa1; .long "__LpPgmName"
     .byte 0x8d; .byte 0x51; .byte 0x04
     .byte 0x89; .byte 0x01
     .byte 0x89; .byte 0xe8
     .byte 0x8b; .byte 0x74; .byte 0x24; .byte 0x04
     .byte 0xe8; .long "_SplitParms_"-.-4
-    .byte 0x8b; .byte 0x0d; .long _D_0014d5e0
+    .byte 0x8b; .byte 0x0d; .long "__argv"
     .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x08
     .byte 0x01; .byte 0xf1
-    .byte 0xa3; .long _D_0014d5dc
+    .byte 0xa3; .long "__argc"
     .byte 0xc7; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0xeb; .byte .L000d06ef-.-1
 .L000d06e5:
-    .byte 0xa3; .long _D_0014d5e0
-    .byte 0xa3; .long _D_0014d5dc
+    .byte 0xa3; .long "__argv"
+    .byte 0xa3; .long "__argc"
 .L000d06ef:
     .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x08
     .byte 0xa3; .long "____Argc"
-    .byte 0xa1; .long _D_0014d5e0
+    .byte 0xa1; .long "__argv"
     .byte 0xa3; .long "____Argv"
     .byte 0x83; .byte 0xc4; .byte 0x0c
     .byte 0x5d
