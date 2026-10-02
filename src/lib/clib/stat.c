@@ -91,7 +91,7 @@ time_t _d2ttime(unsigned date, unsigned time);
 
 unsigned short at2mode(int attr, char *fname);
 
-// stat: fill *buf with information on file path (no wildcards; a root directory is checked with chdir); returns 0, or -1 with errno ENOENT.
+// stat: fill *buf with information on file path (no wildcards; a root directory is checked with chdir); returns 0, or -1 with errno set (ENOENT if not found or path has wildcards).
 // FUNCTION: 0xec750
 int stat(const char *path, struct stat *buf)
 {

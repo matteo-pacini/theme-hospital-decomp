@@ -33,7 +33,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t);
 s8 check_obscuring_column(const s8 row, s8 x, s8 y);
 s8 record_covering_cell(const s8 row, const s16 pos);
 void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const s32 h);
-void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, const s32 cell, const s32 wx,
+void do_cell(const u8 win, const s32 x, const s32 y, const s32 col, const s32 row, const s32 cell, const s32 wx,
              const s32 wy, const s32 cx0, const s32 cy0, const s32 cx1, const s32 cy1);
 void animate_windows(void);
 void move_windows(void);
@@ -357,15 +357,16 @@ void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h)
 
 // Prepares the scan of the map cells covering screen rectangle x,y to w,h
 // (right and bottom edges) in view window win, row by row from the top: sets
-// info.scan_cell to info.full_lines to the first cell, its screen position, the row length, the
-// row counts for floors and for walls and things (taller), and how rows
-// alternate.
+// info's first cell (scan_cell, scan_col, scan_row), its screen position
+// (scan_x, scan_y), the row length (line_len), the row counts for floors
+// (floor_lines) and for walls and things (full_lines, taller), and how rows
+// alternate (scan_dx, line_len_step).
 // FUNCTION: 0x000a7a0c
 void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const s32 h)
 {
     u8 odd;
     u8 left;
-    u8 right;
+    u8 floor_bottom;
     u8 bottom;
     u8 top;
     s32 extra;
@@ -379,7 +380,7 @@ void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const 
     left = 1;
     odd = 1;
     top = 1;
-    right = 1;
+    floor_bottom = 1;
     bottom = 1;
     extra = resvars.tile_height * 19 / 10;
     x -= resvars.tile_width / 2;
@@ -413,7 +414,7 @@ void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const 
     if (prod < span) {
         rem = span - prod;
         if (resvars.tile_height / 2 >= rem)
-            right = 0;
+            floor_bottom = 0;
         cnt++;
     }
     info.floor_lines = cnt * 2 + 1;
@@ -464,19 +465,18 @@ void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const 
     } else if (odd) {
         info.line_len_step = 0;
     }
-    if (right)
+    if (floor_bottom)
         info.floor_lines++;
     if (bottom)
         info.full_lines++;
 }
 
-// Draws the things on map cell cell at screen x,y (z,w are the cell's column
-// and row) clipped to cx0,cy0 to cx1,cy1, then redraws the walls in front of
+// Draws the things on map cell cell (at col,row) at screen x,y, clipped to cx0,cy0 to cx1,cy1, then redraws the walls in front of
 // them; for cells near walls (map flag 0x10) through the pixel buffer, so that
 // only the visible parts show. wx,wy offset the redraw area. Flags the area
 // for redraw.
 // FUNCTION: 0x000a7df0
-void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, const s32 cell, const s32 wx,
+void do_cell(const u8 win, const s32 x, const s32 y, const s32 col, const s32 row, const s32 cell, const s32 wx,
              const s32 wy, const s32 cx0, const s32 cy0, const s32 cx1, const s32 cy1)
 {
     Map *m;
@@ -511,7 +511,7 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
                 by0 = info.clip_y0;
                 bx1 = info.clip_x1;
                 by1 = info.clip_y1;
-                draw_window_into_pix_buffer(0, bx0, by0, bx1, by1, z, w);
+                draw_window_into_pix_buffer(0, bx0, by0, bx1, by1, col, row);
                 set_all_refresh_zones_in_window(bx0, by0, bx1, by1, 3);
             }
             RestoreFromPixBuffer();
@@ -965,8 +965,8 @@ s8 check_obscuring_column(const s8 row, s8 x, s8 y)
 }
 
 // Records scan cell row as covering the position pos relative to it (y * 128
-// + x), unless another cell already covers it or a neighbour: then returns
-// that cell, else -1.
+// + x), unless another cell already covers one of the positions x,y+1, x+1,y
+// or x+1,y+1: then returns that cell, else -1.
 // FUNCTION: 0x000a91f0
 s8 record_covering_cell(const s8 row, const s16 pos)
 {

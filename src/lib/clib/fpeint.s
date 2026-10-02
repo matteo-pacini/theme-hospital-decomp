@@ -1,6 +1,6 @@
 .intel_syntax noprefix
 
-// __Init_FPE_handler: with a real FPU and no hook yet, install the FPU exception interrupt hook for the DOS extender in use and enable FP exceptions; __Fini_FPE_handler, 0x5d bytes in, masks them and removes the hook.
+// __Init_FPE_handler: if _D_00150814 (the 80x87 type, which the emulator sets to 3) is nonzero and no hook is installed yet, install the FPU exception interrupt hook for the DOS extender in use and enable FP exceptions; __Fini_FPE_handler, 0x5d bytes in, masks them and removes the hook.
 // FUNCTION: 0x000fd8d8
 
 .section _TEXT,"ax",@progbits,unique,1038552
@@ -290,7 +290,7 @@
     ret
 .size "fpe_invalid_code",.-"fpe_invalid_code"
 
-// fpe_overflow_result: for an overflow in instruction bx, replace its result with a signed maximum (memory destination) or infinity (register destination).
+// fpe_overflow_result: for an overflow in instruction bx, replace its result: a float/double store writes the signed maximum to memory, a register-form instruction gets infinity in its destination register, any other gets the signed maximum in st(0); fscale is left alone.
 // FUNCTION: 0x000fdb47
 
 .section _TEXT,"ax",@progbits,unique,1039175

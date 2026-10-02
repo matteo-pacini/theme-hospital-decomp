@@ -250,7 +250,7 @@ u16 find_standing_place(Thing *person)
     return 0;
 }
 
-// Sends a patient home: answers their pending call, records them in the
+// Sends a patient home: removes their pending calls (types 8 and 4), records them in the
 // statistics, leaves any queue and walks them off the map.
 // FUNCTION: 0x0001665c
 void person_go_home(Thing *person)
@@ -412,9 +412,10 @@ u8 transform_peep_who(Thing *person, u8 level)
     return 0;
 }
 
-// Calls the queued patient id (or, with follow, the first callable one after
-// it, skipping the dead) to caller's room with complex action at tile arg,
-// making them caller's slave. Returns the patient called, or 0.
+// Calls the queued patient id (or, with follow, the first callable one queued
+// from id on) to caller's room with complex action at tile arg, making them
+// caller's slave. Dead patients met on the way are taken out of the queue and
+// skipped. Returns the patient called, or 0.
 // FUNCTION: 0x00016ba8
 u16 call_person_to_room(Thing *caller, u16 id, u16 action, u16 arg, u8 follow)
 {
@@ -669,9 +670,9 @@ void start_person_going(Thing *person)
     }
 }
 
-// A person whose path failed: retries a recently built destination room,
-// goes back to queueing, or else gets stuck (PS_STUCK), announced for this
-// player.
+// A person whose path failed: if outside rooms and heading for a room built in
+// the last 500 turns, starts going again (start_person_going); else goes back
+// to queueing, or else gets stuck (PS_STUCK), announced for this player.
 // FUNCTION: 0x0001752c
 void person_nav_failure(Thing *person)
 {
@@ -929,7 +930,8 @@ void refer_patient(Thing *person, u8 owner)
 
 // Patient state PS_WAITS_FOR_DECISION: waits while the player decides on
 // their call; goes on when a diagnosis or treatment becomes possible, or
-// home (counted as untreatable) after 1500 ticks of othervar.cur_turn.
+// home (counted as untreatable) after 1500 ticks of othervar.cur_turn. One
+// awaiting a treatment without PF_WAITING_FOR_ROOM set goes home either way.
 // FUNCTION: 0x00017e30
 void person_waits_for_decision(Thing *person)
 {
@@ -1081,7 +1083,8 @@ void get_new_popup_head(u16 type, u8 owner)
 }
 
 // Takes the head call of type `type` of each player off the panel into
-// popup_store, to put back with restore_popup.
+// popup_store, to put back with restore_popup. Stops at the first player
+// without one.
 // FUNCTION: 0x000184f4
 void save_popup(u16 type)
 {
@@ -1189,7 +1192,9 @@ u16 check_playercall(u16 type, u16 subject, u8 owner)
 }
 
 // Ages the calls with a timeout, removing those that expire and applying the
-// default answer for some (an accepted VIP visit, choice 0xb for type 3).
+// default answer for some: type 6 (VIP) schedules the visit, type 3
+// (epidemic) answers CH_EPIDEMIC_COVER_UP, type 5 with subject 1 clears the
+// emergency state.
 // FUNCTION: 0x00018908
 void expire_playercalls(void)
 {

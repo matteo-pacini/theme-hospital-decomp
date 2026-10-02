@@ -17,7 +17,7 @@ int LbScreenLock(void);
 void setup_lores_screen(void);
 void use_hires_help_and_fonts(void);
 void use_hires_layout(void);
-void fn_000905f4(void);
+void empty_name_stub(void);
 void play_main_menu_outro(void);
 u8 play_intro(void);
 u8 play_attract_mode(void);
@@ -37,7 +37,7 @@ s8 compare_products(s32 a, s32 b, s32 c, s32 d);
 
 // Runs one frame of the main menu's state machine (mainmenu.state): loads
 // and plays the intro animation, draws the menu with the hovered segment lit,
-// and carries out a chosen entry (new game, load, network, tutorial or quit)
+// and carries out a chosen entry (continue, load, new game, network or quit)
 // by setting display_mode or quit_game. Also runs the attract loop and the
 // credits.
 // FUNCTION: 0x00061bd0
@@ -228,12 +228,12 @@ void draw_main_menu(void)
         lbDisplay.graphics_screen_width = 0x280;
         lbDisplay.graphics_screen_height = 0x1e0;
         LbScreenSetGraphicsWindow(0, 0, 0x280, 0x1e0);
-        fn_000905f4();
+        empty_name_stub();
         lbDisplay.wscreen = othervar.saved_screen_ptr;
         lbDisplay.graphics_screen_width = othervar.saved_screen_width;
         lbDisplay.graphics_screen_height = othervar.saved_screen_height;
         LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
-        fn_000905f4();
+        empty_name_stub();
         mainmenu.state = MMS_ATTRACT;
         break;
     case MMS_ATTRACT:
@@ -267,12 +267,12 @@ void draw_main_menu(void)
                     lbDisplay.graphics_screen_width = 0x280;
                     lbDisplay.graphics_screen_height = 0x1e0;
                     LbScreenSetGraphicsWindow(0, 0, 0x280, 0x1e0);
-                    fn_000905f4();
+                    empty_name_stub();
                     lbDisplay.wscreen = othervar.saved_screen_ptr;
                     lbDisplay.graphics_screen_width = othervar.saved_screen_width;
                     lbDisplay.graphics_screen_height = othervar.saved_screen_height;
                     LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
-                    fn_000905f4();
+                    empty_name_stub();
                     timer = 0x3e8;
                     if (!done)
                         hosp_fade_palette(othervar.fade_palette, 10, Lb_PALETTE_FADE_CLOSED);
@@ -603,8 +603,8 @@ void play_main_menu_outro(void)
     hosp_play_smk(ANIM_MAIN_MENU2);
 }
 
-// Plays the intro movie from the CD (the high-quality version if the CD is
-// fast enough), then restores the 320x200 mode. Returns 1 if the player
+// Plays the intro movie from the CD in 320x200 (the high-quality version if
+// the CD is fast enough), then switches to 640x480. Returns 1 if the player
 // skipped it or the screen mode could not be restored, 0 otherwise or if
 // the movie is missing.
 // FUNCTION: 0x00063174
@@ -650,7 +650,7 @@ u8 play_intro(void)
     return aborted;
 }
 
-// Plays the attract-mode movie (smacker 0x1b) in 320x200. Returns 1 if the
+// Plays the attract-mode movie (smacker 0x1b) in 640x480. Returns 1 if the
 // player skipped it.
 // FUNCTION: 0x00063300
 u8 play_attract_mode(void)
@@ -673,9 +673,9 @@ u8 play_attract_mode(void)
         anim_choice = 0;
         current_frame = 0;
         smack_draw_callback = 0;
-        othervar.f9ca = saferand();
-        othervar.f9cb = 0;
-        othervar.f9cd = resvars.boxes_s32p[0xab] / 2 + 100;
+        othervar.unused_set_by_play_attract_mode_0 = saferand();
+        othervar.unused_set_by_play_attract_mode_1 = 0;
+        othervar.unused_set_by_play_attract_mode_2 = resvars.boxes_s32p[0xab] / 2 + 100;
         mainmenu.value = 0;
         aborted = 0;
         if (hosp_play_smk(ANIM_ATTRACT) == SMK_SKIPPED)

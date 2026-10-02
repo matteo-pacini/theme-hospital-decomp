@@ -3,7 +3,7 @@
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 
-u8 load_music_bank(long file, u8 bank);
+u8 load_music_bank(long file, u8 type);
 
 extern "C" {
 
@@ -99,14 +99,15 @@ void format_music(void)
     }
 }
 
-// Reads bank `bank` (MusicType index: 0 g, 1 r, 2 f, 3 w) of the open music
-// file at its current position into the music buffers, unpacking RNC data,
-// and prepares its songs. Returns 1, or 0 if the bank is missing or the
-// buffers are not allocated.
+// Reads the bank whose four per-type headers are at the open music file's
+// current position, taking the version for `type` (0 g, 1 r, 2 f, 3 w), into
+// the music buffers, unpacking RNC data, and prepares its songs. Returns 1,
+// or 0 if that type is missing (data_offset -1) or the buffers are not
+// allocated.
 // FUNCTION: 0xf09c0
-// NONMATCHING: the tab_offset seek and the else branch compute head[bank] into
+// NONMATCHING: the tab_offset seek and the else branch compute head[type] into
 // the argument register and load file into eax first; ours goes through eax
-u8 load_music_bank(long file, u8 bank)
+u8 load_music_bank(long file, u8 type)
 {
     BankHead head[4];
     u8 *data;
@@ -116,11 +117,11 @@ u8 load_music_bank(long file, u8 bank)
 
     LbFilePosition(file);
     LbFileRead(file, head, sizeof(head));
-    if (head[bank].data_offset != -1 && MusicData && Music) {
+    if (head[type].data_offset != -1 && MusicData && Music) {
         data = MusicData;
         tab = (u8 *)Music;
-        EndMusic = (SoundBankEntry *)(tab + head[bank].tab_size);
-        LbFileSeek(file, head[bank].data_offset, 0);
+        EndMusic = (SoundBankEntry *)(tab + head[type].tab_size);
+        LbFileSeek(file, head[type].data_offset, 0);
         LbFileRead(file, data, 8);
         if (data[0] == 'R' && data[1] == 'N' && data[2] == 'C') {
             packed_size = data[4];
@@ -130,9 +131,9 @@ u8 load_music_bank(long file, u8 bank)
             LbFileRead(file, MusicData + 8, packed_size - 8);
             UnpackM1(data, data);
         } else {
-            LbFileRead(file, MusicData + 8, head[bank].data_size - 8);
+            LbFileRead(file, MusicData + 8, head[type].data_size - 8);
         }
-        LbFileSeek(file, head[bank].tab_offset, 0);
+        LbFileSeek(file, head[type].tab_offset, 0);
         LbFileRead(file, tab, 8);
         if (tab[0] == 'R' && tab[1] == 'N' && tab[2] == 'C') {
             packed_size = tab[4];
@@ -142,7 +143,7 @@ u8 load_music_bank(long file, u8 bank)
             LbFileRead(file, (u8 *)Music + 8, packed_size - 8);
             UnpackM1(tab, tab);
         } else {
-            LbFileRead(file, (u8 *)Music + 8, head[bank].tab_size - 8);
+            LbFileRead(file, (u8 *)Music + 8, head[type].tab_size - 8);
         }
         format_music();
         for (i = 1; i <= NumberOfSongs; i++)
@@ -153,8 +154,9 @@ u8 load_music_bank(long file, u8 bank)
     return 0;
 }
 
-// Allocates the music buffers for MusicType's banks, sized from the end of
-// MUSIC.DAT. Returns 1, 0 if memory ran out, -1 if there is no MUSIC.DAT,
+// Sets full_music_data_path to <MusicDataPath>/MUSIC.DAT and allocates the
+// music buffers for MusicType's banks, sized from the end of that file.
+// Returns 1, 0 if memory ran out, -1 if there is no MUSIC.DAT,
 // -2 if it has no bank of that type.
 // FUNCTION: 0xf0bc0
 s32 AllocateMusicBankMemory(void)

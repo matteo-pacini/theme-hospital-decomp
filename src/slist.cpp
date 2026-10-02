@@ -277,9 +277,10 @@ u16 get_slist_staff(const u8 dir)
     return slist.value;
 }
 
-// Draws the current page (othervar.slist_page, ten rows) of staff of the kinds
-// shown: number, name, wage and gauges, with `selected` framed; hovering
-// and clicking select a row. Draws the page marker.
+// Draws the column headings and the current page (othervar.slist_page, ten
+// rows) of staff of the kinds shown: number, name, wage and gauges, with
+// `selected` framed; hovering highlights a row (othervar.slist_cursor) and
+// clicking selects it. Draws the page marker.
 // FUNCTION: 0x00091dec
 void draw_slist_staff(const u16 selected)
 {
@@ -387,8 +388,8 @@ void draw_slist_window(const u16 id)
     u8 j;
     u16 save_y;
     Thing *staff;
-    u16 save_w;
-    u16 save_h;
+    u16 save_x1;
+    u16 save_y1;
     u16 save_x;
     int dx;
     int dy;
@@ -411,8 +412,8 @@ void draw_slist_window(const u16 id)
         window.scroll_y[window.window_count - 1] = info.cell_y - *(s32 *)&resvars.coords_u8p[0x55c] + dy;
         save_x = window.clip_x0;
         save_y = window.clip_y0;
-        save_w = window.clip_x1;
-        save_h = window.clip_y1;
+        save_x1 = window.clip_x1;
+        save_y1 = window.clip_y1;
         window.clip_x0 = resvars.screen_list_pos_SlistAreap->x0;
         window.clip_y0 = resvars.screen_list_pos_SlistAreap->y0;
         window.clip_x1 = resvars.screen_list_pos_SlistAreap->x1;
@@ -420,8 +421,8 @@ void draw_slist_window(const u16 id)
         draw_window_not_using_bscreen(window.window_count - 1);
         window.clip_x0 = save_x;
         window.clip_y0 = save_y;
-        window.clip_x1 = save_w;
-        window.clip_y1 = save_h;
+        window.clip_x1 = save_x1;
+        window.clip_y1 = save_y1;
     }
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);

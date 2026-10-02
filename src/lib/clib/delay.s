@@ -1,6 +1,6 @@
 .intel_syntax noprefix
 
-// __delay_init: calibrate delay(); count DOS get-time (2Ch) calls during one change of the seconds value.
+// __delay_init: calibrate delay(); count the DOS get-time (2Ch) calls made in one whole second (between two changes of the seconds value).
 // FUNCTION: 0x000eb701
 
 .section _TEXT,"ax",@progbits,unique,964353

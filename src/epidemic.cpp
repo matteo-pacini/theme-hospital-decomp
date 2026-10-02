@@ -84,7 +84,8 @@ void declare_epidemic(char **strs)
 }
 
 // Epidemic fax button: queues the answer, 0 to declare it and pay the fine
-// (10) or 1 to try to cover it up (11, noted for the advisor).
+// (CH_EPIDEMIC_DECLARE) or 1 to try to cover it up (CH_EPIDEMIC_COVER_UP,
+// noted for the advisor).
 // FUNCTION: 0x000a03b0
 void process_epidemic_start_buttons(u8 button)
 {

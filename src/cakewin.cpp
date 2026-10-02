@@ -155,8 +155,8 @@ void goto_column_row_in_window(const u8 win, const s32 x, const s32 y)
     }
 }
 
-// Applies a frame of scrolling: the scroll keys accelerate the current view,
-// every view moves by its velocity (in 1/65536 pixel, at most one tile a
+// Applies a frame of scrolling: the scroll keys accelerate the current view
+// (which stops dead when none is held), every view moves by its velocity (in 1/65536 pixel, at most one tile a
 // frame, stopped at the scroll limit) which then decays, the background
 // buffer's wrap offset follows the drawn view, and moved or resized views are
 // flagged for redrawing (window.scrolled, zone_changed). Clears the scroll keys.
@@ -393,8 +393,8 @@ void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0,
 
     if (window.window_count < 2) {
         window.window_count++;
-        window.f2e7 = 0;
-        window.f2e8 = 0;
+        window.unused_set_by_open_new_window_0 = 0;
+        window.unused_set_by_open_new_window_1 = 0;
         window.prev_zone_x[window.window_count - 1] = 0;
         window.prev_zone_y[window.window_count - 1] = 0;
         window.prev_zone_x1[window.window_count - 1] = 0;
@@ -477,8 +477,8 @@ void set_window_animating(const u8 win, const u8 mode, s32 steps, const s32 x0, 
 void animate_windows(void)
 {
     u8 i;
-    s32 w;
-    s32 h;
+    s32 x1;
+    s32 y1;
     s32 x;
     s32 y;
 
@@ -496,10 +496,10 @@ void animate_windows(void)
         } else if (window.anim_mode[i] == 2) {
             x = window.prev_zone_x[i];
             y = window.prev_zone_y[i];
-            w = window.prev_zone_x1[i];
-            h = window.prev_zone_y1[i];
+            x1 = window.prev_zone_x1[i];
+            y1 = window.prev_zone_y1[i];
             remove_window_from_list(i);
-            remove_window_from_screen(x, y, w, h);
+            remove_window_from_screen(x, y, x1, y1);
             if (window.current_window >= window.window_count && window.current_window > 0)
                 window.current_window--;
         } else {
@@ -516,8 +516,8 @@ void animate_single_window(const u8 win)
 {
     s32 x;
     s32 y;
-    s32 w;
-    s32 h;
+    s32 x1;
+    s32 y1;
 
     if (window.anim_steps[win] > 0) {
         window.anim_steps[win]--;
@@ -530,8 +530,8 @@ void animate_single_window(const u8 win)
     } else if (window.anim_mode[win] == 2) {
         x = window.zone_x[win];
         y = window.zone_y[win];
-        w = window.zone_x1[win];
-        h = window.zone_y1[win];
+        x1 = window.zone_x1[win];
+        y1 = window.zone_y1[win];
         window.anim_mode[win] = 0;
         remove_window_from_list(win);
         if ((int)window.current_window > (int)win)
@@ -603,11 +603,11 @@ void init_andys_variables(void)
     i = 0;
     set_all_refresh_zones_in_window(0, 0, 0x27f, 0x1df, 3);
     redraw_panel = 1;
-    debug.f102 = 1;
-    debug.f104 = 0;
-    debug.f103 = 0;
-    debug.f105 = 0;
-    debug.f106 = 0;
+    debug.unused_set_by_init_andys_variables_6 = 1;
+    debug.unused_set_by_init_andys_variables_8 = 0;
+    debug.unused_set_by_init_andys_variables_7 = 0;
+    debug.unused_set_by_init_andys_variables_9 = 0;
+    debug.unused_set_by_init_andys_variables_10 = 0;
     window.scroll_x[0] = 0;
     window.scroll_y[0] = 1000;
     window.prev_scroll_x[0] = window.scroll_x[0];
@@ -628,9 +628,9 @@ void init_andys_variables(void)
     window.open_x1[0] = 0x145;
     window.open_y1[0] = 0xf5;
     window.anim_mode[0] = 0;
-    window.f2e7 = 0;
-    window.f2e8 = 0;
-    window.f2e9 = 0;
+    window.unused_set_by_open_new_window_0 = 0;
+    window.unused_set_by_open_new_window_1 = 0;
+    window.unused_set_by_init_andys_variables = 0;
     refresh.scroll_x = 0;
     refresh.scroll_y = 0;
     window.current_window = 0;
@@ -663,10 +663,10 @@ void init_andys_variables(void)
     window.zone_y1[0] = statvar.view_height;
     window.center_x[0] = (window.zone_x[0] + window.zone_x1[0]) / 2;
     window.center_y[0] = (window.zone_y[0] + window.zone_y1[0]) / 2;
-    debug.ffc = 0;
-    debug.ffd = 0;
-    debug.ffe = 0;
-    debug.fff = 0;
-    debug.f100 = 0;
-    debug.f101 = 0;
+    debug.unused_set_by_init_andys_variables_0 = 0;
+    debug.unused_set_by_init_andys_variables_1 = 0;
+    debug.unused_set_by_init_andys_variables_2 = 0;
+    debug.unused_set_by_init_andys_variables_3 = 0;
+    debug.unused_set_by_init_andys_variables_4 = 0;
+    debug.unused_set_by_init_andys_variables_5 = 0;
 }

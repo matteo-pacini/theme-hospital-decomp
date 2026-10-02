@@ -975,6 +975,8 @@ struct AllHosps {
             // disaster.
             u8 disaster_kind;
             s8 disaster_timer;
+            // 0x215: Set to 1 by init_player; no code reads it.
+            u8 unused_set_by_init_player;
         };
     };
     u8 insurance_accepted;
@@ -1567,7 +1569,9 @@ struct AnimStart {
             u8 unknownC[6];
             u16 patient_stand;
             u8 unknown14[0x8e];
-            u16 unknownA2;
+            // 0xa2 (anims[0x51]): person_dead lets the grim reaper come (at
+            // random) only for kinds whose entry here is anim 0x4c1.
+            u16 reaper_test_anim;
             u8 unknownA4[0x74];
         };
     };
@@ -1799,7 +1803,8 @@ struct HospPlayerDetails {
         struct {
             u8 unknown0a_[9];
             u16 years_played;
-            u8 fb;
+            // 0xb: Zeroed by set_default_player_details; no code reads it.
+            u8 unused_set_by_set_default_player_details;
         };
     };
     u8 music_on;
@@ -1999,7 +2004,9 @@ struct Game {
     // 0xf5: Nonzero while aliens are abducting a patient; cleared when the
     // saucer leaves.
     u16 abductee;
-    u16 ff7;
+    // 0xf7: Zeroed with abductee when the saucer leaves (helicopter_leaves); no
+    // code reads it.
+    u16 unused_set_by_helicopter_leaves;
     u8 unknownf9[4];
     EmergencyCall emergency_calls[4];
     u32 next_emergency_turn;
@@ -2080,8 +2087,12 @@ struct Statics {
         };
     };
     u8 music_ok;
-    u8 unknowne6;
-    u8 unknowne7;
+    // 0xe6: Set with the screen layout, 0x17 for SCREEN_MODE_1 and 0x1c for
+    // SCREEN_MODE_13 (swap_game_sprites, setup_host, use_hires_layout); no code
+    // reads it.
+    u8 unused_layout_value_0;
+    // 0xe7: As unused_layout_value_0, with 0x1a and 0x1f.
+    u8 unused_layout_value_1;
     u8 interaction_start[0x14];
     u8 quiet;
     u8 num_players;
@@ -2100,9 +2111,11 @@ struct Statics {
     u8 ref_general_count;
     u8 ref_good_count;
     u8 ref_bad_count;
-    u8 f5dc;
+    // 0x5dc: Set to 0x40 by init_game_vars; no code reads it.
+    u8 unused_set_by_init_game_vars;
     u8 midi_count;
-    u8 f5de;
+    // 0x5de: Set to 1 by the -E command-line option; no code reads it.
+    u8 unused_option_e;
 };
 
 /*
@@ -2320,9 +2333,13 @@ struct HospWindow {
         };
         struct {
             u8 unknown2d3a_[0x14];
-            u8 f2e7;
-            u8 f2e8;
-            u8 f2e9;
+            // 0x2e7: Zeroed by open_new_window and init_andys_variables; no
+            // code reads it.
+            u8 unused_set_by_open_new_window_0;
+            // 0x2e8: As unused_set_by_open_new_window_0.
+            u8 unused_set_by_open_new_window_1;
+            // 0x2e9: Zeroed by init_andys_variables; no code reads it.
+            u8 unused_set_by_init_andys_variables;
         };
     };
     // 0x2eb: Index of the active window.
@@ -2369,7 +2386,8 @@ struct Debug {
             u32 unknown0_;
             u32 last_button;
         };
-        u16 f0;
+        // 0x0: Zeroed by draw_network_select; no code reads it.
+        u16 unused_set_by_draw_network_select;
     };
     u32 last_action;
     // 0xc: Text buffer; complex retries print a message into its second half.
@@ -2383,25 +2401,30 @@ struct Debug {
     u8 unknownd9;
     u32 thing_count;
     u8 unknownde[4];
-    u8 unknowne2;
+    // 0xe2: process_turn compares it with 1 when quitting, with an empty
+    // branch; no code writes it.
+    u8 unused_tested_on_quit;
     union {
         u8 unknowne3[0x25];
         struct {
             u8 unknowne3_[0x19];
-            u8 ffc;
-            u8 ffd;
-            u8 ffe;
-            u8 fff;
-            u8 f100;
-            u8 f101;
-            u8 f102;
-            u8 f103;
-            u8 f104;
-            u8 f105;
-            u8 f106;
+            // 0xfc..0x106: Set by init_andys_variables (_6 to 1, the others to
+            // 0); no code reads them.
+            u8 unused_set_by_init_andys_variables_0;
+            u8 unused_set_by_init_andys_variables_1;
+            u8 unused_set_by_init_andys_variables_2;
+            u8 unused_set_by_init_andys_variables_3;
+            u8 unused_set_by_init_andys_variables_4;
+            u8 unused_set_by_init_andys_variables_5;
+            u8 unused_set_by_init_andys_variables_6;
+            u8 unused_set_by_init_andys_variables_7;
+            u8 unused_set_by_init_andys_variables_8;
+            u8 unused_set_by_init_andys_variables_9;
+            u8 unused_set_by_init_andys_variables_10;
         };
     };
-    u16 unknown108;
+    // 0x108: Zeroed by delete_room; no code reads it.
+    u16 unused_set_by_delete_room;
     // 0x10a: Save slot from the -G option, used by the Alt+S/Alt+L keys and
     // loaded at start.
     u8 save_slot;
@@ -2641,7 +2664,9 @@ struct Req {
     // being placed for requester 10, set once the staff view window is open for
     // requester 0xc.
     u8 arg3;
-    u8 unknownA;
+    // 0xa: Zeroed by process_turn when it reopens crequester; no code reads
+    // it.
+    u8 unused_set_by_process_turn;
     u8 unknownB;
 };
 
@@ -2852,7 +2877,8 @@ struct General {
     // 0x10: Set to force a full redraw of the main view on the next frame.
     u8 full_redraw;
     u8 unknown11[0x5];
-    u8 f16;
+    // 0x16: Set to 1 by init_game_vars; no code reads it.
+    u8 unused_set_by_init_game_vars;
     // 0x17: Set when the blueprint drawing marked a tile invalid.
     u8 blueprint_has_invalid;
     // 0x18: Per player: the door position being placed for the blueprint is
@@ -2884,7 +2910,9 @@ struct General {
     u8 prev_pointer_sprite;
     // 0x32: Set on turns that are a multiple of 16.
     u8 every_16_turns;
-    u8 f33;
+    // 0x33: Set to 1 by setup_new_level and to 0 by draw_area_select; no code
+    // reads it.
+    u8 unused_set_at_level_start;
     // 0x34: Per info-requester slot (indexed 0..3 past its declared size):
     // window to re-centre on the slot's tracked thing.
     u8 track_window[1];
@@ -2920,7 +2948,8 @@ struct General {
     u8 slist_filter;
     // 0x4a: Set while the player is typing a network message.
     u8 net_text_entering;
-    u8 f4b;
+    // 0x4b: Set to 200 by net_text_display; no code reads it.
+    u8 unused_set_by_net_text_display;
     // 0x4c: Bitmask of players the network message goes to.
     u8 net_text_to;
     union {
@@ -2949,8 +2978,11 @@ struct General {
     // 0x6a: Heating level last requested on the town screen.
     u8 pending_heating_level;
     union {
-        s32 f6b;
-        u32 f6b_u32;
+        // 0x6b: Set to 50 with each pending_heating_level change on the town
+        // screen (and to 0 then 50 in draw_town_select); no code reads it.
+        s32 unused_set_with_heating_level;
+        // 0x6b: Unsigned view of unused_set_with_heating_level.
+        u32 unused_set_with_heating_level_u32;
     };
     union {
         // 0x6f: Rat under the mouse, or 0.
@@ -3051,7 +3083,9 @@ struct General {
     u8 user_idle;
     // 0x8b2: Clock when user_idle last became set.
     u32 idle_since;
-    u8 f8b6;
+    // 0x8b6: Gates drugs_help_concentrate's help text; display_drugs clears it
+    // every frame and no code sets it.
+    u8 concentrate_help_on;
     // 0x8b7: Build palette counts saved on entering the shop.
     Blob63 saved_build_palette;
     // 0x8f6: Per object kind: count taken off the build palette while in the
@@ -3113,9 +3147,11 @@ struct General {
     u8 drag_x1;
     // 0x9c9: See drag_x0.
     u8 drag_y1;
-    u8 f9ca;
-    u16 f9cb;
-    u16 f9cd;
+    // 0x9ca..0x9ce: Set by play_attract_mode before the attract movie (_0 to a
+    // saferand value, _1 to 0, _2 from boxes_s32p[0xab]); no code reads them.
+    u8 unused_set_by_play_attract_mode_0;
+    u16 unused_set_by_play_attract_mode_1;
+    u16 unused_set_by_play_attract_mode_2;
     u8 unknown9cf[0x2];
     // 0x9d1: Months since the start of the level (year * 12 + month); compared
     // with level-file month fields.
@@ -3305,7 +3341,8 @@ struct General {
     // 0xa84: Set when a research category has nothing left; cleared by the
     // research screen.
     u8 research_exhausted;
-    u16 fa85;
+    // 0xa85: Set to 10 with research_exhausted; no code reads it.
+    u16 unused_set_by_research_category_exhausted;
     // 0xa87: CD speed from GetCDSpeed; picks the intro movie.
     u8 cd_speed;
     // 0xa88: Last emergency patient viewed from the watch.

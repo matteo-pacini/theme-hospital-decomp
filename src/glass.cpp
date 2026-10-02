@@ -5,7 +5,9 @@ struct GlassBox {
     s16 y;
     s16 x1;
     s16 y1;
-    u8 f8;
+    // 0x8: add_glass_box copies it to the zoom box's unused_copied_from_glass;
+    // no code reads it otherwise.
+    u8 unused_copied_to_zoom;
     u8 unknown9[5];
     // 0xe: Box style for draw_a_box: -1 or 0 background (0 translucent), 1 or 2
     // foreground.
@@ -53,7 +55,8 @@ struct ZoomBox {
     u8 close_delay;
     s32 id;
     s8 type;
-    u8 fa;
+    // 0xa: Copied from the glass box by add_glass_box; no code reads it.
+    u8 unused_copied_from_glass;
     // 0xb: Nonzero: drawn as a button.
     u8 button;
     s32 from[4];
@@ -153,7 +156,7 @@ s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay)
         ZoomBoxes[i].steps = box->steps;
         ZoomBoxes[i].id = id;
         ZoomBoxes[i].type = box->type;
-        ZoomBoxes[i].fa = box->f8;
+        ZoomBoxes[i].unused_copied_from_glass = box->unused_copied_to_zoom;
         ZoomBoxes[i].button = box->button;
         if (open_delay == -1)
             ZoomBoxes[i].open_delay = box->delay;
@@ -378,9 +381,9 @@ s8 draw_zoom_boxes(void)
     return result;
 }
 
-// Returns the display bits to change next: those to close first, then (all at
-// once if bit 8 is involved) the lowest one to open; 0 when CurrentDisplay
-// matches DesiredDisplay.
+// Returns the display bits to change next: those to close first, then the
+// lowest one to open (all differing bits at once while display bit 0x8 is
+// current or desired); 0 when CurrentDisplay matches DesiredDisplay.
 // FUNCTION: 0x000b96cc
 s32 next_map(void)
 {

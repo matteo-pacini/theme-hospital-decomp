@@ -3,7 +3,8 @@
 extern "C" {
 
 // Returns the size data[0..len) would have run-length encoded (see
-// rle_compress).
+// rle_compress), ignoring rle_compress's 127-byte run limit, so it is short
+// for data with a run longer than 127 bytes.
 // FUNCTION: 0x000bbce0
 s32 rle_compressed_size(s8 *data, s32 len)
 {

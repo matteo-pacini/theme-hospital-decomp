@@ -65,7 +65,8 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
 
 // Patient window clicks (patient irequester_slots[1].value): close, the casebook
 // for their illness once diagnosed, send home, their queue's window, and
-// force a cure (EV_FORCE_CURE) when diagnosed and the cure is known.
+// force a cure (EV_FORCE_CURE) when diagnosed with a treatment set, not on a
+// guess, not fed up, and known_illness differs from illness.
 // FUNCTION: 0x00072d60
 void req3(Window *win)
 {

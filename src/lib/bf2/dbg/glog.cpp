@@ -32,7 +32,8 @@ int LbLog(TbLog *log, char *fmt, ...)
     return 1;
 }
 
-// Closes log, clearing its settings. Returns 1, or -1 if it was not set up.
+// Clears log's settings (no file is open to close). Returns 1, or -1 if it
+// was not set up.
 // FUNCTION: 0xeb3c8
 int LbLogClose(TbLog *log)
 {

@@ -362,13 +362,13 @@ void check_cd_available(char *path)
     s32 unused;
     u8 had_screen;
     TbScreenMode mode;
-    u8 flag;
+    u8 was_lores;
     u8 find[0xe4];
     char fname[0x80];
 
     had_screen = lbDisplay.wscreen ? (u8)1 : (u8)0;
     mode = resvars.screen_mode;
-    flag = othervar.use_lores_assets;
+    was_lores = othervar.use_lores_assets;
     unused = 0;
     if (*path == '*')
         return;
@@ -412,7 +412,7 @@ void check_cd_available(char *path)
     }
     if (resvars.screen_mode != mode)
         setup_any_screen(palette, mode);
-    if (flag)
+    if (was_lores)
         setup_lores_screen();
     if (had_screen) {
         while (LbScreenLock() != 1)

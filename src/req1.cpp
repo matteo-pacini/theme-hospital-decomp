@@ -49,11 +49,11 @@ void clear_req_indices(void)
     memset(req_indices, 0, 10);
 }
 
-// Lists the extra objects room type `room` can buy (up to ten available to
+// Lists the extra objects room type room_type can buy (up to ten available to
 // this player) in req_indices and opens the object list (crequester.mode
 // 3).
 // FUNCTION: 0x00054fc0
-void set_buyable_items(u16 room)
+void set_buyable_items(u16 room_type)
 {
     u8 obj_type;
     u16 count;
@@ -62,8 +62,8 @@ void set_buyable_items(u16 room)
     count = 0;
     crequester.mode = 3;
     crequester.item = 0;
-    for (i = 0; i < rooms[room].buyable_count && count < 10; i++) {
-        obj_type = rooms[room].buyable[i];
+    for (i = 0; i < rooms[room_type].buyable_count && count < 10; i++) {
+        obj_type = rooms[room_type].buyable[i];
         if (allhosps[player].equipment[obj_type].available == 1 && objects[obj_type].available_for_level == 1)
             req_indices[count++] = obj_type;
     }
@@ -72,19 +72,19 @@ void set_buyable_items(u16 room)
     reset_dept_object();
 }
 
-// Sets the shopping list (gamevar.buy_list) to just room type `room`'s
+// Sets the shopping list (gamevar.buy_list) to just room type room_type's
 // required objects.
 // FUNCTION: 0x000550cc
-void buy_compulsory_items(const u16 room)
+void buy_compulsory_items(const u16 room_type)
 {
     u16 i;
 
     for (i = 0; i < 0x3e; i++)
         gamevar.buy_list.to_place[i] = 0;
-    for (i = 0; i < rooms[room].compulsory_count; i++) {
+    for (i = 0; i < rooms[room_type].compulsory_count; i++) {
         u8 obj;
 
-        obj = rooms[room].objects[i];
+        obj = rooms[room_type].objects[i];
         gamevar.buy_list.to_place[obj]++;
     }
 }
@@ -96,28 +96,28 @@ void req1_reset_rooms(u16 dept)
 {
     u16 i;
     u16 count;
-    u16 room;
+    u16 room_type;
 
     count = 0;
     for (i = 0; i < departments[dept].count; i++) {
-        room = departments[dept].rooms[i];
-        if (room_available(room))
-            req_indices[count++] = room;
+        room_type = departments[dept].rooms[i];
+        if (room_available(room_type))
+            req_indices[count++] = room_type;
     }
     while (count < 10)
         req_indices[count++] = 0;
 }
 
-// Returns 1 if this player has every object room type `room` requires, else
+// Returns 1 if this player has every object room type room_type requires, else
 // 0.
 // FUNCTION: 0x00055214
-u16 room_available(u16 room)
+u16 room_available(u16 room_type)
 {
     u16 i;
 
-    for (i = 0; i < rooms[room].compulsory_count; i++) {
-        if (allhosps[player].equipment[rooms[room].objects[i]].available == 0 ||
-            objects[rooms[room].objects[i]].available_for_level == 0)
+    for (i = 0; i < rooms[room_type].compulsory_count; i++) {
+        if (allhosps[player].equipment[rooms[room_type].objects[i]].available == 0 ||
+            objects[rooms[room_type].objects[i]].available_for_level == 0)
             return 0;
     }
     return 1;

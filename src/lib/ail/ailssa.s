@@ -3980,11 +3980,13 @@
 // Mixes `amount` bytes of sample `S`'s current buffer, from its position, into
 // its driver's build buffer at byte offset `dest_offset`, through the merge
 // routine M_n for n = output stereo (1) | sample stereo (2) | sample channels
-// swapped (4) | 16-bit sample (8) | signed sample (16) | resampling (32, when
-// the rate differs from the DMA rate by more than DIG_RESAMPLING_TOLERANCE) |
-// volume/pan scaling (64, skipped at full volume and centre pan unless a stereo
-// sample goes to mono output). Advances the sample's position past what it
-// used. Returns the new build buffer offset.
+// swapped (4) | 16-bit sample (8) | signed sample (16, never with 64 for 8-bit
+// data, whose scaling tables handle the sign) | resampling (32, when the rate
+// differs from the DMA rate by more than DIG_RESAMPLING_TOLERANCE, in 1/65536
+// units of the ratio) | volume/pan scaling (64, skipped when the sample and
+// master volumes are 127 and the pan is 64, unless a stereo sample goes to
+// mono output). Advances the sample's position past what it used. Returns the
+// new build buffer offset.
 // FUNCTION: 0x000f2bd4
 
 .section _TEXT,"ax",@progbits,unique,994260

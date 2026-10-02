@@ -657,8 +657,10 @@ long screen_place(void)
     return 1;
 }
 
-// Restores the video memory under the pointer if it has moved or force is
-// set. Returns 1, or -1 if the mouse is not set up.
+// Restores the video memory under the pointer if force is set or the mouse
+// position differs from the saved sprite position (its top left, so with a
+// hotspot set this is nearly always). Returns 1, or -1 if the mouse is not
+// set up.
 // FUNCTION: 0x000be0cc
 long screen_remove(u32 force)
 {

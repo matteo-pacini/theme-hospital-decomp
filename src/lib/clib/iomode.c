@@ -26,7 +26,8 @@ unsigned __IOMode(int handle)
 
 // __SetIOMode: set handle's I/O mode flags to value (marked initialised).
 // FUNCTION: 0xed211
-// NONMATCHING: the index is scaled into a register instead of the address
+// NONMATCHING: the target scales the index in a register (shl edx,2) where
+// this C compiles to a scaled address ([edx+eax*4])
 void __SetIOMode(int handle, unsigned value)
 {
     _iomode[handle] = value | _INITIALIZED;

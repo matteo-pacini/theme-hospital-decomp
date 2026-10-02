@@ -39,7 +39,8 @@ struct __ic76sReceiveCallbacks {
     void (__stdcall *mpReqCompsExDataMsg)(u32 id, u32 seq, void *data);
     void *(__stdcall *unidirectionalMsg)(u32 id, u32 size, void *data);
     void (__stdcall *systemUserMsg)(u32 id, void *msg, u32 size, void *data);
-    void (__stdcall *unknown24)(u32 id, void *msg);
+    // 0x24: Handler for MSG_TYPE_8 messages, or null; LbNetwork_Init clears it.
+    void (__stdcall *msgType8Msg)(u32 id, void *msg);
 };
 
 extern u32 exchangeTimeout;
@@ -257,7 +258,8 @@ union TbNetworkInitParams {
 extern "C" {
 
 // LbNetwork_Init for service `service` taking the serial or modem settings
-// as TbNetworkInitParams (0 for none), converted to the provider's form.
+// as TbNetworkInitParams (0 for none), converted to the provider's form
+// (passed on unconverted for other services).
 // FUNCTION: 0x000bf91c
 TbError LbNetwork_InitWithParams(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                     u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, TbNetworkInitParams *params)
@@ -380,7 +382,8 @@ TbError LbNetwork_InitIndexWithParams(u32 index, __tibcaGUID guid, u32 max_playe
 
 // Starts the service provider at index (0 serial, 1 modem, 2 IPX) with the
 // exchange settings, allocating the composite buffer and clearing the
-// player table. Returns Lb_OK, or Lb_FAIL.
+// player table (of info, only the first entry is cleared). Returns Lb_OK,
+// or Lb_FAIL.
 // FUNCTION: 0x000bfc4c
 TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -405,7 +408,7 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     exchangeBuffer = (u8 *)exchange_buf;
     localPlayerInfoPtr = info;
     receiveCallbacks.multiPlayer = MultiPlayerCallback;
-    receiveCallbacks.unknown24 = 0;
+    receiveCallbacks.msgType8Msg = 0;
     receiveCallbacks.mpReqExDataMsg = MultiPlayerReqExDataMsgCallback;
     if (exchange_size > 0) {
         compositeBufferSize = max_players * exchange_size;
@@ -638,7 +641,8 @@ TbError LbNetwork_CompleteExchange(void *buf)
 // broadcasts the composite; a client waits for it, asking again on timeout,
 // dropping the host after ten retries and taking over if it becomes host.
 // Adapts the timeout to the measured round trip. Advances the sequence
-// number (0-14). Returns Lb_OK, or Lb_FAIL.
+// number (0-14), unless it is still 15 (unknown after joining). Returns
+// Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000c08e4
 // NONMATCHING: register choice: the target copies the elapsed time into ebp and tests timeCount in eax
 static TbError CompleteMultiPlayerExchange(void *buf)
@@ -1075,7 +1079,7 @@ extern "C" {
 
 // Adds player to the player table (if not already there), recording the
 // host and this player's own id and index. Returns Lb_OK, or Lb_FAIL if the
-// table is full.
+// table is full or player is null.
 // NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c197c
 TbError AddAPlayer(TbNetworkPlayerEntry *player)

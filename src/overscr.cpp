@@ -132,9 +132,10 @@ void display_peep_overview(void)
         overview.state = 2;
 }
 
-// Draws the status screen for hospital `overview`: the year, the players'
-// names, the patients' happiness, thirst and warmth gauges with a warning,
-// its share (allhosps.market_share percent) and the criteria bars.
+// Draws the status screen for hospital overview.value: the year, the players'
+// names, the local player's patients' happiness, thirst and warmth gauges
+// (adcounts) with a warning, the hospital's share (allhosps.market_share
+// percent) and its criteria bars.
 // FUNCTION: 0x000571ec
 void draw_overview_screen(void)
 {

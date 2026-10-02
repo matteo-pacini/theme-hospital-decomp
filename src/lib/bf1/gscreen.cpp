@@ -54,8 +54,8 @@ s32 LbScreenIsModeAvailable(TbScreenMode mode)
 }
 
 // Sets the graphics window to the box at (x, y), w x h (either corner
-// order), clipped to the screen; graphics_window points at its unclipped
-// corner. Returns 1.
+// order), clipped to the screen; graphics_window points at (x, y) as passed,
+// neither swapped nor clipped. Returns 1.
 // FUNCTION: 0x000be948
 int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h)
 {

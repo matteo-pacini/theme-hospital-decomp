@@ -32,7 +32,7 @@
     ret
 .size "__Intel_hook_init_",.-"__Intel_hook_init_"
 
-// __Intel_hook_fini: nothing to undo; returns.
+// __Intel_hook_fini: returns at once; the vector __Intel_hook_init set is not restored.
 // FUNCTION: 0x000fdf12
 
 .section _TEXT,"ax",@progbits,unique,1040146

@@ -659,8 +659,10 @@ void balance_filename(char *name)
     LbMemoryFree(buf);
 }
 
-// Does nothing.
+// Empty: does nothing. draw_main_menu calls it twice each time it sets up the
+// title screen, once while drawing into bscreen and once after restoring the
+// previous screen.
 // FUNCTION: 0x000905f4
-extern "C" void fn_000905f4(void)
+extern "C" void empty_name_stub(void)
 {
 }

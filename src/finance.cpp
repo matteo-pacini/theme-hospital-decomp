@@ -599,24 +599,24 @@ void twice_daily_admin(void)
 // FUNCTION: 0x00052f7c
 void calculate_value(const u8 owner)
 {
-    s32 total;
+    s32 room_value;
     AllHosps *hosp;
-    s32 base;
+    s32 object_value;
     s32 rep_value;
     RoomInfo *room;
     s32 area_value;
 
-    total = 0;
+    room_value = 0;
     hosp = &allhosps[owner];
-    base = hosp->object_value;
+    object_value = hosp->object_value;
     rep_value = hosp->reputation / 50 * 1000;
     for (room = room_info + 1; room < end_room_info; room++) {
         if (room->owner == owner)
-            total += rooms[room->type].cost;
+            room_value += rooms[room->type].cost;
     }
     count_hospital_area((u16)owner);
     area_value = hosp->area * gbv.land_cost_per_tile;
-    hosp->hospital_value = area_value + (base + rep_value + total) + 10000;
+    hosp->hospital_value = area_value + (object_value + rep_value + room_value) + 10000;
     if (hosp->hospital_value < 0)
         hosp->hospital_value = 0;
     hosp->max_loan = hosp->hospital_value / 3 + 10000;

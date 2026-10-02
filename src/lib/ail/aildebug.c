@@ -282,9 +282,9 @@ void __cdecl AIL_set_real_vect(U32 vectnum, REALFAR real_ptr)
     END;
 }
 
-// Routes hardware interrupt `IRQ` to the 16-bit driver ISR at `ISR_offset` in
-// real-mode segment `real_base`; one at a time. Logged when MSS_DEBUG tracing
-// is on.
+// Routes hardware interrupt `IRQ` to the 16-bit driver ISR at `ISR_offset` from
+// real-mode address `real_base` (segment:offset); one at a time. Logged when
+// MSS_DEBUG tracing is on.
 // FUNCTION: 0x000c2bb0
 void __cdecl AIL_set_USE16_ISR(S32 IRQ, REALFAR real_base, U32 ISR_offset)
 {
@@ -449,9 +449,9 @@ U32 __cdecl AIL_set_timer_user(HTIMER timer, U32 user)
     return result;
 }
 
-// Sets timer `timer`'s period to `microseconds`, restarting its count, and
-// reprograms the PIT for the shortest period in use. Logged when MSS_DEBUG
-// tracing is on.
+// Sets timer `timer`'s period to `microseconds`, clearing its accumulated time,
+// and reprograms the PIT if the shortest period in use changed. Logged when
+// MSS_DEBUG tracing is on.
 // FUNCTION: 0x000c3200
 void __cdecl AIL_set_timer_period(HTIMER timer, U32 microseconds)
 {
@@ -880,8 +880,8 @@ void __cdecl AIL_set_sample_playback_rate(HSAMPLE S, S32 playback_rate)
     END;
 }
 
-// Sets `S`'s volume (0-127) and rebuilds its scaling. Logged when MSS_DEBUG
-// tracing is on.
+// Sets `S`'s volume (0-127), rebuilding its scaling if it changed. Logged when
+// MSS_DEBUG tracing is on.
 // FUNCTION: 0x000c4200
 void __cdecl AIL_set_sample_volume(HSAMPLE S, S32 volume)
 {
@@ -893,8 +893,8 @@ void __cdecl AIL_set_sample_volume(HSAMPLE S, S32 volume)
     END;
 }
 
-// Sets `S`'s pan (0 left - 127 right) and rebuilds its scaling. Logged when
-// MSS_DEBUG tracing is on.
+// Sets `S`'s pan (0 left - 127 right), rebuilding its scaling if it changed.
+// Logged when MSS_DEBUG tracing is on.
 // FUNCTION: 0x000c4280
 void __cdecl AIL_set_sample_pan(HSAMPLE S, S32 pan)
 {
@@ -1071,7 +1071,8 @@ S32 __cdecl AIL_digital_master_volume(HDIGDRIVER dig)
 }
 
 // Stores `dig`'s DMA rate in `*rate`, hardware format in `*format` and device
-// name in `string`; NULL ones are skipped. Logged when MSS_DEBUG tracing is on.
+// name in `string`; NULL ones are skipped. Logged when MSS_DEBUG tracing is on;
+// the logged result reads all three pointers.
 // FUNCTION: 0x000c4910
 void __cdecl AIL_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *format,
                                        char *string)
@@ -1878,7 +1879,7 @@ S32 __cdecl AIL_channel_notes(HSEQUENCE S, S32 channel)
 
 // Stores `S`'s current beat and measure (MDI_QUANT_ADVANCE intervals ahead) in
 // `*beat` and `*measure`; NULL ones are skipped. Logged when MSS_DEBUG tracing
-// is on.
+// is on; the logged result reads both pointers.
 // FUNCTION: 0x000c67a0
 void __cdecl AIL_sequence_position(HSEQUENCE S, S32 *beat, S32 *measure)
 {
@@ -2398,8 +2399,9 @@ U32 __cdecl AIL_redbook_track(HREDBOOK hand)
     return result;
 }
 
-// Stops any play or pause, then plays from `startmsec` to `endmsec` unless both
-// are 0. Returns the new status. Logged when MSS_DEBUG tracing is on.
+// Stops the drive unless it is stopped, then plays from `startmsec` to `endmsec`
+// unless both are 0; a recorded pause is not cleared. Returns the new status.
+// Logged when MSS_DEBUG tracing is on.
 // FUNCTION: 0x000c7b60
 U32 __cdecl AIL_redbook_play(HREDBOOK hand, U32 startmsec, U32 endmsec)
 {

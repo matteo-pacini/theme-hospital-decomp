@@ -107,13 +107,14 @@
     ret
 .size "_setup_ms_count",.-"_setup_ms_count"
 
-// INT 8 handler. Adds the time since the last interrupt (the PIT period, or
-// the VxD's elapsed time capped at one second) to every running timer and
-// counts each period that has elapsed, acknowledges the PIC and, unless
-// AIL_lock is held, calls the callbacks of the 15 user timers once per elapsed
-// period with their user values, on a private stack. The 16th timer stands
-// for the BIOS clock: its elapsed periods chain to the previous INT 8 handler.
-// A nested interrupt is only acknowledged.
+// INT 8 handler. Adds the time since the previous interrupt (interrupts since
+// then times the PIT period, or the VxD's elapsed time; at most one second, and
+// one PIT period on the first call) to every running timer and counts each
+// period that has elapsed, acknowledges the PIC and, unless AIL_lock is held,
+// calls the callbacks of the 15 user timers once per elapsed period with their
+// user values, on a private stack. The 16th timer stands for the BIOS clock:
+// while it has a period due, the interrupt consumes one and chains to the
+// previous INT 8 handler. A nested interrupt is only acknowledged.
 // FUNCTION: 0x000de04a
 
 .section _TEXT,"ax",@progbits,unique,909386
@@ -316,9 +317,9 @@
     ret
 .size "_set_PIT_period",.-"_set_PIT_period"
 
-// Sets the PIT to the shortest period among the allocated timers, if that
-// changed, then clears every timer's accumulated time and rebases the
-// millisecond count.
+// If the shortest period among the allocated timers changed, programs the PIT
+// for it, clears every timer's accumulated time and rebases the millisecond
+// count; otherwise does nothing.
 // FUNCTION: 0x000de246
 
 .section _TEXT,"ax",@progbits,unique,909894
@@ -593,8 +594,9 @@
 .size "_thunk_proc",.-"_thunk_proc"
 
 // Routes hardware interrupt `IRQ` in protected mode to the 16-bit driver ISR at
-// offset `ISR_offset` of the real-mode segment in `real_base`'s high word:
-// creates code, data and stack descriptors, patches thunk_proc with them and
+// offset `ISR_offset` from real-mode address `real_base` (segment:offset):
+// creates the driver's code and data descriptors, a stack descriptor and a
+// 32-bit code descriptor for thunk_proc, patches thunk_proc with them and
 // installs it, saving the old vector. Only one such ISR can be installed;
 // further calls do nothing until AIL_restore_USE16_ISR.
 // FUNCTION: 0x000de499
@@ -1175,8 +1177,8 @@
     ret
 .size "_AIL_API_stop_all_timers",.-"_AIL_API_stop_all_timers"
 
-// Sets timer `timer`'s period to `microseconds`, restarting its count, and
-// reprograms the PIT for the shortest period in use.
+// Sets timer `timer`'s period to `microseconds`, clearing its accumulated time,
+// and reprograms the PIT if the shortest period in use changed.
 // FUNCTION: 0x000de977
 
 .section _TEXT,"ax",@progbits,unique,911735

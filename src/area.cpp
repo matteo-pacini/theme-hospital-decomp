@@ -52,7 +52,7 @@ void swap_game_sprites(TbScreenMode mode);
 // briefing's map screens (next_map) until they are done, 3 types out the
 // briefing text, 4 shows the debug level list, 5 the text while any level can
 // be picked (process_mouse_area_select), and 2 loads level_number and starts
-// the game (display_mode 0). Returns 0 if the loading screen could not be
+// the game (display_mode DM_GAME). Returns 0 if the loading screen could not be
 // shown, else 1.
 // FUNCTION: 0x00068a80
 u8 draw_area_select(void)
@@ -103,7 +103,7 @@ u8 draw_area_select(void)
         area.state = 0;
         advisor.tutorial_step = 0x1d;
         display_mode = DM_GAME;
-        othervar.f33 = 0;
+        othervar.unused_set_at_level_start = 0;
         LbScreenClear(0);
         swap_game_sprites(resvars.game_mode);
         if (resvars.game_mode == SCREEN_MODE_1) {
@@ -299,7 +299,7 @@ void display_area_select(void)
     lbDisplay.draw_flags = 0;
 }
 
-// Debug level list: draws level.l0 to level.l119 in six columns, greyed when
+// Debug level list: draws level.l0 to level.l119 in six columns, green when
 // the file is missing, and starts the level clicked (state 2). Levels above 14
 // use town 1.
 // FUNCTION: 0x000694e8
@@ -359,7 +359,7 @@ void display_select_level(void)
 }
 
 // Plays level level_no's briefing video (animation_table index level_no + 7)
-// full screen, then restores the saved screen.
+// full screen, then copies the back buffer into bscreen.
 // FUNCTION: 0x00069770
 void play_area_smk(const u8 level_no)
 {

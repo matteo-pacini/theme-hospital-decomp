@@ -512,7 +512,7 @@ void do_charts(void)
 }
 
 // Runs one frame of the year end, by year_end_type: 0 sets it up and pauses
-// the game, 1 the hall of fame, 2 the year charts, 4 checks for winning or
+// the game, 1 the hall of fame, 2 the year charts, 3 moves on to 4, 4 checks for winning or
 // losing and returns to the game, 5-7 the win or lose sequence.
 // FUNCTION: 0x00012274
 void do_year_end(void)
@@ -571,7 +571,7 @@ void draw_pause_mode(void)
 }
 
 // Network game: tells the others when this player's game window gains or
-// loses focus, switching to the lost focus display (display_mode 13) and
+// loses focus, switching to the lost focus display (DM_LOST_FOCUS) and
 // pausing or resuming the music.
 // FUNCTION: 0x00012400
 void check_if_active(void)

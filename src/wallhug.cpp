@@ -29,8 +29,8 @@ u32 wallhug_add_huggers_path(wallhug_path *path, wallhug_hugger *hugger);
 void wallhug_hugstep(wallhug_hugger *hugger);
 }
 
-// Starts stepping a straight orthogonal line from `from` to `to`
-// (Bresenham, in the globals dx, dy, bresval, x_dirn, y_dirn).
+// Starts stepping a line from `from` to `to` in orthogonal unit steps
+// (Bresenham, in the globals dx, dy, bresval, x_dirn, y_dirn, x_longer).
 // FUNCTION: 0x00048960
 void bresenham_start(wallhug_waypoint from, wallhug_waypoint to)
 {
@@ -138,9 +138,10 @@ u32 line_of_sight_cleanup(wallhug_path *path, u32 first)
     return changed;
 }
 
-// Smooths path: removes skippable waypoints, then replaces corners with
-// shorter detours found by wallhug_trivial (up to ten rounds). Returns
-// result unchanged.
+// Smooths path: removes skippable waypoints, then replaces a waypoint with
+// the route wallhug_trivial finds between its neighbours when that route does
+// not pass through it, and starts again (up to ten rounds). Returns result
+// unchanged.
 // FUNCTION: 0x00048c78
 u32 wallhug_cleanup(wallhug_path *path, u32 result)
 {

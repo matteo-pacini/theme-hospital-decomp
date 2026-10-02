@@ -198,13 +198,13 @@ void format_advisor_text(u8 segments)
 
 // Draws and animates the advisor character for advisor.anim_state (its animation
 // state), first bringing it on screen if advice is pending (advisor.advice_id). Idle
-// states occasionally switch to a special animation; looping states move to
-// next_advisor_state when their animation ends.
+// states (2, 3) occasionally switch to a special animation; the other states
+// except 7 move to next_advisor_state when their animation ends.
 // FUNCTION: 0x000b242c
 void advisor_character(void)
 {
     CompFrame *f;
-    s32 loop;
+    s32 advance_at_end;
     u32 speed;
 
     speed = 0;
@@ -220,13 +220,13 @@ void advisor_character(void)
     case 8:
         redraw_panel = 1;
         speed = 1;
-        loop = 1;
+        advance_at_end = 1;
         advisor.state_advanced = 0;
         break;
     case 9:
     case 10:
         speed = 4;
-        loop = 1;
+        advance_at_end = 1;
         break;
     case 2:
         advisor.state_advanced = 0;
@@ -237,7 +237,7 @@ void advisor_character(void)
         }
     case 7:
         speed = 2;
-        loop = 0;
+        advance_at_end = 0;
         break;
     }
     if (speed) {
@@ -247,7 +247,7 @@ void advisor_character(void)
         if (actual_game_turn % speed == 0 && !gamevar.paused) {
             advisor.anim_frame = frame[advisor.anim_frame].next;
             f = &frame[advisor.anim_frame];
-            if (loop && (f->flags & 1)) {
+            if (advance_at_end && (f->flags & 1)) {
                 advisor.anim_state = next_advisor_state[advisor.anim_state];
                 advisor.anim_frame = start[advisor_anims[advisor.anim_state]].frame;
             }

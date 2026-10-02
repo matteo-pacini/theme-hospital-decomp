@@ -68,7 +68,7 @@ void __cdecl AIL_mem_free_lock(void *ptr)
 // Allocates `n_paras` paragraphs of DOS memory (DPMI 0100h) and locks them. On
 // success stores its linear address in `*protected_ptr`, its real-mode far
 // pointer (segment:0) in `*segment_far_ptr` and its selector in `*selector`,
-// and returns 1; returns 0 if DOS memory is short.
+// and returns 1; returns 0 if the DPMI call fails.
 // FUNCTION: 0x000ddac0
 S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
                               U32 *segment_far_ptr, U32 *selector)
@@ -176,7 +176,8 @@ S32 __cdecl AIL_file_error(void)
 }
 
 // Returns the size of file `filename` in bytes, or -1 if it cannot be opened
-// (AIL_file_error then gives AIL_FILE_NOT_FOUND).
+// (AIL_file_error then gives AIL_FILE_NOT_FOUND) or the seek to its end fails
+// (AIL_CANT_READ_FILE).
 // FUNCTION: 0x000ddd20
 S32 __cdecl AIL_file_size(char *filename)
 {

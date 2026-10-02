@@ -74,7 +74,8 @@ u16 find_unallocated_bed(RoomInfo *room)
 // Nurse working in a ward. Substate 0: leaves for a break, the pager,
 // vaccinations or an evacuation as needed; otherwise calls the next queued
 // patient to a free bed, or visits the desk, a patient in bed, or a random
-// spot. Substate 1: waits for the called patient and puts them to bed.
+// spot. Substate 1: waits for the called patient and puts them to bed,
+// applying a diagnosis step (affect_diagnosis).
 // FUNCTION: 0x0006c8d8
 void nurse_in_ward(Thing *nurse)
 {
@@ -85,9 +86,9 @@ void nurse_in_ward(Thing *nurse)
     int cur;
     int target;
     int bed;
-    u32 obj;
+    u32 desk;
 
-    obj = find_object(nurse->x.tile + (nurse->y.tile << 7), OBJ_DESK, 0, 0x97, nurse->owner);
+    desk = find_object(nurse->x.tile + (nurse->y.tile << 7), OBJ_DESK, 0, 0x97, nurse->owner);
     switch (nurse->substate) {
     case 0:
         nurse->room->state == RS_EDITED ? 0 : (nurse->room->state = 1);
@@ -127,8 +128,8 @@ void nurse_in_ward(Thing *nurse)
                 }
             }
         }
-        if (obj > 0 && nurse->work_target != obj && old_newrand() % 100 < 10) {
-            nurse->work_target = obj;
+        if (desk > 0 && nurse->work_target != desk && old_newrand() % 100 < 10) {
+            nurse->work_target = desk;
             set_complex(nurse, 0x168, 0);
             nurse->next_state = SS_NURSE_IN_WARD;
             process_staff_complex(nurse);

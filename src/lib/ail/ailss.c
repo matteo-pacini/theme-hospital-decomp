@@ -95,7 +95,8 @@ void __cdecl SS_stop_DIG_driver_playback(HDIGDRIVER dig)
 
 // Mixes playing sample `S` into its driver's build buffer until the buffer is
 // full. Handles loops (loop_count 0 = forever, loop_end -1 = end of data),
-// calls SOB before each piece and EOB at each end of data, and for a
+// calls SOB before each piece and EOB each time the loop end or the end of the
+// data is reached, and for a
 // double-buffered sample moves on to the other buffer if it is loaded and
 // unplayed, else flags the sample starved. When the data runs out the sample is
 // done and EOS is called.
@@ -308,8 +309,9 @@ void SS_SERVE(U32 user)
 // Chooses `dig`'s hardware format (the supported one nearest the DIG_USE_STEREO
 // and DIG_USE_16_BITS preferences), DMA rate (from DIG_HARDWARE_SAMPLE_RATE: 0
 // minimum, 1 nominal, 2 maximum, else the closest of the three) and DMA
-// half-buffer size (DIG_LATENCY rounded to a power of two, clamped to the
-// driver's limits), and places the two halves in the DMA buffer. Playing
+// half-buffer size (DIG_LATENCY milliseconds of output rounded to the nearest
+// power of two from 8 to half of DIG_DMA_RESERVE, then clamped to the driver's
+// limits), and places the two halves in the DMA buffer. Playing
 // samples are suspended around the change. Returns 1, or 0 with AIL_error set
 // if the driver's minimum buffer is too large for VDM execution.
 // FUNCTION: 0x000e0120
@@ -959,7 +961,7 @@ S32 __cdecl AIL_API_sample_volume(HSAMPLE S)
     return S->volume;
 }
 
-// Sets `S`'s volume (0-127) and rebuilds its scaling.
+// Sets `S`'s volume (0-127), rebuilding its scaling if it changed.
 // FUNCTION: 0x000e1140
 void __cdecl AIL_API_set_sample_volume(HSAMPLE S, S32 volume)
 {
@@ -982,7 +984,7 @@ S32 __cdecl AIL_API_sample_pan(HSAMPLE S)
     return S->pan;
 }
 
-// Sets `S`'s pan (0 left - 127 right) and rebuilds its scaling.
+// Sets `S`'s pan (0 left - 127 right), rebuilding its scaling if it changed.
 // FUNCTION: 0x000e1170
 void __cdecl AIL_API_set_sample_pan(HSAMPLE S, S32 pan)
 {

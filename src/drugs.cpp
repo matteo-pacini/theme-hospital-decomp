@@ -28,7 +28,7 @@ void display_drugs(void)
     u8 unused18;
     u8 no_room;
     u8 unavailable;
-    u8 low_fee;
+    u8 weak_drug;
     u8 i;
     u8 unused28;
     u8 unused24;
@@ -51,12 +51,12 @@ void display_drugs(void)
     unused18 = 0;
     no_room = 0;
     unavailable = 0;
-    low_fee = 0;
+    weak_drug = 0;
     unused30 = 0;
     compute_help_text(0, 0, 0xe);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    othervar.f8b6 = 0;
+    othervar.concentrate_help_on = 0;
     switch (drugs.state) {
     case 0:
         fade_out_menu();
@@ -204,7 +204,7 @@ void display_drugs(void)
                 lbDisplay.draw_flags = 0x100;
                 LbTextDraw(0, 0, buf);
                 if (value < 100) {
-                    low_fee = 1;
+                    weak_drug = 1;
                 }
                 LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
                 lbDisplay.draw_flags = 0;
@@ -404,8 +404,8 @@ void process_drug_keys(void)
 }
 
 // Casebook button action: 0 price up, 1 price down, 2 previous illness, 3
-// next illness, 4 close, 5 make the illness a research concentration (event
-// 0x72).
+// next illness, 4 close, 5 make the illness a research concentration
+// (EV_CONCENTRATE_RESEARCH).
 // FUNCTION: 0x00013bc4
 void process_drug_button(u8 action)
 {
@@ -506,11 +506,12 @@ void setup_drug(u16 hospital, u16 illness)
 }
 
 // Help text callback: the hovered casebook item's help, but only while
-// othervar.f8b6 is set, which nothing does (the casebook clears it each frame).
+// othervar.concentrate_help_on is set, which nothing does (the casebook clears
+// it each frame).
 // FUNCTION: 0x0001403c
 void drugs_help_concentrate(void)
 {
-    if (othervar.f8b6) {
+    if (othervar.concentrate_help_on) {
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
     }
 }

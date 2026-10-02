@@ -98,7 +98,7 @@ S32 __cdecl ASC_val(char *str, S32 base, char **end)
 // Reads one line of `file` through `buf` into `dest`, dropping '\r' and the
 // terminating '\n', and NUL-terminates it. Stops after `maxlen` characters (the
 // '\n' counts), so `dest` needs `maxlen` + 1 bytes. Returns the number of
-// characters consumed, 0 at end of file.
+// characters read other than '\r', 0 at end of file.
 // FUNCTION: 0x000ded50
 U32 AIL_fgets(S32 file, INI_BUFFER *buf, char *dest, U32 maxlen)
 {

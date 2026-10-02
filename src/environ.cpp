@@ -240,8 +240,9 @@ void check_around(Thing *person)
 }
 
 // Gives a patient in the corridor (inside the building) a chance to react:
-// plays a pending animation (flags bit 0x200), vomits when nauseous or wets
-// when desperate (each costing health), or rarely plays a fitting idle
+// plays the earthquake reaction (PF_QUAKE_SHAKEN), vomits when nauseous or wets
+// when desperate (each costing health), may be abducted
+// (shall_i_be_abducted), or rarely plays a fitting idle
 // animation from show_anims; may also drop litter. Returns 1 if an animation
 // started, else 0.
 // FUNCTION: 0x00071960

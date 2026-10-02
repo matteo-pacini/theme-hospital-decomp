@@ -21,10 +21,10 @@ extern u8 *game_panel_data, *pulldv_data, *sprite_data, *watch_data, *money_data
 void conv_string(void *dst, char *src, int mode);
 void display_copyright(void);
 
-// No code refers to it, and its type is unknown: its zeros are in _DATA,
-// where a string initialiser puts them (a zero initialiser puts them in
-// _BSS).
-char D_00128f24[0xdc] = "";
+// 0xdc zero bytes at the start of this module's _DATA. No code refers to them,
+// so their type and use are unknown; they are in _DATA, where a string
+// initialiser puts them (a zero initialiser puts them in _BSS).
+char unreferenced_zero_buf[0xdc] = "";
 }
 
 u8 no_cd = 1;
@@ -63,7 +63,7 @@ int main(u16 argc, char **argv)
                     goto next_arg;
                 case 'E':
                 case 'e':
-                    statvar.f5de = 1;
+                    statvar.unused_option_e = 1;
                     break;
                 case 'G':
                 case 'g':
@@ -171,8 +171,8 @@ void init_game_vars(void)
     for (i = 0; save[i].size != 0; i++) {
         statvar.save_game_size += save[i].size;
     }
-    othervar.f16 = 1;
-    statvar.f5dc = 0x40;
+    othervar.unused_set_by_init_game_vars = 1;
+    statvar.unused_set_by_init_game_vars = 0x40;
     advisor.forced_advice_id = 0;
     advisor.advice_id_u = 0;
     advisor.anim_state = 0;

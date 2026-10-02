@@ -276,7 +276,8 @@ u16 find_emptiest_training_room(u8 owner, u16 exclude)
 // consultant's raises it, and gains training points towards the
 // consultant's surgeon, psychiatrist and researcher skills they lack,
 // getting each skill (announced for this player) once past its threshold.
-// More students share the gain.
+// The gain is divided by a quarter of the seated students plus one, and by a
+// count that grows by one for each student met with a skill to learn.
 // FUNCTION: 0x00043434
 void training_done(const Thing *consultant, const u8 kind)
 {

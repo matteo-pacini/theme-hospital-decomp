@@ -86,7 +86,7 @@ struct Rgb {
 
 // Returns the palette index nearest to (r, g, b) (0-63 each): least squared
 // distance, ties broken by the smallest sum of differences, then the
-// darkest.
+// darkest (least 2r^2 + 2g^2 + b^2), then the lowest index.
 // FUNCTION: 0x000c960c
 u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b)
 {

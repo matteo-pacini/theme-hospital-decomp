@@ -105,8 +105,9 @@ void cbfadesample(u32 user)
 }
 
 // Fades the playing sample `number` of source source_id to volume (0-127),
-// by rate (1-5) volume steps per 50 ms tick, ending it when the target is
-// reached if stop_when_done is set. Starts the fade timer if needed.
+// by rate (1-5; other values give 3) volume steps per 50 ms tick, ending it
+// when the target is reached if stop_when_done is set. Does nothing if the
+// sample is already at volume. Starts the fade timer if needed.
 // FUNCTION: 0x000ccfb0
 void FadeSample(u32 source_id, s16 number, s16 volume, u8 rate, u8 stop_when_done)
 {

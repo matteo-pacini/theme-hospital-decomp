@@ -59,7 +59,7 @@
     ret
 .size "int386x_do_int",.-"int386x_do_int"
 
-// _DoINTR: issue interrupt intno with every register, segment register and the flags taken from and stored back to the REGPACK at edx.
+// _DoINTR: issue interrupt intno with every register and segment register taken from the REGPACK at edx, storing them and the resulting flags back.
 // FUNCTION: 0x000ecdbf
 
 .section _TEXT,"ax",@progbits,unique,970175

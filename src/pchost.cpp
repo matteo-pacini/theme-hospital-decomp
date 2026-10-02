@@ -30,9 +30,9 @@ void use_hires_layout(void);
 
 // Starts up the machine side: the 640x480 screen and palette, the language
 // files, sound, keyboard, mouse, the data files and the faces file, and opens
-// the PLAY.R<n> replay file for the -R/-P switches. Returns 1 on failure with
-// error_number set, else 0 (also, early, if the loading screen cannot be
-// shown).
+// the PLAY.R<n> replay file for the -R/-P switches. Returns 1 on failure (with
+// error_number set, except when the screen cannot be set up), else 0 (also,
+// early, if the loading screen cannot be shown).
 // FUNCTION: 0x000107c0
 u8 setup_host(void)
 {
@@ -62,8 +62,8 @@ u8 setup_host(void)
     }
     LbDataLoadAll(hiresgamepointerfiles);
     LbSpriteSetup(pointer, end_pointers, pointer_data);
-    statvar.unknowne6 = 0x1c;
-    statvar.unknowne7 = 0x1f;
+    statvar.unused_layout_value_0 = 0x1c;
+    statvar.unused_layout_value_1 = 0x1f;
     resvars.tile_height = 0x20;
     resvars.tile_width = 0x40;
     resvars.tile_width = 0x40;
@@ -339,8 +339,8 @@ void use_lores_help_and_fonts(void)
 void use_hires_layout(void)
 {
     statvar.view_height = lbScreenModeInfo[SCREEN_MODE_13].height - 0x30;
-    statvar.unknowne6 = 0x1c;
-    statvar.unknowne7 = 0x1f;
+    statvar.unused_layout_value_0 = 0x1c;
+    statvar.unused_layout_value_1 = 0x1f;
     resvars.game_mode = SCREEN_MODE_13;
     resvars.screen_mode = SCREEN_MODE_13;
     resvars.boxes_u8p = HiresBoxes;

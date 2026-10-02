@@ -497,8 +497,10 @@ TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
 // data, 2 add player, 4 delete player, 0x10 / 0x20 requests for exchange or
 // composite data, 0x40 one-way, 0x80 system, 0x100 type 8; 8 all), calling
 // the callbacks. Stops after a data or one-way message, or at an
-// unselected kind (left waiting). Returns Lb_FAIL if not started or a read
-// failed, else Lb_OK.
+// unselected kind (left waiting). A waiting message of type 3 or an unknown
+// type, or of type 8 when unselected or without its callback, is never read,
+// so the loop keeps peeking it. Returns Lb_FAIL if not started or reading a
+// data or one-way message failed, else Lb_OK.
 // FUNCTION: 0xd1e24
 // NONMATCHING: the inlined DecodeMessageStub swaps ecx/edx (buffer and sequence pointer); its jump table sits in the preceding range
 TbError ServiceProvider::Receive(u32 flags)
@@ -535,11 +537,11 @@ TbError ServiceProvider::Receive(u32 flags)
             switch (type) {
             case MSG_TYPE_8:
                 if (flags & RECV_MSG_TYPE_8) {
-                    if (callbacks->unknown24) {
+                    if (callbacks->msgType8Msg) {
                         dst = __op_new_array(msg_size + 4);
                         size = msg_size + 4;
                         ReadMessage(&from, dst, &size);
-                        callbacks->unknown24(from, dst);
+                        callbacks->msgType8Msg(from, dst);
                     }
                 }
                 break;
@@ -663,8 +665,8 @@ TbError ServiceProvider::Receive(u32 flags)
 }
 
 // Sends message buf to player to: messages to this machine's own player are
-// handled at once; others go out guaranteed except exchange data and its
-// requests. Returns Lb_OK, or Lb_FAIL.
+// handled at once; others go out guaranteed except exchange data, its
+// requests and type 8. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd25ac
 TbError ServiceProvider::Send(u32 to, void *buf)
 {
@@ -687,8 +689,8 @@ TbError ServiceProvider::Send(u32 to, void *buf)
         dst = 0;
         switch (type) {
         case MSG_TYPE_8:
-            if (callbacks->unknown24)
-                callbacks->unknown24(player_id, buf);
+            if (callbacks->msgType8Msg)
+                callbacks->msgType8Msg(player_id, buf);
             break;
         case MSG_TYPE_MULTIPLAYER:
             if (callbacks->multiPlayer)

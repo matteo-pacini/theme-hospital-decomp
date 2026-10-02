@@ -3,7 +3,8 @@
 #pragma intrinsic(strlen)
 
 size_t lib_strlen(const char *s);
-/* config/functions.txt has no name for strlen. */
+/* Defined under another name so that the strlen in its body is the
+   intrinsic. */
 #pragma aux lib_strlen "strlen_"
 
 // strlen: length of s, excluding the terminator.

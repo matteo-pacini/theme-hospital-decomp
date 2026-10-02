@@ -265,8 +265,8 @@ void research_contribution(Thing *researcher, s16 amount)
         allhosps[researcher->owner].research_points = 0;
 }
 
-// Sends a dead patient to the nearest autopsy room (via queue) and pages
-// its staff.
+// Sends patient to the research room for an autopsy (get_expertise_dest for
+// ILL_AUTOPSY, via its queue) and pages its staff.
 // FUNCTION: 0x0006db78
 void send_person_for_research(Thing *patient)
 {
@@ -509,7 +509,7 @@ void research_category_exhausted(const u8 owner, const u8 category)
     if (owner == player) {
         announce_this(ANN_CATEGORY_DONE, category);
         othervar.research_exhausted = 1;
-        othervar.fa85 = 10;
+        othervar.unused_set_by_research_category_exhausted = 10;
         play_sound(SNDSRC_GENERAL, SFX_RESEARCH_EXHAUSTED, -1, -1);
     }
 }

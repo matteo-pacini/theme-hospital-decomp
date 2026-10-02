@@ -25,7 +25,10 @@ extern TbSprite *screen_pointers_tab_end;
 extern Picture loaded_face;
 extern u8 *palette;
 extern u8 redraw_panel;
-extern PicLengths D_0017526c;
+// Initialiser of load_ingame_pic's local `len`, of the kind the compiler
+// generates for an initialised local struct: all zero, copied into `len` on
+// entry.
+extern PicLengths load_ingame_pic_len_init;
 
 int LbScreenLock(void);
 u8 *cache_block_data(TbCacheUsedBlock *block);
@@ -131,7 +134,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
 // FUNCTION: 0x000b7648
 void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 map, TbScreenMode mode)
 {
-    PicLengths len = D_0017526c;
+    PicLengths len = load_ingame_pic_len_init;
     u8 was_locked;
     char name[144];
     u8 *dest;

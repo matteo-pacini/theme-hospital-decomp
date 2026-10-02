@@ -15,8 +15,9 @@ void post_shop_readjust_build_palette(void);
 u8 does_room_contain_compulsory_objects(RoomInfo *room);
 
 // Edit room requester clicks on the enabled buttons (crequester.arg
-// marks the disabled ones): cancel aborts building, one button sends event
-// 0x5b, one switches to picking up objects (mode 8), and confirm commits the
+// marks the disabled ones): cancel aborts building, one button sends
+// EV_FURNISH_EDITED_ROOM, one switches to picking up objects (MM_PICK_UP_OBJECT,
+// requester mode 8), and confirm commits the
 // current step (blueprint, doors, or opens the room).
 // FUNCTION: 0x0009f0c0
 void req14(Window *win)

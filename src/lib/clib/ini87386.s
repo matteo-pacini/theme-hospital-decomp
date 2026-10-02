@@ -259,7 +259,7 @@
     ret
 .size "pharlap_remove_emu",.-"pharlap_remove_emu"
 
-// pharlap_restore_cr0: Phar Lap 2535h: write CR0 back with its original EM/MP bits.
+// pharlap_restore_cr0: Phar Lap 2535h: read the system registers, set the CR0 slot to just the saved EM/MP bits and write them back.
 // FUNCTION: 0x000ef2e2
 
 .section _TEXT,"ax",@progbits,unique,979682

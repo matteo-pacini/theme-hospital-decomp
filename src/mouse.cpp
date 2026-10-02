@@ -286,10 +286,12 @@ void process_mouse(void)
     }
 }
 
-// Left click. icon 0x27 is the map: by mouse mode (gamevar.mouse_mode) it opens
-// the clicked thing's window or call, sends the blueprint, door, staff and
-// object placement events, or toggles vaccination; any other icon is a panel
-// button (panel_l_button).
+// Left click. icon 0x27 is the map: by mouse mode (gamevar.mouse_mode) it
+// presses the watch buttons, opens the clicked thing's window, queue or call,
+// shoots a rat, offers to poach another player's staff member, sends the
+// blueprint, door, staff and object placement events, picks up or edits
+// rooms' objects, moves a queued person, or toggles vaccination; any other
+// icon is a panel button (panel_l_button).
 // FUNCTION: 0x0005a750
 void process_left_button(u16 icon)
 {
@@ -647,10 +649,12 @@ void process_mright_button(u16 icon)
     }
 }
 
-// Right click. On the map: the emergency/epidemic watch buttons jump to the
-// next such patient; otherwise picks up the staff member or object under the
-// pointer, rotates the object being placed, or cancels the current mode (as
-// key 1, Escape). Other icons go to panel_r_button.
+// Right click (ignored in the rat game). On the map: the emergency/epidemic
+// watch buttons open the next such patient's window; otherwise picks up the
+// staff member or object under the pointer, dismisses the advisor, rotates
+// the object being placed, sends the door placement event, cancels editing a
+// room that is emptying, or cancels the current mode or requester (as key 1,
+// Escape). Other icons go to panel_r_button.
 // FUNCTION: 0x0005b95c
 void process_right_button(u16 icon)
 {

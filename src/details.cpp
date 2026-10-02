@@ -72,7 +72,7 @@ void set_default_player_details(void)
     myplayer.game_speed = 0x19;
     myplayer.speed_choice = 2;
     myplayer.years_played = 0;
-    myplayer.fb = 0;
+    myplayer.unused_set_by_set_default_player_details = 0;
     myplayer.shadows_on = 1;
     myplayer.autosave = 1;
     LbMemorySet(myplayer.room_help_seen, 0x1e, 0);

@@ -94,7 +94,7 @@ void draw_town_select(void)
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         setup_abort_all_requesters();
         othervar.pending_heating_level = myhosp->heating_level;
-        othervar.f6b_u32 = 0x32;
+        othervar.unused_set_with_heating_level_u32 = 0x32;
         load_ingame_pic(SCR_TOWN, 1, 0xa, level_number, SCREEN_MODE_13);
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -139,9 +139,9 @@ void draw_town_select(void)
     case 0xb:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         othervar.pending_heating_level = 1;
-        othervar.f6b_u32 = 0;
+        othervar.unused_set_with_heating_level_u32 = 0;
         othervar.pending_heating_level = myhosp->heating_level;
-        othervar.f6b_u32 = 0x32;
+        othervar.unused_set_with_heating_level_u32 = 0x32;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         town.value = 3;
@@ -212,7 +212,8 @@ void process_keys_town_select(void)
 
 // Town map clicks: the panel buttons, a left click on a plot for sale buys
 // it if affordable (EV_BUY_LAND, or an auction in a network game), and a
-// right click elsewhere centres the view there and closes the map.
+// right click centres the view on that tile and closes the map, unless that
+// would pass the scroll limits.
 // FUNCTION: 0x00063ae8
 void process_mouse_town_select(void)
 {
@@ -320,7 +321,7 @@ u16 check_for_sale(void)
     return 0;
 }
 
-// Draws the hospital's walls (all but the 0x8e-0x91 kinds) onto the town
+// Draws the map's walls (kinds below 0x95, except 0x8e-0x91) onto the town
 // map.
 // FUNCTION: 0x00064030
 void display_hospital_map_overhead(void)
@@ -569,7 +570,8 @@ void remove_partition_walls(void)
 // With flag set, drops already-sold plots from the level's plot map.
 // Otherwise rebuilds the map from the level: the public land and each
 // player's starting plot, everything else blank with grass and random
-// decorations, then the partition walls and shadow blocks.
+// decorations. Both then place the partition walls, and the rebuild
+// precalculates the shadow blocks.
 // FUNCTION: 0x0006541c
 void recreate_map(const u8 flag)
 {
@@ -1101,7 +1103,7 @@ void process_town_button(u8 button)
             player_events[player].type = EV_SET_HEATING;
             player_events[player].value = (u16)myhosp->heating_level + 1;
             othervar.pending_heating_level = myhosp->heating_level + 1;
-            othervar.f6b = 0x32;
+            othervar.unused_set_with_heating_level = 0x32;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         othervar.heat_icon_time = 0x1e;
@@ -1111,7 +1113,7 @@ void process_town_button(u8 button)
             player_events[player].type = EV_SET_HEATING;
             player_events[player].value = (u16)myhosp->heating_level - 1;
             othervar.pending_heating_level = myhosp->heating_level - 1;
-            othervar.f6b = 0x32;
+            othervar.unused_set_with_heating_level = 0x32;
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         othervar.heat_icon_time = 0x1e;

@@ -3,7 +3,7 @@
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 
-u8 load_sound_bank(long file, u8 bank);
+u8 load_sound_bank(long file, u8 type);
 
 extern "C" {
 
@@ -115,13 +115,15 @@ void format_sounds(void)
     }
 }
 
-// Reads bank `bank` (SoundType index 0-8) of the open sound file at its
-// current position into the sample buffers, unpacking RNC data. Returns 1,
-// or 0 if the bank is missing or the buffers are not allocated.
+// Reads the bank whose nine per-type headers are at the open sound file's
+// current position, taking the version for `type` (SoundType index 0-8),
+// into the sample buffers, unpacking RNC data. Returns 1, or 0 if that type
+// is missing (data_offset -1) or the buffers are not allocated; SoundAble
+// is cleared while loading and stays 0 in the latter case.
 // FUNCTION: 0xf0280
-// NONMATCHING: the else branches compute head[bank] into the argument register
+// NONMATCHING: the else branches compute head[type] into the argument register
 // (ebx/edx) and load file into eax first; ours goes through eax
-u8 load_sound_bank(long file, u8 bank)
+u8 load_sound_bank(long file, u8 type)
 {
     BankHead head[9];
     u8 *data;
@@ -130,15 +132,15 @@ u8 load_sound_bank(long file, u8 bank)
 
     LbFilePosition(file);
     LbFileRead(file, head, sizeof(head));
-    if (head[bank].data_offset != -1) {
+    if (head[type].data_offset != -1) {
         SoundAble = 0;
         if (SfxData && Sfx) {
             memset(SfxData, 0, largest_dat_size);
             memset(Sfx, 0, largest_tab_size);
             tab = (u8 *)Sfx;
-            EndSfxs = (SoundBankEntry *)(tab + head[bank].tab_size);
+            EndSfxs = (SoundBankEntry *)(tab + head[type].tab_size);
             data = SfxData;
-            LbFileSeek(file, head[bank].data_offset, 0);
+            LbFileSeek(file, head[type].data_offset, 0);
             LbFileRead(file, SfxData, 8);
             if (data[0] == 'R' && data[1] == 'N' && data[2] == 'C') {
                 packed_size = data[4];
@@ -148,9 +150,9 @@ u8 load_sound_bank(long file, u8 bank)
                 LbFileRead(file, SfxData + 8, packed_size - 8);
                 UnpackM1(data, data);
             } else {
-                LbFileRead(file, SfxData + 8, head[bank].data_size - 8);
+                LbFileRead(file, SfxData + 8, head[type].data_size - 8);
             }
-            LbFileSeek(file, head[bank].tab_offset, 0);
+            LbFileSeek(file, head[type].tab_offset, 0);
             LbFileRead(file, Sfx, 8);
             if (tab[0] == 'R' && tab[1] == 'N' && tab[2] == 'C') {
                 packed_size = tab[4];
@@ -160,7 +162,7 @@ u8 load_sound_bank(long file, u8 bank)
                 LbFileRead(file, (u8 *)Sfx + 8, packed_size - 8);
                 UnpackM1(tab, tab);
             } else {
-                LbFileRead(file, (u8 *)Sfx + 8, head[bank].tab_size - 8);
+                LbFileRead(file, (u8 *)Sfx + 8, head[type].tab_size - 8);
             }
             format_sounds();
             SoundAble = 1;
@@ -170,8 +172,9 @@ u8 load_sound_bank(long file, u8 bank)
     return 0;
 }
 
-// Allocates the sample buffers for sound type `type`'s banks, sized from the
-// end of SOUND.DAT. Returns 1, 0 if memory ran out, -1 if there is no
+// Sets full_sound_data_path to <SoundDataPath>/SOUND.DAT and allocates the
+// sample buffers for sound type `type`'s banks, sized from the end of that
+// file. Returns 1, 0 if memory ran out, -1 if there is no
 // SOUND.DAT, -2 if it has no bank of that type.
 // FUNCTION: 0xf04a0
 s32 AllocateSoundBankMemory(u16 type)

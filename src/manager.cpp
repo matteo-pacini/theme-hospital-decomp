@@ -72,7 +72,8 @@ void display_manager(void)
         manager.state = 2;
 }
 
-// Draws the bank manager's figures: balance, loan, interest, the three
+// Draws the bank manager's figures: hospital value, balance, loan, monthly
+// interest, the three
 // insurance companies' yearly totals and the rates; with manager.value
 // set (1-3), the chosen company's monthly payments as a line graph.
 // FUNCTION: 0x0007e42c

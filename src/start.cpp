@@ -95,7 +95,8 @@ extern "C" void start_game(void)
     }
 }
 
-// Starts level `level` (1-14; others play as 1) for this player: clears the
+// Starts level `level` for this player (above 14 the hospital's level is set
+// to 1, though the balance and level files still load by `level`): clears the
 // game state (keeping the hospital's name, level, player_type and
 // score), reloads the balance files if reload_balance is set, loads the
 // map, builds a rat or training level, and sets up the players, staff,
@@ -104,7 +105,7 @@ extern "C" void start_game(void)
 void setup_new_level(int level, u8 reload_balance)
 {
     u32 i;
-    u8 saved_fa75;
+    u8 saved_level_after_bonus;
     AllHosps backup;
 
     myhosp = &allhosps[player];
@@ -119,7 +120,7 @@ void setup_new_level(int level, u8 reload_balance)
     if (reload_balance)
         load_balance(level);
     copy_my_hosp(&backup, myhosp);
-    saved_fa75 = othervar.level_after_bonus;
+    saved_level_after_bonus = othervar.level_after_bonus;
     myplayer.years_played += mycontrol->year;
     memset(thing, 0, 0x40164);
     memset(map, 0, 0x20000);
@@ -138,7 +139,7 @@ void setup_new_level(int level, u8 reload_balance)
     LbMemorySet(&NRAdcounts, 0, 0x11);
     if ((u16)level != 1)
         LbMemorySet(advisor.advice_id_bytes, 0, 0x133);
-    othervar.level_after_bonus = saved_fa75;
+    othervar.level_after_bonus = saved_level_after_bonus;
     for (i = 0; i < 9; i++)
         popup_id[i] = 1;
     mycontrol->day = 1;
@@ -161,7 +162,7 @@ void setup_new_level(int level, u8 reload_balance)
     for (i = 0; i < 4; i++)
         init_player(i);
     othervar.full_redraw = 1;
-    othervar.f33 = 1;
+    othervar.unused_set_at_level_start = 1;
     calc_visitors_this_month();
     adcounts.patients = 1;
     mycontrol->statement_balance = myhosp->year_start_balance;
@@ -230,8 +231,9 @@ void load_balance(const u16 level)
 
 // Turns the illness weights read from the balance file into cumulative
 // tables (visuals, non_visuals; every non-visual illness if none is set),
-// lists the illnesses in play in all_illnesses and makes their treatment
-// machines researchable.
+// lists in all_illnesses the visual illnesses with a weight and every
+// non-visual one, and makes the listed visual illnesses' treatment objects
+// available for the level.
 // FUNCTION: 0x00090dd4
 void balance_control(void)
 {
@@ -349,7 +351,7 @@ void init_player(u8 owner)
     hosp->rest_threshold = gbv.tired;
     hosp->staff_leave_rooms = 1;
     hosp->insurance_accepted = 7;
-    hosp->unknown20f[6] = 1;
+    hosp->unused_set_by_init_player = 1;
     if (!(!gbv.open_countdown || statvar.num_players > 1 || gamevar.rat_fest_level)) {
         if (statvar.num_players <= 1)
             hosp->hospital_open = 0;

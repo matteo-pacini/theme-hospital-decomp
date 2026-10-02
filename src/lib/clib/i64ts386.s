@@ -41,7 +41,7 @@
     ret
 .size "__CmpBigInt",.-"__CmpBigInt"
 
-// __Rnd2Int: round the double at eax to a 64-bit integer (half to even) stored at edx.
+// __Rnd2Int: round the non-negative double at eax to a 64-bit integer (half to even) stored at edx.
 // FUNCTION: 0x000fcfc0
 
 .section _TEXT,"ax",@progbits,unique,1036224

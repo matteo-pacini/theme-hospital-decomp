@@ -540,8 +540,9 @@ void thingpage_cancel_my_response(ThingPager *p, Thing *handyman)
     }
 }
 
-// Sends handyman to repair the most urgent machine paged (by their repair
-// priority), into its room (substate 8). Returns 1 if one was taken.
+// Sends handyman to repair the most urgent machine paged, if its page's
+// priority is at least (100 - prio_repair) * 3 / 4, into its room (substate
+// 8). Returns 1 if one was taken.
 // FUNCTION: 0x0007c488
 u8 handyman_try_fix(Thing *handyman)
 {

@@ -25,18 +25,18 @@ short DPMILockLinearRegion(long linear, long size);
     value [ax] \
     modify [ebx ecx esi edi];
 
-// __CommonInit: startup init; sets _amblksiz to 32K and, under a non-zero-based DPMI host, locks the __GETDS code region.
+// __CommonInit: startup init; sets _amblksiz to 32K and, unless running under Phar Lap (_Extender 2-8), locks the __GETDS code region when a DPMI host is present.
 // FUNCTION: 0xec934
 void __CommonInit(void)
 {
-    int not_zero_based;
+    int not_pharlap;
 
     _amblksiz = 32 * 1024;
     if ((int)_Extender < 2 || (int)_Extender > 8)
-        not_zero_based = 1;
+        not_pharlap = 1;
     else
-        not_zero_based = 0;
-    if (not_zero_based) {
+        not_pharlap = 0;
+    if (not_pharlap) {
         if (__DPMI_hosted() == 1)
             DPMILockLinearRegion((long)__GETDS, __GETDSEnd - (char *)__GETDS);
     }

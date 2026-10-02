@@ -177,8 +177,8 @@ void req11_sell_object(const u16 idx, const s32 amount)
 
 // Buys (button 1) or sells back (2) amount of the selected object, 1, 5 with
 // Shift or 10 with Ctrl, through EV_BUY_OBJECT / EV_SELL_OBJECT, if the
-// player can afford it or has that many. idx is the list entry clicked,
-// which must not be empty.
+// player can afford it or has that many; else plays the error sound. idx is
+// the list entry clicked: an empty one only plays the error sound.
 // FUNCTION: 0x0009d164
 void clicked_buy_objects(const s32 idx, const u8 button)
 {

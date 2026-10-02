@@ -59,8 +59,8 @@ void LbTextSetClipWindow(u32 x, u32 y, u32 width, u32 height);
 
 // Builds the pull-down menu bar from pulldown_text (titles up to ".", then
 // each menu's items up to ".", the last ending with ".."): sets each menu's
-// item count and width, numbers the submenus and the font metrics. Call after
-// a resolution change.
+// item count and width, the font metrics (line height, character width), and
+// numbers the submenus. Call after a resolution change.
 // FUNCTION: 0x00089df0
 void setup_menus(void)
 {
@@ -480,7 +480,7 @@ extern "C" void pulldown_save(void)
 }
 
 // Shows the level's briefing (or the network game's criteria); refused in
-// mouse mode 0xe.
+// mouse mode MM_EDIT_ROOM_WAIT.
 // FUNCTION: 0x0008b7b4
 void pulldown_briefing(void)
 {
@@ -509,7 +509,7 @@ extern "C" void pulldown_toggle_shadows(void)
 }
 
 // Sound effects volume item: item othervar.pulldown_item (0 loudest, 9 quietest) sets
-// myplayer.sfx_volume to 0-127 and moves the menu's check mark.
+// myplayer.sfx_volume to (10 - item) * 127 / 10 and moves the menu's check mark.
 // FUNCTION: 0x0008b8a0
 extern "C" void pulldown_svol(void)
 {
@@ -1164,8 +1164,8 @@ void swap_game_sprites(TbScreenMode mode)
     switch (mode) {
     case SCREEN_MODE_1:
         statvar.view_height = lbScreenModeInfo[SCREEN_MODE_1].height - 0x19;
-        statvar.unknowne6 = 0x17;
-        statvar.unknowne7 = 0x1a;
+        statvar.unused_layout_value_0 = 0x17;
+        statvar.unused_layout_value_1 = 0x1a;
         LbMouseChangeSprite(0);
         LbDataFreeAll(hiresgamepointerfiles);
         LbDataLoadAll(lorespointerfiles);
@@ -1196,8 +1196,8 @@ void swap_game_sprites(TbScreenMode mode)
         break;
     case SCREEN_MODE_13:
         statvar.view_height = lbScreenModeInfo[SCREEN_MODE_13].height - 0x30;
-        statvar.unknowne6 = 0x1c;
-        statvar.unknowne7 = 0x1f;
+        statvar.unused_layout_value_0 = 0x1c;
+        statvar.unused_layout_value_1 = 0x1f;
         LbMouseChangeSprite(0);
         LbDataFreeAll(lorespointerfiles);
         LbDataLoadAll(hiresgamepointerfiles);

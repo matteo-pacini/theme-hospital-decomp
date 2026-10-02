@@ -1,10 +1,12 @@
 .intel_syntax noprefix
 
-// The IPX event service routine dosipx copies into DOS memory. IPX calls it
-// with BX = 0xFFFF and AX = the number of ECBs queued at 0x90, 6 bytes each
-// (the ECB's offset, segment, then ES); either way it far-calls the handler
-// dosipx stores in ipx_entry. It runs from a different segment than it was
-// linked in, so only offsets below 0x1000 of its own are meaningful.
+// The real-mode interrupt handler dosipx copies into DOS memory and installs
+// on a free vector. Called with BX = 0xFFFF, it makes the AX IPX calls
+// batched at 0x90, 6 bytes each (function for BX, ECB offset for SI, ECB
+// segment for ES); otherwise it passes the call on unchanged. Either way it
+// far-calls the IPX entry point dosipx stores in ipx_entry. It runs from a
+// different segment than it was linked in, so only offsets below 0x1000 of
+// its own are meaningful.
 
 .code16
 .section CODE16,"ax",@progbits

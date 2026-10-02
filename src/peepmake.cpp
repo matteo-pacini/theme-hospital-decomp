@@ -30,8 +30,10 @@ void add_contagiousness(Thing *patient);
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner);
 void process_computer_peep(Thing *patient, u8 owner);
 
-// Starts a month's arrivals: adds the popn[] count for month othervar.game_month
-// to the visitor total (gamevar.visitors_per_month) and sets the spawn interval
+// Starts a month's arrivals: adds the monthly change (gamevar.visitor_change,
+// taken from the popn[] entry for othervar.game_month if there is one, else
+// kept from before) to the visitor total (gamevar.visitors_per_month) and sets
+// the spawn interval
 // gamevar.peep_interval to 1500 / that total (0 if none).
 // FUNCTION: 0x0006ff30
 void calc_visitors_this_month(void)
@@ -254,7 +256,8 @@ s8 who_owns_peep(u8 illness)
 }
 
 // Randomly makes a new patient contagious, as their illness allows
-// (Thing.contagion = 1 to gbv.how_contagious); more likely early in the level, never while
+// (Thing.contagion = 1 to gbv.how_contagious), with odds of 1 in its cont_rate,
+// scaled by gbv.reduce_cont_rate percent early in the level; never while
 // the hospital's allhosps.epidemic_active is set.
 // FUNCTION: 0x000707f4
 void add_contagiousness(Thing *patient)

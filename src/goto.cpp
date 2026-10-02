@@ -351,9 +351,10 @@ s16 staff_goto_object(Thing *employee)
     return 0;
 }
 
-// Sends wandering employee dx,dy tiles on from their destination and sets
-// substate (the direction wandered) if the tile is free corridor on their own
-// land; otherwise sets substate 6 (decide again). Returns 1 if they set off.
+// Moves wandering employee's destination dx,dy tiles on and sets substate
+// (the direction wandered) if the tile dx,dy from where they stand is
+// walkable corridor on their own land and the new destination is on the map;
+// otherwise sets substate 6 (decide again). Returns 1 if they set off.
 // FUNCTION: 0x000778b4
 u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
 {

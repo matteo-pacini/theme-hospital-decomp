@@ -17,7 +17,9 @@ struct GlassBox {
     s16 y;
     s16 x1;
     s16 y1;
-    u16 f8;
+    // 0x8: Set to 0x27 here; add_glass_box copies its low byte to the zoom
+    // box, where no code reads it.
+    u16 unused_copied_to_zoom;
     u8 unknownA[4];
     u8 type;
     u8 button;
@@ -59,7 +61,10 @@ struct LoginControl {
     u8 state;
     u8 unknown18[7];
     u8 player_scroll;
-    u16 f20;
+    // 0x20: Sent as screen_packet's shared_value in each login exchange; set
+    // from the host's on the first exchange and from any player sending
+    // command 4. Nothing else reads it.
+    u16 shared_value;
     LoginPlayer players[4];
 };
 
@@ -78,13 +83,19 @@ struct BalanceFileInfo {
 
 struct ScreenPacket {
     u8 unknown0[4];
-    u8 f4;
+    // 0x4: Copied from the host's packet on the first login exchange; no code
+    // sets or reads it otherwise.
+    u8 unused_copied_from_host_0;
     u8 command;
-    u8 f6;
+    // 0x6: Set to 1 by process_login_exchange; no code reads it.
+    u8 unused_set_by_process_login_exchange;
     u8 key;
-    u16 f8;
-    u16 fa;
-    u16 fc;
+    // 0x8: login_control.shared_value, exchanged between players.
+    u16 shared_value;
+    // 0xa: See unused_copied_from_host_0.
+    u16 unused_copied_from_host_1;
+    // 0xc: See unused_copied_from_host_0.
+    u16 unused_copied_from_host_2;
 };
 
 extern "C" {
@@ -257,7 +268,8 @@ void choose_host_player(s8 me)
 // 0x20 serial, 0x40 IPX sessions, 0x80 connection type, 0x100 balance file,
 // 0x200 chat, 0x400 dial pad, 0x800 connecting, 0x1000 level choice, ...),
 // zooming them in. Showing a connection panel (0x10-0x40) first hides all
-// others but 0x80 and 4.
+// others but 0x80 and 4; showing 0x1000 hides all others and lays out one
+// button per level of net_control.
 // FUNCTION: 0x0007fc14
 void set_glass_map(s32 mask)
 {
@@ -284,7 +296,7 @@ void set_glass_map(s32 mask)
             box.y = (lbDisplay.graphics_screen_height - box.y1) / 2;
             box.y1 += box.y;
             box.x1 = box.x + resvars.screen_boxes_NetBoxp[126].w;
-            box.f8 = 0x27;
+            box.unused_copied_to_zoom = 0x27;
             box.type = 0;
             box.button = 0;
             box.steps = 7;
@@ -412,7 +424,7 @@ void draw_network_select(void)
         memset(screen_packet, 0, 0x38);
         quit_game = 2;
         display_mode = DM_GAME;
-        debug.f0 = 0;
+        debug.unused_set_by_draw_network_select = 0;
         set_font_from_cache(0);
         lbDisplay.rleft_button = lbDisplay.left_button = 0;
         login_control.state = 6;
@@ -956,7 +968,7 @@ void report_message(char *message)
     box.y = (lbDisplay.graphics_screen_height - box.y1) / 2;
     box.y1 += box.y;
     box.x1 += box.x;
-    box.f8 = 0x27;
+    box.unused_copied_to_zoom = 0x27;
     box.type = 0;
     box.button = 0;
     box.steps = 10;
@@ -1914,15 +1926,15 @@ void process_login_exchange(void)
     s16 j;
 
     choose_host_player(-1);
-    screen_packet[player].f6 = 1;
-    screen_packet[player].f8 = login_control.f20;
+    screen_packet[player].unused_set_by_process_login_exchange = 1;
+    screen_packet[player].shared_value = login_control.shared_value;
     LbNetwork_ChangeExchangeBuffer(screen_packet, 0xe);
     LbNetwork_Exchange(&screen_packet[player]);
     if (!first_login_exchange) {
-        screen_packet[player].f4 = screen_packet[host_player].f4;
-        screen_packet[player].fa = screen_packet[host_player].fa;
-        screen_packet[player].fc = screen_packet[host_player].fc;
-        login_control.f20 = screen_packet[player].f8 = screen_packet[host_player].f8;
+        screen_packet[player].unused_copied_from_host_0 = screen_packet[host_player].unused_copied_from_host_0;
+        screen_packet[player].unused_copied_from_host_1 = screen_packet[host_player].unused_copied_from_host_1;
+        screen_packet[player].unused_copied_from_host_2 = screen_packet[host_player].unused_copied_from_host_2;
+        login_control.shared_value = screen_packet[player].shared_value = screen_packet[host_player].shared_value;
         first_login_exchange = 1;
     }
     for (i = 0; i < 4; i++) {
@@ -1932,7 +1944,7 @@ void process_login_exchange(void)
         case 5:
             break;
         case 4:
-            login_control.f20 = screen_packet[i].f8;
+            login_control.shared_value = screen_packet[i].shared_value;
             break;
         case 6:
             break;
@@ -2291,7 +2303,7 @@ void swap_month_end_packets(void)
 
 // Network game: shares each player's result for the current criterion (fail:
 // 1 failed, 0 passed) and sets othervar.net_winners[i] for each player who failed.
-// When `active`, sets othervar.net_result_page to the message to show: 1 nobody passed,
+// If some passed and some failed, forces advice 2. When `active`, sets othervar.net_result_page to the message to show: 1 nobody passed,
 // 2 this player failed, 3 this player passed.
 // FUNCTION: 0x0008493c
 void swap_criteria_packets(u8 fail, u8 active)
@@ -2831,7 +2843,7 @@ void net_text_display(u8 from)
     if (lib_strlen(buf) + len < sizeof(current_text.text))
         strcat(current_text.text, buf);
     net_text[from].text = 0;
-    othervar.f4b = 0xc8;
+    othervar.unused_set_by_net_text_display = 0xc8;
 }
 
 // Appends key `key` (scan code, 0x80 set for Shift) to player `who`'s message
@@ -3193,7 +3205,7 @@ extern "C" {
 }
 
 // Player `who` has switched away from the game: pauses with the lost focus
-// screen (display_mode 0xd), remembering the previous display mode.
+// screen (DM_LOST_FOCUS), remembering the previous display mode.
 // FUNCTION: 0x00086834
 void network_lost_focus(s32 who)
 {

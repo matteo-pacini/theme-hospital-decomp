@@ -3,8 +3,8 @@
 extern "C" {
 }
 
-// Draws win's visible buttons in their pressed, highlighted or normal
-// sprite.
+// Draws win's visible buttons in their disabled (flags bit 0), pressed or
+// normal sprite.
 // FUNCTION: 0x0004bcc0
 void draw_buttons(Window *win)
 {

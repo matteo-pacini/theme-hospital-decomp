@@ -190,8 +190,10 @@ void IPXHandler::DeInit(void)
     }
 }
 
-// Points the first free interrupt vector from 0x60 to 0x65 (unset or an
-// IRET) at the DOS buffer's batch code. Returns 1, or 0 if none is free.
+// Points the first free interrupt vector from 0x60 to 0x65 at the DOS
+// buffer's batch code. Only an unset (0:0) vector counts as free: the test
+// for an IRET compares a sign-extended byte with 0xcf and never succeeds.
+// Returns 1, or 0 if none is free.
 // FUNCTION: 0xd422c
 // NONMATCHING: register choice: the target copies used to ebx and builds the
 // real-mode address in eax
@@ -430,7 +432,8 @@ void IPXHandler::SendEcb(ECB *ecb)
     AddBatch(&entry);
 }
 
-// Adds IPX call entry to the batch, running the batch when it is full.
+// Adds IPX call entry to the batch. The entry that would be the 30th is
+// dropped and the batch run instead (with count 32 and no end entry).
 // FUNCTION: 0xd4a1c
 void IPXHandler::AddBatch(__2aq9p8IPXPARAMS *entry)
 {

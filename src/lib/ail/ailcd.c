@@ -563,8 +563,9 @@ U32 __cdecl AIL_API_redbook_track(HREDBOOK hand)
     return 0;
 }
 
-// Stops any play or pause, then plays from `startmsec` to `endmsec` unless both
-// are 0. Returns the new status.
+// Stops the drive unless it is stopped, then plays from `startmsec` to `endmsec`
+// unless both are 0. A recorded pause is not cleared (AIL_redbook_resume clears
+// it before calling this). Returns the new status.
 // FUNCTION: 0x000e6b90
 U32 __cdecl AIL_API_redbook_play(HREDBOOK hand, U32 startmsec, U32 endmsec)
 {

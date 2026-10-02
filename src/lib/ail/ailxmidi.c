@@ -2106,8 +2106,8 @@ void __cdecl AIL_API_send_sysex_message(HMDIDRIVER mdi, void *buffer)
     mdi->disable--;
 }
 
-// Unlocks what AILXMIDI_start locked. Its address also marks the end of the
-// locked code range.
+// Unlocks what AILXMIDI_start locked, except `j`. Its address also marks the
+// end of the locked code range.
 // FUNCTION: 0xe5320
 void AILXMIDI_end(void)
 {

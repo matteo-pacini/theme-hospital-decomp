@@ -138,7 +138,6 @@ void *_TinyCBAlloc(unsigned size);
     "and eax,ebx" \
     parm caller [ebx] value [eax] modify [ebx];
 
-/* config/functions.txt has no name for __unlink. */
 #pragma aux __unlink "__unlink_"
 
 // __unlink: remove miniheap heap from the near-heap list, fixing the rovers.
@@ -198,7 +197,7 @@ void __FreeDPMIBlocks(void)
 
 frlptr __LinkUpNewMHeap(mheapptr p1);
 
-// __ReAllocDPMIBlock: grow the single-allocation DPMI miniheap holding block p1 to req_size; returns the resized block, or NULL.
+// __ReAllocDPMIBlock: resize the single-allocation DPMI miniheap holding block p1 to fit req_size; returns the resized block, or NULL.
 // FUNCTION: 0xebe14
 void *__ReAllocDPMIBlock(frlptr p1, unsigned req_size)
 {
@@ -287,7 +286,7 @@ frlptr __LinkUpNewMHeap(mheapptr p1)
     return (frlptr)p1;
 }
 
-// __LastFree: size of the near heap's last free block if it ends at the current break, else 0.
+// __LastFree: size of the first miniheap's last free block if it ends at the current break, else 0 (refreshes _curbrk from the segment limit under Phar Lap without X32VM).
 // FUNCTION: 0xebf87
 unsigned __LastFree(void)
 {

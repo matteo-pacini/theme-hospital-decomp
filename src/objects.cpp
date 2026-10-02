@@ -713,8 +713,9 @@ s16 place_door(u16 tile, u16 kind)
     return 0;
 }
 
-// Returns the door on or next to person's tile that leads to their room (or,
-// outside a room, whose room's entrance tile they stand on), or 0.
+// Returns a door on or next to person's tile (special_around): the first found
+// while they are in a room, else only one whose room's door_tile they stand
+// on; 0 if none.
 // FUNCTION: 0x00038788
 Thing *find_door(Thing *person)
 {
@@ -966,8 +967,9 @@ u8 modify_machine(Thing *machine)
     return 0;
 }
 
-// Marks an object's footprint on the map from base_cell (flags bit 0, bit 1
-// on its door tiles), its use tiles (bit 2) and its invisible walls. With
+// Marks an object's footprint on the map from base_cell (flags bit 0, or bit 1
+// on the tiles that are also shape->points[9] to [14]), its use tiles (bit 2)
+// and its invisible walls. With
 // cleanse, also cleans the litter under it.
 // FUNCTION: 0x0003917c
 void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *control, u8 cleanse)
@@ -1339,9 +1341,9 @@ u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner)
     return 0;
 }
 
-// Replaces a worn machine with a new one for its cost, if this player can
-// afford it (the check uses this player's balance, the charge the owner's),
-// cancelling its repair pages.
+// Replaces a worn machine with a new one for its cost, if the local player can
+// afford it (the check uses the local player's balance, the charge goes to the
+// owner), cancelling its repair pages.
 // FUNCTION: 0x0003a3e0
 void replace_machine(Thing *machine)
 {

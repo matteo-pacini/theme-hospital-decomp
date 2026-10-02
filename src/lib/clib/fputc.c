@@ -8,7 +8,7 @@
 
 void __ioalloc(FILE *fp);
 
-// fputc: write character c to fp (text mode writes "\r\n" for '\n'); returns c, or EOF on error.
+// fputc: write character c to fp (text mode writes "\r\n" for '\n'); returns c as an unsigned char, or EOF on error.
 // FUNCTION: 0xf316a
 int fputc(int c, FILE *fp)
 {

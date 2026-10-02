@@ -32,9 +32,9 @@ u8 button_available(const u8 button);
 void check_awards_buttons(void);
 void display_awards(void);
 
-// Switches the display to the year-end screens (display_mode 8), saving the
-// current screen state to restore afterwards (from the choice screen's backup
-// if one is showing). Places on the map each hospital's staff member held in
+// Switches the display to the year-end screens (DM_YEAR_END), saving the fax
+// state to restore afterwards in year_end_backup (the fax being shown, if
+// any, else a copy of choice_backup). Places on the map each hospital's staff member held in
 // allhosps.held_staff (at tile held_staff_tile) and clears the awards and trophies to show.
 // FUNCTION: 0x000b4980
 void start_year_end(void)

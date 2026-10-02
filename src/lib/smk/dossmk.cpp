@@ -58,7 +58,8 @@ void set_smack_free(void (*fn)(void *ptr))
 
 // Plays the Smacker video file name, centred, clearing the left button first.
 // flags: 1 no sound, 2 cannot be skipped, 4 double height, 8 double height
-// with blank alternate rows, 0x80 double width, 0x100 draw straight to VGA
+// drawing every other row (the rows between are left as they were), 0x80
+// double width, 0x100 draw straight to VGA
 // memory (320x200 mode only), 0x400 loop forever. smk_flags is unused.
 // Uses an offscreen buffer when scaling or a draw callback is set. Returns 0
 // if the file cannot be opened, 1 when played to the end, 2 if skipped.

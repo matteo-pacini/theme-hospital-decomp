@@ -8,7 +8,7 @@ void general_award(s32 *field, s32 value, const u8 award, const s32 high, const 
 // Year end: decides the player's 13 awards (all_awards, cleared first) from
 // this year's figures, the monthly award_counts and the level's thresholds
 // (awards_trophies), paying their money or reputation. Gives none unless the
-// year's history[4] total exceeds three times myhosp->level.
+// year's visitors (history[4] total) exceed three times myhosp->level.
 // FUNCTION: 0x000b3430
 void check_awards_won(void)
 {
@@ -133,7 +133,7 @@ void check_awards_won(void)
 
 // Year end: decides the player's 9 trophies (trophy, cleared first) from this
 // year's figures and the level's thresholds (awards_trophies), paying their
-// bonuses. Gives none unless the year's history[4] total exceeds 5.
+// bonuses. Gives none unless the year's visitors (history[4] total) exceed 5.
 // FUNCTION: 0x000b3ce4
 void check_trophies_won(void)
 {
@@ -274,7 +274,8 @@ void annual_update_of_award_counts(void)
 
 // Awards trophy trophy_no: picks one of its three texts at random and pays
 // value as reputation (type 1) or money (type 2, TX_TROPHY_BONUS). If the
-// reputation cannot change, pays 5000 instead.
+// reputation cannot change, pays 5000 instead and records the trophy's id
+// as 2.
 // FUNCTION: 0x000b43c0
 void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
 {

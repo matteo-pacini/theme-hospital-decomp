@@ -13,7 +13,6 @@ int __doclose(FILE *fp, int close_handle);
 int __shutdown_stream(FILE *fp, int close_handle);
 
 int fclose(FILE *fp);
-/* config/functions.txt has no name for fclose. */
 #pragma aux fclose "fclose_"
 
 // fclose: flush and close stream fp; returns 0, or -1 if fp is not open or closing fails.

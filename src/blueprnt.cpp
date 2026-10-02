@@ -399,8 +399,8 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
     }
 }
 
-// Places owner's blueprint as the room's floor plan, removes rat holes in
-// the area, and moves to the door placing stage. Returns 0 (with an advisor
+// Places owner's blueprint as the room's floor plan, removes rat holes and
+// litter in the area (cleanse_area), and moves to the door placing stage. Returns 0 (with an advisor
 // message for the local player) if the room is invalid there or would cut off
 // other rooms from the entrance, else 1.
 // FUNCTION: 0x00046b54

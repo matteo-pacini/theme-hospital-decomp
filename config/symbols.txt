@@ -27,6 +27,7 @@
 00128eb0 __HugeValue 8
 00128eb8 __BigPow10Table 50
 00128f08 _Msgs 1c
+00128f24 _unreferenced_zero_buf dc
 00129004 W?$Wsi0herror_string$n[]a$:.0$:?reset_host$n()vnx[]a c8
 001290cc W?face_file$nl 4
 001290d0 _loaded_face 4
@@ -824,6 +825,7 @@
 00175239 _free_head 1
 0017523a W?used_head$nc 2
 0017523c W?cfonts$n[]uc 30
+0017526c _load_ingame_pic_len_init 14
 00175280 W?done$:.0$:?pie_render$n(llllllpn$Sector$$)vn[]uc 104
 00175384 W?pie_mouse_x$nl 4
 00175388 W?pie_mouse_y$nl 4

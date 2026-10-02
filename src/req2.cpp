@@ -511,7 +511,8 @@ void draw_face(Picture *face, const u16 x, const u16 y)
               resvars.face_head_h + resvars.face_body_h + resvars.face_legs_h + resvars.face_border_h * 2, 0x9c);
 }
 
-// Marks applicant id as being hired (SS_HELD).
+// Marks applicant id as being hired (SS_HELD) and adds their happiness to
+// adcounts.staff_happiness_sum.
 // FUNCTION: 0x0006b174
 void req2_mark_employing(const u16 id)
 {
@@ -533,8 +534,9 @@ void req2_exit_employing(const u16 id)
 }
 
 // Staff demand requester clicks: the accept button grants what the staff
-// member asks (by request kind crequester.kind: events 0x6b, 0x6c or
-// 0x6d, or matching a rival's offer), the other lets them go
+// member asks (by request kind crequester.kind: EV_REFUSE_STAFF_DEMAND,
+// EV_GIVE_STAFF_BONUS, EV_RAISE_STAFF_SALARY, or for a rival's offer a raise
+// to twice the salary), the other lets them go
 // (req12_clicked_sack).
 // FUNCTION: 0x0006b1f4
 void req12(Window *win)

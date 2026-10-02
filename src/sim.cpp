@@ -498,8 +498,9 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 // Returns player `owner`'s progress towards winning (percent, the best of
-// the win criteria groups; 100 = won), stores it in allhosps.win_progress, and for
-// this player the best group in othervar.best_win_group.
+// the win criteria groups; 100 = won), stores it in allhosps.win_progress, the
+// average over the groups in adcounts.win_progress, and for this player the
+// best group in othervar.best_win_group.
 // FUNCTION: 0x000594d0
 s32 evaluate_criteria(const u8 owner)
 {

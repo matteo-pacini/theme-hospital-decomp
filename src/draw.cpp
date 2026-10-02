@@ -176,8 +176,9 @@ void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const
 
 // Draws w's current frame at x,y, showing only the layered elements that match
 // w's layers (head, colours, ...) and drawing w's status icon over its head
-// element. Plays the frame's sound once (or every time for looping sounds) and
-// records the box as draw_a_frame does.
+// element. Plays the frame's sound once (or every time if its sfx_details
+// entry allows repeats), records the box as draw_a_frame does and clears
+// frame_extra_height.
 // FUNCTION: 0x0002e0ec
 void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -295,7 +296,9 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 extern "C" {
 
 // As draw_special_id_frame, but draws the layered elements through the pixel
-// buffer with a wobble (draw_wibble) that changes each turn.
+// buffer with a wobble (draw_wibble) that changes each turn. The status
+// icon's position is worked out but the icon is not drawn, and the box
+// recorded is 4 pixels larger on each side.
 // FUNCTION: 0x0002e804
 void draw_wibble_frame(Thing *w, s16 x, s16 y)
 {
@@ -569,7 +572,9 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
 
 // Draws w using a machine (its object): w's own frame above the machine's
 // split line (split_height), and the machine's aux_sprite frame below it, so
-// that w appears inside the machine. Does nothing if w has no object.
+// that w appears inside the machine. An alien (subtype PK_ALIEN) also has the
+// machine drawn first and a looping overlay animation drawn at the split line.
+// Does nothing if w has no object.
 // FUNCTION: 0x0002fa3c
 void draw_split_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -775,7 +780,7 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
     u8 phase;
     u8 hidden;
     CompFrame *f;
-    s32 colour;
+    s32 flags;
 
     f = &frame[w->sprite];
     hidden = 0;
@@ -785,20 +790,20 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         phase = 6 - phase;
     switch (phase) {
     case 0:
-        colour = 0;
+        flags = 0;
         break;
     case 1:
-        colour = 4;
+        flags = 4;
         break;
     case 2:
-        colour = 8;
+        flags = 8;
         break;
     case 3:
-        colour = 0;
+        flags = 0;
         hidden = 1;
         break;
     }
-    full_draw_frame(w, w->sprite, x, y, colour, hidden, w->flip);
+    full_draw_frame(w, w->sprite, x, y, flags, hidden, w->flip);
     if (f->sound && gamevar.turn_skipped == 0 &&
         (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);

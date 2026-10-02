@@ -1,6 +1,6 @@
 .intel_syntax noprefix
 
-// __FDFS: convert the double in edx:eax to a float in eax (rounded); 0 for zero, denormals and underflow, signed infinity on overflow.
+// __FDFS: convert the double in edx:eax to a float in eax (rounded half up in magnitude); +0 for zero, denormals and underflow, signed infinity on overflow and for infinities and NaNs.
 // FUNCTION: 0x000fc6d6
 
 .section _TEXT,"ax",@progbits,unique,1033942

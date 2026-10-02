@@ -952,9 +952,10 @@ void person_complex_retry(Thing *person)
     }
 }
 
-// Continues person's complex once its slave is in PS_ENTERTAINS_THEMSELF
-// (setting the slave to PS_COMPLEX_RETRY), taking over the slave's layers 5-9 and
-// its object's layers 10-12.
+// Once person's slave is in PS_ENTERTAINS_THEMSELF, moves person to its
+// next_state, runs its next complex step and sets the slave to
+// PS_COMPLEX_RETRY; then copies the slave's layers 5-9 (if person has an
+// object) and person's object's layers 10-12 to person.
 // FUNCTION: 0x00041b08
 void person_wait_for_complex_slave(Thing *person)
 {
@@ -1061,7 +1062,8 @@ u8 check_room_mutex_on_entry(Thing *w)
 
 // Makes w give up its complex: runs complex 0xf0 (0x4ba for a receptionist
 // at an object) up to 12 steps at once, keeps w where it was if it did not
-// change room, frees a staff member's slave, and returns w to resume_state
+// change room (unless it was the user of its object), frees a staff member's
+// slave, and returns w to resume_state
 // standing.
 // FUNCTION: 0x00041f84
 void abandon_complex(Thing *w)

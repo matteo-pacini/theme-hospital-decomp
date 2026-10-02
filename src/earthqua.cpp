@@ -13,8 +13,8 @@ void shake_screen(s8 dx, s8 dy);
 }
 
 // Runs one turn of the current earthquake: its strength (gamevar.quake_amplitude) builds
-// up to magnitude, then dies down, each step taken with a 1 in chance per
-// call; otherwise the main view is shaken by the strength. When it has died
+// up to magnitude, then dies down, each step taken with probability
+// 1/chance per call; otherwise the main view is shaken by the strength. When it has died
 // out it stops the quake sound, records gamevar.quake_strength in NRAdcounts and resets
 // for the next quake. Always returns 1.
 // FUNCTION: 0x000a2f00

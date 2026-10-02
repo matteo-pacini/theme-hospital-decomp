@@ -39,8 +39,8 @@ void make_a_rat(u8 owner);
 // queueing turn events: the arrow keys scroll, 1-5 set the game speed (Alt+1-4
 // start a network chat message), P pauses, F1-F8 open the full-screen windows
 // (Alt and Ctrl store and recall map positions), Escape closes requesters,
-// Shift+Escape or a modifier with Q or X asks to quit (Shift+Ctrl+Escape quits
-// at once), Shift+A toggles the advisor, plus debug and cheat keys. In help
+// Shift+Escape or a modifier with Q or X asks to quit (Shift+Ctrl+Escape or
+// Shift+Escape with Tab held quits at once), Shift+A toggles the advisor, plus debug and cheat keys. In help
 // mode Space or Escape close the help page; while chatting, keys go to the
 // message.
 // FUNCTION: 0x0007424c

@@ -129,18 +129,20 @@ enum DISPATCHABLE {
 };
 
 extern thread_ctl _wint_thread_data;
-extern const char D_00128488[];
-extern const char D_001284a7[];
-extern const char D_001284d6[];
-extern const char D_001284ff[];
-extern const char D_00128541[];
-extern const char D_0012856a[];
-extern const char D_00128592[];
-extern const char D_001285c1[];
-extern const char D_001285ec[];
-extern const char D_00128616[];
-extern const char D_00128641[];
-extern const char D_0012866b[];
+// The module's messages, in its CONST segment in this order. _1/_2 pairs are
+// separate copies of the same text.
+extern const char stabthrw_msg_stack_corrupted[];
+extern const char stabthrw_msg_fn_exc_spec[];
+extern const char stabthrw_msg_throw_in_terminate_1[];
+extern const char stabthrw_msg_throw_in_unwind_dtor[];
+extern const char stabthrw_msg_throw_in_terminate_2[];
+extern const char stabthrw_msg_throw_in_ctor[];
+extern const char stabthrw_msg_throw_in_handled_dtor[];
+extern const char stabthrw_msg_rethrow_no_handler_1[];
+extern const char stabthrw_msg_no_handler_1[];
+extern const char stabthrw_msg_rethrow_no_handler_2[];
+extern const char stabthrw_msg_no_handler_2[];
+extern const char stabthrw_msg_system_exception[];
 extern void (*__longjmp_handler)(rw_dtreg *rw);
 
 void __wcpp_2_call_terminate_(void);
@@ -192,10 +194,10 @@ active_exc *getActiveExc(thread_ctl *thr);
 void dispatch_init(dispatch_exc *dispatch, THROW_RO *ro, int zero);
 #pragma aux dispatch_init "W?dispatch_init$n(pn$dispatch_exc$$pn$throw_ro$$i)v"
 void throwIt(void *object, THROW_RO *ro, int zero);
-/* config/functions.txt has no name for the common throw code. */
+/* The library's name for the common throw code. */
 #pragma aux throwIt "W?processThrow$n(pnvpn$throw_ro$$i)v"
 void popCatches(dispatch_exc *dispatch, rw_dtreg *rw);
-/* config/functions.txt has no name for this longjmp helper. */
+/* The library's name for this longjmp helper. */
 #pragma aux popCatches "W?longjmpExcPop$n(pn$dispatch_exc$$pn$rw_dtreg$$)v"
 void __wcpp_2_lj_handler_(rw_dtreg *bound);
 #pragma aux __wcpp_2_lj_handler_ "W?longjmpDtoring$n(pfv)v" modify [edx]
@@ -224,7 +226,7 @@ void callTerminate(thread_ctl *thr)
 // the same segment
 void __wcpp_2_corrupted_stack_(void)
 {
-    _wint_thread_data.abort_msg = D_00128488;
+    _wint_thread_data.abort_msg = stabthrw_msg_stack_corrupted;
     callTerminate(&_wint_thread_data);
 }
 
@@ -262,7 +264,7 @@ unsigned typesigIndex(dispatch_exc *dispatch, unsigned count, RT_TYPE_SIG **sigs
     return 0;
 }
 
-// dispatchableFnExc: 1 if the thrown type violates the exception specification cmd (no listed type matches), else 0.
+// dispatchableFnExc: 1 if the thrown type violates the exception specification cmd (no listed type matches, or the match is a NULL entry), else 0.
 // FUNCTION: 0xf3ee0
 int dispatchableFnExc(dispatch_exc *dispatch, DTOR_CMD *cmd)
 {
@@ -283,7 +285,7 @@ void fneDispatch(dispatch_exc *dispatch)
     thread_ctl *thr;
 
     thr = dispatch->thr;
-    thr->abort_msg = D_001284a7;
+    thr->abort_msg = stabthrw_msg_fn_exc_spec;
     thr->excepts->state = 2;
     unexpected();
 }
@@ -438,7 +440,7 @@ void catchDispatch(dispatch_exc *dispatch)
     longjmp(env, dispatch->catch_no + 1);
 }
 
-// catchDone: destroy exception exc's object (class types) and free it.
+// catchDone: destroy exception exc's object (class types), then free the thread's newest exception.
 // FUNCTION: 0xf4132
 void catchDone(thread_ctl *thr, active_exc *exc)
 {
@@ -585,18 +587,18 @@ active_exc *getActiveExc(thread_ctl *thr)
     exc = thr->excepts;
     if (exc == 0) {
         if (thr->flags & 1)
-            __wcpp_2_fatal_runtime_error_(D_001284d6, 1);
+            __wcpp_2_fatal_runtime_error_(stabthrw_msg_throw_in_terminate_1, 1);
     } else {
         switch (exc->state) {
         case 0:
-            thr->abort_msg = D_001284ff;
+            thr->abort_msg = stabthrw_msg_throw_in_unwind_dtor;
             callTerminate(thr);
         case 3:
-            __wcpp_2_fatal_runtime_error_(D_00128541, 1);
+            __wcpp_2_fatal_runtime_error_(stabthrw_msg_throw_in_terminate_2, 1);
         case 5:
-            __wcpp_2_fatal_runtime_error_(D_0012856a, 1);
+            __wcpp_2_fatal_runtime_error_(stabthrw_msg_throw_in_ctor, 1);
         case 6:
-            __wcpp_2_fatal_runtime_error_(D_00128592, 1);
+            __wcpp_2_fatal_runtime_error_(stabthrw_msg_throw_in_handled_dtor, 1);
         default:
             __wcpp_2_corrupted_stack_();
             break;
@@ -633,9 +635,9 @@ DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw)
 
     if (rw == 0) {
         if (dispatch->rethrow) {
-            __wcpp_2_fatal_runtime_error_(D_001285c1, 1);
+            __wcpp_2_fatal_runtime_error_(stabthrw_msg_rethrow_no_handler_1, 1);
         } else {
-            dispatch->thr->abort_msg = D_001285ec;
+            dispatch->thr->abort_msg = stabthrw_msg_no_handler_1;
             callTerminate(dispatch->thr);
         }
     }
@@ -691,13 +693,13 @@ void __wcpp_2_dispatch_(dispatch_exc *dispatch, DISPATCHABLE kind)
         catchDispatch(dispatch);
     case DISPATCHABLE_NO_CATCH:
         if (dispatch->rethrow) {
-            __wcpp_2_fatal_runtime_error_(D_00128616, 1);
+            __wcpp_2_fatal_runtime_error_(stabthrw_msg_rethrow_no_handler_2, 1);
         } else {
-            dispatch->thr->abort_msg = D_00128641;
+            dispatch->thr->abort_msg = stabthrw_msg_no_handler_2;
             callTerminate(dispatch->thr);
         }
     case DISPATCHABLE_SYS_EXC:
-        strcpy(buf, D_0012866b);
+        strcpy(buf, stabthrw_msg_system_exception);
         ltoa(dispatch->code, buf + strlen(buf) - 8, 16);
         __wcpp_2_fatal_runtime_error_(buf, 1);
     default:

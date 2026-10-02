@@ -3463,7 +3463,7 @@
     ret
 .size "emu_ld_atan",.-"emu_ld_atan"
 
-// emu_fprem: partial remainder (fprem): *eax = *eax mod *edx; returns the low quotient bits.
+// emu_fprem: fprem: *eax = *eax mod *edx (truncating, reduced completely in one call; 0 if *edx is 0); returns the quotient's low bits, negated if the signs differ.
 // FUNCTION: 0x000f9d61
 
 .section _TEXT,"ax",@progbits,unique,1023329
@@ -3692,7 +3692,7 @@
     .byte 0xc0; .byte 0x08; .byte 0xc0
 .size "emu_fxam",.-"emu_fxam"
 
-// emu_ld_add_one: add 1.0 to the long double at eax.
+// emu_ld_add_one: fyl2xp1: add 1.0 to the long double at eax, then fall through into emu_fyl2x, so *edx = *edx * log2(*eax + 1).
 // FUNCTION: 0x000f9f30
 
 .section _TEXT,"ax",@progbits,unique,1023792
@@ -3712,7 +3712,7 @@
     pop ebx
 .size "emu_ld_add_one",.-"emu_ld_add_one"
 
-// emu_fyl2x: fyl2x: *edx = *edx * log2(*eax).
+// emu_fyl2x: fyl2x: *edx = *edx * log2(*eax), computed as ln (left in *eax) times log2(e).
 // FUNCTION: 0x000f9f49
 
 .section _TEXT,"ax",@progbits,unique,1023817
@@ -3750,7 +3750,7 @@
     ret
 .size "emu_fyl2x",.-"emu_fyl2x"
 
-// emu_ld_log: natural logarithm of the long double at eax, in place (mantissa reduced about sqrt(1/2), then a series).
+// emu_ld_log: natural logarithm of the long double at eax, in place: splits off the binary exponent e, folds the mantissa m into (sqrt(1/2), sqrt(2)], takes z = 2(m-1)/(m+1), ln m = z + z*z^2*R(z^2)/S(z^2), and adds e*ln 2 as two parts (0.693359375 and -2.1219444e-4). The sign and zero are not checked.
 // FUNCTION: 0x000f9f8c
 
 .section _TEXT,"ax",@progbits,unique,1023884
@@ -3998,7 +3998,7 @@
     .byte 0x00
 .size "emu_ld_log",.-"emu_ld_log"
 
-// emu_ld_trig: sine, tangent or cosine (esi 0, 1, 2) of the long double at eax, in place, reducing by octants of pi.
+// emu_ld_trig: sine (esi 0), tangent (esi 1) or cosine (esi 2) of the long double at eax, in place: reduces x modulo pi/4 (emu_fprem_core), folds by the octant (cosine is two octants on from sine), evaluates the sine and/or cosine series, and for the tangent divides them (infinity when the divisor is 0).
 // FUNCTION: 0x000fa224
 
 .section _TEXT,"ax",@progbits,unique,1024548
@@ -4454,7 +4454,7 @@
     ret
 .size "emu_f2xm1",.-"emu_f2xm1"
 
-// emu_ld_sqrt: square root of the long double at eax, in place; negative values give the indefinite NaN.
+// emu_ld_sqrt: square root of the long double at eax, in place; zeros and +infinity are kept, an unnormal or -infinity gives the indefinite NaN, a NaN is made quiet, and a negative finite value only gets its top two mantissa bits set.
 // FUNCTION: 0x000fa63c
 
 .section _TEXT,"ax",@progbits,unique,1025596

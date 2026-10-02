@@ -103,7 +103,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     u16 h2;
     s16 year;
     u16 py;
-    s16 quarter;
+    s16 span_year;
     s32 values[3][12];
     char buf[128];
 
@@ -248,7 +248,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     }
     month = mycontrol->month;
     year = actual_game_turn / 0x4650;
-    quarter = actual_game_turn / 0x4650 - (actual_game_turn / 0x4650 & 3);
+    span_year = actual_game_turn / 0x4650 - (actual_game_turn / 0x4650 & 3);
     lbDisplay.draw_flags = 0;
     for (i = 0; i < 12; i++) {
         if (i * 1500 * scale >= actual_game_turn)
@@ -274,11 +274,11 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             LbDrawLine(px, y + 2, px, y + 6, color.black);
             break;
         case 2:
-            sprintf(buf, "%d", quarter);
+            sprintf(buf, "%d", span_year);
             lbDisplay.draw_colour = color.black;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
-            quarter += -4;
+            span_year += -4;
             LbDrawLine(px, y + 2, px, y + 6, color.black);
             break;
         }

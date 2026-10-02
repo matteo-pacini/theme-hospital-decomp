@@ -219,8 +219,8 @@ u32 announce_emergency(u8 owner, char **strs)
     s32 width;
     s32 missing_room;
     s32 missing_staff;
-    s32 cured;
-    s32 count;
+    s32 curable;
+    s32 effectiveness;
     s32 line_height;
     AllHosps *hosp;
     u16 call;
@@ -239,8 +239,8 @@ u32 announce_emergency(u8 owner, char **strs)
     width = 400;
     missing_room = 0;
     missing_staff = 0;
-    cured = 0;
-    count = 0;
+    curable = 0;
+    effectiveness = 0;
     char new_line[] = "\n";
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     hosp = &allhosps[owner];
@@ -257,9 +257,9 @@ u32 announce_emergency(u8 owner, char **strs)
     illness = gamevar.emergency_calls[i].illness;
     exp = &expertise[illness];
     if (allhosps[owner].rooms[illness].cure_available == 1) {
-        cured = 1;
+        curable = 1;
         if (exp->kind == 0x27)
-            count = hosp->rooms[illness].drug_effectiveness;
+            effectiveness = hosp->rooms[illness].drug_effectiveness;
     } else {
         if (listhead[owner].rooms[exp->category] == 0 && room_available(exp->category))
             missing_room = exp->category;
@@ -279,9 +279,9 @@ u32 announce_emergency(u8 owner, char **strs)
     sprintf(buf, strs[1], patients, illness_text[illness]);
     strcat(text, new_line);
     strcat(text, buf);
-    if (cured) {
-        if (count)
-            sprintf(buf, strs[2], illness_text[illness], count);
+    if (curable) {
+        if (effectiveness)
+            sprintf(buf, strs[2], illness_text[illness], effectiveness);
         else
             sprintf(buf, strs[3]);
     } else if (missing_room && missing_staff) {
@@ -446,7 +446,7 @@ void helicopter_leaves(Thing *heli)
             break;
         case 1:
             gamevar.abductee = 0;
-            gamevar.ff7 = 0;
+            gamevar.unused_set_by_helicopter_leaves = 0;
             break;
         }
         if (heli->shadow)

@@ -246,8 +246,10 @@ void draw_panel(u8 all)
     panel_flash();
 }
 
-// Chooses the panel icon set: raised while the mouse is over the panel
-// (othervar.panel_icon_set 2), normal otherwise (1), or the rat game's.
+// Chooses the panel icon set: raised while the mouse is over the panel and
+// the game is not paused (othervar.panel_icon_set 2), normal otherwise (1),
+// or the rat game's; then sets statvar.panel_top and the advisor's position
+// from it.
 // FUNCTION: 0x00031f5c
 void choose_panel_icons(void)
 {
@@ -302,8 +304,9 @@ void setup_panel_icons(const u8 mode)
     othervar.popup_shutter_state = 1;
 }
 
-// Returns the index of the panel icon under the mouse, or 0x63 if the mouse
-// is not over the panel.
+// Returns the index of the panel icon under the mouse, or 0x63 if there is
+// none (or the mouse is not over the panel). Over the panel, sets
+// redraw_panel.
 // FUNCTION: 0x000321b4
 u8 which_icon_is_mouse_over(void)
 {
@@ -339,10 +342,12 @@ void panel_ml_button(const u16 icon)
 }
 
 // Left click on panel icon `icon` (0x63: none): opens the screen, requester
-// or mode it stands for (0 bank manager, 2, 3 and 5 the requesters of events
-// 0x37, 0x62 and 0x2e, 4 room editing on/off, 6 staff list, 7 town map,
-// 8 casebook, 9 research, 10 status, 11 charts, 12 policy). Refused while
-// placing a room, door or staff member.
+// or mode it stands for (0 bank manager, 2 build room, 3 furnish corridor,
+// 5 hire staff, 4 room editing on/off, 6 staff list, 7 town map, 8 casebook,
+// 9 research (only with a research room), 10 status, 11 charts, 12 policy).
+// Other icons, and any click while waiting for an edited room to empty, play
+// the refusal sound; so do 2, 3 and 5 while placing a blueprint, door or
+// staff member.
 // FUNCTION: 0x00032308
 void panel_l_button(const u16 icon)
 {
@@ -1339,7 +1344,7 @@ void rebuild_panel_popup_pos(void)
 void maintain_panel_popup(void)
 {
     u8 slot;
-    u8 found;
+    u8 gone;
     u16 j;
     u16 k;
     u16 i;
@@ -1350,12 +1355,12 @@ void maintain_panel_popup(void)
     for (i = 0; i < 9; i++) {
         if (panel_popup_pos[i]) {
             call = &playercall[panel_popup_pos[i]];
-            found = 1;
+            gone = 1;
             for (j = 1; popup_icons[j].sprite != 0; j++) {
                 if (panel_popup_pos[i] == listhead[player].first[j])
-                    found = 0;
+                    gone = 0;
             }
-            if (found)
+            if (gone)
                 remove_panel_popup(i);
         } else {
             remove_panel_popup(i);
@@ -1588,8 +1593,8 @@ u8 display_panel_special_info(void)
     return 0;
 }
 
-// Help text for the panel's watch: emergency, epidemic or the other timed
-// event, into othervar.help_msg.
+// Help text for the panel's watch: emergency, epidemic or opening countdown,
+// into othervar.help_msg.
 // FUNCTION: 0x0003646c
 void panel_watch_help(void)
 {

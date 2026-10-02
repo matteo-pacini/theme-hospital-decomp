@@ -343,7 +343,7 @@ void process_turn(void)
     int mouse_y;
     u16 j;
     u16 i;
-    u8 changed;
+    u8 mismatch;
 
     if (replay_mode & 2) {
         u32 recorded_seed;
@@ -400,7 +400,7 @@ void process_turn(void)
             if (game_turn == 4) {
                 LbNetwork_ChangeExchangeTimeout(0);
             }
-            changed = 0;
+            mismatch = 0;
             for (j = 0; j < 4; j++) {
                 if (player_info[j].active && player_events[j].checksum) {
                     if (player_events[host_player].checksum != player_events[j].checksum) {
@@ -410,11 +410,11 @@ void process_turn(void)
                             player_events[j].value = 0;
                             player_events[j].arg = 0;
                         }
-                        changed = 1;
+                        mismatch = 1;
                     }
                 }
             }
-            if (changed) {
+            if (mismatch) {
                 finish_composite_help();
                 resyncing = 1;
                 resync_network_game();
@@ -669,7 +669,7 @@ void process_turn(void)
                 choose_host_player(-1);
             }
             quit_game = 1;
-            if (debug.unknowne2 == 1) {
+            if (debug.unused_tested_on_quit == 1) {
             }
             if (replay_mode & 2) {
                 if (replay_loop) {
@@ -909,7 +909,7 @@ void process_turn(void)
                     crequester.arg2 = 0;
                     crequester.kind = 0;
                     crequester.arg3 = 0;
-                    crequester.unknownA = 0;
+                    crequester.unused_set_by_process_turn = 0;
                     close_irequesters();
                     open_requester(crequester.id, 1);
                     set_mouse_sprite(PTR_DEFAULT);
@@ -1058,7 +1058,7 @@ void process_turn(void)
                     crequester.arg2 = 0;
                     crequester.kind = 0;
                     crequester.arg3 = 0;
-                    crequester.unknownA = 0;
+                    crequester.unused_set_by_process_turn = 0;
                     close_irequesters();
                     open_requester(crequester.id, 1);
                     set_mouse_sprite(PTR_DEFAULT);
@@ -2185,8 +2185,9 @@ void setup_addresses(void)
 }
 
 // Loads level file lvl (level.l<lvl>) into the cache. With full set, also
-// creates each player's entrance rooms and sets the start view, helipad and
-// scroll limits from it and rebuilds the map. A level already loaded is kept.
+// creates each player's entrance rooms (then gives every player the host's),
+// sets the start view, helipad and scroll limits from it and adds the static
+// shadows. Either way rebuilds the map. A level already loaded is kept.
 // Returns 1, or 0 on failure.
 // FUNCTION: 0x000221fc
 s8 load_level(const u8 lvl, const u8 full)

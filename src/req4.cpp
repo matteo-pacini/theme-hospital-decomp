@@ -269,8 +269,9 @@ void close_irequesters(void)
     othervar.irequester_slot = 0;
 }
 
-// Raises handyman id's priority for the job of button `button` (a
-// resvars.requester_buttons index: litter, plants or repairs) by 6, taking it from the
+// Raises handyman id's priority for the job of button `button` (the button
+// number held in resvars.requester_buttons[0x27], [0x28] or [0x29]: litter,
+// plants or repairs) by 6, taking it from the
 // larger of the other two so the three sum to at most 100; from 94 it
 // becomes 100 and the others 0. Resets their job counts.
 // FUNCTION: 0x00087c44

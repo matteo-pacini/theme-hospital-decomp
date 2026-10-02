@@ -234,7 +234,8 @@ long SerialHandler::Init(long port)
 }
 
 // Closes COM port `port`: disables its interrupts, restores the IRQ
-// vectors and frees its DOS memory. Returns 0, or -1 for a bad port.
+// vectors, reinitialises the port through BIOS INT 14h and frees its DOS
+// memory. Returns 0, or -1 for a bad port.
 // FUNCTION: 0xf5544
 long SerialHandler::DeInit(long port)
 {
@@ -871,8 +872,9 @@ long CommHandler::DialModem(char *number)
     return ret;
 }
 
-// Hangs up: drops DTR, sends +++, the hang-up string and ATS0=0, then
-// drops DTR and RTS. Returns -1.
+// Hangs up: after a second's pause pulses DTR low for 50 ms, sends +++ and
+// pauses again, sends the hang-up string and ATS0=0 (waiting for each
+// response), then drops DTR and RTS. Returns -1.
 // FUNCTION: 0xf6940
 long CommHandler::HangUpModem(void)
 {
@@ -989,7 +991,8 @@ void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
     }
 }
 
-// Reads a line (up to a carriage return or line feed) from f into p.
+// Reads a line (up to a carriage return or line feed) from f into p. It
+// does not stop at end of file.
 // FUNCTION: 0xf70d8
 void CommHandler::read_a_line(FILE *f, char *p)
 {

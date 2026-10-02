@@ -50,8 +50,8 @@ typedef struct _WAVE_SYNTH {
 static S32 locked = 0;
 /* In the code segment, where the original's table sits between two functions. */
 #pragma data_seg("_TEXT", "CODE")
-// Data, not a function: the pitch of each MIDI note in Hz, rounded and an
-// octave high (440 at note 57) except entry 0. Only ratios are used.
+// Data, not a function: the pitch of each MIDI note in whole Hz, an octave
+// high (440 at note 57) except entry 0. Only ratios are used.
 // FUNCTION: 0xe5430
 S32 note_freq[128] = {
     8, 17, 18, 19, 20, 21, 23, 24,
@@ -374,7 +374,9 @@ S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 da
 // Creates a wave synthesizer that plays `mdi`'s notes found in wave library
 // `wave_lib` as samples on `dig`, with up to `polyphony` voices (at most 16),
 // by hooking `mdi`'s event and timbre callbacks. Returns it, or NULL with
-// AIL_error set if memory or sample handles run out.
+// AIL_error set if memory or sample handles run out; when sample handles run
+// out the callbacks stay hooked and `mdi->system_data[0]` points at the freed
+// synthesizer.
 // FUNCTION: 0x000e5e30
 HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER mdi,
                                                    void *wave_lib, S32 polyphony)

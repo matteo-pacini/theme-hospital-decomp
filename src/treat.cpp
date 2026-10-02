@@ -156,7 +156,7 @@ void setup_next_treatment(Thing *staff, Thing *patient)
 
 // Chooses patient's next state: while the diagnosis awaits a decision
 // (PF_NEEDS_DIAGNOSIS_ROOM) or the treatment's room is missing (PF_AWAITING_DECISION),
-// calls the player (at most a few such calls at a time, else gives up);
+// calls the player (if no more than 5 such calls are pending, else gives up);
 // otherwise goes for treatment. Walks them out of the room first if in_room
 // is set.
 // FUNCTION: 0x0003c8d8
@@ -256,7 +256,8 @@ void change_health(Thing *patient, s16 amount)
 }
 
 // Patient dies: walks to a free spot nearby to fall over (PS_DEAD), and is
-// counted as a death, with reputation lost and the call answered.
+// counted as a death, with reputation lost and their pending calls (types 8
+// and 4) removed.
 // FUNCTION: 0x0003ccc8
 void person_dies(Thing *patient)
 {
@@ -338,7 +339,7 @@ void person_dead(Thing *patient)
         }
         patient->next_state = PS_DEAD;
         patient->depth = -8;
-        if (anim_starts[patient->subtype].unknownA2 == 0x4c1) {
+        if (anim_starts[patient->subtype].reaper_test_anim == 0x4c1) {
             patient->substate = (old_newrand() & 1) + 0x2f;
         } else {
             patient->substate = 0x2f;

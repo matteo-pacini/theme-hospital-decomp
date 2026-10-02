@@ -998,7 +998,7 @@
 00090360     47 W?next_balance_file$n()v
 000903a8     48 W?prev_balance_file$n()v
 000903f0    202 W?balance_filename$n(pna)v
-000905f4     15 fn_000905f4_
+000905f4     15 empty_name_stub_
 00090610    1f2 start_game_
 00090804    488 W?setup_new_level$n(xus)v
 00090c8c     4a W?copy_my_hosp$n(pn$AllHosps$$pn$1$)v

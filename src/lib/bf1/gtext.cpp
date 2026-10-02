@@ -58,7 +58,8 @@ int LbTextSetJustifyWindow(s32 x, s32 y, s32 width)
 }
 
 // Sets the text clip window to the box at (x, y), width x height, clipped
-// to the screen. Returns 1.
+// to the screen; its ptr points at (x, y) as passed, neither swapped nor
+// clipped. Returns 1.
 // FUNCTION: 0x000c857c
 int LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height)
 {
@@ -150,7 +151,7 @@ s32 LbTextWordWidth(char *text)
 }
 
 // Returns the height in pixels of text's lines in the current font
-// (asserting on a null text).
+// (asserting on a null text); 0 with no font or a null text.
 // FUNCTION: 0x000c8800
 s32 LbTextStringHeight(char *text)
 {

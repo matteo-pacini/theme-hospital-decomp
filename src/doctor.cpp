@@ -29,7 +29,8 @@ void doctor_in_office(Thing *doctor)
 // SS_DOCTOR_WORKS_AT_DESK: each time the desk animation loops, decides what
 // doctor does next: leaves if the room is being edited or they resign, takes a
 // requested break, calls the next patient in the queue (a quarter of the time),
-// fetches from the filing cabinet, or answers a staff page when idle.
+// fetches from the filing cabinet, or when idle takes a break if tired or
+// answers a staff page (paging a doctor to cover a waiting queue).
 // FUNCTION: 0x0003a7a8
 void doctor_works_at_desk(Thing *doctor)
 {
@@ -298,8 +299,8 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
 }
 
 // Drops w's call for a patient and puts w back in its room's working state;
-// for a surgeon, also releases the other surgeon waiting with them (state
-// 0x18).
+// for a surgeon, also releases the other surgeon waiting with them
+// (SS_ASSISTANT_READY).
 // FUNCTION: 0x0003b234
 void stop_waiting_for_patient(Thing *w)
 {
@@ -515,13 +516,14 @@ void doctor_researches(Thing *doctor)
 }
 
 // Makes doctor (STAFF_DOCTOR only) crack up, once: changes their look, rerolls
-// their ability around a mean set by their seniority, and counts it for the
-// advisor if they are the local player's.
+// their ability within the range of their rank (junior: 30 to
+// doctor_threshold, doctor: up to consultant_threshold, consultant: up to
+// 1000), and counts it for the advisor if they are the local player's.
 // FUNCTION: 0x0003bd34
 void doctor_cracks_up(Thing *doctor)
 {
-    u32 mean;
-    u32 spread;
+    u32 low;
+    u32 high;
 
     if (doctor->subtype == STAFF_DOCTOR) {
         if (doctor->subtype == STAFF_DOCTOR && doctor->crazy) {
@@ -533,16 +535,16 @@ void doctor_cracks_up(Thing *doctor)
             doctor->layers[5] = 4;
         }
         doctor->crazy = 1;
-        mean = gbv.doctor_threshold;
-        spread = gbv.consultant_threshold;
+        low = gbv.doctor_threshold;
+        high = gbv.consultant_threshold;
         if (doctor->skills & SKILL_CONSULTANT) {
-            mean = gbv.consultant_threshold;
-            spread = 1000;
+            low = gbv.consultant_threshold;
+            high = 1000;
         } else if (doctor->skills & SKILL_JUNIOR) {
-            mean = 30;
-            spread = gbv.doctor_threshold;
+            low = 30;
+            high = gbv.doctor_threshold;
         }
-        doctor->ability = old_normal_rand(mean, spread);
+        doctor->ability = old_normal_rand(low, high);
         if (doctor->owner == player) {
             adcounts.crackups++;
         }
@@ -617,8 +619,8 @@ void doctor_in_theatre(Thing *doctor)
 }
 
 // Starts surgeon changing back from surgical dress (the complex for the first
-// or second surgeon), or turns them back into STAFF_DOCTOR at once if no
-// surgeon is counted in the room.
+// or second surgeon), or turns them back into STAFF_DOCTOR at once if the
+// room counts neither one nor two surgeons.
 // FUNCTION: 0x0003c0a8
 void change_surgeon_to_doc(Thing *surgeon)
 {

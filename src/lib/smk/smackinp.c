@@ -56,26 +56,53 @@ typedef struct SmackSnd {
     u8 *bufend;
     u8 *readpos;
     u8 *writepos;
-    u32 f10;
-    u32 f14;
+    // 0x10: Bytes in the ring buffer not yet handed to the sound driver
+    // (smkmss.c's pending).
+    u32 pending;
+    // 0x14: Bytes per second of the track (rate x channels x sample size).
+    u32 bytespersec;
     u32 bufsize;
-    u32 f1c;
-    u32 f20;
-    u32 f24;
-    u32 f28;
-    u32 f2c;
-    u32 f30;
-    u32 f34;
-    u32 f38;
+    // 0x1c: Bytes of audio per frame, 22.10 fixed point; added to clockfix and
+    // lateclockfix each frame.
+    u32 frameadd;
+    // 0x20: 22.10 fixed-point bytes past clockbase at which the next frame is
+    // due (SmackWait).
+    u32 clockfix;
+    // 0x24: Played-byte count that clockfix and lateclockfix are relative to.
+    u32 clockbase;
+    // 0x28: 22.10 fixed-point bytes past clockbase after which a frame is late
+    // (doskip); starts at half a second of audio.
+    u32 lateclockfix;
+    // 0x2c: Total bytes put into the ring buffer (audio plus silence padding),
+    // less bytes discarded when sound is turned off.
+    u32 written;
+    // 0x30: Frames whose audio was cut short to fit the ring buffer; nothing
+    // reads it.
+    u32 overflows;
+    // 0x34: Times silence was inserted after the driver starved; reported as
+    // SmackSum.SoundSkips.
+    u32 soundskips;
+    // 0x38: The track's LargestInTrack rounded down to 4: a starved track is
+    // padded with silence up to this many bytes per frame.
+    u32 minchunk;
     u32 f3c;
     u32 f40;
     u32 f44;
-    u32 f48;
-    u32 f4c;
-    u32 f50;
-    u32 f54;
-    u32 f58;
-    u32 f5c;
+    // 0x48: Sample rate in Hz (smkmss.c's rate).
+    u32 rate;
+    // 0x4c: Set when the current frame has no audio for the track, so the
+    // driver plays out what is pending (smkmss.c's flush).
+    u32 flush;
+    // 0x50: 16-bit samples (smkmss.c's bits16).
+    u32 bits16;
+    // 0x54: Stereo samples (smkmss.c's stereo).
+    u32 stereo;
+    // 0x58: Set by the driver when it ran out of data (smkmss.c's starved);
+    // soundnext then pads with silence.
+    u32 starved;
+    // 0x5c: Set when soundnext handled starved; it clears starved (and itself)
+    // on the next frame.
+    u32 starvedseen;
     u8 unknown60[0x84 - 0x60];
 } SmackSnd;
 
@@ -107,66 +134,144 @@ typedef struct Smack {
     u32 OpenFlags;
     u32 LeftOfs;
     u32 TopOfs;
-    u32 unknown39c;
+    // 0x39c: Set when a file read comes up short; stops further decoding.
+    u32 readerror;
     u32 unknown3a0;
     u32 handle;
-    u32 f3a8;
+    // 0x3a8: Size of framebuf less its 8 spare bytes: the whole file's frames,
+    // or the largest frame when reading ahead.
+    u32 framebufsize;
     void *addr32;
-    u8 *f3b0;
-    u32 f3b4;
-    u32 f3b8;
-    u8 *f3bc;
-    u8 *f3c0;
-    u32 f3c4;
-    u32 *f3c8;
-    u8 *f3cc;
-    u8 *f3d0;
+    // 0x3b0: Blit table for Unsmack and SmackGetRect, built by SmackToBuffer or
+    // SmackToScreen; byte 0 is 1 for a buffer, 0 for the screen.
+    u8 *deltas;
+    // 0x3b4: Bytes allocated for deltas.
+    u32 deltassize;
+    // 0x3b8: File position of frame 0's data (after the header, frame tables
+    // and Huffman tables).
+    u32 firstframepos;
+    // 0x3bc: Frame data buffer: the current frame, or all frames when the file
+    // was loaded whole (OpenFlags 0x200).
+    u8 *framebuf;
+    // 0x3c0: The current frame's data within framebuf.
+    u8 *framedata;
+    // 0x3c4: Frame number SmackDoFrame last played with NewPalette set (-1
+    // after open); a palette chunk on that frame does not set NewPalette again.
+    u32 palframe;
+    // 0x3c8: Per-frame data sizes read from the file (Frames entries, plus one
+    // for a ring frame).
+    u32 *framesizes;
+    // 0x3cc: Per-frame type bytes read from the file (bit 0 palette, bits 1-7
+    // tracks 0-6); also the start of the frame table allocation.
+    u8 *frametypes;
+    // 0x3d0: Start of the current frame's chunks; SndSize is measured from it.
+    u8 *framestart;
     u32 *trackbufs[7];
-    u8 *f3f0;
-    u32 f3f4;
-    u32 f3f8;
-    u32 f3fc;
-    u32 f400;
-    u32 f404;
-    u32 f408;
-    u32 f40c;
-    u32 f410;
+    // 0x3f0: The current frame's video data (after its palette and audio
+    // chunks), passed to Unsmack.
+    u8 *videodata;
+    // 0x3f4: SmackToBufferRect state: 0 nothing to report, 1 frame decoded, 2 a
+    // rectangle is in rectx..recth, 3 all reported.
+    u32 rectstate;
+    // 0x3f8: Changed rectangle filled in by SmackGetRect: left.
+    u32 rectx;
+    // 0x3fc: See rectx: top.
+    u32 recty;
+    // 0x400: See rectx: width.
+    u32 rectw;
+    // 0x404: See rectx: height.
+    u32 recth;
+    // 0x408: Set by SmackWait (no sound timing) when the frame time has come;
+    // cleared by setuptheframe.
+    u32 framedue;
+    // 0x40c: Timer reading x 100 at which the next frame is due when timing
+    // without sound, or -1 before the first.
+    u32 nextframetime;
+    // 0x410: Frame duration in hundredths of a millisecond (from MSPerFrame), 0
+    // for no frame rate; SmackSum.MS100PerFrame.
+    u32 ms100perframe;
     SmackSnd *sounds[7];
-    u32 f430;
-    u32 f434;
-    u32 f438;
-    u8 *f43c;
-    u8 *f440;
-    u8 *f444;
-    u8 *f448;
-    u32 f44c;
-    u32 f450;
-    u32 f454;
-    u32 f458;
-    u32 f45c;
-    u32 f460;
-    u32 f464;
-    u32 f468;
-    u32 f46c;
-    u32 f470;
-    u32 f474;
-    u32 f478;
-    u32 f47c;
-    u32 f480;
-    u32 f484;
-    u32 f488;
-    u32 f48c;
-    u32 f490;
-    u32 f494;
-    u32 f498;
-    u32 f49c;
-    u32 f4a0;
-    u32 f4a4;
-    u32 f4a8;
-    u32 f4ac;
-    u32 f4b0;
-    u32 f4b4;
-    u32 f4b8;
+    // 0x430: First opened sound track, used for timing, or -1 if none.
+    u32 timingtrack;
+    // 0x434: Set by soundnext each frame (with a frame rate); cleared once the
+    // timing track has played up to the frame's time.
+    u32 soundwait;
+    // 0x438: Sound turned off by SmackSoundOnOff.
+    u32 soundoff;
+    // 0x43c: Read-ahead ring buffer (readaheadsize bytes plus 4K), or NULL.
+    u8 *readahead;
+    // 0x440: End of the valid data in readahead; reads wrap there.
+    u8 *readaheadend;
+    // 0x444: Read position in readahead.
+    u8 *readaheadread;
+    // 0x448: Write position in readahead.
+    u8 *readaheadwrite;
+    // 0x44c: Bytes buffered in readahead.
+    u32 readaheadcount;
+    // 0x450: Size of readahead (the extra buffer); SmackSum.TotalExtraMemory.
+    u32 readaheadsize;
+    // 0x454: File position of the next byte blockread delivers.
+    u32 filepos;
+    // 0x458: Bytes read from the file by blockread; SmackOpen also adds
+    // backreadbytes read while opening.
+    u32 readbytes;
+    // 0x45c: Time spent in blockread; SmackOpen also moves in backreadtime
+    // spent while opening.
+    u32 readtime;
+    // 0x460: Bytes read by backgroundload.
+    u32 backreadbytes;
+    // 0x464: Time spent in backgroundload; SmackSum.TotalBackReadTime.
+    u32 backreadtime;
+    // 0x468: Most bytes ever buffered in readahead; SmackSum.HighestExtraUsed.
+    u32 highestextraused;
+    // 0x46c: Bytes currently allocated through smkmalloc.
+    u32 memamount;
+    // 0x470: Timer reading at SmackDoFrame, for the slowest-frame times; 0 once
+    // used.
+    u32 framestarttime;
+    // 0x474: Timer reading at SmackDoFrame, for the decompression time; 0 once
+    // used.
+    u32 decompstarttime;
+    // 0x478: Timer reading at the first SmackToBufferRect of a frame, for the
+    // blit time; 0 once used.
+    u32 blitstarttime;
+    // 0x47c: Timer reading at the first SmackDoFrame; SmackSum.TotalTime is
+    // measured from it.
+    u32 firstframetime;
+    // 0x480: Time SmackOpen took; SmackSum.TotalOpenTime.
+    u32 totalopentime;
+    // 0x484: readtime at the end of SmackOpen; subtracted for
+    // SmackSum.TotalReadTime.
+    u32 openreadtime;
+    // 0x488: Frames passed to SmackDoFrame; SmackSum.TotalFrames.
+    u32 totalframes;
+    // 0x48c: Frames whose video SmackDoFrame skipped as late;
+    // SmackSum.SkippedFrames.
+    u32 skippedframes;
+    // 0x490: SmackSum.TotalBlitTime.
+    u32 totalblittime;
+    // 0x494: SmackSum.TotalDecompTime.
+    u32 totaldecomptime;
+    // 0x498: SmackSum.SlowestFrameTime.
+    u32 slowestframetime;
+    // 0x49c: SmackSum.Slowest2FrameTime.
+    u32 slowest2frametime;
+    // 0x4a0: Frame number (0-based) of slowestframetime.
+    u32 slowestframenum;
+    // 0x4a4: Frame number (0-based) of slowest2frametime.
+    u32 slowest2framenum;
+    // 0x4a8: Total frame data / frame count; SmackSum.AverageFrameSize.
+    u32 averageframesize;
+    // 0x4ac: Peak memamount; SmackSum.HighestMemAmount.
+    u32 highestmemamount;
+    // 0x4b0: Simulated read speed in bytes per second (simspeed, OpenFlags
+    // 0x800), or 0.
+    u32 simreadspeed;
+    // 0x4b4: Largest total data size of one second's worth of consecutive
+    // frames.
+    u32 highest1secsize;
+    // 0x4b8: First frame (0-based) of that one-second window.
+    u32 highest1secframe;
 } Smack;
 
 typedef struct SmackSum {
@@ -186,8 +291,10 @@ typedef struct SmackSum {
     u32 SlowestFrameNum;
     u32 Slowest2FrameNum;
     u32 AverageFrameSize;
-    u32 unknown40;
-    u32 unknown44;
+    // 0x40: Smack.highest1secsize: most frame data in one second of frames.
+    u32 Highest1SecRate;
+    // 0x44: 1-based first frame of that one-second window.
+    u32 Highest1SecFrame;
     u32 HighestMemAmount;
     u32 TotalExtraMemory;
     u32 HighestExtraUsed;
@@ -226,7 +333,7 @@ void __cdecl radseekbegin(u32 handle, u32 pos);
 u32 __cdecl radseekcur(u32 handle, u32 pos);
 
 void __cdecl Unsmack(u8 *data, void *addr32, u8 *deltas);
-void __cdecl SmackDoPCM(u32 *in, u32 insize, u8 *work, u8 *outbase, u8 *outend, u8 *outpos);
+void __cdecl SmackDoPCM(u32 *in, u32 outsize, u8 *work, u8 *outbase, u8 *outend, u8 *outpos);
 u32 __cdecl SmackGetSizeTables(void);
 void __cdecl SmackDoTables(u8 *tables, void *addr32, u32 codesize, u32 absize, u32 detailsize, u32 typesize);
 u32 __cdecl SmackGetSizeDeltas(u32 width, u32 height);
@@ -247,7 +354,7 @@ u32 blockread(Smack *smk, u8 *buf, u32 size);
 u32 backgroundload(Smack *smk);
 void *smkmalloc(Smack *smk, u32 bytes);
 
-/* config/functions.txt has no name for nexttrack. */
+/* config/functions.txt names nexttrack GetFirstTrack_. */
 #pragma aux nexttrack "GetFirstTrack_";
 
 #pragma aux (__pascal) SmackVolumePan "SMACKVOLUMEPAN";
@@ -281,16 +388,16 @@ void __pascal SmackSummary(Smack *smk, SmackSum *sum);
 u32 __pascal SmackSoundOnOff(Smack *smk, u32 on);
 #pragma aux (__pascal) SmackSoundOnOff "SMACKSOUNDONOFF";
 
-/* config/functions.txt has no name for readframe. */
+/* Binds readframe to readframe_, the name config/functions.txt gives it. */
 #pragma aux readframe "readframe_";
 
 // smkmalloc: RADMALLOC(bytes), adding them to smk's memory total and peak.
 // FUNCTION: 0xeb200
 void *smkmalloc(Smack *smk, u32 bytes)
 {
-    smk->f46c += bytes;
-    if (smk->f46c > smk->f4ac)
-        smk->f4ac = smk->f46c;
+    smk->memamount += bytes;
+    if (smk->memamount > smk->highestmemamount)
+        smk->highestmemamount = smk->memamount;
     return RADMALLOC(bytes);
 }
 
@@ -304,32 +411,32 @@ u32 backgroundload(Smack *smk)
     u32 now;
 
     amount = 0;
-    if (smk->FrameNum < smk->Frames && (s32)(smk->f450 - smk->f44c) >= 0x1000) {
+    if (smk->FrameNum < smk->Frames && (s32)(smk->readaheadsize - smk->readaheadcount) >= 0x1000) {
         start = SmackTimerReadAddr();
-        radread(smk->handle, smk->f448, 0x1000, &amount);
-        smk->f44c += amount;
-        smk->f448 += amount;
-        if (smk->f448 > smk->f440) {
-            smk->f440 = smk->f448;
-            smk->f448 = smk->f43c;
+        radread(smk->handle, smk->readaheadwrite, 0x1000, &amount);
+        smk->readaheadcount += amount;
+        smk->readaheadwrite += amount;
+        if (smk->readaheadwrite > smk->readaheadend) {
+            smk->readaheadend = smk->readaheadwrite;
+            smk->readaheadwrite = smk->readahead;
         }
-        if (smk->f44c > smk->f468)
-            smk->f468 = smk->f44c;
-        smk->f460 += amount;
-        if (smk->f4b0) {
-            until = mult64anddiv(amount, 1000, smk->f4b0) + start;
+        if (smk->readaheadcount > smk->highestextraused)
+            smk->highestextraused = smk->readaheadcount;
+        smk->backreadbytes += amount;
+        if (smk->simreadspeed) {
+            until = mult64anddiv(amount, 1000, smk->simreadspeed) + start;
             do
                 now = SmackTimerReadAddr();
             while (now < until);
         } else {
             now = SmackTimerReadAddr();
         }
-        smk->f464 += now - start;
+        smk->backreadtime += now - start;
     }
     return amount;
 }
 
-// blockread: read size bytes of the file into buf, from the read-ahead buffer first, then directly in up to 16K chunks, refilling the buffer for the tail; a short read sets the read-error flag; returns the bytes delivered.
+// blockread: read size bytes of the file into buf (all directly when there is no read-ahead buffer), from the read-ahead buffer first, then directly in up to 16K chunks, refilling the buffer for the tail; a short read sets the read-error flag; returns the bytes delivered.
 // FUNCTION: 0xeae00
 u32 blockread(Smack *smk, u8 *buf, u32 size)
 {
@@ -343,27 +450,27 @@ u32 blockread(Smack *smk, u8 *buf, u32 size)
     total = 0;
     amount = 0;
     start = SmackTimerReadAddr();
-    if (smk->f43c == NULL) {
+    if (smk->readahead == NULL) {
         radread(smk->handle, buf, size, &amount);
         total = amount;
         goto timing;
     }
     for (;;) {
-        while (smk->f44c) {
-            n = smk->f440 - smk->f444;
+        while (smk->readaheadcount) {
+            n = smk->readaheadend - smk->readaheadread;
             if (n > size)
                 n = size;
-            if (smk->f44c < n)
-                n = smk->f44c;
-            radmemcpy(buf, smk->f444, n);
-            smk->f44c -= n;
-            smk->f454 += n;
-            smk->f444 += n;
-            if (smk->f444 >= smk->f440) {
-                smk->f444 = smk->f43c;
-                smk->f440 = smk->f43c + smk->f450;
-                if (smk->f44c == 0)
-                    smk->f448 = smk->f444;
+            if (smk->readaheadcount < n)
+                n = smk->readaheadcount;
+            radmemcpy(buf, smk->readaheadread, n);
+            smk->readaheadcount -= n;
+            smk->filepos += n;
+            smk->readaheadread += n;
+            if (smk->readaheadread >= smk->readaheadend) {
+                smk->readaheadread = smk->readahead;
+                smk->readaheadend = smk->readahead + smk->readaheadsize;
+                if (smk->readaheadcount == 0)
+                    smk->readaheadwrite = smk->readaheadread;
             }
             total += n;
             size -= n;
@@ -380,38 +487,38 @@ u32 blockread(Smack *smk, u8 *buf, u32 size)
             buf += n;
             total += n;
             amount += n;
-            smk->f454 += n;
+            smk->filepos += n;
             if (sounds)
                 LowSoundCheckAddr();
             if (chunk != n && size != 0) {
-                smk->unknown39c = 1;
+                smk->readerror = 1;
                 break;
             }
         }
         if (size == 0)
             break;
         chunk = ((size + 0xfff) >> 12) << 12;
-        radread(smk->handle, smk->f43c, chunk, &n);
+        radread(smk->handle, smk->readahead, chunk, &n);
         amount += n;
-        smk->f444 = smk->f43c;
-        smk->f448 = smk->f43c + n;
-        smk->f44c = n;
+        smk->readaheadread = smk->readahead;
+        smk->readaheadwrite = smk->readahead + n;
+        smk->readaheadcount = n;
         if (chunk != n && size > n) {
-            smk->unknown39c = 1;
+            smk->readerror = 1;
             break;
         }
     }
 timing:
-    smk->f458 += amount;
-    if (smk->f4b0) {
-        amount = start + mult64anddiv(amount, 1000, smk->f4b0);
+    smk->readbytes += amount;
+    if (smk->simreadspeed) {
+        amount = start + mult64anddiv(amount, 1000, smk->simreadspeed);
         do
             now = SmackTimerReadAddr();
         while (now < amount);
     } else {
         now = SmackTimerReadAddr();
     }
-    smk->f45c += now - start;
+    smk->readtime += now - start;
     return total;
 }
 
@@ -421,17 +528,18 @@ u32 readframe(Smack *smk)
 {
     if (smk->OpenFlags & 0x200)
         return 0;
-    smk->f3c0 = smk->f3bc;
-    smk->FrameSize = smk->f3c8[smk->FrameNum];
-    return blockread(smk, smk->f3bc, smk->FrameSize);
+    smk->framedata = smk->framebuf;
+    smk->FrameSize = smk->framesizes[smk->FrameNum];
+    return blockread(smk, smk->framebuf, smk->FrameSize);
 }
 
-// gotoframe: reposition on FrameNum: on frame 0 clear the palette and reset the sound buffers, then reuse read-ahead data or seek to the frame and read it; returns the bytes read.
+// gotoframe: reposition on FrameNum: on frame 0 clear the palette and, once sound has been queued, reset the sound buffers; then point at the frame (whole file in memory, returning 0), or reuse read-ahead data or seek to the frame, and read it; returns the bytes read.
 // FUNCTION: 0xeab30
-// NONMATCHING: in the else branch the target stores f448 and f444 before f440
-// and adds f450 to f43c in place; written in that order, ours adds to a copy
-// of f43c and loads f450 late (further off than this order). The inlined
-// readframe loads f3c8 before FrameNum (the target loads FrameNum first)
+// NONMATCHING: in the else branch the target stores readaheadwrite and
+// readaheadread before readaheadend and adds readaheadsize to readahead in
+// place; written in that order, ours adds to a copy of readahead and loads
+// readaheadsize late (further off than this order). The inlined readframe
+// loads framesizes before FrameNum (the target loads FrameNum first)
 u32 gotoframe(Smack *smk)
 {
     u32 pos;
@@ -441,9 +549,9 @@ u32 gotoframe(Smack *smk)
 
     if (smk->FrameNum == 0) {
         radmemset(smk->Palette, 0, sizeof(smk->Palette));
-        if (smk->f430 != -1 && smk->sounds[smk->f430]->f2c) {
+        if (smk->timingtrack != -1 && smk->sounds[smk->timingtrack]->written) {
             n = 1;
-            for (i = smk->f430 + 1; i < 7; i++) {
+            for (i = smk->timingtrack + 1; i < 7; i++) {
                 if (smk->sounds[i] != NULL)
                     n++;
             }
@@ -452,12 +560,12 @@ u32 gotoframe(Smack *smk)
                     snd = smk->sounds[i];
                     if (snd != NULL) {
                         LowSoundPurgeAddr(snd);
-                        snd->f10 = 0;
-                        snd->f24 = 0;
+                        snd->pending = 0;
+                        snd->clockbase = 0;
                         snd->readpos = snd->writepos = snd->buf;
-                        snd->f2c = 0;
-                        snd->f28 -= snd->f20;
-                        snd->f20 = 0;
+                        snd->written = 0;
+                        snd->lateclockfix -= snd->clockfix;
+                        snd->clockfix = 0;
                     }
                 }
             }
@@ -465,47 +573,48 @@ u32 gotoframe(Smack *smk)
     }
     pos = 0;
     for (i = 0; i < smk->FrameNum; i++)
-        pos += smk->f3c8[i];
+        pos += smk->framesizes[i];
     if (smk->OpenFlags & 0x200) {
-        smk->f3c0 = smk->f3bc + pos;
+        smk->framedata = smk->framebuf + pos;
         return 0;
     }
-    pos += smk->f3b8;
-    if (pos >= smk->f454 && smk->f454 + smk->f44c >= pos) {
-        n = pos - smk->f454;
-        smk->f44c -= n;
-        smk->f444 += n;
-        if (smk->f444 >= smk->f440) {
-            smk->f444 = smk->f43c + (smk->f444 - smk->f440);
-            smk->f440 = smk->f43c + smk->f450;
+    pos += smk->firstframepos;
+    if (pos >= smk->filepos && smk->filepos + smk->readaheadcount >= pos) {
+        n = pos - smk->filepos;
+        smk->readaheadcount -= n;
+        smk->readaheadread += n;
+        if (smk->readaheadread >= smk->readaheadend) {
+            smk->readaheadread = smk->readahead + (smk->readaheadread - smk->readaheadend);
+            smk->readaheadend = smk->readahead + smk->readaheadsize;
         }
     } else {
-        smk->f44c = 0;
-        smk->f440 = smk->f43c + smk->f450;
-        smk->f448 = smk->f43c;
-        smk->f444 = smk->f43c;
+        smk->readaheadcount = 0;
+        smk->readaheadend = smk->readahead + smk->readaheadsize;
+        smk->readaheadwrite = smk->readahead;
+        smk->readaheadread = smk->readahead;
         radseekbegin(smk->handle, pos);
         n = pos & 0xfff;
         if (n) {
-            smk->f43c = NULL;
-            n = blockread(smk, smk->f444, 0x1000 - n);
-            smk->f44c = n;
-            smk->f448 += n;
-            smk->f43c = smk->f444;
+            smk->readahead = NULL;
+            n = blockread(smk, smk->readaheadread, 0x1000 - n);
+            smk->readaheadcount = n;
+            smk->readaheadwrite += n;
+            smk->readahead = smk->readaheadread;
         }
     }
-    smk->f454 = pos;
+    smk->filepos = pos;
     if (smk->OpenFlags & 0x200)
         return 0;
-    smk->f3c0 = smk->f3bc;
-    smk->FrameSize = smk->f3c8[smk->FrameNum];
-    return blockread(smk, smk->f3bc, smk->FrameSize);
+    smk->framedata = smk->framebuf;
+    smk->FrameSize = smk->framesizes[smk->FrameNum];
+    return blockread(smk, smk->framebuf, smk->FrameSize);
 }
 
 // setuptheframe: prepare the current frame (wrapping past the last one): locate its per-track audio chunks and video data and decode its palette chunk, setting NewPalette when the palette changed.
 // FUNCTION: 0xea7a0
-// NONMATCHING: register allocation in the palette loop (the target keeps c in
-// cl, src in edx and dst in ebp)
+// NONMATCHING: register allocation: the inlined readframe indexes framesizes
+// (eax) by FrameNum (edx), ours the reverse, and in the palette loop the
+// target keeps c in cl, src in edx and dst in ebp
 void setuptheframe(Smack *smk)
 {
     u8 oldpal[0x300];
@@ -521,7 +630,7 @@ void setuptheframe(Smack *smk)
     u8 flags;
     u8 c;
 
-    smk->f408 = 0;
+    smk->framedue = 0;
     past_end = smk->FrameNum - smk->Frames;
     if (past_end >= 0) {
         if (smk->SmackerType & 1) {
@@ -536,9 +645,9 @@ void setuptheframe(Smack *smk)
         gotoframe(smk);
     }
 frame:
-    chunk = smk->f3c0;
-    smk->f3d0 = chunk;
-    flags = smk->f3cc[smk->FrameNum];
+    chunk = smk->framedata;
+    smk->framestart = chunk;
+    flags = smk->frametypes[smk->FrameNum];
     if (flags & 1)
         chunk += *chunk * 4;
     smk->trackbufs[0] = (flags & 0x02) ? (u32 *)chunk : NULL;
@@ -562,12 +671,12 @@ frame:
     smk->trackbufs[6] = (flags & 0x80) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[6] != NULL)
         chunk += *(u32 *)chunk;
-    smk->f3f0 = chunk;
-    smk->SndSize = chunk - smk->f3d0;
+    smk->videodata = chunk;
+    smk->SndSize = chunk - smk->framestart;
     if (flags & 1) {
         dst = smk->Palette;
         i = 0;
-        src = smk->f3c0;
+        src = smk->framedata;
         radmemcpy(oldpal, dst, 0x300);
         prev = oldpal;
         src++;
@@ -595,7 +704,7 @@ frame:
                 i++;
             }
         }
-        if (smk->f3c4 != smk->FrameNum) {
+        if (smk->palframe != smk->FrameNum) {
             smk->NewPalette = 1;
             return;
         }
@@ -626,9 +735,9 @@ u8 soundopen(Smack *smk, u8 trk)
             return 0;
     }
     radmemset(smk->sounds[trk], 0, sizeof(SmackSnd));
-    smk->sounds[trk]->f1c = mult64anddiv(bps << 10, smk->f410, 100000);
-    smk->sounds[trk]->f28 = bps << 9;
-    smk->sounds[trk]->bufsize = ((smk->sounds[trk]->f1c >> 9) + bps + 0xfff) & ~0xfff;
+    smk->sounds[trk]->frameadd = mult64anddiv(bps << 10, smk->ms100perframe, 100000);
+    smk->sounds[trk]->lateclockfix = bps << 9;
+    smk->sounds[trk]->bufsize = ((smk->sounds[trk]->frameadd >> 9) + bps + 0xfff) & ~0xfff;
     if (smk->sounds[trk]->bufsize < 0x2000)
         smk->sounds[trk]->bufsize = 0x2000;
     smk->sounds[trk]->bufend =
@@ -637,18 +746,18 @@ u8 soundopen(Smack *smk, u8 trk)
         + smk->sounds[trk]->bufsize;
     if (smk->sounds[trk]->buf == NULL)
         return 0;
-    smk->sounds[trk]->f14 = bps;
-    smk->sounds[trk]->f48 = rate;
-    smk->sounds[trk]->f50 = bits16;
-    smk->sounds[trk]->f54 = stereo;
+    smk->sounds[trk]->bytespersec = bps;
+    smk->sounds[trk]->rate = rate;
+    smk->sounds[trk]->bits16 = bits16;
+    smk->sounds[trk]->stereo = stereo;
     if (!LowSoundOpenAddr(smk->sounds[trk], smk->OpenFlags)) {
         RADFREE(smk->sounds[trk]->buf);
-        smk->f46c -= smk->sounds[trk]->bufsize;
+        smk->memamount -= smk->sounds[trk]->bufsize;
         return 0;
     }
-    smk->sounds[trk]->f38 = smk->LargestInTrack[trk] & ~3;
-    if (smk->f430 == -1)
-        smk->f430 = trk;
+    smk->sounds[trk]->minchunk = smk->LargestInTrack[trk] & ~3;
+    if (smk->timingtrack == -1)
+        smk->timingtrack = trk;
     sounds++;
     return 1;
 }
@@ -671,11 +780,11 @@ u8 nexttrack(u32 *flags)
     return 0xff;
 }
 
-// SmackOpen: open Smacker file name (a file handle with flag 0x1000; into caller memory with 0x2000000): read the header and frame tables, build the decoding tables, set up read-ahead or load the whole file, prepare the first frame and open the requested sound tracks; NULL on failure.
+// SmackOpen: open Smacker file name (with flag 0x1000 name is an open file handle; with 0x2000000 the Smack is built in the memory at name, whose first dword holds the handle when 0x1000 is also set): read the header and frame tables, build the decoding tables, set up read-ahead or load the whole file, prepare the first frame and open the requested sound tracks; NULL on failure.
 // FUNCTION: 0xe9c80
 // NONMATCHING: the spill slots of largest, start, handle, left, fps and
 // nextsize are ordered differently, the inlined readframe loads FrameNum
-// before f3c8, and the target's inlined nexttrack keeps the mask in eax and
+// before framesizes, and the target's inlined nexttrack keeps the mask in eax and
 // the index in dl, the reverse of its out-of-line GetFirstTrack (ours inlines
 // the GetFirstTrack allocation)
 Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
@@ -730,11 +839,11 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
         }
     }
     radmemset(smk, 0, sizeof(Smack));
-    smk->f46c = sizeof(Smack);
+    smk->memamount = sizeof(Smack);
     smk->handle = handle;
-    smk->f3b8 = tmp;
+    smk->firstframepos = tmp;
     if (flags & 0x800)
-        smk->f4b0 = simspeed;
+        smk->simreadspeed = simspeed;
     tmp = 0;
     smk->Version = 0;
     blockread(smk, (u8 *)smk, (u32)((u8 *)&smk->extra - (u8 *)smk) + 4);
@@ -746,22 +855,22 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     }
     if (flags & 0x80)
         smk->MSPerFrame = forcerate;
-    smk->f410 = (s32)smk->MSPerFrame < 0 ? -smk->MSPerFrame : smk->MSPerFrame * 100;
-    fps = smk->f410 ? 100000 / smk->f410 : 100000;
+    smk->ms100perframe = (s32)smk->MSPerFrame < 0 ? -smk->MSPerFrame : smk->MSPerFrame * 100;
+    fps = smk->ms100perframe ? 100000 / smk->ms100perframe : 100000;
     if (fps == 0)
         ++fps;
     tmp = smk->Frames + (smk->SmackerType & 1);
-    smk->f3cc = smkmalloc(smk, tmp * 5 + 4);
-    if (smk->f3cc == NULL)
+    smk->frametypes = smkmalloc(smk, tmp * 5 + 4);
+    if (smk->frametypes == NULL)
         goto fail_free;
-    smk->f3c8 = (u32 *)(smk->f3cc + tmp);
-    blockread(smk, (u8 *)smk->f3c8, tmp * 4);
-    blockread(smk, smk->f3cc, tmp);
-    smk->f3b8 += tmp * 4 + tmp;
+    smk->framesizes = (u32 *)(smk->frametypes + tmp);
+    blockread(smk, (u8 *)smk->framesizes, tmp * 4);
+    blockread(smk, smk->frametypes, tmp);
+    smk->firstframepos += tmp * 4 + tmp;
     size = SmackGetSizeTables() + smk->codesize + smk->absize + smk->detailsize + smk->typesize;
     smk->addr32 = smkmalloc(smk, size);
     if (smk->addr32 == NULL) {
-        RADFREE(smk->f3cc);
+        RADFREE(smk->frametypes);
         goto fail_free;
     }
     size = (smk->tablesize + 0x1003) & ~3;
@@ -769,17 +878,17 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     if (tables == NULL) {
     fail_tables:
         RADFREE(smk->addr32);
-        RADFREE(smk->f3cc);
+        RADFREE(smk->frametypes);
         goto fail_free;
     }
     blockread(smk, tables + 0x1000, smk->tablesize);
     SmackDoTables(tables, smk->addr32, smk->codesize, smk->absize, smk->detailsize, smk->typesize);
     RADFREE(tables);
-    smk->f46c -= smk->tablesize + 0x1000;
-    smk->f3b8 += (u32)((u8 *)&smk->extra - (u8 *)smk) + 4 + smk->tablesize;
+    smk->memamount -= smk->tablesize + 0x1000;
+    smk->firstframepos += (u32)((u8 *)&smk->extra - (u8 *)smk) + 4 + smk->tablesize;
     tmp = smk->Frames - 1 + (smk->SmackerType & 1);
     highest = 0;
-    frame_size = smk->f3c8;
+    frame_size = smk->framesizes;
     if (tmp < fps) {
         highframe = 0;
         i = 0;
@@ -796,7 +905,7 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
         window = 0;
         for (i = 0; i < fps; i++)
             window += *frame_size++;
-        frame_size = smk->f3c8;
+        frame_size = smk->framesizes;
         left = tmp - fps;
         i = 0;
         nextsize = frame_size + fps;
@@ -822,14 +931,14 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
             frame_size++;
         }
     }
-    smk->f4b8 = highframe;
-    smk->f4b4 = highest;
-    smk->f4a8 = total / i;
+    smk->highest1secframe = highframe;
+    smk->highest1secsize = highest;
+    smk->averageframesize = total / i;
     if (flags & 0x200) {
-        smk->f3a8 = total;
+        smk->framebufsize = total;
     } else {
         if (extrabuf == -1) {
-            extrabuf = smk->f410 ? smk->f4b4 : 0x3000;
+            extrabuf = smk->ms100perframe ? smk->highest1secsize : 0x3000;
             if (extrabuf > total >> 2)
                 extrabuf = total >> 2;
             if (extrabuf < 0x3000)
@@ -840,43 +949,43 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
             extrabuf = 0x2000;
         if (total * 4 / 5 <= extrabuf) {
             flags |= 0x200;
-            smk->f3a8 = total;
+            smk->framebufsize = total;
         } else {
-            smk->f450 = extrabuf;
-            smk->f3a8 = largest;
+            smk->readaheadsize = extrabuf;
+            smk->framebufsize = largest;
             if (extrabuf) {
-                smk->f448 = smk->f444 = smk->f43c = smkmalloc(smk, extrabuf + 0x1000);
-                if (smk->f43c == NULL)
+                smk->readaheadwrite = smk->readaheadread = smk->readahead = smkmalloc(smk, extrabuf + 0x1000);
+                if (smk->readahead == NULL)
                     goto fail_tables;
-                smk->f440 = smk->f43c + smk->f450;
+                smk->readaheadend = smk->readahead + smk->readaheadsize;
             }
         }
     }
-    smk->f3bc = smkmalloc(smk, smk->f3a8 + 8);
-    if (smk->f3bc == NULL) {
-        if (smk->f43c != NULL)
-            RADFREE(smk->f43c);
+    smk->framebuf = smkmalloc(smk, smk->framebufsize + 8);
+    if (smk->framebuf == NULL) {
+        if (smk->readahead != NULL)
+            RADFREE(smk->readahead);
         goto fail_tables;
     }
-    smk->f454 = smk->f3b8;
+    smk->filepos = smk->firstframepos;
     if (flags & 0x200) {
-        blockread(smk, smk->f3bc, total);
+        blockread(smk, smk->framebuf, total);
         if (!(flags & 0x1000))
             radclose(smk->handle);
         smk->handle = -1;
-        smk->f3c0 = smk->f3bc;
+        smk->framedata = smk->framebuf;
     } else {
-        tmp = smk->f3b8 & 0xfff;
+        tmp = smk->firstframepos & 0xfff;
         if (tmp) {
-            radread(smk->handle, smk->f43c, 0x1000 - tmp, &tmp);
-            smk->f448 = smk->f43c + tmp;
-            smk->f44c = tmp;
+            radread(smk->handle, smk->readahead, 0x1000 - tmp, &tmp);
+            smk->readaheadwrite = smk->readahead + tmp;
+            smk->readaheadcount = tmp;
         }
         readframe(smk);
     }
-    smk->f3c4 = -1;
+    smk->palframe = -1;
     setuptheframe(smk);
-    smk->f430 = -1;
+    smk->timingtrack = -1;
     smk->OpenFlags = flags & 0xffc01fff;
     while (flags & SMACKTRACKS) {
         tmp = nexttrack(&flags);
@@ -886,12 +995,12 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
                 smk->OpenFlags |= 1 << (tmp + 13);
             } else {
                 RADFREE(smk->sounds[tmp]);
-                smk->f46c -= sizeof(SmackSnd);
+                smk->memamount -= sizeof(SmackSnd);
                 smk->sounds[tmp] = NULL;
             }
         }
     }
-    smk->f40c = -1;
+    smk->nextframetime = -1;
     if (flags & 0x100) {
         while (backgroundload(smk))
             ;
@@ -917,11 +1026,11 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     }
     if (smk->OpenFlags & 0x300000)
         smk->Height += smk->Height;
-    smk->f480 = SmackTimerReadAddr() - start;
-    smk->f45c += smk->f464;
-    smk->f464 = 0;
-    smk->f458 += smk->f460;
-    smk->f484 = smk->f45c;
+    smk->totalopentime = SmackTimerReadAddr() - start;
+    smk->readtime += smk->backreadtime;
+    smk->backreadtime = 0;
+    smk->readbytes += smk->backreadbytes;
+    smk->openreadtime = smk->readtime;
     return smk;
 }
 
@@ -932,7 +1041,7 @@ void __pascal SmackSimulate(u32 speed)
     simspeed = speed;
 }
 
-// SmackFrameRate: frame rate used instead of the file's for files opened with flag 0x80 (rate > 0 in frames per second).
+// SmackFrameRate: frame rate used instead of the file's for files opened with flag 0x80 (rate > 0 in frames per second; otherwise used as a header MSPerFrame value).
 // FUNCTION: 0xe9c50
 void __pascal SmackFrameRate(s32 rate)
 {
@@ -957,28 +1066,28 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
     if (smk == NULL)
         return 0;
     if (on) {
-        if (smk->f438) {
-            smk->f438 = 0;
+        if (smk->soundoff) {
+            smk->soundoff = 0;
             for (i = 0; i < 7; i++) {
                 snd = smk->sounds[i];
                 if (snd == NULL)
                     continue;
                 if (LowSoundOnAddr != NULL && !LowSoundOnAddr(snd))
                     return 0;
-                snd->f24 = LowSoundPlayedAddr(snd);
-                behind = snd->f2c - snd->f24;
-                snd->f28 -= snd->f20;
-                snd->f20 = 0;
+                snd->clockbase = LowSoundPlayedAddr(snd);
+                behind = snd->written - snd->clockbase;
+                snd->lateclockfix -= snd->clockfix;
+                snd->clockfix = 0;
                 if (smk->FrameNum == 0)
                     continue;
-                need = (snd->f38 - ((snd->f20 >> 10) + snd->f24)) & ~3;
+                need = (snd->minchunk - ((snd->clockfix >> 10) + snd->clockbase)) & ~3;
                 if (behind >= need)
                     continue;
                 behind = need - behind;
-                if (snd->f10 + behind > snd->bufsize)
-                    behind = snd->bufsize - snd->f10;
+                if (snd->pending + behind > snd->bufsize)
+                    behind = snd->bufsize - snd->pending;
                 behind &= ~3;
-                need = snd->f50 ? 0 : 0x80;
+                need = snd->bits16 ? 0 : 0x80;
                 if (snd->writepos + behind >= snd->bufend) {
                     radmemset(snd->writepos, need, snd->bufend - snd->writepos);
                     radmemset(snd->buf, need, behind - (snd->bufend - snd->writepos));
@@ -987,22 +1096,22 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
                     radmemset(snd->writepos, need, behind);
                     snd->writepos += behind;
                 }
-                snd->f10 += behind;
-                snd->f2c += behind;
+                snd->pending += behind;
+                snd->written += behind;
             }
             LowSoundCheckAddr();
             return 1;
         }
-    } else if (!smk->f438) {
-        smk->f438 = 1;
+    } else if (!smk->soundoff) {
+        smk->soundoff = 1;
         for (i = 0; i < 7; i++) {
             if (smk->sounds[i] != NULL) {
                 if (LowSoundOffAddr != NULL)
                     LowSoundOffAddr(smk->sounds[i]);
                 snd = smk->sounds[i];
                 snd->readpos = snd->writepos = snd->buf;
-                snd->f2c -= snd->f10;
-                snd->f10 = 0;
+                snd->written -= snd->pending;
+                snd->pending = 0;
             }
         }
     }
@@ -1019,7 +1128,7 @@ void __pascal SmackClose(Smack *smk)
 
     if (smk == NULL)
         return;
-    if (smk->f430 != -1) {
+    if (smk->timingtrack != -1) {
         for (i = 0; i < 7; i++) {
             if (smk->sounds[i] != NULL) {
                 LowSoundCloseAddr(smk->sounds[i]);
@@ -1029,7 +1138,7 @@ void __pascal SmackClose(Smack *smk)
                 sounds--;
             }
         }
-        smk->f430 = -1;
+        smk->timingtrack = -1;
     }
     if (sounds == 0 && trackbuf != NULL) {
         RADFREE(trackbuf);
@@ -1037,16 +1146,16 @@ void __pascal SmackClose(Smack *smk)
     }
     if (smk->handle != -1 && !(smk->OpenFlags & 0x1000))
         radclose(smk->handle);
-    if (smk->f3b0 != NULL)
-        RADFREE(smk->f3b0);
+    if (smk->deltas != NULL)
+        RADFREE(smk->deltas);
     if (smk->addr32 != NULL)
         RADFREE(smk->addr32);
-    if (smk->f3cc != NULL)
-        RADFREE(smk->f3cc);
-    if (smk->f3bc != NULL)
-        RADFREE(smk->f3bc);
-    if (smk->f43c != NULL)
-        RADFREE(smk->f43c);
+    if (smk->frametypes != NULL)
+        RADFREE(smk->frametypes);
+    if (smk->framebuf != NULL)
+        RADFREE(smk->framebuf);
+    if (smk->readahead != NULL)
+        RADFREE(smk->readahead);
     keep = smk->OpenFlags & 0x2000000;
     radmemset(smk, 0, sizeof(Smack));
     if (!keep)
@@ -1071,46 +1180,46 @@ void soundnext(Smack *smk)
     u32 n;
     u8 *dst;
 
-    if (smk->f430 == -1 || smk->f438)
+    if (smk->timingtrack == -1 || smk->soundoff)
         return;
-    if (smk->f410)
-        smk->f434 = 1;
-    first = smk->sounds[smk->f430];
-    first->f20 += first->f1c;
-    first->f28 += first->f1c;
-    if (first->f20 > 0xfa00000 && first->f28 > 0x2000000) {
-        first->f20 -= 0xfa00000;
-        first->f28 -= 0xfa00000;
-        first->f24 += 0x3e800;
+    if (smk->ms100perframe)
+        smk->soundwait = 1;
+    first = smk->sounds[smk->timingtrack];
+    first->clockfix += first->frameadd;
+    first->lateclockfix += first->frameadd;
+    if (first->clockfix > 0xfa00000 && first->lateclockfix > 0x2000000) {
+        first->clockfix -= 0xfa00000;
+        first->lateclockfix -= 0xfa00000;
+        first->clockbase += 0x3e800;
     }
     tracks = smk->OpenFlags;
     trk = nexttrack(&tracks);
     src = smk->trackbufs[trk];
     size = src == NULL ? 0 : (smk->TrackType[trk] & 0x80000000) ? src[1] : src[0] - 4;
-    if (smk->sounds[trk]->f4c = size == 0)
+    if (smk->sounds[trk]->flush = size == 0)
         goto done;
     if (sounds)
         LowSoundCheckAddr();
     for (;;) {
         snd = smk->sounds[trk];
-        if (size + snd->f10 > snd->bufsize) {
-            size = snd->bufsize - snd->f10;
-            snd->f30++;
+        if (size + snd->pending > snd->bufsize) {
+            size = snd->bufsize - snd->pending;
+            snd->overflows++;
         }
-        if (snd->f5c) {
-            snd->f58 = 0;
-            snd->f5c = 0;
+        if (snd->starvedseen) {
+            snd->starved = 0;
+            snd->starvedseen = 0;
         }
-        fill = snd->f58;
+        fill = snd->starved;
         if (fill) {
-            snd->f5c = 1;
-            if (size < snd->f38 && snd->f2c) {
-                fill = snd->f38 - size;
-                if (snd->f10 + size + fill > snd->bufsize)
-                    fill = snd->bufsize - snd->f10 - size;
+            snd->starvedseen = 1;
+            if (size < snd->minchunk && snd->written) {
+                fill = snd->minchunk - size;
+                if (snd->pending + size + fill > snd->bufsize)
+                    fill = snd->bufsize - snd->pending - size;
                 if (fill) {
-                    snd->f34++;
-                    silence = snd->f50 ? 0 : 0x80;
+                    snd->soundskips++;
+                    silence = snd->bits16 ? 0 : 0x80;
                     if (fill + (u32)snd->writepos > (u32)snd->bufend) {
                         radmemset(snd->writepos, silence, snd->bufend - snd->writepos);
                         n = fill - (snd->bufend - snd->writepos);
@@ -1120,7 +1229,7 @@ void soundnext(Smack *smk)
                         dst = snd->writepos;
                     }
                     radmemset(dst, silence, n);
-                    snd->f24 += fill;
+                    snd->clockbase += fill;
                     snd->writepos += fill;
                     if (snd->writepos >= snd->bufend)
                         snd->writepos = snd->buf + (snd->writepos - snd->bufend);
@@ -1138,8 +1247,8 @@ void soundnext(Smack *smk)
         } else {
             radmemcpy(snd->writepos, src + 1, size);
         }
-        snd->f2c += size + fill;
-        snd->f10 += size + fill;
+        snd->written += size + fill;
+        snd->pending += size + fill;
         snd->writepos += size;
         if (snd->writepos >= snd->bufend)
             snd->writepos = snd->buf + (snd->writepos - snd->bufend);
@@ -1150,29 +1259,29 @@ void soundnext(Smack *smk)
         size = src == NULL ? 0 : (smk->TrackType[trk] & 0x80000000) ? src[1] : src[0] - 4;
     }
 done:
-    if ((first->f20 >> 10) + first->f24 > first->f2c) {
-        first->f28 -= first->f20;
-        first->f20 = 0;
-        first->f24 = first->f2c;
+    if ((first->clockfix >> 10) + first->clockbase > first->written) {
+        first->lateclockfix -= first->clockfix;
+        first->clockfix = 0;
+        first->clockbase = first->written;
     }
 }
 
-// doskip: 1 if the timing sound track has already played past this frame, i.e. the frame is late, else 0.
+// doskip: 1 if the timing sound track has already played past this frame, i.e. the frame is late, else 0 (also 0 when this frame queued no audio on that track).
 // FUNCTION: 0xe9440
 u8 doskip(Smack *smk)
 {
     SmackSnd *snd;
     u32 played;
 
-    if (smk->f430 != -1 && smk->f438 == 0) {
-        if (smk->f434 == 0)
+    if (smk->timingtrack != -1 && smk->soundoff == 0) {
+        if (smk->soundwait == 0)
             return 1;
-        snd = smk->sounds[smk->f430];
-        if (snd->f4c == 0) {
+        snd = smk->sounds[smk->timingtrack];
+        if (snd->flush == 0) {
             played = LowSoundPlayedAddr(snd);
-            snd = smk->sounds[smk->f430];
-            if (played >= (snd->f28 >> 10) + snd->f24) {
-                smk->f434 = 0;
+            snd = smk->sounds[smk->timingtrack];
+            if (played >= (snd->lateclockfix >> 10) + snd->clockbase) {
+                smk->soundwait = 0;
                 return 1;
             }
         }
@@ -1180,7 +1289,7 @@ u8 doskip(Smack *smk)
     return 0;
 }
 
-// SmackDoFrame: queue the current frame's audio and decompress its video, skipping the video if the frame is late (unless opened with 0x400); returns 1 if it was late.
+// SmackDoFrame: queue the current frame's audio and decompress its video, skipping the video if the frame is late (unless opened with 0x400); returns 1 if it was late, 0 otherwise and after a read error.
 // FUNCTION: 0xe9350
 u32 __pascal SmackDoFrame(Smack *smk)
 {
@@ -1190,18 +1299,18 @@ u32 __pascal SmackDoFrame(Smack *smk)
 
     if (smk == NULL)
         return 0;
-    if (smk->unknown39c)
+    if (smk->readerror)
         return 0;
     now = SmackTimerReadAddr();
-    smk->f474 = now;
-    smk->f470 = now;
-    if (smk->f47c == 0)
-        smk->f47c = now;
+    smk->decompstarttime = now;
+    smk->framestarttime = now;
+    if (smk->firstframetime == 0)
+        smk->firstframetime = now;
     if (smk->NewPalette)
-        smk->f3c4 = smk->FrameNum;
-    smk->f488++;
+        smk->palframe = smk->FrameNum;
+    smk->totalframes++;
     soundnext(smk);
-    if (smk->f410 == 0) {
+    if (smk->ms100perframe == 0) {
         skip = 0;
         nodraw = 0;
     } else {
@@ -1210,12 +1319,12 @@ u32 __pascal SmackDoFrame(Smack *smk)
         if (smk->OpenFlags & 0x400)
             nodraw = 0;
     }
-    if (smk->f3b0 != NULL) {
+    if (smk->deltas != NULL) {
         if (nodraw) {
-            smk->f48c++;
+            smk->skippedframes++;
         } else {
-            smk->f3f4 = 1;
-            Unsmack(smk->f3f0, smk->addr32, smk->f3b0);
+            smk->rectstate = 1;
+            Unsmack(smk->videodata, smk->addr32, smk->deltas);
         }
     }
     if (sounds)
@@ -1231,33 +1340,33 @@ void timeframe(Smack *smk)
     u32 elapsed;
 
     now = (u32)-1;
-    if (smk->f470) {
+    if (smk->framestarttime) {
         now = SmackTimerReadAddr();
-        elapsed = now - smk->f470;
-        smk->f470 = 0;
-        if (elapsed > smk->f498) {
-            if (smk->f4a0 != smk->FrameNum) {
-                smk->f49c = smk->f498;
-                smk->f4a4 = smk->f4a0;
-                smk->f4a0 = smk->FrameNum;
+        elapsed = now - smk->framestarttime;
+        smk->framestarttime = 0;
+        if (elapsed > smk->slowestframetime) {
+            if (smk->slowestframenum != smk->FrameNum) {
+                smk->slowest2frametime = smk->slowestframetime;
+                smk->slowest2framenum = smk->slowestframenum;
+                smk->slowestframenum = smk->FrameNum;
             }
-            smk->f498 = elapsed;
-        } else if (elapsed > smk->f49c && smk->f4a0 != smk->FrameNum) {
-            smk->f49c = elapsed;
-            smk->f4a4 = smk->FrameNum;
+            smk->slowestframetime = elapsed;
+        } else if (elapsed > smk->slowest2frametime && smk->slowestframenum != smk->FrameNum) {
+            smk->slowest2frametime = elapsed;
+            smk->slowest2framenum = smk->FrameNum;
         }
     }
-    if (smk->f478) {
+    if (smk->blitstarttime) {
         if (now == -1)
             now = SmackTimerReadAddr();
-        smk->f490 += now - smk->f478;
-        smk->f478 = 0;
+        smk->totalblittime += now - smk->blitstarttime;
+        smk->blitstarttime = 0;
     }
-    if (smk->f474) {
+    if (smk->decompstarttime) {
         if (now == -1)
             now = SmackTimerReadAddr();
-        smk->f494 += now - smk->f474;
-        smk->f474 = 0;
+        smk->totaldecomptime += now - smk->decompstarttime;
+        smk->decompstarttime = 0;
     }
 }
 
@@ -1268,28 +1377,28 @@ void __pascal SmackSummary(Smack *smk, SmackSum *sum)
     u32 total;
 
     timeframe(smk);
-    sum->TotalTime = SmackTimerReadAddr() - smk->f47c;
-    sum->MS100PerFrame = smk->f410;
-    sum->TotalOpenTime = smk->f480;
-    sum->TotalFrames = smk->f488;
-    sum->SkippedFrames = smk->f48c;
-    sum->TotalBlitTime = smk->f490;
-    sum->TotalReadTime = smk->f45c - smk->f484;
-    sum->TotalBackReadTime = smk->f464;
-    sum->TotalDecompTime = smk->f494;
-    total = smk->f45c + smk->f464;
-    sum->TotalReadSpeed = total ? mult64anddiv(smk->f458 + smk->f460, 1000, total) : 0;
-    sum->SlowestFrameTime = smk->f498;
-    sum->SlowestFrameNum = smk->f4a0 + 1;
-    sum->Slowest2FrameTime = smk->f49c;
-    sum->Slowest2FrameNum = smk->f4a4 + 1;
-    sum->AverageFrameSize = smk->f4a8;
-    sum->HighestMemAmount = smk->f4ac;
-    sum->TotalExtraMemory = smk->f450;
-    sum->HighestExtraUsed = smk->f468;
-    sum->unknown40 = smk->f4b4;
-    sum->unknown44 = smk->f4b8 + 1;
-    sum->SoundSkips = smk->f430 != -1 ? smk->sounds[smk->f430]->f34 : 0;
+    sum->TotalTime = SmackTimerReadAddr() - smk->firstframetime;
+    sum->MS100PerFrame = smk->ms100perframe;
+    sum->TotalOpenTime = smk->totalopentime;
+    sum->TotalFrames = smk->totalframes;
+    sum->SkippedFrames = smk->skippedframes;
+    sum->TotalBlitTime = smk->totalblittime;
+    sum->TotalReadTime = smk->readtime - smk->openreadtime;
+    sum->TotalBackReadTime = smk->backreadtime;
+    sum->TotalDecompTime = smk->totaldecomptime;
+    total = smk->readtime + smk->backreadtime;
+    sum->TotalReadSpeed = total ? mult64anddiv(smk->readbytes + smk->backreadbytes, 1000, total) : 0;
+    sum->SlowestFrameTime = smk->slowestframetime;
+    sum->SlowestFrameNum = smk->slowestframenum + 1;
+    sum->Slowest2FrameTime = smk->slowest2frametime;
+    sum->Slowest2FrameNum = smk->slowest2framenum + 1;
+    sum->AverageFrameSize = smk->averageframesize;
+    sum->HighestMemAmount = smk->highestmemamount;
+    sum->TotalExtraMemory = smk->readaheadsize;
+    sum->HighestExtraUsed = smk->highestextraused;
+    sum->Highest1SecRate = smk->highest1secsize;
+    sum->Highest1SecFrame = smk->highest1secframe + 1;
+    sum->SoundSkips = smk->timingtrack != -1 ? smk->sounds[smk->timingtrack]->soundskips : 0;
 }
 
 // SmackNextFrame: advance to the next frame, reading and preparing its data (after a read error only the frame number advances).
@@ -1298,13 +1407,13 @@ void __pascal SmackNextFrame(Smack *smk)
 {
     if (smk == NULL)
         return;
-    if (smk->unknown39c) {
+    if (smk->readerror) {
         smk->FrameNum++;
     } else {
         if (sounds)
             LowSoundCheckAddr();
         timeframe(smk);
-        smk->f3c0 += smk->f3c8[smk->FrameNum];
+        smk->framedata += smk->framesizes[smk->FrameNum];
         smk->FrameNum++;
         if (smk->FrameNum < smk->Frames)
             readframe(smk);
@@ -1328,7 +1437,7 @@ u16 *PutWidths(u16 *p, u32 bpl, u32 width, u32 mult, u32 lines)
     return p;
 }
 
-// SmackToScreen: build the blit table for decoding straight to the screen at left, top with pitch, splitting rows at 64K boundaries through the bank numbers in wintbl when banked.
+// SmackToScreen: build the blit table for decoding straight to the screen at left, top with pitch, splitting rows at 64K boundaries through the bank numbers in wintbl when banked (pitch 320: unbanked VGA memory at 0xA0000).
 // FUNCTION: 0xe8ab0
 // NONMATCHING: register allocation: the original keeps pitch in edi, stride
 // in esi and height (later p) in ebp, and spills prevbuf; ours spills p and
@@ -1363,14 +1472,14 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
         banked = 0;
         wintbl = (const u16 *)0xa0000;
     }
-    old_table = smk->f3b0;
+    old_table = smk->deltas;
     if (old_table != NULL) {
         if (*old_table == 1) {
             prevstep = *(u32 *)(old_table + 0x18);
             prevbuf = *(u8 **)(old_table + 4);
         }
-        RADFREE(smk->f3b0);
-        smk->f46c -= smk->f3b4;
+        RADFREE(smk->deltas);
+        smk->memamount -= smk->deltassize;
     }
     height = smk->Height;
     lines = 4;
@@ -1390,15 +1499,15 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
         height >>= 1;
     }
     extra += stride * 3 + smk->Width;
-    smk->f3b4 = ((top * pitch + stride * height) >> 16) * (smk->Width * lines) + 0x400;
-    smk->f3b0 = smkmalloc(smk, smk->f3b4);
-    if (smk->f3b0 == NULL)
+    smk->deltassize = ((top * pitch + stride * height) >> 16) * (smk->Width * lines) + 0x400;
+    smk->deltas = smkmalloc(smk, smk->deltassize);
+    if (smk->deltas == NULL)
         return;
     left &= ~3;
     smk->TopOfs = top;
     smk->LeftOfs = left;
-    split_buf = smk->f3b0 + 0x400;
-    p = (u16 *)smk->f3b0;
+    split_buf = smk->deltas + 0x400;
+    p = (u16 *)smk->deltas;
     *(u8 *)p = 0;
     ((u8 *)p)[1] = (smk->OpenFlags & 0x200000) != 0;
     offset = left + pitch * top;
@@ -1506,10 +1615,10 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
     if (smk == NULL)
         return;
     if (buf == NULL) {
-        if (smk->f3b0 != NULL) {
-            RADFREE(smk->f3b0);
-            smk->f3b0 = NULL;
-            smk->f46c -= smk->f3b4;
+        if (smk->deltas != NULL) {
+            RADFREE(smk->deltas);
+            smk->deltas = NULL;
+            smk->memamount -= smk->deltassize;
         }
         return;
     }
@@ -1523,23 +1632,23 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
         height >>= 1;
         mult = 7;
     }
-    table = smk->f3b0;
+    table = smk->deltas;
     if (table != NULL) {
         if (*table == 1)
             goto have;
         RADFREE(table);
-        smk->f46c -= smk->f3b4;
+        smk->memamount -= smk->deltassize;
     }
     size = SmackGetSizeDeltas(smk->Width, height) + 0x20;
-    smk->f3b4 = size;
-    smk->f3b0 = smkmalloc(smk, size);
-    if (smk->f3b0 == NULL)
+    smk->deltassize = size;
+    smk->deltas = smkmalloc(smk, size);
+    if (smk->deltas == NULL)
         return;
-    radmemset(smk->f3b0, 0, size);
+    radmemset(smk->deltas, 0, size);
 have:
     smk->TopOfs = top;
     smk->LeftOfs = left;
-    table = smk->f3b0;
+    table = smk->deltas;
     table[0] = 1;
     table[1] = (smk->OpenFlags & 0x200000) ? 1 : 0;
     p = (u32 *)(table + 4);
@@ -1577,7 +1686,7 @@ void __pascal SmackColorTrans(Smack *smk, const void *trans)
     }
 }
 
-// SmackColorRemap: remap the video's colours to the nearest (squared RGB distance) of numcolors entries of remappal, laid out as paltype describes.
+// SmackColorRemap: remap the video's colours to the nearest (squared RGB distance) of numcolors entries of remappal, laid out as paltype describes (1: 16-bit components, 2: BGR order, 4: 4-byte entries, with 8 the colour in bytes 1-3).
 // FUNCTION: 0xe85b0
 // NONMATCHING: register allocation: r, g, b and ro, bo get each other's spill
 // slots and are loaded through different registers; the target computes
@@ -1667,7 +1776,7 @@ u32 __pascal SmackGetTrackData(Smack *smk, u8 *dest, u32 trackflag)
 
     if (smk == NULL)
         return 0;
-    if (smk->unknown39c)
+    if (smk->readerror)
         return 0;
     trk = nexttrack(&trackflag);
     if (trk >= 7)
@@ -1695,7 +1804,7 @@ u32 __pascal SmackGetTrackData(Smack *smk, u8 *dest, u32 trackflag)
 // FUNCTION: 0xe8440
 void __pascal SmackGoto(Smack *smk, u32 frame)
 {
-    if (smk != NULL && smk->unknown39c == 0) {
+    if (smk != NULL && smk->readerror == 0) {
         if (frame)
             frame--;
         if (frame != smk->FrameNum) {
@@ -1706,9 +1815,9 @@ void __pascal SmackGoto(Smack *smk, u32 frame)
     }
 }
 
-// SmackToBufferRect: next changed rectangle of the decoded frame into LastRect* (SmackSurface 1 merges all into one, 0 merges while it saves area, 2 none); returns 1 if one was produced.
+// SmackToBufferRect: next changed rectangle of the decoded frame into LastRect* (SmackSurface 1 merges all into one; 0 and 3 merge while the bounding box stays within 5/4 of the rectangles' area, 3 then also giving one final empty rectangle; 2 none). A frame with only a new palette gives an empty rectangle. Returns 1 if a rectangle was produced.
 // FUNCTION: 0xe8190
-// NONMATCHING: register allocation; the target computes &smk->f3f8 into ecx
+// NONMATCHING: register allocation; the target computes &smk->rectx into ecx
 // once before loading left/top, and loads smk->NewPalette into eax so that its
 // return 0 jumps to the final epilogue
 u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
@@ -1726,24 +1835,24 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
         return 0;
     if (sounds)
         LowSoundCheckAddr();
-    if (smk->f3f4 == 0 || SmackSurface == 2)
+    if (smk->rectstate == 0 || SmackSurface == 2)
         return 0;
-    if (smk->f3f4 == 3) {
-        smk->f3f4 = 0;
+    if (smk->rectstate == 3) {
+        smk->rectstate = 0;
         if (SmackSurface != 3)
             return 0;
         goto empty;
     }
-    if (smk->f478 == 0) {
-        smk->f478 = SmackTimerReadAddr();
-        if (smk->f474) {
-            smk->f494 += smk->f478 - smk->f474;
-            smk->f474 = 0;
+    if (smk->blitstarttime == 0) {
+        smk->blitstarttime = SmackTimerReadAddr();
+        if (smk->decompstarttime) {
+            smk->totaldecomptime += smk->blitstarttime - smk->decompstarttime;
+            smk->decompstarttime = 0;
         }
     }
-    if (smk->f3f4 == 1) {
-        if (!SmackGetRect(smk->f3b0, &smk->f3f8)) {
-            smk->f3f4 = 0;
+    if (smk->rectstate == 1) {
+        if (!SmackGetRect(smk->deltas, &smk->rectx)) {
+            smk->rectstate = 0;
             if (!smk->NewPalette)
                 return 0;
         empty:
@@ -1753,39 +1862,39 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
             smk->LastRecth = 0;
             return 1;
         }
-        smk->f3f4 = 2;
+        smk->rectstate = 2;
     }
-    left = smk->f3f8;
-    top = smk->f3fc;
-    right = smk->f400 + left;
-    bottom = top + smk->f404;
+    left = smk->rectx;
+    top = smk->recty;
+    right = smk->rectw + left;
+    bottom = top + smk->recth;
     if (SmackSurface == 1) {
-        while (SmackGetRect(smk->f3b0, &smk->f3f8)) {
-            if (left > smk->f3f8)
-                left = smk->f3f8;
-            if (smk->f3f8 + smk->f400 > right)
-                right = smk->f3f8 + smk->f400;
-            bottom = smk->f3fc + smk->f404;
+        while (SmackGetRect(smk->deltas, &smk->rectx)) {
+            if (left > smk->rectx)
+                left = smk->rectx;
+            if (smk->rectx + smk->rectw > right)
+                right = smk->rectx + smk->rectw;
+            bottom = smk->recty + smk->recth;
         }
-        smk->f3f4 = 3;
+        smk->rectstate = 3;
     } else {
-        area = (smk->f400 * smk->f404 * 5) >> 2;
-        while (SmackGetRect(smk->f3b0, &smk->f3f8)) {
-            area += (smk->f400 * smk->f404 * 5) >> 2;
-            nleft = smk->f3f8;
+        area = (smk->rectw * smk->recth * 5) >> 2;
+        while (SmackGetRect(smk->deltas, &smk->rectx)) {
+            area += (smk->rectw * smk->recth * 5) >> 2;
+            nleft = smk->rectx;
             if (left <= nleft)
                 nleft = left;
-            nright = smk->f3f8 + smk->f400;
+            nright = smk->rectx + smk->rectw;
             if (right > nright)
                 nright = right;
-            nbottom = smk->f3fc + smk->f404;
+            nbottom = smk->recty + smk->recth;
             if (area < (nbottom - top) * (nright - nleft))
                 goto rect;
             right = nright;
             left = nleft;
             bottom = nbottom;
         }
-        smk->f3f4 = 3;
+        smk->rectstate = 3;
     }
 rect:
     if (smk->OpenFlags & 0x300000) {
@@ -1821,7 +1930,7 @@ void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
 {
     u8 trk;
 
-    if (smk == NULL || smk->f430 == -1)
+    if (smk == NULL || smk->timingtrack == -1)
         return;
     if (volume > 0x10000)
         volume = 0x10000;
@@ -1854,31 +1963,31 @@ u32 __pascal SmackWait(Smack *smk)
 
     if (smk == NULL)
         return 0;
-    if (smk->unknown39c)
+    if (smk->readerror)
         return 0;
     if (sounds)
         LowSoundCheckAddr();
-    if (smk->f430 != -1) {
-        if (smk->f434 == 0 || smk->f438 != 0)
+    if (smk->timingtrack != -1) {
+        if (smk->soundwait == 0 || smk->soundoff != 0)
             return 0;
-        played = LowSoundPlayedAddr(smk->sounds[smk->f430]);
-        snd = smk->sounds[smk->f430];
-        if (played >= (snd->f20 >> 10) + snd->f24) {
-            smk->f434 = 0;
+        played = LowSoundPlayedAddr(smk->sounds[smk->timingtrack]);
+        snd = smk->sounds[smk->timingtrack];
+        if (played >= (snd->clockfix >> 10) + snd->clockbase) {
+            smk->soundwait = 0;
             return 0;
         }
     } else {
-        if (smk->f408)
+        if (smk->framedue)
             return 0;
         now = SmackTimerReadAddr() * 100;
-        if (smk->f40c == -1) {
-            smk->f40c = now + smk->f410;
-        } else if (now >= smk->f40c) {
-            smk->f40c = smk->f410 + smk->f40c;
-            if (now - smk->f40c > smk->f410)
-                smk->f40c = now + smk->f410;
-            if (smk->f410)
-                smk->f408 = 1;
+        if (smk->nextframetime == -1) {
+            smk->nextframetime = now + smk->ms100perframe;
+        } else if (now >= smk->nextframetime) {
+            smk->nextframetime = smk->ms100perframe + smk->nextframetime;
+            if (now - smk->nextframetime > smk->ms100perframe)
+                smk->nextframetime = now + smk->ms100perframe;
+            if (smk->ms100perframe)
+                smk->framedue = 1;
             return 0;
         }
     }

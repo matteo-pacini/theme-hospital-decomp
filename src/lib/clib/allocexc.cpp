@@ -75,7 +75,7 @@ struct thread_ctl {
 };
 
 extern EXC_AREA __EXC_AREA;
-extern char D_00128804[];
+extern char allocexc_msg_no_memory[];
 
 unsigned __wcpp_2_ts_size_(RT_TYPE_SIG *sig);
 void __wcpp_2_fatal_runtime_error_(char *msg, int code);
@@ -112,7 +112,7 @@ active_exc *__wcpp_2_alloc_exc_(void *object, THROW_RO *ro, thread_ctl *thr)
     for (prev = &__EXC_AREA.freed;; prev = &cur->next) {
         cur = *prev;
         if (cur == 0)
-            __wcpp_2_fatal_runtime_error_(D_00128804, 1);
+            __wcpp_2_fatal_runtime_error_(allocexc_msg_no_memory, 1);
         for (;;) {
             next = cur->next;
             if ((FREE_AREA *)((char *)cur + cur->size) != next)

@@ -42,7 +42,8 @@ void *__doalloca(size_t __size);
 
 // write: write len bytes from buffer to handle (text mode writes "\r\n" for '\n'); returns len or the bytes written (errno ENOSPC), or -1 with errno set.
 // FUNCTION: 0xd1016
-// NONMATCHING: same code, but the spilled locals get different stack slots
+// NONMATCHING: the spilled locals get different stack slots, and in the copy
+// loop the target reloads p and increments it (mov/inc) where this C uses lea
 int write(int handle, const void *buffer, unsigned len)
 {
     unsigned num_written;

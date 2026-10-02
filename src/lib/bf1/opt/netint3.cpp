@@ -130,8 +130,8 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
 
 // Receives a message of at most len bytes from player (a player table
 // index) sent with LbNetwork_Send into buf, asking for its blocks a window
-// at a time. Waits up to 30 seconds for each step. Returns the size
-// received, or 0 on failure.
+// at a time. Waits up to 30 seconds for the size announcement and 15 seconds
+// for each block. Returns the size received, or 0 on failure.
 // NONMATCHING: block layout (the target places the RTS handling of the first loop
 // after the request loop's first test) and register choice (len stays in ebp)
 // FUNCTION: 0x000cade4

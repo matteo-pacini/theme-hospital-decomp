@@ -302,7 +302,8 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
     }
 }
 
-// Draws the grim reaper unless it is being removed (blinking in state 0xf2).
+// Draws the grim reaper, except in REAPER_REMOVE; in state 0xf2 it blinks
+// (drawn on even turns only).
 // FUNCTION: 0x0001557c
 void mapwho_reaper(Thing *reaper, s32 x, s32 y)
 {
@@ -315,7 +316,7 @@ void mapwho_reaper(Thing *reaper, s32 x, s32 y)
 }
 
 // Draws a rat. A mouse over the rat's frame (within othervar.rat_hit_margin of it)
-// records it in othervar.pointed_thing_s and f6f_s16; a near miss (within
+// records it in othervar.pointed_thing_s and pointed_rat_s; a near miss (within
 // othervar.rat_near_margin) sets othervar.near_rat.
 // FUNCTION: 0x000155d4
 void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32 top0)

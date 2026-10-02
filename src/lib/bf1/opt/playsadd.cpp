@@ -103,7 +103,7 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
         smp->SamplePitch = pitch;
         smp->FadeState = 0;
         smp->FadeStep = 0;
-        smp->unknown17 = 0;
+        smp->unused_set_by_PlaySampleFromAddress = 0;
         smp->ExtraData = extra;
         return smp;
     }

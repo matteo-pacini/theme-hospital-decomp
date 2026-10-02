@@ -207,7 +207,9 @@ int LbScreenSwap(void)
 
 // Copies the width x height box at (source_x, source_y) of source to the
 // screen at (dest_x, dest_y). Meant to clear the source box to colour too,
-// but the memset arguments are swapped (see the note inside). Returns 1.
+// but the memset arguments are swapped (see the note inside). The screen
+// row start advances by the back buffer's width, not the screen's, while the
+// row end advances by the screen's. Returns 1.
 // FUNCTION: 0x000bef14
 int LbScreenSwapBoxClear(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest_y, u32 width, u32 height, u8 colour, ...)
 {
@@ -288,7 +290,8 @@ int LbScreenSwapClear(u8 colour, ...)
 }
 
 // Copies the width x height box at (source_x, source_y) of source to the
-// screen at (dest_x, dest_y), across VESA banks. Returns 1.
+// screen at (dest_x, dest_y), across VESA banks. As in LbScreenSwapBoxClear,
+// the screen row start advances by the back buffer's width. Returns 1.
 // FUNCTION: 0x000bf1e8
 int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest_y, u32 width, u32 height, ...)
 {
@@ -338,7 +341,9 @@ int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest
 
 // Draws a horizontal or vertical line from (x1, y1) to (x2, y2) straight on
 // the screen by adding 0x80 to each pixel (an inverting cursor line),
-// clipped to the graphics window. Returns 1, or -1 if wholly outside.
+// clipped to the graphics window's size. Coordinates are from the screen's
+// top left, and the start offset uses the graphics window's width as the
+// line pitch. Returns 1, or -1 if wholly outside.
 // FUNCTION: 0x000bf374
 int LbScreenDrawHVLineDirect(s32 x1, s32 y1, s32 x2, s32 y2, ...)
 {
@@ -464,7 +469,8 @@ int LbScreenDrawHVLineDirect(s32 x1, s32 y1, s32 x2, s32 y2, ...)
     return 1;
 }
 
-// Waits for the start of the vertical blank. Returns 1.
+// Waits until the VGA reports vertical retrace (port 0x3da bit 3); returns at
+// once if one is already under way. Returns 1.
 // FUNCTION: 0x000bf760
 int LbScreenWaitVbi(void)
 {

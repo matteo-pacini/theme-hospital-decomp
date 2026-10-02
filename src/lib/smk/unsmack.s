@@ -589,7 +589,7 @@
     .byte 0x87; .byte 0xc9
 .size "_SmackGetSizeTables",.-"_SmackGetSizeTables"
 
-// SmackDoTables: build the four video Huffman trees (sizes codesize, absize, detailsize, typesize) from the header data at tables into addr32, choosing an unused value to mark non-leaf nodes.
+// SmackDoTables: build the four video Huffman trees (sizes codesize, absize, detailsize, typesize) from the header data at tables + 1000h (the first 4K is scratch for the byte trees) into addr32, choosing an unused value to mark non-leaf nodes.
 // FUNCTION: 0x0010bba0
 
 .section _TEXT,"ax",@progbits,unique,1096608
@@ -819,7 +819,7 @@
     .byte 0x90
 .size "_SmackDoTables",.-"_SmackDoTables"
 
-// smk_mark_tree_values: set, in the value bitmap at edi, the bit of every leaf value in the eax-byte tree at esi.
+// smk_mark_tree_values: set, in the value bitmap at edi, the bit of every leaf value in the eax-byte tree at esi + 7468h.
 // FUNCTION: 0x0010bee0
 
 .section _TEXT,"ax",@progbits,unique,1097440
@@ -850,7 +850,7 @@
     ret
 .size "smk_mark_tree_values",.-"smk_mark_tree_values"
 
-// smk_prepare_tree_values: rewrite the eax-byte tree at esi: each leaf's low word becomes its value, every other node's the unused marker value; the frame decoder's block routines follow it.
+// smk_prepare_tree_values: rewrite the eax-byte tree at esi + 7468h: each leaf's low word becomes its value, every other node's the unused marker value; the frame decoder's block routines follow it.
 // FUNCTION: 0x0010bf10
 
 .section _TEXT,"ax",@progbits,unique,1097488
@@ -5255,7 +5255,7 @@
     .byte 0x90
 .size "_Unsmack",.-"_Unsmack"
 
-// SmackDoPCM: decompress insize bytes of Smacker audio at in (work: scratch for its trees) into the ring buffer outbase..outend starting at outpos.
+// SmackDoPCM: decompress Smacker audio at in into outsize bytes of output (the chunk's unpacked size) in the ring buffer outbase..outend, starting at outpos and wrapping at outend (work: scratch for its trees).
 // FUNCTION: 0x0010ebf0
 
 .section _TEXT,"ax",@progbits,unique,1108976

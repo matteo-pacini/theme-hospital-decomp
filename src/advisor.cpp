@@ -5,9 +5,13 @@ struct Advice {
     u16 duration;
     u16 repeat_weight;
     u8 times_given;
-    u8 f7;
+    // 0x7: Set by find_advice (always to 0) and cleared by reset_advisor; no
+    // code reads it.
+    u8 unused_set_by_find_advice_0;
     u32 time;
-    u32 fc;
+    // 0xc: Set by find_advice (always to 0) and cleared by reset_advisor; no
+    // code reads it.
+    u32 unused_set_by_find_advice_1;
 };
 
 Advice advice[] = {
@@ -155,7 +159,7 @@ void display_advisor(void)
 // FUNCTION: 0x0005defc
 u8 find_advice(const u16 id)
 {
-    u8 f7;
+    u8 unused_byte;
     u16 found;
     u32 extra;
     s32 crit;
@@ -164,7 +168,7 @@ u8 find_advice(const u16 id)
 
     found = 0;
     extra = 0;
-    f7 = 0;
+    unused_byte = 0;
     switch (advice[id].id) {
     case 0x6a:
         if (gamevar.quake_phase == 2 && !myplayer.advisor_flags[13]) {
@@ -920,8 +924,8 @@ u8 find_advice(const u16 id)
         advisor.extra_segments = 0;
         advice[id].times_given++;
         advice[id].time = actual_game_turn;
-        advice[id].f7 = f7;
-        advice[id].fc = extra;
+        advice[id].unused_set_by_find_advice_0 = unused_byte;
+        advice[id].unused_set_by_find_advice_1 = extra;
         advisor.advice_id = id;
         advisor.time_left = advice[id].duration / 2;
     }
@@ -941,8 +945,9 @@ void mouse_advice(void)
     }
 }
 
-// Writes the text for the forced advice advisor.forced_advice_id (some with names filled in)
-// into advisor.text, and clears the request.
+// Writes the text for the forced advice advisor.forced_advice_id_s (some with
+// names filled in) into advisor.text, and clears the request and the current
+// advice.
 // FUNCTION: 0x00060904
 void forced_advice(void)
 {
@@ -984,9 +989,9 @@ void reset_advisor(void)
 
     for (i = 1; advice[i].id; i++) {
         advice[i].times_given = 0;
-        advice[i].f7 = 0;
+        advice[i].unused_set_by_find_advice_0 = 0;
         advice[i].time = 0;
-        advice[i].fc = 0;
+        advice[i].unused_set_by_find_advice_1 = 0;
     }
     advisor.advice_id = 0;
     advisor.time_left = 0;
@@ -1319,8 +1324,8 @@ u8 advisor_dead_plants(void)
     return 0;
 }
 
-// Lets the unhappy patients and thirst advice (entries 14 and 15) be given
-// again this month.
+// Lets advice[14] and advice[15] (advice 0x6f and 0x72: how close the
+// hospital is to winning and to losing) be given again this month.
 // FUNCTION: 0x00061998
 void monthly_update_of_adivsor_counts(void)
 {

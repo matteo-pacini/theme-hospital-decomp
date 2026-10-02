@@ -35,9 +35,9 @@ TbError SerialSP::ChangeSettings(u32 setting, void *data)
     return Lb_OK;
 }
 
-// Leaves any session, keeps handling messages for 10 seconds, then closes
-// the port. Returns Lb_FAIL if not initialised, else the base Release's
-// result.
+// Leaves any session, keeps handling messages for one second (1000 ms), then
+// closes the port. Returns Lb_FAIL if not initialised, else the base
+// Release's result.
 // FUNCTION: 0xed498
 TbError SerialSP::Release(void)
 {
@@ -67,7 +67,6 @@ TbError SerialSP::Release(void)
 // Initialises the provider for game guid with callbacks: opens the COM port
 // and sets its speed. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xed558
-// NONMATCHING: operator new and exception-table relocations carry the target's misnamed symbols
 TbError SerialSP::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *cb, void *data)
 {
     TbError ret = Lb_FAIL;
@@ -325,7 +324,7 @@ TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall 
 }
 
 // Leaves the running session, telling the other machine. Returns Lb_OK, or
-// Lb_FAIL if none was running.
+// Lb_FAIL if none was running or the provider is not initialised.
 // FUNCTION: 0xedd3c
 TbError SerialSP::Stop(void)
 {
@@ -478,11 +477,14 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
     return got;
 }
 
-// Handles the first complete packet: delivers a plain or in-sequence
-// guaranteed message into buf (acknowledging and, if remove is set,
-// consuming it; an add-player message is answered with the host's name),
-// and applies acknowledgements. *size is set to the message's length.
-// Returns 1 if a message was delivered.
+// Handles the first complete packet, dropping every other partial one:
+// applies an acknowledgement, re-acknowledges and drops an out-of-sequence
+// guaranteed message, and copies a plain or in-sequence guaranteed message
+// into buf if it fits. If remove is set, a copied message is consumed: a
+// guaranteed one is acknowledged, type 2 resets the sequence numbers and an
+// add-player message is answered with player 0's name. *size (on entry the
+// room in buf) is set to the message's length, header included, or 0.
+// Returns 1 if a message was copied.
 // FUNCTION: 0xee050
 // NONMATCHING: stack slots and register choice
 u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)

@@ -19,8 +19,9 @@ s32 SystemPlaybackRate = 22050;
 
 // Starts the sound effects driver (from BF_FORCE_SOUND_DRIVER or DIG.INI),
 // picks the best sound bank type that can be loaded (SoundType, see
-// DetermineSoundType) and allocates the sample voices. On failure sound
-// effects stay disabled (SoundAble 0).
+// DetermineSoundType) unless DisableLoadSounds is set, allocates the sample
+// voices and sets the sound volume. On failure sound effects stay disabled
+// (SoundAble 0).
 // FUNCTION: 0xdc970
 // NONMATCHING: MaxNumberOfSamples - 1 for end_sample_id is computed in ebx, not edx
 void InitSound(void)
@@ -194,7 +195,7 @@ void InitSound(void)
         for (smp = sample_id; smp <= end_sample_id; smp++) {
             smp->SampleHandle = AIL_allocate_sample_handle(SoundDriver);
             smp->FadeState = 0;
-            smp->unknown17 = 0;
+            smp->unused_set_by_InitSound = 0;
         }
         SoundInstalled = 1;
         sprintf(SoundProgressMessage, "BF24 - Init sound completed\n");
@@ -204,8 +205,10 @@ void InitSound(void)
 }
 
 // Allocates the sound bank for SoundType, stepping down through the types
-// (decimal bits * 100 + kHz: 1644, 1640, 1622, 1620, 1611, 1610, 822, 811,
-// 800) until one loads; SoundType 0 if none does or there is no sound.dat.
+// until one loads; SoundType 0 if none does or there is no sound.dat. The
+// types, in decimal, are 1644, 1640, 1622, 1620, 1611, 1610 (16-bit) and
+// 822, 811, 800 (8-bit); InitSound plays them at 44.1, 44.1, 22.05, 22.05,
+// 11.025, 11.025, 22.05, 11.025 and 11.025 kHz.
 // FUNCTION: 0xdd040
 void DetermineSoundType(void)
 {

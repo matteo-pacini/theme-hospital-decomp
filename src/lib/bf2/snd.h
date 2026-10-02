@@ -44,7 +44,8 @@ struct SampleInfo {
     volatile u8 FadeState;
     volatile u8 FadeStep;
     u8 FadeStopFlag;
-    u8 unknown17;
+    // 0x17: Zeroed by InitSound; no code reads it.
+    u8 unused_set_by_InitSound;
     u8 unknown18;
     u32 ExtraData;
 };

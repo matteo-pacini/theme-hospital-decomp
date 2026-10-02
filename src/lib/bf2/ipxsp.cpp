@@ -243,7 +243,10 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
 
 // Joins the session listed as entry: asks its host for its details, sends a
 // join request (resent every 25 ticks for up to 10 seconds) and fetches the
-// player list. Returns Lb_OK, or Lb_FAIL if it is full or does not answer.
+// player list. Returns Lb_FAIL if not initialised or already in a session,
+// if the session is full or memory runs out; otherwise Lb_OK, also when
+// entry lists no session, the host does not answer or the player list
+// cannot be fetched (then without joining).
 // FUNCTION: 0xd59ec
 // NONMATCHING: stack slots only: the target places done and begin above the other dword
 // temporaries, and orders the ret and inlined BatchProcess argument bytes differently
@@ -606,9 +609,11 @@ struct IPXEnumPlayer {
     char name[0x20];
 };
 
-// Calls callback with each player of session (the running one, or a listed
-// one, asking its host page by page for up to 10 seconds). Returns Lb_OK,
-// or Lb_FAIL if the host does not answer.
+// Calls callback with each player of session: the running one, or a listed
+// one whose host it asks page by page, giving up after 10 seconds without
+// an answer. Returns Lb_FAIL if not initialised, or if the host does not
+// answer or the pages run out (the session is then dropped from the list);
+// otherwise Lb_OK.
 // FUNCTION: 0xd6e2c
 // NONMATCHING: frame 4 bytes smaller, stack slots and register choice; done is tested as a byte
 // here, the target loads it with the sar trick
@@ -921,7 +926,8 @@ TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3lj
 
 // Host: adds the player asking to join (if there is room and new players
 // are allowed), replies with their slot (BUNP) and tells everyone (BUSA).
-// Returns Lb_OK, or Lb_FAIL if not hosting or the player table is full.
+// Returns Lb_FAIL if not hosting or AddPlayer fails, else Lb_OK (also when
+// the session is full or the player is already in it).
 // FUNCTION: 0xd852c
 // NONMATCHING: frame layout and register allocation differ
 TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, __3ljac5NETSOCKET *from)
@@ -1000,7 +1006,8 @@ u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOIN
 }
 
 // Client: fetches the session's player list from server page by page into
-// the player tables (up to 30 seconds). Returns Lb_OK, or Lb_FAIL.
+// the player tables, giving up after 30 seconds without an answer. Returns
+// Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd8e34
 // NONMATCHING: stack slots, register choice in the inlined BatchProcess, and the
 // target shares one Listen-and-break tail between the done and give-up paths
@@ -1025,7 +1032,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
     if (started) {
         remote.magic = MSG_BUQP;
         remote.page = 0;
-        remote.unknown50 = 0;
+        remote.unused_set_by_EnumerateAndAddPlayers = 0;
         last_send = clock();
         start = clock();
         for (;;) {
@@ -1419,8 +1426,10 @@ u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
     return got;
 }
 
-// As Update, without advertising: handles waiting system messages and
-// queues data messages. Returns 1 if any system message was handled.
+// As Update, without advertising: as host answers session and player
+// queries and join requests; handles system messages and queues data
+// messages (other message types are dropped). Returns 1 if any message
+// other than a data message was handled, else 0.
 // FUNCTION: 0xdac14
 // NONMATCHING: stack slots of the hoisted member addresses, register choice in the
 // inlined BatchProcess
@@ -1666,9 +1675,9 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
 }
 
 // Puts message msg into the next free receive queue entry, as a delete- or
-// add-player message for system messages, and keeps the player tables in
-// step. When the player list changes it re-adds every player, passing the
-// local and host flags to AddPlayer in swapped order.
+// add-player message for system messages and for a type 2 data message (a
+// player leaving), and keeps the player tables in step. When the player
+// list changes it re-adds every player with their local and host flags.
 // FUNCTION: 0x000dc440 COMDAT
 // NONMATCHING: stack slots of msg, q, id, size, seq and changed
 void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
@@ -1679,12 +1688,12 @@ void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
     u32 seq;
     u32 id;
     u32 size;
+    u32 me;
     u32 host;
-    u32 local;
     u32 max;
     u32 count;
-    u32 is_host;
     u32 is_local;
+    u32 is_host;
     u8 type;
 
     q = GetNextEmptyReceiveBuffer();
@@ -1738,24 +1747,26 @@ void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
     if (changed == 1) {
         if (host_state == 1) {
             max = session.max_players;
+            me = session.host_id;
             host = session.host_id;
-            local = session.host_id;
         } else {
+            // A client's remote.host_id is its own player id (from the join
+            // reply's player entry) and remote.local_id the host's.
             max = remote.max_players;
-            host = remote.host_id;
-            local = remote.local_id;
+            me = remote.host_id;
+            host = remote.local_id;
         }
         count = 0;
         for (p = players; p < players + max; p++) {
             if (p->addr.socket) {
                 count++;
-                is_host = 0;
                 is_local = 0;
+                is_host = 0;
+                if (me == p->id)
+                    is_local = 1;
                 if (host == p->id)
                     is_host = 1;
-                if (local == p->id)
-                    is_local = 1;
-                AddPlayer(p->id, p->name, is_host, is_local);
+                AddPlayer(p->id, p->name, is_local, is_host);
             }
         }
         if (host_state == 1)

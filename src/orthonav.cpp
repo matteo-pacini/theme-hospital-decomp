@@ -18,7 +18,7 @@ void delete_first_path_entry(orthonav_path *path)
 }
 
 // Plans a path from (x0, y0) to (x1, y1) with wallhug_tricky, keeping its
-// first four waypoints; path->result is the waypoint count, 0 if no route was
+// first four waypoints; path->count is the waypoint count, 0 if no route was
 // found.
 // FUNCTION: 0x00055454
 void orthonav_init(orthonav_path *path, s8 x0, s8 y0, s8 x1, s8 y1)
@@ -353,7 +353,8 @@ other:
 // Returns the direction (0-3) of the next step from (x, y) along path, given
 // the current facing dir, sidestepping walls and people in the way: 4 when
 // arrived, -1 when blocked by people, -2 when walled in, -3 when there is no
-// path. A detour sets path->x1 to 0xff, so the caller replans next time.
+// path. A detour, or being blocked by people or walls, sets path->x1 to
+// 0xff, so the caller replans next time.
 // FUNCTION: 0x00056028
 s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
 {

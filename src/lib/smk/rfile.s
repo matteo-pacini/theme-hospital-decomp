@@ -80,7 +80,7 @@
     ret
 .size "_radcreate",.-"_radcreate"
 
-// radread: read size bytes from handle into a far buffer in chunks of up to 60K (DOS 3Fh), stopping at end of file or an error; stores the bytes read in *amount.
+// radread: read size bytes from handle into a far buffer (DOS 3Fh), in 60K chunks while more than 0FFFFh bytes remain, stopping at end of file, an error or a short read; stores the bytes read in *amount.
 // FUNCTION: 0x000f3039
 
 .section _TEXT,"ax",@progbits,unique,995385
@@ -129,7 +129,7 @@
     ret
 .size "_radread",.-"_radread"
 
-// radwrite: write size bytes from a far buffer to handle in chunks of up to 60K (DOS 40h), stopping on an error or a short write; stores the bytes written in *amount.
+// radwrite: write size bytes from a far buffer to handle (DOS 40h), in 60K chunks while more than 0FFFFh bytes remain, stopping on an error or a short write; stores the bytes written in *amount.
 // FUNCTION: 0x000f3085
 
 .section _TEXT,"ax",@progbits,unique,995461
@@ -245,7 +245,7 @@
     ret
 .size "_radclose",.-"_radclose"
 
-// IsRemote: 1 if handle refers to a remote (network) file or device (IOCTL 440Ah), else 0.
+// IsRemote: 1 in ax if handle refers to a remote (network) file or device (IOCTL 440Ah), else 0; the upper half of eax is not cleared.
 // FUNCTION: 0x000f310f
 
 .section _TEXT,"ax",@progbits,unique,995599

@@ -143,7 +143,8 @@ s32 AWEGetTotalRAM(AWEDriver *mdi)
 }
 
 // Tells the AWE32 driver the memory map at map (count dwords). Returns the
-// driver's status, 0 for success.
+// driver's status, 0 for success, or -1 if the DOS call block cannot be
+// allocated.
 // FUNCTION: 0xef4f0
 s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
 {
@@ -187,7 +188,8 @@ void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
 }
 
 // Streams the 512-byte sample block in buf into bank `bank`. Returns the
-// driver's status, 0 for success.
+// driver's status, 0 for success, or -1 if the DOS call block cannot be
+// allocated.
 // FUNCTION: 0xef670
 s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
 {
@@ -208,7 +210,7 @@ s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
 }
 
 // Loads the presets in buf into bank `bank`. Returns the driver's status, 0
-// for success.
+// for success, or -1 if the DOS call block cannot be allocated.
 // FUNCTION: 0xef720
 s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
 {

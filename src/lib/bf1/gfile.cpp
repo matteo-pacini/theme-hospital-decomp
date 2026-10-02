@@ -160,8 +160,11 @@ int LbFileStringSearch(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
 }
 
 // Builds a path in buf (buflen bytes): the current directory if current_dir
-// is set, then directory, then filename, separated by backslashes. Returns
-// 1, or -1 if it does not fit.
+// is set, then directory, then filename, separated by backslashes. Without
+// current_dir it appends to buf, which must then hold "". The test for a
+// trailing backslash on directory indexes it by the whole length so far, so
+// with current_dir set it checks the wrong character. Returns 1, or -1 if it
+// does not fit.
 // FUNCTION: 0x000bc504
 int LbFileMakeFullPath(int current_dir, char *directory, char *filename, char *buf, u32 buflen)
 {

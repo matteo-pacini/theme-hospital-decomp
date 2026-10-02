@@ -19,7 +19,8 @@ struct MidiFile {
 };
 
 struct HospMusic {
-    s32 unknown0;
+    // 0x0: Set to 1 by init_midi; no code reads it.
+    s32 unused_set_by_init_midi;
     s16 volume;
 };
 
@@ -394,7 +395,7 @@ void init_midi(void)
 {
     u8 i;
 
-    music.unknown0 = 1;
+    music.unused_set_by_init_midi = 1;
     music.volume = myplayer.music_volume;
     for (i = 0; i < 10; i++)
         myplayer.track_enabled[i] = 1;
@@ -529,7 +530,8 @@ u8 is_midi_playing(void)
 // Reads the jukebox's track list (file name and title pairs) from
 // midi/midi.txt, keeping up to ten tracks whose files exist; statvar.midi_count
 // is their count. On failure, or with no tracks, it turns off the sound
-// effects flags (statvar.sound_ok, myplayer.sfx_on), not the music ones.
+// effects flags (statvar.sound_ok, myplayer.sfx_on), not the music ones; a
+// failure to read the file also clears othervar.midi_playing.
 // FUNCTION: 0x00089b14
 void load_midi(void)
 {

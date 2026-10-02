@@ -126,10 +126,12 @@ void calculate_currentbuttonstore(Window *win)
 
 // Handles win's buttons for one frame when nothing is being dragged:
 // highlights the one under the mouse and, when its trigger (press, release,
-// hold, left or right, or the D key) happens, presses or toggles it and
-// runs its action: minimise/maximise, starting a resize or drag, closing,
-// or moving its slider, then its callback. Returns update_state (1 resize,
-// 2 drag, 3 slider). pos is unused.
+// hold, left or right) happens, presses or toggles it and runs its action:
+// minimise/maximise, starting a resize or drag, closing, or moving its
+// slider, then its callback. Holding D triggers the first enabled button
+// wherever the mouse is. A press on the window outside its buttons starts a
+// drag if the window is draggable (flag 0x10). Returns update_state
+// (1 resize, 2 drag, 3 slider). pos is unused.
 // FUNCTION: 0x0004cb80
 u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos)
 {
@@ -606,7 +608,7 @@ void process_window(Window **windows, Window *win)
 // Per frame: brings a clicked window to the front (unless the front one is
 // modal), switches the mouse mode to normal while over a window (restoring
 // it after), and processes the front window. Sets CurrentWindow to the
-// window under the mouse.
+// window under the mouse. Does nothing in mouse mode 0x13.
 // FUNCTION: 0x0004e47c
 extern "C" void ProcessWindows(Window **windows)
 {

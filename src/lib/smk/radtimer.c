@@ -58,7 +58,7 @@ static u32 timeradjust = 0;
 static u32 lasttimerread = 0;
 void (__pascal *SmackTimerSetupAddr)(void) = DEFSmackTimerSetup;
 
-// DEFSmackTimerRead: milliseconds from the BIOS tick count at 0:46Ch (ticks * 2746 / 50), kept increasing across its midnight reset.
+// DEFSmackTimerRead: milliseconds since DEFSmackTimerSetup from the BIOS tick count at 0:46Ch (ticks * 2746 / 50), counted on from the last reading when the count resets at midnight.
 // FUNCTION: 0xf2fa0
 u32 __pascal DEFSmackTimerRead(void)
 {

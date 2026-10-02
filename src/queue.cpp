@@ -189,8 +189,8 @@ u16 which_queue(Thing *person)
 // Queue window button `button` for queue position othervar.queue_pos of room
 // othervar.queue_win_room: 0/1 to the front/back, 4 home, 5 to reception, 6 picks the
 // patient up to move to another queue, 7 closes, 8-10 refer to the 1st-3rd
-// other player (network game), 2/3 raise/lower the queue's limit (events
-// 0x53/0x54).
+// other player (network game), 2/3 raise/lower the queue's limit
+// (EV_QUEUE_CAPACITY_UP/DOWN).
 // FUNCTION: 0x0004b2f4
 void process_queue_button(u8 button)
 {
@@ -340,7 +340,7 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
 {
     RoomInfo *room;
     Thing *person;
-    u8 reception;
+    u8 desk;
 
     room = &room_info[room_id];
     if (room > room_info) {
@@ -350,9 +350,9 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                 leave_queue(person);
                 interrupt_person(person);
                 if (room->type == ROOM_RECEPTION) {
-                    reception = find_nearest_manned_reception(person, room - room_info, 0);
-                    if (reception) {
-                        set_destination_coords(person, thing[reception].use_pos[1]);
+                    desk = find_nearest_manned_reception(person, room - room_info, 0);
+                    if (desk) {
+                        set_destination_coords(person, thing[desk].use_pos[1]);
                     }
                 } else {
                     room->queue_incoming++;

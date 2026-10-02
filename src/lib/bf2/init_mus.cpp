@@ -12,9 +12,10 @@ u8 DangerMusicVolumeChange = 255;
 #pragma inline_depth(0)
 
 // Starts the music driver (from BF_FORCE_MIDI_DRIVER or MDI.INI), chooses
-// the music bank type for the card (MusicType: f FM, g General MIDI, r
-// MT-32, w AWE32 with its soundfont) and allocates the bank. On failure
-// music stays disabled (MusicAble 0).
+// the music bank type for the card unless MidiTypeOverride is set
+// (MusicType: f FM, g General MIDI, r MT-32, w AWE32 with its soundfont),
+// allocates the bank unless DisableLoadMusic is set, and sets the music
+// volume. On failure music stays disabled (MusicAble 0).
 // FUNCTION: 0xdd210
 void InitMusic(void)
 {

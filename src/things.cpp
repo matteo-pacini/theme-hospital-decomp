@@ -79,7 +79,7 @@ void two_peeps_interact(Thing *w);
 
 // Runs one turn of every thing from first up to (not including) last: the
 // state routine for each type and state, and the per-turn counts
-// (reset_all_count before, final_count after).
+// (reset_all_count before, final_count after). Checks the win status first.
 // FUNCTION: 0x0005cc70
 void process_things(Thing *first, Thing *last)
 {

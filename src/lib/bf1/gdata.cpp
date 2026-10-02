@@ -37,7 +37,8 @@ extern "C" {
 // Flags bit 0; a name starting with '*' only allocates SLength bytes),
 // setting *Start and *SEnd, after freeing what it held. Returns 1, -100 if
 // memory ran out, -101 if the file could not be read.
-// NONMATCHING: register choice (target loads operands into registers before compares)
+// NONMATCHING: register choice (target loads operands into registers before
+// compares), and its second failed allocation jumps to the first's return -100
 // FUNCTION: 0x000bcd18
 int LbDataLoad(TbLoadFiles *files)
 {
@@ -75,6 +76,7 @@ int LbDataLoad(TbLoadFiles *files)
 
 // Frees, then loads every entry of the list ending with a null Start,
 // asserting on each failure. Returns the number of entries that failed.
+// NONMATCHING: the stack slots of files and ret are swapped
 // FUNCTION: 0x000bce44
 int LbDataLoadAll(TbLoadFiles *files)
 {

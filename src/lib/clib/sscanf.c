@@ -12,7 +12,6 @@ typedef struct SCNF_SPECS {
 int __scnf(SCNF_SPECS *specs, const char *format, va_list args);
 
 int cget_string(SCNF_SPECS *specs);
-/* config/functions.txt has no name for cget_string. */
 #pragma aux cget_string "cget_string_"
 
 // cget_string: __scnf input callback; next character of the string, or EOF (setting eoinp) at its end.
@@ -31,7 +30,6 @@ int cget_string(SCNF_SPECS *specs)
 }
 
 void uncget_string(int c, SCNF_SPECS *specs);
-/* config/functions.txt has no name for uncget_string. */
 #pragma aux uncget_string "uncget_string_"
 
 // uncget_string: __scnf push-back callback; step the string back one character.

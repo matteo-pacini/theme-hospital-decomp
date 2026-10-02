@@ -19,7 +19,7 @@ void *memcpy(void *dst, const void *src, size_t n);
 
 char *getenv(const char *name);
 
-extern const char D_00128484[];
+extern const char tzset_str_tz[];
 extern char stzone[];
 extern char dtzone[];
 extern long timezone;
@@ -66,7 +66,7 @@ void tzset(void)
 {
     char *tz;
 
-    if ((tz = getenv(D_00128484)) != NULL) {
+    if ((tz = getenv(tzset_str_tz)) != NULL) {
         __parse_tz(tz);
     } else {
         tryOSTimeZone();

@@ -202,8 +202,8 @@ void remove_staff_in_struct(Thing *staff)
 s16 place_staff_in_struct(u16 kind, u16 extra_skills)
 {
     Thing *new_staff;
-    u32 mean;
-    u32 spread;
+    u32 ability_min;
+    u32 ability_max;
 
     new_staff = allocate_thing(0x19);
     if (new_staff != 0) {
@@ -232,8 +232,8 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
         gamevar.applicants[new_staff->subtype]++;
         switch (new_staff->subtype) {
         case STAFF_NURSE:
-            mean = 30;
-            spread = 1000;
+            ability_min = 30;
+            ability_max = 1000;
             new_staff->skills = SKILL_NURSE;
             new_staff->female = 1;
             new_staff->face_head = 12;
@@ -241,8 +241,8 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
             new_staff->face_legs = staffrand() % 5 + 10;
             break;
         case STAFF_DOCTOR:
-            mean = gbv.doctor_threshold;
-            spread = gbv.consultant_threshold;
+            ability_min = gbv.doctor_threshold;
+            ability_max = gbv.consultant_threshold;
             new_staff->skills |= SKILL_DOCTOR;
             if (gamevar.shrink_rate > 0 && staffrand() % gamevar.shrink_rate == 0) {
                 new_staff->skills |= SKILL_PSYCHIATRIST;
@@ -255,12 +255,12 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
             }
             if (gamevar.consultant_rate > 0 && staffrand() % gamevar.consultant_rate == 0) {
                 new_staff->skills |= SKILL_CONSULTANT;
-                mean = gbv.consultant_threshold;
-                spread = 1000;
+                ability_min = gbv.consultant_threshold;
+                ability_max = 1000;
             } else if (gamevar.junior_rate > 0 && staffrand() % gamevar.junior_rate == 0) {
                 new_staff->skills |= SKILL_JUNIOR;
-                mean = 30;
-                spread = gbv.doctor_threshold;
+                ability_min = 30;
+                ability_max = gbv.doctor_threshold;
             }
             if (staffrand() % 100 < 53) {
                 new_staff->female = 1;
@@ -281,8 +281,8 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
             }
             break;
         case STAFF_HANDYMAN:
-            mean = 30;
-            spread = 1000;
+            ability_min = 30;
+            ability_max = 1000;
             new_staff->skills = SKILL_HANDYMAN;
             new_staff->female = 0;
             new_staff->prio_litter = 0x21;
@@ -293,8 +293,8 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
             new_staff->face_legs = staffrand() % 3 + 15;
             break;
         case STAFF_RECEPTIONIST:
-            mean = 30;
-            spread = 1000;
+            ability_min = 30;
+            ability_max = 1000;
             new_staff->skills = SKILL_RECEPTIONIST;
             new_staff->female = 1;
             new_staff->face_head = staffrand() % 4 + 10;
@@ -306,7 +306,7 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
             break;
         }
         new_staff->skills |= extra_skills;
-        new_staff->ability = normal_staffrand(mean, spread);
+        new_staff->ability = normal_staffrand(ability_min, ability_max);
         appraise_staff(new_staff);
         new_staff->salary = new_staff->wage_demand;
         new_staff->initial = staffrand() % 26 + 0x41;
@@ -488,8 +488,9 @@ u8 take_a_break(Thing *staff)
 }
 
 // Staff state SS_IN_STAFF_ROOM: rests them, plays pool, video games or sits
-// on a sofa, and once fully rested cures a crazy doctor and sends everyone
-// back to work (research, training, the pager or the corridor).
+// on a sofa, and once fully rested cures a crazy doctor (who stays) or sends
+// them back to work (research, training, the pager or the corridor). Leaves
+// at once on ORD_LEAVE_ROOM or when the room is being edited.
 // FUNCTION: 0x0002af04
 void staff_in_staff_room(Thing *staff)
 {
@@ -651,8 +652,9 @@ u8 am_i_lead_staff(Thing *staff)
     return 0;
 }
 
-// A staff member whose path failed: leaves a recently built destination
-// room, or gets stuck (SS_STUCK), announced for this player.
+// A staff member whose path failed: if outside rooms and heading for a room
+// built in the last 500 turns, goes back to the corridor (evacuate_staff);
+// else gets stuck (SS_STUCK), announced for this player.
 // FUNCTION: 0x0002b5cc
 void staff_nav_failure(Thing *staff)
 {
@@ -1215,9 +1217,9 @@ void increase_staff_salaries(Thing *staff, u16 amount, u16 percent, u8 owner)
     }
 }
 
-// Sets up training level `level` from rat_fest_level: places a consultant
-// psychiatrist, a surgeon and a researcher on the first chosen tile of the
-// player's land.
+// Sets up training level `level` from rat_fest_level: places three consultant
+// doctors (a psychiatrist, a surgeon and a researcher) on the first tile of
+// the player's land that passes the level's staff_chance roll.
 // FUNCTION: 0x0002cccc
 void training_builder(u8 level)
 {

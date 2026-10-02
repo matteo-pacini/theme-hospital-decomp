@@ -1,6 +1,6 @@
 .intel_syntax noprefix
 
-// __int23_handler: Ctrl-C (INT 23h) handler; on the runtime's own stack, raise(SIGINT) if the program hooked it, else chain to the previous handler.
+// __int23_handler: Ctrl-C (INT 23h) handler; on the runtime's own stack, raise(SIGINT) if the program hooked it and no child process is running, else chain to the previous handler.
 // FUNCTION: 0x000f4bca
 
 .section _TEXT,"ax",@progbits,unique,1002442
@@ -63,7 +63,7 @@
     iretd
 .size "__int23_handler_",.-"__int23_handler_"
 
-// __int_ctrl_break_handler: Ctrl-Break (INT 1Bh) handler; raise(SIGBREAK) if the program hooked it, else chain to the previous handler (shares __int23_handler's tail).
+// __int_ctrl_break_handler: Ctrl-Break (INT 1Bh) handler; on the runtime's own stack, raise(SIGBREAK) if the program hooked it and no child process is running, else chain to the previous handler (shares __int23_handler's tail).
 // FUNCTION: 0x000f4c5f
 
 .section _TEXT,"ax",@progbits,unique,1002591

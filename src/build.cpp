@@ -903,7 +903,7 @@ void delete_room(RoomInfo *room)
             clear_cell_of_ratholes(room->owner, (y << 7) + x);
         }
     }
-    debug.unknown108 = 0;
+    debug.unused_set_by_delete_room = 0;
     add_static_shadows();
     NRAdcounts.open_rooms--;
 }
@@ -1633,7 +1633,7 @@ void init_double_doors(RoomInfo *room)
 // Makes room the build state's room for editing and puts its outline up. If
 // nobody is inside and its door is free, its state is set to RS_EDITED;
 // otherwise it is flagged to wait (being_edited) and the local player's mouse mode set
-// to 14.
+// to MM_EDIT_ROOM_WAIT.
 // FUNCTION: 0x00027920
 void init_edit_room(RoomInfo *room)
 {
@@ -1879,8 +1879,9 @@ void clear_build_objects(u8 owner)
 }
 
 // Returns the tile to place a wall-hugging object of kind at for mouse tile
-// pos: against the room wall nearest pos, turned to face away from it, and
-// kept inside the room with its second part.
+// pos: against the room wall nearest pos, kept inside the room with its second
+// part. Sets gamevar.place_dir to the wall_hug angle for that wall, with a
+// swoosh when it changes.
 // FUNCTION: 0x00028288
 u16 place_object_wall_hug(u16 pos, u8 kind)
 {

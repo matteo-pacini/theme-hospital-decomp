@@ -68,9 +68,10 @@ TbError StartTwoPlayerExchange(void *buf)
 }
 
 // Two-player model: waits for the other player's packet, asking for it
-// again on timeout and dropping the other player after ten retries; adapts
-// the timeout to the measured round trip and advances the sequence number.
-// Returns Lb_OK, or Lb_FAIL.
+// again on each timeout; on the eleventh timeout it sends itself a
+// delete-player message for the other player and fails. Adapts the timeout
+// to the measured round trip and advances the sequence number. Returns
+// Lb_OK (also when the other player is not active), or Lb_FAIL.
 // FUNCTION: 0xd2e40
 TbError CompleteTwoPlayerExchange(void *buf)
 {
@@ -159,9 +160,11 @@ extern "C" {
 extern "C" {
 }
 
-// Two-player provider callback for a packet with sequence number seq:
-// returns where to store it, or 0 (asking for a resend if it is a packet
-// behind).
+// Two-player provider callback for a packet of size bytes with sequence
+// number seq: returns where in the exchange buffer to store it, or 0 for a
+// wrong size or sequence number (asking for a resend of the expected packet
+// when seq is the one after it). A client that has no sequence number yet
+// (15) adopts seq.
 // NONMATCHING: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
 // FUNCTION: 0xd309c
 void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data)
@@ -234,7 +237,8 @@ void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data)
 }
 
 // Two-player provider callback: the other player asks again for packet
-// seq; resends the last or last-but-one packet sent.
+// seq; resends the last or last-but-one packet sent (after the last-but-one,
+// the last as well) and restarts the exchange timer.
 // FUNCTION: 0xd32fc
 void TwoPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
 {

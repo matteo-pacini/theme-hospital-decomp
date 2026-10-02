@@ -33,8 +33,9 @@ u32 old_normal_rand(u32 low, u32 high)
     return sum + low;
 }
 
-// Advances the random generator for things outside the simulation, such as
-// sounds and the advisor (safeseed), and returns its low 16 bits.
+// Advances the random generator kept apart from the simulation's seed
+// (safeseed), used mostly for sounds and other presentation, and returns its
+// low 16 bits.
 // FUNCTION: 0x000b01a0
 u16 saferand(void)
 {

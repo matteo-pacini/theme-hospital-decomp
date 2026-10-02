@@ -224,8 +224,9 @@ void AIL_VOC_EOS(HSAMPLE S)
 }
 
 // Sets sample `S`'s format, rate and address from the "fmt " and "data" chunks
-// of the RIFF WAVE file at `image`. Formats other than 8/16-bit mono/stereo PCM
-// leave the type unchanged.
+// of the RIFF WAVE file at `image`. Only the channel count and sample size pick
+// the type (format_tag is not checked); combinations other than 1 or 2 channels
+// of 8 or 16 bits leave it unchanged.
 // FUNCTION: 0x000e1a20
 void __cdecl AIL_process_WAV_image(void *image, HSAMPLE S)
 {
@@ -269,8 +270,8 @@ void AIL_WAV_EOS(HSAMPLE S)
 // Allocates a sample on `dig` and sets it up from the VOC or WAV file image
 // `file_image`; for a VOC, `block` selects the data after the marker of that
 // number (-1 plays from the start). The handle is released when the file ends.
-// Returns it, or NULL with AIL_error set if the type is unknown, no handle is
-// free or the file has no data to play.
+// Returns it, or NULL: for a NULL image, if no handle is free, or with AIL_error
+// set if the type is unknown or the file has no data to play.
 // FUNCTION: 0x000e1ba0
 HSAMPLE __cdecl AIL_API_allocate_file_sample(HDIGDRIVER dig, void *file_image, S32 block)
 {
@@ -320,8 +321,8 @@ HSAMPLE __cdecl AIL_API_allocate_file_sample(HDIGDRIVER dig, void *file_image, S
 // Sets up sample `S` from the VOC or WAV file image `file_image`, with `block`
 // as in AIL_allocate_file_sample. Unlike that, it installs no end-of-sample
 // callback, so a VOC plays only its first voice block, and `S` is never
-// released. Returns 1, or 0 (with AIL_error set) for a NULL or unrecognised
-// image or no data to play.
+// released. Returns 1, or 0: for a NULL image, or with AIL_error set for an
+// unrecognised image or no data to play.
 // FUNCTION: 0x000e1d30
 S32 __cdecl AIL_API_set_sample_file(HSAMPLE S, void *file_image, S32 block)
 {

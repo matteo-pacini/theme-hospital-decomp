@@ -117,11 +117,12 @@ void remove_newlines(char *text)
 }
 
 // Runs the end-of-level sequence (winlose.state): 2 lose (a random losing
-// animation and line, then the hall of fame or, in a network game, the main
-// menu; 4 waits for a key), 1 win (the animation and a typed-out letter, 5:
-// accept to go to the next level or the bonus level, or decline to keep
-// playing), 3 the game's ending, 6 a win letter that returns to the main
-// menu.
+// animation and line; in a network game then the main menu, else the score
+// goes into the hall of fame and 4 waits for a click or key before the main
+// menu), 1 win (the animation and a typed-out letter, 5: accept to go to the
+// next level or the bonus level, or after the last level to the credits, or
+// decline to keep playing), 3 the game's ending, 6 a win letter that returns
+// to the main menu.
 // FUNCTION: 0x0009e0d8
 void play_winlose(void)
 {

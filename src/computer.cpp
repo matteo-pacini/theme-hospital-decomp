@@ -258,8 +258,8 @@ void computer_action(void)
 
 // Takes owner's next step in its com_strategy script: either sets it as the
 // pending action (types 0-4) or carries it out at once (choose a room, recheck
-// staff, staff and object levels, buy land, repay the loan, build freely,
-// switch strategy, or announce).
+// staff hires, staff and object levels, buy land, maintain the loan, build
+// freely, restart or switch strategy, or announce the hospital's opening).
 // FUNCTION: 0x0004eebc
 void computer_decision(u8 owner)
 {
@@ -347,10 +347,12 @@ void computer_decision(u8 owner)
     }
 
 // Simulates patient's whole visit to computer player owner's hospital at once:
-// GP and diagnosis visits until diagnosed, sent home or fed up, then treatment
-// or not by the hospital's personality; adds the income, cures, deaths and
-// reputation changes to this month's bucket (comp_buckets), advancing the
-// simulated date as it goes.
+// GP and diagnosis visits until diagnosed or the patient leaves or dies at
+// random, or, with no diagnosis room left, a guess if the diagnosis is past
+// the personality's guess_at; then a cure if the hospital has it (or a death,
+// when a drug fails its effectiveness roll). Adds the income, cures, deaths
+// and reputation changes to the bucket (comp_buckets) of the simulated month,
+// advancing the simulated date as it goes.
 // FUNCTION: 0x0004f15c
 void process_computer_peep(Thing *patient, u8 owner)
 {
@@ -360,9 +362,9 @@ void process_computer_peep(Thing *patient, u8 owner)
     u32 hours;
     ComputerBucket *bucket;
     int illness;
-    int busy;
+    int has_drinks;
     int chance;
-    int patience;
+    int health;
     int result;
     int step;
     int pct;
@@ -375,7 +377,7 @@ void process_computer_peep(Thing *patient, u8 owner)
     illness = patient->illness;
     hosp->patient_load++;
     if (listhead[owner].objects[OBJ_DRINKS_MACHINE] * 10 > hosp->patient_load) {
-        busy = 1;
+        has_drinks = 1;
     }
     if (hosp->patient_load > 5) {
         chance = 100 - hosp->patient_load / ((hosp->rooms_built + 1) * 10) -
@@ -389,7 +391,7 @@ void process_computer_peep(Thing *patient, u8 owner)
     } else {
         chance = 20;
     }
-    patience = patient->health;
+    health = patient->health;
     result = 0;
     step = 5;
     for (;;) {
@@ -413,7 +415,7 @@ void process_computer_peep(Thing *patient, u8 owner)
             break;
         }
         ADVANCE_TIME();
-        if (busy && old_newrand() % 5 == 0) {
+        if (has_drinks && old_newrand() % 5 == 0) {
             ADVANCE_TIME();
             bucket->income += 20;
         }
@@ -425,13 +427,13 @@ void process_computer_peep(Thing *patient, u8 owner)
         if (chance < 5) {
             chance = 5;
         }
-        if (old_newrand() % patience == 0) {
+        if (old_newrand() % health == 0) {
             result = 2;
             break;
         }
-        patience -= 1;
-        if (patience < 5) {
-            patience = 5;
+        health -= 1;
+        if (health < 5) {
+            health = 5;
         }
         find_possible_diagnosis(patient);
         if (patient->treatment == 0) {
@@ -646,8 +648,9 @@ u8 computer_loan(s8 amount, u8 owner)
 
 // Looks back over owner's strategy for the first staff hire step whose kind
 // owner now has fewer of than the strategy has hired, and makes it the pending
-// action. a 1 repeats this step next time; otherwise the position reached is
-// kept (recheck_step) to resume from. Always returns 0.
+// action, and steps strategy_step back so this step runs again. With a 0 the
+// position reached is kept (recheck_step) for the next recheck to resume
+// from; a 1 clears it. Always returns 0.
 // FUNCTION: 0x0004ff24
 u8 computer_recheck_actions(u8 a, u8 owner)
 {
@@ -850,7 +853,8 @@ void remove_a_note(u16 type, u8 owner)
     }
 }
 
-// Moves owner's note of type to the last free slot, behind the others.
+// Moves owner's note of type to the last free slot, behind the others. Goes
+// through find_a_note, so the note also becomes the pending action.
 // FUNCTION: 0x000506f4
 void declass_a_note(u16 type, u8 owner)
 {
@@ -1028,8 +1032,8 @@ u8 computer_object_levels(u8 owner)
     return 0;
 }
 
-// Buys owner as many plots as the local player has more of, if it can afford
-// them (else adds note 4). Returns 1 if bought.
+// Buys owner as much land (area, in tiles) as the local player has more of,
+// if it can afford it (else adds note 4). Returns 1 if bought.
 // FUNCTION: 0x00050de4
 u8 computer_buy_land(u8 owner)
 {

@@ -1,6 +1,7 @@
 #include "snd.h"
 
-// Stops the playing song and any danger music fade.
+// Stops the playing song and any danger music fade, and disables danger
+// music.
 // FUNCTION: 0xfb730
 void StopMusic(void)
 {

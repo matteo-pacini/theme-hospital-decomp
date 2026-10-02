@@ -61,7 +61,9 @@ struct __ic76sReceiveCallbacks {
     void (__stdcall *mpReqCompsExDataMsg)(u32 id, u32 seq, void *data);
     void *(__stdcall *unidirectionalMsg)(u32 id, u32 size, void *data);
     void (__stdcall *systemUserMsg)(u32 id, void *msg, u32 size, void *data);
-    void (__stdcall *unknown24)(u32 id, void *msg);
+    // 0x24: Handler for MSG_TYPE_8 messages (Receive with RECV_MSG_TYPE_8, or a
+    // Send to the local player), or null.
+    void (__stdcall *msgType8Msg)(u32 id, void *msg);
 };
 
 struct ServiceProvider {
@@ -476,7 +478,9 @@ struct __5303ctCLIENTINFOPACKET {
     u16 num_players;
     u16 max_players;
     u32 page;
-    u32 unknown50;
+    // 0x50: Zeroed by IPXServiceProvider::EnumerateAndAddPlayers; no code reads
+    // it.
+    u32 unused_set_by_EnumerateAndAddPlayers;
 };
 
 struct __35ct5sCLIENTJOINPACKET {

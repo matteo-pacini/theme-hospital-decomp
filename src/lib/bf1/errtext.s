@@ -1,5 +1,9 @@
 .intel_syntax noprefix
 
+// LbDrawCheapText(x eax, y edx, text ebx, colour cl): draws the
+// zero-terminated text in colour with the 3x6 font below, one character
+// every 4 pixels, straight into the graphics window (no clipping, no
+// draw_flags). The font covers ' ' to 0x9a only.
 // FUNCTION: 0x000ecc8c
 
 .section _TEXT,"ax",@progbits,unique,969868
