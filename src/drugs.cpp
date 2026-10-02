@@ -195,7 +195,7 @@ void display_drugs(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (!(illness >= 0x24 || illness == 1)) {
         if (allhosps[player].rooms[illness].cure_available == 1) {
-            if (def->kind == 0x27) {
+            if (def->kind == OBJ_PHARMACY_CABINET) {
                 value = allhosps[player].rooms[illness].drug_effectiveness;
                 reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 7);
                 set_font_from_cache(0x2e);
@@ -217,7 +217,7 @@ void display_drugs(void)
         } else {
             reqspr_draw(resvars.screen_coords[0x20].x, resvars.screen_coords[0x20].y, screen_sprites_tab_start + 12);
             if (def->outcome != 1 && def->outcome != 5 && def->outcome != 4) {
-                if (def->kind == 0x27) {
+                if (def->kind == OBJ_PHARMACY_CABINET) {
                     reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
                                 screen_sprites_tab_start + 7);
                     set_font_from_cache(0x2e);
@@ -524,7 +524,7 @@ void drugs_help_cure_type(void)
     if (othervar.selected_illness >= 0x24 || othervar.selected_illness == 1) {
         return;
     }
-    if (expertise[othervar.selected_illness].kind == 0x27) {
+    if (expertise[othervar.selected_illness].kind == OBJ_PHARMACY_CABINET) {
         if (allhosps[player].rooms[othervar.selected_illness].cure_available == 1) {
             sprintf(othervar.help_msg, help_text[148],
                     allhosps[player].rooms[othervar.selected_illness].drug_effectiveness);

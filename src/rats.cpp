@@ -397,7 +397,7 @@ void rat_fest_control(void)
             }
         }
         if (actual_game_turn % (200 - othervar.level_after_bonus * 2) == 0) {
-            id = place_staff_in_struct(2, 0);
+            id = place_staff_in_struct(STAFF_HANDYMAN, 0);
             if (id) {
                 place_staff_on_map(0x1a32, id, 0, player);
             }

@@ -550,7 +550,7 @@ void staff_in_staff_room(Thing *staff)
                         return;
                     }
                 }
-                if (overlapping_staff_check(staff, 0x30)) {
+                if (overlapping_staff_check(staff, SS_IN_STAFF_ROOM)) {
                     return;
                 }
                 staff->speed = 0x20;
