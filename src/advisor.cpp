@@ -162,6 +162,8 @@ void display_advisor(void)
 // when it was given. Returns 1 if advice was written, else 0.
 // Case 0xd's stronger contagion warning (count >= 8, tested after >= 4) is
 // never reached, and case 0x10 ignores advisor_staff_tired's result.
+// Bug: case 0x16 uses the language text as the sprintf format with no
+// argument; French LANG-1.DAT's text has a %s there (docs/BUGS.md).
 // FUNCTION: 0x0005defc
 u8 find_advice(const u16 id)
 {

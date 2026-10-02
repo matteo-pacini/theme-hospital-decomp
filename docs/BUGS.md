@@ -145,6 +145,24 @@ In the contagion case (0xd), `contagious_count >= 8` is tested after
 `>= 4` in an `else if`, so the stronger warning (`extra_advice[2]`) is never
 given.
 
+### find_advice, French text (src/advisor.cpp, DATA/LANG-1.DAT)
+
+**Bug** · `0x5defc`
+
+The "junior has become a doctor" advice (case 0x16, announced by
+`appraise_staff` in environ.cpp when a junior's ability passes the
+threshold) is printed with `sprintf(advisor.text, advisor_text[0x16])`: the
+language text is the format and no argument is passed. English's "One of
+your JUNIORS has become a DOCTOR." has no conversion, but the French
+`LANG-1.DAT` has "Un des médecins est devenu %s.", so `%s` takes whatever
+is next on the stack as a string pointer. This is the French version's
+well-known crash when a junior is promoted, often first met on level 5;
+players reported that the game survived it under real DOS. What the stray
+pointer prints there depends on the caller's stack. GOG's `LANG-1.DAT` still has the `%s`.
+A corrected `LANG-1.DAT` or turning the advisor off avoids it. Case 0x89
+(doctor to consultant) has the same pattern, but its French text has no
+conversion.
+
 ### advisor_staff_tired (src/advisor.cpp)
 
 **Potential bug** · `0x619bc`
