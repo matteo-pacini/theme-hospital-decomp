@@ -3,6 +3,10 @@
 // The dispatch table's entries were each assembled after the routine they point at:
 // TABLE RECORDS: fn_000f0da8_
 
+// Data, not a function: the mixer's dispatch table. Entries 0-127 are the DMA
+// copy routines DC_n and entries 128-255 the merge routines M_n, indexed by
+// format bits (see AILSSA_DMA_copy and AILSSA_merge); 0 where no routine
+// exists.
 // FUNCTION: 0x000f0da8
 
 .section _TEXT,"ax",@progbits,unique,986536
@@ -267,6 +271,8 @@
     .long "_M_127"
 .size "fn_000f0da8_",.-"fn_000f0da8_"
 
+// DMA copy routine 0: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit mono output at EDI, unclipped.
 // FUNCTION: 0x000f11a8
 
 .section _TEXT,"ax",@progbits,unique,987560
@@ -283,6 +289,8 @@
     ret
 .size "_DC_0",.-"_DC_0"
 
+// DMA copy routine 1: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit mono output at EDI, unclipped.
 // FUNCTION: 0x000f11b9
 
 .section _TEXT,"ax",@progbits,unique,987577
@@ -298,6 +306,8 @@
     ret
 .size "_DC_1",.-"_DC_1"
 
+// DMA copy routine 16: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, unclipped.
 // FUNCTION: 0x000f11c5
 
 .section _TEXT,"ax",@progbits,unique,987589
@@ -317,6 +327,8 @@
     ret
 .size "_DC_16",.-"_DC_16"
 
+// DMA copy routine 17: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, unclipped.
 // FUNCTION: 0x000f11e4
 
 .section _TEXT,"ax",@progbits,unique,987620
@@ -334,6 +346,8 @@
     ret
 .size "_DC_17",.-"_DC_17"
 
+// DMA copy routine 18: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, right channel first, unclipped.
 // FUNCTION: 0x000f11f8
 
 .section _TEXT,"ax",@progbits,unique,987640
@@ -353,6 +367,8 @@
     ret
 .size "_DC_18",.-"_DC_18"
 
+// DMA copy routine 19: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, right channel first, unclipped.
 // FUNCTION: 0x000f1217
 
 .section _TEXT,"ax",@progbits,unique,987671
@@ -370,6 +386,9 @@
     ret
 .size "_DC_19",.-"_DC_19"
 
+// DMA copy routine 24: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, left and right to separate buffers (EDI
+// and EBX), unclipped.
 // FUNCTION: 0x000f122b
 
 .section _TEXT,"ax",@progbits,unique,987691
@@ -390,6 +409,9 @@
     ret
 .size "_DC_24",.-"_DC_24"
 
+// DMA copy routine 25: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, left and right to separate buffers (EDI
+// and EBX), unclipped.
 // FUNCTION: 0x000f1248
 
 .section _TEXT,"ax",@progbits,unique,987720
@@ -408,6 +430,9 @@
     ret
 .size "_DC_25",.-"_DC_25"
 
+// DMA copy routine 26: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, right channel first, left and right to
+// separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f125a
 
 .section _TEXT,"ax",@progbits,unique,987738
@@ -428,6 +453,9 @@
     ret
 .size "_DC_26",.-"_DC_26"
 
+// DMA copy routine 27: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, right channel first, left and right to
+// separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f1277
 
 .section _TEXT,"ax",@progbits,unique,987767
@@ -446,6 +474,8 @@
     ret
 .size "_DC_27",.-"_DC_27"
 
+// DMA copy routine 32: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit mono output at EDI, unclipped.
 // FUNCTION: 0x000f1289
 
 .section _TEXT,"ax",@progbits,unique,987785
@@ -462,6 +492,8 @@
     ret
 .size "_DC_32",.-"_DC_32"
 
+// DMA copy routine 33: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit mono output at EDI, unclipped.
 // FUNCTION: 0x000f129d
 
 .section _TEXT,"ax",@progbits,unique,987805
@@ -477,6 +509,8 @@
     ret
 .size "_DC_33",.-"_DC_33"
 
+// DMA copy routine 36: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit mono output at EDI, high byte first, unclipped.
 // FUNCTION: 0x000f12ac
 
 .section _TEXT,"ax",@progbits,unique,987820
@@ -494,6 +528,8 @@
     ret
 .size "_DC_36",.-"_DC_36"
 
+// DMA copy routine 37: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit mono output at EDI, high byte first, unclipped.
 // FUNCTION: 0x000f12c2
 
 .section _TEXT,"ax",@progbits,unique,987842
@@ -510,6 +546,8 @@
     ret
 .size "_DC_37",.-"_DC_37"
 
+// DMA copy routine 48: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, unclipped.
 // FUNCTION: 0x000f12d3
 
 .section _TEXT,"ax",@progbits,unique,987859
@@ -529,6 +567,8 @@
     ret
 .size "_DC_48",.-"_DC_48"
 
+// DMA copy routine 49: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, unclipped.
 // FUNCTION: 0x000f12f4
 
 .section _TEXT,"ax",@progbits,unique,987892
@@ -546,6 +586,8 @@
     ret
 .size "_DC_49",.-"_DC_49"
 
+// DMA copy routine 50: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, right channel first, unclipped.
 // FUNCTION: 0x000f130a
 
 .section _TEXT,"ax",@progbits,unique,987914
@@ -565,6 +607,8 @@
     ret
 .size "_DC_50",.-"_DC_50"
 
+// DMA copy routine 51: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, right channel first, unclipped.
 // FUNCTION: 0x000f132b
 
 .section _TEXT,"ax",@progbits,unique,987947
@@ -582,6 +626,8 @@
     ret
 .size "_DC_51",.-"_DC_51"
 
+// DMA copy routine 52: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, high byte first, unclipped.
 // FUNCTION: 0x000f1341
 
 .section _TEXT,"ax",@progbits,unique,987969
@@ -603,6 +649,8 @@
     ret
 .size "_DC_52",.-"_DC_52"
 
+// DMA copy routine 53: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, high byte first, unclipped.
 // FUNCTION: 0x000f1366
 
 .section _TEXT,"ax",@progbits,unique,988006
@@ -622,6 +670,9 @@
     ret
 .size "_DC_53",.-"_DC_53"
 
+// DMA copy routine 54: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, right channel first, high byte first,
+// unclipped.
 // FUNCTION: 0x000f1380
 
 .section _TEXT,"ax",@progbits,unique,988032
@@ -643,6 +694,9 @@
     ret
 .size "_DC_54",.-"_DC_54"
 
+// DMA copy routine 55: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, right channel first, high byte first,
+// unclipped.
 // FUNCTION: 0x000f13a5
 
 .section _TEXT,"ax",@progbits,unique,988069
@@ -662,6 +716,9 @@
     ret
 .size "_DC_55",.-"_DC_55"
 
+// DMA copy routine 56: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, left and right to separate buffers (EDI
+// and EBX), unclipped.
 // FUNCTION: 0x000f13bf
 
 .section _TEXT,"ax",@progbits,unique,988095
@@ -682,6 +739,9 @@
     ret
 .size "_DC_56",.-"_DC_56"
 
+// DMA copy routine 57: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, left and right to separate buffers (EDI
+// and EBX), unclipped.
 // FUNCTION: 0x000f13e2
 
 .section _TEXT,"ax",@progbits,unique,988130
@@ -700,6 +760,9 @@
     ret
 .size "_DC_57",.-"_DC_57"
 
+// DMA copy routine 58: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, right channel first, left and right to
+// separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f13fa
 
 .section _TEXT,"ax",@progbits,unique,988154
@@ -720,6 +783,9 @@
     ret
 .size "_DC_58",.-"_DC_58"
 
+// DMA copy routine 59: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, right channel first, left and right to
+// separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f141d
 
 .section _TEXT,"ax",@progbits,unique,988189
@@ -738,6 +804,9 @@
     ret
 .size "_DC_59",.-"_DC_59"
 
+// DMA copy routine 60: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, high byte first, left and right to
+// separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f1435
 
 .section _TEXT,"ax",@progbits,unique,988213
@@ -760,6 +829,9 @@
     ret
 .size "_DC_60",.-"_DC_60"
 
+// DMA copy routine 61: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, high byte first, left and right to
+// separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f145c
 
 .section _TEXT,"ax",@progbits,unique,988252
@@ -780,6 +852,9 @@
     ret
 .size "_DC_61",.-"_DC_61"
 
+// DMA copy routine 62: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit stereo output at EDI, right channel first, high byte first,
+// left and right to separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f1478
 
 .section _TEXT,"ax",@progbits,unique,988280
@@ -802,6 +877,9 @@
     ret
 .size "_DC_62",.-"_DC_62"
 
+// DMA copy routine 63: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit stereo output at EDI, right channel first, high byte first,
+// left and right to separate buffers (EDI and EBX), unclipped.
 // FUNCTION: 0x000f149f
 
 .section _TEXT,"ax",@progbits,unique,988319
@@ -822,6 +900,8 @@
     ret
 .size "_DC_63",.-"_DC_63"
 
+// DMA copy routine 64: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit mono output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f14bb
 
 .section _TEXT,"ax",@progbits,unique,988347
@@ -849,6 +929,8 @@
     jmp .L000f14ce
 .size "_DC_64",.-"_DC_64"
 
+// DMA copy routine 65: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit mono output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f14e8
 
 .section _TEXT,"ax",@progbits,unique,988392
@@ -875,6 +957,8 @@
     jmp .L000f14fb
 .size "_DC_65",.-"_DC_65"
 
+// DMA copy routine 80: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f1510
 
 .section _TEXT,"ax",@progbits,unique,988432
@@ -916,6 +1000,8 @@
     jmp .L000f1536
 .size "_DC_80",.-"_DC_80"
 
+// DMA copy routine 81: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f1569
 
 .section _TEXT,"ax",@progbits,unique,988521
@@ -955,6 +1041,8 @@
     jmp .L000f158f
 .size "_DC_81",.-"_DC_81"
 
+// DMA copy routine 82: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, right channel first, clipped to 16 bits.
 // FUNCTION: 0x000f15b7
 
 .section _TEXT,"ax",@progbits,unique,988599
@@ -996,6 +1084,8 @@
     jmp .L000f15dd
 .size "_DC_82",.-"_DC_82"
 
+// DMA copy routine 83: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, right channel first, clipped to 16 bits.
 // FUNCTION: 0x000f1610
 
 .section _TEXT,"ax",@progbits,unique,988688
@@ -1035,6 +1125,9 @@
     jmp .L000f1636
 .size "_DC_83",.-"_DC_83"
 
+// DMA copy routine 88: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, left and right to separate buffers (EDI
+// and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f165e
 
 .section _TEXT,"ax",@progbits,unique,988766
@@ -1077,6 +1170,9 @@
     jmp .L000f1684
 .size "_DC_88",.-"_DC_88"
 
+// DMA copy routine 89: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, left and right to separate buffers (EDI
+// and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f16b5
 
 .section _TEXT,"ax",@progbits,unique,988853
@@ -1117,6 +1213,9 @@
     jmp .L000f16db
 .size "_DC_89",.-"_DC_89"
 
+// DMA copy routine 90: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 8-bit stereo output at EDI, right channel first, left and right to
+// separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1701
 
 .section _TEXT,"ax",@progbits,unique,988929
@@ -1159,6 +1258,9 @@
     jmp .L000f1727
 .size "_DC_90",.-"_DC_90"
 
+// DMA copy routine 91: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 8-bit stereo output at EDI, right channel first, left and right to
+// separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1758
 
 .section _TEXT,"ax",@progbits,unique,989016
@@ -1199,6 +1301,8 @@
     jmp .L000f177e
 .size "_DC_91",.-"_DC_91"
 
+// DMA copy routine 96: converts ECX frames of the 32-bit build buffer at ESI to
+// unsigned 16-bit mono output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f17a4
 
 .section _TEXT,"ax",@progbits,unique,989092
@@ -1226,6 +1330,8 @@
     jmp .L000f17b7
 .size "_DC_96",.-"_DC_96"
 
+// DMA copy routine 97: converts ECX frames of the 32-bit build buffer at ESI to
+// signed 16-bit mono output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f17d4
 
 .section _TEXT,"ax",@progbits,unique,989140
@@ -1252,6 +1358,8 @@
     jmp .L000f17e7
 .size "_DC_97",.-"_DC_97"
 
+// DMA copy routine 100: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit mono output at EDI, high byte first, clipped to 16 bits.
 // FUNCTION: 0x000f17ff
 
 .section _TEXT,"ax",@progbits,unique,989183
@@ -1280,6 +1388,8 @@
     jmp .L000f1812
 .size "_DC_100",.-"_DC_100"
 
+// DMA copy routine 101: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit mono output at EDI, high byte first, clipped to 16 bits.
 // FUNCTION: 0x000f1831
 
 .section _TEXT,"ax",@progbits,unique,989233
@@ -1307,6 +1417,8 @@
     jmp .L000f1844
 .size "_DC_101",.-"_DC_101"
 
+// DMA copy routine 112: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f185e
 
 .section _TEXT,"ax",@progbits,unique,989278
@@ -1348,6 +1460,8 @@
     jmp .L000f1884
 .size "_DC_112",.-"_DC_112"
 
+// DMA copy routine 113: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, clipped to 16 bits.
 // FUNCTION: 0x000f18b9
 
 .section _TEXT,"ax",@progbits,unique,989369
@@ -1387,6 +1501,9 @@
     jmp .L000f18df
 .size "_DC_113",.-"_DC_113"
 
+// DMA copy routine 114: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, right channel first, clipped to 16
+// bits.
 // FUNCTION: 0x000f1909
 
 .section _TEXT,"ax",@progbits,unique,989449
@@ -1428,6 +1545,9 @@
     jmp .L000f192f
 .size "_DC_114",.-"_DC_114"
 
+// DMA copy routine 115: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, right channel first, clipped to 16
+// bits.
 // FUNCTION: 0x000f1964
 
 .section _TEXT,"ax",@progbits,unique,989540
@@ -1467,6 +1587,8 @@
     jmp .L000f198a
 .size "_DC_115",.-"_DC_115"
 
+// DMA copy routine 116: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, high byte first, clipped to 16 bits.
 // FUNCTION: 0x000f19b4
 
 .section _TEXT,"ax",@progbits,unique,989620
@@ -1510,6 +1632,8 @@
     jmp .L000f19da
 .size "_DC_116",.-"_DC_116"
 
+// DMA copy routine 117: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, high byte first, clipped to 16 bits.
 // FUNCTION: 0x000f1a13
 
 .section _TEXT,"ax",@progbits,unique,989715
@@ -1551,6 +1675,9 @@
     jmp .L000f1a39
 .size "_DC_117",.-"_DC_117"
 
+// DMA copy routine 118: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, right channel first, high byte
+// first, clipped to 16 bits.
 // FUNCTION: 0x000f1a67
 
 .section _TEXT,"ax",@progbits,unique,989799
@@ -1594,6 +1721,9 @@
     jmp .L000f1a8d
 .size "_DC_118",.-"_DC_118"
 
+// DMA copy routine 119: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, right channel first, high byte first,
+// clipped to 16 bits.
 // FUNCTION: 0x000f1ac6
 
 .section _TEXT,"ax",@progbits,unique,989894
@@ -1635,6 +1765,9 @@
     jmp .L000f1aec
 .size "_DC_119",.-"_DC_119"
 
+// DMA copy routine 120: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, left and right to separate buffers
+// (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1b1a
 
 .section _TEXT,"ax",@progbits,unique,989978
@@ -1677,6 +1810,9 @@
     jmp .L000f1b40
 .size "_DC_120",.-"_DC_120"
 
+// DMA copy routine 121: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, left and right to separate buffers
+// (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1b77
 
 .section _TEXT,"ax",@progbits,unique,990071
@@ -1717,6 +1853,9 @@
     jmp .L000f1b9d
 .size "_DC_121",.-"_DC_121"
 
+// DMA copy routine 122: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, right channel first, left and right
+// to separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1bc9
 
 .section _TEXT,"ax",@progbits,unique,990153
@@ -1759,6 +1898,9 @@
     jmp .L000f1bef
 .size "_DC_122",.-"_DC_122"
 
+// DMA copy routine 123: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, right channel first, left and right to
+// separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1c26
 
 .section _TEXT,"ax",@progbits,unique,990246
@@ -1799,6 +1941,9 @@
     jmp .L000f1c4c
 .size "_DC_123",.-"_DC_123"
 
+// DMA copy routine 124: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, high byte first, left and right to
+// separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1c78
 
 .section _TEXT,"ax",@progbits,unique,990328
@@ -1843,6 +1988,9 @@
     jmp .L000f1c9e
 .size "_DC_124",.-"_DC_124"
 
+// DMA copy routine 125: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, high byte first, left and right to
+// separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1cd9
 
 .section _TEXT,"ax",@progbits,unique,990425
@@ -1885,6 +2033,9 @@
     jmp .L000f1cff
 .size "_DC_125",.-"_DC_125"
 
+// DMA copy routine 126: converts ECX frames of the 32-bit build buffer at ESI
+// to unsigned 16-bit stereo output at EDI, right channel first, high byte
+// first, left and right to separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1d2f
 
 .section _TEXT,"ax",@progbits,unique,990511
@@ -1929,6 +2080,9 @@
     jmp .L000f1d55
 .size "_DC_126",.-"_DC_126"
 
+// DMA copy routine 127: converts ECX frames of the 32-bit build buffer at ESI
+// to signed 16-bit stereo output at EDI, right channel first, high byte first,
+// left and right to separate buffers (EDI and EBX), clipped to 16 bits.
 // FUNCTION: 0x000f1d90
 
 .section _TEXT,"ax",@progbits,unique,990608
@@ -1971,6 +2125,8 @@
     jmp .L000f1db6
 .size "_DC_127",.-"_DC_127"
 
+// Merge routine 0: adds unsigned 8-bit mono sample data from ESI, unscaled, to
+// the mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1de6
 
 .section _TEXT,"ax",@progbits,unique,990694
@@ -1991,6 +2147,8 @@
     ret
 .size "_M_0",.-"_M_0"
 
+// Merge routine 1: adds unsigned 8-bit mono sample data from ESI, unscaled, to
+// the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1e07
 
 .section _TEXT,"ax",@progbits,unique,990727
@@ -2012,6 +2170,8 @@
     ret
 .size "_M_1",.-"_M_1"
 
+// Merge routine 3: adds unsigned 8-bit stereo sample data from ESI, unscaled,
+// to the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1e2b
 
 .section _TEXT,"ax",@progbits,unique,990763
@@ -2036,6 +2196,9 @@
     ret
 .size "_M_3",.-"_M_3"
 
+// Merge routine 7: adds unsigned 8-bit stereo (right channel first) sample data
+// from ESI, unscaled, to the stereo build buffer at EDI, until the source or
+// the build buffer ends.
 // FUNCTION: 0x000f1e5d
 
 .section _TEXT,"ax",@progbits,unique,990813
@@ -2060,6 +2223,8 @@
     ret
 .size "_M_7",.-"_M_7"
 
+// Merge routine 8: adds unsigned 16-bit mono sample data from ESI, unscaled, to
+// the mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1e8f
 
 .section _TEXT,"ax",@progbits,unique,990863
@@ -2080,6 +2245,8 @@
     ret
 .size "_M_8",.-"_M_8"
 
+// Merge routine 9: adds unsigned 16-bit mono sample data from ESI, unscaled, to
+// the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1eb3
 
 .section _TEXT,"ax",@progbits,unique,990899
@@ -2101,6 +2268,8 @@
     ret
 .size "_M_9",.-"_M_9"
 
+// Merge routine 11: adds unsigned 16-bit stereo sample data from ESI, unscaled,
+// to the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1eda
 
 .section _TEXT,"ax",@progbits,unique,990938
@@ -2125,6 +2294,9 @@
     ret
 .size "_M_11",.-"_M_11"
 
+// Merge routine 15: adds unsigned 16-bit stereo (right channel first) sample
+// data from ESI, unscaled, to the stereo build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f1f0e
 
 .section _TEXT,"ax",@progbits,unique,990990
@@ -2149,6 +2321,8 @@
     ret
 .size "_M_15",.-"_M_15"
 
+// Merge routine 16: adds signed 8-bit mono sample data from ESI, unscaled, to
+// the mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1f42
 
 .section _TEXT,"ax",@progbits,unique,991042
@@ -2168,6 +2342,8 @@
     ret
 .size "_M_16",.-"_M_16"
 
+// Merge routine 17: adds signed 8-bit mono sample data from ESI, unscaled, to
+// the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1f5e
 
 .section _TEXT,"ax",@progbits,unique,991070
@@ -2188,6 +2364,8 @@
     ret
 .size "_M_17",.-"_M_17"
 
+// Merge routine 19: adds signed 8-bit stereo sample data from ESI, unscaled, to
+// the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1f7d
 
 .section _TEXT,"ax",@progbits,unique,991101
@@ -2210,6 +2388,9 @@
     ret
 .size "_M_19",.-"_M_19"
 
+// Merge routine 23: adds signed 8-bit stereo (right channel first) sample data
+// from ESI, unscaled, to the stereo build buffer at EDI, until the source or
+// the build buffer ends.
 // FUNCTION: 0x000f1fa4
 
 .section _TEXT,"ax",@progbits,unique,991140
@@ -2232,6 +2413,8 @@
     ret
 .size "_M_23",.-"_M_23"
 
+// Merge routine 24: adds signed 16-bit mono sample data from ESI, unscaled, to
+// the mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1fcb
 
 .section _TEXT,"ax",@progbits,unique,991179
@@ -2251,6 +2434,8 @@
     ret
 .size "_M_24",.-"_M_24"
 
+// Merge routine 25: adds signed 16-bit mono sample data from ESI, unscaled, to
+// the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f1fea
 
 .section _TEXT,"ax",@progbits,unique,991210
@@ -2271,6 +2456,8 @@
     ret
 .size "_M_25",.-"_M_25"
 
+// Merge routine 27: adds signed 16-bit stereo sample data from ESI, unscaled,
+// to the stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f200c
 
 .section _TEXT,"ax",@progbits,unique,991244
@@ -2293,6 +2480,9 @@
     ret
 .size "_M_27",.-"_M_27"
 
+// Merge routine 31: adds signed 16-bit stereo (right channel first) sample data
+// from ESI, unscaled, to the stereo build buffer at EDI, until the source or
+// the build buffer ends.
 // FUNCTION: 0x000f2035
 
 .section _TEXT,"ax",@progbits,unique,991285
@@ -2315,6 +2505,9 @@
     ret
 .size "_M_31",.-"_M_31"
 
+// Merge routine 32: adds unsigned 8-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the mono build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f205e
 
 .section _TEXT,"ax",@progbits,unique,991326
@@ -2336,6 +2529,9 @@
     ret
 .size "_M_32",.-"_M_32"
 
+// Merge routine 33: adds unsigned 8-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f208a
 
 .section _TEXT,"ax",@progbits,unique,991370
@@ -2358,6 +2554,9 @@
     ret
 .size "_M_33",.-"_M_33"
 
+// Merge routine 35: adds unsigned 8-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f20b9
 
 .section _TEXT,"ax",@progbits,unique,991417
@@ -2385,6 +2584,9 @@
     ret
 .size "_M_35",.-"_M_35"
 
+// Merge routine 39: adds unsigned 8-bit stereo (right channel first) sample
+// data from ESI, stepping through it at the rate ratio, unscaled, to the stereo
+// build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f20f9
 
 .section _TEXT,"ax",@progbits,unique,991481
@@ -2412,6 +2614,9 @@
     ret
 .size "_M_39",.-"_M_39"
 
+// Merge routine 40: adds unsigned 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the mono build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f2139
 
 .section _TEXT,"ax",@progbits,unique,991545
@@ -2435,6 +2640,9 @@
     ret
 .size "_M_40",.-"_M_40"
 
+// Merge routine 41: adds unsigned 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f216b
 
 .section _TEXT,"ax",@progbits,unique,991595
@@ -2459,6 +2667,9 @@
     ret
 .size "_M_41",.-"_M_41"
 
+// Merge routine 43: adds unsigned 16-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f21a0
 
 .section _TEXT,"ax",@progbits,unique,991648
@@ -2486,6 +2697,9 @@
     ret
 .size "_M_43",.-"_M_43"
 
+// Merge routine 47: adds unsigned 16-bit stereo (right channel first) sample
+// data from ESI, stepping through it at the rate ratio, unscaled, to the stereo
+// build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f21e2
 
 .section _TEXT,"ax",@progbits,unique,991714
@@ -2513,6 +2727,9 @@
     ret
 .size "_M_47",.-"_M_47"
 
+// Merge routine 48: adds signed 8-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the mono build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f2224
 
 .section _TEXT,"ax",@progbits,unique,991780
@@ -2533,6 +2750,9 @@
     ret
 .size "_M_48",.-"_M_48"
 
+// Merge routine 49: adds signed 8-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f224b
 
 .section _TEXT,"ax",@progbits,unique,991819
@@ -2554,6 +2774,9 @@
     ret
 .size "_M_49",.-"_M_49"
 
+// Merge routine 51: adds signed 8-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f2275
 
 .section _TEXT,"ax",@progbits,unique,991861
@@ -2579,6 +2802,9 @@
     ret
 .size "_M_51",.-"_M_51"
 
+// Merge routine 55: adds signed 8-bit stereo (right channel first) sample data
+// from ESI, stepping through it at the rate ratio, unscaled, to the stereo
+// build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f22aa
 
 .section _TEXT,"ax",@progbits,unique,991914
@@ -2604,6 +2830,9 @@
     ret
 .size "_M_55",.-"_M_55"
 
+// Merge routine 56: adds signed 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the mono build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f22df
 
 .section _TEXT,"ax",@progbits,unique,991967
@@ -2626,6 +2855,9 @@
     ret
 .size "_M_56",.-"_M_56"
 
+// Merge routine 57: adds signed 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f230c
 
 .section _TEXT,"ax",@progbits,unique,992012
@@ -2649,6 +2881,9 @@
     ret
 .size "_M_57",.-"_M_57"
 
+// Merge routine 59: adds signed 16-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, unscaled, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f233c
 
 .section _TEXT,"ax",@progbits,unique,992060
@@ -2674,6 +2909,9 @@
     ret
 .size "_M_59",.-"_M_59"
 
+// Merge routine 63: adds signed 16-bit stereo (right channel first) sample data
+// from ESI, stepping through it at the rate ratio, unscaled, to the stereo
+// build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f2373
 
 .section _TEXT,"ax",@progbits,unique,992115
@@ -2699,6 +2937,9 @@
     ret
 .size "_M_63",.-"_M_63"
 
+// Merge routine 64: adds 8-bit mono sample data from ESI, through the
+// volume/pan tables at EDX, to the mono build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f23aa
 
 .section _TEXT,"ax",@progbits,unique,992170
@@ -2718,6 +2959,9 @@
     ret
 .size "_M_64",.-"_M_64"
 
+// Merge routine 65: adds 8-bit mono sample data from ESI, through the
+// volume/pan tables at EDX, to the stereo build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f23c6
 
 .section _TEXT,"ax",@progbits,unique,992198
@@ -2739,6 +2983,9 @@
     ret
 .size "_M_65",.-"_M_65"
 
+// Merge routine 66: adds 8-bit stereo sample data from ESI, through the
+// volume/pan tables at EDX, to the mono build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f23ec
 
 .section _TEXT,"ax",@progbits,unique,992236
@@ -2761,6 +3008,9 @@
     ret
 .size "_M_66",.-"_M_66"
 
+// Merge routine 67: adds 8-bit stereo sample data from ESI, through the
+// volume/pan tables at EDX, to the stereo build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f2416
 
 .section _TEXT,"ax",@progbits,unique,992278
@@ -2783,6 +3033,9 @@
     ret
 .size "_M_67",.-"_M_67"
 
+// Merge routine 70: adds 8-bit stereo (right channel first) sample data from
+// ESI, through the volume/pan tables at EDX, to the mono build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f2441
 
 .section _TEXT,"ax",@progbits,unique,992321
@@ -2805,6 +3058,9 @@
     ret
 .size "_M_70",.-"_M_70"
 
+// Merge routine 71: adds 8-bit stereo (right channel first) sample data from
+// ESI, through the volume/pan tables at EDX, to the stereo build buffer at EDI,
+// until the source or the build buffer ends.
 // FUNCTION: 0x000f246b
 
 .section _TEXT,"ax",@progbits,unique,992363
@@ -2827,6 +3083,9 @@
     ret
 .size "_M_71",.-"_M_71"
 
+// Merge routine 72: adds unsigned 16-bit mono sample data from ESI, scaled by
+// the volume/pan factors at EDX, to the mono build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f2496
 
 .section _TEXT,"ax",@progbits,unique,992406
@@ -2849,6 +3108,9 @@
     ret
 .size "_M_72",.-"_M_72"
 
+// Merge routine 73: adds unsigned 16-bit mono sample data from ESI, scaled by
+// the volume/pan factors at EDX, to the stereo build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f24c0
 
 .section _TEXT,"ax",@progbits,unique,992448
@@ -2875,6 +3137,9 @@
     ret
 .size "_M_73",.-"_M_73"
 
+// Merge routine 74: adds unsigned 16-bit stereo sample data from ESI, scaled by
+// the volume/pan factors at EDX, to the mono build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f24fa
 
 .section _TEXT,"ax",@progbits,unique,992506
@@ -2903,6 +3168,9 @@
     ret
 .size "_M_74",.-"_M_74"
 
+// Merge routine 75: adds unsigned 16-bit stereo sample data from ESI, scaled by
+// the volume/pan factors at EDX, to the stereo build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f253d
 
 .section _TEXT,"ax",@progbits,unique,992573
@@ -2931,6 +3199,9 @@
     ret
 .size "_M_75",.-"_M_75"
 
+// Merge routine 78: adds unsigned 16-bit stereo (right channel first) sample
+// data from ESI, scaled by the volume/pan factors at EDX, to the mono build
+// buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f2581
 
 .section _TEXT,"ax",@progbits,unique,992641
@@ -2959,6 +3230,9 @@
     ret
 .size "_M_78",.-"_M_78"
 
+// Merge routine 79: adds unsigned 16-bit stereo (right channel first) sample
+// data from ESI, scaled by the volume/pan factors at EDX, to the stereo build
+// buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f25c4
 
 .section _TEXT,"ax",@progbits,unique,992708
@@ -2987,6 +3261,9 @@
     ret
 .size "_M_79",.-"_M_79"
 
+// Merge routine 88: adds signed 16-bit mono sample data from ESI, scaled by the
+// volume/pan factors at EDX, to the mono build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f2608
 
 .section _TEXT,"ax",@progbits,unique,992776
@@ -3008,6 +3285,9 @@
     ret
 .size "_M_88",.-"_M_88"
 
+// Merge routine 89: adds signed 16-bit mono sample data from ESI, scaled by the
+// volume/pan factors at EDX, to the stereo build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f262d
 
 .section _TEXT,"ax",@progbits,unique,992813
@@ -3033,6 +3313,9 @@
     ret
 .size "_M_89",.-"_M_89"
 
+// Merge routine 90: adds signed 16-bit stereo sample data from ESI, scaled by
+// the volume/pan factors at EDX, to the mono build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f2662
 
 .section _TEXT,"ax",@progbits,unique,992866
@@ -3059,6 +3342,9 @@
     ret
 .size "_M_90",.-"_M_90"
 
+// Merge routine 91: adds signed 16-bit stereo sample data from ESI, scaled by
+// the volume/pan factors at EDX, to the stereo build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f269a
 
 .section _TEXT,"ax",@progbits,unique,992922
@@ -3085,6 +3371,9 @@
     ret
 .size "_M_91",.-"_M_91"
 
+// Merge routine 94: adds signed 16-bit stereo (right channel first) sample data
+// from ESI, scaled by the volume/pan factors at EDX, to the mono build buffer
+// at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f26d3
 
 .section _TEXT,"ax",@progbits,unique,992979
@@ -3111,6 +3400,9 @@
     ret
 .size "_M_94",.-"_M_94"
 
+// Merge routine 95: adds signed 16-bit stereo (right channel first) sample data
+// from ESI, scaled by the volume/pan factors at EDX, to the stereo build buffer
+// at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f270b
 
 .section _TEXT,"ax",@progbits,unique,993035
@@ -3137,6 +3429,9 @@
     ret
 .size "_M_95",.-"_M_95"
 
+// Merge routine 96: adds 8-bit mono sample data from ESI, stepping through it
+// at the rate ratio, through the volume/pan tables at EDX, to the mono build
+// buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f2744
 
 .section _TEXT,"ax",@progbits,unique,993092
@@ -3157,6 +3452,9 @@
     ret
 .size "_M_96",.-"_M_96"
 
+// Merge routine 97: adds 8-bit mono sample data from ESI, stepping through it
+// at the rate ratio, through the volume/pan tables at EDX, to the stereo build
+// buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f276b
 
 .section _TEXT,"ax",@progbits,unique,993131
@@ -3179,6 +3477,9 @@
     ret
 .size "_M_97",.-"_M_97"
 
+// Merge routine 98: adds 8-bit stereo sample data from ESI, stepping through it
+// at the rate ratio, through the volume/pan tables at EDX, to the mono build
+// buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f279c
 
 .section _TEXT,"ax",@progbits,unique,993180
@@ -3204,6 +3505,9 @@
     ret
 .size "_M_98",.-"_M_98"
 
+// Merge routine 99: adds 8-bit stereo sample data from ESI, stepping through it
+// at the rate ratio, through the volume/pan tables at EDX, to the stereo build
+// buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f27d4
 
 .section _TEXT,"ax",@progbits,unique,993236
@@ -3229,6 +3533,10 @@
     ret
 .size "_M_99",.-"_M_99"
 
+// Merge routine 102: adds 8-bit stereo (right channel first) sample data from
+// ESI, stepping through it at the rate ratio, through the volume/pan tables at
+// EDX, to the mono build buffer at EDI, until the source or the build buffer
+// ends.
 // FUNCTION: 0x000f280d
 
 .section _TEXT,"ax",@progbits,unique,993293
@@ -3254,6 +3562,10 @@
     ret
 .size "_M_102",.-"_M_102"
 
+// Merge routine 103: adds 8-bit stereo (right channel first) sample data from
+// ESI, stepping through it at the rate ratio, through the volume/pan tables at
+// EDX, to the stereo build buffer at EDI, until the source or the build buffer
+// ends.
 // FUNCTION: 0x000f2845
 
 .section _TEXT,"ax",@progbits,unique,993349
@@ -3279,6 +3591,9 @@
     ret
 .size "_M_103",.-"_M_103"
 
+// Merge routine 104: adds unsigned 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f287e
 
 .section _TEXT,"ax",@progbits,unique,993406
@@ -3304,6 +3619,9 @@
     ret
 .size "_M_104",.-"_M_104"
 
+// Merge routine 105: adds unsigned 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f28b6
 
 .section _TEXT,"ax",@progbits,unique,993462
@@ -3333,6 +3651,9 @@
     ret
 .size "_M_105",.-"_M_105"
 
+// Merge routine 106: adds unsigned 16-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f28fe
 
 .section _TEXT,"ax",@progbits,unique,993534
@@ -3364,6 +3685,9 @@
     ret
 .size "_M_106",.-"_M_106"
 
+// Merge routine 107: adds unsigned 16-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f294f
 
 .section _TEXT,"ax",@progbits,unique,993615
@@ -3395,6 +3719,10 @@
     ret
 .size "_M_107",.-"_M_107"
 
+// Merge routine 110: adds unsigned 16-bit stereo (right channel first) sample
+// data from ESI, stepping through it at the rate ratio, scaled by the
+// volume/pan factors at EDX, to the mono build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f29a1
 
 .section _TEXT,"ax",@progbits,unique,993697
@@ -3426,6 +3754,10 @@
     ret
 .size "_M_110",.-"_M_110"
 
+// Merge routine 111: adds unsigned 16-bit stereo (right channel first) sample
+// data from ESI, stepping through it at the rate ratio, scaled by the
+// volume/pan factors at EDX, to the stereo build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f29f2
 
 .section _TEXT,"ax",@progbits,unique,993778
@@ -3457,6 +3789,9 @@
     ret
 .size "_M_111",.-"_M_111"
 
+// Merge routine 120: adds signed 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f2a44
 
 .section _TEXT,"ax",@progbits,unique,993860
@@ -3481,6 +3816,9 @@
     ret
 .size "_M_120",.-"_M_120"
 
+// Merge routine 121: adds signed 16-bit mono sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f2a77
 
 .section _TEXT,"ax",@progbits,unique,993911
@@ -3509,6 +3847,9 @@
     ret
 .size "_M_121",.-"_M_121"
 
+// Merge routine 122: adds signed 16-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// mono build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f2aba
 
 .section _TEXT,"ax",@progbits,unique,993978
@@ -3538,6 +3879,9 @@
     ret
 .size "_M_122",.-"_M_122"
 
+// Merge routine 123: adds signed 16-bit stereo sample data from ESI, stepping
+// through it at the rate ratio, scaled by the volume/pan factors at EDX, to the
+// stereo build buffer at EDI, until the source or the build buffer ends.
 // FUNCTION: 0x000f2b00
 
 .section _TEXT,"ax",@progbits,unique,994048
@@ -3567,6 +3911,10 @@
     ret
 .size "_M_123",.-"_M_123"
 
+// Merge routine 126: adds signed 16-bit stereo (right channel first) sample
+// data from ESI, stepping through it at the rate ratio, scaled by the
+// volume/pan factors at EDX, to the mono build buffer at EDI, until the source
+// or the build buffer ends.
 // FUNCTION: 0x000f2b47
 
 .section _TEXT,"ax",@progbits,unique,994119
@@ -3596,6 +3944,10 @@
     ret
 .size "_M_126",.-"_M_126"
 
+// Merge routine 127: adds signed 16-bit stereo (right channel first) sample
+// data from ESI, stepping through it at the rate ratio, scaled by the
+// volume/pan factors at EDX, to the stereo build buffer at EDI, until the
+// source or the build buffer ends.
 // FUNCTION: 0x000f2b8d
 
 .section _TEXT,"ax",@progbits,unique,994189
@@ -3625,6 +3977,14 @@
     ret
 .size "_M_127",.-"_M_127"
 
+// Mixes `amount` bytes of sample `S`'s current buffer, from its position, into
+// its driver's build buffer at byte offset `dest_offset`, through the merge
+// routine M_n for n = output stereo (1) | sample stereo (2) | sample channels
+// swapped (4) | 16-bit sample (8) | signed sample (16) | resampling (32, when
+// the rate differs from the DMA rate by more than DIG_RESAMPLING_TOLERANCE) |
+// volume/pan scaling (64, skipped at full volume and centre pan unless a stereo
+// sample goes to mono output). Advances the sample's position past what it
+// used. Returns the new build buffer offset.
 // FUNCTION: 0x000f2bd4
 
 .section _TEXT,"ax",@progbits,unique,994260
@@ -3758,6 +4118,11 @@
     ret
 .size "_AILSSA_merge",.-"_AILSSA_merge"
 
+// Converts `dig`'s build buffer into DMA half-buffer `buffer` (0 or 1) in the
+// hardware's format, through the copy routine DC_n for n = the hardware mode
+// flags' low 4 bits | stereo (16) | 16-bit (32) | clipping (64, when more than
+// one sample is playing). Hardware with mode flag 0x20 gets left and right in
+// the two halves of the DMA buffer instead.
 // FUNCTION: 0x000f2d37
 
 .section _TEXT,"ax",@progbits,unique,994615
@@ -3826,6 +4191,7 @@
     ret
 .size "_AILSSA_DMA_copy",.-"_AILSSA_DMA_copy"
 
+// Clears `dig`'s build buffer. The Miles copyright string follows its code.
 // FUNCTION: 0x000f2dca
 
 .section _TEXT,"ax",@progbits,unique,994762
@@ -3884,6 +4250,8 @@
     .byte 0x0d; .byte 0x0a; .byte 0x0d; .byte 0x0a
 .size "_AILSSA_flush_buffer",.-"_AILSSA_flush_buffer"
 
+// Locks the mixer's data and code (the dispatch table up to here) against
+// paging.
 // FUNCTION: 0x000f2e3c
 
 .section _TEXT,"ax",@progbits,unique,994876

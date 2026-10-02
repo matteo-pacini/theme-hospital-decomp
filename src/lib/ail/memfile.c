@@ -11,6 +11,7 @@
 
 extern S32 disk_err;
 
+// Makes `fn` the allocator behind AIL_mem_alloc_lock; returns the previous one.
 // FUNCTION: 0x000dda40
 void *__cdecl AIL_mem_use_malloc(void *(__pascal *fn)(U32 size))
 {
@@ -21,6 +22,8 @@ void *__cdecl AIL_mem_use_malloc(void *(__pascal *fn)(U32 size))
     return old;
 }
 
+// Makes `fn` the deallocator behind AIL_mem_free_lock; returns the previous
+// one.
 // FUNCTION: 0x000dda50
 void *__cdecl AIL_mem_use_free(void (__pascal *fn)(void *ptr))
 {
@@ -31,6 +34,8 @@ void *__cdecl AIL_mem_use_free(void (__pascal *fn)(void *ptr))
     return old;
 }
 
+// Allocates `size` bytes through the current allocator and locks them against
+// paging; a hidden size word precedes the block. Returns NULL on failure.
 // FUNCTION: 0x000dda60
 void *__cdecl AIL_mem_alloc_lock(U32 size)
 {
@@ -46,6 +51,7 @@ void *__cdecl AIL_mem_alloc_lock(U32 size)
     return ptr;
 }
 
+// Unlocks and frees a block from AIL_mem_alloc_lock; NULL is ignored.
 // FUNCTION: 0x000dda90
 void __cdecl AIL_mem_free_lock(void *ptr)
 {
@@ -59,6 +65,10 @@ void __cdecl AIL_mem_free_lock(void *ptr)
     AIL_mem_free(p - 1);
 }
 
+// Allocates `n_paras` paragraphs of DOS memory (DPMI 0100h) and locks them. On
+// success stores its linear address in `*protected_ptr`, its real-mode far
+// pointer (segment:0) in `*segment_far_ptr` and its selector in `*selector`,
+// and returns 1; returns 0 if DOS memory is short.
 // FUNCTION: 0x000ddac0
 S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
                               U32 *segment_far_ptr, U32 *selector)
@@ -84,6 +94,8 @@ S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
     return result;
 }
 
+// Frees DOS memory from AIL_mem_alloc_DOS by its `selector` (DPMI 0101h); the
+// other two parameters are unused.
 // FUNCTION: 0x000ddb50
 void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr,
                               U32 selector)
@@ -102,6 +114,8 @@ void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr,
     }
 }
 
+// Locks the linear range between `p1` and `p2` inclusive (either order) against
+// paging (DPMI 0600h). Returns 1 on success, 0 on failure.
 // FUNCTION: 0x000ddb90
 S32 __cdecl AIL_vmm_lock_range(void *p1, void *p2)
 {
@@ -120,6 +134,8 @@ S32 __cdecl AIL_vmm_lock_range(void *p1, void *p2)
     return !outregs.x.cflag;
 }
 
+// Unlocks the linear range between `p1` and `p2` inclusive (either order) (DPMI
+// 0601h). Returns 1 on success, 0 on failure.
 // FUNCTION: 0x000ddc30
 S32 __cdecl AIL_vmm_unlock_range(void *p1, void *p2)
 {
@@ -138,24 +154,29 @@ S32 __cdecl AIL_vmm_unlock_range(void *p1, void *p2)
     return !outregs.x.cflag;
 }
 
+// Locks the `size` bytes at `start` against paging. Returns 1 on success.
 // FUNCTION: 0x000ddcd0
 S32 __cdecl AIL_vmm_lock(void *start, U32 size)
 {
     return AIL_vmm_lock_range(start, (U8 *)start + size - 1);
 }
 
+// Unlocks the `size` bytes at `start`. Returns 1 on success.
 // FUNCTION: 0x000ddcf0
 S32 __cdecl AIL_vmm_unlock(void *start, U32 size)
 {
     return AIL_vmm_unlock_range(start, (U8 *)start + size - 1);
 }
 
+// Returns the AIL_... error code of the last AIL_file_* call (0 for none).
 // FUNCTION: 0xddd10
 S32 __cdecl AIL_file_error(void)
 {
     return disk_err;
 }
 
+// Returns the size of file `filename` in bytes, or -1 if it cannot be opened
+// (AIL_file_error then gives AIL_FILE_NOT_FOUND).
 // FUNCTION: 0x000ddd20
 S32 __cdecl AIL_file_size(char *filename)
 {
@@ -176,6 +197,10 @@ S32 __cdecl AIL_file_size(char *filename)
     return len;
 }
 
+// Reads all of file `filename`. With `dest` NULL the data goes into a new
+// locked block (free with AIL_mem_free_lock); with FILE_READ_WITH_SIZE
+// likewise, but the block starts with the U32 file size and the data follows;
+// otherwise into `dest`. Returns the buffer, or NULL with AIL_file_error set.
 // FUNCTION: 0x000ddd80
 void *__cdecl AIL_file_read(char *filename, void *dest)
 {
@@ -217,6 +242,9 @@ void *__cdecl AIL_file_read(char *filename, void *dest)
     return buf;
 }
 
+// Creates file `filename` holding the `len` bytes at `buf`. Returns 1, or 0
+// with AIL_file_error set to AIL_CANT_WRITE_FILE (a short write leaves the file
+// open; AIL_DISK_FULL is never reported).
 // FUNCTION: 0x000dde70
 S32 __cdecl AIL_file_write(char *filename, void *buf, U32 len)
 {
@@ -242,6 +270,9 @@ S32 __cdecl AIL_file_write(char *filename, void *buf, U32 len)
     return 1;
 }
 
+// Appends the `len` bytes at `buf` to file `filename`, creating it if needed.
+// Returns 1, or 0 with AIL_file_error set to AIL_CANT_WRITE_FILE (a short write
+// leaves the file open; AIL_DISK_FULL is never reported).
 // FUNCTION: 0xddf00
 S32 __cdecl AIL_file_append(char *filename, void *buf, U32 len)
 {

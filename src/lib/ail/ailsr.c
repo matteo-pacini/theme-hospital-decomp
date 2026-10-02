@@ -39,6 +39,7 @@ void AILSR_end(void);
 void MarkEBXAsChanged(void);
 #pragma aux MarkEBXAsChanged = "" modify [ebx];
 
+// Locks this module's code against paging, and the debug module's state, once.
 // FUNCTION: 0x000efb60
 void AILSR_start(void)
 {
@@ -49,6 +50,7 @@ void AILSR_start(void)
     }
 }
 
+// AIL_mem_alloc hook: malloc() with the __pascal convention.
 // FUNCTION: 0xefba0
 void *AIL_MALLOC(U32 size)
 {
@@ -59,6 +61,7 @@ void *AIL_MALLOC(U32 size)
     return ptr;
 }
 
+// AIL_mem_free hook: free() with the __pascal convention.
 // FUNCTION: 0xefbb0
 void AIL_FREE(void *ptr)
 {
@@ -66,6 +69,7 @@ void AIL_FREE(void *ptr)
     MarkEBXAsChanged();
 }
 
+// AIL_getenv hook: getenv() with the __pascal convention.
 // FUNCTION: 0x000efbc0
 char *__pascal AIL_GETENV(char const *name)
 {
@@ -76,12 +80,15 @@ char *__pascal AIL_GETENV(char const *name)
     return value;
 }
 
+// AIL_int386 hook: int386() with the __pascal convention.
 // FUNCTION: 0xefbd0
 int AIL_INT386(int intno, union REGS *in, union REGS *out)
 {
     return int386(intno, in, out);
 }
 
+// AIL_sprintf hook: formats `fmt` into `dest` with the first `nargs` (0-5) of
+// `args`; any other count writes nothing.
 // FUNCTION: 0x000efc00
 void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args)
 {
@@ -107,6 +114,10 @@ void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args)
     }
 }
 
+// AIL_startup: installs the C runtime hooks (allocator, getenv, int386,
+// sprintf), locks the library and starts it (AIL_API_startup). If MSS_DEBUG
+// names a file, every API call is then logged to it, with internal calls too
+// when MSS_SYS_DEBUG is set. Calls after the first do nothing.
 // FUNCTION: 0x000efcc0
 void __cdecl AIL_startup_reg(void)
 {
@@ -164,6 +175,8 @@ void __cdecl AIL_startup_reg(void)
     AIL_started = 1;
 }
 
+// Unlocks what AILSR_start locked (this module's code only). Its address also
+// marks the end of the locked code range.
 // FUNCTION: 0x000efe30
 void AILSR_end(void)
 {

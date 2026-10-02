@@ -3,8 +3,8 @@
 #define AUDIO_TYPE_MIDI 1
 #define AUDIO_TYPE_DIGITAL 2
 
-#define QSTAT_LOADED 1
-#define QSTAT_DONE 2
+#define QSTAT_DONE 1
+#define QSTAT_LOADED 2
 #define QSTAT_PLAYING 3
 
 typedef struct _AUDIO_TYPE {
@@ -29,6 +29,8 @@ void END_OF_SAMPLE(HSAMPLE S);
 
 void AILQAPI_end(void);
 
+// Locks this module's code and the Quick API's driver and list variables
+// against paging, once.
 // FUNCTION: 0xe6ca0
 void AILQAPI_start(void)
 {
@@ -41,19 +43,23 @@ void AILQAPI_start(void)
     }
 }
 
+// End-of-sequence callback for AIL_quick_play: marks the sequence's HAUDIO done
+// and releases the sequence handle.
 // FUNCTION: 0xe6d00
 void END_OF_SEQUENCE(HSEQUENCE S)
 {
     ((HAUDIO)AIL_sequence_user_data(S, 0))->handle = NULL;
-    ((HAUDIO)AIL_sequence_user_data(S, 0))->status = QSTAT_LOADED;
+    ((HAUDIO)AIL_sequence_user_data(S, 0))->status = QSTAT_DONE;
     AIL_release_sequence_handle(S);
 }
 
+// End-of-sample callback for AIL_quick_play: marks the sample's HAUDIO done and
+// releases the sample handle.
 // FUNCTION: 0xe6d40
 void END_OF_SAMPLE(HSAMPLE S)
 {
     ((HAUDIO)AIL_sample_user_data(S, 0))->handle = NULL;
-    ((HAUDIO)AIL_sample_user_data(S, 0))->status = QSTAT_LOADED;
+    ((HAUDIO)AIL_sample_user_data(S, 0))->status = QSTAT_DONE;
     AIL_release_sample_handle(S);
 }
 
@@ -61,6 +67,12 @@ S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital
                                   U32 output_rate, S32 output_bits, S32 output_channels);
 #pragma aux (__cdecl) AIL_API_quick_startup "_AIL_quick_startup_with_start";
 
+// Runs `startup` (the library's startup function), then installs the MIDI
+// and/or digital drivers from their .INI files, applying `output_rate`,
+// `output_bits` (16 or 8) and `output_channels` (2 or 1) when nonzero. Returns
+// 1 on success; 0 if neither kind is requested, or after AIL_shutdown if an
+// install fails.
+//
 // startup is __cdecl: the parameters are loaded after its call, which
 // clobbers eax, ecx and edx.
 // FUNCTION: 0xe6d80
@@ -98,6 +110,8 @@ S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital
     return 1;
 }
 
+// Unloads every Quick API file and shuts the library down; does nothing if no
+// driver was installed.
 // FUNCTION: 0xe6e50
 void __cdecl AIL_API_quick_shutdown(void)
 {
@@ -112,6 +126,10 @@ void __cdecl AIL_API_quick_shutdown(void)
     dig = NULL;
 }
 
+// Reads file `filename` into memory and identifies it as digital (VOC or WAV)
+// or XMIDI. Returns a new HAUDIO, loaded and not playing, whose `next` is the
+// current list head (the head itself is not updated); NULL with AIL_error set
+// if the file is missing, of unknown type, or needs a driver not installed.
 // FUNCTION: 0x000e6e90
 HAUDIO __cdecl AIL_API_quick_load(char *filename)
 {
@@ -151,11 +169,13 @@ HAUDIO __cdecl AIL_API_quick_load(char *filename)
         strcpy(AIL_error, "Digital support not enabled\n");
         return NULL;
     }
-    audio->status = QSTAT_DONE;
+    audio->status = QSTAT_LOADED;
     audio->next = audios;
     return audio;
 }
 
+// Stops `audio` if it is playing and frees it and its data, unlinking it from
+// the loaded list. NULL is ignored.
 // FUNCTION: 0x000e7120
 void __cdecl AIL_API_quick_unload(HAUDIO audio)
 {
@@ -194,6 +214,9 @@ void __cdecl AIL_API_quick_unload(HAUDIO audio)
     AIL_mem_free_lock(audio);
 }
 
+// Plays `audio` from the start (restarting it if playing) `loop_count` times, 0
+// meaning forever, on a newly allocated sequence or sample handle. Returns 1 if
+// it started, 0 otherwise.
 // FUNCTION: 0x000e71c0
 S32 __cdecl AIL_API_quick_play(HAUDIO audio, U32 loop_count)
 {
@@ -239,6 +262,7 @@ S32 __cdecl AIL_API_quick_play(HAUDIO audio, U32 loop_count)
     return 0;
 }
 
+// Stops `audio` if it is playing and releases its handle. NULL is ignored.
 // FUNCTION: 0xe7330
 void __cdecl AIL_API_quick_halt(HAUDIO audio)
 {
@@ -260,6 +284,9 @@ void __cdecl AIL_API_quick_halt(HAUDIO audio)
     AIL_unlock();
 }
 
+// Loads and plays file `filename` `loop_count` times; with `wait_request` set
+// and a finite `loop_count`, busy-waits until it finishes. Returns the HAUDIO,
+// or NULL if it could not be loaded or started.
 // FUNCTION: 0xe7380
 HAUDIO __cdecl AIL_API_quick_load_and_play(char *filename, U32 loop_count, S32 wait_request)
 {
@@ -288,15 +315,19 @@ HAUDIO __cdecl AIL_API_quick_load_and_play(char *filename, U32 loop_count, S32 w
     return audio;
 }
 
+// Returns `audio`'s state: QSTAT_LOADED, QSTAT_PLAYING or QSTAT_DONE (also for
+// NULL).
 // FUNCTION: 0xe7410
 S32 __cdecl AIL_API_quick_status(HAUDIO audio)
 {
     if (audio == NULL) {
-        return QSTAT_LOADED;
+        return QSTAT_DONE;
     }
     return audio->status;
 }
 
+// Unlocks this module's code. Its address also marks the end of the locked code
+// range.
 // FUNCTION: 0xe7430
 void AILQAPI_end(void)
 {

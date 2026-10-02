@@ -86,6 +86,7 @@ void AIL_WAV_EOS(HSAMPLE S);
 #pragma aux (__pascal) AIL_WAV_EOS "*";
 void AILSFILE_end(void);
 
+// Locks this module's code against paging, once.
 // FUNCTION: 0x000e16e0
 void AILSFILE_start(void)
 {
@@ -95,12 +96,16 @@ void AILSFILE_start(void)
     }
 }
 
+// Returns the 24-bit length field of the VOC block header at `block`.
 // FUNCTION: 0x000e1710
 U32 __cdecl AIL_VOC_block_len(void *block)
 {
     return *(U32 *)block >> 8;
 }
 
+// Ends a VOC or WAV file sample: calls its end-of-file callback, releases the
+// handle if AIL_allocate_file_sample allocated it, and marks the file finished
+// (SSD_RELEASE = -1).
 // FUNCTION: 0x000e1720
 void __cdecl AIL_VOC_terminate(HSAMPLE S)
 {
@@ -113,16 +118,23 @@ void __cdecl AIL_VOC_terminate(HSAMPLE S)
     S->system_data[SSD_RELEASE] = -1;
 }
 
+// Walks sample `S`'s VOC file from its current block to the next voice block
+// (type 1, type 8 with the data block after it, or type 9) and sets the
+// sample's address, rate and format from it, starting it if `play_flag` is
+// set. Follows repeat loops (types 6 and 7; 0xFFFF repeats forever). With a
+// marker requested, only voice blocks between the marker block of that number
+// and the next marker are used. At the terminator block it calls
+// AIL_VOC_terminate instead.
 // FUNCTION: 0x000e1780
 void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
 {
     S32 voice_block;
-    void *b;
+    void *block;
 
     voice_block = 0;
     do {
-        b = (void *)S->system_data[VOC_BLK_PTR];
-        switch (((BLOCK *)b)->block_ID) {
+        block = (void *)S->system_data[VOC_BLK_PTR];
+        switch (((BLOCK *)block)->block_ID) {
         case 0:
             AIL_VOC_terminate(S);
             return;
@@ -130,8 +142,8 @@ void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
             if (!S->system_data[VOC_MARKER_FOUND]) {
                 break;
             }
-            AIL_set_sample_address(S, ((VOC_BLOCK1 *)b)->data, AIL_VOC_block_len(b) - 2);
-            AIL_set_sample_playback_rate(S, 1000000UL / (256 - ((VOC_BLOCK1 *)b)->time_constant));
+            AIL_set_sample_address(S, ((VOC_BLOCK1 *)block)->data, AIL_VOC_block_len(block) - 2);
+            AIL_set_sample_playback_rate(S, 1000000UL / (256 - ((VOC_BLOCK1 *)block)->time_constant));
             AIL_set_sample_type(S, DIG_F_MONO_8, 0);
             if (play_flag) {
                 AIL_start_sample(S);
@@ -142,15 +154,15 @@ void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
             if (S->system_data[VOC_MARKER] == -1) {
                 break;
             }
-            if ((S32)((MARKER_BLOCK *)b)->marker == S->system_data[VOC_MARKER]) {
+            if ((S32)((MARKER_BLOCK *)block)->marker == S->system_data[VOC_MARKER]) {
                 S->system_data[VOC_MARKER_FOUND] = 1;
             } else {
                 S->system_data[VOC_MARKER_FOUND] = 0;
             }
             break;
         case 6:
-            S->system_data[VOC_REP_BLK] = (S32)b;
-            S->system_data[VOC_N_REPS] = ((REPEAT_BLOCK *)b)->repeat_count;
+            S->system_data[VOC_REP_BLK] = (S32)block;
+            S->system_data[VOC_N_REPS] = ((REPEAT_BLOCK *)block)->repeat_count;
             break;
         case 7:
             if (S->system_data[VOC_N_REPS] != 0xffff) {
@@ -158,21 +170,21 @@ void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
                     break;
                 }
             }
-            b = (void *)S->system_data[VOC_REP_BLK];
+            block = (void *)S->system_data[VOC_REP_BLK];
             break;
         case 8:
             if (!S->system_data[VOC_MARKER_FOUND]) {
                 break;
             }
-            if (((EXTENDED_BLOCK *)b)->voice_mode) {
+            if (((EXTENDED_BLOCK *)block)->voice_mode) {
                 AIL_set_sample_type(S, DIG_F_STEREO_8, 0);
-                AIL_set_sample_playback_rate(S, 128000000UL / (65536UL - ((EXTENDED_BLOCK *)b)->time_constant));
+                AIL_set_sample_playback_rate(S, 128000000UL / (65536UL - ((EXTENDED_BLOCK *)block)->time_constant));
             } else {
                 AIL_set_sample_type(S, DIG_F_MONO_8, 0);
-                AIL_set_sample_playback_rate(S, 256000000UL / (65536UL - ((EXTENDED_BLOCK *)b)->time_constant));
+                AIL_set_sample_playback_rate(S, 256000000UL / (65536UL - ((EXTENDED_BLOCK *)block)->time_constant));
             }
-            b = (U8 *)b + AIL_VOC_block_len(b) + 4;
-            AIL_set_sample_address(S, ((VOC_BLOCK1 *)b)->data, AIL_VOC_block_len(b) - 2);
+            block = (U8 *)block + AIL_VOC_block_len(block) + 4;
+            AIL_set_sample_address(S, ((VOC_BLOCK1 *)block)->data, AIL_VOC_block_len(block) - 2);
             if (play_flag) {
                 AIL_start_sample(S);
             }
@@ -182,15 +194,15 @@ void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
             if (!S->system_data[VOC_MARKER_FOUND]) {
                 break;
             }
-            AIL_set_sample_address(S, ((BLOCK9 *)b)->data, AIL_VOC_block_len(b) - 12);
-            AIL_set_sample_playback_rate(S, ((BLOCK9 *)b)->sample_rate);
-            if (((BLOCK9 *)b)->channels == 1 && ((BLOCK9 *)b)->format == 0) {
+            AIL_set_sample_address(S, ((BLOCK9 *)block)->data, AIL_VOC_block_len(block) - 12);
+            AIL_set_sample_playback_rate(S, ((BLOCK9 *)block)->sample_rate);
+            if (((BLOCK9 *)block)->channels == 1 && ((BLOCK9 *)block)->format == 0) {
                 AIL_set_sample_type(S, DIG_F_MONO_8, 0);
-            } else if (((BLOCK9 *)b)->channels == 2 && ((BLOCK9 *)b)->format == 0) {
+            } else if (((BLOCK9 *)block)->channels == 2 && ((BLOCK9 *)block)->format == 0) {
                 AIL_set_sample_type(S, DIG_F_STEREO_8, 0);
-            } else if (((BLOCK9 *)b)->channels == 1 && ((BLOCK9 *)b)->format == 4) {
+            } else if (((BLOCK9 *)block)->channels == 1 && ((BLOCK9 *)block)->format == 4) {
                 AIL_set_sample_type(S, DIG_F_MONO_16, DIG_PCM_SIGN);
-            } else if (((BLOCK9 *)b)->channels == 2 && ((BLOCK9 *)b)->format == 4) {
+            } else if (((BLOCK9 *)block)->channels == 2 && ((BLOCK9 *)block)->format == 4) {
                 AIL_set_sample_type(S, DIG_F_STEREO_16, DIG_PCM_SIGN);
             }
             if (play_flag) {
@@ -199,43 +211,49 @@ void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
             voice_block = 1;
             break;
         }
-        S->system_data[VOC_BLK_PTR] = (S32)((U8 *)b + AIL_VOC_block_len(b) + 4);
+        S->system_data[VOC_BLK_PTR] = (S32)((U8 *)block + AIL_VOC_block_len(block) + 4);
     } while (!voice_block);
 }
 
+// End-of-sample callback for VOC files: moves on to and starts the next voice
+// block.
 // FUNCTION: 0xe1a00
 void AIL_VOC_EOS(HSAMPLE S)
 {
     AIL_process_VOC_block(S, 1);
 }
 
+// Sets sample `S`'s format, rate and address from the "fmt " and "data" chunks
+// of the RIFF WAVE file at `image`. Formats other than 8/16-bit mono/stereo PCM
+// leave the type unchanged.
 // FUNCTION: 0x000e1a20
 void __cdecl AIL_process_WAV_image(void *image, HSAMPLE S)
 {
-    FMT *f;
-    DATA *d;
+    FMT *fmt;
+    DATA *data;
 
-    f = (FMT *)((U8 *)image + 12);
-    while (strnicmp(f->FMT_string, "fmt ", 4)) {
-        f = (FMT *)((U8 *)f + f->chunk_size + 8 + (f->chunk_size & 1));
+    fmt = (FMT *)((U8 *)image + 12);
+    while (strnicmp(fmt->FMT_string, "fmt ", 4)) {
+        fmt = (FMT *)((U8 *)fmt + fmt->chunk_size + 8 + (fmt->chunk_size & 1));
     }
-    if (f->channels == 1 && f->bits_per_sample == 8) {
+    if (fmt->channels == 1 && fmt->bits_per_sample == 8) {
         AIL_set_sample_type(S, DIG_F_MONO_8, 0);
-    } else if (f->channels == 2 && f->bits_per_sample == 8) {
+    } else if (fmt->channels == 2 && fmt->bits_per_sample == 8) {
         AIL_set_sample_type(S, DIG_F_STEREO_8, 0);
-    } else if (f->channels == 1 && f->bits_per_sample == 16) {
+    } else if (fmt->channels == 1 && fmt->bits_per_sample == 16) {
         AIL_set_sample_type(S, DIG_F_MONO_16, DIG_PCM_SIGN);
-    } else if (f->channels == 2 && f->bits_per_sample == 16) {
+    } else if (fmt->channels == 2 && fmt->bits_per_sample == 16) {
         AIL_set_sample_type(S, DIG_F_STEREO_16, DIG_PCM_SIGN);
     }
-    AIL_set_sample_playback_rate(S, f->sample_rate);
-    d = (DATA *)((U8 *)image + 12);
-    while (strnicmp(d->DATA_string, "data", 4)) {
-        d = (DATA *)((U8 *)d + d->chunk_size + 8 + (d->chunk_size & 1));
+    AIL_set_sample_playback_rate(S, fmt->sample_rate);
+    data = (DATA *)((U8 *)image + 12);
+    while (strnicmp(data->DATA_string, "data", 4)) {
+        data = (DATA *)((U8 *)data + data->chunk_size + 8 + (data->chunk_size & 1));
     }
-    AIL_set_sample_address(S, d->data, d->chunk_size);
+    AIL_set_sample_address(S, data->data, data->chunk_size);
 }
 
+// End-of-sample callback for WAV files: same as AIL_VOC_terminate.
 // FUNCTION: 0xe1b60
 void AIL_WAV_EOS(HSAMPLE S)
 {
@@ -248,6 +266,11 @@ void AIL_WAV_EOS(HSAMPLE S)
     S->system_data[SSD_RELEASE] = -1;
 }
 
+// Allocates a sample on `dig` and sets it up from the VOC or WAV file image
+// `file_image`; for a VOC, `block` selects the data after the marker of that
+// number (-1 plays from the start). The handle is released when the file ends.
+// Returns it, or NULL with AIL_error set if the type is unknown, no handle is
+// free or the file has no data to play.
 // FUNCTION: 0x000e1ba0
 HSAMPLE __cdecl AIL_API_allocate_file_sample(HDIGDRIVER dig, void *file_image, S32 block)
 {
@@ -294,6 +317,11 @@ HSAMPLE __cdecl AIL_API_allocate_file_sample(HDIGDRIVER dig, void *file_image, S
     return S;
 }
 
+// Sets up sample `S` from the VOC or WAV file image `file_image`, with `block`
+// as in AIL_allocate_file_sample. Unlike that, it installs no end-of-sample
+// callback, so a VOC plays only its first voice block, and `S` is never
+// released. Returns 1, or 0 (with AIL_error set) for a NULL or unrecognised
+// image or no data to play.
 // FUNCTION: 0x000e1d30
 S32 __cdecl AIL_API_set_sample_file(HSAMPLE S, void *file_image, S32 block)
 {
@@ -330,6 +358,8 @@ S32 __cdecl AIL_API_set_sample_file(HSAMPLE S, void *file_image, S32 block)
     return 1;
 }
 
+// Sets the callback run when the file behind sample `S` ends; returns the
+// previous one (NULL for a NULL `S`).
 // FUNCTION: 0xe1e80
 AILSAMPLECB __cdecl AIL_API_register_EOF_callback(HSAMPLE S, AILSAMPLECB EOFILE)
 {
@@ -343,6 +373,8 @@ AILSAMPLECB __cdecl AIL_API_register_EOF_callback(HSAMPLE S, AILSAMPLECB EOFILE)
     return old;
 }
 
+// Unlocks this module's code. Its address also marks the end of the locked code
+// range.
 // FUNCTION: 0xe1ea0
 void AILSFILE_end(void)
 {

@@ -47,6 +47,8 @@ static S32 cnt;
 
 #define DIG_BUFFER_SERVICE 0x0010
 
+// Locks this module's code, pan table and state, and the mixer's (AILSSA),
+// against paging, once.
 // FUNCTION: 0x000df970
 void AILSS_start(void)
 {
@@ -66,6 +68,8 @@ void AILSS_start(void)
     }
 }
 
+// Starts DMA playback on `dig` at its hardware format and rate, if not already
+// playing.
 // FUNCTION: 0x000dfa30
 void __cdecl SS_start_DIG_driver_playback(HDIGDRIVER dig)
 {
@@ -79,6 +83,7 @@ void __cdecl SS_start_DIG_driver_playback(HDIGDRIVER dig)
     }
 }
 
+// Stops DMA playback on `dig`, if playing.
 // FUNCTION: 0x000dfa80
 void __cdecl SS_stop_DIG_driver_playback(HDIGDRIVER dig)
 {
@@ -88,6 +93,12 @@ void __cdecl SS_stop_DIG_driver_playback(HDIGDRIVER dig)
     }
 }
 
+// Mixes playing sample `S` into its driver's build buffer until the buffer is
+// full. Handles loops (loop_count 0 = forever, loop_end -1 = end of data),
+// calls SOB before each piece and EOB at each end of data, and for a
+// double-buffered sample moves on to the other buffer if it is loaded and
+// unplayed, else flags the sample starved. When the data runs out the sample is
+// done and EOS is called.
 // FUNCTION: 0x000dfab0
 void SS_stream_to_buffer(HSAMPLE S)
 {
@@ -145,6 +156,11 @@ void SS_stream_to_buffer(HSAMPLE S)
     }
 }
 
+// Clamps `S`'s volume and pan to 0-127 and rebuilds its scaling from them and
+// the driver's master volume: for 16-bit data just a left and right factor, for
+// 8-bit data 256-entry tables mapping each sample byte to a scaled value, left
+// and right ones when either the sample or the output is stereo, otherwise a
+// single table.
 // FUNCTION: 0x000dfbe0
 // pan doubles as every loop counter, and the mono tables are filled through
 // right: the register assignment depends on those variables being shared.
@@ -229,6 +245,11 @@ void __cdecl SS_build_amplitude_tables(HSAMPLE S)
     }
 }
 
+// Service timer callback of digital driver `user` (an HDIGDRIVER). Once the
+// driver has switched DMA halves, mixes every playing sample and copies the
+// result into the idle half (and notifies the driver if it wants that); stops
+// DMA after three silent services. Reentrant calls return at once; with
+// DIG_SS_LOCK set it runs with interrupts disabled.
 // FUNCTION: 0xdff00
 void SS_SERVE(U32 user)
 {
@@ -284,6 +305,13 @@ void SS_SERVE(U32 user)
     entry = 0;
 }
 
+// Chooses `dig`'s hardware format (the supported one nearest the DIG_USE_STEREO
+// and DIG_USE_16_BITS preferences), DMA rate (from DIG_HARDWARE_SAMPLE_RATE: 0
+// minimum, 1 nominal, 2 maximum, else the closest of the three) and DMA
+// half-buffer size (DIG_LATENCY rounded to a power of two, clamped to the
+// driver's limits), and places the two halves in the DMA buffer. Playing
+// samples are suspended around the change. Returns 1, or 0 with AIL_error set
+// if the driver's minimum buffer is too large for VDM execution.
 // FUNCTION: 0x000e0120
 S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
 {
@@ -455,6 +483,10 @@ S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
     return 1;
 }
 
+// Tries `dig`'s driver with I/O settings `IO`, negative fields taken from the
+// driver's first standard configuration, by storing them in its header and
+// sending DRV_VERIFY_IO. Returns the driver's answer, nonzero if the hardware
+// is there.
 // FUNCTION: 0x000e0560
 S32 __cdecl SS_attempt_DIG_detection(HDIGDRIVER dig, IO_PARMS *IO)
 {
@@ -495,6 +527,8 @@ S32 __cdecl SS_attempt_DIG_detection(HDIGDRIVER dig, IO_PARMS *IO)
     }
 }
 
+// Destructor of a digital driver: stops playback over silenced DMA buffers,
+// then frees `dig`'s timer, DMA buffer, samples, build buffer and descriptor.
 // FUNCTION: 0xe0660
 void SS_destroy_DIG_driver(HDIGDRIVER dig)
 {
@@ -512,6 +546,13 @@ void SS_destroy_DIG_driver(HDIGDRIVER dig)
     AIL_mem_free_lock(dig);
 }
 
+// Builds the HDIGDRIVER for installed .DIG driver `drvr`: finds the hardware
+// with `IO`, else the driver's environment variable, else (with
+// AIL_SCAN_FOR_HARDWARE) each standard configuration, recording the attempt in
+// AIL_last_IO_attempt; allocates a DMA buffer that does not cross a 64K page,
+// configures it, initialises the device, allocates the build buffer and
+// DIG_MIXER_CHANNELS samples, and starts the service timer at DIG_SERVICE_RATE.
+// Returns it, or NULL with AIL_error set.
 // FUNCTION: 0x000e06f0
 HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
 {
@@ -677,6 +718,9 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     return dig;
 }
 
+// Loads the .DIG driver file `filename` (also looked up in the driver
+// directory), installs it and sets it up with I/O settings `IO` (NULL to
+// detect). Returns the driver, or NULL with AIL_error set.
 // FUNCTION: 0x000e0d30
 HDIGDRIVER __cdecl AIL_API_install_DIG_driver_file(char *filename, IO_PARMS *IO)
 {
@@ -711,6 +755,9 @@ HDIGDRIVER __cdecl AIL_API_install_DIG_driver_file(char *filename, IO_PARMS *IO)
     return dig;
 }
 
+// Installs the .DIG driver image `driver_image` of `size` bytes and sets it up
+// with I/O settings `IO` (NULL to detect). Returns the driver, or NULL with
+// AIL_error set.
 // FUNCTION: 0x000e0e10
 HDIGDRIVER __cdecl AIL_API_install_DIG_driver_image(void *driver_image, U32 size, IO_PARMS *IO)
 {
@@ -728,6 +775,9 @@ HDIGDRIVER __cdecl AIL_API_install_DIG_driver_image(void *driver_image, U32 size
     return dig;
 }
 
+// Installs the digital driver and I/O settings named in DIG.INI, storing it in
+// `*dig`. Returns 0 on success, 1 if DIG.INI cannot be read, 2 if the install
+// fails.
 // FUNCTION: 0x000e0e50
 S32 __cdecl AIL_API_install_DIG_INI(HDIGDRIVER *dig)
 {
@@ -744,12 +794,14 @@ S32 __cdecl AIL_API_install_DIG_INI(HDIGDRIVER *dig)
     return 0;
 }
 
+// Uninstalls digital driver `dig` and frees everything it owns.
 // FUNCTION: 0x000e0ed0
 void __cdecl AIL_API_uninstall_DIG_driver(HDIGDRIVER dig)
 {
     AIL_uninstall_driver(dig->drvr);
 }
 
+// Returns the number of `dig`'s samples that are playing.
 // FUNCTION: 0x000e0ef0
 S32 __cdecl AIL_API_active_sample_count(HDIGDRIVER dig)
 {
@@ -765,6 +817,8 @@ S32 __cdecl AIL_API_active_sample_count(HDIGDRIVER dig)
     return n;
 }
 
+// Returns a free sample of `dig`, initialised with AIL_init_sample, or NULL
+// with AIL_error set if all are in use.
 // FUNCTION: 0x000e0f20
 HSAMPLE __cdecl AIL_API_allocate_sample_handle(HDIGDRIVER dig)
 {
@@ -788,6 +842,7 @@ HSAMPLE __cdecl AIL_API_allocate_sample_handle(HDIGDRIVER dig)
     return S;
 }
 
+// Returns sample `S` to its driver's pool, silencing it. NULL is ignored.
 // FUNCTION: 0x000e0fa0
 void __cdecl AIL_API_release_sample_handle(HSAMPLE S)
 {
@@ -797,6 +852,8 @@ void __cdecl AIL_API_release_sample_handle(HSAMPLE S)
     S->status = SMP_FREE;
 }
 
+// Resets sample `S` to defaults: done, no data, played once, 8-bit mono at
+// 11025 Hz, default volume, pan 64 (0 on mono hardware), no callbacks.
 // FUNCTION: 0x000e0fb0
 void __cdecl AIL_API_init_sample(HSAMPLE S)
 {
@@ -834,6 +891,7 @@ void __cdecl AIL_API_init_sample(HSAMPLE S)
     SS_build_amplitude_tables(S);
 }
 
+// Returns `S`'s SMP_... status, 0 for NULL.
 // FUNCTION: 0x000e10a0
 U32 __cdecl AIL_API_sample_status(HSAMPLE S)
 {
@@ -843,6 +901,7 @@ U32 __cdecl AIL_API_sample_status(HSAMPLE S)
     return S->status;
 }
 
+// Makes the `len` bytes at `start` `S`'s (single-buffered) data.
 // FUNCTION: 0x000e10b0
 void __cdecl AIL_API_set_sample_address(HSAMPLE S, void *start, U32 len)
 {
@@ -855,6 +914,8 @@ void __cdecl AIL_API_set_sample_address(HSAMPLE S, void *start, U32 len)
     S->len[0] = len;
 }
 
+// Sets `S`'s data format (DIG_F_...) and `flags` (DIG_PCM_SIGN), rebuilding its
+// scaling if they changed.
 // FUNCTION: 0x000e10e0
 void __cdecl AIL_API_set_sample_type(HSAMPLE S, S32 format, U32 flags)
 {
@@ -868,6 +929,7 @@ void __cdecl AIL_API_set_sample_type(HSAMPLE S, S32 format, U32 flags)
     }
 }
 
+// Returns `S`'s playback rate in Hz, 0 for NULL.
 // FUNCTION: 0x000e1110
 S32 __cdecl AIL_API_sample_playback_rate(HSAMPLE S)
 {
@@ -877,6 +939,7 @@ S32 __cdecl AIL_API_sample_playback_rate(HSAMPLE S)
     return S->playback_rate;
 }
 
+// Sets `S`'s playback rate to `playback_rate` Hz.
 // FUNCTION: 0x000e1120
 void __cdecl AIL_API_set_sample_playback_rate(HSAMPLE S, S32 playback_rate)
 {
@@ -886,6 +949,7 @@ void __cdecl AIL_API_set_sample_playback_rate(HSAMPLE S, S32 playback_rate)
     S->playback_rate = playback_rate;
 }
 
+// Returns `S`'s volume (0-127), 0 for NULL.
 // FUNCTION: 0x000e1130
 S32 __cdecl AIL_API_sample_volume(HSAMPLE S)
 {
@@ -895,6 +959,7 @@ S32 __cdecl AIL_API_sample_volume(HSAMPLE S)
     return S->volume;
 }
 
+// Sets `S`'s volume (0-127) and rebuilds its scaling.
 // FUNCTION: 0x000e1140
 void __cdecl AIL_API_set_sample_volume(HSAMPLE S, S32 volume)
 {
@@ -907,6 +972,7 @@ void __cdecl AIL_API_set_sample_volume(HSAMPLE S, S32 volume)
     }
 }
 
+// Returns `S`'s pan (0 left - 127 right), 0 for NULL.
 // FUNCTION: 0x000e1160
 S32 __cdecl AIL_API_sample_pan(HSAMPLE S)
 {
@@ -916,6 +982,7 @@ S32 __cdecl AIL_API_sample_pan(HSAMPLE S)
     return S->pan;
 }
 
+// Sets `S`'s pan (0 left - 127 right) and rebuilds its scaling.
 // FUNCTION: 0x000e1170
 void __cdecl AIL_API_set_sample_pan(HSAMPLE S, S32 pan)
 {
@@ -928,6 +995,7 @@ void __cdecl AIL_API_set_sample_pan(HSAMPLE S, S32 pan)
     }
 }
 
+// Returns the byte offset of playback in `S`'s current buffer, 0 for NULL.
 // FUNCTION: 0x000e1190
 U32 __cdecl AIL_API_sample_position(HSAMPLE S)
 {
@@ -937,6 +1005,7 @@ U32 __cdecl AIL_API_sample_position(HSAMPLE S)
     return S->pos[S->current_buffer];
 }
 
+// Moves playback in `S`'s current buffer to byte offset `pos`.
 // FUNCTION: 0x000e11b0
 void __cdecl AIL_API_set_sample_position(HSAMPLE S, U32 pos)
 {
@@ -946,6 +1015,7 @@ void __cdecl AIL_API_set_sample_position(HSAMPLE S, U32 pos)
     S->pos[S->current_buffer] = pos;
 }
 
+// Returns how many more times `S` plays (0 = forever), -1 for NULL.
 // FUNCTION: 0x000e11d0
 S32 __cdecl AIL_API_sample_loop_count(HSAMPLE S)
 {
@@ -955,6 +1025,7 @@ S32 __cdecl AIL_API_sample_loop_count(HSAMPLE S)
     return S->loop_count;
 }
 
+// Sets how many times `S` plays to `loop_count` (0 = forever).
 // FUNCTION: 0x000e11f0
 void __cdecl AIL_API_set_sample_loop_count(HSAMPLE S, S32 loop_count)
 {
@@ -964,6 +1035,8 @@ void __cdecl AIL_API_set_sample_loop_count(HSAMPLE S, S32 loop_count)
     S->loop_count = loop_count;
 }
 
+// Sets the byte offsets each repeat of `S` starts and ends at (end -1 = end of
+// data).
 // FUNCTION: 0x000e1200
 void __cdecl AIL_API_set_sample_loop_block(HSAMPLE S, S32 loop_start_offset, S32 loop_end_offset)
 {
@@ -974,6 +1047,8 @@ void __cdecl AIL_API_set_sample_loop_block(HSAMPLE S, S32 loop_start_offset, S32
     S->loop_end = loop_end_offset;
 }
 
+// Plays `S` from the start of its current buffer, starting DMA if needed.
+// Ignored if `S` is free or has no data.
 // FUNCTION: 0x000e1220
 void __cdecl AIL_API_start_sample(HSAMPLE S)
 {
@@ -992,6 +1067,7 @@ void __cdecl AIL_API_start_sample(HSAMPLE S)
     SS_start_DIG_driver_playback(S->driver);
 }
 
+// Pauses `S` if it is playing.
 // FUNCTION: 0x000e1270
 void __cdecl AIL_API_stop_sample(HSAMPLE S)
 {
@@ -1004,6 +1080,7 @@ void __cdecl AIL_API_stop_sample(HSAMPLE S)
     S->status = SMP_STOPPED;
 }
 
+// Resumes `S` if it is paused.
 // FUNCTION: 0x000e1290
 void __cdecl AIL_API_resume_sample(HSAMPLE S)
 {
@@ -1016,6 +1093,8 @@ void __cdecl AIL_API_resume_sample(HSAMPLE S)
     }
 }
 
+// Ends `S` now unless it is free or already done: marks it done and calls its
+// EOB and EOS callbacks.
 // FUNCTION: 0x000e12c0
 void __cdecl AIL_API_end_sample(HSAMPLE S)
 {
@@ -1035,6 +1114,8 @@ void __cdecl AIL_API_end_sample(HSAMPLE S)
     }
 }
 
+// Sets `S`'s start-of-block callback; returns the previous one (NULL for a NULL
+// `S`).
 // FUNCTION: 0x000e1310
 AILSAMPLECB __cdecl AIL_API_register_SOB_callback(HSAMPLE S, AILSAMPLECB SOB)
 {
@@ -1048,6 +1129,8 @@ AILSAMPLECB __cdecl AIL_API_register_SOB_callback(HSAMPLE S, AILSAMPLECB SOB)
     return old;
 }
 
+// Sets `S`'s end-of-buffer callback; returns the previous one (NULL for a NULL
+// `S`).
 // FUNCTION: 0x000e1330
 AILSAMPLECB __cdecl AIL_API_register_EOB_callback(HSAMPLE S, AILSAMPLECB EOB)
 {
@@ -1061,6 +1144,8 @@ AILSAMPLECB __cdecl AIL_API_register_EOB_callback(HSAMPLE S, AILSAMPLECB EOB)
     return old;
 }
 
+// Sets `S`'s end-of-sample callback; returns the previous one (NULL for a NULL
+// `S`).
 // FUNCTION: 0x000e1350
 AILSAMPLECB __cdecl AIL_API_register_EOS_callback(HSAMPLE S, AILSAMPLECB EOS)
 {
@@ -1074,6 +1159,7 @@ AILSAMPLECB __cdecl AIL_API_register_EOS_callback(HSAMPLE S, AILSAMPLECB EOS)
     return old;
 }
 
+// Stores `value` in `S`'s user data slot `index` (0-7, unchecked).
 // FUNCTION: 0x000e1370
 void __cdecl AIL_API_set_sample_user_data(HSAMPLE S, U32 index, S32 value)
 {
@@ -1083,6 +1169,7 @@ void __cdecl AIL_API_set_sample_user_data(HSAMPLE S, U32 index, S32 value)
     S->user_data[index] = value;
 }
 
+// Returns `S`'s user data slot `index` (0-7, unchecked), 0 for NULL.
 // FUNCTION: 0x000e1390
 S32 __cdecl AIL_API_sample_user_data(HSAMPLE S, U32 index)
 {
@@ -1092,6 +1179,8 @@ S32 __cdecl AIL_API_sample_user_data(HSAMPLE S, U32 index)
     return S->user_data[index];
 }
 
+// Sets `dig`'s master volume (0-127) and rebuilds the scaling of every
+// allocated sample.
 // FUNCTION: 0x000e13b0
 void __cdecl AIL_API_set_digital_master_volume(HDIGDRIVER dig, S32 master_volume)
 {
@@ -1105,12 +1194,17 @@ void __cdecl AIL_API_set_digital_master_volume(HDIGDRIVER dig, S32 master_volume
     }
 }
 
+// Returns `dig`'s master volume.
 // FUNCTION: 0x000e13f0
 S32 __cdecl AIL_API_digital_master_volume(HDIGDRIVER dig)
 {
     return dig->master_volume;
 }
 
+// Returns the smallest buffer size, in bytes, for AIL_load_sample_buffer data
+// at `playback_rate` Hz in `format` to cover one DMA half-buffer: allowing for
+// DIG_RESAMPLING_TOLERANCE and, unless the rate is the DMA rate, a half or a
+// quarter of it, 4 more bytes, rounded up to 256.
 // FUNCTION: 0x000e1410
 S32 __cdecl AIL_API_minimum_sample_buffer_size(HDIGDRIVER dig, S32 playback_rate, S32 format)
 {
@@ -1143,6 +1237,9 @@ S32 __cdecl AIL_API_minimum_sample_buffer_size(HDIGDRIVER dig, S32 playback_rate
     return n;
 }
 
+// Loads double buffer `buff_num` (0 or 1) of `S` with the `len` bytes at
+// `buffer`, `len` 0 meaning no more data, and starts `S` playing in streaming
+// mode if it is not already.
 // FUNCTION: 0x000e14b0
 void __cdecl AIL_API_load_sample_buffer(HSAMPLE S, U32 buff_num, void *buffer, U32 len)
 {
@@ -1161,6 +1258,9 @@ void __cdecl AIL_API_load_sample_buffer(HSAMPLE S, U32 buff_num, void *buffer, U
     }
 }
 
+// Returns which buffer of streaming sample `S` to load next (0 or 1), or -1 if
+// none is needed yet (also for NULL). The first two calls after AIL_init_sample
+// return 0 and then 1.
 // FUNCTION: 0x000e1520
 S32 __cdecl AIL_API_sample_buffer_ready(HSAMPLE S)
 {
@@ -1183,6 +1283,8 @@ S32 __cdecl AIL_API_sample_buffer_ready(HSAMPLE S)
     return S->current_buffer ^ 1;
 }
 
+// Stores `dig`'s DMA rate in `*rate`, hardware format in `*format` and device
+// name in `string`; NULL ones are skipped.
 // FUNCTION: 0x000e1580
 void __cdecl AIL_API_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *format, char *string)
 {
@@ -1197,6 +1299,8 @@ void __cdecl AIL_API_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *forma
     }
 }
 
+// Stores the positions and lengths of `S`'s two buffers through the non-NULL
+// pointers. Returns 1 if `S` has run out of data (starved), else 0.
 // FUNCTION: 0x000e15d0
 S32 __cdecl AIL_API_sample_buffer_info(HSAMPLE S, U32 *pos0, U32 *len0, U32 *pos1, U32 *len1)
 {
@@ -1215,6 +1319,8 @@ S32 __cdecl AIL_API_sample_buffer_info(HSAMPLE S, U32 *pos0, U32 *len0, U32 *pos
     return S->starved;
 }
 
+// Unlocks what AILSS_start locked, except the mixer. Its address also marks the
+// end of the locked code range.
 // FUNCTION: 0xe1620
 void AILSS_end(void)
 {

@@ -72,6 +72,8 @@ extern U32 seltoreal;
 
 U32 rbpos(U32 drive, S32 track);
 
+// Runs real-mode interrupt `intno` with the registers in `rmi` (DPMI 0300h, on
+// a DPMI-supplied stack); `rmi` receives the registers afterwards.
 // FUNCTION: 0x000e60c0
 void simint(S32 intno, RMI *rmi)
 {
@@ -87,6 +89,10 @@ void simint(S32 intno, RMI *rmi)
     AIL_int386(0x31, &in, &out);
 }
 
+// Sends MSCDEX device request `req` (real-mode address: segment from the high
+// word of `real`, offset `offset`) to CD drive `drive` (INT 2Fh AX=1510h),
+// setting its length to 13. Returns 1 unless the request's status has the error
+// bit set.
 // FUNCTION: 0x000e6100
 S32 calldrv(U32 drive, RQ_HDR *req, U32 real, U32 offset)
 {
@@ -104,6 +110,8 @@ S32 calldrv(U32 drive, RQ_HDR *req, U32 real, U32 offset)
     return !(req->status & 0x8000);
 }
 
+// Sends `req` as an IOCTL input request (command 3) to drive `drive`; the
+// caller sets its transfer address and count. Returns 1 on success.
 // FUNCTION: 0x000e6190
 S32 mscdexread(U32 drive, RQ_HDR *req, U32 real, U32 offset)
 {
@@ -117,6 +125,8 @@ S32 mscdexread(U32 drive, RQ_HDR *req, U32 real, U32 offset)
     return calldrv(drive, req, real, offset);
 }
 
+// Converts Red Book address `rb` (frame, second, minute in the low three bytes)
+// to milliseconds.
 // FUNCTION: 0x000e61c0
 U32 RBtoMS(U32 rb)
 {
@@ -124,24 +134,32 @@ U32 RBtoMS(U32 rb)
            + ((rb & 0xff) * 1000) / 75;
 }
 
+// Converts a position of `min` minutes, `sec` seconds and `frame` frames (75
+// per second) to milliseconds.
 // FUNCTION: 0x000e6240
 U32 RBseptoMS(U32 min, U32 sec, U32 frame)
 {
     return (sec & 0xff) * 1000 + (min & 0xff) * 60000 + (frame * 1000) / 75;
 }
 
+// Converts disc time `ms` to an HSG sector number (75 per second, less the
+// 150-sector lead-in).
 // FUNCTION: 0x000e62b0
 U32 MStoSector(U32 ms)
 {
     return ((ms / 1000) % 60) * 75 + (ms / 60000) * 4500 + ((ms % 1000) * 75) / 1000 - 150;
 }
 
+// Returns the binary value of BCD byte `bcd`.
 // FUNCTION: 0x000e6340
 U8 BCDtoBin(U8 bcd)
 {
     return (bcd / 16) * 10 + (bcd & 0x0f);
 }
 
+// Reads drive `drive`'s table of contents into `info`: track count, each
+// track's start in ms (+1) and the lead-out position after the last. Returns 1,
+// or 0 if a request fails.
 // FUNCTION: 0x000e6380
 S32 rbcontents(U32 drive, RB_CONTENTS *info)
 {
@@ -178,6 +196,9 @@ error:
     return 0;
 }
 
+// Returns the drive number of CD-ROM drive `which` (0 first) from MSCDEX, or
+// 0xFF if there is no such drive or no DOS memory. The first open allocates the
+// shared DOS request buffer.
 // FUNCTION: 0x000e64a0
 U32 rbopen(U32 which)
 {
@@ -204,6 +225,7 @@ U32 rbopen(U32 which)
     return ptrtoreal[which];
 }
 
+// Closes one rbopen; the last one frees the shared DOS request buffer.
 // FUNCTION: 0x000e6580
 void rbclose(void)
 {
@@ -212,6 +234,8 @@ void rbclose(void)
     }
 }
 
+// Sends one-byte IOCTL output control code `cmd` (0 eject, 5 close tray) to
+// drive `drive`. Returns 1 on success.
 // FUNCTION: 0x000e65d0
 S32 rbwrite(U32 drive, U32 cmd)
 {
@@ -232,6 +256,9 @@ S32 rbwrite(U32 drive, U32 cmd)
     return calldrv(drive, req, segtoreal, 0);
 }
 
+// Reads drive `drive`'s current audio Q-channel position: with `track` 0, the
+// absolute disc position in ms, otherwise the current track number. Returns 0
+// if the request fails.
 // FUNCTION: 0x000e6b10
 U32 rbpos(U32 drive, S32 track)
 {
@@ -254,23 +281,26 @@ U32 rbpos(U32 drive, S32 track)
     return BCDtoBin(buf[2]);
 }
 
+// Plays `len` ms of audio from disc position `start` (ms) on drive `drive`.
 // FUNCTION: 0x000e6650
 void rbplay(U32 drive, U32 start, U32 len)
 {
-    RQ_HDR *rh = (RQ_HDR *)ptrtoreal;
-    PLAY_RQ *pr = (PLAY_RQ *)(rh + 1);
+    RQ_HDR *req = (RQ_HDR *)ptrtoreal;
+    PLAY_RQ *play = (PLAY_RQ *)(req + 1);
     U32 first;
     U32 last;
 
     first = MStoSector(start);
     last = MStoSector(start + len);
-    rh->command = 0x84;
-    pr->mode = 0;
-    pr->start = first;
-    pr->count = last - first;
-    calldrv(drive, rh, segtoreal, 0);
+    req->command = 0x84;
+    play->mode = 0;
+    play->start = first;
+    play->count = last - first;
+    calldrv(drive, req, segtoreal, 0);
 }
 
+// Sends Stop Audio to drive `drive`: pauses play, or resets a paused drive.
+// Returns 1 on success.
 // FUNCTION: 0x000e66a0
 S32 rbstop(U32 drive)
 {
@@ -278,6 +308,8 @@ S32 rbstop(U32 drive)
     return calldrv(drive, (RQ_HDR *)ptrtoreal, segtoreal, 0);
 }
 
+// Returns drive `drive`'s state: 1 while audio is playing, 2 when idle, 0 on
+// error or with the door open.
 // FUNCTION: 0x000e66c0
 U32 rbstatus(U32 drive)
 {
@@ -298,6 +330,8 @@ U32 rbstatus(U32 drive)
     return ((req->status & 0x200) == 0) + 1;
 }
 
+// Sets the volume of drive `drive`'s output channels 0 and 1 to `vol` (channels
+// 2 and 3 to 0, each mapped to itself). Returns 0.
 // FUNCTION: 0xe6730
 S32 rbsetvol(U32 drive, U8 vol)
 {
@@ -330,6 +364,7 @@ S32 rbsetvol(U32 drive, U8 vol)
     return 0;
 }
 
+// Returns the mean volume of drive `drive`'s channels 0 and 1, halved (0-127).
 // FUNCTION: 0xe67b0
 U32 rbgetvol(U32 drive)
 {
@@ -364,6 +399,8 @@ U32 rbgetvol(U32 drive)
     return vol / 2;
 }
 
+// Opens CD-ROM drive `which` (0 first) for Red Book audio. Returns its handle,
+// or NULL if there is no such drive or memory runs out.
 // FUNCTION: 0x000e6850
 HREDBOOK __cdecl AIL_API_redbook_open(U32 which)
 {
@@ -385,6 +422,7 @@ HREDBOOK __cdecl AIL_API_redbook_open(U32 which)
     return rb;
 }
 
+// Closes Red Book handle `hand`; NULL is ignored.
 // FUNCTION: 0x000e68d0
 void __cdecl AIL_API_redbook_close(HREDBOOK hand)
 {
@@ -394,6 +432,7 @@ void __cdecl AIL_API_redbook_close(HREDBOOK hand)
     }
 }
 
+// Ejects the disc in `hand`'s drive and cancels any pause; NULL is ignored.
 // FUNCTION: 0x000e68f0
 void __cdecl AIL_API_redbook_eject(HREDBOOK hand)
 {
@@ -403,6 +442,7 @@ void __cdecl AIL_API_redbook_eject(HREDBOOK hand)
     }
 }
 
+// Closes the tray of `hand`'s drive and cancels any pause; NULL is ignored.
 // FUNCTION: 0x000e6910
 void __cdecl AIL_API_redbook_retract(HREDBOOK hand)
 {
@@ -412,6 +452,9 @@ void __cdecl AIL_API_redbook_retract(HREDBOOK hand)
     }
 }
 
+// Returns `hand`'s state: REDBOOK_PLAYING, REDBOOK_PAUSED, REDBOOK_STOPPED or
+// REDBOOK_ERROR (also for NULL, no disc or an open door). The first good call
+// after open or an error rereads the table of contents.
 // FUNCTION: 0x000e6930
 U32 __cdecl AIL_API_redbook_status(HREDBOOK hand)
 {
@@ -439,6 +482,7 @@ error:
     return REDBOOK_ERROR;
 }
 
+// Returns the number of audio tracks on `hand`'s disc, 0 on error.
 // FUNCTION: 0x000e6990
 U32 __cdecl AIL_API_redbook_tracks(HREDBOOK hand)
 {
@@ -448,6 +492,8 @@ U32 __cdecl AIL_API_redbook_tracks(HREDBOOK hand)
     return hand->contents.tracks;
 }
 
+// Stores track `tracknum`'s (1-based) start and end in ms in `*startmsec` and
+// `*endmsec` (either may be NULL); both get 0 for an invalid track or an error.
 // FUNCTION: 0x000e69b0
 void __cdecl AIL_API_redbook_track_info(HREDBOOK hand, U32 tracknum, U32 *startmsec,
                                         U32 *endmsec)
@@ -469,6 +515,8 @@ void __cdecl AIL_API_redbook_track_info(HREDBOOK hand, U32 tracknum, U32 *startm
     }
 }
 
+// Returns an ID for `hand`'s disc hashed from its track count and track times,
+// or 0 on error.
 // FUNCTION: 0x000e6a10
 U32 __cdecl AIL_API_redbook_id(HREDBOOK hand)
 {
@@ -495,6 +543,7 @@ U32 __cdecl AIL_API_redbook_id(HREDBOOK hand)
     return hash;
 }
 
+// Returns the current play position in ms while playing, otherwise 0.
 // FUNCTION: 0x000e6ac0
 U32 __cdecl AIL_API_redbook_position(HREDBOOK hand)
 {
@@ -504,6 +553,7 @@ U32 __cdecl AIL_API_redbook_position(HREDBOOK hand)
     return 0;
 }
 
+// Returns the track being played, or 0 when not playing.
 // FUNCTION: 0x000e6ae0
 U32 __cdecl AIL_API_redbook_track(HREDBOOK hand)
 {
@@ -513,6 +563,8 @@ U32 __cdecl AIL_API_redbook_track(HREDBOOK hand)
     return 0;
 }
 
+// Stops any play or pause, then plays from `startmsec` to `endmsec` unless both
+// are 0. Returns the new status.
 // FUNCTION: 0x000e6b90
 U32 __cdecl AIL_API_redbook_play(HREDBOOK hand, U32 startmsec, U32 endmsec)
 {
@@ -531,6 +583,7 @@ U32 __cdecl AIL_API_redbook_play(HREDBOOK hand, U32 startmsec, U32 endmsec)
     return AIL_redbook_status(hand);
 }
 
+// Stops play and cancels any pause. Returns the new status.
 // FUNCTION: 0x000e6be0
 U32 __cdecl AIL_API_redbook_stop(HREDBOOK hand)
 {
@@ -542,6 +595,8 @@ U32 __cdecl AIL_API_redbook_stop(HREDBOOK hand)
     return AIL_redbook_status(hand);
 }
 
+// Pauses play, remembering the position for AIL_redbook_resume. Returns the new
+// status.
 // FUNCTION: 0x000e6c20
 U32 __cdecl AIL_API_redbook_pause(HREDBOOK hand)
 {
@@ -553,6 +608,8 @@ U32 __cdecl AIL_API_redbook_pause(HREDBOOK hand)
     return AIL_redbook_status(hand);
 }
 
+// Resumes a paused disc from where it paused up to the end of the last play.
+// Returns the new status.
 // FUNCTION: 0x000e6c60
 U32 __cdecl AIL_API_redbook_resume(HREDBOOK hand)
 {

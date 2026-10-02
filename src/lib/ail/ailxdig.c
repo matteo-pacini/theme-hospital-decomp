@@ -50,6 +50,8 @@ typedef struct _WAVE_SYNTH {
 static S32 locked = 0;
 /* In the code segment, where the original's table sits between two functions. */
 #pragma data_seg("_TEXT", "CODE")
+// Data, not a function: the pitch of each MIDI note in Hz, rounded and an
+// octave high (440 at note 57) except entry 0. Only ratios are used.
 // FUNCTION: 0xe5430
 S32 note_freq[128] = {
     8, 17, 18, 19, 20, 21, 23, 24,
@@ -84,6 +86,7 @@ static void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 dat
 
 void XDIG_set_pitch(HWAVESYNTH W, S32 voice);
 
+// Locks this module's code against paging, once.
 // FUNCTION: 0x000e5630
 void AILXDIG_start(void)
 {
@@ -93,6 +96,8 @@ void AILXDIG_start(void)
     }
 }
 
+// Records a program change, pitch bend or tracked controller (`status`,
+// `data_1`, `data_2`) in channel state `log`; other events are ignored.
 // FUNCTION: 0x000e5660
 static void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2)
 {
@@ -158,6 +163,8 @@ static void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 dat
     }
 }
 
+// Returns the entry for `bank` and `patch` in wave library `list` (ended by
+// bank -1, at most 512 entries), or NULL.
 // FUNCTION: 0x000e5820
 WAVE_ENTRY *WVL_search(WAVE_ENTRY *list, S32 bank, S32 patch)
 {
@@ -175,6 +182,8 @@ WAVE_ENTRY *WVL_search(WAVE_ENTRY *list, S32 bank, S32 patch)
     return NULL;
 }
 
+// Sets voice `voice`'s sample volume from its channel's volume, expression and
+// the note velocity, and its pan from the channel's pan.
 // FUNCTION: 0x000e5850
 void XDIG_set_volume(HWAVESYNTH W, S32 voice)
 {
@@ -188,6 +197,9 @@ void XDIG_set_volume(HWAVESYNTH W, S32 voice)
     AIL_set_sample_pan(W->S[voice], W->controls.pan[ch]);
 }
 
+// Sets voice `voice`'s playback rate for its note, transposed from the wave's
+// root key (not on the drum channel 10) and bent by the channel's pitch bend
+// over its bend range.
 // FUNCTION: 0x000e58d0
 void XDIG_set_pitch(HWAVESYNTH W, S32 voice)
 {
@@ -197,10 +209,10 @@ void XDIG_set_pitch(HWAVESYNTH W, S32 voice)
     S32 note;
     S32 pitch;
     S32 dir;
-    S32 n;
+    S32 bend_note;
     S32 root_freq;
     S32 base;
-    S32 f;
+    S32 freq;
 
     ch = W->chan[voice];
     root = W->root[voice];
@@ -217,24 +229,26 @@ void XDIG_set_pitch(HWAVESYNTH W, S32 voice)
         pitch = 0;
         dir = 0;
     }
-    n = dir * W->controls.bend_range[ch] + note;
-    if (n < 0) {
-        n = 0;
+    bend_note = dir * W->controls.bend_range[ch] + note;
+    if (bend_note < 0) {
+        bend_note = 0;
     }
-    if (n > 127) {
-        n = 127;
+    if (bend_note > 127) {
+        bend_note = 127;
     }
     root_freq = note_freq[root];
     base = note_freq[note];
-    f = base + ((note_freq[n] - base) * pitch) / 8192;
+    freq = base + ((note_freq[bend_note] - base) * pitch) / 8192;
     if (ch != 9) {
-        rate = ((rate * base) / root_freq) * f / base;
+        rate = ((rate * base) / root_freq) * freq / base;
     } else {
-        rate = (rate * f) / base;
+        rate = (rate * freq) / base;
     }
     AIL_set_sample_playback_rate(W->S[voice], rate);
 }
 
+// Timbre callback on the MIDI driver: returns 1 if the wave library has
+// `bank`/`patch`, so that timbre is not loaded into the MIDI driver.
 // FUNCTION: 0xe59e0
 S32 XDIG_TIMB_TRAP(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
@@ -243,6 +257,12 @@ S32 XDIG_TIMB_TRAP(HMDIDRIVER mdi, S32 bank, S32 patch)
     return WVL_search(W->library, bank, patch) != NULL;
 }
 
+// Event callback on the MIDI driver: plays note-ons with a wave in the library
+// as digital samples (drum channel 10 from bank 127, the note as patch),
+// stealing the oldest voice when all are busy, and ends them on note-off
+// (except drums) or all-notes-off; volume, pan, expression, bend range and
+// pitch bend changes update the playing voices. Returns 1 if it handled a note
+// (so the driver does not play it), else 0.
 // FUNCTION: 0xe5a10
 S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2)
 {
@@ -251,7 +271,7 @@ S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 da
     S32 ch;
     S32 i;
     S32 j;
-    U32 t;
+    U32 oldest;
     WAVE_ENTRY *wave;
 
     st = status & 0xf0;
@@ -314,10 +334,10 @@ S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 da
             }
         }
         if (i == W->n_voices) {
-            t = 0xffffffff;
+            oldest = 0xffffffff;
             for (j = 0; j < W->n_voices; j++) {
-                if (W->time[j] <= t) {
-                    t = W->time[j];
+                if (W->time[j] <= oldest) {
+                    oldest = W->time[j];
                     i = j;
                 }
             }
@@ -351,6 +371,10 @@ S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 da
     return 0;
 }
 
+// Creates a wave synthesizer that plays `mdi`'s notes found in wave library
+// `wave_lib` as samples on `dig`, with up to `polyphony` voices (at most 16),
+// by hooking `mdi`'s event and timbre callbacks. Returns it, or NULL with
+// AIL_error set if memory or sample handles run out.
 // FUNCTION: 0x000e5e30
 HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER mdi,
                                                    void *wave_lib, S32 polyphony)
@@ -403,6 +427,8 @@ HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER md
     return W;
 }
 
+// Releases wave synthesizer `W`'s samples, restores the MIDI driver's previous
+// event and timbre callbacks and frees it. NULL is ignored.
 // FUNCTION: 0x000e6020
 void __cdecl AIL_API_destroy_wave_synthesizer(HWAVESYNTH W)
 {
@@ -419,6 +445,8 @@ void __cdecl AIL_API_destroy_wave_synthesizer(HWAVESYNTH W)
     AIL_mem_free_lock(W);
 }
 
+// Unlocks this module's code. Its address also marks the end of the locked code
+// range.
 // FUNCTION: 0xe6090
 void AILXDIG_end(void)
 {

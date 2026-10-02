@@ -100,6 +100,8 @@ int abs(int x);
     "L1:" \
     parm [eax] value [eax];
 
+// Locks this module's code, GTL prefix and sequencer state against paging,
+// once.
 // FUNCTION: 0x000e1ed0
 void AILXMIDI_start(void)
 {
@@ -124,6 +126,8 @@ void AILXMIDI_start(void)
     }
 }
 
+// Returns the length in bytes of a channel message with `status` (3, or 2 for
+// program change and channel pressure); 0 for system messages.
 // FUNCTION: 0x000e1ff0
 S32 __cdecl XMI_message_size(S32 status)
 {
@@ -141,6 +145,8 @@ S32 __cdecl XMI_message_size(S32 status)
     return 0;
 }
 
+// Sends the MIDI messages buffered for `mdi` to its driver (MDI_MIDI_XMIT), if
+// any.
 // FUNCTION: 0x000e2050
 void __cdecl XMI_flush_buffer(HMDIDRIVER mdi)
 {
@@ -154,8 +160,11 @@ void __cdecl XMI_flush_buffer(HMDIDRIVER mdi)
     }
 }
 
+// Appends the channel message `status`, `data_1`, `data_2` to `mdi`'s transmit
+// buffer, flushing it first when full. With MDI_DOUBLE_NOTE_OFF set, note-offs
+// (and zero-velocity note-ons) are queued twice.
 // FUNCTION: 0x000e20a0
-void __cdecl XMI_MIDI_message(HMDIDRIVER mdi, S32 status, S32 d1, S32 d2)
+void __cdecl XMI_MIDI_message(HMDIDRIVER mdi, S32 status, S32 data_1, S32 data_2)
 {
     S32 size;
     S32 n;
@@ -165,13 +174,13 @@ void __cdecl XMI_MIDI_message(HMDIDRIVER mdi, S32 status, S32 d1, S32 d2)
 
     n = 1;
     if (AIL_preference[MDI_DOUBLE_NOTE_OFF]) {
-        if ((status & 0xf0) == 0x80 || ((status & 0xf0) == 0x90 && d2 == 0)) {
+        if ((status & 0xf0) == 0x80 || ((status & 0xf0) == 0x90 && data_2 == 0)) {
             n = 2;
         }
     }
     st = status;
-    b1 = d1;
-    b2 = d2;
+    b1 = data_1;
+    b2 = data_2;
     while (n--) {
         size = XMI_message_size(status);
         if (mdi->offset + size > sizeof(mdi->DST->MIDI_data)) {
@@ -186,6 +195,8 @@ void __cdecl XMI_MIDI_message(HMDIDRIVER mdi, S32 status, S32 d1, S32 d2)
     }
 }
 
+// Sends the `size`-byte system exclusive `message` to `mdi`'s driver on its
+// own, truncated to the transmit buffer's size.
 // FUNCTION: 0x000e21a0
 void __cdecl XMI_sysex_message(HMDIDRIVER mdi, U8 *message, U32 size)
 {
@@ -196,26 +207,29 @@ void __cdecl XMI_sysex_message(HMDIDRIVER mdi, U8 *message, U32 size)
     XMI_flush_buffer(mdi);
 }
 
+// Reads a MIDI variable-length number (at most 4 bytes) at `*ptr`, advancing
+// `*ptr` past it. Returns its value.
 // FUNCTION: 0x000e2200
 S32 __cdecl XMI_read_VLN(U8 **ptr)
 {
     S32 value;
     S32 i;
-    S32 b;
+    S32 byte;
 
     value = 0;
     i = 4;
     do {
-        b = **ptr;
-        value = (value << 7) | (b & 0x7f);
+        byte = **ptr;
+        value = (value << 7) | (byte & 0x7f);
         (*ptr)++;
-        if (!(b & 0x80)) {
+        if (!(byte & 0x80)) {
             break;
         }
     } while (--i);
     return value;
 }
 
+// Returns `val` with its byte order reversed.
 // FUNCTION: 0x000e2230
 U32 __cdecl XMI_swap(U32 val)
 {
@@ -223,6 +237,9 @@ U32 __cdecl XMI_swap(U32 val)
            + ((val & 0x00ff0000) >> 8) + ((val & 0xff000000) >> 24);
 }
 
+// Finds sequence `sequence` (0 first) in XMIDI file image `image`: the FORM
+// XMID itself (sequence 0 only) or the nth FORM XMID inside its CAT XMID.
+// Returns it, or NULL.
 // FUNCTION: 0x000e2270
 U8 *__cdecl XMI_find_sequence(U8 *image, S32 sequence)
 {
@@ -256,6 +273,9 @@ U8 *__cdecl XMI_find_sequence(U8 *image, S32 sequence)
     return NULL;
 }
 
+// Returns the value channel state `log` holds for the program (0xC0), pitch
+// bend (0xE0, 14 bits) or controller `data_1` (0xB0) of `status`'s channel; -1
+// if the event is not tracked. Untouched values are -1.
 // FUNCTION: 0x000e2360
 S32 __cdecl XMI_read_log(CTRL_LOG *log, S32 status, S32 data_1)
 {
@@ -307,6 +327,8 @@ S32 __cdecl XMI_read_log(CTRL_LOG *log, S32 status, S32 data_1)
     return -1;
 }
 
+// Records a program change, pitch bend or tracked controller (`status`,
+// `data_1`, `data_2`) in channel state `log`; other events are ignored.
 // FUNCTION: 0x000e2520
 void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2)
 {
@@ -377,6 +399,14 @@ void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2)
 
 void __cdecl XMI_flush_channel_notes(HSEQUENCE S, S32 channel);
 
+// Plays channel message `status`, `data_1`, `data_2` of sequence `S`: records
+// it in the sequence's channel state and acts on XMIDI controllers (indirect
+// and callback prefixes, callback trigger, beat/bar reset, FOR/NEXT loops,
+// branch, channel lock and protect). Volume is scaled by the sequence and
+// master volumes, and a bend range change is sent with its RPN select. The
+// result goes to the event callback or out on the mapped physical channel,
+// unless another sequence has locked it or (note-on) the channel is muted.
+// `ICA_enable` lets a pending indirect controller value replace `data_2`.
 // FUNCTION: 0x000e26f0
 void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
                                             S32 data_2, S32 ICA_enable)
@@ -523,6 +553,8 @@ void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
     XMI_MIDI_message(mdi, st | phys, data_1, data_2);
 }
 
+// Sends note-off for every note `S` has queued and empties the queue; waits
+// about 50 ms if any were sent, unless called from the timer interrupt.
 // FUNCTION: 0x000e2b80
 void __cdecl XMI_flush_note_queue(HSEQUENCE S)
 {
@@ -545,6 +577,8 @@ void __cdecl XMI_flush_note_queue(HSEQUENCE S)
     }
 }
 
+// Sends note-off for every note `S` has queued on logical channel `channel` and
+// removes them from the queue.
 // FUNCTION: 0x000e2c10
 void __cdecl XMI_flush_channel_notes(HSEQUENCE S, S32 channel)
 {
@@ -560,6 +594,8 @@ void __cdecl XMI_flush_channel_notes(HSEQUENCE S, S32 channel)
     XMI_flush_buffer(S->driver);
 }
 
+// Resends the bank, program, pitch bend and controllers `S` has recorded for
+// logical channel `ch`.
 // FUNCTION: 0x000e2c80
 void __cdecl XMI_refresh_channel(HSEQUENCE S, S32 ch)
 {
@@ -607,6 +643,8 @@ void __cdecl XMI_refresh_channel(HSEQUENCE S, S32 ch)
     }
 }
 
+// Resets `S`'s playback state: identity channel map, nothing recorded, no loops
+// or queued notes, beat and bar counters at the start, 4/4 at 120 bpm.
 // FUNCTION: 0x000e2ec0
 void __cdecl XMI_init_sequence_state(HSEQUENCE S)
 {
@@ -633,6 +671,7 @@ void __cdecl XMI_init_sequence_state(HSEQUENCE S)
     S->interval_num = 0;
 }
 
+// Resets `S`'s playback state and moves it to the start of its event data.
 // FUNCTION: 0x000e2f90
 void __cdecl XMI_rewind_sequence(HSEQUENCE S)
 {
@@ -640,6 +679,8 @@ void __cdecl XMI_rewind_sequence(HSEQUENCE S)
     S->EVNT_ptr = (U8 *)S->EVNT + 8;
 }
 
+// Resends the volume of every channel of `S` that has one, rescaled by the
+// current sequence and master volumes.
 // FUNCTION: 0x000e2fb0
 void __syscall XMI_update_volume(HSEQUENCE S)
 {
@@ -652,6 +693,13 @@ void __syscall XMI_update_volume(HSEQUENCE S)
     }
 }
 
+// Service timer callback of MIDI driver `user` (an HMDIDRIVER); the build uses
+// the assembly stand-in XMI_SERVE. For each playing sequence, at its tempo:
+// ends notes whose time is up, interprets the events due (end of track loops or
+// ends the sequence, tempo, time signature, sysex, channel messages; note-ons
+// are queued with their duration), counts beats and bars for the beat callback,
+// and steps volume and tempo ramps. Does nothing while the driver is disabled
+// or the previous call is still running.
 // FUNCTION: 0xe2ff0
 // NONMATCHING: register choice (the time signature case keeps q in eax and
 // t in edx, the sysex and note-on paths swap ebx/ecx/edx)
@@ -826,6 +874,10 @@ void __pascal XMI_serve(U32 user)
     entry = 0;
 }
 
+// Tries `mdi`'s driver with I/O settings `IO`, fields below 1 taken from the
+// driver's first standard configuration, by storing them in its header and
+// sending DRV_VERIFY_IO. Returns the driver's answer, nonzero if the hardware
+// is there.
 // FUNCTION: 0x000e36c0
 S32 __cdecl XMI_attempt_MDI_detection(HMDIDRIVER mdi, IO_PARMS *IO)
 {
@@ -859,6 +911,8 @@ S32 __cdecl XMI_attempt_MDI_detection(HMDIDRIVER mdi, IO_PARMS *IO)
     return AIL_call_driver(mdi->drvr, DRV_VERIFY_IO, NULL, NULL);
 }
 
+// Destructor of a MIDI driver: ends every sequence and frees `mdi`'s timer,
+// sequences and descriptor.
 // FUNCTION: 0x000e3790
 void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi)
 {
@@ -872,6 +926,12 @@ void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi)
     AIL_mem_free_lock(mdi);
 }
 
+// Builds the HMDIDRIVER for installed .MDI driver `drvr`: sets the driver's
+// library directory from the environment variable it names and its GTL file
+// name (GTL_prefix plus its suffix), finds the hardware as the digital driver
+// does, initialises the device and instrument manager, allocates MDI_SEQUENCES
+// sequences, resets every channel and starts the service timer at
+// MDI_SERVICE_RATE. Returns it, or NULL with AIL_error set.
 // FUNCTION: 0x000e37f0
 HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
 {
@@ -1038,6 +1098,10 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     return mdi;
 }
 
+// Loads the .MDI driver file `filename` (also looked up in the driver
+// directory, which then also prefixes the GTL file name), installs it and sets
+// it up with I/O settings `IO` (NULL to detect). Returns the driver, or NULL
+// with AIL_error set.
 // FUNCTION: 0x000e3eb0
 HMDIDRIVER __cdecl AIL_API_install_MDI_driver_file(char *filename, IO_PARMS *IO)
 {
@@ -1081,6 +1145,9 @@ done:
     return mdi;
 }
 
+// Installs the .MDI driver image `driver_image` of `size` bytes and sets it up
+// with I/O settings `IO` (NULL to detect). Returns the driver, or NULL with
+// AIL_error set.
 // FUNCTION: 0x000e4000
 HMDIDRIVER __cdecl AIL_API_install_MDI_driver_image(void *driver_image, U32 size, IO_PARMS *IO)
 {
@@ -1098,6 +1165,9 @@ HMDIDRIVER __cdecl AIL_API_install_MDI_driver_image(void *driver_image, U32 size
     return mdi;
 }
 
+// Installs the MIDI driver and I/O settings named in MDI.INI, storing it in
+// `*mdi`. Returns 0 on success, 1 if MDI.INI cannot be read, 2 if the install
+// fails.
 // FUNCTION: 0x000e4040
 S32 __cdecl AIL_API_install_MDI_INI(HMDIDRIVER *mdi)
 {
@@ -1114,12 +1184,16 @@ S32 __cdecl AIL_API_install_MDI_INI(HMDIDRIVER *mdi)
     return 0;
 }
 
+// Uninstalls MIDI driver `mdi` and frees everything it owns.
 // FUNCTION: 0x000e40c0
 void __cdecl AIL_API_uninstall_MDI_driver(HMDIDRIVER mdi)
 {
     AIL_uninstall_driver(mdi->drvr);
 }
 
+// Returns the kind of synthesizer `mdi` drives: 3 for the Tandy or PC speaker
+// drivers, 1 for OPL2 (.AD timbres and a driver of at most 0x5000 bytes), 2 for
+// OPL3 (.OPL timbres), otherwise 0 (General MIDI).
 // FUNCTION: 0x000e40e0
 S32 __cdecl AIL_API_MDI_driver_type(HMDIDRIVER mdi)
 {
@@ -1152,6 +1226,8 @@ S32 __cdecl AIL_API_MDI_driver_type(HMDIDRIVER mdi)
     return 0;
 }
 
+// Sets the GTL file name prefix to `prefix`, dropping a trailing '\' or a file
+// extension.
 // FUNCTION: 0x000e4240
 void __cdecl AIL_API_set_GTL_filename_prefix(char *prefix)
 {
@@ -1172,6 +1248,8 @@ void __cdecl AIL_API_set_GTL_filename_prefix(char *prefix)
     }
 }
 
+// Returns a free sequence of `mdi`, reset and with no end-of-sequence callback,
+// or NULL with AIL_error set if all are in use.
 // FUNCTION: 0x000e42c0
 HSEQUENCE __cdecl AIL_API_allocate_sequence_handle(HMDIDRIVER mdi)
 {
@@ -1197,6 +1275,7 @@ HSEQUENCE __cdecl AIL_API_allocate_sequence_handle(HMDIDRIVER mdi)
     return S;
 }
 
+// Stops sequence `S` and returns it to its driver's pool. NULL is ignored.
 // FUNCTION: 0x000e4360
 void __cdecl AIL_API_release_sequence_handle(HSEQUENCE S)
 {
@@ -1207,6 +1286,7 @@ void __cdecl AIL_API_release_sequence_handle(HSEQUENCE S)
     S->status = SEQ_FREE;
 }
 
+// Sets AIL_error to say the driver could not install timbre `bank`/`patch`.
 // FUNCTION: 0x000e4380
 void set_timbre_error(S32 bank, S32 patch)
 {
@@ -1217,6 +1297,12 @@ void set_timbre_error(S32 bank, S32 patch)
     AIL_sprintf(AIL_error, "Driver could not install timbre bank %d, patch %d\n", 2, args);
 }
 
+// Prepares `S` to play sequence `sequence_num` of the XMIDI image `start`:
+// finds its TIMB, RBRN and EVNT chunks, resets its state, callbacks, loop
+// count (1), volume and tempo, and has the driver load the timbres it needs
+// that the timbre callback does not supply. Returns 1 on success, 0 if the
+// sequence is invalid, -1 if the driver fails to load the timbres or they are
+// needed while called from the timer interrupt.
 // FUNCTION: 0x000e43b0
 S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
 {
@@ -1321,6 +1407,7 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
     return 1;
 }
 
+// Plays `S` from the start. Ignored for a free sequence.
 // FUNCTION: 0x000e4740
 void __cdecl AIL_API_start_sequence(HSEQUENCE S)
 {
@@ -1335,6 +1422,8 @@ void __cdecl AIL_API_start_sequence(HSEQUENCE S)
     S->status = SEQ_PLAYING;
 }
 
+// Pauses `S` if it is playing: ends its notes, releases sustain, voice
+// protection and channel protection, and gives back channels it locked.
 // FUNCTION: 0x000e4770
 void __cdecl AIL_API_stop_sequence(HSEQUENCE S)
 {
@@ -1368,6 +1457,8 @@ void __cdecl AIL_API_stop_sequence(HSEQUENCE S)
     }
 }
 
+// Resumes `S` if it is paused: locks channels again where it held them and
+// resends every channel's state.
 // FUNCTION: 0x000e4830
 void __cdecl AIL_API_resume_sequence(HSEQUENCE S)
 {
@@ -1397,6 +1488,8 @@ void __cdecl AIL_API_resume_sequence(HSEQUENCE S)
     S->status = SEQ_PLAYING;
 }
 
+// Ends `S` now unless it is free or already done, calling its end-of-sequence
+// callback.
 // FUNCTION: 0x000e48b0
 void __cdecl AIL_API_end_sequence(HSEQUENCE S)
 {
@@ -1413,6 +1506,7 @@ void __cdecl AIL_API_end_sequence(HSEQUENCE S)
     }
 }
 
+// Sets how many times `S` plays to `loop_count` (0 = forever).
 // FUNCTION: 0x000e48f0
 void __cdecl AIL_API_set_sequence_loop_count(HSEQUENCE S, S32 loop_count)
 {
@@ -1422,6 +1516,7 @@ void __cdecl AIL_API_set_sequence_loop_count(HSEQUENCE S, S32 loop_count)
     S->loop_count = loop_count;
 }
 
+// Moves `S`'s tempo to `tempo` percent over `milliseconds` (0 = at once).
 // FUNCTION: 0x000e4900
 void __cdecl AIL_API_set_sequence_tempo(HSEQUENCE S, S32 tempo, S32 milliseconds)
 {
@@ -1445,6 +1540,7 @@ void __cdecl AIL_API_set_sequence_tempo(HSEQUENCE S, S32 tempo, S32 milliseconds
     S->driver->disable--;
 }
 
+// Moves `S`'s volume to `volume` (0-127) over `milliseconds` (0 = at once).
 // FUNCTION: 0x000e4970
 void __cdecl AIL_API_set_sequence_volume(HSEQUENCE S, S32 volume, S32 milliseconds)
 {
@@ -1471,6 +1567,7 @@ void __cdecl AIL_API_set_sequence_volume(HSEQUENCE S, S32 volume, S32 millisecon
     S->driver->disable--;
 }
 
+// Returns `S`'s SEQ_... status, 0 for NULL.
 // FUNCTION: 0x000e4a00
 U32 __cdecl AIL_API_sequence_status(HSEQUENCE S)
 {
@@ -1480,6 +1577,7 @@ U32 __cdecl AIL_API_sequence_status(HSEQUENCE S)
     return S->status;
 }
 
+// Returns how many more times `S` plays (0 = forever), -1 for NULL.
 // FUNCTION: 0x000e4a10
 S32 __cdecl AIL_API_sequence_loop_count(HSEQUENCE S)
 {
@@ -1489,6 +1587,7 @@ S32 __cdecl AIL_API_sequence_loop_count(HSEQUENCE S)
     return S->loop_count;
 }
 
+// Returns `S`'s current tempo in percent, 0 for NULL.
 // FUNCTION: 0x000e4a30
 S32 __cdecl AIL_API_sequence_tempo(HSEQUENCE S)
 {
@@ -1498,6 +1597,7 @@ S32 __cdecl AIL_API_sequence_tempo(HSEQUENCE S)
     return S->tempo_percent;
 }
 
+// Returns `S`'s current volume, 0 for NULL.
 // FUNCTION: 0x000e4a40
 S32 __cdecl AIL_API_sequence_volume(HSEQUENCE S)
 {
@@ -1507,6 +1607,8 @@ S32 __cdecl AIL_API_sequence_volume(HSEQUENCE S)
     return S->volume;
 }
 
+// Sets `mdi`'s master volume (0-127) and resends the volume of every playing
+// sequence.
 // FUNCTION: 0x000e4a50
 void __cdecl AIL_API_set_XMIDI_master_volume(HMDIDRIVER mdi, S32 master_volume)
 {
@@ -1526,12 +1628,15 @@ void __cdecl AIL_API_set_XMIDI_master_volume(HMDIDRIVER mdi, S32 master_volume)
     mdi->disable--;
 }
 
+// Returns `mdi`'s master volume.
 // FUNCTION: 0x000e4aa0
 S32 __cdecl AIL_API_XMIDI_master_volume(HMDIDRIVER mdi)
 {
     return mdi->master_volume;
 }
 
+// Returns the driver's status for timbre `bank`/`patch` (MDI_GET_T_STATUS),
+// nonzero if it is installed.
 // FUNCTION: 0x000e4ab0
 S32 __cdecl AIL_API_timbre_status(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
@@ -1541,6 +1646,8 @@ S32 __cdecl AIL_API_timbre_status(HMDIDRIVER mdi, S32 bank, S32 patch)
     return AIL_call_driver(mdi->drvr, MDI_GET_T_STATUS, &in, NULL);
 }
 
+// Has `mdi`'s driver load timbre `bank`/`patch`, unless the timbre callback
+// supplies it. Returns nonzero on success; 0 with AIL_error set otherwise.
 // FUNCTION: 0x000e4af0
 S32 __cdecl AIL_API_install_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
@@ -1562,6 +1669,7 @@ S32 __cdecl AIL_API_install_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
     return (S16)out.AX;
 }
 
+// Protects timbre `bank`/`patch` in `mdi`'s driver from being swapped out.
 // FUNCTION: 0x000e4bb0
 void __cdecl AIL_API_protect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
@@ -1572,6 +1680,7 @@ void __cdecl AIL_API_protect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
     AIL_call_driver(mdi->drvr, MDI_PROT_UNPROT_T, &in, NULL);
 }
 
+// Lets `mdi`'s driver swap out timbre `bank`/`patch` again.
 // FUNCTION: 0x000e4bf0
 void __cdecl AIL_API_unprotect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
@@ -1582,6 +1691,7 @@ void __cdecl AIL_API_unprotect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
     AIL_call_driver(mdi->drvr, MDI_PROT_UNPROT_T, &in, NULL);
 }
 
+// Returns the number of `mdi`'s sequences that are playing.
 // FUNCTION: 0x000e4c30
 S32 __cdecl AIL_API_active_sequence_count(HMDIDRIVER mdi)
 {
@@ -1597,6 +1707,8 @@ S32 __cdecl AIL_API_active_sequence_count(HMDIDRIVER mdi)
     return n;
 }
 
+// Returns the value `S` last set for controller `controller_num` on `channel`
+// (1-16), -1 if none or for NULL.
 // FUNCTION: 0x000e4c60
 S32 __cdecl AIL_API_controller_value(HSEQUENCE S, S32 channel, S32 controller_num)
 {
@@ -1606,6 +1718,8 @@ S32 __cdecl AIL_API_controller_value(HSEQUENCE S, S32 channel, S32 controller_nu
     return XMI_read_log(&S->shadow, (channel - 1) | 0xb0, controller_num);
 }
 
+// Returns the number of notes `S` has playing on `channel` (1-16), counting
+// only the first 16 entries of its note queue; 0 for NULL.
 // FUNCTION: 0x000e4c90
 S32 __cdecl AIL_API_channel_notes(HSEQUENCE S, S32 channel)
 {
@@ -1624,43 +1738,47 @@ S32 __cdecl AIL_API_channel_notes(HSEQUENCE S, S32 channel)
     return n;
 }
 
+// Stores `S`'s current beat and measure (MDI_QUANT_ADVANCE intervals ahead) in
+// `*beat` and `*measure`; NULL ones are skipped.
 // FUNCTION: 0x000e4cd0
 void __cdecl AIL_API_sequence_position(HSEQUENCE S, S32 *beat, S32 *measure)
 {
-    S32 b;
-    S32 m;
-    S32 f;
+    S32 beats;
+    S32 measures;
+    S32 fraction;
     S32 i;
 
     if (S == NULL) {
         return;
     }
     S->driver->disable++;
-    b = S->beat_count;
-    m = S->measure_count;
-    f = S->beat_fraction;
+    beats = S->beat_count;
+    measures = S->measure_count;
+    fraction = S->beat_fraction;
     for (i = 0; i < AIL_preference[MDI_QUANT_ADVANCE]; i++) {
-        f += S->time_fraction;
-        if (f >= S->time_per_beat) {
-            f -= S->time_per_beat;
-            if (++b >= S->time_numerator) {
-                m++;
-                b = 0;
+        fraction += S->time_fraction;
+        if (fraction >= S->time_per_beat) {
+            fraction -= S->time_per_beat;
+            if (++beats >= S->time_numerator) {
+                measures++;
+                beats = 0;
             }
         }
     }
-    if (m < 0) {
-        m = 0;
+    if (measures < 0) {
+        measures = 0;
     }
     if (measure != NULL) {
-        *measure = m;
+        *measure = measures;
     }
     if (beat != NULL) {
-        *beat = b;
+        *beat = beats;
     }
     S->driver->disable--;
 }
 
+// Jumps `S` to branch point `marker` of its RBRN chunk, if present. FOR loops
+// are cancelled unless MDI_ALLOW_LOOP_BRANCHING is set.
 // FUNCTION: 0x000e4d50
 void __cdecl AIL_API_branch_index(HSEQUENCE S, U32 marker)
 {
@@ -1692,6 +1810,7 @@ void __cdecl AIL_API_branch_index(HSEQUENCE S, U32 marker)
     }
 }
 
+// Sets `S`'s callback-prefix controller callback; returns the previous one.
 // FUNCTION: 0x000e4de0
 AILPREFIXCB __cdecl AIL_API_register_prefix_callback(HSEQUENCE S, AILPREFIXCB callback)
 {
@@ -1705,6 +1824,7 @@ AILPREFIXCB __cdecl AIL_API_register_prefix_callback(HSEQUENCE S, AILPREFIXCB ca
     return old;
 }
 
+// Sets `S`'s callback-trigger controller callback; returns the previous one.
 // FUNCTION: 0x000e4e00
 AILTRIGGERCB __cdecl AIL_API_register_trigger_callback(HSEQUENCE S, AILTRIGGERCB callback)
 {
@@ -1718,6 +1838,7 @@ AILTRIGGERCB __cdecl AIL_API_register_trigger_callback(HSEQUENCE S, AILTRIGGERCB
     return old;
 }
 
+// Sets `S`'s end-of-sequence callback; returns the previous one.
 // FUNCTION: 0x000e4e20
 AILSEQUENCECB __cdecl AIL_API_register_sequence_callback(HSEQUENCE S, AILSEQUENCECB callback)
 {
@@ -1731,6 +1852,7 @@ AILSEQUENCECB __cdecl AIL_API_register_sequence_callback(HSEQUENCE S, AILSEQUENC
     return old;
 }
 
+// Sets `S`'s beat/bar callback; returns the previous one.
 // FUNCTION: 0x000e4e40
 AILBEATCB __cdecl AIL_API_register_beat_callback(HSEQUENCE S, AILBEATCB callback)
 {
@@ -1744,6 +1866,8 @@ AILBEATCB __cdecl AIL_API_register_beat_callback(HSEQUENCE S, AILBEATCB callback
     return old;
 }
 
+// Sets the callback that sees each MIDI event `mdi` is about to send and can
+// claim it by returning nonzero; returns the previous one.
 // FUNCTION: 0x000e4e60
 AILEVENTCB __cdecl AIL_API_register_event_callback(HMDIDRIVER mdi, AILEVENTCB callback)
 {
@@ -1754,6 +1878,8 @@ AILEVENTCB __cdecl AIL_API_register_event_callback(HMDIDRIVER mdi, AILEVENTCB ca
     return old;
 }
 
+// Sets the callback that can supply timbres for `mdi` (by returning nonzero)
+// instead of the driver; returns the previous one.
 // FUNCTION: 0x000e4e80
 AILTIMBRECB __cdecl AIL_API_register_timbre_callback(HMDIDRIVER mdi, AILTIMBRECB callback)
 {
@@ -1764,6 +1890,7 @@ AILTIMBRECB __cdecl AIL_API_register_timbre_callback(HMDIDRIVER mdi, AILTIMBRECB
     return old;
 }
 
+// Stores `value` in `S`'s user data slot `index` (0-7, unchecked).
 // FUNCTION: 0x000e4ea0
 void __cdecl AIL_API_set_sequence_user_data(HSEQUENCE S, U32 index, S32 value)
 {
@@ -1773,6 +1900,7 @@ void __cdecl AIL_API_set_sequence_user_data(HSEQUENCE S, U32 index, S32 value)
     S->user_data[index] = value;
 }
 
+// Returns `S`'s user data slot `index` (0-7, unchecked), 0 for NULL.
 // FUNCTION: 0x000e4ec0
 S32 __cdecl AIL_API_sequence_user_data(HSEQUENCE S, U32 index)
 {
@@ -1782,6 +1910,7 @@ S32 __cdecl AIL_API_sequence_user_data(HSEQUENCE S, U32 index)
     return S->user_data[index];
 }
 
+// Sets the array the indirect controller prefix of `S` reads values from.
 // FUNCTION: 0x000e4ee0
 void __cdecl AIL_API_register_ICA_array(HSEQUENCE S, U8 *array)
 {
@@ -1791,6 +1920,10 @@ void __cdecl AIL_API_register_ICA_array(HSEQUENCE S, U8 *array)
     S->ICA = array;
 }
 
+// Locks a physical channel (2-9) for the application: the one with fewest
+// notes playing, highest first, among unlocked channels, preferring ones not
+// protected. Silences it and remembers its user. Returns the channel number
+// (1-based), or 0 if every channel is locked.
 // FUNCTION: 0x000e4ef0
 S32 __cdecl AIL_API_lock_channel(HMDIDRIVER mdi)
 {
@@ -1857,6 +1990,8 @@ S32 __cdecl AIL_API_lock_channel(HMDIDRIVER mdi)
     return best + 1;
 }
 
+// Releases physical channel `channel` (1-based) locked by AIL_lock_channel:
+// silences it and restores its previous owner's settings.
 // FUNCTION: 0x000e5080
 void __cdecl AIL_API_release_channel(HMDIDRIVER mdi, S32 channel)
 {
@@ -1893,6 +2028,8 @@ void __cdecl AIL_API_release_channel(HMDIDRIVER mdi, S32 channel)
     mdi->disable--;
 }
 
+// Routes `S`'s logical channel `seq_channel` to physical channel `new_channel`
+// (both 1-based).
 // FUNCTION: 0x000e51a0
 void __cdecl AIL_API_map_sequence_channel(HSEQUENCE S, S32 seq_channel, S32 new_channel)
 {
@@ -1905,6 +2042,8 @@ void __cdecl AIL_API_map_sequence_channel(HSEQUENCE S, S32 seq_channel, S32 new_
     }
 }
 
+// Returns the physical channel (1-based) `S`'s logical channel `seq_channel` is
+// routed to, 0 for NULL.
 // FUNCTION: 0x000e51e0
 S32 __cdecl AIL_API_true_sequence_channel(HSEQUENCE S, S32 seq_channel)
 {
@@ -1914,6 +2053,9 @@ S32 __cdecl AIL_API_true_sequence_channel(HSEQUENCE S, S32 seq_channel)
     return S->chan_map[seq_channel - 1] + 1;
 }
 
+// Sends a channel message now: through sequence `S`'s mapping and logic if `S`
+// is given, otherwise straight to `mdi` (volume scaled by the master volume,
+// the event callback consulted).
 // FUNCTION: 0x000e5200
 void __cdecl AIL_API_send_channel_voice_message(HMDIDRIVER mdi, HSEQUENCE S, S32 status,
                                                 S32 data_1, S32 data_2)
@@ -1949,6 +2091,8 @@ void __cdecl AIL_API_send_channel_voice_message(HMDIDRIVER mdi, HSEQUENCE S, S32
     --drvr->disable;
 }
 
+// Sends the system exclusive message at `buffer` (status byte, length, data) to
+// `mdi`'s driver now.
 // FUNCTION: 0x000e52d0
 void __cdecl AIL_API_send_sysex_message(HMDIDRIVER mdi, void *buffer)
 {
@@ -1962,6 +2106,8 @@ void __cdecl AIL_API_send_sysex_message(HMDIDRIVER mdi, void *buffer)
     mdi->disable--;
 }
 
+// Unlocks what AILXMIDI_start locked. Its address also marks the end of the
+// locked code range.
 // FUNCTION: 0xe5320
 void AILXMIDI_end(void)
 {

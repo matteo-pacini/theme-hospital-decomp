@@ -1,5 +1,7 @@
 .intel_syntax noprefix
 
+// Raises the timer lock count. While it is above zero the timer interrupt still
+// counts due periods but defers the callbacks until AIL_unlock.
 // FUNCTION: 0x000ddf88
 
 .section _TEXT,"ax",@progbits,unique,909192
@@ -10,6 +12,7 @@
     ret
 .size "_AIL_API_lock",.-"_AIL_API_lock"
 
+// Lowers the timer lock count raised by AIL_lock.
 // FUNCTION: 0x000ddf8f
 
 .section _TEXT,"ax",@progbits,unique,909199
@@ -20,6 +23,10 @@
     ret
 .size "_AIL_API_unlock",.-"_AIL_API_unlock"
 
+// Returns milliseconds since the timer system started, never less than the
+// previous result. Uses the Windows VxD entry point when present, otherwise the
+// interrupt count times the current PIT period plus the elapsed part of the
+// current PIT countdown.
 // FUNCTION: 0x000ddf96
 
 .section _TEXT,"ax",@progbits,unique,909206
@@ -82,6 +89,9 @@
     ret
 .size "_AIL_ms_count",.-"_AIL_ms_count"
 
+// After the PIT is reprogrammed, restarts the interrupt count and makes the
+// current AIL_ms_count value its base, so the millisecond count carries on
+// unbroken. Does nothing before the first AIL_ms_count call.
 // FUNCTION: 0x000de02c
 
 .section _TEXT,"ax",@progbits,unique,909356
@@ -97,6 +107,13 @@
     ret
 .size "_setup_ms_count",.-"_setup_ms_count"
 
+// INT 8 handler. Adds the time since the last interrupt (the PIT period, or
+// the VxD's elapsed time capped at one second) to every running timer and
+// counts each period that has elapsed, acknowledges the PIC and, unless
+// AIL_lock is held, calls the callbacks of the 15 user timers once per elapsed
+// period with their user values, on a private stack. The 16th timer stands
+// for the BIOS clock: its elapsed periods chain to the previous INT 8 handler.
+// A nested interrupt is only acknowledged.
 // FUNCTION: 0x000de04a
 
 .section _TEXT,"ax",@progbits,unique,909386
@@ -235,6 +252,8 @@
     iretd
 .size "_API_timer",.-"_API_timer"
 
+// Programs PIT channel 0 (rate generator) with `divisor` (0 = 65536) and
+// records it for AIL_interrupt_divisor.
 // FUNCTION: 0x000de1ed
 
 .section _TEXT,"ax",@progbits,unique,909805
@@ -269,6 +288,8 @@
     ret
 .size "_set_PIT_divisor",.-"_set_PIT_divisor"
 
+// Programs the PIT for an interrupt every `period` microseconds; 54925 or more
+// gives the BIOS rate (divisor 65536).
 // FUNCTION: 0x000de217
 
 .section _TEXT,"ax",@progbits,unique,909847
@@ -295,6 +316,9 @@
     ret
 .size "_set_PIT_period",.-"_set_PIT_period"
 
+// Sets the PIT to the shortest period among the allocated timers, if that
+// changed, then clears every timer's accumulated time and rebases the
+// millisecond count.
 // FUNCTION: 0x000de246
 
 .section _TEXT,"ax",@progbits,unique,909894
@@ -338,6 +362,10 @@
     ret
 .size "_program_timers",.-"_program_timers"
 
+// Starts the timer system: locks its memory, clears the timer table, looks up
+// the Windows VxD entry point (INT 2Fh AX=1684h), saves the real- and
+// protected-mode INT 8 vectors, installs the timer interrupt handler and runs
+// the 16th timer at the BIOS clock period so the BIOS still gets its ticks.
 // FUNCTION: 0x000de2ac
 
 .section _TEXT,"ax",@progbits,unique,909996
@@ -428,6 +456,8 @@
     ret
 .size "_AILA_startup",.-"_AILA_startup"
 
+// Stops the timer system: restores the PIT to the BIOS rate and the original
+// protected-mode INT 8 vector.
 // FUNCTION: 0x000de3c2
 
 .section _TEXT,"ax",@progbits,unique,910274
@@ -461,6 +491,8 @@
     ret
 .size "_AILA_shutdown",.-"_AILA_shutdown"
 
+// Returns real-mode interrupt vector `vectnum` as a segment:offset pair
+// (segment in the high word).
 // FUNCTION: 0x000de3f9
 
 .section _TEXT,"ax",@progbits,unique,910329
@@ -491,6 +523,8 @@
     ret
 .size "_AIL_API_get_real_vect",.-"_AIL_API_get_real_vect"
 
+// Sets real-mode interrupt vector `vectnum` to the segment:offset pair
+// `real_ptr` (segment in the high word).
 // FUNCTION: 0x000de421
 
 .section _TEXT,"ax",@progbits,unique,910369
@@ -514,6 +548,11 @@
     ret
 .size "_AIL_API_set_real_vect",.-"_AIL_API_set_real_vect"
 
+// Template for the protected-mode stub AIL_set_USE16_ISR installs: its 0x9999
+// placeholders are patched with the driver's selectors, a private stack and the
+// ISR's address. It switches to those, far-returns into the 16-bit driver ISR
+// with an interrupt frame that leads back into its own tail (bytes after the
+// retf), which restores the caller's stack and registers and irets.
 // FUNCTION: 0x000de444
 
 .section _TEXT,"ax",@progbits,unique,910404
@@ -553,6 +592,11 @@
     .byte 0xcf
 .size "_thunk_proc",.-"_thunk_proc"
 
+// Routes hardware interrupt `IRQ` in protected mode to the 16-bit driver ISR at
+// offset `ISR_offset` of the real-mode segment in `real_base`'s high word:
+// creates code, data and stack descriptors, patches thunk_proc with them and
+// installs it, saving the old vector. Only one such ISR can be installed;
+// further calls do nothing until AIL_restore_USE16_ISR.
 // FUNCTION: 0x000de499
 
 .section _TEXT,"ax",@progbits,unique,910489
@@ -718,6 +762,8 @@
     ret
 .size "_AIL_API_set_USE16_ISR",.-"_AIL_API_set_USE16_ISR"
 
+// Restores the protected-mode vector of `IRQ` saved by AIL_set_USE16_ISR, if
+// that is the IRQ currently installed.
 // FUNCTION: 0x000de6af
 
 .section _TEXT,"ax",@progbits,unique,911023
@@ -754,6 +800,8 @@
     ret
 .size "_AIL_API_restore_USE16_ISR",.-"_AIL_API_restore_USE16_ISR"
 
+// Disables interrupts; returns the EFLAGS value from before, for
+// AIL_restore_interrupts.
 // FUNCTION: 0x000de6f4
 
 .section _TEXT,"ax",@progbits,unique,911092
@@ -766,6 +814,8 @@
     ret
 .size "_AIL_API_disable_interrupts",.-"_AIL_API_disable_interrupts"
 
+// Restores EFLAGS (and so the interrupt flag) from `flags`, as returned by
+// AIL_disable_interrupts.
 // FUNCTION: 0x000de6f8
 
 .section _TEXT,"ax",@progbits,unique,911096
@@ -788,6 +838,11 @@
     ret
 .size "_AIL_API_restore_interrupts",.-"_AIL_API_restore_interrupts"
 
+// Moves the caller onto a new stack in DS ending at `base` + `size` (bit 2 of
+// the end cleared): stores SS, ESP and EBP through `ss_save`, `esp_save` and
+// `ebp_save`, points EBP at the new top with room for the caller's locals below
+// it, and returns. Nothing is copied from the old frame. Undone by
+// AIL_restore_stack.
 // FUNCTION: 0x000de70d
 
 .section _TEXT,"ax",@progbits,unique,911117
@@ -816,6 +871,8 @@
     jmp edx
 .size "_AIL_switch_stack",.-"_AIL_switch_stack"
 
+// Returns the caller to the stack saved by AIL_switch_stack, given the saved
+// `ss`, `esp` and `ebp`.
 // FUNCTION: 0x000de743
 
 .section _TEXT,"ax",@progbits,unique,911171
@@ -835,6 +892,10 @@
     jmp ecx
 .size "_AIL_restore_stack",.-"_AIL_restore_stack"
 
+// Calls driver `drvr` through real-mode INT 66h with AX = `fn` and BX = its
+// driver number. CX, DX, SI and DI come from `in` (zero if NULL); if `out` is
+// not NULL it receives AX, BX, CX, DX, SI and DI afterwards. Runs with AIL_lock
+// held. Returns AX, sign-extended.
 // FUNCTION: 0x000de75f
 
 .section _TEXT,"ax",@progbits,unique,911199
@@ -919,6 +980,7 @@
     ret
 .size "_AIL_API_call_driver",.-"_AIL_API_call_driver"
 
+// Returns nonzero while called from inside the timer interrupt.
 // FUNCTION: 0x000de839
 
 .section _TEXT,"ax",@progbits,unique,911417
@@ -929,6 +991,9 @@
     ret
 .size "_AIL_API_background",.-"_AIL_API_background"
 
+// Allocates one of the 15 user timers, stopped, with `callback` as its
+// callback. Returns the handle (the timer's byte offset into the timer tables),
+// or -1 if all are in use.
 // FUNCTION: 0x000de83f
 
 .section _TEXT,"ax",@progbits,unique,911423
@@ -959,6 +1024,8 @@
     ret
 .size "_AIL_API_register_timer",.-"_AIL_API_register_timer"
 
+// Sets the value passed to timer `timer`'s callback to `user`; returns the
+// previous value. Handle -1 is ignored.
 // FUNCTION: 0x000de880
 
 .section _TEXT,"ax",@progbits,unique,911488
@@ -981,6 +1048,7 @@
     ret
 .size "_AIL_API_set_timer_user",.-"_AIL_API_set_timer_user"
 
+// Frees timer `timer`; -1 is ignored. The PIT rate is not recomputed.
 // FUNCTION: 0x000de8a2
 
 .section _TEXT,"ax",@progbits,unique,911522
@@ -1000,6 +1068,7 @@
     ret
 .size "_AIL_API_release_timer_handle",.-"_AIL_API_release_timer_handle"
 
+// Frees the 15 user timers.
 // FUNCTION: 0x000de8c3
 
 .section _TEXT,"ax",@progbits,unique,911555
@@ -1020,6 +1089,7 @@
     ret
 .size "_AIL_API_release_all_timers",.-"_AIL_API_release_all_timers"
 
+// Starts timer `timer` if it is allocated and stopped; -1 is ignored.
 // FUNCTION: 0x000de8e3
 
 .section _TEXT,"ax",@progbits,unique,911587
@@ -1041,6 +1111,7 @@
     ret
 .size "_AIL_API_start_timer",.-"_AIL_API_start_timer"
 
+// Starts every allocated, stopped user timer.
 // FUNCTION: 0x000de90d
 
 .section _TEXT,"ax",@progbits,unique,911629
@@ -1061,6 +1132,7 @@
     ret
 .size "_AIL_API_start_all_timers",.-"_AIL_API_start_all_timers"
 
+// Stops timer `timer` if it is running; -1 is ignored.
 // FUNCTION: 0x000de92d
 
 .section _TEXT,"ax",@progbits,unique,911661
@@ -1082,6 +1154,7 @@
     ret
 .size "_AIL_API_stop_timer",.-"_AIL_API_stop_timer"
 
+// Stops every running user timer.
 // FUNCTION: 0x000de957
 
 .section _TEXT,"ax",@progbits,unique,911703
@@ -1102,6 +1175,8 @@
     ret
 .size "_AIL_API_stop_all_timers",.-"_AIL_API_stop_all_timers"
 
+// Sets timer `timer`'s period to `microseconds`, restarting its count, and
+// reprograms the PIT for the shortest period in use.
 // FUNCTION: 0x000de977
 
 .section _TEXT,"ax",@progbits,unique,911735
@@ -1127,6 +1202,8 @@
     ret
 .size "_AIL_API_set_timer_period",.-"_AIL_API_set_timer_period"
 
+// Sets timer `timer` to fire `hertz` times a second (period 1000000 / `hertz`
+// microseconds).
 // FUNCTION: 0x000de9a7
 
 .section _TEXT,"ax",@progbits,unique,911783
@@ -1149,6 +1226,8 @@
     ret
 .size "_AIL_API_set_timer_frequency",.-"_AIL_API_set_timer_frequency"
 
+// Sets timer `timer`'s period to that of PIT divisor `PIT_divisor` (0 gives the
+// BIOS rate, 54925 microseconds).
 // FUNCTION: 0x000de9d1
 
 .section _TEXT,"ax",@progbits,unique,911825
@@ -1178,6 +1257,7 @@
     ret
 .size "_AIL_API_set_timer_divisor",.-"_AIL_API_set_timer_divisor"
 
+// Returns the divisor the PIT is currently programmed with (0 = 65536).
 // FUNCTION: 0x000dea0d
 
 .section _TEXT,"ax",@progbits,unique,911885
@@ -1188,6 +1268,8 @@
     ret
 .size "_AIL_API_interrupt_divisor",.-"_AIL_API_interrupt_divisor"
 
+// Opens file `filename` with DOS access mode `access` (0 read, 1 write, 2
+// read/write). Returns the DOS handle, or -1 on failure.
 // FUNCTION: 0x000dea13
 
 .section _TEXT,"ax",@progbits,unique,911891
@@ -1212,6 +1294,8 @@
     ret
 .size "_AIL_fopen",.-"_AIL_fopen"
 
+// Creates (or truncates) file `filename` with normal attributes. Returns the
+// DOS handle, or -1 on failure.
 // FUNCTION: 0x000dea2f
 
 .section _TEXT,"ax",@progbits,unique,911919
@@ -1236,6 +1320,8 @@
     ret
 .size "_AIL_fcreate",.-"_AIL_fcreate"
 
+// Opens file `filename` for writing positioned at its end, creating it if it
+// does not exist. Returns the DOS handle, or -1 on failure.
 // FUNCTION: 0x000dea4a
 
 .section _TEXT,"ax",@progbits,unique,911946
@@ -1278,6 +1364,9 @@
     ret
 .size "_AIL_fappend",.-"_AIL_fappend"
 
+// Reads up to `bytes` bytes from `handle` into `buffer` (in 0xF000-byte pieces
+// when over 64K), stopping at an error, end of file or a short read. Returns
+// the number of bytes read.
 // FUNCTION: 0x000dea89
 
 .section _TEXT,"ax",@progbits,unique,912009
@@ -1321,6 +1410,9 @@
     ret
 .size "_AIL_fread",.-"_AIL_fread"
 
+// Writes `bytes` bytes from `buffer` to `handle` (in 0xF000-byte pieces when
+// over 64K), stopping at an error or a short write. Returns the number of bytes
+// written.
 // FUNCTION: 0x000deacb
 
 .section _TEXT,"ax",@progbits,unique,912075
@@ -1364,6 +1456,8 @@
     ret
 .size "_AIL_fwrite",.-"_AIL_fwrite"
 
+// Moves `handle`'s file pointer to `offset` from the start; returns the new
+// position. Falls through into fn_000deb11_.
 // FUNCTION: 0x000deb0d
 
 .section _TEXT,"ax",@progbits,unique,912141
@@ -1373,6 +1467,9 @@
     mov ax, 0x4200
 .size "_AIL_fseekbegin",.-"_AIL_fseekbegin"
 
+// Shared body of the AIL_fseek functions, entered with the DOS seek function
+// (AX = 4200h, 4201h or 4202h) already in AX: seeks `handle` by `offset` and
+// returns the new position.
 // FUNCTION: 0x000deb11
 
 .section _TEXT,"ax",@progbits,unique,912145
@@ -1398,6 +1495,8 @@
     ret
 .size "fn_000deb11_",.-"fn_000deb11_"
 
+// Moves `handle`'s file pointer by `offset` from its current position; returns
+// the new position.
 // FUNCTION: 0x000deb31
 
 .section _TEXT,"ax",@progbits,unique,912177
@@ -1408,6 +1507,8 @@
     .byte 0xeb; .byte 0xda  # jmp 0xdeb11
 .size "_AIL_fseekcur",.-"_AIL_fseekcur"
 
+// Moves `handle`'s file pointer to `offset` from the end; returns the new
+// position (the file size for offset 0).
 // FUNCTION: 0x000deb37
 
 .section _TEXT,"ax",@progbits,unique,912183
@@ -1418,6 +1519,7 @@
     .byte 0xeb; .byte 0xd4  # jmp 0xdeb11
 .size "_AIL_fseekend",.-"_AIL_fseekend"
 
+// Closes DOS file `handle`. The Miles copyright string follows its code.
 // FUNCTION: 0x000deb3d
 
 .section _TEXT,"ax",@progbits,unique,912189
@@ -1458,6 +1560,8 @@
     .byte 0x0d; .byte 0x0a; .byte 0x0d; .byte 0x0a
 .size "_AIL_fclose",.-"_AIL_fclose"
 
+// Locks this module's data (the timer tables up to AIL_driver_directory) and
+// code (AIL_API_lock to here) against paging.
 // FUNCTION: 0x000deb91
 
 .section _TEXT,"ax",@progbits,unique,912273

@@ -20,6 +20,9 @@ void AIL_end(void);
 void __pascal AIL_DRIVER_SERVER(U32 user);
 #pragma aux (__pascal) AIL_DRIVER_SERVER "AIL_DRIVER_SERVER"
 
+// Locks this module's code (AIL_start up to AIL_end) and the driver table,
+// preferences, error text and module state against paging, once; AIL_end undoes
+// it.
 // FUNCTION: 0x000debc0
 void AIL_start(void)
 {
@@ -35,6 +38,9 @@ void AIL_start(void)
     }
 }
 
+// Timer callback of an installed driver with a service rate: `user` is its
+// AIL_DRIVER. Sends it DRV_SERVE with interrupts disabled; a call arriving
+// while one is still running is dropped.
 // FUNCTION: 0x000dec50
 void __pascal AIL_DRIVER_SERVER(U32 user)
 {
@@ -47,6 +53,9 @@ void __pascal AIL_DRIVER_SERVER(U32 user)
     }
 }
 
+// Parses `str` as an integer in `base` (2..16, digits case-insensitive). Spaces
+// are skipped and each '-' flips the sign; parsing stops at the first other
+// character, and `*end` (if not NULL) is set to it. Returns the signed value.
 // FUNCTION: 0x000decb0
 S32 __cdecl ASC_val(char *str, S32 base, char **end)
 {
@@ -86,6 +95,10 @@ S32 __cdecl ASC_val(char *str, S32 base, char **end)
     return total * sign;
 }
 
+// Reads one line of `file` through `buf` into `dest`, dropping '\r' and the
+// terminating '\n', and NUL-terminates it. Stops after `maxlen` characters (the
+// '\n' counts), so `dest` needs `maxlen` + 1 bytes. Returns the number of
+// characters consumed, 0 at end of file.
 // FUNCTION: 0x000ded50
 U32 AIL_fgets(S32 file, INI_BUFFER *buf, char *dest, U32 maxlen)
 {
@@ -115,6 +128,11 @@ U32 AIL_fgets(S32 file, INI_BUFFER *buf, char *dest, U32 maxlen)
     return n;
 }
 
+// Reads driver settings from the .INI file `filename`, looked up as given and
+// then in the driver directory: DRIVER, DEVICE, IO_ADDR (hex), IRQ, DMA_8_bit
+// and DMA_16_bit, one "key value" per line, ';' starting a comment. IO fields
+// not given are -1. Returns 1 and fills `INI`; 0 if the file is missing or
+// lacks DRIVER or DEVICE (then AIL_error says so).
 // FUNCTION: 0x000dedd0
 S32 __cdecl AIL_API_read_INI(AIL_INI *INI, char *filename)
 {
@@ -199,6 +217,8 @@ S32 __cdecl AIL_API_read_INI(AIL_INI *INI, char *filename)
     return 1;
 }
 
+// Sets preference `number` (DIG_..., MDI_..., AIL_...) to `value`; returns its
+// previous value.
 // FUNCTION: 0x000df270
 S32 __cdecl AIL_API_set_preference(U32 number, S32 value)
 {
@@ -209,12 +229,17 @@ S32 __cdecl AIL_API_set_preference(U32 number, S32 value)
     return old;
 }
 
+// Returns the text describing the last error.
 // FUNCTION: 0x000df290
 char *__cdecl AIL_last_error(void)
 {
     return AIL_error;
 }
 
+// Loads a .DIG or .MDI driver image of `n_bytes` into DOS memory, gives it one
+// of the 16 driver handles, hooks real-mode INT 66h to it, sends DRV_INIT and,
+// if the driver asks for one, starts a timer at its service rate. Returns the
+// new driver, or NULL with AIL_error set.
 // FUNCTION: 0x000df2a0
 AIL_DRIVER *__cdecl AIL_API_install_driver(U8 *driver_image, U32 n_bytes)
 {
@@ -284,6 +309,9 @@ AIL_DRIVER *__cdecl AIL_API_install_driver(U8 *driver_image, U32 n_bytes)
     return drvr;
 }
 
+// Releases driver `drvr`: runs its destructor, stops its timer, shuts it down
+// (DRV_SHUTDOWN) if initialized, restores INT 66h and frees its memory and
+// handle.
 // FUNCTION: 0x000df580
 void __cdecl AIL_API_uninstall_driver(AIL_DRIVER *drvr)
 {
@@ -311,6 +339,10 @@ void __cdecl AIL_API_uninstall_driver(AIL_DRIVER *drvr)
     }
 }
 
+// Gets driver `drvr`'s I/O settings from the environment variable its header
+// names, parsed by the driver (DRV_PARSE_ENV). Returns them in a static buffer
+// overwritten by the next call, or NULL if the driver names no variable, it is
+// not set or the driver rejects it.
 // FUNCTION: 0x000df630
 IO_PARMS *__cdecl AIL_API_get_IO_environment(AIL_DRIVER *drvr)
 {
@@ -341,9 +373,9 @@ IO_PARMS *__cdecl AIL_API_get_IO_environment(AIL_DRIVER *drvr)
     return &IO;
 }
 
+// Initialises the library: locks its memory, sets every preference to its
+// default, clears the driver table and error text, and starts the timer system.
 // FUNCTION: 0x000df6e0
-// NONMATCHING: AILA_startup (0xde2ac) has no config/functions.txt entry; the
-// target names the tail jump _program_timers+0x66
 void __cdecl AIL_API_startup(void)
 {
     S32 i;
@@ -376,6 +408,8 @@ void __cdecl AIL_API_startup(void)
     AILA_startup();
 }
 
+// Uninstalls every driver (last handle first), releases all timers and shuts
+// the timer system down.
 // FUNCTION: 0x000df800
 void __cdecl AIL_API_shutdown(void)
 {
@@ -392,6 +426,9 @@ void __cdecl AIL_API_shutdown(void)
     AILA_shutdown();
 }
 
+// Sets the directory searched for drivers and .INI files to `dir`, adding a
+// trailing '\' unless it ends in '\' or ':'; NULL clears it. Returns the stored
+// directory.
 // FUNCTION: 0x000df850
 char *__cdecl AIL_API_set_driver_directory(char *dir)
 {
@@ -411,6 +448,7 @@ char *__cdecl AIL_API_set_driver_directory(char *dir)
     return AIL_driver_directory;
 }
 
+// Busy-waits for `intervals` ticks of 16 ms (about 1/60 second).
 // FUNCTION: 0x000df8c0
 void __cdecl AIL_API_delay(S32 intervals)
 {
@@ -421,6 +459,8 @@ void __cdecl AIL_API_delay(S32 intervals)
     }
 }
 
+// Unlocks what AIL_start locked. Its address also marks the end of the locked
+// code range.
 // FUNCTION: 0x000df8e0
 void AIL_end(void)
 {
