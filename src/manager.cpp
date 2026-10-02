@@ -315,7 +315,7 @@ void process_bank_button(u8 button)
 }
 
 // Animates the bank manager's face: randomly starts and advances the three
-// face animations (othervar.manager_face1_frame-fa4e, bank_manager_face1-3).
+// face animations (othervar.manager_face1_frame to manager_face3_frame, bank_manager_face1-3).
 // FUNCTION: 0x0007f6e4
 void display_manager_face(void)
 {

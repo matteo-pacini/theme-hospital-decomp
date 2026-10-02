@@ -24,7 +24,7 @@ IconTableData icon_table_data[] = {
 
 // Shows status icon icon (ICON_*) over peep, unless a dead patient or a more
 // important icon (lower icon_table priority) is showing. The icon stays until
-// reset (kind f5 > 0) or for its time; kind f5 < 0 waits, stored negative, for
+// reset (icon_table mode > 0) or for its time; mode < 0 waits, stored negative, for
 // peep_icon to announce it.
 // FUNCTION: 0x000b0300
 void set_icon_value(Thing *const peep, const s8 icon)

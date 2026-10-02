@@ -570,8 +570,9 @@ void draw_rep_on_panel(void)
 }
 
 // Draws the panel's watch for an emergency, an epidemic (myhosp->epidemic_timer) or
-// the timed event of myhosp->opening_countdown, with its time left and the button
-// for vaccinating (epidemic) or announcing (the other event).
+// the hospital's opening countdown (myhosp->opening_countdown), with its time
+// left and the button for vaccinating (epidemic) or opening the hospital at
+// once (countdown).
 // FUNCTION: 0x00032e20
 void draw_emergency(void)
 {

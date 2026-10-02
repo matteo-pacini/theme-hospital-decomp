@@ -159,7 +159,7 @@ void goto_column_row_in_window(const u8 win, const s32 x, const s32 y)
 // every view moves by its velocity (in 1/65536 pixel, at most one tile a
 // frame, stopped at the scroll limit) which then decays, the background
 // buffer's wrap offset follows the drawn view, and moved or resized views are
-// flagged for redrawing (window.scrolled, fdb). Clears the scroll keys.
+// flagged for redrawing (window.scrolled, zone_changed). Clears the scroll keys.
 // FUNCTION: 0x000abc44
 void move_windows(void)
 {
@@ -247,8 +247,8 @@ void move_windows(void)
 }
 
 // Finds the map cell under screen point x,y of view window win. Sets
-// info.cell_col,unknown60 to its column and row (unclamped), unknown64 to
-// row * 128 + column, and unknown54,unknown58 to its screen position.
+// info.cell_col,cell_row to its column and row (unclamped), info.cell to
+// row * 128 + column, and info.cell_x,cell_y to its screen position.
 // FUNCTION: 0x000ac264
 void find_cell_at_point(const u8 win, const s32 x, const s32 y)
 {
@@ -270,7 +270,7 @@ void find_cell_at_point(const u8 win, const s32 x, const s32 y)
     info.cell_y = resvars.tile_height * (col + row + 2) / 2 - window.scroll_y[win] + window.center_y[win];
 }
 
-// Sets info.cell_x,unknown58 to the screen position in view window win of
+// Sets info.cell_x,cell_y to the screen position in view window win of
 // map cell column x, row y.
 // FUNCTION: 0x000ac3c4
 void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y)
@@ -279,7 +279,7 @@ void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y
     info.cell_y = (x + y + 2) * resvars.tile_height / 2 - window.scroll_y[win] + window.center_y[win];
 }
 
-// Sets info.cell_x,unknown58 to the map pixel position of cell column x,
+// Sets info.cell_x,cell_y to the map pixel position of cell column x,
 // row y, before any scrolling.
 // FUNCTION: 0x000ac464
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y)
@@ -289,7 +289,7 @@ void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y)
 }
 
 // Returns 1 if map pixel position x,y falls outside the scroll limits
-// (gamevar.scroll_min_tile to f134), widened by 10 tiles with with_margin; else 0.
+// (gamevar.scroll_min_tile to scroll_max_tile), widened by 10 tiles with with_margin; else 0.
 // FUNCTION: 0x000ac4bc
 u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin)
 {
@@ -316,7 +316,7 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_ma
 }
 
 // Clamps the rectangle x0,y0 to x1,y1 to the window wx0,wy0 to wx1,wy1 and
-// stores it in info.clip_x0 to unknown74; info.clip_empty is set if the
+// stores it in info.clip_x0 to clip_y1; info.clip_empty is set if the
 // result is empty.
 // FUNCTION: 0x000ac5e4
 void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1)
@@ -347,7 +347,7 @@ void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32
         info.clip_empty = 0;
 }
 
-// Stores in info.clip_x0 to unknown74 the rectangle covering both x0,y0 to
+// Stores in info.clip_x0 to clip_y1 the rectangle covering both x0,y0 to
 // x1,y1 and wx0,wy0 to wx1,wy1; info.clip_empty is set if it is empty.
 // FUNCTION: 0x000ac6bc
 void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1)

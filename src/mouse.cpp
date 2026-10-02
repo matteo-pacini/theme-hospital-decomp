@@ -324,7 +324,7 @@ void process_left_button(u16 icon)
                 if (myhosp->opening_countdown) {
                     if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x,
                                      resvars.coords[0x86].y, watch[14].width, watch[14].height)) {
-                        D_001549d0[player].type = EV_ANNOUNCE;
+                        D_001549d0[player].type = EV_OPEN_HOSPITAL;
                         play_sound(SNDSRC_GENERAL, SFX_FANFARE, -1, -1);
                         break;
                     }

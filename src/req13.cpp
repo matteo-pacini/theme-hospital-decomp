@@ -76,7 +76,7 @@ void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, 
 }
 
 // Closes the yes/no requester if it is open, and with reopen set reopens the
-// requester and mouse mode it covered (othervar.yesno_saved_requester, f9c4).
+// requester and mouse mode it covered (othervar.yesno_saved_requester, yesno_saved_mouse_mode).
 // FUNCTION: 0x0006fdfc
 void close_yes_no_requester(u8 reopen)
 {

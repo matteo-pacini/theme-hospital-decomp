@@ -32,7 +32,7 @@ void generate_quake(void)
         break;
     case 1:
         gamevar.quake_strength = 4;
-        gamevar.quake_shake_chance = 4;
+        gamevar.quake_step_chance = 4;
         gamevar.quake_amplitude = 0;
         gamevar.quake_ramp = 1;
         gamevar.quake_phase = 2;
@@ -42,7 +42,7 @@ void generate_quake(void)
     case 2:
         if (actual_game_turn > gamevar.quake_timer) {
             gamevar.quake_strength = 0x10;
-            gamevar.quake_shake_chance = 4;
+            gamevar.quake_step_chance = 4;
             gamevar.quake_amplitude = 0;
             gamevar.quake_ramp = 1;
             gamevar.quake_phase = 3;

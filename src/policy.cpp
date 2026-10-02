@@ -100,7 +100,7 @@ void process_policy_button(u8 action)
 }
 
 // Draws the policy sliders at this player's settings (allhosps.guess_cure_threshold and
-// f21b 0-100, f217 1000-2000, f21d 0-1000 rest threshold) and the pager
+// send_home_threshold 0-100, diag_threshold 1000-2000, rest_threshold 0-1000) and the pager
 // option; dragging a slider sends its new value as event EV_SET_POLICY (value =
 // slider 1-4).
 // FUNCTION: 0x0004488c

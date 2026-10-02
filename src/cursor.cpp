@@ -90,8 +90,8 @@ void draw_cell_no_editor(s32 x, s32 y, u8 colour)
 // mouse tile, greyed where it cannot go. When the mouse tile or angle changed,
 // first recomputes its tile (gamevar.place_tile) for the placing mode
 // (gamevar.place_mode 0 free in the room, 1 against a wall, 2 moving) and
-// whether it may be placed there (gamevar.place_ok), and marks the tiles it
-// covers.
+// whether it may be placed there (gamevar.place_ok). Marks the tiles it
+// covers (compute_object_drag_shape) every call.
 // FUNCTION: 0x000b14f0
 void draw_object_cursor(void)
 {

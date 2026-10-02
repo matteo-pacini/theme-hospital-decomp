@@ -69,7 +69,7 @@ void display_panel_person_info(void);
 void compute_room_pointed(u16 tile);
 
 // Queue window clicks (room othervar.queue_win_room): raise (event EV_QUEUE_CAPACITY_UP, up to 30) or
-// lower (0x54) the queue's limit (f1e), and close (event EV_CLOSE_QUEUE_WINDOW).
+// lower (0x54) the queue's limit (queue_capacity), and close (event EV_CLOSE_QUEUE_WINDOW).
 // FUNCTION: 0x000957f0
 void req7(Window *win)
 {

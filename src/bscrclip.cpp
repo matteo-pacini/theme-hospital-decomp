@@ -10,7 +10,7 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
 
 // Copies the screen rectangle x0,y0 to x1,y1 (exclusive) from the background
 // buffer (bscreen), which is scrolled by dx,dy and wraps at its width and
-// height (lbDisplay.physical_screen_width, unknown1c), to the work screen; a rectangle
+// height (lbDisplay.physical_screen_width, physical_screen_height), to the work screen; a rectangle
 // crossing the wrap is copied in up to four parts.
 // FUNCTION: 0x000adad0
 void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx,
@@ -122,7 +122,7 @@ void refresh_wscreen(void)
     }
 }
 
-// Draws the wall block of map cell cell (map unknown4) at view position x,y
+// Draws the wall block of map cell cell (Map.wall_w) at view position x,y
 // into the wrapping background buffer, clipped to x0,y0 to x1,y1 and the
 // current view zone, drawing up to four copies where it crosses the wrap.
 // FUNCTION: 0x000adf8c

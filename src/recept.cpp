@@ -74,8 +74,9 @@ void receptionist_setup(Thing *receptionist)
     receptionist->state = SS_RECEPTIONIST_WORKS;
 }
 
-// Staff state SS_RECEPTIONIST_WORKS: calls the first queued patient
-// (emergencies first) whose treatment has room to spare to the desk, or
+// Staff state SS_RECEPTIONIST_WORKS: calls to the desk the first queued
+// patient whose treatment has room to spare, searching from the first
+// emergency patient in the queue if there is one (else from the head), or
 // idles with random desk tasks while the queue is empty.
 // FUNCTION: 0x00097fac
 void receptionist_works(Thing *receptionist)

@@ -103,7 +103,7 @@ void modify_person(Thing *person)
 }
 
 // Moves person's warmth one step towards the warmth where they stand: a room's
-// unknown26 * 1250 spread over its area, or in the corridor the nearby corridor
+// radiators * 1250 spread over its area, or in the corridor the nearby corridor
 // radiators by distance and the heating setting (allhosps.heating_level); 0 with the
 // heating off. Hot patients get thirsty faster. Returns the warmth at that
 // spot.

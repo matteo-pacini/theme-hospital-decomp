@@ -79,7 +79,7 @@ void compute_help_text(s16 x, s16 y, u8 help_group)
 // Prepares a help box with text strs: mode 1 a tooltip (strs[0] wrapped) above
 // x,y, mode 2 a framed help page (the "."-ended list of strs) centred on screen
 // when x,y is -1,-1, with the mouse kept inside it. Stores the text, size and
-// position in othervar (f96, f89a, f89c, f896, f898), kept on screen (the
+// position in othervar (help_msg, help_w, help_h, help_x, help_y), kept on screen (the
 // bottom limit uses the screen width).
 // FUNCTION: 0x00099e4c
 void set_help_text(u8 mode, s16 x, s16 y, char **strs)

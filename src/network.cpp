@@ -2956,7 +2956,7 @@ s32 network_button_join(void)
 }
 
 // Names each active player's hospital after the player, and sets every
-// hospital's f2a to 1.
+// hospital's player_type to 1.
 // FUNCTION: 0x000861c0
 void init_network_players(void)
 {

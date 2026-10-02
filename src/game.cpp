@@ -321,12 +321,14 @@ void limit_framerate(void)
 }
 
 // Starts a game turn if the game speed (myplayer.game_speed, turns per second)
-// allows one now; otherwise sets gamevar.turn_skipped (frame without a turn) and
-// returns. Unless paused, advances actual_game_turn and the per-turn random
-// values, runs the twice-daily, daily, month-end, quarterly and year-end
-// administration as they fall due, counts down each hospital's start delay
-// (unknown1257), runs earthquakes, and queues closing a room being edited once
-// it is empty.
+// allows one now (always in a network game); otherwise sets
+// gamevar.turn_skipped (frame without a turn) and returns. Unless paused,
+// advances actual_game_turn and the per-turn random values, runs the
+// twice-daily, daily, month-end, quarterly and year-end administration as they
+// fall due, counts down each hospital's start delay (opening_countdown), runs
+// earthquakes, and once the room being edited is empty queues its
+// place-object requester (in MM_EDIT_ROOM_WAIT, once room->first is 0) or the
+// end of the edit. In a network game, queues the pending net result event.
 // FUNCTION: 0x00011b90
 void start_turn(void)
 {
@@ -403,7 +405,7 @@ void start_turn(void)
     }
     compute_whether_user_not_busy();
     if (gamevar.quake_strength_s) {
-        earthquake(gamevar.quake_strength_s, gamevar.quake_shake_chance);
+        earthquake(gamevar.quake_strength_s, gamevar.quake_step_chance);
     }
     room = &room_info[allhosps[player].edited_room];
     if (room > room_info) {

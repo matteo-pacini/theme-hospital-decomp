@@ -833,7 +833,9 @@ enum {
     EV_CANCEL_SACK = 0x88,
     EV_CHEAT_END_YEAR = 0x89,
     EV_REPLACE_MACHINE = 0x8a,
-    EV_ANNOUNCE = 0x8b,
+    // Ends the opening countdown (the panel watch clicked): the hospital opens
+    // now.
+    EV_OPEN_HOSPITAL = 0x8b,
     EV_CLOSE_SAVE_YES_NO = 0x8c,
     EV_NETWORK_LOST_FOCUS = 0x8d,
     EV_NETWORK_GAINED_FOCUS = 0x8e,

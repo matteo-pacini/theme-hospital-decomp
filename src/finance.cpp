@@ -190,7 +190,7 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
 // Month end for every hospital: pays wages (appraising each employee), banks
 // drinks and amusement income and the insurance payments due this month,
 // charges heating, loan and overdraft interest, updates prices and each
-// hospital's share of the f1cd totals (f1cb), the computer players, the monthly
+// hospital's share of the month_visitors totals (market_share), the computer players, the monthly
 // history and statistics, then moves to the next month and refreshes the job
 // market.
 // FUNCTION: 0x00051534
@@ -594,7 +594,7 @@ void twice_daily_admin(void)
 }
 
 // Recalculates owner's hospital value (allhosps.hospital_value: rooms, land,
-// reputation, f1bf and a base 10000) and from it the loan limit (f41, a third
+// reputation, object_value and a base 10000) and from it the loan limit (max_loan, a third
 // of it plus 10000, at most 100000).
 // FUNCTION: 0x00052f7c
 void calculate_value(const u8 owner)

@@ -258,7 +258,7 @@ void process_keys_nickname(void)
 }
 
 // Preferences screen clicks: presses the button under the mouse and runs its
-// callback, and draws the selected advisor and resolution options pressed.
+// callback, and draws the selected tutorial and resolution options pressed.
 // FUNCTION: 0x0008f448
 void process_mouse_nickname(void)
 {
@@ -368,7 +368,7 @@ void display_nick_name_screen(void)
     LbTextDraw(x, y, buf);
 }
 
-// Preferences screen button `index`: 0/1 advisor on/off (advisor.flags bit 0),
+// Preferences screen button `index`: 0/1 tutorial on/off (advisor.flags bit 0),
 // 2 accept, 3 cancel, 4/5 previous/next balance file, 6/7 320x200 or 640x480.
 // FUNCTION: 0x0008fa90
 extern "C" void process_nickname_button(u8 index)

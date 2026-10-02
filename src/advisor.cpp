@@ -1265,7 +1265,7 @@ u8 advisor_litter_problem(void)
 
 // Bench advice from the bench shortage score per patient (NRAdcounts.bench_shortage:
 // up when a patient finds no free bench, down when one does) and the number of
-// benches (unknown4). Returns 1 if advice was written.
+// benches (NRAdcounts.benches). Returns 1 if advice was written.
 // FUNCTION: 0x000616b4
 u8 advisor_benches(void)
 {

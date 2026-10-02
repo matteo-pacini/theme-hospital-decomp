@@ -43,7 +43,7 @@ void try_bonus_level(void);
 // treatment (illness index, 0 for the hospital as a whole): each event adds a
 // fixed amount or a percentage of allhosps.rep_events to the reputation totals
 // (amount scales events 13, 23 and 24), and event 22 counts a case. Hospitals
-// on the map (allhosps.player_type 1) update their reputation now; computer ones (f2a
+// on the map (allhosps.player_type 1) update their reputation now; computer ones (player_type
 // 2) bank it in comp_buckets[owner][month].
 // FUNCTION: 0x00058370
 void reputation_affected(const u8 treatment, const u16 event, const u16 month, const u8 owner, const s32 amount)
@@ -146,7 +146,7 @@ void reputation_affected(const u8 treatment, const u16 event, const u16 month, c
 }
 
 // Recomputes player `owner`'s reputation (0-1000) for treatment, or the
-// hospital's overall reputation (unknownc7e) for treatment 0, from its
+// hospital's overall reputation (allhosps.reputation) for treatment 0, from its
 // running totals; 500 when nothing is counted yet.
 // FUNCTION: 0x00058730
 void evaluate_reputation(const u8 treatment, const u8 owner)
@@ -415,8 +415,8 @@ s32 check_criteria(u16 mode, u8 owner)
 }
 
 // Evaluates every win (mode 0) or lose (mode 1) criterion for player
-// `owner`: its current value (f10), whether it is met (fe) and its progress
-// (f14, 0-200%). Returns the highest criteria group number, 0 for owner
+// `owner`: its current value (current), whether it is met (met) and its progress
+// (progress, 0-200%). Returns the highest criteria group number, 0 for owner
 // 0xff.
 // FUNCTION: 0x000591d4
 u32 check_criteria_values(const u32 mode, const u8 owner)
@@ -576,7 +576,7 @@ s32 evaluate_criteria(const u8 owner)
 // Network game: once the current criterion's time is up, checks player
 // `owner` against it and sets up the next one, shares the result, and ends
 // the game for this player when they win or lose. Returns 1 if they failed
-// the criterion.
+// the criterion (0 when the local player's game ends here).
 // FUNCTION: 0x000597c4
 u8 check_net_criteria(const u8 owner)
 {

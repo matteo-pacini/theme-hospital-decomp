@@ -378,7 +378,7 @@ u16 which_room_number(u16 tile)
     return 0;
 }
 
-// Returns the room with a door tile (unknown4 or unknown6) at tile, or 0.
+// Returns the room with a door tile (door_tile or door_inside_tile) at tile, or 0.
 // FUNCTION: 0x00023a64
 RoomInfo *is_this_a_door(u16 tile)
 {
@@ -417,7 +417,7 @@ s16 find_bluep_who(Map *cell)
 
 // Turns the blueprint pieces on the current player's land (othervar.cur_player) into
 // real walls, doors, windows and objects, in a wall colour matched to the
-// surroundings, then resets any negative room f3 to 0.
+// surroundings, then resets any negative room state to 0.
 // FUNCTION: 0x00023b64
 void build_all_rooms(void)
 {
@@ -1519,7 +1519,7 @@ u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir)
 
 // Sets the placing angle (gamevar.place_dir) to angle, or to the next angle the
 // object has a shape for if angle is -1 (0 if it has none for angle), and
-// recomputes its tile extent (gamevar.place_max_x to f2e). Returns 1 if the angle
+// recomputes its tile extent (gamevar.place_max_x to place_min_y). Returns 1 if the angle
 // changed.
 // FUNCTION: 0x000273bc
 u8 place_object_change_angle(s8 angle)
@@ -1631,8 +1631,8 @@ void init_double_doors(RoomInfo *room)
 }
 
 // Makes room the build state's room for editing and puts its outline up. If
-// nobody is inside and its door is free, its f3 is set to 4 (editing);
-// otherwise it is flagged to wait (f22) and the local player's mouse mode set
+// nobody is inside and its door is free, its state is set to RS_EDITED;
+// otherwise it is flagged to wait (being_edited) and the local player's mouse mode set
 // to 14.
 // FUNCTION: 0x00027920
 void init_edit_room(RoomInfo *room)

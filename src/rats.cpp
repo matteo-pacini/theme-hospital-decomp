@@ -455,7 +455,7 @@ void rat_fest_builder(u8 level)
 }
 
 // After a level in 640x480, unlocks a bonus rat level (othervar.bonus_level 13 or 14)
-// if the rats killed (myhosp->rats_killed_u), and their ratio to fd29, beat
+// if the rats killed (myhosp->rats_killed_u), and their ratio to myhosp->rat_shots, beat
 // awards_trophies' targets, or by the debug flag.
 // FUNCTION: 0x0007e140
 void try_bonus_level(void)

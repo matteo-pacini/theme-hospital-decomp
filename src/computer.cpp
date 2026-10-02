@@ -64,8 +64,9 @@ extern char **computer_names;
 }
 
 // Single player: fills the free hospital slots (allhosps.player_type 0) with computer
-// players (f2a 2), first those computer[] marks (f8), then random unused ones,
-// giving each its name, personality (f1245) and strategy (f1244, f1240).
+// players (player_type 2), first those computer[].playing marks, then random
+// unused ones, giving each its name, computer[] entry (ai_index) and strategy
+// (strategy, strategy_step).
 // FUNCTION: 0x0004e760
 void setup_computer_players(void)
 {
@@ -164,7 +165,7 @@ void computer_day(void)
 }
 
 // Month end for computer players: adds the simulated results to each one's
-// hospital and pays its wages (f1234). Single player only.
+// hospital and pays its wages (wage_bill). Single player only.
 // FUNCTION: 0x0004eae0
 void computer_month(void)
 {
@@ -182,7 +183,7 @@ void computer_month(void)
     }
 }
 
-// Runs each computer player whose next action time (f11f8) has come: carries
+// Runs each computer player whose next action time (next_action_turn) has come: carries
 // out its pending action (employ, build, buy objects, loan) or, with none,
 // takes its next strategy step (computer_decision), then sets the time of the
 // next one from its personality's pace. Single player only, and not during the
@@ -621,8 +622,8 @@ u8 computer_place_object(u8 obj, u8 free, u8 owner)
 }
 
 // Changes owner's loan by 5000: amount negative adds 5000 to the balance and to
-// f3d if the balance is at least 5000 and f3d is positive; amount positive
-// takes 5000 from both if f3d stays at least 5000 below the limit f41. Returns
+// loan if the balance is at least 5000 and the loan is positive; amount
+// positive takes 5000 from both if the loan stays at least 5000 below max_loan. Returns
 // 1 if done.
 // FUNCTION: 0x0004fe78
 u8 computer_loan(s8 amount, u8 owner)
@@ -646,7 +647,7 @@ u8 computer_loan(s8 amount, u8 owner)
 // Looks back over owner's strategy for the first staff hire step whose kind
 // owner now has fewer of than the strategy has hired, and makes it the pending
 // action. a 1 repeats this step next time; otherwise the position reached is
-// kept (f1242) to resume from. Always returns 0.
+// kept (recheck_step) to resume from. Always returns 0.
 // FUNCTION: 0x0004ff24
 u8 computer_recheck_actions(u8 a, u8 owner)
 {
@@ -813,7 +814,7 @@ u8 make_a_note(u16 type, s16 arg, s16 count, u8 owner)
 }
 
 // If owner has a note of type, makes it the pending action (flagging it as
-// from a note, f1202) and returns 1; else 0.
+// from a note, action_from_note) and returns 1; else 0.
 // FUNCTION: 0x000505d0
 u8 find_a_note(u16 type, u8 owner)
 {
@@ -947,7 +948,7 @@ u8 computer_free_build(u8 owner)
 }
 
 // Makes a loan change (action 4, arg -1) owner's pending action if it has a
-// loan (f3d) and more than 6000; a pending note 4 is taken (with its arg 0)
+// loan and more than 6000; a pending note 4 is taken (with its arg 0)
 // and removed instead. Returns 1 if an action was set.
 // FUNCTION: 0x00050aa8
 u8 computer_maintain_loan(u8 owner)

@@ -208,7 +208,7 @@ extern "C" void req6_overdraw(Requester *req)
 }
 
 // Stops the music and clears the playing and loop flags (othervar.music_playing,
-// fa50).
+// loop_track).
 // FUNCTION: 0x0008ee10
 void stop_midi(void)
 {

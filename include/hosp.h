@@ -53,8 +53,8 @@ struct RoomInfo {
     u8 type;
     s8 width;
     s8 height;
-    // 0x3: <0 free slot, 0 normal, 1 staffed, 3 blueprint, 4 being edited, 5
-    // machine awaiting repair, 6 broken.
+    // 0x3: <0 free slot, 0 in use, 1 in use (set by nurse_in_ward), else
+    // RS_*: 3 blueprint, 4 being edited, 5 repair due, 6 closed.
     s8 state;
     u16 door_tile;
     u16 door_inside_tile;
@@ -508,8 +508,8 @@ struct Thing {
             // 0x8d: they work only on turns divisible by work_delay + 1.
             u8 work_delay;
             u8 pad8e_[2];
-            // 0x90: 1 for nurses and receptionists, 0 for handymen, random
-            // for doctors; presumably the gender. Only written.
+            // 0x90: Gender: 1 for nurses and receptionists, 0 for handymen,
+            // 1 for 53% of doctors. Only written.
             u8 female;
             u8 pad91_[0xd];
             // 0x9e, handymen: priorities for cleaning, watering, repairs.
@@ -811,7 +811,9 @@ struct BuildState {
     u8 drag;
     // 0xd: Room type (ROOM_*) being built.
     u8 room_type;
-    // 0xe: Set to 1 when a blueprint drag starts.
+    // 0xe: How draw_overdrawn_blueprints draws x0,y0..x1,y1: 1 every frame
+    // (a blueprint being laid out), 2 for one frame and then back to 0 (the
+    // room under the pointer while editing), 0 not at all.
     u8 draw_mode;
     // 0xf: Tile where the door is being placed.
     u16 door_tile;
@@ -1363,16 +1365,19 @@ struct ObjectControl {
     u16 when_avail;
     // 0xe: start[] index of the object's frames, plus the facing.
     u16 anim_start;
-    // 0x10: Not read by the game code.
+    // 0x10: start[] index of the object's picture in the build room and buy
+    // object requesters.
     u16 preview_anim;
-    // 0x12: Not read by the game code.
+    // 0x12: Animation sequence a handyman plays while repairing the machine,
+    // 0 for none.
     u16 repair_aniseq;
     // 0x14: Object category; placing one of category 7 counts as a reception
     // desk for the AI (computer_place_object).
     u8 category;
     // 0x15: Copied to Thing.use_style when the object is created.
     u8 use_style[1];
-    // 0x16: Not read by the game code.
+    // 0x16: Group of four object_walls[] entries (one per facing) for the invisible
+    // walls mark_object_shape puts round the object, or -1 for none.
     s8 walls;
     // 0x17: next_part[] index of the second part of a two-part object, or -1.
     s8 next_part_index;
@@ -1982,7 +1987,9 @@ struct Game {
         u8 quake_strength;
         s8 quake_strength_s;
     };
-    u8 quake_shake_chance;
+    // Each turn of a quake, a 1 in quake_step_chance chance that the amplitude
+    // steps up (or down) instead of the view shaking.
+    u8 quake_step_chance;
     s8 quake_amplitude;
     u8 quake_shake_index;
     union {
@@ -2720,6 +2727,8 @@ struct NonResettingAdvisorCounts {
     // 0xb: Sum of the plants' health, at most 0x37 per plant; divided by plants
     // for the averages.
     s32 plant_health_sum;
+    // 0xf: Gates advice 0x63, which quotes last_quake_size; cleared when given
+    // and never set.
     u8 quake_damage_report;
     // 0x10: Rooms opened and not since deleted.
     u8 open_rooms;
@@ -2774,7 +2783,8 @@ struct Advisor {
     // 0x11e: Animation state (advisor_anims, next_advisor_state index).
     u8 anim_state;
     // 0x11f: Bit 0: tutorial running; bit 1: the cursor tile is invalid for
-    // building; bit 2: the room is too small.
+    // building; bit 2: the room is too small; bit 4: the room being edited
+    // has its compulsory objects.
     u8 flags;
     // 0x120: Control the tutorial is pointing at (panel button 0x10..0x1b, or a
     // requester control).
@@ -2830,8 +2840,8 @@ struct SampleInfo;
  * saved.
  */
 struct General {
-    // 0x0: Random 0..99 rolled each turn by start_turn; staff code re-rolls it
-    // before each test.
+    // 0x0: Random 0..99 rolled each turn by start_turn; staff, reception,
+    // examination and contagion code re-roll it before each test.
     s16 rand_pct;
     u8 unknown2[0xc];
     // 0xe: Random 0..5 rolled each turn: a patient this many tiles from a queue
@@ -2954,7 +2964,7 @@ struct General {
     u16 winlose_result;
     union {
         // 0x74: Money offered for the next level after a win; becomes the next
-        // hospital's f2d.
+        // hospital's score.
         u32 next_level_offer;
         // 0x74: Signed view of next_level_offer.
         s32 next_level_offer_s;
@@ -3031,7 +3041,8 @@ struct General {
     // 0x8ac: Current help hotspot (resvars.help_hotspots index), 0 none.
     u16 help_hotspot;
     // 0x8ae: Countdown decremented each turn while positive; cleared when a
-    // receptionist finishes or abandons calling a patient.
+    // receptionist finishes or abandons calling a patient. Nothing sets it
+    // above 0.
     s16 recept_call_timer;
     // 0x8b0: Set while the fast-forward key is held; turns run without the
     // speed delay.
@@ -3124,7 +3135,7 @@ struct General {
     u8 unknown9e3[0x1];
     // 0x9e4: 1 while the hall of fame (not shame) is on screen.
     u8 showing_fame;
-    // 0x9e5: Pixels added around a rat's box for a near miss (sets f71).
+    // 0x9e5: Pixels added around a rat's box for a near miss (sets near_rat).
     u16 rat_near_margin;
     // 0x9e7: Pixels around a rat's sprite box that still count as a hit;
     // widened by rat power-ups.
@@ -3144,7 +3155,7 @@ struct General {
     // 0x9f1: Step for held +/- buttons (drug price, research allocation), 8.8
     // fixed point; grows while held, 0x100 after release.
     u16 repeat_step;
-    // 0x9f3: Clock (f8a2) at the last held-button step.
+    // 0x9f3: Clock (clock_ms) at the last held-button step.
     u32 repeat_time;
     // 0x9f7: Palette colour of the bank manager's text underline.
     u8 manager_line_colour;
@@ -3461,9 +3472,11 @@ struct AwardCounts {
     s32 mayor_score_total;
     // 0x13e: Mayor visits this year.
     u8 mayor_visits;
-    // 0x13f: Emergencies this year; the emergency award needs more than 2.
+    // 0x13f: Emergencies this year, for the emergency award (which needs
+    // more than 2); nothing writes it, so that award is never given.
     u8 emergencies;
-    // 0x140: Percentage of emergency patients saved this year.
+    // 0x140: Percentage of emergency patients saved this year, for the
+    // emergency award; nothing writes it.
     s32 emergency_saved_pct;
     // 0x144: Set when a machine blew up; forces the poor machines award.
     u8 machine_exploded;
@@ -3623,11 +3636,11 @@ struct AdvisorCounts {
             // 0x24: Patients counted per illness.
             u8 illness_counts[0x26];
             u8 unknown4ae_[4];
-            // 0x4e: Per-staff-kind patient waiting sums; person_count adds
-            // every patient to all five.
+            // 0x4e: Patient waiting-time sums; person_count adds each of the
+            // local player's indoor patients to all five. Only [0] (nurse
+            // advice) and [1] (doctor advice) are read.
             s32 wait_sums[5];
-            // 0x62: Per-staff-kind patient counts; person_count adds every
-            // patient to all five.
+            // 0x62: Patient counts matching wait_sums, kept the same way.
             s32 wait_counts[5];
             u8 unknown76e_[0xe];
             // 0x84: Sum of happiness per staff kind (STAFF_*).
@@ -3710,7 +3723,7 @@ struct ScoreRatings {
     // 0x2: Score growth in hundredths of a percent.
     u16 growth;
     // 0x4: Score growth used once the score is over 1000000 or over
-    // score_max_inc percent of the hospital's reference value.
+    // gbv.score_max_inc percent of the hospital's start_score.
     u16 capped_growth;
 };
 

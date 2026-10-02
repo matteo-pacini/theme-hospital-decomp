@@ -342,7 +342,7 @@ void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u1
 }
 
 // Counts the reference texts (general, good and bad, each list ending at
-// ".") into statvar.ref_general_count-f5db.
+// ".") into statvar.ref_general_count to ref_bad_count.
 // FUNCTION: 0x00087fb8
 void setup_req4_references(void)
 {

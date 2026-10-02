@@ -725,7 +725,7 @@ void req12_overdraw(Window *win)
 }
 
 // Opens the staff demand requester for a staff member who wants to leave,
-// choosing the request (crequester.kind, amount in unknown6): a rival's
+// choosing the request (crequester.kind, amount in arg2): a rival's
 // offer (9), quitting after many requests (2), their wage demand plus 10%
 // (7), or 10-30% of their salary (3/4 when tired, 5/6 by happiness, else 8).
 // FUNCTION: 0x0006bda8

@@ -54,7 +54,7 @@ void spread_epidemic(Thing *carrier, u16 warmth)
 }
 
 // Composes the epidemic fax for the local player from strs: the illness
-// (myhosp->epidemic_illness), the number of contagious patients (f203), and the choices.
+// (myhosp->epidemic_illness), the fine (myhosp->epidemic_fine), and the choices.
 // FUNCTION: 0x000a0240
 void declare_epidemic(char **strs)
 {
@@ -164,8 +164,8 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
 }
 
 // Counts down owner's epidemic cover-up (allhosps.epidemic_active): it ends when no
-// contagious patient is left or time (f207) runs out. On ending, clears the
-// cover-up and sets f20e. Returns 1 if it ended this call.
+// contagious patient is left or time (epidemic_timer) runs out. On ending, clears
+// the cover-up and sets epidemic_over. Returns 1 if it ended this call.
 // FUNCTION: 0x000a0654
 u32 epidemic_status(u8 owner)
 {

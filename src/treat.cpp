@@ -62,7 +62,7 @@ void affect_diagnosis(Thing *staff, Thing *patient)
 // treatment's kind: home, back to the GP, cured (or killed after a wrong
 // guess), diagnosed, or on to the next treatment. When diagnosis is
 // inconclusive, guesses the illness or gives up by the hospital's policy
-// thresholds (f219, f21b). Then sets up the next state
+// thresholds (guess_cure_threshold, send_home_threshold). Then sets up the next state
 // (next_treatment_now_setup).
 // FUNCTION: 0x0003c4ec
 void setup_next_treatment(Thing *staff, Thing *patient)

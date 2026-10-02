@@ -1860,7 +1860,7 @@ void process_turn(void)
             }
             replace_machine(&thing[D_001549d0[i].value]);
             break;
-        case EV_ANNOUNCE:
+        case EV_OPEN_HOSPITAL:
             allhosps[i].opening_countdown = 0;
             if (statvar.num_players <= 1) {
                 allhosps[i].hospital_open = 1;

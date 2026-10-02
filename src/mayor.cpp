@@ -47,7 +47,7 @@ void process_mayor_start_buttons(u8 button)
 
 // Daily VIP check: once a hospital with a reception desk has waited gbv.mayor_launch
 // days, asks it to accept a random VIP (allhosps.mayor_state = 1). An accepted
-// visit (f1fa 2) starts at its time with create_mayor (f1fa 3).
+// visit (mayor_state 2) starts at its time with create_mayor (mayor_state 3).
 // FUNCTION: 0x000a0cac
 void generate_mayors(void)
 {
@@ -113,7 +113,7 @@ void generate_mayors(void)
 }
 
 // Creates the visiting VIP for player `owner` at one of the hospital's four
-// entry points (unknown1cf), walking to the reception desk, or straight back
+// entry points (allhosps.entrances), walking to the reception desk, or straight back
 // out with verdict 14 if there is none. Returns the thing index, 0 if no
 // thing was free.
 // FUNCTION: 0x000a0f6c
@@ -198,9 +198,9 @@ void mayor_pauses(Thing *mayor)
         satisfied_net_criteria(2, mayor->owner);
 }
 
-// Scores player `owner`'s hospital for a VIP visit (staff tiredness, room
-// warmth, doctor grades, rooms, a random part) and returns the verdict, a
-// mayor_result index 0-14.
+// Scores player `owner`'s hospital for a VIP visit (litter, staff tiredness,
+// patients' warmth, doctor grades, rooms, a random part) and returns the
+// verdict, a mayor_result index 0-14.
 // FUNCTION: 0x000a13a4
 u8 mayor_judges_hospital(u8 owner)
 {
@@ -329,8 +329,9 @@ void mayor_gone(Thing *mayor)
     remove_thing(mayor);
 }
 
-// Draws the VIP report: strs[0-4] and the verdict text strs[f1fb + 5], with
-// the cash award and reputation change when there are any.
+// Draws the VIP report: strs[0-4] and the verdict text strs[mayor_verdict + 5], with
+// the cash award when there is one and the reputation line for
+// REP_VIP_GOOD and REP_VIP_BAD verdicts (not REP_VIP_FAIR).
 // FUNCTION: 0x000a17e8
 void report_mayor_result(u8 owner, char **strs)
 {

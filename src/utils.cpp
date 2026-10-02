@@ -116,7 +116,7 @@ void remove_thing(Thing *target)
 }
 
 // Counts the tiles player `owner` owns into allhosps.area (not for a
-// hospital with f2a 2).
+// hospital with player_type 2).
 // FUNCTION: 0x00019a1c
 void count_hospital_area(u16 owner)
 {
@@ -238,7 +238,7 @@ void screen_shot(void)
 }
 
 // Returns a random room of type kind of player `owner` (mode 0x65: any;
-// otherwise only rooms not in use, f3 0), or 0 if none.
+// otherwise only rooms not in use, state 0), or 0 if none.
 // FUNCTION: 0x00019ef8
 RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
 {
@@ -263,7 +263,7 @@ RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
     return list[old_newrand() % count];
 }
 
-// Returns player `owner`'s first room of type kind not in use (f3 0); with
+// Returns player `owner`'s first room of type kind not in use (state 0); with
 // mode 0x65 the first of the kind at all, with mode 0x64 else the last of
 // the kind. Returns room_info (the null room), not 0, if none is found.
 // FUNCTION: 0x00019fe0
@@ -296,7 +296,7 @@ RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner)
 }
 
 // Returns the nearest room of type kind of person's owner that is usable
-// (f3 0 or 1) to person, or 0.
+// (state 0 or 1) to person, or 0.
 // FUNCTION: 0x0001a0a0
 RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
 {
@@ -361,7 +361,8 @@ void cheat(u32 flags)
 }
 
 // Sets mouse mode `mode` (gamevar.mouse_mode, MM_*) and its pointer sprite
-// (othervar.pointer_sprite), unless the mouse is on a window.
+// (othervar.pointer_sprite), and shows that pointer unless mouse_was_on_window
+// is set, which it clears instead.
 // FUNCTION: 0x0001a374
 void set_mouse_mode(const u8 mode)
 {
@@ -726,9 +727,9 @@ void vary_speed(s16 speed)
     }
 }
 
-// Notes the time (othervar.clock_ms into f8b2) when the player becomes idle: no
-// windows, no full-screen window, no debug display. othervar.user_idle holds
-// whether they are.
+// Notes the time (othervar.clock_ms into othervar.idle_since) when the player
+// becomes idle: no windows open, the game screen showing and help not
+// suppressed (debug.suppress_help). othervar.user_idle holds whether they are.
 // FUNCTION: 0x0001afd8
 void compute_whether_user_not_busy(void)
 {
@@ -741,7 +742,7 @@ void compute_whether_user_not_busy(void)
 }
 
 // Returns how well furnished room is: its size plus the objects beyond the
-// required ones (and half its f1b), never below 0; 0 for an invalid room.
+// required ones (and half its windows), never below 0; 0 for an invalid room.
 // Used as a diagnosis bonus.
 // FUNCTION: 0x0001b050
 u32 calc_room_value(RoomInfo *room)

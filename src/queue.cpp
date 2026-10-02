@@ -92,8 +92,8 @@ void back_queue(const u16 room_id, const u16 pos)
 }
 
 // Appends person to room's queue, leaving any queue they were in. Counts
-// them in the queue length (unknown31) and no longer as on the way
-// (unknown32).
+// them in the queue length (queue_length) and no longer as on the way
+// (queue_incoming).
 // FUNCTION: 0x0004af50
 void join_queue(Thing *person, RoomInfo *room)
 {
@@ -373,7 +373,7 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
     }
 }
 
-// Returns the free places (capacity f1e minus queue length, and minus those
+// Returns the free places (queue_capacity minus queue length, and minus those
 // on the way if waiting is set) in room, or, with room 0, in the first of
 // player `owner`'s rooms for illness type that has any. 0 if none.
 // FUNCTION: 0x0004b988

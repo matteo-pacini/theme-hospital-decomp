@@ -310,7 +310,7 @@ void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
 
 // Menu bar mouse handling: on a release over an item of the open menu,
 // toggles its check flag, sends its key and calls its callback (othervar.pulldown_arg
-// = the item's arg, f90 = its index); while held, opens the menu or submenu
+// = the item's arg, othervar.pulldown_item = its index); while held, opens the menu or submenu
 // under the mouse. Closes the menu when the button is up.
 // FUNCTION: 0x0008add8
 extern "C" void process_menus(void)

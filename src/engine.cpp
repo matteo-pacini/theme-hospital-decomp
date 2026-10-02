@@ -357,7 +357,7 @@ void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h)
 
 // Prepares the scan of the map cells covering screen rectangle x,y to w,h
 // (right and bottom edges) in view window win, row by row from the top: sets
-// info.scan_cell to f24 to the first cell, its screen position, the row length, the
+// info.scan_cell to info.full_lines to the first cell, its screen position, the row length, the
 // row counts for floors and for walls and things (taller), and how rows
 // alternate.
 // FUNCTION: 0x000a7a0c

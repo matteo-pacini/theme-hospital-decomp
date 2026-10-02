@@ -35,7 +35,7 @@ void display_awards(void);
 // Switches the display to the year-end screens (display_mode 8), saving the
 // current screen state to restore afterwards (from the choice screen's backup
 // if one is showing). Places on the map each hospital's staff member held in
-// allhosps.held_staff (at tile f11f6) and clears the awards and trophies to show.
+// allhosps.held_staff (at tile held_staff_tile) and clears the awards and trophies to show.
 // FUNCTION: 0x000b4980
 void start_year_end(void)
 {

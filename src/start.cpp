@@ -96,7 +96,7 @@ extern "C" void start_game(void)
 }
 
 // Starts level `level` (1-14; others play as 1) for this player: clears the
-// game state (keeping the hospital's name, level, simulation flag and
+// game state (keeping the hospital's name, level, player_type and
 // score), reloads the balance files if reload_balance is set, loads the
 // map, builds a rat or training level, and sets up the players, staff,
 // visitors, insurers, rivals, disasters and music.
@@ -193,8 +193,7 @@ void setup_new_level(int level, u8 reload_balance)
     close_irequesters();
 }
 
-// Copies a hospital's name, level (f29), simulation flag (f2a) and score
-// (f2d) from src to dst.
+// Copies a hospital's name, level, player_type and score from src to dst.
 // FUNCTION: 0x00090c8c
 void copy_my_hosp(AllHosps *dst, AllHosps *src)
 {

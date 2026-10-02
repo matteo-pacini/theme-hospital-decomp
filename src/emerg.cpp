@@ -51,7 +51,7 @@ u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim);
 // accepted an emergency (allhosps.emergency_state 5, then 3 once summoned, or 0 if no
 // thing was free); when the next scheduled emergency is due (and some hospital
 // has seen its illness) offers it to every active hospital by fax, then
-// schedules the following one; counts down the waits (f1e2 above 5).
+// schedules the following one; counts down the waits (emergency_state above 5).
 // FUNCTION: 0x000aeec0
 void try_to_generate_emergency(void)
 {
@@ -107,7 +107,7 @@ void try_to_generate_emergency(void)
 // Returns 1 if the scheduled emergency (gamevar.next_emergency_turn) is due, statvar.illness_kind_count is
 // set, fewer than 4 offers are outstanding, and no active hospital has an
 // emergency call (type 3) pending, allhosps.epidemic_active set, an emergency running
-// (f1e2), or, in single player, unknown1256 clear; else 0. Never while a single
+// (emergency_state), or, in single player, hospital_open clear; else 0. Never while a single
 // player is viewing an epidemic fax.
 // FUNCTION: 0x000af118
 u32 check_emergency_criteria(void)
