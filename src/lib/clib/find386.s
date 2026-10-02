@@ -19,7 +19,7 @@
     int 0x21
     call "__doserror_"
     mov edx, ebx
-    call "fn_000d1264_"
+    call "find386_copy_dta_out"
     pop ecx
     ret
 .size "_dos_findfirst_",.-"_dos_findfirst_"
@@ -35,11 +35,11 @@
     mov edx, eax
     mov ah, 0x1a
     int 0x21
-    call "fn_000d1287_"
+    call "find386_copy_dta_in"
     mov ah, 0x4f
     int 0x21
     call "__doserror_"
-    call "fn_000d1264_"
+    call "find386_copy_dta_out"
     pop edx
     ret
 .size "_dos_findnext_",.-"_dos_findnext_"
@@ -55,13 +55,13 @@
     ret
 .size "_dos_findclose_",.-"_dos_findclose_"
 
-// fn_000d1264: under CodeBuilder (_Extender 9), copy the 43-byte DTA into the caller's find buffer edx.
+// find386_copy_dta_out: under CodeBuilder (_Extender 9), copy the 43-byte DTA into the caller's find buffer edx.
 // FUNCTION: 0x000d1264
 
 .section _TEXT,"ax",@progbits,unique,856676
-.globl "fn_000d1264_"
-.type "fn_000d1264_",@function
-"fn_000d1264_":
+.globl "find386_copy_dta_out"
+.type "find386_copy_dta_out",@function
+"find386_copy_dta_out":
     cmp byte ptr ["__Extender"], 9
     jne .L000d1286
     push eax
@@ -82,15 +82,15 @@
     pop eax
 .L000d1286:
     ret
-.size "fn_000d1264_",.-"fn_000d1264_"
+.size "find386_copy_dta_out",.-"find386_copy_dta_out"
 
-// fn_000d1287: under CodeBuilder (_Extender 9), copy the caller's find buffer edx into the DTA.
+// find386_copy_dta_in: under CodeBuilder (_Extender 9), copy the caller's find buffer edx into the DTA.
 // FUNCTION: 0x000d1287
 
 .section _TEXT,"ax",@progbits,unique,856711
-.globl "fn_000d1287_"
-.type "fn_000d1287_",@function
-"fn_000d1287_":
+.globl "find386_copy_dta_in"
+.type "find386_copy_dta_in",@function
+"find386_copy_dta_in":
     cmp byte ptr ["__Extender"], 9
     jne .L000d12a9
     push eax
@@ -111,4 +111,4 @@
     pop eax
 .L000d12a9:
     ret
-.size "fn_000d1287_",.-"fn_000d1287_"
+.size "find386_copy_dta_in",.-"find386_copy_dta_in"

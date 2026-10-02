@@ -30,7 +30,7 @@ extern "C" {
 extern Event D_001549d0[];
 extern char **town_names;
 extern char **town_details;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern Menu overview;
 extern Menu choice;
 void LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
@@ -1252,7 +1252,7 @@ extern "C" void draw_bid_text(void)
             y = 0x11c;
             break;
         }
-        if (D_001609c4[i].active) {
+        if (player_info[i].active) {
             sprintf(big, "%s", allhosps[i].name);
             sprintf(small, "%ld", plotbid.bids[i]);
             if (i == plotbid.bidder) {
@@ -1361,7 +1361,7 @@ void draw_money_on_town(void)
         if (othervar.balance_roll_step == 4) {
             othervar.balance_roll_step = 0;
             othervar.shown_balance = myhosp->balance;
-            D_00156910 = 1;
+            redraw_panel = 1;
         }
     } else {
         LbTextSetClipWindow(resvars.screen_boxes_TownViewp->balance_clip_x,

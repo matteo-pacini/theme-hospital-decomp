@@ -12,7 +12,7 @@
     push ebx
     push ds
     push edx
-    call "fn_000ecd9a_"
+    call "int386x_do_int"
     push ds
     push edi
     mov ebp, esp
@@ -37,15 +37,15 @@
     ret
 .size "__int386x_",.-"__int386x_"
 
-// fn_000ecd9a: load the registers from in_regs and segregs and "return" into the int-n stub for interrupt esi (whose ret comes back to __int386x).
+// int386x_do_int: load the registers from in_regs and segregs and "return" into the int-n stub for interrupt esi (whose ret comes back to __int386x).
 // FUNCTION: 0x000ecd9a
 
 .section _TEXT,"ax",@progbits,unique,970138
-.globl "fn_000ecd9a_"
-.type "fn_000ecd9a_",@function
-"fn_000ecd9a_":
+.globl "int386x_do_int"
+.type "int386x_do_int",@function
+"int386x_do_int":
     lea esi, [esi + esi*2]
-    lea eax, cs:[esi + "fn_000ece0c_"+0x34]
+    lea eax, cs:[esi + "dointr_do_int"+0x34]
     push eax
     mov es, word ptr [ebx]
     mov bp, word ptr [ebx + 6]
@@ -57,7 +57,7 @@
     mov edi, dword ptr [edi + 0x14]
     mov ds, ebp
     ret
-.size "fn_000ecd9a_",.-"fn_000ecd9a_"
+.size "int386x_do_int",.-"int386x_do_int"
 
 // _DoINTR: issue interrupt intno with every register, segment register and the flags taken from and stored back to the REGPACK at edx.
 // FUNCTION: 0x000ecdbf
@@ -72,7 +72,7 @@
     push es
     push ds
     push edx
-    call "fn_000ece0c_"
+    call "dointr_do_int"
     push ebx
     push ds
     push ebp
@@ -102,13 +102,13 @@
     ret
 .size "_DoINTR_",.-"_DoINTR_"
 
-// fn_000ece0c: load the registers from the REGPACK at edx and "return" into the int-n stub for interrupt al; the stub table follows.
+// dointr_do_int: load the registers from the REGPACK at edx and "return" into the int-n stub for interrupt al; the stub table follows.
 // FUNCTION: 0x000ece0c
 
 .section _TEXT,"ax",@progbits,unique,970252
-.globl "fn_000ece0c_"
-.type "fn_000ece0c_",@function
-"fn_000ece0c_":
+.globl "dointr_do_int"
+.type "dointr_do_int",@function
+"dointr_do_int":
     and eax, 0xff
     lea eax, [eax + eax*2]
     lea eax, cs:[eax + .L000ece40]
@@ -641,4 +641,4 @@
     .byte 0xc3
     .byte 0xcd; .byte 0xff
     .byte 0xc3
-.size "fn_000ece0c_",.-"fn_000ece0c_"
+.size "dointr_do_int",.-"dointr_do_int"

@@ -36,7 +36,7 @@ void draw_glass_text(SlistButton *button, char *text);
 extern "C" {
 extern u8 *palette;
 extern u16 col;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 
 void strcat(char *dst, char *src);
 void keybuffer_clear(void);
@@ -120,7 +120,7 @@ void draw_load_game(void)
                     set_mouse_mode(MM_NORMAL);
                     LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                     display_mode = DM_GAME;
-                    D_00156910 = 1;
+                    redraw_panel = 1;
                     set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width,
                                                     lbDisplay.physical_screen_height, 3);
                     draw_it();

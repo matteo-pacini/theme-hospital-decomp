@@ -61,7 +61,7 @@ extern char **object_names;
 extern char **illness_text;
 extern char **research_names;
 extern char **real_room_names;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern char **forced_advice_text;
 extern char **mouse_advice_text;
 }
@@ -89,7 +89,7 @@ void display_advisor(void)
                             advisor_character();
                             if (advisor_up_states[advisor.anim_state]) {
                                 advisor_text_box();
-                                D_00156910 = 1;
+                                redraw_panel = 1;
                             }
                         } else {
                             return;
@@ -127,7 +127,7 @@ void display_advisor(void)
                         if (advisor_up_states[advisor.anim_state]) {
                             if (advisor.advice_id && !othervar.dismiss_advisor) {
                                 advisor_text_box();
-                                D_00156910 = 1;
+                                redraw_panel = 1;
                             } else if (--advisor.time_left <= 0 || othervar.dismiss_advisor) {
                                 othervar.dismiss_advisor = 0;
                                 advisor.time_left = -1;

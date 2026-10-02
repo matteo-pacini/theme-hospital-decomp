@@ -1687,7 +1687,7 @@ struct ToDraw {
 
 /*
  * The refresh box that follows refresh in memory is declared separately as
- * D_001567b0; x0 is reached through refresh where the code loads it as the
+ * frame_bounds; x0 is reached through refresh where the code loads it as the
  * low half of a dword.
  */
 struct Refresh {
@@ -1701,7 +1701,7 @@ struct Refresh {
             s16 scroll_y;
         };
     };
-    // 0x4: The first word of the refresh box D_001567b0 declared after refresh.
+    // 0x4: The first word of the refresh box frame_bounds declared after refresh.
     s16 x0;
 };
 
@@ -5159,21 +5159,6 @@ u16 find_next_emergency_person(u16 id, u32 flags);
 #pragma aux find_next_emergency_person "W?find_next_emergency_person$n(us)us"
 void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type);
 #pragma aux set_award_value "W?set_award_value$n(xucxucxucxsuc)v"
-}
-
-/*
- * Globals the retail code uses with a different type or layout from the
- * demo global that config/symbols.txt places at their address.
- */
-extern "C" {
-
-struct PlayerSlot {
-    s32 active;
-    u8 unknown4[0x20];
-};
-
-extern PlayerSlot D_001609c4[];
-#pragma aux D_001609c4 "_D_001609c4"
 }
 
 #endif

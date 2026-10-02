@@ -21,7 +21,7 @@
 .L000ef0b9:
     or ebp, ebp
     je .L000ef0c2
-    call "fn_000ef0d8_"
+    call "emu_install_int7"
 .L000ef0c2:
     wait
     fninit
@@ -37,13 +37,13 @@
     ret
 .size "__sys_init_387_emulator",.-"__sys_init_387_emulator"
 
-// fn_000ef0d8: install the emulator's INT 7 (device not available) handler and enable FPU emulation, by the method the DOS extender needs.
+// emu_install_int7: install the emulator's INT 7 (device not available) handler and enable FPU emulation, by the method the DOS extender needs.
 // FUNCTION: 0x000ef0d8
 
 .section _TEXT,"ax",@progbits,unique,979160
-.globl "fn_000ef0d8_"
-.type "fn_000ef0d8_",@function
-"fn_000ef0d8_":
+.globl "emu_install_int7"
+.type "emu_install_int7",@function
+"emu_install_int7":
     mov byte ptr [_D_00150814], 3
     mov byte ptr [_D_00151b54], 1
     .byte 0x66; .byte 0x0f; .byte 0x01; .byte 0x25; .long _D_00151b52  # smsw word ptr [0x31b52]
@@ -55,11 +55,11 @@
     add esp, 8
     cmp byte ptr ["__X32VM"], 0
     je .L000ef12a
-    call "fn_000ef1a3_"
+    call "emu_int7_gate"
     .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_0014d5da  # mov es, word ptr [0x2d5da]
     mov dword ptr es:[ebx], edx
     mov dword ptr es:[ebx + 4], ecx
-    call "fn_000ef20d_"
+    call "pharlap_set_cr0_em"
     jmp .L000ef1a2
 .L000ef12a:
     cmp byte ptr ["__Extender"], 0
@@ -78,7 +78,7 @@
 .L000ef14e:
     cmp byte ptr ["__Extender"], 9
     jne .L000ef176
-    call "fn_000ef1a3_"
+    call "emu_int7_gate"
     mov dword ptr [ebx], edx
     mov dword ptr [ebx + 4], ecx
     mov eax, 0xe02
@@ -99,18 +99,18 @@
     call "__hook387"
     cmp al, 1
     je .L000ef1a2
-    call "fn_000ef1c0_"
+    call "pharlap_install_emu"
 .L000ef1a2:
     ret
-.size "fn_000ef0d8_",.-"fn_000ef0d8_"
+.size "emu_install_int7",.-"emu_install_int7"
 
-// fn_000ef1a3: build an interrupt-gate descriptor (edx:ecx) for the emulator's INT 7 handler in the current code segment.
+// emu_int7_gate: build an interrupt-gate descriptor (edx:ecx) for the emulator's INT 7 handler in the current code segment.
 // FUNCTION: 0x000ef1a3
 
 .section _TEXT,"ax",@progbits,unique,979363
-.globl "fn_000ef1a3_"
-.type "fn_000ef1a3_",@function
-"fn_000ef1a3_":
+.globl "emu_int7_gate"
+.type "emu_int7_gate",@function
+"emu_int7_gate":
     lea ecx, ["__int7_X32VM"+0x330]
     mov dx, cs
     shl edx, 0x10
@@ -120,15 +120,15 @@
     shl cx, 0xd
     or ch, 0x8e
     ret
-.size "fn_000ef1a3_",.-"fn_000ef1a3_"
+.size "emu_int7_gate",.-"emu_int7_gate"
 
-// fn_000ef1c0: Phar Lap: save the INT 7 vector, point it at the emulator and set CR0.EM (directly or through 2535h).
+// pharlap_install_emu: Phar Lap: save the INT 7 vector, point it at the emulator and set CR0.EM (directly or through 2535h).
 // FUNCTION: 0x000ef1c0
 
 .section _TEXT,"ax",@progbits,unique,979392
-.globl "fn_000ef1c0_"
-.type "fn_000ef1c0_",@function
-"fn_000ef1c0_":
+.globl "pharlap_install_emu"
+.type "pharlap_install_emu",@function
+"pharlap_install_emu":
     mov cl, 7
     mov ax, 0x2502
     int 0x21
@@ -144,7 +144,7 @@
     lea edx, ["__int7_X32VM"+0x2c0]
     int 0x21
     pop ds
-    call "fn_000ef20d_"
+    call "pharlap_set_cr0_em"
     jmp .L000ef20c
 .L000ef1f7:
     lea edx, ["__int7_X32VM"+0x330]
@@ -156,15 +156,15 @@
     mov cr0, ecx
 .L000ef20c:
     ret
-.size "fn_000ef1c0_",.-"fn_000ef1c0_"
+.size "pharlap_install_emu",.-"pharlap_install_emu"
 
-// fn_000ef20d: Phar Lap 2535h: read CR0, set EM and clear MP, write it back.
+// pharlap_set_cr0_em: Phar Lap 2535h: read CR0, set EM and clear MP, write it back.
 // FUNCTION: 0x000ef20d
 
 .section _TEXT,"ax",@progbits,unique,979469
-.globl "fn_000ef20d_"
-.type "fn_000ef20d_",@function
-"fn_000ef20d_":
+.globl "pharlap_set_cr0_em"
+.type "pharlap_set_cr0_em",@function
+"pharlap_set_cr0_em":
     xor ebx, ebx
     lea edx, [_D_00151b0c]
     mov ax, 0x2535
@@ -174,7 +174,7 @@
     inc ebx
     int 0x21
     ret
-.size "fn_000ef20d_",.-"fn_000ef20d_"
+.size "pharlap_set_cr0_em",.-"pharlap_set_cr0_em"
 
 // __sys_fini_387_emulator: if the emulator was installed, undo the INT 7 hook and CR0 changes for the DOS extender in use.
 // FUNCTION: 0x000ef22d
@@ -193,7 +193,7 @@
     mov al, byte ptr ["__Extender"]
     cmp byte ptr ["__X32VM"], 0
     je .L000ef24f
-    call "fn_000ef2e2_"
+    call "pharlap_restore_cr0"
     jmp .L000ef29c
 .L000ef24f:
     cmp al, 9
@@ -222,7 +222,7 @@
     call "__unhook387"
     cmp al, 1
     je .L000ef29c
-    call "fn_000ef2a7_"
+    call "pharlap_remove_emu"
 .L000ef29c:
     mov byte ptr [_D_00151b54], 0
     pop edx
@@ -231,13 +231,13 @@
     ret
 .size "__sys_fini_387_emulator",.-"__sys_fini_387_emulator"
 
-// fn_000ef2a7: Phar Lap: restore the saved INT 7 vector and CR0's original EM/MP bits.
+// pharlap_remove_emu: Phar Lap: restore the saved INT 7 vector and CR0's original EM/MP bits.
 // FUNCTION: 0x000ef2a7
 
 .section _TEXT,"ax",@progbits,unique,979623
-.globl "fn_000ef2a7_"
-.type "fn_000ef2a7_",@function
-"fn_000ef2a7_":
+.globl "pharlap_remove_emu"
+.type "pharlap_remove_emu",@function
+"pharlap_remove_emu":
     mov cl, 7
     mov ax, 0x2504
     mov edx, dword ptr [_D_00151b4c]
@@ -247,7 +247,7 @@
     pop ds
     cmp byte ptr ["__Extender"], 3
     jl .L000ef2ce
-    call "fn_000ef2e2_"
+    call "pharlap_restore_cr0"
     jmp .L000ef2e1
 .L000ef2ce:
     mov ecx, cr0
@@ -257,15 +257,15 @@
     mov cr0, ecx
 .L000ef2e1:
     ret
-.size "fn_000ef2a7_",.-"fn_000ef2a7_"
+.size "pharlap_remove_emu",.-"pharlap_remove_emu"
 
-// fn_000ef2e2: Phar Lap 2535h: write CR0 back with its original EM/MP bits.
+// pharlap_restore_cr0: Phar Lap 2535h: write CR0 back with its original EM/MP bits.
 // FUNCTION: 0x000ef2e2
 
 .section _TEXT,"ax",@progbits,unique,979682
-.globl "fn_000ef2e2_"
-.type "fn_000ef2e2_",@function
-"fn_000ef2e2_":
+.globl "pharlap_restore_cr0"
+.type "pharlap_restore_cr0",@function
+"pharlap_restore_cr0":
     xor ebx, ebx
     lea edx, [_D_00151b0c]
     mov ax, 0x2535
@@ -283,7 +283,7 @@
     .byte 0xdd; .byte 0x20
     .byte 0x9b
     .byte 0xc3
-.size "fn_000ef2e2_",.-"fn_000ef2e2_"
+.size "pharlap_restore_cr0",.-"pharlap_restore_cr0"
 
 // __init_8087_: with a real FPU, install the fsave/frstor routines as __Save8087/__Rest8087; then initialise the FPU with _8087cw (__init_80x87).
 // FUNCTION: 0x000ef30c
@@ -296,8 +296,8 @@
     push edx
     cmp byte ptr [__real87], 0
     je .L000ef32d
-    .byte 0xba; .long "fn_000ef2e2_"+0x21  # mov edx, 0xdf303
-    .byte 0xbb; .long "fn_000ef2e2_"+0x26  # mov ebx, 0xdf308
+    .byte 0xba; .long "pharlap_restore_cr0"+0x21  # mov edx, 0xdf303
+    .byte 0xbb; .long "pharlap_restore_cr0"+0x26  # mov ebx, 0xdf308
     mov dword ptr ["___Save8087"], edx
     mov dword ptr ["___Rest8087"], ebx
 .L000ef32d:

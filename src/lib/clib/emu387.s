@@ -1,12 +1,12 @@
 .intel_syntax noprefix
 
-// fn_000f75a0: the emulator's constant tables (status/control/tag masks), not code; the instructions are a disassembly of data.
+// emu_constants: the emulator's constant tables (status/control/tag masks), not code; the instructions are a disassembly of data.
 // FUNCTION: 0x000f75a0
 
 .section _TEXT,"ax",@progbits,unique,1013152
-.globl "fn_000f75a0_"
-.type "fn_000f75a0_",@function
-"fn_000f75a0_":
+.globl "emu_constants"
+.type "emu_constants",@function
+"emu_constants":
     add byte ptr [eax], al
     add byte ptr [eax], al
     add byte ptr [eax], al
@@ -97,191 +97,191 @@
     .byte 0x41
     .byte 0x43
     .byte 0x87; .byte 0xdb
-.size "fn_000f75a0_",.-"fn_000f75a0_"
+.size "emu_constants",.-"emu_constants"
 
-// __int7_X32VM: the emulator's dispatch tables (addressing-mode and per-opcode handler addresses), followed by its INT 7 entry stubs, which save the registers and call fn_000f79a8.
+// __int7_X32VM: the emulator's dispatch tables (addressing-mode and per-opcode handler addresses), followed by its INT 7 entry stubs, which save the registers and call emu_execute.
 // FUNCTION: 0x000f7654
 
 .section _TEXT,"ax",@progbits,unique,1013332
 .globl "__int7_X32VM"
 .type "__int7_X32VM",@function
 "__int7_X32VM":
-    .long "fn_000f7bb8_"+0x4e
-    .long "fn_000f7bb8_"+0x54
-    .long "fn_000f7bb8_"+0x5a
-    .long "fn_000f7bb8_"+0x60
-    .long "fn_000f7bb8_"+0x110
-    .long "fn_000f7bb8_"+0x6e
-    .long "fn_000f7bb8_"+0x74
-    .long "fn_000f7bb8_"+0x7a
-    .long "fn_000f7bb8_"+0x80
-    .long "fn_000f7bb8_"+0x88
-    .long "fn_000f7bb8_"+0x90
-    .long "fn_000f7bb8_"+0x98
-    .long "fn_000f7bb8_"+0x110
-    .long "fn_000f7bb8_"+0xaa
-    .long "fn_000f7bb8_"+0xb4
-    .long "fn_000f7bb8_"+0xbc
-    .long "fn_000f7bb8_"+0xc4
-    .long "fn_000f7bb8_"+0xcd
-    .long "fn_000f7bb8_"+0xd6
-    .long "fn_000f7bb8_"+0xdf
-    .long "fn_000f7bb8_"+0x110
-    .long "fn_000f7bb8_"+0xf3
-    .long "fn_000f7bb8_"+0xfe
-    .long "fn_000f7bb8_"+0x107
-    .long "fn_000f7bb8_"+0x4e
-    .long "fn_000f7bb8_"+0x54
-    .long "fn_000f7bb8_"+0x5a
-    .long "fn_000f7bb8_"+0x60
-    .long "fn_000f7bb8_"+0x66
-    .long "fn_000f7bb8_"+0x6e
-    .long "fn_000f7bb8_"+0x74
-    .long "fn_000f7bb8_"+0x7a
-    .long "fn_000f7bb8_"+0x80
-    .long "fn_000f7bb8_"+0x88
-    .long "fn_000f7bb8_"+0x90
-    .long "fn_000f7bb8_"+0x98
-    .long "fn_000f7bb8_"+0xa0
-    .long "fn_000f7bb8_"+0xaa
-    .long "fn_000f7bb8_"+0xb4
-    .long "fn_000f7bb8_"+0xbc
-    .long "fn_000f7bb8_"+0xc4
-    .long "fn_000f7bb8_"+0xcd
-    .long "fn_000f7bb8_"+0xd6
-    .long "fn_000f7bb8_"+0xdf
-    .long "fn_000f7bb8_"+0xe8
-    .long "fn_000f7bb8_"+0xf3
-    .long "fn_000f7bb8_"+0xfe
-    .long "fn_000f7bb8_"+0x107
-    .long "fn_000f7bb8_"+0x14d
-    .long "fn_000f7bb8_"+0x23f
-    .long "fn_000f7bb8_"+0x31b
-    .long "fn_000f7bb8_"+0x40d
-    .long "fn_000f7bb8_"+0x4a7
-    .long "fn_000f7bb8_"+0x600
-    .long "fn_000f7bb8_"+0x706
-    .long "fn_000f7bb8_"+0x808
-    .long "fn_000f7bb8_"+0x16c
-    .long "fn_000f7bb8_"+0x148
-    .long "fn_000f7bb8_"+0x33a
-    .long "fn_000f7bb8_"+0x148
-    .long "fn_000f7bb8_"+0x4ca
-    .long "fn_000f7bb8_"+0x148
-    .long "fn_000f7bb8_"+0x727
-    .long "fn_000f7bb8_"+0x148
-    .long "fn_000f7bb8_"+0x18b
-    .long "fn_000f7bb8_"+0x279
-    .long "fn_000f7bb8_"+0x359
-    .long "fn_000f7bb8_"+0x447
-    .long "fn_000f7bb8_"+0x4ed
-    .long "fn_000f7bb8_"+0x63e
-    .long "fn_000f7bb8_"+0x748
-    .long "fn_000f7bb8_"+0x844
-    .long "fn_000f7bb8_"+0x1a7
-    .long "fn_000f7bb8_"+0x28a
-    .long "fn_000f7bb8_"+0x375
-    .long "fn_000f7bb8_"+0x483
-    .long "fn_000f7bb8_"+0x50d
-    .long "fn_000f7bb8_"+0x671
-    .long "fn_000f7bb8_"+0x766
-    .long "fn_000f7bb8_"+0x88c
-    .long "fn_000f7bb8_"+0x1c3
-    .long "fn_000f7bb8_"+0x29b
-    .long "fn_000f7bb8_"+0x391
-    .long "fn_000f7bb8_"+0x148
-    .long "fn_000f7bb8_"+0x52d
-    .long "fn_000f7bb8_"+0x686
-    .long "fn_000f7bb8_"+0x784
-    .long "fn_000f7bb8_"+0x8bc
-    .long "fn_000f7bb8_"+0x1e2
-    .long "fn_000f7bb8_"+0x2b9
-    .long "fn_000f7bb8_"+0x3b0
-    .long "fn_000f7bb8_"+0x5b9
-    .long "fn_000f7bb8_"+0x550
-    .long "fn_000f7bb8_"+0x148
-    .long "fn_000f7bb8_"+0x7a5
-    .long "fn_000f7bb8_"+0x8c1
-    .long "fn_000f7bb8_"+0x201
-    .long "fn_000f7bb8_"+0x2f9
-    .long "fn_000f7bb8_"+0x3cf
-    .long "fn_000f7bb8_"+0x148
-    .long "fn_000f7bb8_"+0x573
-    .long "fn_000f7bb8_"+0x6cd
-    .long "fn_000f7bb8_"+0x7c6
-    .long "fn_000f7bb8_"+0x8fb
-    .long "fn_000f7bb8_"+0x220
-    .long "fn_000f7bb8_"+0x30d
-    .long "fn_000f7bb8_"+0x3ee
-    .long "fn_000f7bb8_"+0x653
-    .long "fn_000f7bb8_"+0x596
-    .long "fn_000f7bb8_"+0x6f8
-    .long "fn_000f7bb8_"+0x7e7
-    .long "fn_000f7bb8_"+0x900
-    .long "fn_000f7bb8_"+0x956
-    .long "fn_000f7bb8_"+0x9f8
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x1009
-    .long "fn_000f7bb8_"+0x1087
-    .long "fn_000f7bb8_"+0x1122
-    .long "fn_000f7bb8_"+0x1087
-    .long "fn_000f7bb8_"+0x96b
-    .long "fn_000f7bb8_"+0xa40
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x101e
-    .long "fn_000f7bb8_"+0xa40
-    .long "fn_000f7bb8_"+0x116d
-    .long "fn_000f7bb8_"+0xa40
-    .long "fn_000f7bb8_"+0x980
-    .long "fn_000f7bb8_"+0x929
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x980
-    .long "fn_000f7bb8_"+0x10a6
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x10a6
-    .long "fn_000f7bb8_"+0x992
-    .long "fn_000f7bb8_"+0x10f6
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x992
-    .long "fn_000f7bb8_"+0x10f6
-    .long "fn_000f7bb8_"+0x11b8
-    .long "fn_000f7bb8_"+0x10f6
-    .long "fn_000f7bb8_"+0x9a4
-    .long "fn_000f7bb8_"+0xa68
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0xfaf
-    .long "fn_000f7bb8_"+0x1033
-    .long "fn_000f7bb8_"+0x10d2
-    .long "fn_000f7bb8_"+0x1241
-    .long "fn_000f7bb8_"+0x136d
-    .long "fn_000f7bb8_"+0x9b9
-    .long "fn_000f7bb8_"+0xae9
-    .long "fn_000f7bb8_"+0xf26
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x1048
-    .long "fn_000f7bb8_"+0x10e4
-    .long "fn_000f7bb8_"+0x128c
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x9ce
-    .long "fn_000f7bb8_"+0xd04
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x105d
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x12d7
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x9e3
-    .long "fn_000f7bb8_"+0xe0e
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x1072
-    .long "fn_000f7bb8_"+0x924
-    .long "fn_000f7bb8_"+0x1322
-    .long "fn_000f7bb8_"+0x924
+    .long "emu_raise_exception"+0x4e
+    .long "emu_raise_exception"+0x54
+    .long "emu_raise_exception"+0x5a
+    .long "emu_raise_exception"+0x60
+    .long "emu_raise_exception"+0x110
+    .long "emu_raise_exception"+0x6e
+    .long "emu_raise_exception"+0x74
+    .long "emu_raise_exception"+0x7a
+    .long "emu_raise_exception"+0x80
+    .long "emu_raise_exception"+0x88
+    .long "emu_raise_exception"+0x90
+    .long "emu_raise_exception"+0x98
+    .long "emu_raise_exception"+0x110
+    .long "emu_raise_exception"+0xaa
+    .long "emu_raise_exception"+0xb4
+    .long "emu_raise_exception"+0xbc
+    .long "emu_raise_exception"+0xc4
+    .long "emu_raise_exception"+0xcd
+    .long "emu_raise_exception"+0xd6
+    .long "emu_raise_exception"+0xdf
+    .long "emu_raise_exception"+0x110
+    .long "emu_raise_exception"+0xf3
+    .long "emu_raise_exception"+0xfe
+    .long "emu_raise_exception"+0x107
+    .long "emu_raise_exception"+0x4e
+    .long "emu_raise_exception"+0x54
+    .long "emu_raise_exception"+0x5a
+    .long "emu_raise_exception"+0x60
+    .long "emu_raise_exception"+0x66
+    .long "emu_raise_exception"+0x6e
+    .long "emu_raise_exception"+0x74
+    .long "emu_raise_exception"+0x7a
+    .long "emu_raise_exception"+0x80
+    .long "emu_raise_exception"+0x88
+    .long "emu_raise_exception"+0x90
+    .long "emu_raise_exception"+0x98
+    .long "emu_raise_exception"+0xa0
+    .long "emu_raise_exception"+0xaa
+    .long "emu_raise_exception"+0xb4
+    .long "emu_raise_exception"+0xbc
+    .long "emu_raise_exception"+0xc4
+    .long "emu_raise_exception"+0xcd
+    .long "emu_raise_exception"+0xd6
+    .long "emu_raise_exception"+0xdf
+    .long "emu_raise_exception"+0xe8
+    .long "emu_raise_exception"+0xf3
+    .long "emu_raise_exception"+0xfe
+    .long "emu_raise_exception"+0x107
+    .long "emu_raise_exception"+0x14d
+    .long "emu_raise_exception"+0x23f
+    .long "emu_raise_exception"+0x31b
+    .long "emu_raise_exception"+0x40d
+    .long "emu_raise_exception"+0x4a7
+    .long "emu_raise_exception"+0x600
+    .long "emu_raise_exception"+0x706
+    .long "emu_raise_exception"+0x808
+    .long "emu_raise_exception"+0x16c
+    .long "emu_raise_exception"+0x148
+    .long "emu_raise_exception"+0x33a
+    .long "emu_raise_exception"+0x148
+    .long "emu_raise_exception"+0x4ca
+    .long "emu_raise_exception"+0x148
+    .long "emu_raise_exception"+0x727
+    .long "emu_raise_exception"+0x148
+    .long "emu_raise_exception"+0x18b
+    .long "emu_raise_exception"+0x279
+    .long "emu_raise_exception"+0x359
+    .long "emu_raise_exception"+0x447
+    .long "emu_raise_exception"+0x4ed
+    .long "emu_raise_exception"+0x63e
+    .long "emu_raise_exception"+0x748
+    .long "emu_raise_exception"+0x844
+    .long "emu_raise_exception"+0x1a7
+    .long "emu_raise_exception"+0x28a
+    .long "emu_raise_exception"+0x375
+    .long "emu_raise_exception"+0x483
+    .long "emu_raise_exception"+0x50d
+    .long "emu_raise_exception"+0x671
+    .long "emu_raise_exception"+0x766
+    .long "emu_raise_exception"+0x88c
+    .long "emu_raise_exception"+0x1c3
+    .long "emu_raise_exception"+0x29b
+    .long "emu_raise_exception"+0x391
+    .long "emu_raise_exception"+0x148
+    .long "emu_raise_exception"+0x52d
+    .long "emu_raise_exception"+0x686
+    .long "emu_raise_exception"+0x784
+    .long "emu_raise_exception"+0x8bc
+    .long "emu_raise_exception"+0x1e2
+    .long "emu_raise_exception"+0x2b9
+    .long "emu_raise_exception"+0x3b0
+    .long "emu_raise_exception"+0x5b9
+    .long "emu_raise_exception"+0x550
+    .long "emu_raise_exception"+0x148
+    .long "emu_raise_exception"+0x7a5
+    .long "emu_raise_exception"+0x8c1
+    .long "emu_raise_exception"+0x201
+    .long "emu_raise_exception"+0x2f9
+    .long "emu_raise_exception"+0x3cf
+    .long "emu_raise_exception"+0x148
+    .long "emu_raise_exception"+0x573
+    .long "emu_raise_exception"+0x6cd
+    .long "emu_raise_exception"+0x7c6
+    .long "emu_raise_exception"+0x8fb
+    .long "emu_raise_exception"+0x220
+    .long "emu_raise_exception"+0x30d
+    .long "emu_raise_exception"+0x3ee
+    .long "emu_raise_exception"+0x653
+    .long "emu_raise_exception"+0x596
+    .long "emu_raise_exception"+0x6f8
+    .long "emu_raise_exception"+0x7e7
+    .long "emu_raise_exception"+0x900
+    .long "emu_raise_exception"+0x956
+    .long "emu_raise_exception"+0x9f8
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x1009
+    .long "emu_raise_exception"+0x1087
+    .long "emu_raise_exception"+0x1122
+    .long "emu_raise_exception"+0x1087
+    .long "emu_raise_exception"+0x96b
+    .long "emu_raise_exception"+0xa40
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x101e
+    .long "emu_raise_exception"+0xa40
+    .long "emu_raise_exception"+0x116d
+    .long "emu_raise_exception"+0xa40
+    .long "emu_raise_exception"+0x980
+    .long "emu_raise_exception"+0x929
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x980
+    .long "emu_raise_exception"+0x10a6
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x10a6
+    .long "emu_raise_exception"+0x992
+    .long "emu_raise_exception"+0x10f6
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x992
+    .long "emu_raise_exception"+0x10f6
+    .long "emu_raise_exception"+0x11b8
+    .long "emu_raise_exception"+0x10f6
+    .long "emu_raise_exception"+0x9a4
+    .long "emu_raise_exception"+0xa68
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0xfaf
+    .long "emu_raise_exception"+0x1033
+    .long "emu_raise_exception"+0x10d2
+    .long "emu_raise_exception"+0x1241
+    .long "emu_raise_exception"+0x136d
+    .long "emu_raise_exception"+0x9b9
+    .long "emu_raise_exception"+0xae9
+    .long "emu_raise_exception"+0xf26
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x1048
+    .long "emu_raise_exception"+0x10e4
+    .long "emu_raise_exception"+0x128c
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x9ce
+    .long "emu_raise_exception"+0xd04
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x105d
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x12d7
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x9e3
+    .long "emu_raise_exception"+0xe0e
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x1072
+    .long "emu_raise_exception"+0x924
+    .long "emu_raise_exception"+0x1322
+    .long "emu_raise_exception"+0x924
     .byte 0xfb
     .byte 0x60
     .byte 0x8b; .byte 0xec
@@ -291,7 +291,7 @@
     .byte 0x66; .byte 0x89; .byte 0x4d; .byte 0xfa
     .byte 0x8b; .byte 0x4d; .byte 0x38
     .byte 0x89; .byte 0x4d; .byte 0x0c
-    .byte 0xe8; .long "fn_000f79a8_"-.-4
+    .byte 0xe8; .long "emu_execute"-.-4
     .byte 0x1f
     .byte 0x07
     .byte 0x61
@@ -317,7 +317,7 @@
     .byte 0x06
     .byte 0x1e
     .byte 0x8c; .byte 0x54; .byte 0x24; .byte 0x02
-    .byte 0xe8; .long "fn_000f79a8_"-.-4
+    .byte 0xe8; .long "emu_execute"-.-4
     .byte 0x1f
     .byte 0x07
     .byte 0x5f
@@ -352,7 +352,7 @@
     .byte 0x06
     .byte 0x1e
     .byte 0x8c; .byte 0x54; .byte 0x24; .byte 0x02
-    .byte 0xe8; .long "fn_000f79a8_"-.-4
+    .byte 0xe8; .long "emu_execute"-.-4
     .byte 0x1f
     .byte 0x07
     .byte 0x61
@@ -360,13 +360,13 @@
     .byte 0xcf
 .size "__int7_X32VM",.-"__int7_X32VM"
 
-// fn_000f79a8: emulate the x87 instructions at the trapping CS:EIP (skipping prefixes, decoding ModR/M) one after another, returning at the first non-FPU instruction.
+// emu_execute: emulate the x87 instructions at the trapping CS:EIP (skipping prefixes, decoding ModR/M) one after another, returning at the first non-FPU instruction.
 // FUNCTION: 0x000f79a8
 
 .section _TEXT,"ax",@progbits,unique,1014184
-.globl "fn_000f79a8_"
-.type "fn_000f79a8_",@function
-"fn_000f79a8_":
+.globl "emu_execute"
+.type "emu_execute",@function
+"emu_execute":
 .L000f79a8:
     {load} mov ebp, esp
     mov esi, dword ptr [ebp + 0x38]
@@ -525,32 +525,32 @@
     .byte 0x40
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x55; .byte 0x04
     .byte 0x66; .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0xb8
-    .byte 0x2e; .byte 0x0a; .byte 0xb0; .long "fn_000f75a0_"+0xa6
+    .byte 0x2e; .byte 0x0a; .byte 0xb0; .long "emu_constants"+0xa6
     .byte 0x3e; .byte 0x66; .byte 0x89; .byte 0x55; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x6
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x6
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
     .byte 0xe9; .long .L000f79a8-.-4
     .byte 0x40
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x55; .byte 0x04
     .byte 0x66; .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0xb8
-    .byte 0x2e; .byte 0x0a; .byte 0xb0; .long "fn_000f75a0_"+0xa6
+    .byte 0x2e; .byte 0x0a; .byte 0xb0; .long "emu_constants"+0xa6
     .byte 0x3e; .byte 0x66; .byte 0x89; .byte 0x55; .byte 0x04
     .byte 0xe9; .long .L000f79a8-.-4
-.size "fn_000f79a8_",.-"fn_000f79a8_"
+.size "emu_execute",.-"emu_execute"
 
-// fn_000f7bb8: raise FPU exception al: set it in the status word and, if unmasked, call __FPE_handler(ah) with the register image copied to the stack; the addressing-mode and instruction handlers follow it.
+// emu_raise_exception: raise FPU exception al: set it in the status word and, if unmasked, call __FPE_handler(ah) with the register image copied to the stack; the addressing-mode and instruction handlers follow it.
 // FUNCTION: 0x000f7bb8
 
 .section _TEXT,"ax",@progbits,unique,1014712
-.globl "fn_000f7bb8_"
-.type "fn_000f7bb8_",@function
-"fn_000f7bb8_":
+.globl "emu_raise_exception"
+.type "emu_raise_exception",@function
+"emu_raise_exception":
     or byte ptr ds:[ebp + 4], al
     test byte ptr ds:[ebp], al
     jne .L000f7c05
@@ -704,87 +704,87 @@
 .L000f7cfe:
     .byte 0x59
     .byte 0xc3
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90cc_"-.-4
+    .byte 0xe8; .long "emu_ld_add"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9500_"-.-4
+    .byte 0xe8; .long "emu_ld_mul"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1f4-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1f4-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1a2-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1a2-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x8
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x8
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f98f6_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe8; .long "emu_float_to_ld"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f97b0_"-.-4
+    .byte 0xe8; .long "emu_ld_to_float"-.-4
     .byte 0x26; .byte 0x89; .byte 0x06
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f97b0_"-.-4
+    .byte 0xe8; .long "emu_ld_to_float"-.-4
     .byte 0x26; .byte 0x89; .byte 0x06
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
     .byte 0xb9; .byte 0x07; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x1e
     .byte 0x06
@@ -796,108 +796,108 @@
     .byte 0xf3; .byte 0xa5
     .byte 0x07
     .byte 0x1f
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x3e; .byte 0x66; .byte 0x89; .byte 0x45; .byte 0x00
     .byte 0x66; .byte 0x25; .byte 0x00; .byte 0x03
     .byte 0x66; .byte 0x3d; .byte 0x00; .byte 0x03
     .byte 0x75; .byte .L000f7e90-.-1
-    .byte 0x8d; .byte 0x15; .long "fn_000f79a8_"
+    .byte 0x8d; .byte 0x15; .long "emu_execute"
     .byte 0x3e; .byte 0x89; .byte 0x55; .byte 0x76
     .byte 0xeb; .byte .L000f7eac-.-1
 .L000f7e90:
     .byte 0x66; .byte 0x3d; .byte 0x00; .byte 0x02
     .byte 0x75; .byte .L000f7ea2-.-1
-    .byte 0x8d; .byte 0x15; .long "fn_000f79a8_"+0x170
+    .byte 0x8d; .byte 0x15; .long "emu_execute"+0x170
     .byte 0x3e; .byte 0x89; .byte 0x55; .byte 0x76
     .byte 0xeb; .byte .L000f7eac-.-1
 .L000f7ea2:
-    .byte 0x8d; .byte 0x15; .long "fn_000f79a8_"+0x134
+    .byte 0x8d; .byte 0x15; .long "emu_execute"+0x134
     .byte 0x3e; .byte 0x89; .byte 0x55; .byte 0x76
 .L000f7eac:
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0xb9; .byte 0x07; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0xdf
     .byte 0x8b; .byte 0xfe
     .byte 0x8b; .byte 0xf5
     .byte 0xf3; .byte 0xa5
     .byte 0x8b; .byte 0xfb
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x45; .byte 0x00
     .byte 0x26; .byte 0x66; .byte 0x89; .byte 0x06
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90cc_"-.-4
+    .byte 0xe8; .long "emu_ld_add"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9500_"-.-4
+    .byte 0xe8; .long "emu_ld_mul"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1f4-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1f4-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1a2-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1a2-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x8
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x8
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
     .byte 0xff; .byte 0x33
     .byte 0xff; .byte 0x73; .byte 0x04
@@ -905,98 +905,98 @@
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x55; .byte 0x00
     .byte 0x66; .byte 0x81; .byte 0xe2; .byte 0x00; .byte 0x0c
-    .byte 0xe8; .long "fn_000f99bb_"-.-4
+    .byte 0xe8; .long "emu_ld_round"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f967b_"-.-4
+    .byte 0xe8; .long "emu_ld_to_int31"-.-4
     .byte 0x26; .byte 0x89; .byte 0x06
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
     .byte 0x8f; .byte 0x43; .byte 0x06
     .byte 0x8f; .byte 0x43; .byte 0x04
     .byte 0x8f; .byte 0x03
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x55; .byte 0x00
     .byte 0x66; .byte 0x81; .byte 0xe2; .byte 0x00; .byte 0x0c
-    .byte 0xe8; .long "fn_000f99bb_"-.-4
+    .byte 0xe8; .long "emu_ld_round"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f967b_"-.-4
+    .byte 0xe8; .long "emu_ld_to_int31"-.-4
     .byte 0x26; .byte 0x89; .byte 0x06
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90cc_"-.-4
+    .byte 0xe8; .long "emu_ld_add"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9500_"-.-4
+    .byte 0xe8; .long "emu_ld_mul"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1f4-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1f4-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1a2-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1a2-.-4
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5d; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x8
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x8
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x89; .byte 0x44; .byte 0x2f; .byte 0x1c
@@ -1004,35 +1004,35 @@
     .byte 0x89; .byte 0x44; .byte 0x2f; .byte 0x20
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x46; .byte 0x08
     .byte 0x66; .byte 0x89; .byte 0x44; .byte 0x2f; .byte 0x24
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x8
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0xe9; .long "emu_execute"-.-4
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x8
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x26; .byte 0x8b; .byte 0x56; .byte 0x04
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9730_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe8; .long "emu_double_to_ld"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f982f_"-.-4
+    .byte 0xe8; .long "emu_ld_to_double"-.-4
     .byte 0x26; .byte 0x89; .byte 0x06
     .byte 0x26; .byte 0x89; .byte 0x56; .byte 0x04
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x26; .byte 0x89; .byte 0x06
     .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x20
     .byte 0x26; .byte 0x89; .byte 0x46; .byte 0x04
     .byte 0x66; .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x24
     .byte 0x26; .byte 0x66; .byte 0x89; .byte 0x46; .byte 0x08
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f982f_"-.-4
+    .byte 0xe8; .long "emu_ld_to_double"-.-4
     .byte 0x26; .byte 0x89; .byte 0x06
     .byte 0x26; .byte 0x89; .byte 0x56; .byte 0x04
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
     .byte 0xb9; .byte 0x07; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x1e
     .byte 0x06
@@ -1052,11 +1052,11 @@
     .byte 0xa5
     .byte 0xa5
     .byte 0x66; .byte 0xa5
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0x9b; .long "fn_000f75a0_"+0x6
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0x9b; .long "emu_constants"+0x6
     .byte 0xe2; .byte 0xee
     .byte 0x07
     .byte 0x1f
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0xb9; .byte 0x07; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0xdf
     .byte 0x8b; .byte 0xfe
@@ -1067,94 +1067,94 @@
     .byte 0xa5
     .byte 0xa5
     .byte 0x66; .byte 0xa5
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0x9b; .long "fn_000f75a0_"+0x6
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0x9b; .long "emu_constants"+0x6
     .byte 0xe2; .byte 0xee
     .byte 0x8b; .byte 0xfb
     .byte 0xe9; .long .L000f8b9b-.-4
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x45; .byte 0x04
     .byte 0x26; .byte 0x66; .byte 0x89; .byte 0x06
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90cc_"-.-4
+    .byte 0xe8; .long "emu_ld_add"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9500_"-.-4
+    .byte 0xe8; .long "emu_ld_mul"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1f4-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1f4-.-4
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1a2-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1a2-.-4
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x55; .byte 0x6c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x55; .byte 0x6c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
     .byte 0x8d; .byte 0x45; .byte 0x6c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x8
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x8
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
     .byte 0x26; .byte 0x66; .byte 0x8b; .byte 0x06
     .byte 0x98
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f96ea_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe8; .long "emu_int_to_ld"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
     .byte 0xff; .byte 0x33
     .byte 0xff; .byte 0x73; .byte 0x04
@@ -1162,9 +1162,9 @@
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x55; .byte 0x00
     .byte 0x66; .byte 0x81; .byte 0xe2; .byte 0x00; .byte 0x0c
-    .byte 0xe8; .long "fn_000f99bb_"-.-4
+    .byte 0xe8; .long "emu_ld_round"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f967b_"-.-4
+    .byte 0xe8; .long "emu_ld_to_int31"-.-4
     .byte 0x8b; .byte 0xd0
     .byte 0x98
     .byte 0x3b; .byte 0xc2
@@ -1176,13 +1176,13 @@
     .byte 0x8f; .byte 0x43; .byte 0x06
     .byte 0x8f; .byte 0x43; .byte 0x04
     .byte 0x8f; .byte 0x03
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x55; .byte 0x00
     .byte 0x66; .byte 0x81; .byte 0xe2; .byte 0x00; .byte 0x0c
-    .byte 0xe8; .long "fn_000f99bb_"-.-4
+    .byte 0xe8; .long "emu_ld_round"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f967b_"-.-4
+    .byte 0xe8; .long "emu_ld_to_int31"-.-4
     .byte 0x8b; .byte 0xd0
     .byte 0x98
     .byte 0x3b; .byte 0xc2
@@ -1190,29 +1190,29 @@
     .byte 0x66; .byte 0xb8; .byte 0x00; .byte 0x80
 .L000f846b:
     .byte 0x26; .byte 0x66; .byte 0x89; .byte 0x06
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x8
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x8
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
     .byte 0x26; .byte 0x8b; .byte 0x06
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f96fb_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
+    .byte 0xe8; .long "emu_uint_to_ld"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x3e; .byte 0x66; .byte 0x8b; .byte 0x55; .byte 0x00
     .byte 0x66; .byte 0x81; .byte 0xe2; .byte 0x00; .byte 0x0c
-    .byte 0xe8; .long "fn_000f99bb_"-.-4
+    .byte 0xe8; .long "emu_ld_round"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9680_"-.-4
+    .byte 0xe8; .long "emu_ld_to_int32"-.-4
     .byte 0x26; .byte 0x89; .byte 0x06
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
 .L000f84dc:
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
     .byte 0x2e; .byte 0xff; .byte 0x24; .byte 0x9d; .long .L000f84e9
 .L000f84e9:
     .long .L000f8509
@@ -1224,50 +1224,50 @@
     .long .L000f84dc
     .long .L000f84dc
 .L000f8509:
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90cc_"-.-4
+    .byte 0xe8; .long "emu_ld_add"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9500_"-.-4
+    .byte 0xe8; .long "emu_ld_mul"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1f4-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1f4-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1a2-.-4
-    .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
-    .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
-    .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
-    .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
-    .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
-    .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
-    .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
-    .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1a2-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x8
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
+    .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
+    .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
+    .byte 0xe8; .long "emu_ld_div"-.-4
+    .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
+    .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
+    .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
+    .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
+    .byte 0xe8; .long "emu_ld_div"-.-4
+    .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x8
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
     .byte 0x8b; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x89; .byte 0x44; .byte 0x2f; .byte 0x1c
@@ -1275,7 +1275,7 @@
     .byte 0x89; .byte 0x44; .byte 0x2f; .byte 0x20
     .byte 0x66; .byte 0x8b; .byte 0x44; .byte 0x2e; .byte 0x24
     .byte 0x66; .byte 0x89; .byte 0x44; .byte 0x2f; .byte 0x24
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x5c; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x74; .byte 0x2e; .byte 0x1c
     .byte 0x8b; .byte 0x06
@@ -1287,7 +1287,7 @@
     .byte 0x66; .byte 0x8b; .byte 0x46; .byte 0x08
     .byte 0x66; .byte 0x87; .byte 0x43; .byte 0x08
     .byte 0x66; .byte 0x89; .byte 0x46; .byte 0x08
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x2e; .byte 0xff; .byte 0x24; .byte 0x9d; .long .L000f8628
 .L000f8628:
     .long .L000f8648
@@ -1301,26 +1301,26 @@
 .L000f8648:
     lea eax, [edi + ebp + 0x1c]
     xor byte ptr [eax + 9], 0x80
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8655:
     lea eax, [edi + ebp + 0x1c]
     and byte ptr [eax + 9], 0x7f
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8662:
     mov eax, dword ptr cs:[_C_000f759c]
     mov dword ptr ds:[ebp + 0x6c], eax
-    mov eax, dword ptr cs:["fn_000f75a0_"]
+    mov eax, dword ptr cs:["emu_constants"]
     mov dword ptr ds:[ebp + 0x70], eax
-    mov ax, word ptr cs:["fn_000f75a0_"+0x4]
+    mov ax, word ptr cs:["emu_constants"+0x4]
     mov word ptr ds:[ebp + 0x74], ax
     lea eax, [edi + ebp + 0x1c]
     lea edx, [ebp + 0x6c]
-    call "fn_000f9292_"
-    jmp "fn_000f79a8_"+0x1f4
+    call "emu_ld_compare"
+    jmp "emu_execute"+0x1f4
 .L000f8693:
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000f9e42_"
-    jmp "fn_000f79a8_"
+    call "emu_fxam"
+    jmp "emu_execute"
     .byte 0x2e; .byte 0xff; .byte 0x24; .byte 0x9d; .long .L000f86a9
 .L000f86a9:
     .long .L000f86c9
@@ -1332,95 +1332,95 @@
     .long .L000f8865
     .long .L000f84dc
 .L000f86c9:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     {load} sub eax, eax
     mov dword ptr [esi], eax
     mov dword ptr [esi + 4], 0x80000000
     mov word ptr [esi + 8], 0x3fff
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f870c:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     mov dword ptr [esi], 0xcd1b8afe
     mov dword ptr [esi + 4], 0xd49a784b
     mov word ptr [esi + 8], 0x4000
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8751:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     mov dword ptr [esi], 0x5c17f0bc
     mov dword ptr [esi + 4], 0xb8aa3b29
     mov word ptr [esi + 8], 0x3fff
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8796:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     mov dword ptr [esi], 0x2168c235
     mov dword ptr [esi + 4], 0xc900daa2
     mov word ptr [esi + 8], 0x4000
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f87db:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     mov dword ptr [esi], 0xfbcff799
     mov dword ptr [esi + 4], 0x9a209a84
     mov word ptr [esi + 8], 0x3ffd
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8820:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     mov dword ptr [esi], 0xd1cf79ac
     mov dword ptr [esi + 4], 0xb17217f7
     mov word ptr [esi + 8], 0x3ffe
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8865:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     {load} sub eax, eax
     mov dword ptr [esi], eax
     mov dword ptr [esi + 4], eax
     mov word ptr [esi + 8], ax
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x58]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x58]
     or word ptr ds:[ebp + 8], bx
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
     .byte 0x2e; .byte 0xff; .byte 0x24; .byte 0x9d; .long .L000f88c4
 .L000f88c4:
     .long .L000f88e4
@@ -1433,48 +1433,48 @@
     .long .L000f89a5
 .L000f88e4:
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000fa468_"
+    call "emu_f2xm1"
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f88f1:
     lea eax, [edi + ebp + 0x1c]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x5e]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x5e]
     or word ptr ds:[ebp + 8], bx
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x6]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x6]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
     lea edx, [edi + ebp + 0x1c]
-    call "fn_000f9f49_"
+    call "emu_fyl2x"
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f8938:
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000fa432_"
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    call "emu_ld_tan"
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea esi, [edi + ebp + 0x1c]
     {load} sub eax, eax
     mov dword ptr [esi], eax
     mov dword ptr [esi + 4], 0x80000000
     mov word ptr [esi + 8], 0x3fff
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8984:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f89a5:
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x6]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x6]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
     .byte 0x2e; .byte 0xff; .byte 0x24; .byte 0x9d; .long .L000f89ce
 .L000f89ce:
     .long .L000f89ee
@@ -1488,29 +1488,29 @@
 .L000f89ee:
     lea eax, [edi + ebp + 0x1c]
     lea edx, [esi + ebp + 0x1c]
-    call "fn_000f9d61_"
+    call "emu_fprem"
     and eax, 7
     mov dx, word ptr ds:[ebp + 4]
     and dx, 0xb8ff
-    or dh, byte ptr cs:[eax + "fn_000f75a0_"+0xaa]
+    or dh, byte ptr cs:[eax + "emu_constants"+0xaa]
     mov word ptr ds:[ebp + 4], dx
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f8a18:
     lea eax, [edi + ebp + 0x1c]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x5e]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x5e]
     or word ptr ds:[ebp + 8], bx
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x6]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x6]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
     lea edx, [edi + ebp + 0x1c]
-    call "fn_000f9f30_"
+    call "emu_ld_add_one"
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f8a5f:
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000fa63c_"
+    call "emu_ld_sqrt"
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f8a6c:
     lea ebx, [edi + ebp + 0x1c]
@@ -1518,27 +1518,27 @@
     push dword ptr [ebx + 4]
     push dword ptr [ebx + 6]
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000fa41b_"
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    call "emu_ld_sin"
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea ebx, [edi + ebp + 0x1c]
     pop dword ptr [ebx + 6]
     pop dword ptr [ebx + 4]
     pop dword ptr [ebx]
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000fa425_"
-    jmp "fn_000f79a8_"
+    call "emu_ld_cos"
+    jmp "emu_execute"
 .L000f8ac4:
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000fa41b_"
+    call "emu_ld_sin"
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f8ad1:
     lea eax, [edi + ebp + 0x1c]
-    call "fn_000fa425_"
+    call "emu_ld_cos"
     notrack jmp dword ptr ds:[ebp + 0x76]
     jmp dword ptr cs:[ebx*4 + .L000f8ae6]
 .L000f8ae6:
@@ -1557,18 +1557,18 @@
     mov dword ptr ds:[ebp + 0x70], eax
     mov ax, word ptr [edi + ebp + 0x24]
     mov word ptr ds:[ebp + 0x74], ax
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x5e]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x5e]
     or word ptr ds:[ebp + 8], bx
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x6]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x6]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
     lea eax, [ebp + 0x6c]
     lea edx, [edi + ebp + 0x1c]
-    call "fn_000f9292_"
-    jmp "fn_000f79a8_"+0x1a2
+    call "emu_ld_compare"
+    jmp "emu_execute"+0x1a2
     .byte 0x2e; .byte 0xff; .byte 0x24; .byte 0x9d; .long .L000f8b6f
 .L000f8b6f:
     .long .L000f84dc
@@ -1581,99 +1581,99 @@
     .long .L000f84dc
 .L000f8b8f:
     and word ptr ds:[ebp + 4], 0x7f00
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f8b9b:
     mov word ptr ds:[ebp], 0x33f
     mov word ptr ds:[ebp + 4], 0
     mov word ptr ds:[ebp + 8], 0xffff
-    lea edx, ["fn_000f79a8_"]
+    lea edx, ["emu_execute"]
     mov dword ptr ds:[ebp + 0x76], edx
     {load} sub edi, edi
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90cc_"-.-4
+    .byte 0xe8; .long "emu_ld_add"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9500_"-.-4
+    .byte 0xe8; .long "emu_ld_mul"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
+    .byte 0xe8; .long "emu_ld_sub"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
+    .byte 0xe8; .long "emu_ld_div"-.-4
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x89; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x20
     .byte 0x89; .byte 0x44; .byte 0x2e; .byte 0x20
     .byte 0x66; .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x24
     .byte 0x66; .byte 0x89; .byte 0x44; .byte 0x2e; .byte 0x24
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0xe9; .long "fn_000f79a8_"-.-4
+    .byte 0xe9; .long "emu_execute"-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1f4-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1f4-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9292_"-.-4
-    .byte 0xe9; .long "fn_000f79a8_"+0x1a2-.-4
+    .byte 0xe8; .long "emu_ld_compare"-.-4
+    .byte 0xe9; .long "emu_execute"+0x1a2-.-4
     .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x89; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x20
     .byte 0x89; .byte 0x44; .byte 0x2e; .byte 0x20
     .byte 0x66; .byte 0x8b; .byte 0x44; .byte 0x2f; .byte 0x24
     .byte 0x66; .byte 0x89; .byte 0x44; .byte 0x2e; .byte 0x24
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "fn_000f75a0_"+0x56
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9e; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0xe9; .long "fn_000f79a8_"+0x1b9-.-4
+    .byte 0xe9; .long "emu_execute"+0x1b9-.-4
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90cc_"-.-4
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0xe8; .long "emu_ld_add"-.-4
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x6
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x6
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f9500_"-.-4
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0xe8; .long "emu_ld_mul"-.-4
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x6
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x6
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
@@ -1694,67 +1694,67 @@
     mov dword ptr ds:[ebp + 0x70], eax
     mov ax, word ptr [edi + ebp + 0x24]
     mov word ptr ds:[ebp + 0x74], ax
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x5e]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x5e]
     or word ptr ds:[ebp + 8], bx
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x6]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x6]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
     lea eax, [ebp + 0x6c]
     lea edx, [edi + ebp + 0x1c]
-    call "fn_000f9292_"
-    jmp "fn_000f79a8_"+0x1a2
+    call "emu_ld_compare"
+    jmp "emu_execute"+0x1a2
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0xe8; .long "emu_ld_sub"-.-4
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x6
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x6
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f90be_"-.-4
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0xe8; .long "emu_ld_sub"-.-4
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x6
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x6
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0xe8; .long "emu_ld_div"-.-4
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x6
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x6
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
     .byte 0x8d; .byte 0x44; .byte 0x2e; .byte 0x1c
     .byte 0x8d; .byte 0x54; .byte 0x2f; .byte 0x1c
     .byte 0x8d; .byte 0x5c; .byte 0x2e; .byte 0x1c
-    .byte 0xe8; .long "fn_000f932b_"-.-4
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x56
+    .byte 0xe8; .long "emu_ld_div"-.-4
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x56
     .byte 0x3e; .byte 0x66; .byte 0x21; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0x5e
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0x5e
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x08
-    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "fn_000f75a0_"+0x6
-    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "fn_000f75a0_"+0xa
+    .byte 0x2e; .byte 0x0f; .byte 0xb7; .byte 0xbf; .long "emu_constants"+0x6
+    .byte 0x2e; .byte 0x66; .byte 0x8b; .byte 0x9f; .long "emu_constants"+0xa
     .byte 0x3e; .byte 0x66; .byte 0x81; .byte 0x65; .byte 0x04; .byte 0xff; .byte 0xc7
     .byte 0x3e; .byte 0x66; .byte 0x09; .byte 0x5d; .byte 0x04
     .byte 0x3e; .byte 0xff; .byte 0x65; .byte 0x76
@@ -1770,25 +1770,25 @@
     .long .L000f84dc
 .L000f8f4d:
     lea edx, [edi + ebp + 0x1c]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x5e]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x5e]
     or word ptr ds:[ebp + 8], bx
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x6]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x6]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
     lea eax, [edi + ebp + 0x1c]
     {load} mov ebx, eax
-    call "fn_000f9b48_"
+    call "emu_fpatan"
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f8f96:
     lea esi, [edi + ebp + 0x1c]
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x8]
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0xa]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x8]
+    mov bx, word ptr cs:[edi + "emu_constants"+0xa]
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
-    mov bx, word ptr cs:[edi + "fn_000f75a0_"+0x56]
+    mov bx, word ptr cs:[edi + "emu_constants"+0x56]
     and word ptr ds:[ebp + 8], bx
     lea ebx, [edi + ebp + 0x1c]
     mov eax, dword ptr [esi]
@@ -1804,30 +1804,30 @@
     sub ax, 0x3fff
     cwde
     {load} mov edx, esi
-    call "fn_000f967b_"
-    jmp "fn_000f79a8_"
+    call "emu_ld_to_int31"
+    jmp "emu_execute"
 .L000f8ffb:
     lea eax, [edi + ebp + 0x1c]
     lea edx, [esi + ebp + 0x1c]
-    call "fn_000f9d61_"
+    call "emu_fprem"
     and eax, 7
     mov dx, word ptr ds:[ebp + 4]
     and dx, 0xb8ff
-    or dh, byte ptr cs:[eax + "fn_000f75a0_"+0xaa]
+    or dh, byte ptr cs:[eax + "emu_constants"+0xaa]
     mov word ptr ds:[ebp + 4], dx
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f9025:
     lea eax, [edi + ebp + 0x1c]
     mov dx, word ptr ds:[ebp]
     and dx, 0xc00
-    call "fn_000f99bb_"
-    jmp "fn_000f79a8_"
+    call "emu_ld_round"
+    jmp "emu_execute"
 .L000f903d:
     {load} mov esi, edi
-    movzx edi, word ptr cs:[edi + "fn_000f75a0_"+0x6]
+    movzx edi, word ptr cs:[edi + "emu_constants"+0x6]
     lea eax, [edi + ebp + 0x1c]
     mov cx, word ptr [eax + 8]
-    call "fn_000f967b_"
+    call "emu_ld_to_int31"
     {load} mov edi, esi
     lea ebx, [edi + ebp + 0x1c]
     {load} mov edx, eax
@@ -1862,36 +1862,36 @@
 .L000f90a2:
     {load} or dx, cx
     mov word ptr [ebx + 8], dx
-    jmp "fn_000f79a8_"
+    jmp "emu_execute"
 .L000f90ae:
     mov ax, word ptr ds:[ebp + 4]
     {load} mov ebp, esp
     mov word ptr [ebp + 0x28], ax
-    jmp "fn_000f79a8_"
-.size "fn_000f7bb8_",.-"fn_000f7bb8_"
+    jmp "emu_execute"
+.size "emu_raise_exception",.-"emu_raise_exception"
 
-// fn_000f90be: long double subtract, *ebx = *eax - *edx (negates the second operand's sign, then shares fn_000f90cc).
+// emu_ld_sub: long double subtract, *ebx = *eax - *edx (negates the second operand's sign, then shares emu_ld_add).
 // FUNCTION: 0x000f90be
 
 .section _TEXT,"ax",@progbits,unique,1020094
-.globl "fn_000f90be_"
-.type "fn_000f90be_",@function
-"fn_000f90be_":
+.globl "emu_ld_sub"
+.type "emu_ld_sub",@function
+"emu_ld_sub":
     push esi
     push ecx
     push ebx
     mov si, word ptr [edx + 8]
     xor si, 0x8000
     .byte 0xeb; .byte 0x07  # jmp 0xf90d3
-.size "fn_000f90be_",.-"fn_000f90be_"
+.size "emu_ld_sub",.-"emu_ld_sub"
 
-// fn_000f90cc: long double add, *ebx = *eax + *edx.
+// emu_ld_add: long double add, *ebx = *eax + *edx.
 // FUNCTION: 0x000f90cc
 
 .section _TEXT,"ax",@progbits,unique,1020108
-.globl "fn_000f90cc_"
-.type "fn_000f90cc_",@function
-"fn_000f90cc_":
+.globl "emu_ld_add"
+.type "emu_ld_add",@function
+"emu_ld_add":
     push esi
     push ecx
     push ebx
@@ -1902,7 +1902,7 @@
     mov si, word ptr [eax + 8]
     mov edx, dword ptr [eax + 4]
     mov eax, dword ptr [eax]
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     pop ebx
     mov dword ptr [ebx], eax
     mov dword ptr [ebx + 4], edx
@@ -1910,15 +1910,15 @@
     pop ecx
     pop esi
     ret
-.size "fn_000f90cc_",.-"fn_000f90cc_"
+.size "emu_ld_add",.-"emu_ld_add"
 
-// fn_000f90f6: long double add, *ebx = *eax + the long double passed on the stack.
+// emu_ld_add_arg: long double add, *ebx = *eax + the long double passed on the stack.
 // FUNCTION: 0x000f90f6
 
 .section _TEXT,"ax",@progbits,unique,1020150
-.globl "fn_000f90f6_"
-.type "fn_000f90f6_",@function
-"fn_000f90f6_":
+.globl "emu_ld_add_arg"
+.type "emu_ld_add_arg",@function
+"emu_ld_add_arg":
     push esi
     push ecx
     push ebx
@@ -1929,7 +1929,7 @@
     mov si, word ptr [eax + 8]
     mov edx, dword ptr [eax + 4]
     mov eax, dword ptr [eax]
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     pop ebx
     mov dword ptr [ebx], eax
     mov dword ptr [ebx + 4], edx
@@ -1937,15 +1937,15 @@
     pop ecx
     pop esi
     ret 0xc
-.size "fn_000f90f6_",.-"fn_000f90f6_"
+.size "emu_ld_add_arg",.-"emu_ld_add_arg"
 
-// fn_000f9126: long double add core: edx:eax (exponent si) + ecx:ebx (exponent in esi's high word), result in edx:eax:si.
+// emu_ld_add_core: long double add core: edx:eax (exponent si) + ecx:ebx (exponent in esi's high word), result in edx:eax:si.
 // FUNCTION: 0x000f9126
 
 .section _TEXT,"ax",@progbits,unique,1020198
-.globl "fn_000f9126_"
-.type "fn_000f9126_",@function
-"fn_000f9126_":
+.globl "emu_ld_add_core"
+.type "emu_ld_add_core",@function
+"emu_ld_add_core":
     {load} or eax, eax
     jne .L000f9149
     {load} or edx, edx
@@ -2114,15 +2114,15 @@
     {load} sub eax, eax
     mov edx, 0x80000000
     jmp .L000f927b
-.size "fn_000f9126_",.-"fn_000f9126_"
+.size "emu_ld_add_core",.-"emu_ld_add_core"
 
-// fn_000f9292: compare the long doubles at eax and edx; returns 0 if equal, -1 or 1 for less or greater, 2 if unordered (NaN).
+// emu_ld_compare: compare the long doubles at eax and edx; returns 0 if equal, -1 or 1 for less or greater, 2 if unordered (NaN).
 // FUNCTION: 0x000f9292
 
 .section _TEXT,"ax",@progbits,unique,1020562
-.globl "fn_000f9292_"
-.type "fn_000f9292_",@function
-"fn_000f9292_":
+.globl "emu_ld_compare"
+.type "emu_ld_compare",@function
+"emu_ld_compare":
     push edi
     push esi
     mov si, word ptr [eax + 8]
@@ -2191,15 +2191,15 @@
     pop esi
     pop edi
     ret
-.size "fn_000f9292_",.-"fn_000f9292_"
+.size "emu_ld_compare",.-"emu_ld_compare"
 
-// fn_000f932b: long double divide, *ebx = *eax / *edx.
+// emu_ld_div: long double divide, *ebx = *eax / *edx.
 // FUNCTION: 0x000f932b
 
 .section _TEXT,"ax",@progbits,unique,1020715
-.globl "fn_000f932b_"
-.type "fn_000f932b_",@function
-"fn_000f932b_":
+.globl "emu_ld_div"
+.type "emu_ld_div",@function
+"emu_ld_div":
     push esi
     push ecx
     push ebx
@@ -2210,7 +2210,7 @@
     mov si, word ptr [eax + 8]
     mov edx, dword ptr [eax + 4]
     mov eax, dword ptr [eax]
-    call "fn_000f9355_"
+    call "emu_ld_div_core"
     pop ebx
     mov dword ptr [ebx], eax
     mov dword ptr [ebx + 4], edx
@@ -2218,15 +2218,15 @@
     pop ecx
     pop esi
     ret
-.size "fn_000f932b_",.-"fn_000f932b_"
+.size "emu_ld_div",.-"emu_ld_div"
 
-// fn_000f9355: long double divide core on registers (as fn_000f9126); x/0 raises zero-divide (infinity), 0/0 invalid (indefinite).
+// emu_ld_div_core: long double divide core on registers (as emu_ld_add_core); x/0 raises zero-divide (infinity), 0/0 invalid (indefinite).
 // FUNCTION: 0x000f9355
 
 .section _TEXT,"ax",@progbits,unique,1020757
-.globl "fn_000f9355_"
-.type "fn_000f9355_",@function
-"fn_000f9355_":
+.globl "emu_ld_div_core"
+.type "emu_ld_div_core",@function
+"emu_ld_div_core":
     {load} or ecx, ecx
     jne .L000f93a0
     {load} or ebx, ebx
@@ -2242,7 +2242,7 @@
     jne .L000f938a
     mov al, 1
     mov ah, 0x81
-    call "fn_000f7bb8_"
+    call "emu_raise_exception"
     mov edx, 0xc0000000
     {load} sub eax, eax
     mov si, 0xffff
@@ -2250,7 +2250,7 @@
 .L000f938a:
     mov al, 4
     mov ah, 0x83
-    call "fn_000f7bb8_"
+    call "emu_raise_exception"
     mov edx, 0x80000000
     {load} sub eax, eax
     or si, 0x7fff
@@ -2426,15 +2426,15 @@
     pop edi
     pop ebp
     ret
-.size "fn_000f9355_",.-"fn_000f9355_"
+.size "emu_ld_div_core",.-"emu_ld_div_core"
 
-// fn_000f9500: long double multiply, *ebx = *eax * *edx.
+// emu_ld_mul: long double multiply, *ebx = *eax * *edx.
 // FUNCTION: 0x000f9500
 
 .section _TEXT,"ax",@progbits,unique,1021184
-.globl "fn_000f9500_"
-.type "fn_000f9500_",@function
-"fn_000f9500_":
+.globl "emu_ld_mul"
+.type "emu_ld_mul",@function
+"emu_ld_mul":
     push esi
     push ecx
     push ebx
@@ -2445,7 +2445,7 @@
     mov si, word ptr [eax + 8]
     mov edx, dword ptr [eax + 4]
     mov eax, dword ptr [eax]
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     pop ebx
     mov dword ptr [ebx], eax
     mov dword ptr [ebx + 4], edx
@@ -2453,15 +2453,15 @@
     pop ecx
     pop esi
     ret
-.size "fn_000f9500_",.-"fn_000f9500_"
+.size "emu_ld_mul",.-"emu_ld_mul"
 
-// fn_000f952a: long double multiply core on registers (as fn_000f9126).
+// emu_ld_mul_core: long double multiply core on registers (as emu_ld_add_core).
 // FUNCTION: 0x000f952a
 
 .section _TEXT,"ax",@progbits,unique,1021226
-.globl "fn_000f952a_"
-.type "fn_000f952a_",@function
-"fn_000f952a_":
+.globl "emu_ld_mul_core"
+.type "emu_ld_mul_core",@function
+"emu_ld_mul_core":
     {load} or eax, eax
     jne .L000f953b
     {load} or edx, edx
@@ -2629,27 +2629,27 @@
     .byte 0x59
     .byte 0x5b
     .byte 0xc3
-.size "fn_000f952a_",.-"fn_000f952a_"
+.size "emu_ld_mul_core",.-"emu_ld_mul_core"
 
-// fn_000f967b: convert the long double at eax to an integer of at most 31 magnitude bits in eax (0x80000000 if too large); shares fn_000f9680.
+// emu_ld_to_int31: convert the long double at eax to an integer of at most 31 magnitude bits in eax (0x80000000 if too large); shares emu_ld_to_int32.
 // FUNCTION: 0x000f967b
 
 .section _TEXT,"ax",@progbits,unique,1021563
-.globl "fn_000f967b_"
-.type "fn_000f967b_",@function
-"fn_000f967b_":
+.globl "emu_ld_to_int31"
+.type "emu_ld_to_int31",@function
+"emu_ld_to_int31":
     push ebx
     mov bl, 0x1f
     .byte 0xeb; .byte 0x03  # jmp 0xf9683
-.size "fn_000f967b_",.-"fn_000f967b_"
+.size "emu_ld_to_int31",.-"emu_ld_to_int31"
 
-// fn_000f9680: convert the long double at eax to an integer of at most 32 magnitude bits in eax (0x80000000 if too large).
+// emu_ld_to_int32: convert the long double at eax to an integer of at most 32 magnitude bits in eax (0x80000000 if too large).
 // FUNCTION: 0x000f9680
 
 .section _TEXT,"ax",@progbits,unique,1021568
-.globl "fn_000f9680_"
-.type "fn_000f9680_",@function
-"fn_000f9680_":
+.globl "emu_ld_to_int32"
+.type "emu_ld_to_int32",@function
+"emu_ld_to_int32":
     push ebx
     mov bl, 0x20
     mov bh, byte ptr [eax + 9]
@@ -2704,15 +2704,15 @@
     pop ecx
     pop ebx
     ret
-.size "fn_000f9680_",.-"fn_000f9680_"
+.size "emu_ld_to_int32",.-"emu_ld_to_int32"
 
-// fn_000f96ea: convert signed int eax to the long double at edx.
+// emu_int_to_ld: convert signed int eax to the long double at edx.
 // FUNCTION: 0x000f96ea
 
 .section _TEXT,"ax",@progbits,unique,1021674
-.globl "fn_000f96ea_"
-.type "fn_000f96ea_",@function
-"fn_000f96ea_":
+.globl "emu_int_to_ld"
+.type "emu_int_to_ld",@function
+"emu_int_to_ld":
     push ebx
     {load} mov ebx, edx
     {load} or eax, eax
@@ -2722,15 +2722,15 @@
     .byte 0xeb; .byte 0x09  # jmp 0xf9703
 .L000f96fa:
     pop ebx
-.size "fn_000f96ea_",.-"fn_000f96ea_"
+.size "emu_int_to_ld",.-"emu_int_to_ld"
 
-// fn_000f96fb: convert unsigned int eax to the long double at edx.
+// emu_uint_to_ld: convert unsigned int eax to the long double at edx.
 // FUNCTION: 0x000f96fb
 
 .section _TEXT,"ax",@progbits,unique,1021691
-.globl "fn_000f96fb_"
-.type "fn_000f96fb_",@function
-"fn_000f96fb_":
+.globl "emu_uint_to_ld"
+.type "emu_uint_to_ld",@function
+"emu_uint_to_ld":
     push ebx
     {load} mov ebx, edx
     mov edx, 0x3fff
@@ -2758,15 +2758,15 @@
     pop ecx
     pop ebx
     ret
-.size "fn_000f96fb_",.-"fn_000f96fb_"
+.size "emu_uint_to_ld",.-"emu_uint_to_ld"
 
-// fn_000f9730: convert the double in edx:eax to the long double at ebx (a NaN raises invalid and is made quiet).
+// emu_double_to_ld: convert the double in edx:eax to the long double at ebx (a NaN raises invalid and is made quiet).
 // FUNCTION: 0x000f9730
 
 .section _TEXT,"ax",@progbits,unique,1021744
-.globl "fn_000f9730_"
-.type "fn_000f9730_",@function
-"fn_000f9730_":
+.globl "emu_double_to_ld"
+.type "emu_double_to_ld",@function
+"emu_double_to_ld":
     push ecx
     {load} mov ecx, edx
     shld edx, eax, 0xb
@@ -2788,7 +2788,7 @@
     push eax
     mov al, 1
     mov ah, 0x81
-    call "fn_000f7bb8_"
+    call "emu_raise_exception"
     pop eax
     or edx, 0x40000000
 .L000f9773:
@@ -2822,15 +2822,15 @@
     mov word ptr [ebx + 8], cx
     pop ecx
     ret
-.size "fn_000f9730_",.-"fn_000f9730_"
+.size "emu_double_to_ld",.-"emu_double_to_ld"
 
-// fn_000f97b0: convert the long double at eax to a float in eax, rounded to nearest even.
+// emu_ld_to_float: convert the long double at eax to a float in eax, rounded to nearest even.
 // FUNCTION: 0x000f97b0
 
 .section _TEXT,"ax",@progbits,unique,1021872
-.globl "fn_000f97b0_"
-.type "fn_000f97b0_",@function
-"fn_000f97b0_":
+.globl "emu_ld_to_float"
+.type "emu_ld_to_float",@function
+"emu_ld_to_float":
     push edx
     push ecx
     push ebx
@@ -2885,15 +2885,15 @@
     pop ecx
     pop edx
     ret
-.size "fn_000f97b0_",.-"fn_000f97b0_"
+.size "emu_ld_to_float",.-"emu_ld_to_float"
 
-// fn_000f982f: convert the long double at eax to a double in edx:eax, rounded to nearest even.
+// emu_ld_to_double: convert the long double at eax to a double in edx:eax, rounded to nearest even.
 // FUNCTION: 0x000f982f
 
 .section _TEXT,"ax",@progbits,unique,1021999
-.globl "fn_000f982f_"
-.type "fn_000f982f_",@function
-"fn_000f982f_":
+.globl "emu_ld_to_double"
+.type "emu_ld_to_double",@function
+"emu_ld_to_double":
     push ecx
     push ebx
     push esi
@@ -2971,22 +2971,22 @@
     push eax
     mov al, 8
     mov ah, 0x84
-    call "fn_000f7bb8_"
+    call "emu_raise_exception"
     pop eax
 .L000f98f2:
     pop esi
     pop ebx
     pop ecx
     ret
-.size "fn_000f982f_",.-"fn_000f982f_"
+.size "emu_ld_to_double",.-"emu_ld_to_double"
 
-// fn_000f98f6: convert the float in eax to the long double at edx; a table of mantissa masks follows.
+// emu_float_to_ld: convert the float in eax to the long double at edx; a table of mantissa masks follows.
 // FUNCTION: 0x000f98f6
 
 .section _TEXT,"ax",@progbits,unique,1022198
-.globl "fn_000f98f6_"
-.type "fn_000f98f6_",@function
-"fn_000f98f6_":
+.globl "emu_float_to_ld"
+.type "emu_float_to_ld",@function
+"emu_float_to_ld":
     push ecx
     push ebx
     {load} mov ebx, edx
@@ -3096,15 +3096,15 @@
     .byte 0x00; .byte 0x00
     .byte 0x00; .byte 0x00
     .byte 0x00
-.size "fn_000f98f6_",.-"fn_000f98f6_"
+.size "emu_float_to_ld",.-"emu_float_to_ld"
 
-// fn_000f99bb: round the long double at eax to an integer in place, using rounding control dx (0 nearest, 400h down, 800h up, C00h chop).
+// emu_ld_round: round the long double at eax to an integer in place, using rounding control dx (0 nearest, 400h down, 800h up, C00h chop).
 // FUNCTION: 0x000f99bb
 
 .section _TEXT,"ax",@progbits,unique,1022395
-.globl "fn_000f99bb_"
-.type "fn_000f99bb_",@function
-"fn_000f99bb_":
+.globl "emu_ld_round"
+.type "emu_ld_round",@function
+"emu_ld_round":
     push edi
     {load} mov edi, eax
     {load} sub ebx, ebx
@@ -3131,7 +3131,7 @@
     mov ecx, dword ptr [edi]
     add bx, 0x20
     jl .L000f9a4a
-    mov eax, dword ptr cs:[ebx*4 + "fn_000f98f6_"+0x45]
+    mov eax, dword ptr cs:[ebx*4 + "emu_float_to_ld"+0x45]
     {load} and ecx, eax
     xor dword ptr [edi], ecx
     inc eax
@@ -3169,7 +3169,7 @@
     mov esi, dword ptr [edi + 4]
     add bx, 0x20
     jl .L000f9aad
-    mov eax, dword ptr cs:[ebx*4 + "fn_000f98f6_"+0x45]
+    mov eax, dword ptr cs:[ebx*4 + "emu_float_to_ld"+0x45]
     {load} and esi, eax
     xor dword ptr [edi + 4], esi
     inc eax
@@ -3260,15 +3260,15 @@
     .byte 0x00; .byte 0x00
     .byte 0x00; .byte 0x00
     .byte 0x80; .byte 0xff; .byte 0x3f
-.size "fn_000f99bb_",.-"fn_000f99bb_"
+.size "emu_ld_round",.-"emu_ld_round"
 
-// fn_000f9b48: fpatan: arctangent of *eax / *edx, quadrant from their signs, into *ebx.
+// emu_fpatan: fpatan: arctangent of *eax / *edx, quadrant from their signs, into *ebx.
 // FUNCTION: 0x000f9b48
 
 .section _TEXT,"ax",@progbits,unique,1022792
-.globl "fn_000f9b48_"
-.type "fn_000f9b48_",@function
-"fn_000f9b48_":
+.globl "emu_fpatan"
+.type "emu_fpatan",@function
+"emu_fpatan":
     push edi
     push esi
     push ecx
@@ -3301,9 +3301,9 @@
     jmp .L000f9bfa
 .L000f9bae:
     mov ch, byte ptr [edi + 9]
-    call "fn_000f932b_"
+    call "emu_ld_div"
     {load} mov eax, ebx
-    call "fn_000f9bfe_"
+    call "emu_ld_atan"
     mov dl, byte ptr [ebx + 9]
     {load} or ch, ch
     js .L000f9be0
@@ -3313,7 +3313,7 @@
     push 0x4000
     push 0xc90fdaa2
     push 0x2168c235
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
 .L000f9bde:
     jmp .L000f9bfa
 .L000f9be0:
@@ -3323,21 +3323,21 @@
     push 0xc000
     push 0xc90fdaa2
     push 0x2168c235
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
 .L000f9bfa:
     pop ecx
     pop esi
     pop edi
     ret
-.size "fn_000f9b48_",.-"fn_000f9b48_"
+.size "emu_fpatan",.-"emu_fpatan"
 
-// fn_000f9bfe: arctangent of the long double at eax, in place (|x| >= 1 is reduced through 1/x).
+// emu_ld_atan: arctangent of the long double at eax, in place (|x| >= 1 is reduced through 1/x).
 // FUNCTION: 0x000f9bfe
 
 .section _TEXT,"ax",@progbits,unique,1022974
-.globl "fn_000f9bfe_"
-.type "fn_000f9bfe_",@function
-"fn_000f9bfe_":
+.globl "emu_ld_atan"
+.type "emu_ld_atan",@function
+"emu_ld_atan":
     push edi
     push esi
     push ecx
@@ -3374,7 +3374,7 @@
     mov si, 0x3fff
     mov edx, 0x80000000
     mov eax, 0
-    call "fn_000f9355_"
+    call "emu_ld_div_core"
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
     mov word ptr [edi + 8], si
@@ -3398,7 +3398,7 @@
     mov eax, dword ptr [edi]
     mov edx, dword ptr [edi + 4]
     mov si, word ptr [edi + 8]
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     push eax
     push edx
     push esi
@@ -3408,20 +3408,20 @@
     mov eax, dword ptr [edi]
     mov edx, dword ptr [edi + 4]
     mov si, word ptr [edi + 8]
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     {load} sub ebx, ebx
     mov ecx, 0x80000000
     rol esi, 0x10
     mov si, 0xbfff
     rol esi, 0x10
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     pop ebx
     shl ebx, 0x10
     {load} mov bx, si
     {load} mov esi, ebx
     pop ecx
     pop ebx
-    call "fn_000f9355_"
+    call "emu_ld_div_core"
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
     mov word ptr [edi + 8], si
@@ -3429,9 +3429,9 @@
     or ch, 1
 .L000f9d04:
     {load} mov eax, edi
-    lea edx, ["fn_000f99bb_"+0x133]
+    lea edx, ["emu_ld_round"+0x133]
     mov ebx, 8
-    call "fn_000fa77a_"
+    call "emu_odd_poly"
     shr ch, 1
     jae .L000f9d32
     {load} mov eax, edi
@@ -3439,7 +3439,7 @@
     push 0x860a91c1
     push 0x6b9b2c23
     {load} mov ebx, edi
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
 .L000f9d32:
     shr ch, 1
     jae .L000f9d52
@@ -3448,7 +3448,7 @@
     push 0x2168c235
     {load} mov eax, edi
     {load} mov ebx, edi
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
     xor byte ptr [ebx + 9], 0x80
 .L000f9d52:
     cmp cl, 0
@@ -3461,15 +3461,15 @@
     pop esi
     pop edi
     ret
-.size "fn_000f9bfe_",.-"fn_000f9bfe_"
+.size "emu_ld_atan",.-"emu_ld_atan"
 
-// fn_000f9d61: partial remainder (fprem): *eax = *eax mod *edx; returns the low quotient bits.
+// emu_fprem: partial remainder (fprem): *eax = *eax mod *edx; returns the low quotient bits.
 // FUNCTION: 0x000f9d61
 
 .section _TEXT,"ax",@progbits,unique,1023329
-.globl "fn_000f9d61_"
-.type "fn_000f9d61_",@function
-"fn_000f9d61_":
+.globl "emu_fprem"
+.type "emu_fprem",@function
+"emu_fprem":
     cmp word ptr [eax + 8], 0
     jne .L000f9d76
     cmp dword ptr [eax + 4], 0
@@ -3505,7 +3505,7 @@
     mov ebx, dword ptr [edx]
     mov edx, dword ptr [eax + 4]
     mov eax, dword ptr [eax]
-    call "fn_000f9dc7_"
+    call "emu_fprem_core"
     pop ecx
     mov dword ptr [ecx], eax
     mov dword ptr [ecx + 4], edx
@@ -3518,15 +3518,15 @@
     pop esi
     pop ebp
     ret
-.size "fn_000f9d61_",.-"fn_000f9d61_"
+.size "emu_fprem",.-"emu_fprem"
 
-// fn_000f9dc7: remainder core on registers for fn_000f9d61; the quotient bits are returned in edi.
+// emu_fprem_core: remainder core on registers for emu_fprem; the quotient bits are returned in edi.
 // FUNCTION: 0x000f9dc7
 
 .section _TEXT,"ax",@progbits,unique,1023431
-.globl "fn_000f9dc7_"
-.type "fn_000f9dc7_",@function
-"fn_000f9dc7_":
+.globl "emu_fprem_core"
+.type "emu_fprem_core",@function
+"emu_fprem_core":
     push esi
     push edi
     and esi, 0x7fff
@@ -3593,19 +3593,19 @@
     neg edi
 .L000f9e41:
     ret
-.size "fn_000f9dc7_",.-"fn_000f9dc7_"
+.size "emu_fprem_core",.-"emu_fprem_core"
 
-// fn_000f9e42: fxam: classify the long double at eax into condition codes C0-C3 in the status word, and update its tag.
+// emu_fxam: fxam: classify the long double at eax into condition codes C0-C3 in the status word, and update its tag.
 // FUNCTION: 0x000f9e42
 
 .section _TEXT,"ax",@progbits,unique,1023554
-.globl "fn_000f9e42_"
-.type "fn_000f9e42_",@function
-"fn_000f9e42_":
+.globl "emu_fxam"
+.type "emu_fxam",@function
+"emu_fxam":
     push ebx
     push edx
     {load} mov ebx, eax
-    mov ax, word ptr cs:[edi + "fn_000f75a0_"+0x5e]
+    mov ax, word ptr cs:[edi + "emu_constants"+0x5e]
     {load} mov edx, eax
     and ax, word ptr ds:[ebp + 8]
     {load} cmp ax, dx
@@ -3627,7 +3627,7 @@
     or eax, dword ptr [ebx]
     mov al, 0x44
     jne .L000f9e92
-    mov ax, word ptr cs:[edi + "fn_000f75a0_"+0x58]
+    mov ax, word ptr cs:[edi + "emu_constants"+0x58]
     or word ptr ds:[ebp + 8], ax
     mov al, 0x40
 .L000f9e92:
@@ -3635,7 +3635,7 @@
 .L000f9e94:
     cmp ax, 0x7fff
     jne .L000f9ebc
-    mov ax, word ptr cs:[edi + "fn_000f75a0_"+0x5c]
+    mov ax, word ptr cs:[edi + "emu_constants"+0x5c]
     or word ptr ds:[ebp + 8], ax
     cmp dword ptr [ebx], 0
     jne .L000f9eb4
@@ -3651,7 +3651,7 @@
     test byte ptr [ebx + 7], 0x80
     mov al, 4
     jne .L000f9ed3
-    mov ax, word ptr cs:[edi + "fn_000f75a0_"+0x5c]
+    mov ax, word ptr cs:[edi + "emu_constants"+0x5c]
     or word ptr ds:[ebp + 8], ax
     mov al, 0x44
 .L000f9ed3:
@@ -3690,15 +3690,15 @@
     .byte 0xbb; .byte 0x83; .byte 0x6c; .byte 0xe0; .byte 0xf4
     .byte 0x5f
     .byte 0xc0; .byte 0x08; .byte 0xc0
-.size "fn_000f9e42_",.-"fn_000f9e42_"
+.size "emu_fxam",.-"emu_fxam"
 
-// fn_000f9f30: add 1.0 to the long double at eax.
+// emu_ld_add_one: add 1.0 to the long double at eax.
 // FUNCTION: 0x000f9f30
 
 .section _TEXT,"ax",@progbits,unique,1023792
-.globl "fn_000f9f30_"
-.type "fn_000f9f30_",@function
-"fn_000f9f30_":
+.globl "emu_ld_add_one"
+.type "emu_ld_add_one",@function
+"emu_ld_add_one":
     push ebx
     push edx
     push eax
@@ -3706,30 +3706,30 @@
     push 0x80000000
     push 0
     {load} mov ebx, eax
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
     pop eax
     pop edx
     pop ebx
-.size "fn_000f9f30_",.-"fn_000f9f30_"
+.size "emu_ld_add_one",.-"emu_ld_add_one"
 
-// fn_000f9f49: fyl2x: *edx = *edx * log2(*eax).
+// emu_fyl2x: fyl2x: *edx = *edx * log2(*eax).
 // FUNCTION: 0x000f9f49
 
 .section _TEXT,"ax",@progbits,unique,1023817
-.globl "fn_000f9f49_"
-.type "fn_000f9f49_",@function
-"fn_000f9f49_":
+.globl "emu_fyl2x"
+.type "emu_fyl2x",@function
+"emu_fyl2x":
     push edi
     push esi
     push edx
     push ecx
     push ebx
     push eax
-    call "fn_000f9f8c_"
+    call "emu_ld_log"
     pop eax
     {load} mov ebx, edx
     push edx
-    call "fn_000f9500_"
+    call "emu_ld_mul"
     pop edi
     mov si, word ptr [edi + 8]
     mov ecx, dword ptr [edi + 4]
@@ -3738,7 +3738,7 @@
     mov si, 0x3fff
     mov edx, 0xb8aa3b29
     mov eax, 0x5c17f0bd
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
     mov word ptr [edi + 8], si
@@ -3748,15 +3748,15 @@
     pop esi
     pop edi
     ret
-.size "fn_000f9f49_",.-"fn_000f9f49_"
+.size "emu_fyl2x",.-"emu_fyl2x"
 
-// fn_000f9f8c: natural logarithm of the long double at eax, in place (mantissa reduced about sqrt(1/2), then a series).
+// emu_ld_log: natural logarithm of the long double at eax, in place (mantissa reduced about sqrt(1/2), then a series).
 // FUNCTION: 0x000f9f8c
 
 .section _TEXT,"ax",@progbits,unique,1023884
-.globl "fn_000f9f8c_"
-.type "fn_000f9f8c_",@function
-"fn_000f9f8c_":
+.globl "emu_ld_log"
+.type "emu_ld_log",@function
+"emu_ld_log":
     push edi
     push esi
     push edx
@@ -3778,7 +3778,7 @@
     mov esi, 0xbffe3ffe
     mov ecx, 0x80000000
     {load} sub ebx, ebx
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     cmp word ptr [edi + 8], 0x3ffe
     jne .L000f9fdd
     cmp dword ptr [edi + 4], 0xb504f333
@@ -3790,7 +3790,7 @@
     or esi, 0xbffe0000
     mov ecx, 0x80000000
     {load} sub ebx, ebx
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     jmp .L000fa005
 .L000f9ff9:
     mov dword ptr [edi], eax
@@ -3809,7 +3809,7 @@
     or esi, 0x3ffe0000
     mov ecx, 0x80000000
     {load} sub ebx, ebx
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     shl esi, 0x10
     {load} mov ecx, edx
     {load} mov ebx, eax
@@ -3817,7 +3817,7 @@
     {load} mov si, ax
     pop edx
     pop eax
-    call "fn_000f9355_"
+    call "emu_ld_div_core"
     push eax
     push edx
     push esi
@@ -3826,48 +3826,48 @@
     {load} mov si, cx
     {load} mov ecx, edx
     {load} mov ebx, eax
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
     mov word ptr [edi + 8], si
     mov ebx, 3
-    lea ecx, ["fn_000f9e42_"+0xc6]
-    call "fn_000fa728_"
+    lea ecx, ["emu_fxam"+0xc6]
+    call "emu_poly"
     push eax
     push edx
     push esi
     mov eax, dword ptr [edi]
     mov edx, dword ptr [edi + 4]
     mov si, word ptr [edi + 8]
-    lea ecx, ["fn_000f9e42_"+0xa8]
+    lea ecx, ["emu_fxam"+0xa8]
     mov ebx, 2
-    call "fn_000fa728_"
+    call "emu_poly"
     pop ecx
     rol esi, 0x10
     {load} mov si, cx
     rol esi, 0x10
     pop ecx
     pop ebx
-    call "fn_000f9355_"
+    call "emu_ld_div_core"
     mov ebx, dword ptr [edi]
     mov ecx, dword ptr [edi + 4]
     rol esi, 0x10
     mov si, word ptr [edi + 8]
     rol esi, 0x10
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     rol esi, 0x10
     mov si, word ptr [esp]
     rol esi, 0x10
     mov ecx, dword ptr [esp + 4]
     mov ebx, dword ptr [esp + 8]
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     rol esi, 0x10
     pop ecx
     {load} mov si, cx
     rol esi, 0x10
     pop ecx
     pop ebx
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     pop ecx
     {load} or ecx, ecx
     je .L000fa14e
@@ -3876,7 +3876,7 @@
     push esi
     {load} mov edx, edi
     {load} mov eax, ecx
-    call "fn_000f96ea_"
+    call "emu_int_to_ld"
     mov eax, dword ptr [edi]
     mov edx, dword ptr [edi + 4]
     mov si, word ptr [edi + 8]
@@ -3884,14 +3884,14 @@
     or esi, 0xbff20000
     mov ecx, 0xde8082e3
     mov ebx, 0x865435c
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     pop ecx
     rol esi, 0x10
     {load} mov si, cx
     rol esi, 0x10
     pop ecx
     pop ebx
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     push eax
     push edx
     push esi
@@ -3902,14 +3902,14 @@
     or esi, 0x3ffe0000
     mov ecx, 0xb1800000
     {load} sub ebx, ebx
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     pop ecx
     rol esi, 0x10
     {load} mov si, cx
     rol esi, 0x10
     pop ecx
     pop ebx
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
 .L000fa14e:
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
@@ -3996,15 +3996,15 @@
     .byte 0x04; .byte 0x00
     .byte 0x05; .byte 0x00; .byte 0x05; .byte 0x00; .byte 0x06
     .byte 0x00
-.size "fn_000f9f8c_",.-"fn_000f9f8c_"
+.size "emu_ld_log",.-"emu_ld_log"
 
-// fn_000fa224: sine, tangent or cosine (esi 0, 1, 2) of the long double at eax, in place, reducing by octants of pi.
+// emu_ld_trig: sine, tangent or cosine (esi 0, 1, 2) of the long double at eax, in place, reducing by octants of pi.
 // FUNCTION: 0x000fa224
 
 .section _TEXT,"ax",@progbits,unique,1024548
-.globl "fn_000fa224_"
-.type "fn_000fa224_",@function
-"fn_000fa224_":
+.globl "emu_ld_trig"
+.type "emu_ld_trig",@function
+"emu_ld_trig":
     push ebp
     push edi
     push edx
@@ -4029,7 +4029,7 @@
     mov ebx, 0x2168c235
     mov edx, dword ptr [eax + 4]
     mov eax, dword ptr [eax]
-    call "fn_000f9dc7_"
+    call "emu_fprem_core"
     pop ecx
     mov dword ptr [ecx], eax
     mov dword ptr [ecx + 4], edx
@@ -4045,7 +4045,7 @@
     push 0x3ffe
     push 0xc90fdaa2
     push 0x2168c235
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
     pop eax
     dec eax
 .L000fa295:
@@ -4062,7 +4062,7 @@
     push 0x2168c235
     {load} mov eax, edi
     {load} mov ebx, edi
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
     xor byte ptr [ebx + 9], 0x80
 .L000fa2c1:
     {load} sub ecx, ecx
@@ -4084,7 +4084,7 @@
     jle .L000fa301
     mov cx, 8
 .L000fa301:
-    mov cx, word ptr cs:[ecx*2 + "fn_000f9f8c_"+0x286]
+    mov cx, word ptr cs:[ecx*2 + "emu_ld_log"+0x286]
     push ecx
     mov eax, dword ptr [ebp - 0x14]
     inc al
@@ -4102,13 +4102,13 @@
     mov si, word ptr [edi + 8]
     {load} mov ebx, eax
     {load} mov ecx, edx
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     mov ecx, dword ptr [ebp - 0x18]
     mov ebx, 8
     {load} sub ebx, ecx
     lea ecx, [ecx + ecx*4]
-    lea ecx, [ecx*2 + "fn_000f9f8c_"+0x22c]
-    call "fn_000fa728_"
+    lea ecx, [ecx*2 + "emu_ld_log"+0x22c]
+    call "emu_poly"
     mov dword ptr [ebp - 0xc], eax
     mov dword ptr [ebp - 8], edx
     mov word ptr [ebp - 4], si
@@ -4126,9 +4126,9 @@
     {load} sub ebx, ecx
     lea ecx, [ecx + ecx*4]
     {load} add ecx, ecx
-    lea edx, ["fn_000f9f8c_"+0x1d2]
+    lea edx, ["emu_ld_log"+0x1d2]
     {load} add edx, ecx
-    call "fn_000fa77a_"
+    call "emu_odd_poly"
 .L000fa382:
     mov eax, dword ptr [ebp - 0x14]
     inc al
@@ -4182,7 +4182,7 @@
     or si, 0x7fff
     jmp .L000fa40a
 .L000fa405:
-    call "fn_000f9355_"
+    call "emu_ld_div_core"
 .L000fa40a:
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
@@ -4194,57 +4194,57 @@
     pop edi
     pop ebp
     ret
-.size "fn_000fa224_",.-"fn_000fa224_"
+.size "emu_ld_trig",.-"emu_ld_trig"
 
-// fn_000fa41b: sine of the long double at eax, in place.
+// emu_ld_sin: sine of the long double at eax, in place.
 // FUNCTION: 0x000fa41b
 
 .section _TEXT,"ax",@progbits,unique,1025051
-.globl "fn_000fa41b_"
-.type "fn_000fa41b_",@function
-"fn_000fa41b_":
+.globl "emu_ld_sin"
+.type "emu_ld_sin",@function
+"emu_ld_sin":
     push esi
     {load} sub esi, esi
-    call "fn_000fa224_"
+    call "emu_ld_trig"
     pop esi
     ret
-.size "fn_000fa41b_",.-"fn_000fa41b_"
+.size "emu_ld_sin",.-"emu_ld_sin"
 
-// fn_000fa425: cosine of the long double at eax, in place.
+// emu_ld_cos: cosine of the long double at eax, in place.
 // FUNCTION: 0x000fa425
 
 .section _TEXT,"ax",@progbits,unique,1025061
-.globl "fn_000fa425_"
-.type "fn_000fa425_",@function
-"fn_000fa425_":
+.globl "emu_ld_cos"
+.type "emu_ld_cos",@function
+"emu_ld_cos":
     push esi
     mov esi, 2
-    call "fn_000fa224_"
+    call "emu_ld_trig"
     pop esi
     ret
-.size "fn_000fa425_",.-"fn_000fa425_"
+.size "emu_ld_cos",.-"emu_ld_cos"
 
-// fn_000fa432: tangent of the long double at eax, in place.
+// emu_ld_tan: tangent of the long double at eax, in place.
 // FUNCTION: 0x000fa432
 
 .section _TEXT,"ax",@progbits,unique,1025074
-.globl "fn_000fa432_"
-.type "fn_000fa432_",@function
-"fn_000fa432_":
+.globl "emu_ld_tan"
+.type "emu_ld_tan",@function
+"emu_ld_tan":
     push esi
     mov esi, 1
-    call "fn_000fa224_"
+    call "emu_ld_trig"
     pop esi
     ret
-.size "fn_000fa432_",.-"fn_000fa432_"
+.size "emu_ld_tan",.-"emu_ld_tan"
 
-// fn_000fa440: the 2^x routine's table of long double constants, not code.
+// emu_f2xm1_constants: the 2^x routine's table of long double constants, not code.
 // FUNCTION: 0x000fa440
 
 .section _TEXT,"ax",@progbits,unique,1025088
-.globl "fn_000fa440_"
-.type "fn_000fa440_",@function
-"fn_000fa440_":
+.globl "emu_f2xm1_constants"
+.type "emu_f2xm1_constants",@function
+"emu_f2xm1_constants":
     adc eax, 0x67cc487b
     ret
     .byte 0xaa
@@ -4267,15 +4267,15 @@
     .byte 0x04; .byte 0xb5
     .byte 0xff
     .byte 0x3f
-.size "fn_000fa440_",.-"fn_000fa440_"
+.size "emu_f2xm1_constants",.-"emu_f2xm1_constants"
 
-// fn_000fa468: f2xm1: *eax = 2^(*eax) - 1.
+// emu_f2xm1: f2xm1: *eax = 2^(*eax) - 1.
 // FUNCTION: 0x000fa468
 
 .section _TEXT,"ax",@progbits,unique,1025128
-.globl "fn_000fa468_"
-.type "fn_000fa468_",@function
-"fn_000fa468_":
+.globl "emu_f2xm1"
+.type "emu_f2xm1",@function
+"emu_f2xm1":
     push ebp
     push edi
     push esi
@@ -4301,7 +4301,7 @@
     push 0
     {load} mov eax, edi
     {load} mov ebx, edi
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
     xor byte ptr [ebx + 9], 0x80
 .L000fa4ab:
     mov bx, word ptr [edi + 8]
@@ -4351,7 +4351,7 @@
     mov si, word ptr [edi + 8]
     {load} mov ebx, eax
     {load} mov ecx, edx
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     push eax
     push edx
     push esi
@@ -4359,7 +4359,7 @@
     mov ebx, 0x1bf21f8c
     and esi, 0xffff
     or esi, 0x40030000
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     {load} mov ebp, esp
     xchg dword ptr [ebp + 8], eax
     xchg dword ptr [ebp + 4], edx
@@ -4368,18 +4368,18 @@
     mov ebx, 0x9d7bfdb
     and esi, 0xffff
     or esi, 0x3ffa0000
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     mov ecx, 0xe6d5051a
     mov ebx, 0xe536e187
     and esi, 0xffff
     or esi, 0x40010000
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     mov ebx, dword ptr [edi]
     mov ecx, dword ptr [edi + 4]
     rol esi, 0x10
     mov si, word ptr [edi + 8]
     rol esi, 0x10
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     push eax
     push edx
     push esi
@@ -4389,7 +4389,7 @@
     rol esi, 0x10
     mov ebx, dword ptr [ebp + 8]
     mov ecx, dword ptr [ebp + 4]
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     xchg dword ptr [ebp - 4], eax
     xchg dword ptr [ebp - 8], edx
     xchg dword ptr [ebp - 0xc], esi
@@ -4398,20 +4398,20 @@
     rol esi, 0x10
     mov ebx, dword ptr [ebp + 8]
     mov ecx, dword ptr [ebp + 4]
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     rol esi, 0x10
     mov si, word ptr [ebp - 0xc]
     rol esi, 0x10
     pop ecx
     pop ecx
     pop ebx
-    call "fn_000f9355_"
+    call "emu_ld_div_core"
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
     mov word ptr [edi + 8], si
     add esp, 0xc
     pop ecx
-    lea esi, ["fn_000fa440_"]
+    lea esi, ["emu_f2xm1_constants"]
 .L000fa5e3:
     {load} or ecx, ecx
     je .L000fa61b
@@ -4427,7 +4427,7 @@
     mov edx, dword ptr cs:[esi + 4]
     mov esi, dword ptr cs:[esi]
     xchg esi, eax
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
     mov word ptr [edi + 8], si
@@ -4444,7 +4444,7 @@
     push 0x80000000
     push 0
     {load} mov ebx, edi
-    call "fn_000f90f6_"
+    call "emu_ld_add_arg"
     pop ebx
     pop ecx
     pop edx
@@ -4452,15 +4452,15 @@
     pop edi
     pop ebp
     ret
-.size "fn_000fa468_",.-"fn_000fa468_"
+.size "emu_f2xm1",.-"emu_f2xm1"
 
-// fn_000fa63c: square root of the long double at eax, in place; negative values give the indefinite NaN.
+// emu_ld_sqrt: square root of the long double at eax, in place; negative values give the indefinite NaN.
 // FUNCTION: 0x000fa63c
 
 .section _TEXT,"ax",@progbits,unique,1025596
-.globl "fn_000fa63c_"
-.type "fn_000fa63c_",@function
-"fn_000fa63c_":
+.globl "emu_ld_sqrt"
+.type "emu_ld_sqrt",@function
+"emu_ld_sqrt":
     push edi
     push esi
     push edx
@@ -4567,7 +4567,7 @@
     .byte 0x66; .byte 0x8b; .byte 0x70; .byte 0x08
     .byte 0x8b; .byte 0x50; .byte 0x04
     .byte 0x8b; .byte 0x00
-    .byte 0xe8; .long "fn_000fa728_"-.-4
+    .byte 0xe8; .long "emu_poly"-.-4
     .byte 0x59
     .byte 0x89; .byte 0x01
     .byte 0x89; .byte 0x51; .byte 0x04
@@ -4575,15 +4575,15 @@
     .byte 0x59
     .byte 0x5e
     .byte 0xc3
-.size "fn_000fa63c_",.-"fn_000fa63c_"
+.size "emu_ld_sqrt",.-"emu_ld_sqrt"
 
-// fn_000fa728: evaluate a polynomial by Horner's rule at x (edx:eax, exponent si) with ebx steps over the long double coefficients at cs:ecx; result in edx:eax:si.
+// emu_poly: evaluate a polynomial by Horner's rule at x (edx:eax, exponent si) with ebx steps over the long double coefficients at cs:ecx; result in edx:eax:si.
 // FUNCTION: 0x000fa728
 
 .section _TEXT,"ax",@progbits,unique,1025832
-.globl "fn_000fa728_"
-.type "fn_000fa728_",@function
-"fn_000fa728_":
+.globl "emu_poly"
+.type "emu_poly",@function
+"emu_poly":
     push ebp
     push edi
     push ecx
@@ -4602,14 +4602,14 @@
     rol esi, 0x10
     mov ebx, dword ptr [ebp]
     mov ecx, dword ptr [ebp + 4]
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     lea edi, [edi + 0xa]
     mov ebx, dword ptr cs:[edi]
     mov ecx, dword ptr cs:[edi + 4]
     rol esi, 0x10
     mov si, word ptr cs:[edi + 8]
     rol esi, 0x10
-    call "fn_000f9126_"
+    call "emu_ld_add_core"
     dec dword ptr [ebp + 0xc]
     jne .L000fa73f
     add esp, 0x10
@@ -4617,15 +4617,15 @@
     pop edi
     pop ebp
     ret
-.size "fn_000fa728_",.-"fn_000fa728_"
+.size "emu_poly",.-"emu_poly"
 
-// fn_000fa77a: *eax = x * P(x^2), with P's coefficients at cs:edx and ebx steps (fn_000fa728).
+// emu_odd_poly: *eax = x * P(x^2), with P's coefficients at cs:edx and ebx steps (emu_poly).
 // FUNCTION: 0x000fa77a
 
 .section _TEXT,"ax",@progbits,unique,1025914
-.globl "fn_000fa77a_"
-.type "fn_000fa77a_",@function
-"fn_000fa77a_":
+.globl "emu_odd_poly"
+.type "emu_odd_poly",@function
+"emu_odd_poly":
     push edi
     push esi
     push ecx
@@ -4639,16 +4639,16 @@
     mov si, word ptr [edi + 8]
     {load} mov ebx, eax
     {load} mov ecx, edx
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     pop ecx
     pop ebx
-    call "fn_000fa728_"
+    call "emu_poly"
     rol esi, 0x10
     mov ebx, dword ptr [edi]
     mov ecx, dword ptr [edi + 4]
     mov si, word ptr [edi + 8]
     rol esi, 0x10
-    call "fn_000f952a_"
+    call "emu_ld_mul_core"
     mov dword ptr [edi], eax
     mov dword ptr [edi + 4], edx
     mov word ptr [edi + 8], si
@@ -4656,4 +4656,4 @@
     pop esi
     pop edi
     ret
-.size "fn_000fa77a_",.-"fn_000fa77a_"
+.size "emu_odd_poly",.-"emu_odd_poly"

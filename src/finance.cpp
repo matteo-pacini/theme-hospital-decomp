@@ -54,7 +54,7 @@ StatItem banktext[] = {
 extern char **stat_text;
 extern char **finance_text;
 extern char **illness_text;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 void StopSample(u32 source_id, u32 number);
 }
 
@@ -528,14 +528,14 @@ void daily_admin(void)
     s32 hosp_count;
 
     mycontrol->day++;
-    D_00156910 = 1;
+    redraw_panel = 1;
     try_to_generate_emergency();
     generate_mayors();
     hosp_count = 1;
     if (statvar.num_players > 1)
         hosp_count = 4;
     for (i = 0; i < hosp_count; i++) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && player_info[i].active == 0)
             continue;
         if (allhosps[i].emergency_state_s == 2) {
             if (allhosps[i].emergency_present == 0) {
@@ -576,7 +576,7 @@ void twice_daily_admin(void)
     if (statvar.num_players > 1)
         hosp_count = 4;
     for (i = 0; i < hosp_count; i++, hosp++) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && player_info[i].active == 0)
             continue;
         if (hosp->emergency_timer_s > 0) {
             hosp->emergency_timer--;

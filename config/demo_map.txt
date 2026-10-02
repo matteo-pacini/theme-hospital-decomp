@@ -2467,6 +2467,10 @@
 000f2e6b 000d5de4 bytes   consistent runtime enterdb        __EnterWVIDEO_
 000f2e91 000d5e0a calls   consistent runtime xmsg           __exit_with_msg_
 000f2e96 000d5e0f calls   confirmed  runtime xmsg           __fatal_runtime_error_
+000f2ec0 000d3100 manual  confirmed  runtime sndnone        DEFSMACKTIMERSETUP
+000f2f70 000d31b0 manual  confirmed  runtime sndnone        DEFSMACKTIMERDONE
+000f2f80 000d31c0 manual  confirmed  runtime sndnone        DEFWINSMACKTIMERREAD
+000f2fa0 000d31e0 manual  confirmed  runtime sndnone        DEFSMACKTIMERREAD
 000f2fe0 000d3220 bytes   consistent runtime rfile          _radopen
 000f3001 000d3241 bytes   consistent runtime rfile          _raderase
 000f3019 000d3259 bytes   consistent runtime rfile          _radcreate

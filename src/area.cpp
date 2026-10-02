@@ -16,7 +16,7 @@ struct AreaLayout {
 extern "C" {
 extern Event D_001549d0[];
 extern u8 *palette;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern void *smack_draw_callback;
 void keybuffer_clear(void);
 int LbScreenLock(void);
@@ -116,7 +116,7 @@ u8 draw_area_select(void)
                 ;
         }
         resvars.loaded_mode = resvars.game_mode;
-        D_00156910 = 1;
+        redraw_panel = 1;
         clear_loading_screen(palette);
         setup_new_level((u16)level_number, 1);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);

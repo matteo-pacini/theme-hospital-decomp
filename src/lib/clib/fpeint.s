@@ -163,7 +163,7 @@
 .L000fda18:
     .byte 0xf6; .byte 0xc2; .byte 0x01
     .byte 0x74; .byte .L000fda24-.-1
-    .byte 0xe8; .long "fn_000fdaba_"-.-4
+    .byte 0xe8; .long "fpe_invalid_code"-.-4
     .byte 0xeb; .byte .L000fda50-.-1
 .L000fda24:
     .byte 0xf6; .byte 0xc2; .byte 0x02
@@ -173,7 +173,7 @@
 .L000fda2d:
     .byte 0xf6; .byte 0xc2; .byte 0x08
     .byte 0x74; .byte .L000fda3b-.-1
-    .byte 0xe8; .long "fn_000fdb47_"-.-4
+    .byte 0xe8; .long "fpe_overflow_result"-.-4
     .byte 0xb1; .byte 0x84
     .byte 0xeb; .byte .L000fda50-.-1
 .L000fda3b:
@@ -184,7 +184,7 @@
 .L000fda44:
     .byte 0xf6; .byte 0xc2; .byte 0x04
     .byte 0x74; .byte .L000fda50-.-1
-    .byte 0xe8; .long "fn_000fdb99_"-.-4
+    .byte 0xe8; .long "fpe_load_max"-.-4
     .byte 0xb1; .byte 0x83
 .L000fda50:
     .byte 0x80; .byte 0xf9; .byte 0x00
@@ -222,13 +222,13 @@
     .byte 0xcf
 .size "__Enable_FPE_",.-"__Enable_FPE_"
 
-// fn_000fdaba: for an invalid-operation exception in instruction bx, pick the FPE code in cl (sqrt of a negative, log or mod error, integer overflow, underflow...) and patch the result where needed.
+// fpe_invalid_code: for an invalid-operation exception in instruction bx, pick the FPE code in cl (sqrt of a negative, log or mod error, integer overflow, underflow...) and patch the result where needed.
 // FUNCTION: 0x000fdaba
 
 .section _TEXT,"ax",@progbits,unique,1039034
-.globl "fn_000fdaba_"
-.type "fn_000fdaba_",@function
-"fn_000fdaba_":
+.globl "fpe_invalid_code"
+.type "fpe_invalid_code",@function
+"fpe_invalid_code":
     mov cl, 0x81
     cmp bx, 0xd9fa
     jne .L000fdac6
@@ -264,7 +264,7 @@
     and dl, 0xc0
     cmp dl, 0xc0
     je .L000fdb14
-    call "fn_000fdbe4_"
+    call "fpe_store_st0"
 .L000fdb14:
     test bl, 8
     je .L000fdb1b
@@ -288,15 +288,15 @@
     mov cl, 0x83
 .L000fdb46:
     ret
-.size "fn_000fdaba_",.-"fn_000fdaba_"
+.size "fpe_invalid_code",.-"fpe_invalid_code"
 
-// fn_000fdb47: for an overflow in instruction bx, replace its result with a signed maximum (memory destination) or infinity (register destination).
+// fpe_overflow_result: for an overflow in instruction bx, replace its result with a signed maximum (memory destination) or infinity (register destination).
 // FUNCTION: 0x000fdb47
 
 .section _TEXT,"ax",@progbits,unique,1039175
-.globl "fn_000fdb47_"
-.type "fn_000fdb47_",@function
-"fn_000fdb47_":
+.globl "fpe_overflow_result"
+.type "fpe_overflow_result",@function
+"fpe_overflow_result":
     cmp bx, 0xd9fd
     jne .L000fdb50
     jmp .L000fdb98
@@ -305,12 +305,12 @@
     and dx, 0x110
     cmp dx, 0x110
     jne .L000fdb7c
-    call "fn_000fdb99_"
+    call "fpe_load_max"
     mov dl, bl
     and dl, 0xc0
     cmp dl, 0xc0
     je .L000fdb73
-    call "fn_000fdbe4_"
+    call "fpe_store_st0"
 .L000fdb73:
     test bl, 8
     je .L000fdb7a
@@ -323,21 +323,21 @@
     cmp dl, 0xc0
     jne .L000fdb93
     lea esi, [_D_00153ae0]
-    call "fn_000fdbbf_"
+    call "fpe_load_dest"
     jmp .L000fdb98
 .L000fdb93:
-    call "fn_000fdb99_"
+    call "fpe_load_max"
 .L000fdb98:
     ret
-.size "fn_000fdb47_",.-"fn_000fdb47_"
+.size "fpe_overflow_result",.-"fpe_overflow_result"
 
-// fn_000fdb99: replace st(0) with DBL_MAX (bh bit 2) or FLT_MAX, keeping its sign.
+// fpe_load_max: replace st(0) with DBL_MAX (bh bit 2) or FLT_MAX, keeping its sign.
 // FUNCTION: 0x000fdb99
 
 .section _TEXT,"ax",@progbits,unique,1039257
-.globl "fn_000fdb99_"
-.type "fn_000fdb99_",@function
-"fn_000fdb99_":
+.globl "fpe_load_max"
+.type "fpe_load_max",@function
+"fpe_load_max":
     ftst
     wait
     fnstsw word ptr [ebp + 0x14]
@@ -354,15 +354,15 @@
     fchs
 .L000fdbbe:
     ret
-.size "fn_000fdb99_",.-"fn_000fdb99_"
+.size "fpe_load_max",.-"fpe_load_max"
 
-// fn_000fdbbf: load the long double at esi into the instruction's destination register (st(bl & 7) or st(0)).
+// fpe_load_dest: load the long double at esi into the instruction's destination register (st(bl & 7) or st(0)).
 // FUNCTION: 0x000fdbbf
 
 .section _TEXT,"ax",@progbits,unique,1039295
-.globl "fn_000fdbbf_"
-.type "fn_000fdbbf_",@function
-"fn_000fdbbf_":
+.globl "fpe_load_dest"
+.type "fpe_load_dest",@function
+"fpe_load_dest":
     test bh, 4
     jne .L000fdbc8
     mov dl, 0
@@ -388,15 +388,15 @@
     jmp .L000fdbdb
 .L000fdbe3:
     ret
-.size "fn_000fdbbf_",.-"fn_000fdbbf_"
+.size "fpe_load_dest",.-"fpe_load_dest"
 
-// fn_000fdbe4: store st(0) at es:edi as a double (bl bit 2) or a float.
+// fpe_store_st0: store st(0) at es:edi as a double (bl bit 2) or a float.
 // FUNCTION: 0x000fdbe4
 
 .section _TEXT,"ax",@progbits,unique,1039332
-.globl "fn_000fdbe4_"
-.type "fn_000fdbe4_",@function
-"fn_000fdbe4_":
+.globl "fpe_store_st0"
+.type "fpe_store_st0",@function
+"fpe_store_st0":
     test bl, 4
     je .L000fdbee
     fst qword ptr es:[edi]
@@ -405,7 +405,7 @@
     fst dword ptr es:[edi]
 .L000fdbf1:
     ret
-.size "fn_000fdbe4_",.-"fn_000fdbe4_"
+.size "fpe_store_st0",.-"fpe_store_st0"
 
 // The 80x87 exception interrupt and the interrupt controllers' layout.
 .section _DATA,"aw",@progbits

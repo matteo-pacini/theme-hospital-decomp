@@ -1,12 +1,12 @@
 .intel_syntax noprefix
 
-// fn_0010b640: zero bytes at the start of the module, not code.
+// smk_zero_pad: zero bytes at the start of the module, not code.
 // FUNCTION: 0x0010b640
 
 .section _TEXT,"ax",@progbits,unique,1095232
-.globl "fn_0010b640_"
-.type "fn_0010b640_",@function
-"fn_0010b640_":
+.globl "smk_zero_pad"
+.type "smk_zero_pad",@function
+"smk_zero_pad":
     add byte ptr [eax], al
     add byte ptr [eax], al
     add byte ptr [eax], al
@@ -103,15 +103,15 @@
     add byte ptr [eax], al
     add byte ptr [eax], al
     add byte ptr [eax], al
-.size "fn_0010b640_",.-"fn_0010b640_"
+.size "smk_zero_pad",.-"smk_zero_pad"
 
-// fn_0010b700: read a Huffman tree with 8-bit leaves from the bit stream (esi, bits in ebp) into the node array at edi.
+// smk_read_byte_tree: read a Huffman tree with 8-bit leaves from the bit stream (esi, bits in ebp) into the node array at edi.
 // FUNCTION: 0x0010b700
 
 .section _TEXT,"ax",@progbits,unique,1095424
-.globl "fn_0010b700_"
-.type "fn_0010b700_",@function
-"fn_0010b700_":
+.globl "smk_read_byte_tree"
+.type "smk_read_byte_tree",@function
+"smk_read_byte_tree":
     mov eax, 0x80000000
     push -1
     push -2
@@ -180,15 +180,15 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
-.size "fn_0010b700_",.-"fn_0010b700_"
+.size "smk_read_byte_tree",.-"smk_read_byte_tree"
 
-// fn_0010b7a0: read a 16-bit-leaf Huffman tree from the bit stream: three escape values, then leaves built from the low- and high-byte trees; records the escape leaves' nodes at edx.
+// smk_read_word_tree: read a 16-bit-leaf Huffman tree from the bit stream: three escape values, then leaves built from the low- and high-byte trees; records the escape leaves' nodes at edx.
 // FUNCTION: 0x0010b7a0
 
 .section _TEXT,"ax",@progbits,unique,1095584
-.globl "fn_0010b7a0_"
-.type "fn_0010b7a0_",@function
-"fn_0010b7a0_":
+.globl "smk_read_word_tree"
+.type "smk_read_word_tree",@function
+"smk_read_word_tree":
     cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b7b9
     {load} mov ebx, ebp
@@ -459,15 +459,15 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
-.size "fn_0010b7a0_",.-"fn_0010b7a0_"
+.size "smk_read_word_tree",.-"smk_read_word_tree"
 
-// fn_0010ba90: build the fast lookup table at edi for the tree at edx: for each bit pattern of the table's width, the node reached and the bits consumed.
+// smk_build_tree_lookup: build the fast lookup table at edi for the tree at edx: for each bit pattern of the table's width, the node reached and the bits consumed.
 // FUNCTION: 0x0010ba90
 
 .section _TEXT,"ax",@progbits,unique,1096336
-.globl "fn_0010ba90_"
-.type "fn_0010ba90_",@function
-"fn_0010ba90_":
+.globl "smk_build_tree_lookup"
+.type "smk_build_tree_lookup",@function
+"smk_build_tree_lookup":
     mov dword ptr [.Ldata+0x78], edx
     push ebp
     mov ebp, dword ptr [.Ldata+0xb4]
@@ -508,15 +508,15 @@
     ret
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
-.size "fn_0010ba90_",.-"fn_0010ba90_"
+.size "smk_build_tree_lookup",.-"smk_build_tree_lookup"
 
-// fn_0010bb00: read one video tree from the bit stream (its byte trees, the tree and its lookup table), or store an empty tree if the stream says it is absent.
+// smk_read_video_tree: read one video tree from the bit stream (its byte trees, the tree and its lookup table), or store an empty tree if the stream says it is absent.
 // FUNCTION: 0x0010bb00
 
 .section _TEXT,"ax",@progbits,unique,1096448
-.globl "fn_0010bb00_"
-.type "fn_0010bb00_",@function
-"fn_0010bb00_":
+.globl "smk_read_video_tree"
+.type "smk_read_video_tree",@function
+"smk_read_video_tree":
     dec byte ptr [.Ldata+0xc0]
     jne .L0010bb14
     mov ebp, dword ptr [esi]
@@ -544,7 +544,7 @@
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jae .L0010bb52
     mov edi, dword ptr [.Ldata+0x8c]
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
 .L0010bb52:
     dec byte ptr [.Ldata+0xc0]
     jne .L0010bb66
@@ -555,14 +555,14 @@
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jae .L0010bb76
     mov edi, dword ptr [.Ldata+0x90]
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
 .L0010bb76:
     pop edi
     pop edx
-    call "fn_0010b7a0_"
+    call "smk_read_word_tree"
     pop edx
     pop edi
-    call "fn_0010ba90_"
+    call "smk_build_tree_lookup"
 .L0010bb84:
     ret
     .byte 0xeb; .byte 0x09
@@ -571,7 +571,7 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x90
-.size "fn_0010bb00_",.-"fn_0010bb00_"
+.size "smk_read_video_tree",.-"smk_read_video_tree"
 
 // SmackGetSizeTables: size of the fixed part of the decoding tables (0x7468 bytes); the trees' sizes come on top.
 // FUNCTION: 0x0010bb90
@@ -633,7 +633,7 @@
     lea eax, [edi + 0x7468]
     mov dword ptr [.Ldata+0xa4], edi
     add edi, 0x10
-    call "fn_0010bb00_"
+    call "smk_read_video_tree"
     mov dword ptr [.Ldata+0xb0], 0xa
     mov dword ptr [.Ldata+0xb4], 0x400
     .byte 0xba; .long .Ldata+0x20  # mov edx, 0x31c20
@@ -641,7 +641,7 @@
     lea eax, [edi + 0x7468]
     add edi, 0x2010
     add eax, dword ptr [.Ldata+0x608]
-    call "fn_0010bb00_"
+    call "smk_read_video_tree"
     mov dword ptr [.Ldata+0xb0], 0xc
     mov dword ptr [.Ldata+0xb4], 0x1000
     .byte 0xba; .long .Ldata+0x30  # mov edx, 0x31c30
@@ -650,7 +650,7 @@
     add edi, 0x3010
     add eax, dword ptr [.Ldata+0x608]
     add eax, dword ptr [.Ldata+0x60c]
-    call "fn_0010bb00_"
+    call "smk_read_video_tree"
     mov dword ptr [.Ldata+0xb0], 8
     mov dword ptr [.Ldata+0xb4], 0x100
     .byte 0xba; .long .Ldata+0x40  # mov edx, 0x31c40
@@ -660,7 +660,7 @@
     add eax, dword ptr [.Ldata+0x608]
     add eax, dword ptr [.Ldata+0x60c]
     add eax, dword ptr [.Ldata+0x610]
-    call "fn_0010bb00_"
+    call "smk_read_video_tree"
     mov edi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [.Ldata+0x608]
     mov dword ptr [edi], eax
@@ -681,17 +681,17 @@
     mov edi, dword ptr [.Ldata+0x600]
     mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi]
-    call "fn_0010bee0_"
+    call "smk_mark_tree_values"
     mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi + 4]
     add esi, dword ptr [esi]
-    call "fn_0010bee0_"
+    call "smk_mark_tree_values"
     mov esi, dword ptr [.Ldata+0x604]
     mov ecx, dword ptr [esi + 4]
     mov eax, dword ptr [esi + 8]
     add esi, dword ptr [esi]
     {load} add esi, ecx
-    call "fn_0010bee0_"
+    call "smk_mark_tree_values"
     mov esi, dword ptr [.Ldata+0x604]
     mov edx, dword ptr [esi + 4]
     mov ecx, dword ptr [esi + 8]
@@ -699,7 +699,7 @@
     add esi, dword ptr [esi]
     {load} add esi, edx
     {load} add esi, ecx
-    call "fn_0010bee0_"
+    call "smk_mark_tree_values"
     mov ecx, 0x800
     mov eax, 0xffffffff
     repe scasd eax, dword ptr es:[edi]
@@ -716,17 +716,17 @@
     mov word ptr [esi], di
     mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi]
-    call "fn_0010bf10_"
+    call "smk_prepare_tree_values"
     mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi + 4]
     add esi, dword ptr [esi]
-    call "fn_0010bf10_"
+    call "smk_prepare_tree_values"
     mov esi, dword ptr [.Ldata+0x604]
     mov ecx, dword ptr [esi + 4]
     mov eax, dword ptr [esi + 8]
     add esi, dword ptr [esi]
     {load} add esi, ecx
-    call "fn_0010bf10_"
+    call "smk_prepare_tree_values"
     mov esi, dword ptr [.Ldata+0x604]
     mov edx, dword ptr [esi + 4]
     mov ecx, dword ptr [esi + 8]
@@ -734,7 +734,7 @@
     add esi, dword ptr [esi]
     {load} add esi, edx
     {load} add esi, ecx
-    call "fn_0010bf10_"
+    call "smk_prepare_tree_values"
     pop esi
     pop edi
     pop edx
@@ -819,13 +819,13 @@
     .byte 0x90
 .size "_SmackDoTables",.-"_SmackDoTables"
 
-// fn_0010bee0: set, in the value bitmap at edi, the bit of every leaf value in the eax-byte tree at esi.
+// smk_mark_tree_values: set, in the value bitmap at edi, the bit of every leaf value in the eax-byte tree at esi.
 // FUNCTION: 0x0010bee0
 
 .section _TEXT,"ax",@progbits,unique,1097440
-.globl "fn_0010bee0_"
-.type "fn_0010bee0_",@function
-"fn_0010bee0_":
+.globl "smk_mark_tree_values"
+.type "smk_mark_tree_values",@function
+"smk_mark_tree_values":
     add esi, 0x7468
     shr eax, 2
 .L0010bee9:
@@ -848,15 +848,15 @@
     jne .L0010bee9
 .L0010bf0f:
     ret
-.size "fn_0010bee0_",.-"fn_0010bee0_"
+.size "smk_mark_tree_values",.-"smk_mark_tree_values"
 
-// fn_0010bf10: rewrite the eax-byte tree at esi: each leaf's low word becomes its value, every other node's the unused marker value; the frame decoder's block routines follow it.
+// smk_prepare_tree_values: rewrite the eax-byte tree at esi: each leaf's low word becomes its value, every other node's the unused marker value; the frame decoder's block routines follow it.
 // FUNCTION: 0x0010bf10
 
 .section _TEXT,"ax",@progbits,unique,1097488
-.globl "fn_0010bf10_"
-.type "fn_0010bf10_",@function
-"fn_0010bf10_":
+.globl "smk_prepare_tree_values"
+.type "smk_prepare_tree_values",@function
+"smk_prepare_tree_values":
     add esi, 0x7468
     shr eax, 2
     push ebp
@@ -4964,7 +4964,7 @@
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
-.size "fn_0010bf10_",.-"fn_0010bf10_"
+.size "smk_prepare_tree_values",.-"smk_prepare_tree_values"
 
 // Unsmack: decode one frame's video data with the tables at addr32 into the destination the table at deltas describes.
 // FUNCTION: 0x0010e820
@@ -5028,32 +5028,32 @@
     jne .L0010e91d
     test dword ptr [.Ldata+0xac], 1
     je .L0010e8e9
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x1b30  # mov dword ptr [0x31c50], 0xfda40
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x1e70  # mov dword ptr [0x31c54], 0xfdd80
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2674  # mov dword ptr [0x31c58], 0xfe584
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0x27d0  # mov dword ptr [0x31c5c], 0xfe6e0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "smk_prepare_tree_values"+0x1b30  # mov dword ptr [0x31c50], 0xfda40
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "smk_prepare_tree_values"+0x1e70  # mov dword ptr [0x31c54], 0xfdd80
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "smk_prepare_tree_values"+0x2674  # mov dword ptr [0x31c58], 0xfe584
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "smk_prepare_tree_values"+0x27d0  # mov dword ptr [0x31c5c], 0xfe6e0
     jmp .L0010e911
 .L0010e8e9:
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x1ae0  # mov dword ptr [0x31c50], 0xfd9f0
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x1e20  # mov dword ptr [0x31c54], 0xfdd30
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2630  # mov dword ptr [0x31c58], 0xfe540
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0x2780  # mov dword ptr [0x31c5c], 0xfe690
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "smk_prepare_tree_values"+0x1ae0  # mov dword ptr [0x31c50], 0xfd9f0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "smk_prepare_tree_values"+0x1e20  # mov dword ptr [0x31c54], 0xfdd30
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "smk_prepare_tree_values"+0x2630  # mov dword ptr [0x31c58], 0xfe540
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "smk_prepare_tree_values"+0x2780  # mov dword ptr [0x31c5c], 0xfe690
 .L0010e911:
     mov dword ptr [.Ldata+0xa8], 0
     jmp .L0010e985
 .L0010e91d:
     test dword ptr [.Ldata+0xac], 1
     je .L0010e953
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x80  # mov dword ptr [0x31c50], 0xfbf90
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x3e0  # mov dword ptr [0x31c54], 0xfc2f0
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2674  # mov dword ptr [0x31c58], 0xfe584
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0xbf0  # mov dword ptr [0x31c5c], 0xfcb00
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "smk_prepare_tree_values"+0x80  # mov dword ptr [0x31c50], 0xfbf90
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "smk_prepare_tree_values"+0x3e0  # mov dword ptr [0x31c54], 0xfc2f0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "smk_prepare_tree_values"+0x2674  # mov dword ptr [0x31c58], 0xfe584
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "smk_prepare_tree_values"+0xbf0  # mov dword ptr [0x31c5c], 0xfcb00
     jmp .L0010e97b
 .L0010e953:
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x30  # mov dword ptr [0x31c50], 0xfbf40
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x390  # mov dword ptr [0x31c54], 0xfc2a0
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2630  # mov dword ptr [0x31c58], 0xfe540
-    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0xba0  # mov dword ptr [0x31c5c], 0xfcab0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "smk_prepare_tree_values"+0x30  # mov dword ptr [0x31c50], 0xfbf40
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "smk_prepare_tree_values"+0x390  # mov dword ptr [0x31c54], 0xfc2a0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "smk_prepare_tree_values"+0x2630  # mov dword ptr [0x31c58], 0xfe540
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "smk_prepare_tree_values"+0xba0  # mov dword ptr [0x31c5c], 0xfcab0
 .L0010e97b:
     mov dword ptr [.Ldata+0xa8], 1
 .L0010e985:
@@ -5317,7 +5317,7 @@
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     mov edi, dword ptr [.Ldata+0x624]
     mov dword ptr [.Ldata+0x8c], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412
@@ -5395,7 +5395,7 @@
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     mov edi, dword ptr [.Ldata+0x624]
     mov dword ptr [.Ldata+0x8c], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     dec byte ptr [.Ldata+0xc0]
     jne .L0010edbc
     mov ebp, dword ptr [esi]
@@ -5406,7 +5406,7 @@
     mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x800
     mov dword ptr [.Ldata+0x90], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412
@@ -5538,7 +5538,7 @@
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     mov edi, dword ptr [.Ldata+0x624]
     mov dword ptr [.Ldata+0x8c], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     dec byte ptr [.Ldata+0xc0]
     jne .L0010ef8e
     mov ebp, dword ptr [esi]
@@ -5549,7 +5549,7 @@
     mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x800
     mov dword ptr [.Ldata+0x90], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412
@@ -5672,7 +5672,7 @@
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     mov edi, dword ptr [.Ldata+0x624]
     mov dword ptr [.Ldata+0x8c], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     dec byte ptr [.Ldata+0xc0]
     jne .L0010f13d
     mov ebp, dword ptr [esi]
@@ -5683,7 +5683,7 @@
     mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x800
     mov dword ptr [.Ldata+0x90], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     dec byte ptr [.Ldata+0xc0]
     jne .L0010f16b
     mov ebp, dword ptr [esi]
@@ -5694,7 +5694,7 @@
     mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x1000
     mov dword ptr [.Ldata+0x94], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     dec byte ptr [.Ldata+0xc0]
     jne .L0010f199
     mov ebp, dword ptr [esi]
@@ -5705,7 +5705,7 @@
     mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x1800
     mov dword ptr [.Ldata+0x98], edi
-    call "fn_0010b700_"
+    call "smk_read_byte_tree"
     mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412

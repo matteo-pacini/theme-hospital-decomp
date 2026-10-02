@@ -77,7 +77,7 @@ void create_a_peep(void)
     if (gamevar.rat_fest_level)
         return;
     for (i = 0; i < nplayers; i++) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && player_info[i].active == 0)
             continue;
         hosp = &allhosps[i];
         if (hosp->emergency_to_spawn > 0 && hosp->heli_landed == 1) {
@@ -214,7 +214,7 @@ s8 who_owns_peep(u8 illness)
             bids[i].player = i;
             bids[i].score = 0;
             if (statvar.num_players > 1) {
-                if (D_001609c4[i].active == 0)
+                if (player_info[i].active == 0)
                     continue;
             }
             bids[i].score += allhosps[i].rooms[illness].reputation * gbv.alloc_ind_rep;

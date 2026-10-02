@@ -115,7 +115,7 @@ void keybuffer_clear(void);
 void use_hires_layout(void);
 u32 lib_strlen(char *s);
 #pragma aux lib_strlen "strlen_"
-void find_other_player(s8 me);
+void choose_host_player(s8 me);
 }
 
 __tibcaGUID theme_hospital_guid = {0x1e8b2240, 0x11d037fe, 0xa0002b8d, 0xc96a00c9};
@@ -240,13 +240,13 @@ void read_modem_ini_file(void)
 // Sets host_player to the first active player other than `me` (0 if none);
 // with me = -1, the first active player, who runs the session.
 // FUNCTION: 0x0007fbb8
-void find_other_player(s8 me)
+void choose_host_player(s8 me)
 {
     s32 i;
 
     host_player = 0;
     for (i = 0; i < 4; i++) {
-        if (D_001609c4[i].active != 0 && me != i) {
+        if (player_info[i].active != 0 && me != i) {
             host_player = i;
             break;
         }
@@ -1158,17 +1158,28 @@ struct NetInitData {
 
 extern "C" {
 extern NetInitData serial_init_data;
-extern char D_00160594[];
-extern s32 D_001605e4;
-extern s32 (*D_001605e8)(void);
-extern s32 (*D_001605ec)(void);
+// Modem session settings and results, passed to LbNetwork_Create and
+// LbNetwork_Join (modemsp.cpp's ModemStartData).
+struct TbModemDev {
+    s32 timeout;
+    s32 dial_timeout;
+    char response[0x50];
+    // 0x58: Number dialled.
+    char number[0x50];
+    // 0xa8: Outcome code, reported to the player when the connection fails.
+    s32 result;
+    s32 (*init_func)(void);
+    s32 (*dial_func)(void);
+};
+
+extern TbModemDev modem_dev;
 extern TbNetworkSessionNameEntry *session_pointers[];
 extern s32 session_count;
 void sessions_callback(TbNetworkCallbackData *data, void *arg);
 #pragma aux (net_callback) sessions_callback;
 }
 
-#define SESSION_NAME ((char *)D_001609c4 + 0x70)
+extern char session_names[][32];
 
 u8 setup_network(TbNetworkService service, void *data, u8 max_players);
 s32 network_button_create(void);
@@ -1464,7 +1475,7 @@ void process_serial_buttons(u8 button)
                         session_count = 0;
                         if (LbNetwork_EnumerateSessions((TbNetworkCallbackFunc)sessions_callback, 0) == Lb_OK) {
                             hilighted_session = 0;
-                            lib_strcpy(hilighted_session_name, SESSION_NAME);
+                            lib_strcpy(hilighted_session_name, session_names[0]);
                             if (network_button_join() == -1) {
                                 LbNetwork_Stop();
                                 report_message(network_text[31]);
@@ -1587,9 +1598,9 @@ void process_modem_buttons(u8 button)
                     serial_init_data.hangup = hangup_str;
                     serial_init_data.auto_ans = auto_ans_str;
                     if (setup_network(service, &serial_init_data, 2)) {
-                        lib_strcpy(D_00160594, PhoneBook[BookHilight]);
+                        lib_strcpy(modem_dev.number, PhoneBook[BookHilight]);
                         if (button == 4) {
-                            D_001605e8 = network_service_function_init;
+                            modem_dev.init_func = network_service_function_init;
                             RestoreDisplay = DesiredDisplay;
                             DesiredDisplay = 4;
                             set_glass_map(0x800);
@@ -1597,7 +1608,7 @@ void process_modem_buttons(u8 button)
                             res = network_button_create();
                             reset_glass_map(0x800);
                             if (res == -1) {
-                                switch (D_001605e4) {
+                                switch (modem_dev.result) {
                                 case 4:
                                     DesiredDisplay = RestoreDisplay;
                                     report_message(network_text[21]);
@@ -1645,9 +1656,9 @@ void process_modem_buttons(u8 button)
                             session_count = 0;
                             if (LbNetwork_EnumerateSessions((TbNetworkCallbackFunc)sessions_callback, 0) == Lb_OK) {
                                 hilighted_session = 0;
-                                lib_strcpy(hilighted_session_name, SESSION_NAME);
-                                D_001605e8 = network_service_function_init;
-                                D_001605ec = network_service_function_connect;
+                                lib_strcpy(hilighted_session_name, session_names[0]);
+                                modem_dev.init_func = network_service_function_init;
+                                modem_dev.dial_func = network_service_function_connect;
                                 RestoreDisplay = DesiredDisplay;
                                 DesiredDisplay = 4;
                                 set_glass_map(0x800);
@@ -1655,7 +1666,7 @@ void process_modem_buttons(u8 button)
                                 res = network_button_join();
                                 reset_glass_map(0x800);
                                 if (res == -1) {
-                                    switch (D_001605e4) {
+                                    switch (modem_dev.result) {
                                     case 4:
                                         DesiredDisplay = RestoreDisplay;
                                         report_message(network_text[21]);
@@ -1902,7 +1913,7 @@ void process_login_exchange(void)
     s16 i;
     s16 j;
 
-    find_other_player(-1);
+    choose_host_player(-1);
     screen_packet[player].f6 = 1;
     screen_packet[player].f8 = login_control.f20;
     LbNetwork_ChangeExchangeBuffer(screen_packet, 0xe);
@@ -1953,7 +1964,7 @@ void process_login_exchange(void)
                 if (DesiredDisplay & 0x10)
                     set_glass_map(0x10000);
             }
-            find_other_player(i);
+            choose_host_player(i);
             break;
         case 9:
             login_control.state = 9;
@@ -2055,8 +2066,6 @@ void update_message_box(u8 key, u8 shift, u8 from)
     }
 }
 
-#define SESSION_NAMES ((char (*)[32])SESSION_NAME)
-
 struct LevelPacket {
     u8 unknown0[4];
     u8 level;
@@ -2097,13 +2106,13 @@ void draw_active_session(u8 com_panel)
     y = resvars.screen_boxes_NetBoxp[idx].y + 4;
     player_count = 0;
     for (i = 0; i < 4; i++) {
-        if (D_001609c4[i].active)
+        if (player_info[i].active)
             player_count++;
     }
     if (player_count <= 3)
         login_control.player_scroll = 0;
     for (i = 0, j = login_control.player_scroll; i < 3 && j < 4; j++) {
-        if (D_001609c4[j].active) {
+        if (player_info[j].active) {
             draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y,
                                    player_info[j].name);
             y += character_height();
@@ -2120,7 +2129,7 @@ void sessions_callback(TbNetworkCallbackData *data, void *arg)
     TbNetworkSessionNameEntry *session;
 
     session = (TbNetworkSessionNameEntry *)data;
-    lib_strcpy(SESSION_NAMES[session_count], session->name);
+    lib_strcpy(session_names[session_count], session->name);
     session_pointers[session_count] = session;
     session_count++;
 }
@@ -2146,10 +2155,10 @@ void draw_available_sessions(SessionInfo *sessions)
     while (swapped) {
         swapped = 0;
         for (i = 0; session_count - 1 > i; i++) {
-            if (strcmp(SESSION_NAMES[i], SESSION_NAMES[i + 1]) > 0) {
-                lib_strcpy(name, SESSION_NAMES[i]);
-                lib_strcpy(SESSION_NAMES[i], SESSION_NAMES[i + 1]);
-                lib_strcpy(SESSION_NAMES[i + 1], name);
+            if (strcmp(session_names[i], session_names[i + 1]) > 0) {
+                lib_strcpy(name, session_names[i]);
+                lib_strcpy(session_names[i], session_names[i + 1]);
+                lib_strcpy(session_names[i + 1], name);
                 entry = session_pointers[i];
                 session_pointers[i] = session_pointers[i + 1];
                 session_pointers[i + 1] = entry;
@@ -2163,18 +2172,18 @@ void draw_available_sessions(SessionInfo *sessions)
         hilighted_session_name[0] = 0;
     } else if (hilighted_session == -1) {
         hilighted_session = 0;
-        lib_strcpy(hilighted_session_name, SESSION_NAMES[0]);
+        lib_strcpy(hilighted_session_name, session_names[0]);
     }
     if (hilighted_session >= 0) {
-        if (strcmp(hilighted_session_name, SESSION_NAMES[hilighted_session])) {
+        if (strcmp(hilighted_session_name, session_names[hilighted_session])) {
             for (i = 0; i < session_count; i++) {
-                if (!strcmp(SESSION_NAMES[i], hilighted_session_name)) {
+                if (!strcmp(session_names[i], hilighted_session_name)) {
                     if (i < 0) {
                         hilighted_session = i;
                         hilighted_session_name[0] = 0;
                     } else {
                         hilighted_session = i;
-                        lib_strcpy(hilighted_session_name, SESSION_NAMES[i]);
+                        lib_strcpy(hilighted_session_name, session_names[i]);
                     }
                     break;
                 }
@@ -2189,12 +2198,12 @@ void draw_available_sessions(SessionInfo *sessions)
     for (i = TopSession; TopSession + session_count > i && TopSession + 3 > i; i++, y += character_height()) {
         if (i == hilighted_session && !found) {
             draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w,
-                                             y, SESSION_NAMES[i]);
+                                             y, session_names[i]);
             draw_players_on_session(i);
             found = 1;
         } else {
             draw_small_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w, y,
-                                   SESSION_NAMES[i]);
+                                   session_names[i]);
         }
     }
     y = resvars.screen_boxes_NetBoxp[125].y + 4;
@@ -2211,7 +2220,7 @@ void draw_available_sessions(SessionInfo *sessions)
                     hilighted_session_name[0] = 0;
                 } else {
                     hilighted_session = i;
-                    lib_strcpy(hilighted_session_name, SESSION_NAMES[i]);
+                    lib_strcpy(hilighted_session_name, session_names[i]);
                 }
                 lbDisplay.mleft_button = lbDisplay.left_button = 0;
             }
@@ -2299,7 +2308,7 @@ void swap_criteria_packets(u8 fail, u8 active)
         LbNetwork_Exchange(&criteria_packet[player]);
         for (i = 0; i < 4; i++) {
             othervar.net_winners[i] = 0;
-            if (D_001609c4[i].active) {
+            if (player_info[i].active) {
                 if (criteria_packet[i].result == 0) {
                     passed++;
                 } else if (criteria_packet[i].result == 1) {
@@ -2423,7 +2432,7 @@ void swap_year_end_packets(void)
     LbNetwork_ChangeExchangeBuffer(YEAR_END_PACKETS, 0x45);
     LbNetwork_Exchange(YEAR_END_PACKETS + player * 0x45);
     for (i = 0; i < 4; i++) {
-        if (D_001609c4[i].active) {
+        if (player_info[i].active) {
             allhosps[i].score = year_packet[i].score;
             allhosps[i].avg_patient_happiness = year_packet[i].avg_patient_happiness;
             allhosps[i].loan = year_packet[i].loan;
@@ -2452,10 +2461,6 @@ void swap_year_end_packets(void)
     }
 }
 
-extern "C" {
-extern u8 modem_dev[];
-}
-
 // Starts network service `service` (data: the serial or modem settings, or 0)
 // for up to max_players players. Returns 1 on success.
 // FUNCTION: 0x000850f4
@@ -2464,7 +2469,7 @@ u8 setup_network(TbNetworkService service, void *data, u8 max_players)
     s32 res;
 
     login_control.state = 6;
-    memset(modem_dev, 0, 0xb4);
+    memset(&modem_dev, 0, 0xb4);
     memset(player_info, 0, 0x90);
     res = LbNetwork_Init(service, theme_hospital_guid, max_players, 0, 0, player_info, data);
     if (res == Lb_OK) {
@@ -2492,7 +2497,7 @@ s32 create_session(void)
         myplayer.name_chars[len + 1] = 0;
     }
     sprintf(name, "%s", myplayer.name_chars);
-    res = LbNetwork_Create(name, myplayer.name_chars, &player, modem_dev);
+    res = LbNetwork_Create(name, myplayer.name_chars, &player, &modem_dev);
     if (res == Lb_OK) {
         login_control.state = 5;
         memset(login_control.players, 0, 0x540);
@@ -2519,7 +2524,7 @@ s32 join_session(void)
             myplayer.name_chars[res] = player_count + 'A';
             myplayer.name_chars[res + 1] = 0;
         }
-        res = LbNetwork_Join(session_pointers[hilighted_session], myplayer.name_chars, &player, modem_dev);
+        res = LbNetwork_Join(session_pointers[hilighted_session], myplayer.name_chars, &player, &modem_dev);
         if (res == Lb_OK) {
             login_control.state = 5;
             reset_glass_map(0x80);
@@ -2631,7 +2636,7 @@ s32 nth_other_active_player(s32 nth)
 
     for (i = 0; i < 4; i++) {
         if (i != player) {
-            if (D_001609c4[i].active) {
+            if (player_info[i].active) {
                 nth--;
                 if (nth == 0)
                     return i;
@@ -2648,7 +2653,7 @@ s32 nth_active_player(s32 nth)
     s32 i;
 
     for (i = 0; i < 4; i++) {
-        if (D_001609c4[i].active) {
+        if (player_info[i].active) {
             nth--;
             if (nth == 0)
                 return i;
@@ -2963,7 +2968,7 @@ void init_network_players(void)
     u8 i;
 
     for (i = 0; i < 4; i++) {
-        if (D_001609c4[i].active)
+        if (player_info[i].active)
             lib_strcpy((char *)allhosps[i].name, player_info[i].name);
         allhosps[i].player_type = 1;
     }
@@ -3058,7 +3063,7 @@ u8 network_num_players(void)
         u32 i;
 
         for (i = 0; i < 4; i++) {
-            if (D_001609c4[i].active)
+            if (player_info[i].active)
                 count++;
         }
     }

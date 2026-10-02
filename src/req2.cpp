@@ -748,7 +748,7 @@ void open_staff_resign_requester(Thing *staff)
     if (staff->poach_offers) {
         crequester.arg2 = 0;
         for (i = 0; i < nplayers; i++) {
-            if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+            if (statvar.num_players > 1 && player_info[i].active == 0)
                 continue;
             if (staff->poach_offers == 1 << i) {
                 crequester.arg2 = i;

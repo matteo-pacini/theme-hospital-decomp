@@ -60,7 +60,7 @@
     mov ebp, esi
     and edx, dword ptr [ebp + 4]
     and eax, dword ptr [ebp]
-    call "fn_000fcead_"
+    call "modf_pack_double"
     pop esi
     or edx, edx
     je .L000fce56
@@ -116,7 +116,7 @@
 .L000fce94:
     mov eax, ecx
     mov edi, 0x43300000
-    call "fn_000fcead_"
+    call "modf_pack_double"
     pop ebp
     mov dword ptr [ebp + 4], edx
     mov dword ptr [ebp], eax
@@ -128,13 +128,13 @@
     ret
 .size "__ZBuf2F",.-"__ZBuf2F"
 
-// fn_000fcead: pack the 64-bit mantissa edx:eax with exponent field edi into a double in edx:eax, normalising and rounding; 0 stays 0.
+// modf_pack_double: pack the 64-bit mantissa edx:eax with exponent field edi into a double in edx:eax, normalising and rounding; 0 stays 0.
 // FUNCTION: 0x000fcead
 
 .section _TEXT,"ax",@progbits,unique,1035949
-.globl "fn_000fcead_"
-.type "fn_000fcead_",@function
-"fn_000fcead_":
+.globl "modf_pack_double"
+.type "modf_pack_double",@function
+"modf_pack_double":
     sub esi, esi
     or esi, eax
     or esi, edx
@@ -166,4 +166,4 @@
     or edx, edi
 .L000fcefd:
     ret
-.size "fn_000fcead_",.-"fn_000fcead_"
+.size "modf_pack_double",.-"modf_pack_double"

@@ -131,7 +131,7 @@ extern "C" {
 extern char **room_names;
 extern char **object_names;
 extern Event D_001549d0[];
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern TbSprite *game_panel_data;
 extern TbSprite *end_game_panel;
 extern char **misc_text;
@@ -173,19 +173,19 @@ void update_panel(void)
     switch (othervar.panel_icon_set) {
     case 1:
         if (statvar.panel_top <= lbDisplay.mmouse_y && !gamevar.rat_fest_level)
-            D_00156910 = 1;
+            redraw_panel = 1;
         break;
     case 2:
         if (statvar.panel_top > lbDisplay.mmouse_y || gamevar.rat_fest_level)
-            D_00156910 = 1;
+            redraw_panel = 1;
         break;
     }
     if (othervar.shown_balance != myhosp->balance)
-        D_00156910 = 1;
-    if (D_00156910 == 1) {
+        redraw_panel = 1;
+    if (redraw_panel == 1) {
         choose_panel_icons();
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        D_00156910 = 0;
+        redraw_panel = 0;
         drawn = 1;
         draw_panel(1);
         set_all_refresh_zones_in_window(0, statvar.view_height, lbDisplay.physical_screen_width,
@@ -320,7 +320,7 @@ u8 which_icon_is_mouse_over(void)
             }
             i++;
         }
-        D_00156910 = 1;
+        redraw_panel = 1;
     }
     return over;
 }
@@ -333,7 +333,7 @@ void panel_ml_button(const u16 icon)
         if (((PanelIcon *)panel)[icon].kind != 0x40) {
             reqspr_draw(((PanelIcon *)panel)[icon].x, ((PanelIcon *)panel)[icon].y,
                         &game_panel[((PanelIcon *)panel)[icon].pressed]);
-            D_00156910 = 1;
+            redraw_panel = 1;
         }
     }
 }
@@ -449,7 +449,7 @@ void panel_l_button(const u16 icon)
             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             break;
         }
-        D_00156910 = 1;
+        redraw_panel = 1;
     }
 }
 
@@ -476,7 +476,7 @@ void panel_r_button(const u16 icon)
             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             break;
         }
-        D_00156910 = 1;
+        redraw_panel = 1;
     }
 }
 
@@ -530,7 +530,7 @@ void draw_money_on_panel(void)
         if (othervar.balance_roll_step == 4) {
             othervar.balance_roll_step = 0;
             othervar.shown_balance = myhosp->balance;
-            D_00156910 = 1;
+            redraw_panel = 1;
         }
     } else {
         LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_clip_x, resvars.boxes_PanelLayoutp->balance_clip_y,
@@ -1409,7 +1409,7 @@ void panel_flash(void)
                         ((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].y,
                         &game_panel[((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].pressed]);
             othervar.flash_counter = 0;
-            D_00156910 = 1;
+            redraw_panel = 1;
         }
     }
 }

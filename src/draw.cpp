@@ -36,8 +36,8 @@ struct FrameBox {
 
 extern "C" {
 
-extern FrameBox D_001567b0;
-extern s32 D_00156911;
+extern FrameBox frame_bounds;
+extern s32 frame_extra_height;
 extern TbSprite *money;
 
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
@@ -52,7 +52,7 @@ static u8 glow_path[] = {0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d};
 
 // Draws composite frame frame_id with its origin at screen x,y, mirrored if
 // flip, with flags ORed into each element's draw flags; plays the frame's
-// sound. Records the frame's box in D_001567b0 (x, y, w, h) and grows its
+// sound. Records the frame's box in frame_bounds (x, y, w, h) and grows its
 // dirty rectangle (x0, y0, x1, y1) to cover it.
 // FUNCTION: 0x0002d910
 void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 flip)
@@ -63,7 +63,7 @@ void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, 
     TbSprite *spr;
 
     f = &frame[frame_id];
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
@@ -72,10 +72,10 @@ void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, 
                 lbDisplay.draw_flags = elem->flags | flags;
                 lbDisplay.draw_flags ^= 1;
                 LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
-                if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                    D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                    frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     } else {
@@ -85,32 +85,32 @@ void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, 
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags | flags;
                 LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
-                if (D_001567b0.x > elem->x - 0x8d)
-                    D_001567b0.x = elem->x - 0x8d;
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > elem->x - 0x8d)
+                    frame_bounds.x = elem->x - 0x8d;
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     }
     if (f->sound && gamevar.turn_skipped == 0)
         play_sound(SNDSRC_GENERAL, f->sound, x, y);
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
     lbDisplay.draw_flags = 0;
 }
 
@@ -125,7 +125,7 @@ void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const
     TbSprite *spr;
 
     f = &frame[frame_id];
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
@@ -134,10 +134,10 @@ void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const
                 lbDisplay.draw_flags = elem->flags;
                 lbDisplay.draw_flags ^= 1;
                 LbSpriteDrawOneColour(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, colour);
-                if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                    D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                    frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     } else {
@@ -147,30 +147,30 @@ void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags;
                 LbSpriteDrawOneColour(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, colour);
-                if (D_001567b0.x > elem->x - 0x8d)
-                    D_001567b0.x = elem->x - 0x8d;
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > elem->x - 0x8d)
+                    frame_bounds.x = elem->x - 0x8d;
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     }
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
     lbDisplay.draw_flags = 0;
 }
 
@@ -191,7 +191,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 
     f = &frame[w->sprite];
     icon = 0;
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     if (w->flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
@@ -222,10 +222,10 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                 lbDisplay.draw_flags = elem->flags & 0xf;
                 lbDisplay.draw_flags ^= 1;
                 LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
-                if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                    D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                    frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     } else {
@@ -256,10 +256,10 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags & 0xf;
                 LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
-                if (D_001567b0.x > elem->x - 0x8d)
-                    D_001567b0.x = elem->x - 0x8d;
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > elem->x - 0x8d)
+                    frame_bounds.x = elem->x - 0x8d;
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     }
@@ -269,25 +269,25 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
     if (icon)
-        icon_draw_from_special_id_frame(w->icon_frame, x, y, f->width / 2 + D_001567b0.x, D_001567b0.y);
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+        icon_draw_from_special_id_frame(w->icon_frame, x, y, f->width / 2 + frame_bounds.x, frame_bounds.y);
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    D_00156911 = 0;
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    frame_extra_height = 0;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
     lbDisplay.draw_flags = 0;
     othervar.frame_icon_drawn = 0;
 }
@@ -315,7 +315,7 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
     phase = actual_game_turn % 17;
     drawn = 0;
     icon = 0;
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     if (w->flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
@@ -347,31 +347,31 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
                     lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(0x3a - (elem->x - 0x8d) - spr->width, elem->y - 0xca + 0x74, spr);
                     drawn = 1;
-                    if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                        D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                        frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
                 RestoreFromPixBuffer();
             } else {
                 if (drawn) {
                     drawn = 0;
-                    draw_wibble(x + D_001567b0.x - 4, y + D_001567b0.y - 4,
-                                pixBuf.data + 0x3a + D_001567b0.x - 4 + (D_001567b0.y + 0x70) * 0xb4,
-                                f->width + 8 < 0x7a - D_001567b0.x + 3 ? f->width + 8 : 0x7a - D_001567b0.x + 3,
-                                f->length + 8 < 0x40 - D_001567b0.y + 3 ? f->length + 8 : 0x40 - D_001567b0.y + 3,
+                    draw_wibble(x + frame_bounds.x - 4, y + frame_bounds.y - 4,
+                                pixBuf.data + 0x3a + frame_bounds.x - 4 + (frame_bounds.y + 0x70) * 0xb4,
+                                f->width + 8 < 0x7a - frame_bounds.x + 3 ? f->width + 8 : 0x7a - frame_bounds.x + 3,
+                                f->length + 8 < 0x40 - frame_bounds.y + 3 ? f->length + 8 : 0x40 - frame_bounds.y + 3,
                                 phase);
-                    FillBoxInPixBuffer(0xfe, D_001567b0.x + 0x3a, D_001567b0.y + 0x74, f->width, f->length);
+                    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->length);
                 }
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
                     lbDisplay.draw_flags = elem->flags & 0xf;
                     lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
-                    if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                        D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                        frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
             }
         }
@@ -405,68 +405,68 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
                     lbDisplay.draw_flags = elem->flags & 0xf;
                     LbSpriteDraw(elem->x - 0x8d + 0x3a, elem->y - 0xca + 0x74, spr);
                     drawn = 1;
-                    if (D_001567b0.x > elem->x - 0x8d)
-                        D_001567b0.x = elem->x - 0x8d;
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > elem->x - 0x8d)
+                        frame_bounds.x = elem->x - 0x8d;
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
                 RestoreFromPixBuffer();
             } else {
                 if (drawn) {
                     drawn = 0;
-                    draw_wibble(x + D_001567b0.x - 4, y + D_001567b0.y - 4,
-                                pixBuf.data + 0x3a + D_001567b0.x - 4 + (D_001567b0.y + 0x70) * 0xb4,
-                                f->width + 8 < 0x7a - D_001567b0.x + 3 ? f->width + 8 : 0x7a - D_001567b0.x + 3,
-                                f->length + 8 < 0x40 - D_001567b0.y + 3 ? f->length + 8 : 0x40 - D_001567b0.y + 3,
+                    draw_wibble(x + frame_bounds.x - 4, y + frame_bounds.y - 4,
+                                pixBuf.data + 0x3a + frame_bounds.x - 4 + (frame_bounds.y + 0x70) * 0xb4,
+                                f->width + 8 < 0x7a - frame_bounds.x + 3 ? f->width + 8 : 0x7a - frame_bounds.x + 3,
+                                f->length + 8 < 0x40 - frame_bounds.y + 3 ? f->length + 8 : 0x40 - frame_bounds.y + 3,
                                 phase);
-                    FillBoxInPixBuffer(0xfe, D_001567b0.x + 0x3a, D_001567b0.y + 0x74, f->width, f->length);
+                    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->length);
                 }
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
                     lbDisplay.draw_flags = elem->flags & 0xf;
                     LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
-                    if (D_001567b0.x > elem->x - 0x8d)
-                        D_001567b0.x = elem->x - 0x8d;
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > elem->x - 0x8d)
+                        frame_bounds.x = elem->x - 0x8d;
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
             }
         }
     }
     if (drawn) {
-        draw_wibble(x + D_001567b0.x - 4, y + D_001567b0.y - 4,
-                    pixBuf.data + 0x3a + D_001567b0.x - 4 + (D_001567b0.y + 0x70) * 0xb4,
-                    f->width + 8 < 0x7a - D_001567b0.x + 3 ? f->width + 8 : 0x7a - D_001567b0.x + 3,
-                    f->length + 8 < 0x40 - D_001567b0.y + 3 ? f->length + 8 : 0x40 - D_001567b0.y + 3, phase);
+        draw_wibble(x + frame_bounds.x - 4, y + frame_bounds.y - 4,
+                    pixBuf.data + 0x3a + frame_bounds.x - 4 + (frame_bounds.y + 0x70) * 0xb4,
+                    f->width + 8 < 0x7a - frame_bounds.x + 3 ? f->width + 8 : 0x7a - frame_bounds.x + 3,
+                    f->length + 8 < 0x40 - frame_bounds.y + 3 ? f->length + 8 : 0x40 - frame_bounds.y + 3, phase);
     }
-    FillBoxInPixBuffer(0xfe, D_001567b0.x + 0x3a, D_001567b0.y + 0x74, f->width, f->length);
+    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->length);
     if (f->sound && gamevar.turn_skipped == 0 &&
         (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    D_00156911 = 0;
-    D_001567b0.x -= 4;
-    D_001567b0.y -= 4;
-    D_001567b0.w += 8;
-    D_001567b0.h += 8;
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    frame_extra_height = 0;
+    frame_bounds.x -= 4;
+    frame_bounds.y -= 4;
+    frame_bounds.w += 8;
+    frame_bounds.h += 8;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
     lbDisplay.draw_flags = 0;
     othervar.frame_icon_drawn = 0;
 }
@@ -487,7 +487,7 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
 
     f = &frame[w->sprite];
     glow = glow_path[((actual_game_turn + w->layers[0] + w->layers[1]) >> 1) & 7];
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
         elem = &element[*el];
         if (elem->flags & 0xfff0) {
@@ -526,16 +526,16 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
             if (w->flip) {
                 lbDisplay.draw_flags ^= 1;
                 sprite_draw_glow(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, g);
-                if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                    D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                    frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             } else {
                 sprite_draw_glow(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, g);
-                if (D_001567b0.x > elem->x - 0x8d)
-                    D_001567b0.x = elem->x - 0x8d;
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > elem->x - 0x8d)
+                    frame_bounds.x = elem->x - 0x8d;
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     }
@@ -544,24 +544,24 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    D_00156911 = 0;
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    frame_extra_height = 0;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
     lbDisplay.draw_flags = 0;
     othervar.frame_icon_drawn = 0;
 }
@@ -589,7 +589,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         f = &frame[w->sprite];
         split_height = obj->split_height;
         rest = f->length - split_height;
-        D_001567b0.x = D_001567b0.y = 999;
+        frame_bounds.x = frame_bounds.y = 999;
         {
             s32 top = y - split_height;
 
@@ -612,23 +612,23 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
             play_sound((u32)w, f->sound, x, y);
         if (gamevar.turn_skipped == 0)
             w->last_sound = f->sound;
-        D_001567b0.x += x;
-        D_001567b0.y += y;
-        D_001567b0.w = f->width;
+        frame_bounds.x += x;
+        frame_bounds.y += y;
+        frame_bounds.w = f->width;
         if (resvars.screen_mode == SCREEN_MODE_13) {
-            D_001567b0.h = f->length + D_00156911;
+            frame_bounds.h = f->length + frame_extra_height;
         } else {
-            D_001567b0.w /= 2;
-            D_001567b0.h = f->length / 2 + D_00156911;
+            frame_bounds.w /= 2;
+            frame_bounds.h = f->length / 2 + frame_extra_height;
         }
-        if (D_001567b0.x0 > D_001567b0.x)
-            D_001567b0.x0 = D_001567b0.x;
-        if (D_001567b0.y0 > D_001567b0.y)
-            D_001567b0.y0 = D_001567b0.y;
-        if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-            D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-        if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-            D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+        if (frame_bounds.x0 > frame_bounds.x)
+            frame_bounds.x0 = frame_bounds.x;
+        if (frame_bounds.y0 > frame_bounds.y)
+            frame_bounds.y0 = frame_bounds.y;
+        if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+            frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+        if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+            frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
         if (w->subtype == 0xe) {
             s32 anim;
 
@@ -658,7 +658,7 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
     rng = 0x546b1;
     if (obj > thing) {
         f = &frame[w->sprite];
-        D_001567b0.x = D_001567b0.y = 999;
+        frame_bounds.x = frame_bounds.y = 999;
         if (obj->aux_draw_flags != 0xff)
             full_draw_frame(w, w->sprite, x, y, obj->aux_draw_flags, 0, w->flip);
         InitPixBuffer(0, 0, 0x40, 0x40, 0, 0);
@@ -681,23 +681,23 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
             play_sound((u32)w, f->sound, x, y);
         if (gamevar.turn_skipped == 0)
             w->last_sound = f->sound;
-        D_001567b0.x += x;
-        D_001567b0.y += y;
-        D_001567b0.w = f->width;
+        frame_bounds.x += x;
+        frame_bounds.y += y;
+        frame_bounds.w = f->width;
         if (resvars.screen_mode == SCREEN_MODE_13) {
-            D_001567b0.h = f->length + D_00156911;
+            frame_bounds.h = f->length + frame_extra_height;
         } else {
-            D_001567b0.w /= 2;
-            D_001567b0.h = f->length / 2 + D_00156911;
+            frame_bounds.w /= 2;
+            frame_bounds.h = f->length / 2 + frame_extra_height;
         }
-        if (D_001567b0.x0 > D_001567b0.x)
-            D_001567b0.x0 = D_001567b0.x;
-        if (D_001567b0.y0 > D_001567b0.y)
-            D_001567b0.y0 = D_001567b0.y;
-        if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-            D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-        if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-            D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+        if (frame_bounds.x0 > frame_bounds.x)
+            frame_bounds.x0 = frame_bounds.x;
+        if (frame_bounds.y0 > frame_bounds.y)
+            frame_bounds.y0 = frame_bounds.y;
+        if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+            frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+        if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+            frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
         lbDisplay.draw_flags = 0;
     }
 }
@@ -713,7 +713,7 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
     TbSprite *spr;
 
     f = &frame[frame_id];
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
@@ -724,10 +724,10 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
                 LbSpriteDrawScaled(x - ((elem->x - 0x8d + spr->width) * scale >> 16),
                                    y + ((elem->y - 0xca) * scale >> 16), spr, spr->width * scale >> 16,
                                    spr->height * scale >> 16);
-                if (D_001567b0.x > -(elem->x - 0x8d + spr->width))
-                    D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > -(elem->x - 0x8d + spr->width))
+                    frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     } else {
@@ -738,32 +738,32 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
                 lbDisplay.draw_flags = elem->flags | flags;
                 LbSpriteDrawScaled(x + ((elem->x - 0x8d) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16), spr,
                                    spr->width * scale >> 16, spr->height * scale >> 16);
-                if (D_001567b0.x > elem->x - 0x8d)
-                    D_001567b0.x = elem->x - 0x8d;
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > elem->x - 0x8d)
+                    frame_bounds.x = elem->x - 0x8d;
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     }
     if (f->sound && gamevar.turn_skipped == 0)
         play_sound(SNDSRC_GENERAL, f->sound, x, y);
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
     lbDisplay.draw_flags = 0;
 }
 
@@ -779,7 +779,7 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
 
     f = &frame[w->sprite];
     hidden = 0;
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     phase = game_turn % 6;
     if (phase >= 4)
         phase = 6 - phase;
@@ -804,23 +804,23 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
     lbDisplay.draw_flags = 0;
 }
 
@@ -836,9 +836,9 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
     TbSprite *spr;
 
     f = &frame[frame_id];
-    D_001567b0.x0 = D_001567b0.y0 = 999;
-    D_001567b0.x1 = D_001567b0.y1 = 0;
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x0 = frame_bounds.y0 = 999;
+    frame_bounds.x1 = frame_bounds.y1 = 0;
+    frame_bounds.x = frame_bounds.y = 999;
     if (flip) {
         if (remap) {
             for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
@@ -848,10 +848,10 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
                     lbDisplay.draw_flags = elem->flags;
                     lbDisplay.draw_flags ^= 1;
                     LbSpriteDrawRemap(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
-                    if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                        D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                        frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
             }
         } else {
@@ -862,10 +862,10 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
                     lbDisplay.draw_flags = elem->flags;
                     lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
-                    if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                        D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                        frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
             }
         }
@@ -877,10 +877,10 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
                 if (spr > sprite) {
                     lbDisplay.draw_flags = elem->flags;
                     LbSpriteDrawRemap(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, remap);
-                    if (D_001567b0.x > elem->x - 0x8d)
-                        D_001567b0.x = elem->x - 0x8d;
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > elem->x - 0x8d)
+                        frame_bounds.x = elem->x - 0x8d;
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
             }
         } else {
@@ -890,32 +890,32 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
                 if (spr > sprite) {
                     lbDisplay.draw_flags = elem->flags;
                     LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
-                    if (D_001567b0.x > elem->x - 0x8d)
-                        D_001567b0.x = elem->x - 0x8d;
-                    if (D_001567b0.y > elem->y - 0xca)
-                        D_001567b0.y = elem->y - 0xca;
+                    if (frame_bounds.x > elem->x - 0x8d)
+                        frame_bounds.x = elem->x - 0x8d;
+                    if (frame_bounds.y > elem->y - 0xca)
+                        frame_bounds.y = elem->y - 0xca;
                 }
             }
         }
     }
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    set_all_refresh_zones_in_window(D_001567b0.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
+    set_all_refresh_zones_in_window(frame_bounds.x0, frame_bounds.y0, frame_bounds.x1, frame_bounds.y1, 3);
     lbDisplay.draw_flags = 0;
 }
 
@@ -931,7 +931,7 @@ void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8
     TbSprite *spr;
 
     f = &frame[frame_id];
-    D_001567b0.x = D_001567b0.y = 999;
+    frame_bounds.x = frame_bounds.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
@@ -948,10 +948,10 @@ void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8
                     LbSpriteDrawRemap(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
                 else
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
-                if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                    D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                    frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     } else {
@@ -969,37 +969,37 @@ void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8
                     LbSpriteDrawRemap(x + (elem->x - 0x8d), y + (elem->y - 0xca), spr, remap);
                 else
                     LbSpriteDraw(x + (elem->x - 0x8d), y + (elem->y - 0xca), spr);
-                if (D_001567b0.x > elem->x - 0x8d)
-                    D_001567b0.x = elem->x - 0x8d;
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > elem->x - 0x8d)
+                    frame_bounds.x = elem->x - 0x8d;
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     }
-    D_001567b0.x += x;
-    D_001567b0.y += y;
-    D_001567b0.w = f->width;
+    frame_bounds.x += x;
+    frame_bounds.y += y;
+    frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        D_001567b0.h = f->length + D_00156911;
+        frame_bounds.h = f->length + frame_extra_height;
     } else {
-        D_001567b0.w /= 2;
-        D_001567b0.h = f->length / 2 + D_00156911;
+        frame_bounds.w /= 2;
+        frame_bounds.h = f->length / 2 + frame_extra_height;
     }
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    set_all_refresh_zones_in_window(D_001567b0.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
+    set_all_refresh_zones_in_window(frame_bounds.x0, frame_bounds.y0, frame_bounds.x1, frame_bounds.y1, 3);
     lbDisplay.draw_flags = 0;
 }
 
 // Draws frame frame_id at x,y for w (only the layered elements matching w's
 // layers), with flags ORed into the draw flags and mirrored if flip; with
-// hidden set nothing is drawn. Only grows D_001567b0's x,y to the frame's top
+// hidden set nothing is drawn. Only grows frame_bounds's x,y to the frame's top
 // left (relative to x,y), for the caller to finish.
 // FUNCTION: 0x00031434
 void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden,
@@ -1027,10 +1027,10 @@ void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, con
                     lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                 }
-                if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
-                    D_001567b0.x = -(elem->x - 0x8d + spr->width);
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > -(spr->width + (elem->x - 0x8d)))
+                    frame_bounds.x = -(elem->x - 0x8d + spr->width);
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     } else {
@@ -1047,17 +1047,17 @@ void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, con
                     lbDisplay.draw_flags = elem->flags & 0xf | flags;
                     LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                 }
-                if (D_001567b0.x > elem->x - 0x8d)
-                    D_001567b0.x = elem->x - 0x8d;
-                if (D_001567b0.y > elem->y - 0xca)
-                    D_001567b0.y = elem->y - 0xca;
+                if (frame_bounds.x > elem->x - 0x8d)
+                    frame_bounds.x = elem->x - 0x8d;
+                if (frame_bounds.y > elem->y - 0xca)
+                    frame_bounds.y = elem->y - 0xca;
             }
         }
     }
 }
 
 // Draws text at x,y in colour colour with font 0, and records its box in
-// D_001567b0.
+// frame_bounds.
 // FUNCTION: 0x00031760
 void draw_text_on_map(char *text, const u8 colour, const s32 x, const s32 y)
 {
@@ -1066,22 +1066,22 @@ void draw_text_on_map(char *text, const u8 colour, const s32 x, const s32 y)
     lbDisplay.draw_colour = colour;
     lbDisplay.draw_flags |= 0x40;
     LbTextDraw(x, y, text);
-    D_001567b0.x = x;
-    D_001567b0.y = y;
-    D_001567b0.w = LbTextStringWidth(text);
-    D_001567b0.h = LbTextStringHeight(text);
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    frame_bounds.x = x;
+    frame_bounds.y = y;
+    frame_bounds.w = LbTextStringWidth(text);
+    frame_bounds.h = LbTextStringHeight(text);
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
 }
 
 // Draws icon frame icon centred at x + dx, above y + dy by the frame's height
-// and the layout's icon gap, and notes the extra height in D_00156911.
+// and the layout's icon gap, and notes the extra height in frame_extra_height.
 // FUNCTION: 0x00031874
 void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, const s16 dx, const s16 dy)
 {
@@ -1098,11 +1098,11 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
             lbDisplay.draw_flags = elem->flags & 0xf;
             LbSpriteDraw(x + dx - spr->width / 2,
                          (y + dy) + (elem->y - 0xca) - f->length - resvars.coords_IconScreenp->icon_gap, spr);
-            if (D_001567b0.x > dx - spr->width / 2)
-                D_001567b0.x = dx - spr->width / 2;
-            if (D_001567b0.y > dy - f->length - resvars.coords_IconScreenp->icon_gap) {
-                D_001567b0.y = dy - f->length - resvars.coords_IconScreenp->icon_gap;
-                D_00156911 = resvars.coords_IconScreenp->icon_gap + f->length;
+            if (frame_bounds.x > dx - spr->width / 2)
+                frame_bounds.x = dx - spr->width / 2;
+            if (frame_bounds.y > dy - f->length - resvars.coords_IconScreenp->icon_gap) {
+                frame_bounds.y = dy - f->length - resvars.coords_IconScreenp->icon_gap;
+                frame_extra_height = resvars.coords_IconScreenp->icon_gap + f->length;
             }
         }
     }
@@ -1111,7 +1111,7 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
 }
 
 // Draws a money bag at x,y, with value written on it in high resolution
-// (unless othervar.use_lores_assets), and records its box in D_001567b0.
+// (unless othervar.use_lores_assets), and records its box in frame_bounds.
 // FUNCTION: 0x00031a44
 void draw_money(s32 x, s32 y, s32 value)
 {
@@ -1125,10 +1125,10 @@ void draw_money(s32 x, s32 y, s32 value)
     x += -2;
     lbDisplay.draw_flags = 0;
     LbSpriteDraw(x, y, money + 1);
-    D_001567b0.x = x;
-    D_001567b0.y = y;
-    D_001567b0.w = money[1].width;
-    D_001567b0.h = money[1].height;
+    frame_bounds.x = x;
+    frame_bounds.y = y;
+    frame_bounds.w = money[1].width;
+    frame_bounds.h = money[1].height;
     if (resvars.game_mode == SCREEN_MODE_13 && !othervar.use_lores_assets) {
         sprintf(buf, "%d", value);
         width = -1;
@@ -1144,12 +1144,12 @@ void draw_money(s32 x, s32 y, s32 value)
             px += money[digit + 2].width + 1;
         }
     }
-    if (D_001567b0.x0 > D_001567b0.x)
-        D_001567b0.x0 = D_001567b0.x;
-    if (D_001567b0.y0 > D_001567b0.y)
-        D_001567b0.y0 = D_001567b0.y;
-    if (D_001567b0.x1 < D_001567b0.x + D_001567b0.w)
-        D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
-    if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
-        D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
+    if (frame_bounds.x0 > frame_bounds.x)
+        frame_bounds.x0 = frame_bounds.x;
+    if (frame_bounds.y0 > frame_bounds.y)
+        frame_bounds.y0 = frame_bounds.y;
+    if (frame_bounds.x1 < frame_bounds.x + frame_bounds.w)
+        frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
+    if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
+        frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
 }

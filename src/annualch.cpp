@@ -167,7 +167,7 @@ extern "C" void display_year_charts(void)
             LbTextDraw(x, y, chart_types[cat]);
             y += height;
             for (j = 0; j < count; j++) {
-                if (statvar.num_players > 1 && D_001609c4[chart[cat][j].hosp].active == 0)
+                if (statvar.num_players > 1 && player_info[chart[cat][j].hosp].active == 0)
                     continue;
                 if (allhosps[chart[cat][j].hosp].player_type != 0) {
                     y += height;

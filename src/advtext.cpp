@@ -53,8 +53,8 @@ struct AdvisorLayout {
 
 extern "C" {
 extern u8 no_pieces;
-extern u8 D_00156910;
-extern FrameBox D_001567b0;
+extern u8 redraw_panel;
+extern FrameBox frame_bounds;
 char *strncpy(char *dst, const char *src, u32 len);
 char *strncat(char *dst, const char *t, u32 n);
 void process_advisor_text(void);
@@ -218,7 +218,7 @@ void advisor_character(void)
     case 5:
     case 6:
     case 8:
-        D_00156910 = 1;
+        redraw_panel = 1;
         speed = 1;
         loop = 1;
         advisor.state_advanced = 0;
@@ -242,8 +242,8 @@ void advisor_character(void)
     }
     if (speed) {
         draw_a_frame(advisor.anim_frame, advisor.x, advisor.y, 0, 0);
-        set_all_refresh_zones_in_window(D_001567b0.x, D_001567b0.y, D_001567b0.x + D_001567b0.w,
-                                        D_001567b0.y + D_001567b0.h, 3);
+        set_all_refresh_zones_in_window(frame_bounds.x, frame_bounds.y, frame_bounds.x + frame_bounds.w,
+                                        frame_bounds.y + frame_bounds.h, 3);
         if (actual_game_turn % speed == 0 && !gamevar.paused) {
             advisor.anim_frame = frame[advisor.anim_frame].next;
             f = &frame[advisor.anim_frame];

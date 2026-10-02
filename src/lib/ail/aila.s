@@ -1457,7 +1457,7 @@
 .size "_AIL_fwrite",.-"_AIL_fwrite"
 
 // Moves `handle`'s file pointer to `offset` from the start; returns the new
-// position. Falls through into fn_000deb11_.
+// position. Falls through into ail_dos_seek.
 // FUNCTION: 0x000deb0d
 
 .section _TEXT,"ax",@progbits,unique,912141
@@ -1473,9 +1473,9 @@
 // FUNCTION: 0x000deb11
 
 .section _TEXT,"ax",@progbits,unique,912145
-.globl "fn_000deb11_"
-.type "fn_000deb11_",@function
-"fn_000deb11_":
+.globl "ail_dos_seek"
+.type "ail_dos_seek",@function
+"ail_dos_seek":
     push ebp
     {load} mov ebp, esp
     push ebx
@@ -1493,7 +1493,7 @@
     pop ebx
     pop ebp
     ret
-.size "fn_000deb11_",.-"fn_000deb11_"
+.size "ail_dos_seek",.-"ail_dos_seek"
 
 // Moves `handle`'s file pointer by `offset` from its current position; returns
 // the new position.

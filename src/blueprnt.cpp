@@ -27,7 +27,7 @@ void set_expertise_room(RoomInfo *room);
 
 extern "C" {
 
-extern s16 D_001567b0[8];
+extern s16 frame_bounds[8];
 }
 
 // Draws the blueprint x0,y0 to x1,y1 (inclusive tiles) on the local player's
@@ -133,8 +133,8 @@ outline:
                 give_screen_xy_of_cell_at_column_row(window.current_window, x, y - 1);
                 sx = info.cell_x;
                 sy = info.cell_y;
-                D_001567b0[0] = D_001567b0[1] = 999;
-                D_001567b0[2] = D_001567b0[3] = 0;
+                frame_bounds[0] = frame_bounds[1] = 999;
+                frame_bounds[2] = frame_bounds[3] = 0;
                 tx = x;
                 ty = y;
                 if (mode != 2) {
@@ -170,7 +170,7 @@ outline:
                                  start[blueprint[piece + base].anim].flags);
                 LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
                 LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
-                set_all_refresh_zones_in_window(D_001567b0[0], D_001567b0[1], D_001567b0[2], D_001567b0[3], 3);
+                set_all_refresh_zones_in_window(frame_bounds[0], frame_bounds[1], frame_bounds[2], frame_bounds[3], 3);
             }
         }
     }
@@ -764,7 +764,7 @@ void process_blueprint_zones(void)
         count = 4;
     }
     for (i = count - 1; i >= 0; i--) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && player_info[i].active == 0) {
             continue;
         }
         othervar.cur_player = i;

@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_001567c0[][16];
+extern u8 refresh_zones[][16];
 void LbVesaSetPage(s16 page);
 }
 
@@ -20,7 +20,7 @@ void special_refresh(void)
     LbMouseRemove();
 }
 
-// Copies each 32x32 zone of the back buffer marked in D_001567c0 to the
+// Copies each 32x32 zone of the back buffer marked in refresh_zones to the
 // 640-wide banked VESA screen, switching banks as needed, and decrements
 // the zones' counts.
 // FUNCTION: 0x000ab144
@@ -42,12 +42,12 @@ void refresh_to_VRAM(void)
     page = -1;
     for (row = 0; row < lbDisplay.physical_screen_height / 32; row++) {
         for (col = 0; col < lbDisplay.physical_screen_width / 32; col++) {
-            if (D_001567c0[col][row] > 0) {
+            if (refresh_zones[col][row] > 0) {
                 end = col;
                 do {
-                    D_001567c0[end][row]--;
+                    refresh_zones[end][row]--;
                     end++;
-                } while (D_001567c0[end][row] > 0 && end < lbDisplay.physical_screen_width / 32);
+                } while (refresh_zones[end][row] > 0 && end < lbDisplay.physical_screen_width / 32);
                 width = end - col;
                 offset = lbDisplay.physical_screen_width * (row << 5) + (col << 5);
                 src = lbDisplay.wscreen + offset;
@@ -152,6 +152,6 @@ void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, c
         zy2 = cy2 / 32;
         for (y = zy1; y <= (u8)zy2; y++)
             for (x = zx1; x <= (u8)zx2; x++)
-                D_001567c0[x][y] = refresh_count;
+                refresh_zones[x][y] = refresh_count;
     }
 }

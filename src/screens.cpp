@@ -24,7 +24,7 @@ extern u8 *screen_pointers_data;
 extern TbSprite *screen_pointers_tab_end;
 extern Picture loaded_face;
 extern u8 *palette;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern PicLengths D_0017526c;
 
 int LbScreenLock(void);
@@ -84,7 +84,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
         othervar.fade_palette = palette;
         display_mode = DM_GAME;
         othervar.full_redraw = 1;
-        D_00156910 = 1;
+        redraw_panel = 1;
         set_font_from_cache(1);
         close_irequesters();
         window.current_window = 0;

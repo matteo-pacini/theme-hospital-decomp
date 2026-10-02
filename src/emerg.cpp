@@ -21,13 +21,8 @@ struct EmergencyDef {
     u16 bonus;
 };
 
-struct PlayerPopup {
-    u16 call;
-    u8 unknown2[0x6a];
-};
-
 extern "C" {
-extern PlayerPopup D_0015f5c2[];
+extern PlayerCall popup_store[][9];
 extern char **illness_text;
 extern char **room_names;
 extern char **skill_names;
@@ -66,7 +61,7 @@ void try_to_generate_emergency(void)
     if (statvar.num_players > 1)
         hosp_count = 4;
     for (i = 0; i < hosp_count; i++) {
-        if (statvar.num_players <= 1 || D_001609c4[i].active != 0 || 0) {
+        if (statvar.num_players <= 1 || player_info[i].active != 0 || 0) {
             hosp = &allhosps[i];
             if (hosp->emergency_state_s == 5) {
                 hosp->emergency_heli = summon_vehicle(i, 0, allhosps[i].heli_pad_tile + 0x80, 0x4cc, 0x7a7);
@@ -82,21 +77,21 @@ void try_to_generate_emergency(void)
     }
     if (check_emergency_criteria()) {
         for (j = 0; j < hosp_count; j++) {
-            if (statvar.num_players <= 1 || D_001609c4[j].active != 0 || 0) {
+            if (statvar.num_players <= 1 || player_info[j].active != 0 || 0) {
                 if (allhosps[j].rooms[gamevar.emergency_illness].discovered == 1)
                     found = 1;
             }
         }
         if (found) {
             for (j = 0; j < hosp_count; j++) {
-                if (statvar.num_players <= 1 || D_001609c4[j].active != 0 || 0)
+                if (statvar.num_players <= 1 || player_info[j].active != 0 || 0)
                     setup_emergency_stats(make_a_playercall(2, 0, 0x14, j), j);
             }
         }
         setup_next_emergency();
     }
     for (i = 0; i < hosp_count; i++) {
-        if (statvar.num_players <= 1 || D_001609c4[i].active != 0 || 0) {
+        if (statvar.num_players <= 1 || player_info[i].active != 0 || 0) {
             hosp = &allhosps[i];
             if (hosp->emergency_state_s > 5)
                 hosp->emergency_state--;
@@ -122,7 +117,7 @@ u32 check_emergency_criteria(void)
         return 0;
     if (actual_game_turn >= gamevar.next_emergency_turn && gamevar.emergency_pending) {
         for (i = 0; i < hosp_count; i++) {
-            if (statvar.num_players <= 1 || D_001609c4[i].active != 0 || 0) {
+            if (statvar.num_players <= 1 || player_info[i].active != 0 || 0) {
                 if (check_playercall(3, 0, i))
                     return 0;
                 if (allhosps[i].epidemic_active)
@@ -251,7 +246,7 @@ u32 announce_emergency(u8 owner, char **strs)
     hosp = &allhosps[owner];
     if (hosp->emergency_state_s != 0)
         available_buttons &= ~1;
-    call = D_0015f5c2[owner].call;
+    call = popup_store[owner][2].id;
     for (i = 0; i < 4; i++) {
         if (gamevar.emergency_calls[i].call == call && gamevar.emergency_calls[i].used)
             break;

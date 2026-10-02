@@ -59,7 +59,7 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
 void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 cell);
 
 extern "C" {
-extern s16 D_001567b0[8];
+extern s16 frame_bounds[8];
 extern CellLink draw_precedence[];
 void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, s32 colour);
@@ -496,16 +496,16 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
             oy = 0xb4 - resvars.tile_height * 3 / 2;
             DrawIntoPixBuffer();
             do_mapwho(m, ox, oy, cx0 + x - ox, cy0 + y - 0xb4);
-            px = D_001567b0[0];
-            py = D_001567b0[1];
-            D_001567b0[0] += x - ox;
-            D_001567b0[1] += y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
-            D_001567b0[2] += x - ox;
-            D_001567b0[3] += y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
+            px = frame_bounds[0];
+            py = frame_bounds[1];
+            frame_bounds[0] += x - ox;
+            frame_bounds[1] += y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
+            frame_bounds[2] += x - ox;
+            frame_bounds[3] += y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
             pixBuf.x = x - ox;
             pixBuf.y = y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
-            find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0,
-                               cx1, cy1);
+            find_common_window(frame_bounds[0] + wx, frame_bounds[1] + wy, frame_bounds[2] + wx, frame_bounds[3] + wy,
+                               cx0, cy0, cx1, cy1);
             if (info.clip_empty == 0) {
                 bx0 = info.clip_x0;
                 by0 = info.clip_y0;
@@ -516,13 +516,13 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
             }
             RestoreFromPixBuffer();
             LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
-            DrawPixBuffer(0, px, py, D_001567b0[2] - D_001567b0[0], D_001567b0[3] - D_001567b0[1]);
-            FillBoxInPixBuffer(0xfe, px, py, D_001567b0[2] - D_001567b0[0], D_001567b0[3] - D_001567b0[1]);
+            DrawPixBuffer(0, px, py, frame_bounds[2] - frame_bounds[0], frame_bounds[3] - frame_bounds[1]);
+            FillBoxInPixBuffer(0xfe, px, py, frame_bounds[2] - frame_bounds[0], frame_bounds[3] - frame_bounds[1]);
         } else {
             LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
             do_mapwho(m, x, y - resvars.tile_height, 0, 0);
-            find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0,
-                               cx1, cy1);
+            find_common_window(frame_bounds[0] + wx, frame_bounds[1] + wy, frame_bounds[2] + wx, frame_bounds[3] + wy,
+                               cx0, cy0, cx1, cy1);
             if (info.clip_empty == 0) {
                 bx0 = info.clip_x0;
                 by0 = info.clip_y0;
@@ -1314,16 +1314,16 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
                     } else {
                         DrawIntoPixBuffer();
                         do_mapwho(m, 0x5a - resvars.tile_width / 2, 0xb4 - resvars.tile_height * 3 / 2, 0, 0);
-                        ppx = D_001567b0[0];
-                        ppy = D_001567b0[1];
-                        D_001567b0[0] += x - (0x5a - resvars.tile_width / 2);
-                        D_001567b0[1] += sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
-                        D_001567b0[2] += x - (0x5a - resvars.tile_width / 2);
-                        D_001567b0[3] += sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
+                        ppx = frame_bounds[0];
+                        ppy = frame_bounds[1];
+                        frame_bounds[0] += x - (0x5a - resvars.tile_width / 2);
+                        frame_bounds[1] += sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
+                        frame_bounds[2] += x - (0x5a - resvars.tile_width / 2);
+                        frame_bounds[3] += sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
                         pixBuf.x = x - 0x5a + resvars.tile_width / 2;
                         pixBuf.y = sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
-                        find_common_window(D_001567b0[0] + minx, D_001567b0[1] + miny, D_001567b0[2] + minx,
-                                           D_001567b0[3] + miny, x0, y0, x1, y1);
+                        find_common_window(frame_bounds[0] + minx, frame_bounds[1] + miny, frame_bounds[2] + minx,
+                                           frame_bounds[3] + miny, x0, y0, x1, y1);
                         b0 = info.clip_x0;
                         b1 = info.clip_y0;
                         b2 = info.clip_x1;
@@ -1335,9 +1335,10 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
                         }
                         RestoreFromPixBuffer();
                         LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
-                        DrawPixBuffer(0, ppx, ppy, D_001567b0[2] - D_001567b0[0], D_001567b0[3] - D_001567b0[1]);
-                        FillBoxInPixBuffer(0xfe, ppx, ppy, D_001567b0[2] - D_001567b0[0],
-                                           D_001567b0[3] - D_001567b0[1]);
+                        DrawPixBuffer(0, ppx, ppy, frame_bounds[2] - frame_bounds[0],
+                                      frame_bounds[3] - frame_bounds[1]);
+                        FillBoxInPixBuffer(0xfe, ppx, ppy, frame_bounds[2] - frame_bounds[0],
+                                           frame_bounds[3] - frame_bounds[1]);
                     }
                 }
             }

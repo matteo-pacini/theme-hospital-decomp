@@ -20,7 +20,7 @@ struct ScrollLayout {
 
 extern "C" {
 extern TrackSlot D_001581b2[];
-extern u8 D_00156910;
+extern u8 redraw_panel;
 }
 
 extern s16 mapx;
@@ -602,7 +602,7 @@ void init_andys_variables(void)
 
     i = 0;
     set_all_refresh_zones_in_window(0, 0, 0x27f, 0x1df, 3);
-    D_00156910 = 1;
+    redraw_panel = 1;
     debug.f102 = 1;
     debug.f104 = 0;
     debug.f103 = 0;

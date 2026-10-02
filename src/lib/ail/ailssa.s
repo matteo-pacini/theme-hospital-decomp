@@ -1,7 +1,7 @@
 .intel_syntax noprefix
 
 // The dispatch table's entries were each assembled after the routine they point at:
-// TABLE RECORDS: fn_000f0da8_
+// TABLE RECORDS: ssa_dispatch_table
 
 // Data, not a function: the mixer's dispatch table. Entries 0-127 are the DMA
 // copy routines DC_n and entries 128-255 the merge routines M_n, indexed by
@@ -10,9 +10,9 @@
 // FUNCTION: 0x000f0da8
 
 .section _TEXT,"ax",@progbits,unique,986536
-.globl "fn_000f0da8_"
-.type "fn_000f0da8_",@function
-"fn_000f0da8_":
+.globl "ssa_dispatch_table"
+.type "ssa_dispatch_table",@function
+"ssa_dispatch_table":
     .long "_DC_0"
     .long "_DC_1"
     .long 0
@@ -269,7 +269,7 @@
     .long 0
     .long "_M_126"
     .long "_M_127"
-.size "fn_000f0da8_",.-"fn_000f0da8_"
+.size "ssa_dispatch_table",.-"ssa_dispatch_table"
 
 // DMA copy routine 0: converts ECX frames of the 32-bit build buffer at ESI to
 // unsigned 8-bit mono output at EDI, unclipped.
@@ -4101,7 +4101,7 @@
     mov ecx, 0x80000000
     push ebp
     mov ebp, dword ptr [.Ldata]
-    call dword ptr cs:[ebp*4 + "fn_000f0da8_"+0x200]
+    call dword ptr cs:[ebp*4 + "ssa_dispatch_table"+0x200]
     pop ebp
     mov ecx, dword ptr [ebp + 8]
     mov ebx, dword ptr [ecx + 0x2c]
@@ -4181,7 +4181,7 @@
     {load} add ebx, eax
 .L000f2db6:
     mov eax, dword ptr [.Ldata]
-    call dword ptr cs:[eax*4 + "fn_000f0da8_"]
+    call dword ptr cs:[eax*4 + "ssa_dispatch_table"]
     pop es
     pop ds
     pop edi
@@ -4268,7 +4268,7 @@
     call "_AIL_vmm_lock_range"
     add esp, 8
     .byte 0x68; .long "_AILSSA_VMM_lock"  # push 0xe2e3c
-    .byte 0x68; .long "fn_000f0da8_"  # push 0xe0da8
+    .byte 0x68; .long "ssa_dispatch_table"  # push 0xe0da8
     call "_AIL_vmm_lock_range"
     add esp, 8
     pop es

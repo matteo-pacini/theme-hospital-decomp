@@ -38,7 +38,7 @@ extern Picture loaded_face;
 extern u8 error_number;
 extern TbSprite *end_pointers;
 extern u8 *pointer_data;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 void strcat(char *dst, char *src);
 int LbScreenLock(void);
 void change_screen_mode(TbScreenMode mode);
@@ -1268,7 +1268,7 @@ extern "C" void change_screen_mode(TbScreenMode mode)
     swap_game_sprites(mode);
     LbSpriteSetup(pointer, end_pointers, pointer_data);
     LbMouseSetup(&pointer[othervar.pointer_sprite]);
-    D_00156910 = 1;
+    redraw_panel = 1;
     othervar.full_redraw = 1;
     set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
     if (active) {

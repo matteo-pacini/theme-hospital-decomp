@@ -42,7 +42,7 @@ extern s16 staff_states[][5];
 extern s16 mcurx;
 extern s16 mcury;
 extern "C" {
-extern s16 D_001567b0[8];
+extern s16 frame_bounds[8];
 }
 
 // At each month end (and level start): takes this month's staff_levels entry
@@ -724,8 +724,8 @@ void draw_staff_cursor(void)
     LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
     held = &thing[gamevar.held_staff];
     if (held > thing) {
-        D_001567b0[0] = D_001567b0[1] = 999;
-        D_001567b0[2] = D_001567b0[3] = 0;
+        frame_bounds[0] = frame_bounds[1] = 999;
+        frame_bounds[2] = frame_bounds[3] = 0;
         draw_from_special_id_frame(start[gamevar.staff_cursor_anim].frame, mcurx + resvars.tile_width / 2,
                                    mcury - resvars.tile_height / 2, remap, held->layers,
                                    start[gamevar.staff_cursor_anim].flags);

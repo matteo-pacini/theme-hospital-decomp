@@ -72,7 +72,7 @@ S32 note_freq[128] = {
     16745, 17740, 18796, 19910, 21094, 22348, 23680, 25088,
 };
 #pragma data_seg()
-#pragma aux note_freq "fn_000e5430_";
+#pragma aux note_freq "_note_freq";
 
 
 /* Timbre and MIDI event traps: __pascal (callee pops). */

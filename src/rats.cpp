@@ -150,7 +150,7 @@ void manage_rats(void)
         nplayers = 4;
     }
     for (i = nplayers - 1; i >= 0; i--) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && player_info[i].active == 0) {
             continue;
         }
         if (old_newrand() % 100 < allhosps[i].litter_count) {

@@ -24,7 +24,7 @@ u8 play_attract_mode(void);
 u8 play_credits(s16 *scroll, u16 *line);
 
 extern u8 *palette;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern u8 anim_choice;
 extern char **credit_text;
 }
@@ -127,7 +127,7 @@ void draw_main_menu(void)
                 mainmenu.state = MMS_ENTER;
                 load_game_files();
                 clear_loading_screen(palette);
-                D_00156910 = 1;
+                redraw_panel = 1;
                 set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height,
                                                 3);
                 draw_it();

@@ -49,16 +49,6 @@ struct Rect {
     int y1;
 };
 
-/*
- * A player's popup state (D_0015f5c2[player]), as emerg.cpp's PlayerPopup.
- */
-struct Stride6c {
-    // 0x0: The emergency call the player's popup is about (matched against
-    // gamevar.emergency_calls[].call).
-    u16 call;
-    u8 unknown2[0x6a];
-};
-
 extern "C" {
 extern u8 host_player;
 
@@ -75,12 +65,12 @@ extern u8 replay_mode;
 extern s32 replay_file;
 extern u8 replay_number, replay_loop;
 extern u8 *palette;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern u8 last_saved;
 extern u8 need_a_save;
 extern Menu overview;
 extern Slot D_001581b2[];
-extern Stride6c D_0015f5c2[];
+extern PlayerCall popup_store[][9];
 
 int LbScreenLock(void);
 u32 check_sum(void);
@@ -89,7 +79,7 @@ void net_debug_msg(char *s);
 u8 is_player_building(void);
 void check_autosave(void);
 void restart_level(void);
-void find_other_player(int me);
+void choose_host_player(int me);
 void cancel_room_edit(u8 a);
 u8 surgeon_screen_free(Thing *staff);
 int is_checksummed_region(int region);
@@ -412,7 +402,7 @@ void process_turn(void)
             }
             changed = 0;
             for (j = 0; j < 4; j++) {
-                if (D_001609c4[j].active && D_001549d0[j].checksum) {
+                if (player_info[j].active && D_001549d0[j].checksum) {
                     if (D_001549d0[host_player].checksum != D_001549d0[j].checksum) {
                         if (D_001549d0[j].type != EV_NETWORK_GAINED_FOCUS &&
                             D_001549d0[j].type != EV_NETWORK_LOST_FOCUS) {
@@ -675,7 +665,7 @@ void process_turn(void)
                 }
                 statvar.num_players = 1;
                 player = 0;
-                find_other_player(-1);
+                choose_host_player(-1);
             }
             quit_game = 1;
             if (debug.unknowne2 == 1) {
@@ -825,7 +815,7 @@ void process_turn(void)
             if (display_mode != DM_GAME) {
                 display_mode = DM_GAME;
                 othervar.full_redraw = 1;
-                D_00156910 = 1;
+                redraw_panel = 1;
                 othervar.fade_palette = palette;
             }
             break;
@@ -882,7 +872,7 @@ void process_turn(void)
                     break;
                 }
                 othervar.full_redraw = 1;
-                D_00156910 = 1;
+                redraw_panel = 1;
             }
             break;
         case EV_BUY_LAND:
@@ -1571,7 +1561,7 @@ void process_turn(void)
                 }
                 break;
             case CH_EMERGENCY_ACCEPT:
-                give_emergency_stats(D_0015f5c2[player].call, i);
+                give_emergency_stats(popup_store[player][2].id, i);
                 D_001549d0[i].type = EV_START_EMERGENCY;
                 goto dispatch;
             case CH_DIAG_SEND_HOME:
@@ -1616,7 +1606,7 @@ void process_turn(void)
                 restore_display_screen();
                 othervar.fade_palette = palette;
                 othervar.full_redraw = 1;
-                D_00156910 = 1;
+                redraw_panel = 1;
             }
             break;
         }
@@ -1671,7 +1661,7 @@ void process_turn(void)
                         statvar.num_players = 1;
                         player = 0;
                     }
-                    find_other_player((s8)i);
+                    choose_host_player((s8)i);
                 }
                 break;
             case 2:
@@ -2237,7 +2227,7 @@ s8 load_level(const u8 lvl, const u8 full)
         }
         room = room_info + 1;
         for (i = 0; i < 4; i++) {
-            if (D_001609c4[i].active || (statvar.num_players <= 1 && i == player)) {
+            if (player_info[i].active || (statvar.num_players <= 1 && i == player)) {
                 for (j = 0; j < 4; j++) {
                     for (; room < end_room_info; room++) {
                         if (room->type == ROOM_FREE) {
@@ -2301,7 +2291,7 @@ u32 check_sum(void)
     sum = 0;
     sum = seed;
     for (i = 0; i < 4; i++) {
-        if (D_001609c4[i].active) {
+        if (player_info[i].active) {
             for (j = 0; j < 20; j++) {
                 sum += allhosps[i].build.objects[j];
             }
@@ -2400,7 +2390,7 @@ void restart_level(void)
         if (crequester.id != REQ_NONE) {
             close_crequester(crequester.id);
         }
-        D_00156910 = 1;
+        redraw_panel = 1;
         setup_new_level((u16)level_number, 1);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
         goto_column_row_in_window(window.current_window, level->camera_start[player] % 128,

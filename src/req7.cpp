@@ -50,7 +50,7 @@ struct QueueButtons {
 extern "C" {
 extern char **queue_text;
 extern Event D_001549d0[];
-extern s16 D_001567b0[8];
+extern s16 frame_bounds[8];
 
 void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 void draw_glow_frame(Thing *w, s16 x, s16 y);
@@ -539,8 +539,9 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
                     lbDisplay.draw_flags = 0;
                     fr = &frame[person->sprite];
-                    set_all_refresh_zones_in_window(x + D_001567b0[4], y + D_001567b0[5], x + D_001567b0[4] + fr->width,
-                                                    y + D_001567b0[5] + fr->length, 3);
+                    set_all_refresh_zones_in_window(x + frame_bounds[4], y + frame_bounds[5],
+                                                    x + frame_bounds[4] + fr->width, y + frame_bounds[5] + fr->length,
+                                                    3);
                     person->facing = old_facing;
                     person->sprite = old_sprite;
                     person->flip = old_flip;

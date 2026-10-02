@@ -2,7 +2,7 @@
 
 extern "C" {
 extern Event D_001549d0[];
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern char **object_names;
 extern char **req1_help;
 }
@@ -88,7 +88,7 @@ void req11_overdraw(Window *win)
     ox = win->x - lbDisplay.graphics_window_x;
     oy = win->y - lbDisplay.graphics_window_y;
     set_all_refresh_zones_in_window(ox, oy, win->width + ox, lbDisplay.graphics_screen_height, 3);
-    D_00156910 = 1;
+    redraw_panel = 1;
     lbDisplay.draw_flags = 0;
     set_font_from_cache(1);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);

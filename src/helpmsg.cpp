@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern u8 help_close_hover;
 extern char **show_help_text_0;
 extern char **level_text;
@@ -161,7 +161,7 @@ void draw_help_text(void)
     set_all_refresh_zones_in_window(othervar.help_x, othervar.help_y, othervar.help_x + othervar.help_w + 0xc,
                                     othervar.help_y + othervar.help_h + 0xc, 3);
     if (othervar.help_group == 3)
-        D_00156910 = 1;
+        redraw_panel = 1;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_width);
     lbDisplay.draw_flags = 0;
@@ -500,7 +500,7 @@ void finish_composite_help(void)
 {
     LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     help_close_hover = 0;
-    D_00156910 = 1;
+    redraw_panel = 1;
     othervar.help_msg[0] = 0;
     if (gamevar.mouse_mode == MM_HELP) {
         set_mouse_mode(MM_NORMAL);

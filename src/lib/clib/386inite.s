@@ -7,7 +7,7 @@
 .globl "__init_387_emulator"
 .type "__init_387_emulator",@function
 "__init_387_emulator":
-    jmp "fn_000ef0a8_"
+    jmp "__sys_init_387_emulator"
 .size "__init_387_emulator",.-"__init_387_emulator"
 
 // __fini_387_emulator: shut the 387 emulator down (jumps into its termination code).
@@ -17,5 +17,5 @@
 .globl "__fini_387_emulator"
 .type "__fini_387_emulator",@function
 "__fini_387_emulator":
-    jmp "fn_000ef20d_"+0x20
+    jmp "__sys_fini_387_emulator"
 .size "__fini_387_emulator",.-"__fini_387_emulator"

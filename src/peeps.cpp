@@ -1093,7 +1093,7 @@ void save_popup(u16 type)
         n = 4;
     }
     for (i = 0; i < n; i++) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && player_info[i].active == 0) {
             continue;
         }
         call = playercall + listhead[i].first[type];
@@ -1121,7 +1121,7 @@ void restore_popup(u16 type)
         n = 4;
     }
     for (i = 0; i < n; i++) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && player_info[i].active == 0) {
             continue;
         }
         for (call = playercall + 1; call < end_playercall; call++) {

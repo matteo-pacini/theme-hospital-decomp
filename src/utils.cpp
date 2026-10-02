@@ -50,7 +50,7 @@ u8 pick_random_player(void)
         return 0;
     }
     for (i = count = 0; i < 4; i++) {
-        if (D_001609c4[i].active) {
+        if (player_info[i].active) {
             count++;
         }
     }

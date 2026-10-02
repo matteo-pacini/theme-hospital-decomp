@@ -66,13 +66,13 @@ void display_peep_overview(void)
         draw_piechart();
         break;
     case 1:
-        if (statvar.num_players > 1 && D_001609c4[overview.value].active == 0)
+        if (statvar.num_players > 1 && player_info[overview.value].active == 0)
             overview.value = player;
         copy_screen_to_wscreen(bscreen);
         if (lbDisplay.mleft_button) {
             slot = 0;
             for (i = 0; i < nplayers; i++) {
-                if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+                if (statvar.num_players > 1 && player_info[i].active == 0)
                     continue;
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x,
                                  resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
@@ -91,7 +91,7 @@ void display_peep_overview(void)
         if (lbDisplay.rleft_button) {
             slot = 0;
             for (i = 0; i < nplayers; i++) {
-                if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+                if (statvar.num_players > 1 && player_info[i].active == 0)
                     continue;
                 if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x,
                                  resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
@@ -156,7 +156,7 @@ void draw_overview_screen(void)
         LbTextDraw(resvars.screen_coords[0x6f].x, resvars.screen_coords[0x6f].y, buf);
         slot = 0;
         for (i = 0; i < nplayers; i++) {
-            if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+            if (statvar.num_players > 1 && player_info[i].active == 0)
                 continue;
             if (overview.value == i)
                 set_font_from_cache(0x25);
@@ -233,7 +233,7 @@ void calculate_piechart(void)
     nplayers = network_num_players();
     if (statvar.num_players > 1) {
         for (i = 0; i < 4; i++) {
-            if (D_001609c4[i].active != 0)
+            if (player_info[i].active != 0)
                 total += allhosps[i].market_share;
         }
         if (total == 0) {

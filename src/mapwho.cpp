@@ -7,7 +7,7 @@ struct Offset {
 
 extern "C" {
 
-extern s16 D_001567b0[8];
+extern s16 frame_bounds[8];
 extern ToDraw *buckets[32];
 extern FloorDef litter_starts[];
 
@@ -33,8 +33,8 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 
     node = draw_cells;
     memset(buckets, 0, sizeof(buckets));
-    D_001567b0[0] = D_001567b0[1] = 999;
-    D_001567b0[2] = D_001567b0[3] = 0;
+    frame_bounds[0] = frame_bounds[1] = 999;
+    frame_bounds[2] = frame_bounds[3] = 0;
     for (id = cell->first; id > 0; id = occupant->cell_next) {
         occupant = &thing[id];
         screen_x = resvars.screen_mode == SCREEN_MODE_13 ? ((occupant->x.frac - occupant->y.frac) >> 3) + 0x20
@@ -195,8 +195,8 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     default:
         break;
     }
-    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
-        D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+    if (frame_bounds[4] + left < lbDisplay.mmouse_x && frame_bounds[4] + frame_bounds[6] + left > lbDisplay.mmouse_x &&
+        frame_bounds[5] + top < lbDisplay.mmouse_y && frame_bounds[5] + frame_bounds[7] + top > lbDisplay.mmouse_y) {
         othervar.pointed_thing_s = person - thing;
     }
 }
@@ -257,8 +257,8 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     default:
         break;
     }
-    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
-        D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+    if (frame_bounds[4] + left < lbDisplay.mmouse_x && frame_bounds[4] + frame_bounds[6] + left > lbDisplay.mmouse_x &&
+        frame_bounds[5] + top < lbDisplay.mmouse_y && frame_bounds[5] + frame_bounds[7] + top > lbDisplay.mmouse_y) {
         othervar.pointed_thing_s = staff - thing;
     }
 }
@@ -284,8 +284,10 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
         } else {
             draw_special_id_frame(obj, x, y);
         }
-        if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
-            D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+        if (frame_bounds[4] + left < lbDisplay.mmouse_x &&
+            frame_bounds[4] + frame_bounds[6] + left > lbDisplay.mmouse_x &&
+            frame_bounds[5] + top < lbDisplay.mmouse_y &&
+            frame_bounds[5] + frame_bounds[7] + top > lbDisplay.mmouse_y) {
             othervar.pointed_thing_s = obj - thing;
         }
         if (obj->overlay_frame) {
@@ -328,10 +330,10 @@ void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32
     mouse_x = lbDisplay.mmouse_x;
     mouse_y = lbDisplay.mmouse_y;
     draw_special_id_frame(rat, x, y);
-    left = left0 + D_001567b0[4] - othervar.rat_near_margin;
-    right = left + D_001567b0[6] + othervar.rat_near_margin * 2;
-    top = top0 + D_001567b0[5] - othervar.rat_near_margin;
-    bottom = top + D_001567b0[7] + othervar.rat_near_margin * 2;
+    left = left0 + frame_bounds[4] - othervar.rat_near_margin;
+    right = left + frame_bounds[6] + othervar.rat_near_margin * 2;
+    top = top0 + frame_bounds[5] - othervar.rat_near_margin;
+    bottom = top + frame_bounds[7] + othervar.rat_near_margin * 2;
     if (mouse_x > left && mouse_x < right && mouse_y > top && mouse_y < bottom) {
         if (left + othervar.rat_near_margin - othervar.rat_hit_margin < mouse_x &&
             right - othervar.rat_near_margin + othervar.rat_hit_margin > mouse_x &&
@@ -388,8 +390,8 @@ void mapwho_numfx(Thing *fx, s32 x, s32 y)
 void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top)
 {
     draw_special_id_frame(mayor, x, y);
-    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
-        D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+    if (frame_bounds[4] + left < lbDisplay.mmouse_x && frame_bounds[4] + frame_bounds[6] + left > lbDisplay.mmouse_x &&
+        frame_bounds[5] + top < lbDisplay.mmouse_y && frame_bounds[5] + frame_bounds[7] + top > lbDisplay.mmouse_y) {
         othervar.pointed_thing_s = mayor - thing;
     }
 }

@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_001567c0[][16];
+extern u8 refresh_zones[][16];
 }
 
 void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 dst_y, const s16 w, const s16 h);
@@ -84,7 +84,7 @@ void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 ds
 }
 
 // Copies to the work screen each 32x32 cell of the current view zone whose
-// dirty count (D_001567c0) is positive, decrementing the count.
+// dirty count (refresh_zones) is positive, decrementing the count.
 // FUNCTION: 0x000add58
 void refresh_wscreen(void)
 {
@@ -105,7 +105,7 @@ void refresh_wscreen(void)
         y1 = info.clip_y1;
         for (y = y0 / 32; y <= y1 / 32; y++) {
             for (x = x0 / 32; x <= x1 / 32; x++) {
-                if (D_001567c0[x][y] > 0) {
+                if (refresh_zones[x][y] > 0) {
                     find_common_window(x << 5, y << 5, (x << 5) + 32, (y << 5) + 32, window.clip_x0, window.clip_y0,
                                        window.clip_x1, window.clip_y1);
                     find_common_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
@@ -114,7 +114,7 @@ void refresh_wscreen(void)
                     if (info.clip_empty == 0) {
                         copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
                                                            refresh.scroll_x, refresh.scroll_y);
-                        D_001567c0[x][y]--;
+                        refresh_zones[x][y]--;
                     }
                 }
             }

@@ -3,7 +3,7 @@
 u8 treatment_machine_used(const u16 illness, const u16 tile);
 
 extern "C" {
-extern s16 D_001567b0[8];
+extern s16 frame_bounds[8];
 }
 
 // SS_DOCTOR_EXAMINES: steps the examination or treatment of doctor's patient
@@ -167,10 +167,11 @@ void doctor_carries_out_examination(Thing *doctor)
             obj->aux_sprite = start[entry].frame;
             obj->aux_flip = start[entry].flags > 0;
         }
-        D_001567b0[4] = D_001567b0[5] = 999;
+        frame_bounds[4] = frame_bounds[5] = 999;
         full_draw_frame(patient, patient->sprite, 0, 0, 0, 1, patient->flip);
         obj->split_height =
-            -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height - D_001567b0[5];
+            -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height -
+            frame_bounds[5];
         break;
     case 241:
         if (patient->state != PS_SLAVE_READY)

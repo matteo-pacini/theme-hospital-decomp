@@ -2,25 +2,43 @@
 
 extern "C" {
 extern s32 lbMouseInstalled;
-extern s32 D_00176bc4;
-extern s32 D_00176bc8;
-extern s32 D_00176bcc;
-extern u32 D_00176bd0;
-extern u8 D_00176bd4[];
-extern s32 D_00177bd4;
-extern s32 D_00177bd8;
-extern s32 D_00177bdc;
-extern s32 D_00177be0;
-extern s32 D_00177be4;
-extern s32 D_00177be8;
-extern s32 D_00177bec;
-extern s32 D_00177bf0;
-extern u8 D_00177bf4[];
+// The screen area under the pointer, saved while it is drawn.
+struct mouse_buffer {
+    // 0x0: Nonzero while buffer holds the area (mouse_setup_range's result).
+    s32 valid;
+    s32 width;
+    s32 height;
+    // 0xc: Offset of the area's top left in the back buffer.
+    u32 offset;
+    u8 buffer[0x1000];
+    // 0x1010: Screen position of the pointer sprite's top left.
+    s32 x;
+    s32 y;
+    // 0x1018: First sprite column and row on screen, when clipped at the
+    // left or top edge.
+    s32 sprite_x;
+    s32 sprite_y;
+};
+
+struct mouse_info {
+    // 0x0: Mickeys per pixel (LbMouseChangeMoveRatio).
+    s32 move_ratio_x;
+    s32 move_ratio_y;
+    // 0x8: Offset from the mouse position to the sprite's top left: minus
+    // the hotspot.
+    s32 sprite_offset_x;
+    s32 sprite_offset_y;
+    // 0x10: The pointer sprite drawn at full size, 0xfe where transparent.
+    u8 sprite[0x1000];
+};
+
+extern mouse_buffer mbuffer;
+extern mouse_info minfo;
 extern s32 redraw_active;
 extern s32 mouse_initialised;
 extern volatile s32 mouse_dx;
 extern volatile s32 mouse_dy;
-extern s32 D_00178c08;
+extern s32 mouse_delta_pending;
 extern s16 old_mx;
 extern s16 old_my;
 extern s32 old_rx;
@@ -65,18 +83,19 @@ int LbMousePlace(void)
 
     redraw_active = 1;
     if (lbDisplay.mouse_sprite) {
-        D_00177bd4 = lbDisplay.mmouse_x + D_00177bec;
-        D_00177bd8 = lbDisplay.mmouse_y + D_00177bf0;
-        D_00176bc4 = mouse_setup_range();
-        if (D_00176bc4 == 1) {
-            save = D_00176bd4;
-            sprite = D_00177bf4 + D_00177bdc + D_00177be0 * lbDisplay.mouse_sprite->width;
-            D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.graphics_screen_width;
-            screen = lbDisplay.wscreen + D_00176bd0;
-            for (y = 0; y < D_00176bcc; y++) {
+        mbuffer.x = lbDisplay.mmouse_x + minfo.sprite_offset_x;
+        mbuffer.y = lbDisplay.mmouse_y + minfo.sprite_offset_y;
+        mbuffer.valid = mouse_setup_range();
+        if (mbuffer.valid == 1) {
+            save = mbuffer.buffer;
+            sprite = minfo.sprite + mbuffer.sprite_x + mbuffer.sprite_y * lbDisplay.mouse_sprite->width;
+            mbuffer.offset =
+                mbuffer.x + mbuffer.sprite_x + (mbuffer.y + mbuffer.sprite_y) * lbDisplay.graphics_screen_width;
+            screen = lbDisplay.wscreen + mbuffer.offset;
+            for (y = 0; y < mbuffer.height; y++) {
                 scr = screen;
                 mask = sprite;
-                for (x = 0; x < D_00176bc8; x++, save++, scr++, mask++) {
+                for (x = 0; x < mbuffer.width; x++, save++, scr++, mask++) {
                     *save = *scr;
                     if (*mask != 0xfe)
                         *scr = *mask;
@@ -100,17 +119,17 @@ int LbMouseRemove(void)
     u8 *scr;
     u8 *screen;
 
-    if (D_00176bc4) {
-        save = D_00176bd4;
-        screen = lbDisplay.wscreen + D_00176bd0;
-        for (y = 0; y < D_00176bcc; y++) {
+    if (mbuffer.valid) {
+        save = mbuffer.buffer;
+        screen = lbDisplay.wscreen + mbuffer.offset;
+        for (y = 0; y < mbuffer.height; y++) {
             scr = screen;
-            for (x = 0; x < D_00176bc8; x++)
+            for (x = 0; x < mbuffer.width; x++)
                 *scr++ = *save++;
             screen += lbDisplay.graphics_screen_width;
         }
     }
-    if (D_00178c08) {
+    if (mouse_delta_pending) {
         lbDisplay.mmouse_x += mouse_dx;
         lbDisplay.mmouse_y += mouse_dy;
         adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
@@ -118,7 +137,7 @@ int LbMouseRemove(void)
             screen_remove(0);
             screen_place();
         }
-        D_00178c08 = 0;
+        mouse_delta_pending = 0;
     }
     redraw_active = 0;
     return 1;
@@ -134,10 +153,10 @@ int LbMouseSetPointerHotspot(s32 x, s32 y)
     redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
-    D_00177bec = x;
-    D_00177bec = -D_00177bec;
-    D_00177bf0 = y;
-    D_00177bf0 = -D_00177bf0;
+    minfo.sprite_offset_x = x;
+    minfo.sprite_offset_x = -minfo.sprite_offset_x;
+    minfo.sprite_offset_y = y;
+    minfo.sprite_offset_y = -minfo.sprite_offset_y;
     if (!mouse_pos_change_saved)
         screen_place();
     redraw_active = 0;
@@ -167,10 +186,10 @@ int LbMouseChangeSprite(TbSprite *sprite)
     if (!mouse_pos_change_saved)
         screen_remove(1);
     lbDisplay.mouse_sprite = sprite;
-    memset(D_00177bf4, 0xfe, 0x1000);
+    memset(minfo.sprite, 0xfe, 0x1000);
     if (sprite) {
         screen = lbDisplay.wscreen;
-        lbDisplay.wscreen = D_00177bf4;
+        lbDisplay.wscreen = minfo.sprite;
         win_x = lbDisplay.graphics_window_x;
         win_y = lbDisplay.graphics_window_y;
         win_width = lbDisplay.graphics_window_width;
@@ -203,7 +222,6 @@ int LbMouseChangeSpriteAndHotspot(TbSprite *sprite, s32 x, s32 y)
     }
     return -1;
 }
-
 }
 
 // Sets the mickeys per pixel in x and y (1-63). Returns 1, or -1 if out of
@@ -217,8 +235,8 @@ long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y)
         return -1;
     if (ratio_y < 1 || ratio_y > 63)
         return -1;
-    D_00177be4 = ratio_x;
-    D_00177be8 = ratio_y;
+    minfo.move_ratio_x = ratio_x;
+    minfo.move_ratio_y = ratio_y;
     return 1;
 }
 
@@ -257,14 +275,14 @@ int LbMouseSetup(TbSprite *sprite)
             return -1;
     }
     lbMouseInstalled = 1;
-    D_00177be4 = 1;
-    D_00177be8 = 1;
-    D_00177bec = 0;
-    D_00177bf0 = 0;
-    memset(D_00177bf4, 0xfe, 0x1000);
+    minfo.move_ratio_x = 1;
+    minfo.move_ratio_y = 1;
+    minfo.sprite_offset_x = 0;
+    minfo.sprite_offset_y = 0;
+    memset(minfo.sprite, 0xfe, 0x1000);
     lbDisplay.mouse_sprite = 0;
     redraw_active = 0;
-    memset(&D_00176bc4, 0, 0x1020);
+    memset(&mbuffer.valid, 0, 0x1020);
     if (LbMouseSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height) != 1) {
         lbMouseInstalled = 0;
         return -1;
@@ -305,7 +323,7 @@ int LbMouseReset(void)
     redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
-    memset(&D_00176bc4, 0, 0x1020);
+    memset(&mbuffer.valid, 0, 0x1020);
     in.w.ax = 0;
     int386(0x33, &in, &out);
     mouse_initialised = 0;
@@ -325,7 +343,7 @@ int LbMouseSuspend(void)
     redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
-    memset(&D_00176bc4, 0, 0x1020);
+    memset(&mbuffer.valid, 0, 0x1020);
     lbDisplay.mouse_sprite = 0;
     lbMouseInstalled = 0;
     redraw_active = 0;
@@ -366,7 +384,6 @@ int LbMouseSetPosition(s32 x, s32 y)
     redraw_active = 0;
     return 1;
 }
-
 }
 
 // Applies movement the interrupt handler has stored but not yet applied.
@@ -374,11 +391,11 @@ int LbMouseSetPosition(s32 x, s32 y)
 // FUNCTION: 0x000bd868
 long LbMouseUpdatePosition(void)
 {
-    if (D_00178c08) {
+    if (mouse_delta_pending) {
         lbDisplay.mmouse_x += mouse_dx;
         lbDisplay.mmouse_y += mouse_dy;
         adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
-        D_00178c08 = 0;
+        mouse_delta_pending = 0;
     }
     return 1;
 }
@@ -464,33 +481,33 @@ void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y)
     if (dx != 0) {
         if (dx > 0) {
             dx += old_rx;
-            old_rx = dx % D_00177be4;
-            mouse_dx = dx / D_00177be4;
+            old_rx = dx % minfo.move_ratio_x;
+            mouse_dx = dx / minfo.move_ratio_x;
         } else {
-            mouse_dx = dx / D_00177be4;
-            old_rx += dx % D_00177be4;
+            mouse_dx = dx / minfo.move_ratio_x;
+            old_rx += dx % minfo.move_ratio_x;
             if (old_rx < 0) {
                 mouse_dx--;
-                old_rx = D_00177be4 + old_rx % D_00177be4;
+                old_rx = minfo.move_ratio_x + old_rx % minfo.move_ratio_x;
             }
         }
-        D_00178c08 = 1;
+        mouse_delta_pending = 1;
     }
     dy = mouse_mickey_y - old_my;
     if (dy != 0) {
         if (dy > 0) {
             dy += old_ry;
-            old_ry = dy % D_00177be8;
-            mouse_dy = dy / D_00177be8;
+            old_ry = dy % minfo.move_ratio_y;
+            mouse_dy = dy / minfo.move_ratio_y;
         } else {
-            mouse_dy = dy / D_00177be8;
-            old_ry += dy % D_00177be8;
+            mouse_dy = dy / minfo.move_ratio_y;
+            old_ry += dy % minfo.move_ratio_y;
             if (old_ry < 0) {
                 mouse_dy--;
-                old_ry = D_00177be8 + old_ry % D_00177be8;
+                old_ry = minfo.move_ratio_y + old_ry % minfo.move_ratio_y;
             }
         }
-        D_00178c08 = 1;
+        mouse_delta_pending = 1;
     }
     if (!redraw_active && !mouse_pos_change_saved) {
         lbDisplay.mmouse_x += mouse_dx;
@@ -501,7 +518,7 @@ void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y)
         screen_place();
         if (lbDisplay.vesa_is_set_up)
             LbVesaSetPage(page);
-        D_00178c08 = 0;
+        mouse_delta_pending = 0;
     }
 }
 
@@ -538,28 +555,28 @@ u32 adjust_point(long *x, long *y)
 // FUNCTION: 0x000bdcfc
 u32 mouse_setup_range(void)
 {
-    D_00176bc8 = lbDisplay.mouse_sprite->width;
-    D_00176bcc = lbDisplay.mouse_sprite->height;
-    D_00177bdc = 0;
-    D_00177be0 = 0;
-    if (!(-D_00176bc8 < D_00177bd4 && D_00177bd4 < lbDisplay.graphics_screen_width))
+    mbuffer.width = lbDisplay.mouse_sprite->width;
+    mbuffer.height = lbDisplay.mouse_sprite->height;
+    mbuffer.sprite_x = 0;
+    mbuffer.sprite_y = 0;
+    if (!(-mbuffer.width < mbuffer.x && mbuffer.x < lbDisplay.graphics_screen_width))
         return 0;
-    if (!(-D_00176bcc < D_00177bd8 && D_00177bd8 < lbDisplay.graphics_screen_height))
+    if (!(-mbuffer.height < mbuffer.y && mbuffer.y < lbDisplay.graphics_screen_height))
         return 0;
-    if (D_00177bd4 < 0) {
-        D_00177bdc = D_00177bd4;
-        D_00177bdc = -D_00177bdc;
-        D_00176bc8 -= D_00177bdc;
+    if (mbuffer.x < 0) {
+        mbuffer.sprite_x = mbuffer.x;
+        mbuffer.sprite_x = -mbuffer.sprite_x;
+        mbuffer.width -= mbuffer.sprite_x;
     }
-    if (D_00177bd4 + D_00176bc8 > lbDisplay.graphics_screen_width)
-        D_00176bc8 = lbDisplay.graphics_screen_width - D_00177bd4;
-    if (D_00177bd8 < 0) {
-        D_00177be0 = D_00177bd8;
-        D_00177be0 = -D_00177be0;
-        D_00176bcc -= D_00177be0;
+    if (mbuffer.x + mbuffer.width > lbDisplay.graphics_screen_width)
+        mbuffer.width = lbDisplay.graphics_screen_width - mbuffer.x;
+    if (mbuffer.y < 0) {
+        mbuffer.sprite_y = mbuffer.y;
+        mbuffer.sprite_y = -mbuffer.sprite_y;
+        mbuffer.height -= mbuffer.sprite_y;
     }
-    if (D_00177bd8 + D_00176bcc > lbDisplay.graphics_screen_height)
-        D_00176bcc = lbDisplay.graphics_screen_height - D_00177bd8;
+    if (mbuffer.y + mbuffer.height > lbDisplay.graphics_screen_height)
+        mbuffer.height = lbDisplay.graphics_screen_height - mbuffer.y;
     return 1;
 }
 
@@ -584,33 +601,36 @@ long screen_place(void)
     if (!lbMouseInstalled)
         return -1;
     if (lbDisplay.mouse_sprite) {
-        D_00177bd4 = lbDisplay.mmouse_x + D_00177bec;
-        D_00177bd8 = lbDisplay.mmouse_y + D_00177bf0;
-        D_00176bc4 = mouse_setup_range();
-        if (D_00176bc4 == 1) {
-            save = D_00176bd4;
-            sprite = D_00177bf4 + D_00177bdc + lbDisplay.mouse_sprite->width * D_00177be0;
-            D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.physical_screen_width;
+        mbuffer.x = lbDisplay.mmouse_x + minfo.sprite_offset_x;
+        mbuffer.y = lbDisplay.mmouse_y + minfo.sprite_offset_y;
+        mbuffer.valid = mouse_setup_range();
+        if (mbuffer.valid == 1) {
+            save = mbuffer.buffer;
+            sprite = minfo.sprite + mbuffer.sprite_x + lbDisplay.mouse_sprite->width * mbuffer.sprite_y;
+            mbuffer.offset =
+                mbuffer.x + mbuffer.sprite_x + (mbuffer.y + mbuffer.sprite_y) * lbDisplay.physical_screen_width;
             if (!lbDisplay.vesa_is_set_up) {
-                screen = lbDisplay.physical_screen + D_00176bd0;
-                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width, sprite += lbDisplay.mouse_sprite->width) {
+                screen = lbDisplay.physical_screen + mbuffer.offset;
+                for (rows_left = mbuffer.height; --rows_left != -1;
+                     screen += lbDisplay.physical_screen_width, sprite += lbDisplay.mouse_sprite->width) {
                     scr = screen;
                     mask = sprite;
-                    for (x = 0; x < D_00176bc8; x++, scr++, mask++) {
+                    for (x = 0; x < mbuffer.width; x++, scr++, mask++) {
                         *save++ = *scr;
                         if (*mask != 0xfe)
                             *scr = *mask;
                     }
                 }
             } else {
-                page = D_00176bd0 >> 16;
+                page = mbuffer.offset >> 16;
                 LbVesaSetPage(page);
-                screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
-                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width, sprite += lbDisplay.mouse_sprite->width) {
+                screen = lbDisplay.physical_screen + (mbuffer.offset & 0xffff);
+                for (rows_left = mbuffer.height; --rows_left != -1;
+                     screen += lbDisplay.physical_screen_width, sprite += lbDisplay.mouse_sprite->width) {
                     scr = screen;
                     mask = sprite;
-                    after_bank = D_00176bc8;
-                    if ((u32)(scr + D_00176bc8) >= 0xb0000) {
+                    after_bank = mbuffer.width;
+                    if ((u32)(scr + mbuffer.width) >= 0xb0000) {
                         before_bank = 0xb0000 - (u32)scr;
                         if (before_bank > 0) {
                             for (i = 0; i < before_bank; i++, scr++, mask++) {
@@ -655,23 +675,23 @@ long screen_remove(u32 force)
 
     if (!lbMouseInstalled)
         return -1;
-    if ((lbDisplay.mmouse_x != D_00177bd4 || lbDisplay.mmouse_y != D_00177bd8 || force) && D_00176bc4) {
-        save = D_00176bd4;
+    if ((lbDisplay.mmouse_x != mbuffer.x || lbDisplay.mmouse_y != mbuffer.y || force) && mbuffer.valid) {
+        save = mbuffer.buffer;
         if (!lbDisplay.vesa_is_set_up) {
-            screen = lbDisplay.physical_screen + D_00176bd0;
-            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width) {
+            screen = lbDisplay.physical_screen + mbuffer.offset;
+            for (rows_left = mbuffer.height; --rows_left != -1; screen += lbDisplay.physical_screen_width) {
                 scr = screen;
-                for (x = 0; x < D_00176bc8; x++)
+                for (x = 0; x < mbuffer.width; x++)
                     *scr++ = *save++;
             }
         } else {
-            page = D_00176bd0 >> 16;
+            page = mbuffer.offset >> 16;
             LbVesaSetPage(page);
-            screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
-            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width) {
+            screen = lbDisplay.physical_screen + (mbuffer.offset & 0xffff);
+            for (rows_left = mbuffer.height; --rows_left != -1; screen += lbDisplay.physical_screen_width) {
                 scr = screen;
-                after_bank = D_00176bc8;
-                if ((u32)(scr + D_00176bc8) >= 0xb0000) {
+                after_bank = mbuffer.width;
+                if ((u32)(scr + mbuffer.width) >= 0xb0000) {
                     before_bank = 0xb0000 - (u32)scr;
                     if (before_bank > 0) {
                         for (i = 0; i < before_bank; i++)
@@ -687,7 +707,7 @@ long screen_remove(u32 force)
                     *scr++ = *save++;
             }
         }
-        D_00176bc4 = 0;
+        mbuffer.valid = 0;
     }
     return 1;
 }

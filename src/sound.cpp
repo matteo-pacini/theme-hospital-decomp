@@ -58,8 +58,8 @@ SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, 
 
 extern "C" {
 
-extern s32 D_00156433;
-extern s32 D_0015642f;
+extern s32 sound_file_set;
+extern s32 sound_heap_size;
 extern u8 *heapptr;
 extern u8 __IsTable[];
 #pragma aux __IsTable "*"
@@ -116,11 +116,11 @@ u8 setup_sound(void)
     lib_strcpy(statvar.sound_path, options.SoundDataPath);
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
-        LbDataLoad(&soundfiles[D_00156433]);
+        LbDataLoad(&soundfiles[sound_file_set]);
         if (heapptr) {
             loaded = 1;
             sprintf(buf, "%s\\data\\sound-%1d.dat", options.SoundDataPath, myplayer.language);
-            if (init_sound_heap(heapptr, D_0015642f, buf, options.SoundType)) {
+            if (init_sound_heap(heapptr, sound_heap_size, buf, options.SoundType)) {
                 window.zone0_x = 0;
                 window.zone0_x1 = lbDisplay.physical_screen_width;
                 window.zone0_y = 0;

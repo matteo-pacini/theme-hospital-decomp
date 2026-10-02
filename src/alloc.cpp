@@ -2,8 +2,8 @@
 
 extern "C" {
 extern u32 lbMemoryAvailable[5];
-extern u32 D_0015642f;
-extern u32 D_00156433;
+extern u32 sound_heap_size;
+extern u32 sound_file_set;
 
 void _CMemory_ReleaseAll(_CMemory *mem);
 #pragma aux _CMemory_ReleaseAll "W?ReleaseAll$:_CMemory$n()v"
@@ -55,7 +55,7 @@ int LbMemoryFree(void *p)
 
 // Reserves the game heap: about 5.4 MB if available, else the largest size from
 // 4.7 MB upwards in 150 KB steps that can be allocated. Picks the sound heap
-// size (D_0015642f) and sound file set (D_00156433) to match the memory
+// size (sound_heap_size) and sound file set (sound_file_set) to match the memory
 // obtained. Returns 1, or -1 if no heap could be allocated.
 // FUNCTION: 0x000bacd8
 int LbMemorySetup(void)
@@ -83,14 +83,14 @@ int LbMemorySetup(void)
     if (mem == 0)
         return -1;
     if (size >= 0x503ca0) {
-        D_0015642f = 0xc8000;
-        D_00156433 = 2;
+        sound_heap_size = 0xc8000;
+        sound_file_set = 2;
     } else if (size >= 0x4d1ca0) {
-        D_0015642f = 0x96000;
-        D_00156433 = 1;
+        sound_heap_size = 0x96000;
+        sound_file_set = 1;
     } else {
-        D_0015642f = 0x70800;
-        D_00156433 = 0;
+        sound_heap_size = 0x70800;
+        sound_file_set = 0;
     }
     _lbHeap.Init(mem, size);
     return 1;

@@ -9,7 +9,7 @@
 "__CmpBigInt":
     push edi
     push ecx
-    call "fn_000fd095_"
+    call "pow10_table_addr"
     inc eax
     lea edi, [edi + eax*8]
     mov ecx, dword ptr [edx]
@@ -173,14 +173,14 @@
 .size "__Bin2String",.-"__Bin2String"
 
 
-// fn_000fd095: return in edi the address of the 64-bit powers-of-ten table that follows the call.
+// pow10_table_addr: return in edi the address of the 64-bit powers-of-ten table that follows the call.
 // FUNCTION: 0x000fd095
 
 .section _TEXT,"ax",@progbits,unique,1036437
-.globl "fn_000fd095_"
-.type "fn_000fd095_",@function
-"fn_000fd095_":
-    call "fn_000fd14a_"
+.globl "pow10_table_addr"
+.type "pow10_table_addr",@function
+"pow10_table_addr":
+    call "get_return_addr"
     .byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00
     .byte 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00
     .byte 0x00, 0x00, 0x00, 0x00, 0xe8, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00
@@ -194,15 +194,15 @@
     .byte 0x23, 0x00, 0x00, 0x00, 0xc1, 0x6f, 0x78, 0x45, 0x63, 0x01, 0x00, 0x00, 0x8a, 0x5d, 0xb3, 0xb6
     .byte 0xe0, 0x0d, 0x00, 0x00, 0x64, 0xa7, 0x04, 0x23, 0xc7, 0x8a, 0x00, 0x00, 0xe8, 0x89, 0xff, 0xff
     .byte 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-.size "fn_000fd095_",.-"fn_000fd095_"
+.size "pow10_table_addr",.-"pow10_table_addr"
 
-// fn_000fd14a: return the caller's return address in edi.
+// get_return_addr: return the caller's return address in edi.
 // FUNCTION: 0x000fd14a
 
 .section _TEXT,"ax",@progbits,unique,1036618
-.globl "fn_000fd14a_"
-.type "fn_000fd14a_",@function
-"fn_000fd14a_":
+.globl "get_return_addr"
+.type "get_return_addr",@function
+"get_return_addr":
     pop edi
     ret
-.size "fn_000fd14a_",.-"fn_000fd14a_"
+.size "get_return_addr",.-"get_return_addr"

@@ -624,7 +624,7 @@ u8 check_net_criteria(const u8 owner)
                 break;
             case 8:
                 for (i = 0; i < 4; i++) {
-                    if (D_001609c4[i].active) {
+                    if (player_info[i].active) {
                         if (i != player && hosp->reputation >= allhosps[i].reputation)
                             better = 1;
                     }
@@ -633,7 +633,7 @@ u8 check_net_criteria(const u8 owner)
                 break;
             case 9:
                 for (i = 0; i < 4; i++) {
-                    if (D_001609c4[i].active) {
+                    if (player_info[i].active) {
                         if (i != player && hosp->balance - hosp->loan >= allhosps[i].balance - allhosps[i].loan)
                             better = 1;
                     }

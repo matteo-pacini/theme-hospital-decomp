@@ -1,5 +1,5 @@
 # address  symbol  size
-000e5430 fn_000e5430_ 200
+000e5430 _note_freq 200
 00110000 _ipx_esr_code 68
 00110068 _serial_handler_code 96
 001100fe _serial_handler_code_end 1
@@ -501,11 +501,16 @@
 00155240 W?gamevar$n$Game$$ 178
 001553b8 W?othervar$n$General$$ a96
 00155e50 W?statvar$n$Statics$$ 5df
+0015642f _sound_heap_size 4
+00156433 _sound_file_set 4
 00156438 W?scroll$n$Scroll$$ 4
 0015643c W?info$n$Info$$ 80
 001564bc W?window$n$HospWindow$$ 2f0
 001567ac W?refresh$n$Refresh$$ 4
-001567b0 _D_001567b0 10
+001567b0 _frame_bounds 10
+001567c0 _refresh_zones 150
+00156910 _redraw_panel 1
+00156911 _frame_extra_height 4
 00156918 W?required$n$Required$$ c
 00156924 W?debug$n$Debug$$ 21c
 00156b40 W?gamecounts$n$GameCounts$$ 1c
@@ -599,7 +604,7 @@
 0015f57c W?TitleText$npna 4
 0015f580 W?popup_id$n[]us 12
 0015f592 W?panel_popup_pos$n[]us 12
-0015f5a4 _popup_store 1e
+0015f5a4 _popup_store 1b0
 0015f754 W?panel$npn$Icons$$ 4
 0015f758 W?c_buttons$npnpna 4
 0015f75c W?c_text$npnpna 4
@@ -757,7 +762,7 @@
 00160508 _host_player 4
 0016050c W?PhoneNumber$n[]a 10
 0016051c _serial_init_data 20
-0016053c _modem_dev 58
+0016053c _modem_dev b4
 001605f0 W?BookCount$nc 1
 001605f1 _BookIndex 3
 001605f4 W?PhoneBook$n[][13]a c4
@@ -774,8 +779,8 @@
 00160810 _ConnectMessage 28
 00160838 W?player_count$nl 4
 0016083c W?NetMessageText$n[][40]a 168
-001609a4 W?player_info$n[]$__7308jnTbNetworkPlayerInfo$$ 20
-001609c4 _D_001609c4 1b0
+001609a4 W?player_info$n[]$__7308jnTbNetworkPlayerInfo$$ 90
+00160a34 W?session_names$n[][32]a 400
 00160e34 _session_pointers 80
 00160eb4 _session_count 4
 00160eb8 _swap_level_packet 3c
@@ -846,12 +851,15 @@
 00176bb8 _old_rx 4
 00176bbc _old_ry 4
 00176bc0 _lbMouseInstalled 4
+00176bc4 _mbuffer 1020
+00177be4 _minfo 1010
 00178bf4 _redraw_active 4
 00178bf8 _mouse_initialised 4
 00178bfc _mouse_mickey_x 2
 00178bfe _mouse_mickey_y 2
 00178c00 _mouse_dx 4
 00178c04 _mouse_dy 4
+00178c08 _mouse_delta_pending 4
 00178c0c _ghost_table 10000
 00188c0c _setup 4
 00188c10 W?_lbScreenInitialised$nul 4

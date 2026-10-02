@@ -6,7 +6,7 @@ extern u32 menu_turn;
 extern u8 new_game;
 extern Event D_001549d0[];
 extern u8 *palette;
-extern u8 D_00156910;
+extern u8 redraw_panel;
 
 void start_game(void);
 void use_hires_layout(void);
@@ -383,7 +383,7 @@ void start_turn(void)
         hosp_count = 4;
     }
     for (i = 0; i < hosp_count; i++) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && player_info[i].active == 0) {
             continue;
         }
         allhosps[i].idle_nurses_prev = allhosps[i].idle_nurses;
@@ -566,7 +566,7 @@ void draw_pause_mode(void)
         LbDrawBox(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, color.dark_blue);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
         lbDisplay.draw_flags = 0;
-        D_00156910 = 1;
+        redraw_panel = 1;
     }
 }
 

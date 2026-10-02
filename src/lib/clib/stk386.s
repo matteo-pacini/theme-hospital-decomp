@@ -1,15 +1,15 @@
 .intel_syntax noprefix
 
-// fn_000ed282: startup routine; record the program's stack segment for __STK.
+// stk_save_ss: startup routine; record the program's stack segment for __STK.
 // FUNCTION: 0x000ed282
 
 .section _TEXT,"ax",@progbits,unique,971394
-.globl "fn_000ed282_"
-.type "fn_000ed282_",@function
-"fn_000ed282_":
+.globl "stk_save_ss"
+.type "stk_save_ss",@function
+"stk_save_ss":
     .byte 0x66; .byte 0x8c; .byte 0x15; .long .Lstk_ss  # mov word ptr [0x31a60], ss
     ret
-.size "fn_000ed282_",.-"fn_000ed282_"
+.size "stk_save_ss",.-"stk_save_ss"
 
 // __CHK: stack check for the size passed on the stack (__STK).
 // FUNCTION: 0x000ed28a
@@ -75,4 +75,4 @@
 
 .section XI,"aw",@progbits
     .byte 0x00, 0x20
-    .long "fn_000ed282_"
+    .long "stk_save_ss"

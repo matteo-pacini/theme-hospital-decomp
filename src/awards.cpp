@@ -354,7 +354,7 @@ void general_award(s32 *field, s32 value, const u8 award, const s32 high, const 
     bottom = 1;
     hosp_no = 4;
     while (--hosp_no >= 0) {
-        if (statvar.num_players > 1 && D_001609c4[hosp_no].active == 0)
+        if (statvar.num_players > 1 && player_info[hosp_no].active == 0)
             continue;
         if (&allhosps[hosp_no] == myhosp)
             continue;

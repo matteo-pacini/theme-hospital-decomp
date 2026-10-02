@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_00156910;
+extern u8 redraw_panel;
 extern Menu choice;
 void strcat(char *dst, char *src);
 }
@@ -24,7 +24,7 @@ void mayor_requester(u8 idx, char **strs)
     text_y = line_height * 2;
     sprintf(buf, strs[0], mayor_names[idx]);
     LbTextDraw(text_x, text_y, buf);
-    D_00156910 = 1;
+    redraw_panel = 1;
 }
 
 // VIP request buttons: 0 accepts the visit (choice 0x14), 1 refuses it
@@ -63,7 +63,7 @@ void generate_mayors(void)
     if (statvar.num_players > 1)
         count = 4;
     for (i = 0; i < count; i++) {
-        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && player_info[i].active == 0)
             continue;
         if (allhosps[i].mayor_state != 0) {
             found = 1;
@@ -72,7 +72,7 @@ void generate_mayors(void)
     }
     if (!found) {
         for (i = 0; i < count; i++) {
-            if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+            if (statvar.num_players > 1 && player_info[i].active == 0)
                 continue;
             if (&thing[listhead[i].objects[OBJ_RECEPTION_DESK]] > thing) {
                 hosp = &allhosps[i];
@@ -90,7 +90,7 @@ void generate_mayors(void)
         }
     } else {
         for (i = 0; i < count; i++) {
-            if (statvar.num_players > 1 && D_001609c4[i].active == 0)
+            if (statvar.num_players > 1 && player_info[i].active == 0)
                 continue;
             hosp = &allhosps[i];
             switch (hosp->mayor_state) {
@@ -374,7 +374,7 @@ void report_mayor_result(u8 owner, char **strs)
         strcat(text, buf);
     }
     LbTextDraw(text_x, text_y, text);
-    D_00156910 = 1;
+    redraw_panel = 1;
 }
 
 // VIP report button 0 closes the report (choice.state = 0x5c).
