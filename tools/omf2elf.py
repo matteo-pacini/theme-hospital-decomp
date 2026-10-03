@@ -455,7 +455,7 @@ def write_omf(sections, symbols, externs, weak, path):
     for sec in sections:
         if sec.comdat:
             continue
-        cls = sec.cls if sec.cls in ("CODE", "DATA", "BSS", "STACK") else ("CODE" if sec.code else "DATA")
+        cls = sec.cls if sec.cls in ("CODE", "BEGDATA", "DATA", "BSS", "STACK") else ("CODE" if sec.code else "DATA")
         length = max(len(sec.data), sec.length)
         combine = 5 if cls == "STACK" else 2  # stack or public
         acbp = {1: 1, 2: 2, 4: 5, 16: 3, 256: 4}.get(sec.align, 3) << 5 | combine << 2 | (0 if sec.use16 else 1)

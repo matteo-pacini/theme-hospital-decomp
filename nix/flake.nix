@@ -43,7 +43,7 @@
         owdemangle = final.stdenv.mkDerivation {
           pname = "owdemangle";
           version = final.open-watcom-v2-unwrapped.version;
-          src = ./tools/owdemangle;
+          src = ./owdemangle;
           buildPhase = ''
             $CC -O2 -w -I. -o owdemangle \
               ${final.open-watcom-v2-unwrapped.src}/bld/lib_misc/c/demangle.c main.c \
@@ -150,15 +150,15 @@
         name = "theme-hospital";
         runtimeInputs = buildTools ++ (with pkgs; [ dosbox-staging dosbox-x dosbox coreutils gnused diffutils ]);
         runtimeEnv = watcomEnv;
-        text = builtins.readFile ./tools/play.sh;
+        text = builtins.readFile ./play.sh;
       };
 
-      # `nix run .#gog-unpack -- PATH/setup_theme_hospital_v3_(28027).exe`:
+      # `nix run path:./nix#gog-unpack -- PATH/setup_theme_hospital_v3_(28027).exe`:
       # check GOG's installer and extract the game into orig/.
       gog-unpack = pkgs.writeShellApplication {
         name = "gog-unpack";
         runtimeInputs = with pkgs; [ innoextract coreutils ];
-        text = builtins.readFile ./tools/gog-unpack.sh;
+        text = builtins.readFile ./gog-unpack.sh;
       };
     in
     {

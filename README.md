@@ -22,12 +22,34 @@ runtime (Watcom C library, Miles, Smacker). Of these:
   libraries (`lib` entries in `config/cflags.txt`), which the EXE links.
 
 The rest are compiled from the C++/C in `src/`, which also defines the
-EXE's data. `tools/lewrite.py --strict` writes `build/hospital.exe` from
-the built units alone, placed as `tools/relink.py` checks them, with the
-DOS/4GW stub from the Watcom 10.5 toolchain: it is byte-identical to the
-original `HOSPITAL.EXE`. `ninja link` also links the units with Open
-Watcom's wlink into `build/link/hosp.exe` (see `tools/link.py`), which runs
-in DOSBox-X but does not reproduce the original's layout.
+EXE's data.
+
+## Two builds of the EXE
+
+The same compiled units make two executables:
+
+| | Byte-identical build | wlink build |
+| --- | --- | --- |
+| Output | `build/hospital.exe` | `build/link/hosp.exe` |
+| Made by | `tools/lewrite.py --strict` (after `ninja`) | `ninja link` (`tools/link.py`, Open Watcom's wlink) |
+| Layout | every function and global at its original address | chosen by wlink |
+| Result | byte for byte the original `HOSPITAL.EXE` | a working game, not identical to the original |
+| Needs `orig/HOSPITAL.EXE` | yes: the build checks the placement against it and compares the result | no: the repository's objects alone |
+| Use it to | prove the decompilation exact | change the code |
+
+The byte-identical build is the decompilation's result: `lewrite.py`
+places every unit where `tools/relink.py` checks it belongs, fills the gaps
+as the original linker did and writes the headers, fixup tables and the
+DOS/4GW stub of the Watcom 10.5 toolchain itself, so the file compares
+equal to the original. Because everything sits at a fixed address, a
+function that compiles to a different size no longer fits.
+
+The wlink build is for changing the code. wlink links the units like any
+other program, so functions and data may grow, shrink or be added. No code,
+data or layout comes from the original EXE: the data the units do not
+define is laid out from `config/` as zeroed storage, and the stack is a
+segment of its own. It runs in DOSBox-X; check changes there, since only
+the byte-identical build is compared with the original.
 
 ## What you need
 
@@ -45,7 +67,7 @@ build is supported:
 
 Check it with `sha256sum` (Linux), `shasum -a 256` (macOS) or
 `certutil -hashfile <file> SHA256` (Windows). The game executable it
-contains, which every build is compared against, is:
+contains, which the matching build is compared against, is:
 
 | | |
 | --- | --- |
@@ -53,14 +75,17 @@ contains, which every build is compared against, is:
 | `HOSPITAL.EXE` SHA-1 | `d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae` |
 | `HOSPITAL.EXE` MD5 | `a4a934ec18b66d131c53bdc71a429f93` |
 
-You also need Nix with flakes enabled. The first `nix develop` downloads the
+You also need Nix with flakes enabled. The flake lives in `nix/` and is used
+as `path:./nix`, from the repository root: a `path:` flake copies only that
+directory into the Nix store, where the repository root as a flake would copy
+the whole tree on every run. The first `nix develop path:./nix` downloads the
 Watcom 10.5 and 10.6 CD images from WinWorld for their runtime libraries
 (about 600 MB); everything else comes from nixpkgs.
 
 ## Unpacking
 
 ```sh
-nix run .#gog-unpack -- 'PATH/setup_theme_hospital_v3_(28027).exe'
+nix run path:./nix#gog-unpack -- 'PATH/setup_theme_hospital_v3_(28027).exe'
 ```
 
 This checks the installer's name and SHA-256, extracts it with innoextract,
@@ -75,9 +100,10 @@ gitignored: never commit game files.
 ## Playing
 
 ```sh
-nix run .                # DOSBox Staging
-nix run . -- --dosbox-x  # or DOSBox-X, or --dosbox for DOSBox 0.74
-nix run . -- --wlink     # play the wlink-linked build/link/hosp.exe instead
+nix run path:./nix                 # DOSBox Staging
+nix run path:./nix -- --dosbox-x   # or DOSBox-X, or --dosbox
+nix run path:./nix -- --wlink      # play the wlink build (for changed code) instead
+nix run path:./nix -- --486        # at the minimum spec (486DX2-66); --pentium for a Pentium 133
 ```
 
 This builds every unit, rebuilds `HOSPITAL.EXE` from them with
@@ -87,19 +113,32 @@ directory `build/run` (game data linked from `orig/`; its own
 `HOSPITAL.CFG`, set to English on first run, and its saves). Run it from the
 repository root.
 
+`--wlink` builds and plays only the wlink build (see [Two builds of the
+EXE](#two-builds-of-the-exe)), without the byte-identical rebuild and its
+check, so it needs only the game's files, not `orig/HOSPITAL.EXE`:
+`DOS4GW.EXE`, `HOSPITAL.CFG` and the data directories (`DATA` and the others
+above).
+
 ## Developing
 
 Enter the dev shell and build:
 
 ```sh
-nix develop
+nix develop path:./nix
 python3 configure.py     # writes build.ninja and objdiff.json; rerun after adding a source file
-ninja                    # target and base objects
+ninja                    # target and base objects (without orig/HOSPITAL.EXE: base objects only)
 ninja build/report.json  # objdiff report and progress summary (plain `ninja` does not rebuild it)
-ninja link               # trial link with wlink; unresolved symbols in build/link/report.txt
+ninja link               # the wlink build, for changed code; unresolved symbols in build/link/report.txt
 ```
 
 `objdiff` (GUI) can open the project root directly; it reads `objdiff.json`.
+
+The matching side (`build/target`, split from `orig/HOSPITAL.EXE` by
+`tools/split.py`; `ninja all`, `ninja report`, objdiff, `tools/check.py`,
+`tools/lewrite.py`) needs the original EXE. Compiling the units and linking
+them with wlink (`ninja link`) does not: without the EXE,
+`configure.py` says so, and the matching targets fail with that message if
+built.
 
 Editors: `configure.py` also writes `compile_commands.json`, which lets
 clangd and clang-tidy parse the sources (clang flags approximating Watcom's
@@ -169,7 +208,7 @@ each function in its own segment. The flake provides:
 | --- | --- |
 | Watcom C/C++ 10.6 (`$WATCOM_10_6`) | period compiler, Win32 host binaries |
 | Watcom C/C++ 10.0a (`$WATCOM_10_0A`) | built the C runtime's printf/stdio modules |
-| Watcom C/C++ 10.5 and 10.6 runtime libraries (`$WATCOM_LIBS_10_5`, `$WATCOM_LIBS_10_6`) | `LIB386` of each CD (downloaded from WinWorld, 245 + 349 MB, on first `nix develop`); several runtime units are built from their modules |
+| Watcom C/C++ 10.5 and 10.6 runtime libraries (`$WATCOM_LIBS_10_5`, `$WATCOM_LIBS_10_6`) | `LIB386` of each CD (downloaded from WinWorld, 245 + 349 MB, on first `nix develop path:./nix`); several runtime units are built from their modules |
 | wibo 1.2.0 | runs the Win32 compiler on Linux |
 | objdiff-cli 3.8.1 | diffing and progress reports |
 | rizin + rz-ghidra | disassembly and decompiler output (`pdg`) |
@@ -193,6 +232,7 @@ register allocation). Library flags are in `config/cflags.txt`.
 | `src/**/*.standin.s` | assembly stand-ins for functions of the source file of the same name (see `tools/standin.py`) |
 | `include/` | shared headers |
 | `tools/` | LE reader, splitter, compiler wrapper, OMF-to-ELF converter, matching aids |
+| `nix/` | the flake (toolchain, dev shell, `nix run` apps), its play and unpack scripts, the owdemangle filter |
 
 ## Matching a function
 

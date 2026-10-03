@@ -287,6 +287,31 @@ If the temporary buffer cannot be allocated, the data is left encoded but
 the decoded size is still returned, so the caller goes on to use encoded
 data as decoded. Only when memory runs out.
 
+### wallhug_trivial (src/wallhug.cpp)
+
+**Bug** · `0x491d8`
+
+The path finder gives up when it hits one of its fixed limits: 60000 steps
+in all, 252 corners for either wall follower (`wallhug_hugstep`, the
+route's 0xfc entries) or 250 waypoints in the route. It then returns no
+route even when one exists, and `orthonav_init` reports the destination
+unreachable: `check_points_connected` and `can_i_get_to` say no, and
+`orthonav_whatnext` gives a person sent there no direction (-3). Measured
+on generated maps, this misses about 3% of reachable pairs, all in mazes,
+dense clutter and rows of dead ends. The wall following also gets routes up
+to 1.9 times the shortest, and its smoothing pass (`wallhug_cleanup`, up to
+ten rounds of further searches) makes long winding searches take over a
+second at 486 speed.
+
+### orthonav_init (src/orthonav.cpp)
+
+**Bug** · `0x55454`
+
+When no route is found it sets `count` to 0 and returns before recording
+the destination (`x1`, `y1`). `person_head_for` (src/nav.cpp) replans when
+`count` is 0 and again when the destination differs from `x1`, `y1`, so for
+an unreachable destination it runs the failing search twice per call.
+
 ## UI & drawing
 
 ### remove_old_window_image_from_wscreen (src/engine.cpp)

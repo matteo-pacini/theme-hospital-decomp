@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Generate build.ninja and objdiff.json from config/.
 
-Run inside the devShell (`nix develop`), then `ninja` to build every object
+Run inside the devShell (`nix develop path:./nix`), then `ninja` to build every object
 and `ninja report` for build/report.json.
+
+The matching targets (build/target, `all`, `report`) are split from
+orig/HOSPITAL.EXE; without it, or with a different EXE, they fail with a
+message when built, and `ninja` builds only the objects compiled from source,
+which are all the link target depends on.
 """
 
 import hashlib
@@ -22,16 +27,20 @@ CATEGORIES = [
 ]
 
 
-def check_exe():
+def exe_problem():
+    """Why orig/HOSPITAL.EXE cannot be split for the matching targets, or None."""
     if not os.path.exists(EXE):
-        sys.exit(f"missing {os.path.relpath(EXE, ROOT)}: extract the GOG release into orig/ (see README)")
+        return f"missing {os.path.relpath(EXE, ROOT)}: extract the GOG release into orig/ (see README)"
     digest = hashlib.sha1(open(EXE, "rb").read()).hexdigest()
     if digest != EXE_SHA1:
-        sys.exit(f"{os.path.relpath(EXE, ROOT)}: sha1 {digest}, expected {EXE_SHA1}")
+        return f"{os.path.relpath(EXE, ROOT)}: sha1 {digest}, expected {EXE_SHA1}"
+    return None
 
 
 def main():
-    check_exe()
+    problem = exe_problem()
+    if problem:
+        print(f"{problem}\nonly the link target is available; rerun configure.py once the EXE is in place", file=sys.stderr)
     proj = Project()
     tools = ["tools/cc.py", "tools/lefile.py", "tools/project.py", "tools/split.py", "tools/x86scan.py"]
     configs = ["config/functions.txt", "config/symbols.txt", "config/demo_map.txt", "config/demo_data_map.txt", "config/relocs.txt", "config/cflags.txt", "config/sections.txt"]
@@ -39,7 +48,10 @@ def main():
     n = []
     n.append("ninja_required_version = 1.10\n")
     n.append("rule configure\n  command = python3 configure.py\n  generator = 1\n")
-    n.append("rule split\n  command = python3 tools/split.py build/target\n  restat = 1\n")
+    if problem:
+        n.append(f"rule split\n  command = echo '{problem}' >&2; exit 1\n")
+    else:
+        n.append("rule split\n  command = python3 tools/split.py build/target\n  restat = 1\n")
     n.append("rule as\n  command = as --32 -o $out $in\n")
     n.append("rule cc\n  command = python3 tools/cc.py $in $out\n")
     n.append(
@@ -60,14 +72,16 @@ def main():
     n.append(f"build build.ninja objdiff.json: configure configure.py {' '.join(configs + tools + sources)}\n")
 
     target_s = [f"build/target/{u.name}.s" for u in proj.units]
-    n.append(f"build {' '.join(target_s)}: split | {EXE} {' '.join(configs + tools + sources)}\n")
+    exe_dep = [] if problem else [EXE]
+    n.append(f"build {' '.join(target_s)}: split | {' '.join(exe_dep + configs + tools + sources)}\n")
 
+    targets = []
     objects = []
     units = []
     for u in proj.units:
         target = f"build/target/{u.name}.o"
         n.append(f"build {target}: as build/target/{u.name}.s\n")
-        objects.append(target)
+        targets.append(target)
         unit = {
             "name": u.name,
             "target_path": target,
@@ -97,13 +111,15 @@ def main():
         n.append(f"build build/base/{m.name}.o: as {m.source}\n")
         objects.append(f"build/base/{m.name}.o")
 
-    n.append(f"build all: phony {' '.join(objects)}\n")
+    # base-objects: the objects compiled from source, all that the links need.
+    n.append(f"build base-objects: phony {' '.join(objects)}\n")
+    n.append(f"build all: phony base-objects {' '.join(targets)}\n")
     n.append("build build/report.json: report | all objdiff.json tools/progress.py tools/verify.py tools/elfrelocs.py\n")
     n.append("build report: phony build/report.json\n")
     n.append("rule link\n  command = python3 tools/link.py\n")
-    n.append("build build/link/report.txt: link | all tools/link.py\n")
+    n.append("build build/link/report.txt: link | base-objects tools/link.py\n")
     n.append("build link: phony build/link/report.txt\n")
-    n.append("default all\n")
+    n.append("default base-objects\n" if problem else "default all\n")
 
     with open(os.path.join(ROOT, "build.ninja"), "w") as f:
         f.write("\n".join(n))

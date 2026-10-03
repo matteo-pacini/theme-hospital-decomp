@@ -2,7 +2,7 @@ Theme Hospital decompilation
 Copyright (C) 2026 Matteo Pacini and contributors
 
 The project's own work (the build system and tools in tools/, configure.py,
-flake.nix, the configuration in config/ and the documentation) is licensed
+nix/, the configuration in config/ and the documentation) is licensed
 under the GNU General Public License, version 3 or any later version; see
 COPYING for the full text.
 

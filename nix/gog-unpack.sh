@@ -1,5 +1,5 @@
 # Extract the game from GOG's installer into orig/, which the build and
-# `nix run .` need. Run from the repository root.
+# `nix run path:./nix` need. Run from the repository root.
 #
 # Usage: gog-unpack PATH/setup_theme_hospital_v3_(28027).exe
 #
