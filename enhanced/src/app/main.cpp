@@ -5,7 +5,6 @@
 #include "app/datadir.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
-#include "core/data/fs.h"
 #include "core/data/gamedata.h"
 #include "core/render/blit.h"
 #include "core/render/iso.h"
@@ -13,7 +12,7 @@
 #include "core/render/shadows.h"
 #include "core/render/surface.h"
 #include "core/render/view.h"
-#include "core/world/world.h"
+#include "core/world/game.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -60,19 +59,24 @@ void SDLCALL on_folder_chosen(void *userdata, const char *const *files, int)
 // A level as it starts: its map and objects, the shadowed blocks, and the
 // scratch surface the view is drawn with.
 struct LevelView {
-    World world;
+    Game game;
     std::unique_ptr<ShadowSprites> shadows;
     Surface scratch;
 };
 
-std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level)
+// Starts level `number` with its settings (the default FULL set), or
+// returns nothing and says why.
+std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level, int number, std::string *error)
 {
+    Balance settings;
+    if (!load_balance(data.dir(), number, kDefaultBalanceId, settings, error))
+        return nullptr;
     auto view = std::make_unique<LevelView>();
-    start_level(view->world, level, data.anims());
+    view->game.start(level, number, settings, data.anims());
     // The shadowed blocks are made from the map as recreate_map leaves it,
     // before add_static_shadows.
-    view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost(), view->world.map.data());
-    add_static_shadows(view->world.map);
+    view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost(), view->game.world.map.data());
+    add_static_shadows(view->game.world.map);
     return view;
 }
 
@@ -85,7 +89,7 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
             level->scratch.resize(surface.width(), surface.height());
             level->scratch.fill(kMaskColour);
         }
-        draw_world(surface, {0, 0, surface.width(), surface.height()}, camera, level->world, data,
+        draw_world(surface, {0, 0, surface.width(), surface.height()}, camera, level->game.world, data,
                    shadows ? level->shadows.get() : nullptr, level->scratch);
     }
 }
@@ -106,11 +110,12 @@ SDL_Texture *argb_texture(SDL_Renderer *renderer, const std::vector<uint32_t> &p
 // --screenshot: renders level `level_number` at `width` x `height` with the view
 // centred on the player's start, without opening a window, and saves it as
 // a BMP. Returns the process exit code.
-int screenshot(const std::filesystem::path &data_dir, int level_number, int width, int height, const std::string &out)
+int screenshot(const std::filesystem::path &data_dir, int level_number, int width, int height, const std::string &out,
+               std::optional<int> language)
 {
     GameData data;
     std::string error;
-    if (!data.load(data_dir, &error)) {
+    if (!data.load(data_dir, &error, language)) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 1;
     }
@@ -119,13 +124,16 @@ int screenshot(const std::filesystem::path &data_dir, int level_number, int widt
         std::fprintf(stderr, "%s\n", error.c_str());
         return 1;
     }
-    auto map = begin_level(data, *level);
+    auto map = begin_level(data, *level, level_number, &error);
+    if (!map) {
+        std::fprintf(stderr, "%s\n", error.c_str());
+        return 1;
+    }
     int start = level->camera_start[0];
     Point centre = cell_to_world(start % kMapSize, start / kMapSize);
     Surface surface;
     surface.resize(width, height);
     draw_view(surface, data, map.get(), {centre.x - width / 2, centre.y - height / 2}, true);
-    draw_panel(surface, data.panel());
 
     SDL_Surface *img = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_XRGB8888);
     if (!img) {
@@ -137,6 +145,20 @@ int screenshot(const std::filesystem::path &data_dir, int level_number, int widt
         auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(img->pixels) + y * img->pitch);
         for (int x = 0; x < width; x++)
             row[x] = data.palette()[*src++];
+    }
+    // The panel at native size with the level's starting figures, as the
+    // window draws it.
+    const Game &g = map->game;
+    PanelFigures figures{g.balance, g.date.day, g.date.month, g.reputation, g.opening_countdown, g.open_countdown};
+    int pw = 0, ph = 0;
+    std::vector<uint32_t> panel = panel_to_argb(data, &figures, pw, ph);
+    for (int y = 0; y < ph && height - ph + y >= 0; y++) {
+        auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(img->pixels) + (height - ph + y) * img->pitch);
+        for (int x = 0; x < pw; x++) {
+            int dx = (width - pw) / 2 + x;
+            if (dx >= 0 && dx < width && panel[size_t(y * pw + x)])
+                row[dx] = panel[size_t(y * pw + x)];
+        }
     }
     bool ok = SDL_SaveBMP(img, out.c_str());
     if (!ok)
@@ -157,10 +179,11 @@ class App
     void load_level(int number);
     void handle_event(const SDL_Event &e);
     void update(float dt);
-    void render(float frame_ms);
+    void render();
     int zoom() const;
     int ui_scale() const;
     void make_ui_textures();
+    void update_panel();
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -169,6 +192,7 @@ class App
     // The panel and the pointer, drawn at the UI scale over the view.
     SDL_Texture *panel_ = nullptr;
     int panel_w_ = 0, panel_h_ = 0;
+    PanelFigures panel_figures_; // what the panel texture shows
     SDL_Texture *pointer_ = nullptr;
     int pointer_w_ = 0, pointer_h_ = 0;
 
@@ -178,15 +202,19 @@ class App
     FolderPick pick_;
     std::unique_ptr<GameData> data_;
 
-    std::vector<int> levels_;
+    int level_ = 1;
+    std::optional<int> language_; // --language: LANG-n.DAT instead of HOSPITAL.CFG's
     std::unique_ptr<LevelView> map_;
-    std::string level_error_;
 
     Surface surface_;
     Point camera_;                                         // map pixel position of the view's top-left
     uint16_t scroll_min_ = 0, scroll_max_ = kMapCells - 1; // the level's scroll area, as cells
     float scroll_x_ = 0, scroll_y_ = 0;                    // sub-pixel scroll carried between frames
     bool dragging_ = false;
+    int zoom_ = 0;        // the view's scale: 0 automatic, else the integer scale
+    bool shadows_ = true; // the game's shadows option
+    Speed speed_ = Speed::Normal;
+    double turn_clock_ = 0; // turns due but not yet run
     ToolsState tools_;
     bool running_ = true;
     bool imgui_ready_ = false;
@@ -200,7 +228,9 @@ bool App::init(int argc, char **argv)
         if (arg == "--data" && i + 1 < argc)
             data_arg = argv[++i];
         else if (arg == "--level" && i + 1 < argc)
-            tools_.level = std::atoi(argv[++i]);
+            level_ = std::atoi(argv[++i]);
+        else if (arg == "--language" && i + 1 < argc)
+            language_ = std::atoi(argv[++i]);
     }
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -244,18 +274,14 @@ bool App::try_load_data(const std::filesystem::path &dir)
 {
     auto data = std::make_unique<GameData>();
     std::string error;
-    if (!data->load(dir, &error)) {
+    if (!data->load(dir, &error, language_)) {
         data_error_ = error;
         return false;
     }
     data_ = std::move(data);
     make_ui_textures();
     data_error_.clear();
-    levels_.clear();
-    for (int n = 0; n < 120; n++)
-        if (resolve_ci(dir, "levels/level.l" + std::to_string(n)))
-            levels_.push_back(n);
-    load_level(tools_.level);
+    load_level(level_);
     return true;
 }
 
@@ -264,12 +290,16 @@ void App::load_level(int number)
     std::string error;
     auto level = data_->load_level(number, &error);
     if (!level) {
-        level_error_ = error;
+        std::fprintf(stderr, "%s\n", error.c_str());
         return;
     }
-    level_error_.clear();
-    tools_.level = number;
-    map_ = begin_level(*data_, *level);
+    auto map = begin_level(*data_, *level, number, &error);
+    if (!map) {
+        std::fprintf(stderr, "%s\n", error.c_str());
+        return;
+    }
+    level_ = number;
+    map_ = std::move(map);
     // Centre the view on the player's starting cell, as load_level does.
     int start = level->camera_start[0];
     scroll_min_ = level->scroll_min;
@@ -287,14 +317,33 @@ int App::ui_scale() const
     return std::max(1, h / kMinViewHeight);
 }
 
+// Remakes the panel texture when the figures it shows have changed.
+void App::update_panel()
+{
+    PanelFigures f;
+    if (map_) {
+        const Game &g = map_->game;
+        f = {g.balance, g.date.day, g.date.month, g.reputation, g.opening_countdown, g.open_countdown};
+    }
+    if (panel_ && f.balance == panel_figures_.balance && f.day == panel_figures_.day &&
+        f.month == panel_figures_.month && f.reputation == panel_figures_.reputation &&
+        f.opening_countdown == panel_figures_.opening_countdown)
+        return;
+    if (panel_)
+        SDL_DestroyTexture(panel_);
+    panel_figures_ = f;
+    auto pixels = panel_to_argb(*data_, map_ ? &f : nullptr, panel_w_, panel_h_);
+    panel_ = argb_texture(renderer_, pixels, panel_w_, panel_h_);
+}
+
 void App::make_ui_textures()
 {
     if (panel_)
         SDL_DestroyTexture(panel_);
     if (pointer_)
         SDL_DestroyTexture(pointer_);
-    auto panel = panel_to_argb(data_->panel(), data_->palette(), panel_w_, panel_h_);
-    panel_ = argb_texture(renderer_, panel, panel_w_, panel_h_);
+    panel_ = nullptr;
+    update_panel();
     Sprite s = data_->pointers().at(kPointerDefault);
     pointer_w_ = s.width;
     pointer_h_ = s.height;
@@ -307,8 +356,8 @@ int App::zoom() const
 {
     int w = 0, h = 0;
     SDL_GetWindowSizeInPixels(window_, &w, &h);
-    if (tools_.zoom > 0)
-        return tools_.zoom;
+    if (zoom_ > 0)
+        return zoom_;
     return std::max(1, h / kMinViewHeight);
 }
 
@@ -325,6 +374,13 @@ void App::handle_event(const SDL_Event &e)
             break;
         if (e.key.key == SDLK_F1)
             tools_.open = !tools_.open;
+        else if (e.key.key == SDLK_P && map_)
+            map_->game.paused = !map_->game.paused;
+        // Until the game's menu bar exists, 1-5 pick the Speed menu's
+        // entries, slowest to "and then some".
+        else if (e.key.key >= SDLK_1 && e.key.key <= SDLK_5)
+            speed_ = std::array{Speed::Slowest, Speed::Slower, Speed::Normal, Speed::Max,
+                                Speed::AndThenSome}[e.key.key - SDLK_1];
         else if (e.key.key == SDLK_ESCAPE && !data_)
             running_ = false;
         break;
@@ -346,7 +402,7 @@ void App::handle_event(const SDL_Event &e)
     case SDL_EVENT_MOUSE_WHEEL:
         if (!io.WantCaptureMouse && data_) {
             // render() keeps the view centred when the surface changes size.
-            tools_.zoom = std::clamp(zoom() + (e.wheel.y > 0 ? 1 : e.wheel.y < 0 ? -1 : 0), 1, 4);
+            zoom_ = std::clamp(zoom() + (e.wheel.y > 0 ? 1 : e.wheel.y < 0 ? -1 : 0), 1, 4);
         }
         break;
     default:
@@ -358,6 +414,12 @@ void App::update(float dt)
 {
     if (!data_)
         return;
+    if (map_ && !map_->game.paused) {
+        // At most a few frames' worth of turns after a stall.
+        turn_clock_ = std::min(turn_clock_ + dt * double(int(speed_)), 8.0);
+        for (; turn_clock_ >= 1; turn_clock_ -= 1)
+            map_->game.turn();
+    }
     const ImGuiIO &io = ImGui::GetIO();
     if (!io.WantCaptureKeyboard) {
         const bool *keys = SDL_GetKeyboardState(nullptr);
@@ -397,14 +459,9 @@ void App::update(float dt)
         camera_.x += dx;
     if (!beyond_scroll_limit({camera_.x + surface_.width() / 2, centre.y + dy}, scroll_min_, scroll_max_))
         camera_.y += dy;
-
-    if (tools_.level_requested) {
-        tools_.level_requested = false;
-        load_level(tools_.level);
-    }
 }
 
-void App::render(float frame_ms)
+void App::render()
 {
     ImGui_ImplSDLRenderer3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
@@ -440,7 +497,7 @@ void App::render(float frame_ms)
             screen_h_ = vh;
         }
 
-        draw_view(surface_, *data_, map_.get(), camera_, tools_.shadows);
+        draw_view(surface_, *data_, map_.get(), camera_, shadows_);
 
         void *pixels;
         int pitch;
@@ -459,6 +516,7 @@ void App::render(float frame_ms)
         }
 
         // The panel and the pointer keep their size whatever the view's zoom.
+        update_panel();
         int s = ui_scale();
         if (panel_) {
             SDL_FRect p = {float((out_w - panel_w_ * s) / 2), float(out_h - panel_h_ * s), float(panel_w_ * s),
@@ -478,12 +536,7 @@ void App::render(float frame_ms)
             SDL_ShowCursor();
         }
 
-        float mx, my;
-        SDL_GetMouseState(&mx, &my);
-        float density = SDL_GetWindowPixelDensity(window_);
-        Point cell = world_to_cell({camera_.x + int(mx * density) / z, camera_.y + int(my * density) / z});
-        ViewInfo info{out_w, out_h, vw, vh, z, camera_.x, camera_.y, cell.x, cell.y, frame_ms, levels_, level_error_};
-        draw_tools(tools_, *data_, info, renderer_);
+        draw_tools(tools_);
     }
 
     ImGui::Render();
@@ -496,7 +549,6 @@ void App::render(float frame_ms)
 void App::run()
 {
     uint64_t last = SDL_GetTicksNS();
-    float frame_ms = 0;
     while (running_) {
         SDL_Event e;
         while (SDL_PollEvent(&e))
@@ -520,18 +572,13 @@ void App::run()
         uint64_t now = SDL_GetTicksNS();
         float dt = float(now - last) / 1e9f;
         last = now;
-        frame_ms = frame_ms * 0.9f + dt * 1000.0f * 0.1f;
         update(std::min(dt, 0.1f));
-        render(frame_ms);
+        render();
     }
 }
 
 void App::shutdown()
 {
-    if (tools_.preview)
-        SDL_DestroyTexture(tools_.preview);
-    if (tools_.anim_preview)
-        SDL_DestroyTexture(tools_.anim_preview);
     if (panel_)
         SDL_DestroyTexture(panel_);
     if (pointer_)
@@ -555,9 +602,10 @@ void App::shutdown()
 
 int main(int argc, char **argv)
 {
-    // --screenshot OUT.bmp [--size WxH] [--level N] --data DIR
+    // --screenshot OUT.bmp [--size WxH] [--level N] [--language N] --data DIR
     std::string shot, data_dir;
     int level = 1, width = 1280, height = 720;
+    std::optional<int> language;
     for (int i = 1; i + 1 < argc; i++) {
         std::string arg = argv[i];
         if (arg == "--screenshot")
@@ -566,6 +614,8 @@ int main(int argc, char **argv)
             data_dir = argv[++i];
         else if (arg == "--level")
             level = std::atoi(argv[++i]);
+        else if (arg == "--language")
+            language = std::atoi(argv[++i]);
         else if (arg == "--size")
             std::sscanf(argv[++i], "%dx%d", &width, &height);
     }
@@ -574,7 +624,7 @@ int main(int argc, char **argv)
             std::fprintf(stderr, "--screenshot needs --data\n");
             return 2;
         }
-        return th::screenshot(data_dir, level, width, height, shot);
+        return th::screenshot(data_dir, level, width, height, shot, language);
     }
 
     th::App app;

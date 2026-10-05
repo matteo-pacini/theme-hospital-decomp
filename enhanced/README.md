@@ -22,8 +22,7 @@ Milestone 1, the map at any resolution:
 - the bottom panel at native size, centred;
 - scrolling (arrow keys or WASD, the window edges, middle or right drag) and
   zoom (mouse wheel; automatic keeps at least 480 lines);
-- developer tools (F1): frame time, view size, camera and cell under the
-  mouse, level picker, palette and sprite viewer.
+- a tools window (F1) with the UI scale; levels are chosen with `--level N`.
 
 Milestone 2, the level as it starts:
 
@@ -36,12 +35,23 @@ Milestone 2, the level as it starts:
 - the game's drawing order: floors, then each row's walls and what stands on
   its cells, with things behind a wall drawn through a mask of the walls in
   front of them;
-- shadows cast by walls (on by default, a tools option);
+- shadows cast by walls;
 - each level's scroll area and the game's mouse pointer;
-- an animation browser in the tools.
+- the panel and pointer at their own UI scale, apart from the view's zoom.
 
-Not yet: people and the simulation, litter, the panel's figures and the
-game's screens.
+Milestone 3a, time passing:
+
+- the level settings (LEVELS/*.SAM, the FULL set) read as the game reads
+  them;
+- the game turn: game speeds (keys 1-5 until the menu bar exists, P to
+  pause), the date (a day every 50 turns), the opening countdown, the
+  per-turn random draws, and objects' animations;
+- the panel's balance, date and reputation marker, and the opening
+  countdown's watch, in the game's fonts and language (HOSPITAL.CFG's, or
+  `--language N`: 0 English, 1 French, 2 German, 3 Italian, 4 Spanish,
+  5 Swedish).
+
+Not yet: people, litter, the menu bar and the game's screens.
 
 ## Game data
 

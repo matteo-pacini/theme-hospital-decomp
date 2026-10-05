@@ -1,14 +1,18 @@
 // Engine tests. Those that need the game data read it from TH_TEST_DATA_DIR
 // and are skipped (exit code 77) when it is unset or missing.
 
+#include "core/data/balance.h"
 #include "core/data/blocks.h"
 #include "core/data/gamedata.h"
 #include "core/data/rnc.h"
+#include "core/data/text.h"
 #include "core/render/blit.h"
 #include "core/render/iso.h"
 #include "core/render/panel.h"
 #include "core/render/shadows.h"
+#include "core/render/text.h"
 #include "core/render/view.h"
+#include "core/world/game.h"
 #include "core/world/world.h"
 
 #include <algorithm>
@@ -371,13 +375,13 @@ void test_panel_image(const char *dir)
     std::string error;
     CHECK(gd.load(dir, &error));
     int w = 0, h = 0;
-    std::vector<uint32_t> argb = th::panel_to_argb(gd.panel(), gd.palette(), w, h);
+    std::vector<uint32_t> argb = th::panel_to_argb(gd, nullptr, w, h);
     CHECK(w == 640 && h > 0);
     th::Surface s;
     s.resize(w, h);
     s.fill(0);
     th::Rect r = th::draw_panel(s, gd.panel());
-    CHECK(r.x == 0 && r.y == 0 && r.w == w && r.h == h);
+    CHECK(r.x == 0 && r.y + r.h == h && r.w == w);
     int opaque = 0;
     for (int i = 0; i < w * h; i++) {
         if (argb[size_t(i)] == 0)
@@ -385,7 +389,229 @@ void test_panel_image(const char *dir)
         opaque++;
         CHECK(argb[size_t(i)] == gd.palette()[s.data()[i]]);
     }
-    CHECK(opaque > w * h / 2);
+    CHECK(opaque >= r.w * r.h / 2);
+}
+
+void test_text_layout()
+{
+    // A font with a 3x2 space (sprite 1) and a 2x2 'A' (sprite 'A' - 31);
+    // every other sprite empty.
+    const uint8_t a_rle[] = {2, 5, 5, 0, 2, 5, 5, 0};
+    std::vector<uint8_t> tab(6 * 35, 0);
+    tab[6 * 1 + 4] = 3;
+    tab[6 * 1 + 5] = 2;
+    tab[6 * 34 + 4] = 2;
+    tab[6 * 34 + 5] = 2;
+    th::SpriteSheet sheet;
+    CHECK(sheet.load(tab, std::vector<uint8_t>(std::begin(a_rle), std::end(a_rle))));
+    th::Font font(std::move(sheet));
+    CHECK(th::text_width(font, "A A") == 7);
+    CHECK(th::text_width(font, "A\nA A\tA") == 2 + 3 + 2 + 12 + 2);
+    CHECK(th::text_height(font, "A\nA") == 4);
+
+    th::Surface surf;
+    surf.resize(20, 4);
+    surf.fill(1);
+    // Centred in a 20-wide window: (20 - 7) / 2 = 6.
+    th::draw_text(surf, font, {0, 1, 20}, 0, 0, "A A", th::kTextCentre, {0, 0, 20, 4});
+    CHECK(surf.row(1)[5] == 1 && surf.row(1)[6] == 5 && surf.row(2)[7] == 5 && surf.row(1)[8] == 1);
+    CHECK(surf.row(1)[11] == 5 && surf.row(1)[12] == 5 && surf.row(1)[13] == 1 && surf.row(0)[6] == 1);
+    // The clip window cuts the second 'A' and leaves the surface's clip alone.
+    surf.fill(1);
+    th::draw_text(surf, font, {0, 0, 20}, 0, 0, "A A", th::kTextCentre, {0, 0, 7, 4});
+    CHECK(surf.row(0)[6] == 5 && surf.row(0)[11] == 1);
+    CHECK(surf.clip().w == 20);
+    // Wrapped at the window's width, the second line one line height down.
+    surf.fill(1);
+    th::draw_text(surf, font, {0, 0, 4}, 0, 0, "A A", th::kTextWrap, {0, 0, 20, 4});
+    CHECK(surf.row(0)[0] == 5 && surf.row(2)[0] == 5 && surf.row(0)[5] == 1);
+}
+
+void test_language_and_fonts(const char *dir)
+{
+    th::LanguageText text;
+    std::string error;
+    CHECK(th::load_language(dir, th::kEnglish, text, &error));
+    CHECK(text.section_count() == 0x44);
+    const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    CHECK(text.size(th::TextSection::Months) == 12);
+    for (int i = 0; i < 12; i++)
+        CHECK(text.month(i) == months[i]);
+    CHECK(text.month(12).empty());
+    auto language = th::config_language(dir);
+    CHECK(!language || (*language >= th::kEnglish && *language <= th::kSwedish));
+
+    th::Font balance_font, date_font;
+    CHECK(th::load_font(dir, 5, balance_font, &error));
+    CHECK(th::load_font(dir, 6, date_font, &error));
+    CHECK(!balance_font.empty() && !date_font.empty());
+
+    int glyphs = 0;
+    for (char c : std::string_view("15143"))
+        glyphs += balance_font.glyph(uint8_t(c)).width;
+    int width = th::text_width(balance_font, "15143");
+    CHECK(width == glyphs && width > 0);
+
+    th::Surface surf;
+    surf.resize(200, 40);
+    surf.fill(0);
+    th::draw_text(surf, balance_font, {10, 5, 0}, 0, 0, "15143", 0, {0, 0, 200, 40});
+    int drawn = 0, left = 200, right = -1;
+    for (int y = 0; y < 40; y++) {
+        for (int x = 0; x < 200; x++) {
+            if (surf.row(y)[x] == 0)
+                continue;
+            drawn++;
+            left = std::min(left, x);
+            right = std::max(right, x);
+            CHECK(y >= 5 && y < 5 + balance_font.line_height());
+        }
+    }
+    CHECK(drawn > 0);
+    CHECK(left >= 10 && right < 10 + width);
+
+    // The panel's date: "%d %s" centred (0x100) in the date box.
+    std::string date = "1 " + std::string(text.month(0));
+    int date_width = th::text_width(date_font, date);
+    surf.fill(0);
+    th::draw_text(surf, date_font, {0, 0, 200}, 0, 0, date, th::kTextCentre, {0, 0, 200, 40});
+    left = 200;
+    right = -1;
+    for (int y = 0; y < 40; y++) {
+        for (int x = 0; x < 200; x++) {
+            if (surf.row(y)[x] != 0) {
+                left = std::min(left, x);
+                right = std::max(right, x);
+            }
+        }
+    }
+    CHECK(left >= (200 - date_width) / 2 && right < (200 - date_width) / 2 + date_width);
+}
+
+void test_balance(const char *dir)
+{
+    auto text = [](std::string_view s) {
+        return std::span<const uint8_t>(reinterpret_cast<const uint8_t *>(s.data()), s.size());
+    };
+
+    // Every shipped file reads to its end.
+    for (const char *id : {"EASY", "FULL", "HARD"}) {
+        for (int level = 0; level <= 12; level++) {
+            char rel[32];
+            std::snprintf(rel, sizeof rel, "levels/%s%02d.sam", id, level);
+            auto file = th::load_data_file(dir, rel);
+            CHECK(file);
+            th::Balance b;
+            CHECK(file && th::read_balance_file(*file, b));
+        }
+    }
+
+    for (int level = 1; level <= 12; level++) {
+        th::Balance b;
+        std::string error;
+        CHECK(th::load_balance(dir, level, "", b, &error));
+        CHECK(error.empty());
+    }
+
+    // levels/FULL00.SAM, then FULL01.SAM over it.
+    th::Balance b;
+    CHECK(th::load_balance(dir, 1, th::kDefaultBalanceId, b));
+    CHECK(b.staff[0].min_salary == 60 && b.staff[1].min_salary == 75);
+    CHECK(b.gbv.salary_add[3] == -30 && b.gbv.salary_add[4] == 30);
+    CHECK(b.towns[1].start_cash == 40000 && b.towns[1].ill_rate == 2 && b.towns[1].interest_rate == 100);
+    CHECK(b.towns[1].inflation_rate == 450); // no file sets it: the static value
+    CHECK(b.towns[3].start_cash == 50000 && b.towns[3].interest_rate == 300);
+    CHECK(b.gbv.hold_visual_peep_count == 2); // FULL00 says 6
+    CHECK(b.gbv.open_countdown == 5000);
+    CHECK(b.expertise[2].start_price == 850 && b.expertise[2].max_diag_diff == 200);
+    CHECK(b.popn[0].month == 0 && b.popn[0].change == 3);
+    CHECK(b.popn[4].month == 21 && b.popn[4].change == 0);
+    CHECK(b.popn[5].month == 11 && b.popn[5].change == 0); // static, carried
+    CHECK(b.win_criteria[4].criteria == 6 && b.win_criteria[4].value == 55000 && b.win_criteria[4].group == 1);
+    CHECK(b.lose_criteria[1].value == -20000 && b.lose_criteria[1].group == 2 && b.lose_criteria[1].bound == 0);
+    CHECK(b.staff_levels[1].seed == 8654 && b.staff_levels[1].receptionists == 6);
+    CHECK(b.computer[2].playing == 1);
+    CHECK(b.awards_trophies.cures_penalty == -3000);
+    // balance_control: visuals 0 (5) and 3 (3), four non-visuals (19).
+    CHECK(b.visuals_total == 8 && b.visuals[2] == 5 && b.visuals[13] == 8);
+    CHECK(b.non_visuals_total == 19);
+    CHECK(b.illness_kinds.size() == 22 && b.illness_kinds[0] == 2 && b.illness_kinds[1] == 5 &&
+          b.illness_kinds[2] == 16);
+    CHECK(b.objects[39].available_for_level == 1 && b.expertise[1].known == 1);
+
+    th::Balance hard;
+    CHECK(th::load_balance(dir, 1, "HARD", hard));
+    CHECK(hard.towns[1].start_cash == 30000 && hard.towns[1].interest_rate == 500 && hard.staff[0].min_salary == 70);
+
+    th::Balance missing;
+    std::string error;
+    CHECK(!th::load_balance(dir, 13, "FULL", missing, &error) && !error.empty());
+
+    CHECK(th::balance_description(dir, "FULL", 0) == " Doctor (Medium)");
+    CHECK(th::balance_description(dir, "EASY", 2) == " AIPler (Einfach)");
+    CHECK(!th::balance_description(dir, "NONE", 0));
+
+    // A value out of bounds: the rest of its line is still read, the rest of
+    // the file is not.
+    th::Balance s;
+    CHECK(!th::read_balance_file(text("#staff[0].MinSalary 70\r\n"
+                                      "#towns[2].StartCash.IllRate.InterestRate 100001 7 321\r\n"
+                                      "#staff[1].MinSalary 71\r\n"),
+                                 s));
+    CHECK(s.staff[0].min_salary == 70 && s.staff[1].min_salary == 270);
+    CHECK(s.towns[2].start_cash == 50010 && s.towns[2].ill_rate == 7 && s.towns[2].interest_rate == 321);
+    // Unknown keys and indexes above the bound stop it too; the bound is
+    // inclusive, and an index past the table (popn has 30) is passed over.
+    th::Balance u;
+    CHECK(!th::read_balance_file(text("#popn[30].Month 9\r\n#gbv.Nothing 1\r\n#staff[0].MinSalary 70\r\n"), u));
+    CHECK(u.staff[0].min_salary == 150);
+    CHECK(!th::read_balance_file(text("#popn[31].Month 9\r\n#staff[0].MinSalary 70\r\n"), u));
+    CHECK(u.staff[0].min_salary == 150);
+    // Lines are taken to end in CRLF: LF-only lines lose their last
+    // character, and an empty one ends the file. Text before '#' is ignored.
+    th::Balance lf;
+    CHECK(th::read_balance_file(text("note #staff[0].MinSalary 70\n#gbv.SalaryAdd[5] -45\r\n\n#staff[2].MinSalary 9\n"),
+                                lf));
+    CHECK(lf.staff[0].min_salary == 7 && lf.gbv.salary_add[5] == -45 && lf.staff[2].min_salary == 95);
+}
+
+// The clock: a day every 50 turns, months and the year rolling over, the
+// opening countdown, and three random draws a turn.
+void test_game_clock(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    auto game = std::make_unique<th::Game>();
+    game->start(*level, 1, settings, gd.anims());
+    CHECK(game->balance == int(settings.towns[1].start_cash));
+    CHECK(game->opening_countdown == settings.gbv.open_countdown && !game->open);
+
+    uint32_t seed = game->world.seed;
+    for (int i = 0; i < 49; i++)
+        game->turn();
+    CHECK(game->date.day == 2 && game->date.month == 0); // turn 50
+    for (int i = 0; i < 3 * 49; i++)
+        th::old_newrand(seed);
+    CHECK(seed == game->world.seed);
+
+    for (int i = 0; i < 30 * th::kTurnsPerDay; i++)
+        game->turn();
+    CHECK(game->date.day == 1 && game->date.month == 1);
+    for (int i = 0; i < 334 * th::kTurnsPerDay; i++)
+        game->turn();
+    CHECK(game->date.day == 1 && game->date.month == 0 && game->date.year == 1);
+    CHECK(game->open && game->opening_countdown == 0);
+
+    game->paused = true;
+    uint32_t turns = game->turn_count;
+    game->turn();
+    CHECK(game->turn_count == turns);
 }
 
 int main()
@@ -396,6 +622,7 @@ int main()
     test_rnc_rejects_garbage();
     test_missing_data();
     test_static_shadows();
+    test_text_layout();
 
     const char *dir = std::getenv("TH_TEST_DATA_DIR");
     bool have_data = dir && *dir && th::missing_data_files(dir).empty();
@@ -405,6 +632,9 @@ int main()
         test_level_objects(dir);
         test_draw_world(dir);
         test_panel_image(dir);
+        test_game_clock(dir);
+        test_language_and_fonts(dir);
+        test_balance(dir);
     }
 
     if (failures) {

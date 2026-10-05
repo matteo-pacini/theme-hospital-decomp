@@ -11,7 +11,9 @@ const std::vector<std::string_view> &required_data_files()
     static const std::vector<std::string_view> files = {
         "data/mpalette.dat", "data/vblk-0.tab",   "data/vblk-0.dat",   "data/panel02v.tab", "data/panel02v.dat",
         "data/vspr-0.tab",   "data/vspr-0.dat",   "data/vstart-1.ani", "data/vfra-1.ani",   "data/vele-1.ani",
-        "data/vlist-1.ani",  "qdata/ghost66.dat", "data/mpointer.tab", "data/mpointer.dat", "levels/level.l1",
+        "data/vlist-1.ani",  "qdata/ghost66.dat", "data/mpointer.tab", "data/mpointer.dat", "qdata/font05v.tab",
+        "qdata/font05v.dat", "qdata/font16v.tab", "qdata/font16v.dat", "data/watch01v.tab", "data/watch01v.dat",
+        "levels/level.l1",
     };
     return files;
 }
@@ -73,7 +75,7 @@ bool load_sheet(const std::filesystem::path &dir, std::string_view base, SpriteF
 
 } // namespace
 
-bool GameData::load(const std::filesystem::path &dir, std::string *error)
+bool GameData::load(const std::filesystem::path &dir, std::string *error, std::optional<int> language)
 {
     dir_ = dir;
     auto pal = load_data_file(dir, "data/mpalette.dat", error);
@@ -87,7 +89,8 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error)
     if (!load_sheet(dir, "data/vblk-0", SpriteFormat::Rle, blocks_, error) ||
         !load_sheet(dir, "data/panel02v", SpriteFormat::Req, panel_, error) ||
         !load_sheet(dir, "data/vspr-0", SpriteFormat::Rle, sprites_, error) ||
-        !load_sheet(dir, "data/mpointer", SpriteFormat::Rle, pointers_, error) || !anims_.load(dir, error))
+        !load_sheet(dir, "data/mpointer", SpriteFormat::Rle, pointers_, error) ||
+        !load_sheet(dir, "data/watch01v", SpriteFormat::Req, watch_, error) || !anims_.load(dir, error))
         return false;
     auto ghost = load_data_file(dir, "qdata/ghost66.dat", error);
     if (!ghost)
@@ -98,6 +101,13 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error)
         return false;
     }
     ghost_ = std::move(*ghost);
+    language_ = language ? *language : config_language(dir).value_or(0);
+    if (!load_language(dir, language_, text_, error))
+        return false;
+    fonts_.clear();
+    for (int slot : {5, 6})
+        if (!load_font(dir, slot, fonts_[slot], error))
+            return false;
     return true;
 }
 
