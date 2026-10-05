@@ -72,7 +72,7 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
     if (!load_balance(data.dir(), number, kDefaultBalanceId, settings, error))
         return nullptr;
     auto view = std::make_unique<LevelView>();
-    view->game.start(level, number, settings, data.anims());
+    view->game.start(level, number, settings, data.anims(), data.person_complexes());
     // The shadowed blocks are made from the map as recreate_map leaves it,
     // before add_static_shadows.
     view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost(), view->game.world.map.data());
@@ -178,6 +178,7 @@ class App
     bool try_load_data(const std::filesystem::path &dir);
     void load_level(int number);
     void handle_event(const SDL_Event &e);
+    void nav_click(uint8_t button, float x, float y);
     void update(float dt);
     void render();
     int zoom() const;
@@ -361,6 +362,35 @@ int App::zoom() const
     return std::max(1, h / kMinViewHeight);
 }
 
+// The path finding tool's clicks on the view (window coordinates): left
+// places a walker, selects the person on the cell or sends the selected one
+// there; right deselects.
+void App::nav_click(uint8_t button, float x, float y)
+{
+    NavTool &nav = tools_.nav;
+    Game &game = map_->game;
+    if (button == SDL_BUTTON_RIGHT) {
+        nav.selected = 0;
+        return;
+    }
+    if (button != SDL_BUTTON_LEFT)
+        return;
+    float density = SDL_GetWindowPixelDensity(window_);
+    int z = zoom();
+    Point cell = world_to_cell({camera_.x + int(x * density) / z, camera_.y + int(y * density) / z});
+    if (cell.x < 0 || cell.x >= kMapSize || cell.y < 0 || cell.y >= kMapSize)
+        return;
+    int tile = cell.x + cell.y * kMapSize;
+    if (nav.placing) {
+        nav.placing = false;
+        nav.selected = game.add_walker(tile);
+    } else if (uint16_t id = person_at(game.world, cell.x, cell.y)) {
+        nav.selected = id;
+    } else if (nav.selected) {
+        game.send_walker(nav.selected, tile);
+    }
+}
+
 void App::handle_event(const SDL_Event &e)
 {
     ImGui_ImplSDL3_ProcessEvent(&e);
@@ -387,6 +417,8 @@ void App::handle_event(const SDL_Event &e)
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
         if (!io.WantCaptureMouse && (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT))
             dragging_ = true;
+        if (!io.WantCaptureMouse && tools_.open && map_)
+            nav_click(e.button.button, e.button.x, e.button.y);
         break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
         if (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT)
@@ -536,7 +568,10 @@ void App::render()
             SDL_ShowCursor();
         }
 
-        draw_tools(tools_);
+        draw_tools(tools_, map_ ? &map_->game.world : nullptr);
+        if (tools_.open && map_)
+            draw_nav_overlay(tools_.nav, map_->game.world, camera_,
+                             float(z) / ImGui::GetIO().DisplayFramebufferScale.x);
     }
 
     ImGui::Render();

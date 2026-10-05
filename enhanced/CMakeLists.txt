@@ -39,7 +39,10 @@ add_library(th_core STATIC
   src/core/render/panel.cpp
   src/core/render/shadows.cpp
   src/core/render/view.cpp
+  src/core/world/arrivals.cpp
+  src/core/world/complex.cpp
   src/core/world/game.cpp
+  src/core/world/nav.cpp
   src/core/world/world.cpp
 )
 target_include_directories(th_core PUBLIC src)
@@ -49,6 +52,7 @@ add_executable(th_enhanced
   src/app/main.cpp
   src/app/datadir.cpp
   src/app/settings.cpp
+  src/app/ui/nav_tool.cpp
   src/app/ui/tools.cpp
 )
 target_link_libraries(th_enhanced PRIVATE th_core th_imgui SDL3::SDL3)

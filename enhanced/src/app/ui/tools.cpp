@@ -48,13 +48,15 @@ MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::
     return action;
 }
 
-void draw_tools(ToolsState &state)
+void draw_tools(ToolsState &state, const World *world)
 {
     if (!state.open)
         return;
     if (ImGui::Begin("Tools (F1)", &state.open, ImGuiWindowFlags_AlwaysAutoResize)) {
         const char *scales[] = {"Automatic", "1x", "2x", "3x", "4x"};
         ImGui::Combo("UI scale", &state.ui_scale, scales, IM_ARRAYSIZE(scales));
+        if (world)
+            draw_nav_tool(state.nav, *world);
     }
     ImGui::End();
 }

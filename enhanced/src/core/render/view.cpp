@@ -111,7 +111,10 @@ Rect draw_cell_things(Surface &dst, const MapCell &cell, int x, int y, const Wor
             if (it->first != b)
                 continue;
             const Thing &t = world.things[size_t(it->second)];
-            if (t.type != kThingObject)
+            // mapwho_object and mapwho_person's usual case
+            // (draw_special_id_frame); people's glow, wobble and status icons
+            // are not drawn yet.
+            if (t.type != kThingObject && t.type != kThingPatient && t.type != kThingStaff)
                 continue;
             int tx = x + kTileWidth / 2 + ((int(t.x.frac) - int(t.y.frac)) >> 3);
             int ty = y + ((int(t.x.frac) + int(t.y.frac)) >> 4);

@@ -1,5 +1,7 @@
 #include "core/world/game.h"
 
+#include "core/world/nav.h"
+
 #include <array>
 
 namespace th
@@ -20,11 +22,20 @@ int days_in_month(int month)
     return kCalendar[size_t(month % 12)];
 }
 
-void Game::start(const Level &level, int number, const Balance &settings, const AnimData &anims)
+void Game::start(const Level &level, int number, const Balance &settings, const AnimData &anims,
+                 const PersonComplexes &complexes)
 {
+    complexes_ = &complexes;
     int open_countdown = settings.gbv.open_countdown;
     anims_ = &anims;
+    settings_ = settings;
+    level_ = std::make_unique<Level>(level);
+    level_number_ = number;
+    start_arrivals(arrivals, settings);
+    new_patients.clear();
+    walkers_.assign(kThingCount, false);
     start_level(world, level, anims);
+    world.entrances = level.entrances;
     date = {};
     turn_count = 1;
     paused = false;
@@ -47,16 +58,27 @@ void Game::turn()
     old_newrand(world.seed);
     old_newrand(world.seed);
 
+    new_patients.clear();
+    if (turn_count % (kTurnsPerDay / 2) == 0) {
+        // twice_daily_admin
+        if (uint16_t id =
+                create_a_peep(world, arrivals, settings_, *anims_, *level_, level_number_, open, turn_count)) {
+            new_patients.push_back(id);
+            start_person_going(world, *anims_, *complexes_, id, turn_count);
+        }
+    }
     if (turn_count % kTurnsPerDay == 0) {
         // daily_admin, then month_end and year_end (src/finance.cpp).
         date.day++;
         if (date.day > days_in_month(date.month)) {
+            calc_visitors_this_month(arrivals, settings_);
             date.day = 1;
             date.month++;
             if (date.month >= 12) {
                 date.month = 0;
                 date.year++;
             }
+            arrivals.game_month = uint16_t(date.year * 12 + date.month);
         }
     }
 
@@ -67,15 +89,44 @@ void Game::turn()
         open = true;
     }
 
-    // process_things, after the turn starts.
+    // process_things, after the turn starts, in thing order.
     for (size_t i = 1; i < world.things.size(); i++) {
         Thing &t = world.things[i];
-        if (t.type != kThingObject || t.state != kObjectStatic || t.anim_speed == 0)
-            continue;
-        // object_static (src/objects.cpp).
-        if (turn_count % t.anim_speed == 0 && t.sprite < anims_->frames.size())
-            t.sprite = anims_->frames[t.sprite].next;
+        if (t.type == kThingFree)
+            walkers_[i] = false;
+        if (t.type == kThingPatient && walkers_[i]) {
+            if (walk_turn(world, *anims_, uint16_t(i), turn_count) != WalkResult::Walking)
+                play_frame(t, *anims_, kPatientAnims[t.subtype % kPatientAnims.size()].stand);
+        } else if (t.type == kThingPatient) {
+            person_turn(world, *anims_, *complexes_, uint16_t(i), turn_count);
+        } else if (t.type == kThingObject) {
+            if (t.state == kObjectStatic) {
+                // object_static (src/objects.cpp).
+                if (t.anim_speed && turn_count % t.anim_speed == 0 && t.sprite < anims_->frames.size())
+                    t.sprite = anims_->frames[t.sprite].next;
+            } else {
+                sliding_door_turn(world, *anims_, uint16_t(i), turn_count);
+            }
+        }
     }
+}
+
+uint16_t Game::add_walker(int cell)
+{
+    // Illness 16, the first of the illnesses that do not change a patient's
+    // looks.
+    uint16_t id = make_a_peep(world, arrivals, settings_, *anims_, level_number_, uint16_t(cell), 16, 0);
+    if (id)
+        walkers_[id] = true;
+    return id;
+}
+
+void Game::send_walker(uint16_t id, int cell)
+{
+    if (id >= world.things.size())
+        return;
+    walkers_[id] = true;
+    set_destination_coords(world, id, cell);
 }
 
 } // namespace th

@@ -12,7 +12,10 @@
 #include "core/render/shadows.h"
 #include "core/render/text.h"
 #include "core/render/view.h"
+#include "core/world/arrivals.h"
+#include "core/world/complex.h"
 #include "core/world/game.h"
+#include "core/world/nav.h"
 #include "core/world/world.h"
 
 #include <algorithm>
@@ -21,6 +24,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -588,7 +592,7 @@ void test_game_clock(const char *dir)
     if (!level)
         return;
     auto game = std::make_unique<th::Game>();
-    game->start(*level, 1, settings, gd.anims());
+    game->start(*level, 1, settings, gd.anims(), gd.person_complexes());
     CHECK(game->balance == int(settings.towns[1].start_cash));
     CHECK(game->opening_countdown == settings.gbv.open_countdown && !game->open);
 
@@ -614,6 +618,464 @@ void test_game_clock(const char *dir)
     CHECK(game->turn_count == turns);
 }
 
+// Whether (x1, y1) can be reached from (x0, y0) in steps wall_in_way allows.
+bool reachable(const th::World &w, int x0, int y0, int x1, int y1)
+{
+    std::vector<bool> seen(th::kMapCells);
+    std::vector<int> queue = {x0 + y0 * th::kMapSize};
+    seen[size_t(queue[0])] = true;
+    for (size_t i = 0; i < queue.size(); i++) {
+        int x = queue[i] % th::kMapSize;
+        int y = queue[i] / th::kMapSize;
+        if (x == x1 && y == y1)
+            return true;
+        for (uint32_t d = 0; d < 4; d++) {
+            int next = x + th::kAroundXy[d][0] + (y + th::kAroundXy[d][1]) * th::kMapSize;
+            if (!th::wall_in_way(w, x, y, d) && !seen[size_t(next)]) {
+                seen[size_t(next)] = true;
+                queue.push_back(next);
+            }
+        }
+    }
+    return false;
+}
+
+// A route found by wallhug: it ends at its end and each waypoint is in
+// sight of the one before.
+bool route_walkable(const th::World &w, const th::WallhugPath &path)
+{
+    th::Waypoint from = path.start;
+    for (int i = 0; i < path.count; i++) {
+        if (!th::line_of_sight(w, from, path.route[size_t(i)]))
+            return false;
+        from = path.route[size_t(i)];
+    }
+    return path.count > 0 && from.x == path.end.x && from.y == path.end.y;
+}
+
+void test_wall_in_way()
+{
+    auto w = std::make_unique<th::World>();
+    CHECK(th::wall_in_way(*w, 5, 0, 0) && th::wall_in_way(*w, 0, 5, 3));
+    CHECK(th::wall_in_way(*w, 127, 5, 1) && th::wall_in_way(*w, 5, 127, 2));
+    CHECK(!th::wall_in_way(*w, 126, 5, 1) && !th::wall_in_way(*w, 5, 1, 0));
+    for (uint32_t d = 0; d < 4; d++)
+        CHECK(!th::wall_in_way(*w, 5, 5, d));
+
+    w->map[5 + 5 * 128].wall_n = 1; // between (5, 4) and (5, 5)
+    w->map[8 + 5 * 128].wall_w = 1; // between (7, 5) and (8, 5)
+    CHECK(th::wall_in_way(*w, 5, 5, 0) && th::wall_in_way(*w, 5, 4, 2) && !th::wall_in_way(*w, 5, 5, 2));
+    CHECK(th::wall_in_way(*w, 8, 5, 3) && th::wall_in_way(*w, 7, 5, 1) && !th::wall_in_way(*w, 8, 5, 1));
+
+    // An object's footprint blocks steps onto and off it, unless it is also
+    // a use cell (flag 2).
+    w->map[10 + 10 * 128].flags = 1;
+    CHECK(th::wall_in_way(*w, 10, 10, 2) && th::wall_in_way(*w, 9, 10, 1) && th::wall_in_way(*w, 10, 9, 2));
+    w->map[10 + 10 * 128].flags = 3;
+    CHECK(!th::wall_in_way(*w, 10, 10, 2) && !th::wall_in_way(*w, 9, 10, 1));
+
+    CHECK(th::free_orthog_line(*w, 3, 5, 7, 5) && !th::free_orthog_line(*w, 9, 5, 3, 5));
+    CHECK(th::free_orthog_line(*w, 5, 1, 5, 4) && !th::free_orthog_line(*w, 5, 8, 5, 1));
+    CHECK(th::line_of_sight(*w, {1, 1}, {4, 9}) && !th::line_of_sight(*w, {5, 9}, {5, 1}));
+}
+
+// The wall-hugging path finder round a wall, into a closed box, and past
+// its corner limit.
+void test_wallhug()
+{
+    auto w = std::make_unique<th::World>();
+    th::WallhugPath path;
+    path.start = {10, 10};
+    path.end = {20, 15};
+    CHECK(th::wallhug_tricky(*w, path) == 15 && path.count == 1 && route_walkable(*w, path));
+
+    // A wall from (15, 5) to (15, 20) across the way.
+    for (int y = 5; y <= 20; y++)
+        w->map[size_t(15 + y * 128)].wall_w = 1;
+    path.start = {10, 12};
+    path.end = {20, 12};
+    CHECK(th::wallhug_trivial(*w, path) != th::kWallhugFailed && route_walkable(*w, path));
+    int trivial = path.count;
+    CHECK(th::wallhug_tricky(*w, path) != th::kWallhugFailed && route_walkable(*w, path));
+    CHECK(path.count <= trivial);
+
+    th::OrthonavPath nav;
+    th::orthonav_init(*w, nav, 10, 12, 20, 12);
+    CHECK(nav.count == std::min<int>(path.count, 4) && nav.x0 == 10 && nav.y1 == 12 && nav.x1 == 20);
+    for (int i = 0; i < nav.count; i++)
+        CHECK(nav.steps[size_t(i)].x == path.route[size_t(i)].x && nav.steps[size_t(i)].y == path.route[size_t(i)].y);
+
+    // A closed box round (40, 40): no route in or out. A failed plan keeps
+    // its old destination.
+    for (int i = 39; i <= 41; i++) {
+        w->map[size_t(i + 39 * 128)].wall_n = 1;
+        w->map[size_t(i + 42 * 128)].wall_n = 1;
+        w->map[size_t(39 + i * 128)].wall_w = 1;
+        w->map[size_t(42 + i * 128)].wall_w = 1;
+    }
+    path.start = {10, 40};
+    path.end = {40, 40};
+    CHECK(th::wallhug_tricky(*w, path) == th::kWallhugFailed);
+    path.start = {40, 40};
+    path.end = {10, 40};
+    CHECK(th::wallhug_tricky(*w, path) == th::kWallhugFailed);
+    th::orthonav_init(*w, nav, 40, 40, 10, 40);
+    CHECK(nav.count == 0 && nav.x1 == 20);
+
+    // A wall down column 64 from the top to row 125, open below: found while
+    // the wall is plain, but not when every cell along it has a spur: each
+    // wall follower runs out of its 252 corners before getting round
+    // (docs/BUGS.md).
+    auto comb = std::make_unique<th::World>();
+    for (int y = 0; y <= 125; y++)
+        comb->map[size_t(64 + y * 128)].wall_w = 1;
+    path.start = {50, 70};
+    path.end = {80, 70};
+    CHECK(th::wallhug_trivial(*comb, path) != th::kWallhugFailed && route_walkable(*comb, path));
+    for (int y = 1; y <= 125; y++) {
+        comb->map[size_t(63 + y * 128)].wall_n = 1;
+        comb->map[size_t(64 + y * 128)].wall_n = 1;
+    }
+    CHECK(reachable(*comb, 50, 70, 80, 70));
+    CHECK(th::wallhug_trivial(*comb, path) == th::kWallhugFailed);
+}
+
+// orthonav_whatnext steering a person round a wall one cell at a time, and
+// its failures.
+void test_orthonav_whatnext()
+{
+    auto w = std::make_unique<th::World>();
+    for (int y = 5; y <= 20; y++)
+        w->map[size_t(15 + y * 128)].wall_w = 1;
+    th::Thing &p = w->things[1];
+    p.type = th::kThingPatient;
+    p.x.tile = 10;
+    p.y.tile = 12;
+    p.dest_x = 20;
+    p.dest_y = 12;
+    th::insert_node(*w, 1, p.x, p.y);
+    int steps = 0;
+    int dir = 0;
+    while (steps < 200 && (dir = th::person_head_for(*w, 1)) >= 0 && dir < 4) {
+        CHECK(!th::wall_in_way(*w, p.x.tile, p.y.tile, uint32_t(dir)));
+        p.facing = uint8_t(dir);
+        th::move_node(*w, 1, {0x80, uint8_t(p.x.tile + th::kAroundXy[size_t(dir)][0])},
+                      {0x80, uint8_t(p.y.tile + th::kAroundXy[size_t(dir)][1])});
+        steps++;
+    }
+    CHECK(dir == th::kNavArrived && p.x.tile == 20 && p.y.tile == 12);
+    std::printf("orthonav: round the wall in %d steps\n", steps);
+
+    // Walled in on its cell, or with the destination out of reach.
+    w->map[size_t(30 + 30 * 128)].wall_n = 1;
+    w->map[size_t(30 + 31 * 128)].wall_n = 1;
+    w->map[size_t(30 + 30 * 128)].wall_w = 1;
+    w->map[size_t(31 + 30 * 128)].wall_w = 1;
+    th::move_node(*w, 1, {0x80, 30}, {0x80, 30});
+    CHECK(th::person_head_for(*w, 1) == th::kNavWalledIn);
+    th::move_node(*w, 1, {0x80, 50}, {0x80, 50});
+    p.dest_x = 30;
+    p.dest_y = 30;
+    CHECK(th::person_head_for(*w, 1) == th::kNavNoPath);
+}
+
+// Every cell's list is well linked and holds the things on that cell.
+bool cell_lists_consistent(const th::World &w)
+{
+    for (int i = 0; i < th::kMapCells; i++) {
+        int prev = 0;
+        for (int id = w.map[size_t(i)].first; id > 0; id = w.things[size_t(id)].cell_next) {
+            const th::Thing &t = w.things[size_t(id)];
+            if (t.cell_prev != prev || t.x.tile + t.y.tile * th::kMapSize != i)
+                return false;
+            prev = id;
+        }
+    }
+    return true;
+}
+
+// With the game data: a patient walks on level 1 from where patients arrive
+// (the level's entrance cell) in through the entrance door, and back out,
+// in a fixed number of turns from the level's starting seed, keeping the
+// cell lists consistent every turn; (40, 60), walled off from it, is out
+// of reach.
+void test_walk_level1(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    auto w = std::make_unique<th::World>();
+    for (int run = 0; run < 2; run++) {
+        th::start_level(*w, *level, gd.anims());
+        uint16_t id = 3; // after the two parts of the entrance door
+        CHECK(w->things[id].type == th::kThingFree);
+        th::Thing &p = w->things[id];
+        p.type = th::kThingPatient;
+        p.speed = 0x20;
+        p.anim_speed = 1;
+        int entrance = level->entrances[0][0];
+        p.x = {0x80, uint8_t(entrance % th::kMapSize)};
+        p.y = {0x80, uint8_t(entrance / th::kMapSize)};
+        th::insert_node(*w, id, p.x, p.y);
+        th::play_frame(p, gd.anims(), th::kPatientAnims[0].walk);
+
+        struct Leg {
+            int x, y;
+            th::WalkResult result;
+            int turns;
+        };
+        const Leg legs[] = {
+            {63, 78, th::WalkResult::Arrived, 305},
+            {40, 60, th::WalkResult::NoPath, 1},
+            {entrance % th::kMapSize, entrance / th::kMapSize, th::WalkResult::Arrived, 305},
+        };
+        uint32_t turn = 1;
+        for (const Leg &leg : legs) {
+            th::set_destination_coords(*w, id, leg.x + leg.y * th::kMapSize);
+            int turns = 0;
+            bool consistent = true;
+            th::WalkResult r;
+            do {
+                r = th::walk_turn(*w, gd.anims(), id, ++turn);
+                consistent &= cell_lists_consistent(*w);
+                turns++;
+            } while (r == th::WalkResult::Walking && turns < 5000);
+            CHECK(consistent);
+            CHECK(r == leg.result && turns == leg.turns);
+            if (r == th::WalkResult::Arrived)
+                CHECK(p.x.tile == leg.x && p.y.tile == leg.y && p.x.frac == 0x80 && p.y.frac == 0x80);
+            std::printf("walk to %d,%d: result %d in %d turns\n", leg.x, leg.y, int(r), turns);
+        }
+        CHECK(w->seed == 0x2b6c015b);
+    }
+}
+
+// Draws `n` values from `seed`, as the game does for those it discards.
+uint32_t skip_draws(uint32_t seed, int n)
+{
+    for (int i = 0; i < n; i++)
+        th::old_newrand(seed);
+    return seed;
+}
+
+void test_create_an_illness()
+{
+    th::Balance b;
+    b.gbv.hold_visual_months = 0;
+    b.gbv.hold_visual_peep_count = 0;
+    b.towns[1].ill_rate = 1;
+    b.visuals.fill(0);
+    b.visuals[3] = 5;
+    b.non_visuals.fill(0);
+    b.non_visuals[7] = 1;
+    b.non_visuals[9] = 3;
+    th::balance_control(b);
+    th::ArrivalState s;
+
+    // A visual illness: the ill_rate draw, then the visual one.
+    uint32_t seed = 1234;
+    CHECK(th::create_an_illness(seed, s, b, 1) == 5);
+    CHECK(seed == skip_draws(1234, 2));
+    // Not yet available: a non-visual one after both.
+    b.visuals_available[3] = 1;
+    seed = 1234;
+    uint8_t ill = th::create_an_illness(seed, s, b, 1);
+    CHECK(ill == 23 || ill == 25);
+    CHECK(seed == skip_draws(1234, 3));
+    // Held back early in the level: no visual draw.
+    b.visuals_available[3] = 0;
+    b.gbv.hold_visual_months = 1;
+    seed = 1234;
+    ill = th::create_an_illness(seed, s, b, 1);
+    CHECK((ill == 23 || ill == 25) && seed == skip_draws(1234, 2));
+    // No visual odds: only the non-visual draw, by weight 1 : 3.
+    b.towns[1].ill_rate = 0;
+    seed = 1234;
+    int counts[2] = {};
+    for (int i = 0; i < 4000; i++) {
+        ill = th::create_an_illness(seed, s, b, 1);
+        CHECK(ill == 23 || ill == 25);
+        counts[ill == 25]++;
+    }
+    CHECK(seed == skip_draws(1234, 4000));
+    CHECK(counts[0] > 850 && counts[0] < 1150);
+}
+
+void test_arrivals_level1(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    // Open from the start, so the rivals take patients too.
+    settings.gbv.open_countdown = 0;
+    const th::AnimData &anims = gd.anims();
+    auto game = std::make_unique<th::Game>();
+    for (int run = 0; run < 2; run++) {
+        game->start(*level, 1, settings, anims, gd.person_complexes());
+        const th::ArrivalState &state = game->arrivals;
+        CHECK(state.visitors_per_month == 3 && state.peep_interval == 500); // popn[0]: month 0, change 3
+        int ours = 0;
+        bool valid = true;
+        while (game->date.month < 6) {
+            game->turn();
+            for (uint16_t id : game->new_patients) {
+                ours++;
+                const th::Thing &t = game->world.things[id];
+                int cell = t.x.tile + t.y.tile * th::kMapSize;
+                const auto &doors = level->entrances[0];
+                valid &= t.type == th::kThingPatient && t.owner == 0 && t.subtype < 15;
+                // Set going in the turn it arrived: still at its entrance.
+                valid &= std::find(doors.begin(), doors.end(), cell) != doors.end();
+                valid &= t.sprite < anims.frames.size();
+                valid &= t.layers[0] >= 1 && t.layers[0] <= 10 && t.layers[1] < 4 && t.layers[2] < 4 &&
+                         t.layers[3] < 6 && t.layers[4] < 6;
+                valid &= t.illness >= 2 && t.illness <= 35 && t.known_illness == 1 && t.treatment == 1;
+                valid &= t.health >= 200 && t.health <= 1000 && t.cash >= 5000 && t.cash < 100000;
+                valid &= t.speed == 0x20 && t.anim_speed == 1 && t.happiness == 100;
+            }
+        }
+        CHECK(valid);
+        CHECK(cell_lists_consistent(game->world));
+        CHECK(ours == int(state.hospitals[0].visitors));
+        std::printf("arrivals, level 1, 6 months: %d of %d patients ours, %d a month now, seed %#x\n", ours,
+                    int(state.peeps_arrived), int(state.visitors_per_month), unsigned(game->world.seed));
+        // Regression values, not checked against the game.
+        CHECK(ours == 11 && state.peeps_arrived == 43 && state.visitors_per_month == 11);
+        CHECK(game->world.seed == 0x70085bd9);
+    }
+}
+
+// set_complex starts a complex on an idle person, queues two behind a
+// running one (the second slot replaced by a third), and resumes one a step
+// of action 24 left, queueing the new one.
+void test_set_complex()
+{
+    auto w = std::make_unique<th::World>();
+    th::Thing &p = w->things[1];
+    p.type = th::kThingPatient;
+    CHECK(th::set_complex(*w, 1, 20, 0));
+    CHECK(p.complex_pc == 20 && p.complex_action == 20);
+    CHECK(!th::set_complex(*w, 1, 30, 5 + 6 * th::kMapSize));
+    CHECK(p.complex_queued == 30 && p.queued_arg_x == 5 && p.queued_arg_y == 6);
+    CHECK(!th::set_complex(*w, 1, 40, 0));
+    CHECK(!th::set_complex(*w, 1, 50, 7));
+    CHECK(p.complex_queued2 == 50 && p.queued2_arg_x == 7 && p.complex_queued == 30);
+
+    th::Thing &q = w->things[2];
+    q.type = th::kThingPatient;
+    q.complex_resume = 80;
+    CHECK(th::set_complex(*w, 2, 60, 9));
+    CHECK(q.complex_pc == 80 && q.complex_resume == 0 && q.complex_queued == 60 && q.queued_arg_x == 9);
+}
+
+// Runs patient `id` and the level's objects for up to `limit` turns from
+// turn `turn` until the patient is gone. Returns the turns run; `opened`
+// tells whether an entrance door started opening.
+int run_patient(th::World &w, const th::AnimData &anims, const th::PersonComplexes &cx, uint16_t id, uint32_t &turn,
+                int limit, bool &consistent, bool &opened)
+{
+    int turns = 0;
+    bool exists = true;
+    while (exists && turns < limit) {
+        turn++;
+        turns++;
+        for (uint16_t i = 1; i < w.things.size(); i++) {
+            if (i == id)
+                exists = th::person_turn(w, anims, cx, i, turn);
+            else if (w.things[i].type == th::kThingObject)
+                th::sliding_door_turn(w, anims, i, turn);
+            opened |= w.things[i].type == th::kThingObject && w.things[i].state == 0x16;
+        }
+        consistent &= cell_lists_consistent(w);
+    }
+    return turns;
+}
+
+// With the game data: P_COMP.LEX's complex 20 (walk, then leave the map);
+// on level 1, with no reception, start_person_going sends a patient made at
+// the entrance cell (where all four of level 1's entrances are) straight
+// off the map, and one inside the entrance door out through it, the
+// sliding doors opening for it, in a fixed number of turns.
+void test_patient_leaves_level1(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    th::PersonComplexes cx;
+    CHECK(th::load_person_complexes(dir, cx, &error));
+    CHECK(cx.group.size() == 2000);
+    CHECK(cx.at(20) == 12 && cx.at(21) == 15 && cx.at(22) == 0);
+    auto level = gd.load_level(1, &error);
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    const th::AnimData &anims = gd.anims();
+    auto w = std::make_unique<th::World>();
+    for (int run = 0; run < 2; run++) {
+        th::start_level(*w, *level, anims);
+        w->entrances = level->entrances;
+        int entrance = level->entrances[0][0];
+        struct Start {
+            int x, y;
+            int turns;
+            bool opens;
+        };
+        // The second walk crosses indoor cells, where the game also runs the
+        // patient's needs and reactions (not ported): a regression value.
+        const Start starts[] = {
+            {entrance % th::kMapSize, entrance / th::kMapSize, 2, false},
+            {64, 76, 314, true},
+        };
+        uint32_t turn = 1;
+        for (const Start &s : starts) {
+            uint16_t id = 3; // after the two parts of the entrance door
+            CHECK(w->things[id].type == th::kThingFree);
+            th::Thing &p = w->things[id];
+            p.type = th::kThingPatient;
+            p.speed = 0x20;
+            p.anim_speed = 1;
+            p.x = {0x80, uint8_t(s.x)};
+            p.y = {0x80, uint8_t(s.y)};
+            th::insert_node(*w, id, p.x, p.y);
+            th::play_frame(p, anims, th::kPatientAnims[0].walk);
+            th::start_person_going(*w, anims, cx, id, turn);
+            CHECK(p.state == th::kPsGotoDestination && p.complex_pc == 21);
+            CHECK(p.dest_x + p.dest_y * th::kMapSize == entrance);
+            bool consistent = true;
+            bool opened = false;
+            int turns = run_patient(*w, anims, cx, id, turn, 5000, consistent, opened);
+            CHECK(consistent);
+            CHECK(w->things[id].type == th::kThingFree);
+            CHECK(w->map[size_t(entrance)].first == 0);
+            CHECK(opened == s.opens);
+            std::printf("patient from %d,%d left in %d turns, doors %s\n", s.x, s.y, turns,
+                        opened ? "opened" : "closed");
+            CHECK(turns == s.turns);
+        }
+        // The doors close again 50 turns after the patient has passed.
+        for (int i = 0; i < 100; i++) {
+            turn++;
+            th::sliding_door_turn(*w, anims, 1, turn);
+            th::sliding_door_turn(*w, anims, 2, turn);
+        }
+        for (uint16_t door : {1, 2}) {
+            const th::Thing &d = w->things[door];
+            CHECK(d.state == 0x14 && d.sprite == anims.starts[th::kObjects[d.subtype].anim_start + d.facing].frame);
+        }
+        std::printf("seed %#x\n", unsigned(w->seed));
+        CHECK(w->seed == 0xebe44801);
+    }
+}
+
 int main()
 {
     test_blit_clips_and_skips();
@@ -623,6 +1085,11 @@ int main()
     test_missing_data();
     test_static_shadows();
     test_text_layout();
+    test_wall_in_way();
+    test_wallhug();
+    test_orthonav_whatnext();
+    test_create_an_illness();
+    test_set_complex();
 
     const char *dir = std::getenv("TH_TEST_DATA_DIR");
     bool have_data = dir && *dir && th::missing_data_files(dir).empty();
@@ -635,6 +1102,9 @@ int main()
         test_game_clock(dir);
         test_language_and_fonts(dir);
         test_balance(dir);
+        test_walk_level1(dir);
+        test_arrivals_level1(dir);
+        test_patient_leaves_level1(dir);
     }
 
     if (failures) {

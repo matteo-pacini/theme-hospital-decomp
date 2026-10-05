@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/datadir.h"
+#include "app/ui/nav_tool.h"
 
 #include <string>
 #include <vector>
@@ -19,8 +20,11 @@ MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::
 struct ToolsState {
     bool open = false;
     int ui_scale = 0; // panel and pointer scale: 0 automatic, else the integer scale
+    NavTool nav;
 };
 
-void draw_tools(ToolsState &state);
+// The tools window; with `world` (a level in play), also the path finding
+// tool.
+void draw_tools(ToolsState &state, const World *world);
 
 } // namespace th

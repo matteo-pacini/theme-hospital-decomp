@@ -3,9 +3,13 @@
 #include "core/data/anims.h"
 #include "core/data/balance.h"
 #include "core/data/level.h"
+#include "core/world/arrivals.h"
+#include "core/world/complex.h"
 #include "core/world/world.h"
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace th
 {
@@ -35,7 +39,8 @@ int days_in_month(int month);
 
 // The state of a game in progress and its turn, as the game's start_turn
 // and process_things (src/game.cpp, src/things.cpp) for what exists so far:
-// the date, the opening countdown and the objects' animations.
+// the date, the opening countdown, arrivals, patients' action sequences,
+// the entrance doors and the objects' animations.
 class Game
 {
   public:
@@ -43,7 +48,8 @@ class Game
     // first month, and from its settings the starting cash and the opening
     // countdown (gbv OpenCountdown turns; 0 opens the hospital at once), as
     // setup_new_level and init_player (src/start.cpp).
-    void start(const Level &level, int number, const Balance &settings, const AnimData &anims);
+    void start(const Level &level, int number, const Balance &settings, const AnimData &anims,
+               const PersonComplexes &complexes);
 
     // Runs one game turn unless paused: advances the turn count and the
     // random values the game draws every turn, the date every 50 turns,
@@ -64,9 +70,28 @@ class Game
     // evaluate_reputation gives 500 at the start).
     int balance = 0;
     int reputation = 500;
+    // Patients arriving (src/peepmake.cpp).
+    ArrivalState arrivals;
+    // The patients that reached the map this turn, to be set going.
+    std::vector<uint16_t> new_patients;
+
+    // Path finding tool: puts a test patient on `cell` that only walks where
+    // it is sent (it has no action sequence). Returns its id, or 0 if there
+    // was no free entry. Draws from the random generator, as making a
+    // patient does.
+    uint16_t add_walker(int cell);
+    // Path finding tool: sends person `id` to `cell`. A patient on an action
+    // sequence leaves it and only walks from then on.
+    void send_walker(uint16_t id, int cell);
 
   private:
     const AnimData *anims_ = nullptr;
+    const PersonComplexes *complexes_ = nullptr;
+    Balance settings_;
+    std::unique_ptr<Level> level_;
+    int level_number_ = 0;
+    // The path finding tool's walkers, walked by walk_turn alone.
+    std::vector<bool> walkers_;
 };
 
 } // namespace th

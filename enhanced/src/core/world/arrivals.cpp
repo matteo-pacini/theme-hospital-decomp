@@ -1,0 +1,408 @@
+#include "core/world/arrivals.h"
+
+#include "core/world/nav.h"
+#include "core/world/patient_tables.h"
+
+namespace th
+{
+
+namespace
+{
+
+// Illnesses (the game's ILL_*, include/enums.h) that make_a_peep and
+// effect_illness single out.
+constexpr uint8_t kIllGeneralPractice = 1;
+constexpr uint8_t kIllBloatyHead = 2;
+constexpr uint8_t kIllHairyitis = 3;
+constexpr uint8_t kIllKingComplex = 4;
+constexpr uint8_t kIllInvisibility = 5;
+constexpr uint8_t kIllSlackTongue = 7;
+constexpr uint8_t kIllAlienDna = 8;
+constexpr uint8_t kIllFracturedBones = 9;
+constexpr uint8_t kIllBaldness = 10;
+constexpr uint8_t kIllTransparency = 15;
+constexpr uint8_t kIllTheSquits = 29;
+
+// The alien patient kind (PK_ALIEN).
+constexpr uint8_t kPatientAlien = 14;
+
+// allocate_thing's reserve for people.
+constexpr size_t kPeopleReserve = 50;
+
+// The towns[] entry of a campaign level: setup_new_level plays levels above
+// 14 as level 1.
+size_t town_index(int level_number)
+{
+    return level_number > 14 ? 1 : size_t(level_number);
+}
+
+// transform_peep_who (0x16b30) for a patient.
+void transform_peep_who(Thing &person, uint8_t change)
+{
+    int8_t subtype = kChangePersonWho[change][person.subtype];
+    person.orig_subtype = person.subtype;
+    if (subtype != -1)
+        person.subtype = uint8_t(subtype);
+}
+
+// effect_illness (0x54444) with cured 0: gives the patient `illness` and
+// changes their looks to show it.
+void effect_illness(uint32_t &seed, Thing &patient, uint8_t illness)
+{
+    switch (illness) {
+    case kIllBloatyHead:
+        patient.layers[0] = uint8_t(patient.layers[0] + 5);
+        patient.layers[2] = 0;
+        break;
+    case kIllHairyitis:
+        patient.layers[0] = 1;
+        transform_peep_who(patient, 1);
+        patient.layers[2] = 0;
+        break;
+    case kIllKingComplex:
+        patient.layers[0] = 1;
+        transform_peep_who(patient, 5);
+        patient.layers[2] = 0;
+        break;
+    case kIllTransparency:
+        transform_peep_who(patient, 3);
+        break;
+    case kIllSlackTongue:
+        if (patient.subtype == 1)
+            patient.layers[0] = uint8_t(patient.layers[0] + 4);
+        else
+            transform_peep_who(patient, 7);
+        break;
+    case kIllInvisibility:
+        patient.layers[0] = 1;
+        transform_peep_who(patient, 9);
+        break;
+    case kIllBaldness:
+        transform_peep_who(patient, 7);
+        patient.layers[0] = 6;
+        break;
+    case kIllFracturedBones:
+        if (patient.subtype == 1) {
+            uint8_t r = uint8_t(old_newrand(seed) % 3 + 1);
+            patient.layers[2] = r & 1;
+            patient.layers[3] = (r >> 1) & 1;
+        } else {
+            transform_peep_who(patient, 0xd);
+            patient.layers[2] = uint8_t(old_newrand(seed) & 3);
+            patient.layers[3] = uint8_t(old_newrand(seed) % 6);
+            patient.layers[4] = uint8_t(old_newrand(seed) % 6);
+        }
+        break;
+    case kIllAlienDna:
+        patient.layers[0] = 1;
+        patient.orig_subtype = patient.subtype;
+        patient.subtype = kPatientAlien;
+        break;
+    default:
+        break;
+    }
+    patient.illness = illness;
+}
+
+// add_contagiousness (0x707f4). The game gives no contagion during its
+// hospital's epidemic (allhosps.epidemic_active); there are no epidemics yet.
+void add_contagiousness(uint32_t &seed, Thing &patient, const ArrivalState &state, const Balance &settings)
+{
+    if (kNotContagious[patient.illness])
+        return;
+    uint8_t chance = settings.expertise[patient.illness].cont_rate;
+    if (!chance)
+        return;
+    const Balance::Gbv &gbv = settings.gbv;
+    bool early = false;
+    if (gbv.reduce_cont_months && state.game_month < gbv.reduce_cont_months)
+        early = true;
+    else if (gbv.reduce_cont_peep_count && state.peeps_arrived < gbv.reduce_cont_peep_count)
+        early = true;
+    if (early)
+        chance = uint8_t(chance * gbv.reduce_cont_rate / 100);
+    if (chance && old_newrand(seed) % chance == 0)
+        patient.contagion = uint8_t(old_newrand(seed) % gbv.how_contagious + 1);
+}
+
+// max_price_for_treatment (0x58e34) for an illness below 36 other than
+// general practice, which go by the room's reputation, in single player.
+int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &settings, uint8_t illness)
+{
+    int32_t base = settings.expertise[illness].start_price;
+    int32_t price = base * hosp.reputation[illness] / 500;
+    return base > price ? base : price;
+}
+
+// update_single_cure_cost (0x143e0).
+void update_single_cure_cost(HospitalMarket &hosp, const Balance &settings, uint8_t illness)
+{
+    int32_t target = max_price_for_treatment(hosp, settings, illness) * hosp.price_scale[illness] / 10000;
+    int32_t diff = target - hosp.price[illness];
+    if (diff < 0)
+        diff = -diff;
+    if (target / 100 <= diff)
+        hosp.price[illness] = target;
+}
+
+// One bidder in who_owns_peep (the game's PeepBid). Its 27-bit score cannot
+// overflow: at most 1000 * 255 * 150% per hospital.
+struct PeepBid {
+    int32_t score;
+    uint8_t player;
+};
+
+// sort_peep_bids (0x70e50): sorts the first three bids by ascending score;
+// bids[3] is never compared.
+void sort_peep_bids(std::array<PeepBid, 4> &bids)
+{
+    bool swapped = true;
+    while (swapped) {
+        swapped = false;
+        for (size_t i = 0; i < 2; i++) {
+            if (bids[i].score > bids[i + 1].score) {
+                std::swap(bids[i], bids[i + 1]);
+                swapped = true;
+                break;
+            }
+        }
+    }
+}
+
+} // namespace
+
+void start_arrivals(ArrivalState &state, const Balance &settings)
+{
+    state = {};
+    for (HospitalMarket &hosp : state.hospitals) {
+        hosp.open = settings.gbv.open_countdown == 0;
+        for (size_t i = 0; i < hosp.price.size(); i++) {
+            hosp.price[i] = settings.expertise[i].start_price;
+            hosp.price_scale[i] = 10000;
+            hosp.reputation[i] = 20 * 500 / 20; // evaluate_reputation
+        }
+    }
+    calc_visitors_this_month(state, settings);
+}
+
+void calc_visitors_this_month(ArrivalState &state, const Balance &settings)
+{
+    for (const Balance::Population &p : settings.popn) {
+        if (p.month == state.game_month) {
+            state.visitor_change = uint16_t(p.change);
+            break;
+        }
+        if (p.month > state.game_month)
+            break;
+    }
+    state.visitors_per_month = uint16_t(state.visitors_per_month + state.visitor_change);
+    state.peep_interval = state.visitors_per_month ? int16_t(1500 / state.visitors_per_month) : 0;
+}
+
+uint32_t old_normal_rand(uint32_t &seed, uint32_t low, uint32_t high)
+{
+    int32_t range = int32_t((high - low) / 2 + 1);
+    if (range <= 0)
+        range = 1;
+    uint32_t sum = old_newrand(seed) % uint32_t(range);
+    sum += old_newrand(seed) % uint32_t(range);
+    return sum + low;
+}
+
+uint8_t create_an_illness(uint32_t &seed, const ArrivalState &state, const Balance &settings, int level_number)
+{
+    const Balance::Gbv &gbv = settings.gbv;
+    uint8_t ill_rate = settings.towns[town_index(level_number)].ill_rate;
+    uint8_t illness = 0;
+    bool ok = false;
+    if (ill_rate && old_newrand(seed) % ill_rate == 0) {
+        ok = true;
+        if (gbv.hold_visual_months && state.game_month < gbv.hold_visual_months)
+            ok = false;
+        else if (gbv.hold_visual_peep_count && state.peeps_arrived < gbv.hold_visual_peep_count)
+            ok = false;
+    }
+    if (ok && settings.visuals_total) {
+        uint16_t r = uint16_t(old_newrand(seed) % settings.visuals_total);
+        for (size_t i = 0; i < settings.visuals.size(); i++) {
+            if (r < settings.visuals[i]) {
+                if (state.game_month < settings.visuals_available[i])
+                    ok = false;
+                else
+                    illness = uint8_t(i + 2);
+                break;
+            }
+        }
+    }
+    if (!ok) {
+        uint16_t r = uint16_t(old_newrand(seed) % settings.non_visuals_total);
+        for (size_t i = 0; i < settings.non_visuals.size(); i++) {
+            if (r < settings.non_visuals[i]) {
+                illness = uint8_t(i + 16);
+                break;
+            }
+        }
+    }
+    return illness;
+}
+
+int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness, bool hospital_open)
+{
+    const Balance::Gbv &gbv = settings.gbv;
+    constexpr uint32_t players = 4;
+    int owner = -1;
+    if (gbv.alloc_delay && state.game_month < gbv.alloc_delay) {
+        owner = int(state.peep_owner_counter % players);
+        state.peep_owner_counter++;
+    } else if (old_newrand(seed) % gbv.alloc_rand == 0) {
+        owner = int(old_newrand(seed) % players);
+    } else {
+        std::array<PeepBid, 4> bids{};
+        for (uint8_t i = 0; i < 4; i++) {
+            HospitalMarket &hosp = state.hospitals[i];
+            bids[i].player = i;
+            bids[i].score = hosp.reputation[illness] * gbv.alloc_ind_rep;
+            update_single_cure_cost(hosp, settings, illness);
+            int32_t pct = max_price_for_treatment(hosp, settings, illness) * 100 / hosp.price[illness];
+            if (pct < 50)
+                pct = 50;
+            else if (pct > 150)
+                pct = 150;
+            bids[i].score = bids[i].score * pct / 100;
+        }
+        sort_peep_bids(bids);
+        int32_t total = 0;
+        for (PeepBid &bid : bids) {
+            total += bid.score;
+            bid.score = total;
+        }
+        if (total) {
+            int32_t roll = int32_t(old_newrand(seed) % uint32_t(total));
+            for (const PeepBid &bid : bids) {
+                if (bid.score > roll) {
+                    owner = bid.player;
+                    break;
+                }
+            }
+        }
+        if (owner < 0)
+            owner = int(old_newrand(seed) % players);
+    }
+    bool open = owner == 0 ? hospital_open : state.hospitals[size_t(owner)].open;
+    return open ? owner : -1;
+}
+
+uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &settings, const AnimData &anims,
+                     int level_number, uint16_t pos, uint8_t illness, uint8_t owner)
+{
+    uint16_t id = 0;
+    for (size_t i = 1; i < world.things.size() - kPeopleReserve; i++) {
+        if (world.things[i].type == kThingFree) {
+            id = uint16_t(i);
+            break;
+        }
+    }
+    if (!id)
+        return 0;
+    uint32_t &seed = world.seed;
+    Thing &peep = world.things[id];
+    peep.owner = owner;
+    peep.type = kThingPatient;
+    peep.x = {0x80, uint8_t(pos % kMapSize)};
+    peep.y = {0x80, uint8_t(pos / kMapSize)};
+    peep.dest_x = peep.x.tile;
+    peep.dest_y = peep.y.tile;
+    peep.speed = kPeepSpeed;
+    peep.anim_speed = kPeepAnimSpeed;
+
+    const PeepPalette *pal;
+    if (illness >= 16) {
+        uint32_t total = 0;
+        for (const PeepType &type : kGeneratePerson)
+            total += type.weight;
+        uint32_t r = old_newrand(seed) % total;
+        size_t i = kGeneratePerson.size() - 1;
+        for (;; i--) {
+            total -= kGeneratePerson[i].weight;
+            if (r >= total)
+                break;
+        }
+        const PeepType &type = kGeneratePerson[i];
+        peep.subtype = type.kind;
+        uint32_t k = old_newrand(seed) % type.count;
+        peep.layers[0] = type.head[k];
+        pal = &kVariations[type.palette[k]];
+    } else {
+        struct Choice {
+            uint8_t kind, head, palette;
+        };
+        std::array<Choice, 10> choices{};
+        uint32_t count = 0;
+        for (size_t i = kGeneratePerson.size(); i-- > 0;) {
+            if (!kSuitableIllness[illness][i])
+                continue;
+            const PeepType &type = kGeneratePerson[i];
+            for (size_t k = type.count; k-- > 0;)
+                choices[count++] = {type.kind, type.head[k], type.palette[k]};
+        }
+        const Choice &pick = choices[old_newrand(seed) % count];
+        peep.subtype = pick.kind;
+        peep.layers[0] = pick.head;
+        pal = &kVariations[pick.palette];
+    }
+    peep.layers[1] = pal->layer1[old_newrand(seed) % pal->count1];
+    peep.layers[2] = pal->layer2[old_newrand(seed) % pal->count2];
+    peep.layers[3] = pal->layer3[old_newrand(seed) % pal->count3];
+    peep.layers[4] = 0;
+    effect_illness(seed, peep, illness);
+    add_contagiousness(seed, peep, state, settings);
+    peep.icon_id = 0;
+    play_frame(peep, anims, kPatientAnims[peep.subtype].walk);
+    peep.happiness = 100;
+    peep.warmth = 50;
+    peep.refreshment = 100;
+    peep.bladder = illness == kIllTheSquits ? int16_t(settings.gbv.bowel_full / 2) : int16_t(0);
+    peep.health = int16_t(old_normal_rand(seed, 200, 1000));
+    peep.health_history.fill(int8_t(peep.health));
+    peep.treatment = kIllGeneralPractice;
+    peep.known_illness = kIllGeneralPractice;
+    peep.diagnosis_handicap = uint16_t(old_normal_rand(seed, 1, settings.expertise[illness].max_diag_diff));
+    if (old_newrand(seed) % kTownExtras[town_index(level_number)].insurance_odds == 0)
+        peep.insurance = uint8_t(1 << old_newrand(seed) % 3);
+    else
+        peep.insurance = 0;
+    peep.cash = int32_t(old_newrand(seed) % 95000 + 5000);
+    if (owner == 0) {
+        nav_init(world, peep);
+        insert_node(world, id, peep.x, peep.y);
+    }
+    return id;
+}
+
+uint16_t create_a_peep(World &world, ArrivalState &state, const Balance &settings, const AnimData &anims,
+                       const Level &level, int level_number, bool hospital_open, uint32_t game_turn)
+{
+    if (kTownExtras[town_index(level_number)].special_kind == 1 || !state.peep_interval)
+        return 0;
+    if (game_turn % uint32_t(state.peep_interval) >= 25)
+        return 0;
+    uint8_t illness = create_an_illness(world.seed, state, settings, level_number);
+    int owner = who_owns_peep(world.seed, state, settings, illness, hospital_open);
+    if (owner < 0)
+        return 0;
+    uint16_t id = 0;
+    if (owner == 0) {
+        uint16_t door = level.entrances[0][old_newrand(world.seed) & 3];
+        id = make_a_peep(world, state, settings, anims, level_number, door, illness, 0);
+    } else if (uint16_t rival = make_a_peep(world, state, settings, anims, level_number, 0, illness, uint8_t(owner))) {
+        // process_computer_peep would treat them here.
+        remove_node(world, rival);
+        world.things[rival] = Thing{};
+    }
+    state.peeps_arrived++;
+    state.hospitals[size_t(owner)].visitors++;
+    state.hospitals[size_t(owner)].month_visitors++;
+    return id;
+}
+
+} // namespace th

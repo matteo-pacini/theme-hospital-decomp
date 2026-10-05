@@ -13,7 +13,7 @@ const std::vector<std::string_view> &required_data_files()
         "data/vspr-0.tab",   "data/vspr-0.dat",   "data/vstart-1.ani", "data/vfra-1.ani",   "data/vele-1.ani",
         "data/vlist-1.ani",  "qdata/ghost66.dat", "data/mpointer.tab", "data/mpointer.dat", "qdata/font05v.tab",
         "qdata/font05v.dat", "qdata/font16v.tab", "qdata/font16v.dat", "data/watch01v.tab", "data/watch01v.dat",
-        "levels/level.l1",
+        "data/p_comp.lex",   "levels/level.l1",
     };
     return files;
 }
@@ -101,6 +101,8 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error, std::o
         return false;
     }
     ghost_ = std::move(*ghost);
+    if (!load_person_complexes(dir, person_complexes_, error))
+        return false;
     language_ = language ? *language : config_language(dir).value_or(0);
     if (!load_language(dir, language_, text_, error))
         return false;

@@ -27,7 +27,7 @@ constexpr std::array<Balance::Expertise, 47> kExpertise{{
     {0, 0, 0, 100, 0},    {0, 0, 0, 100, 0},
 }};
 
-constexpr std::array<Balance::Object, 63> kObjects{{
+constexpr std::array<Balance::Object, 63> kObjectSettings{{
     {-99, 0, 0, 0, 0},    {2000, 1, 0, 12, 1},  {200, 1, 0, 12, 1},   {0, 1, 0, 12, 1},     {50, 1, 0, 12, 1},
     {40, 1, 0, 12, 1},    {10, 1, 0, 12, 1},    {50, 1, 0, 12, 1},    {0, 1, 500, 12, 1},   {3000, 0, 24, 12, 1},
     {0, 1, 0, 12, 1},     {0, 1, 0, 12, 1},     {0, 1, 0, 12, 1},     {500, 1, 0, 12, 1},   {5000, 0, 24, 12, 1},
@@ -794,7 +794,7 @@ bool read_line(std::string_view line, Balance &out)
 } // namespace
 
 Balance::Balance()
-    : expertise(kExpertise), objects(kObjects), towns(kTowns), rooms(kRooms), staff(kStaff), gbv(kGbv),
+    : expertise(kExpertise), objects(kObjectSettings), towns(kTowns), rooms(kRooms), staff(kStaff), gbv(kGbv),
       win_criteria(kWinCriteria), lose_criteria(kLoseCriteria), net_criteria(kNetCriteria), popn(kPopn),
       staff_levels(kStaffLevels), emergency_control(kEmergencyControl), quake_control(kQuakeControl),
       computer(kComputer), awards_trophies(kAwardsTrophies), non_visuals(kNonVisuals), visuals(kVisuals),

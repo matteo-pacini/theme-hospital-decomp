@@ -51,7 +51,22 @@ Milestone 3a, time passing:
   `--language N`: 0 English, 1 French, 2 German, 3 Italian, 4 Spanish,
   5 Swedish).
 
-Not yet: people, litter, the menu bar and the game's screens.
+Milestone 3b, people:
+
+- patients arriving as the game makes them (create_a_peep, make_a_peep:
+  illness, looks, needs, health, insurance, cash), with the game's random
+  draws in order; the rival hospitals' patients are made and dropped, but
+  the computer players' own draws are not ported yet;
+- the patients' action sequences (DATA/P_COMP.LEX and the step table): with
+  no reception desk, a patient goes home through an entrance, as in the game;
+- the game's path finding (wall following, its four-waypoint plans and its
+  limits), walking, and the sliding entrance doors;
+- a path finding tool in the tools window (F1): planned routes drawn over
+  the view, click a person to select them and a cell to send them there,
+  or add a test walker.
+
+Not yet: rooms, staff, building, litter, the menu bar and the game's
+screens.
 
 ## Game data
 
@@ -93,6 +108,7 @@ renders a level's start view to a BMP.
 
     src/core/data/    file formats: RNC, sprites, palette, levels, the data folder
     src/core/render/  indexed surface, sprites, frames, shadows, the hospital view, panel
-    src/core/world/   the map and its things, level start
+    src/core/world/   the map and its things, level start, the turn, arrivals, action
+                      sequences, path finding
     src/app/          SDL3 window and input, data-folder search, settings, ImGui tools
     tests/            ctest tests
