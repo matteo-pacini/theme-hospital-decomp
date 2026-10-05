@@ -177,7 +177,6 @@ class Startup
     size_t balance_ = 0;
     std::string balance_name_;
     bool tutorial_ = false;
-    bool low_res_ = false;
     int level_ = 0;
     int idle_ = 600;
     int last_mouse_sum_ = 0;

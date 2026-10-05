@@ -102,17 +102,15 @@ struct GlassBox {
 };
 
 // Glass screen 10 (display bit 1, the preferences) and 11 (bit 2, the name
-// box): hiresglass[310..321] and [341].
-constexpr std::array<GlassBox, 12> kPrefsGlass = {{
+// box): hiresglass[310..321] and [341], less the screen-resolution row
+// (hiresglass[314], [317], [318]), which has no use here.
+constexpr std::array<GlassBox, 9> kPrefsGlass = {{
     {124, 30, 515, 449, 0, false, 7, 0, 0},
     {149, 55, 490, 424, 1, false, 7, 0, 0},
     {161, 67, 479, 176, 2, false, 7, 0, 0},
     {161, 303, 334, 336, 2, false, 7, 0, 0},
-    {161, 341, 334, 374, 2, false, 7, 0, 0},
     {339, 303, 406, 336, 2, true, 7, 0, 0},
     {411, 303, 478, 336, 2, true, 7, 0, 0},
-    {339, 341, 406, 374, 2, true, 7, 0, 0},
-    {411, 341, 478, 374, 2, true, 7, 0, 0},
     {339, 379, 406, 412, 2, true, 7, 0, 0},
     {441, 72, 474, 105, 3, true, 7, 0, 0},
     {441, 138, 474, 171, 3, true, 7, 0, 0},
@@ -121,21 +119,20 @@ constexpr std::array<GlassBox, 1> kNameGlass = {{{90, 422, 549, 466, -1, false, 
 
 // The preferences' buttons, screenbuttons 0xa0 to 0xa7 (src/scoords.cpp),
 // corners (x, y) and (x1, y1): tutorial on and off, accept, cancel (drawn
-// with PREF02V's sprites), previous and next difficulty, low and high
-// resolution. process_nickname_button(i) acts on button i.
+// with PREF02V's sprites), previous and next difficulty. The game's low and
+// high resolution buttons (0xa6, 0xa7) are left out. process_nickname_button(i)
+// acts on button i.
 struct ScreenButton {
     int x, y, x1, y1;
     bool sprite;
 };
-constexpr std::array<ScreenButton, 8> kPrefsButtons = {{
+constexpr std::array<ScreenButton, 6> kPrefsButtons = {{
     {339, 303, 406, 336, false},
     {411, 303, 478, 336, false},
     {339, 379, 406, 412, false},
     {449, 383, 474, 408, true},
     {441, 72, 474, 105, false},
     {441, 138, 474, 171, false},
-    {339, 341, 406, 374, false},
-    {411, 341, 478, 374, false},
 }};
 enum : int {
     kTutorialOn,
@@ -144,8 +141,6 @@ enum : int {
     kCancel,
     kPrevBalance,
     kNextBalance,
-    kLowRes,
-    kHighRes,
 };
 
 // ScreenBoxes[122]: where the difficulty's title and name are centred.
@@ -708,8 +703,6 @@ void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys
         draw_glass_text(mouse, kAccept, nick(0x12), false);
         draw_glass_text(mouse, kTutorialOn, nick(0x10), tutorial_);
         draw_glass_text(mouse, kTutorialOff, nick(0x11), !tutorial_);
-        draw_glass_text(mouse, kLowRes, nick(0x10), low_res_);
-        draw_glass_text(mouse, kHighRes, nick(0x11), !low_res_);
         const Font &font = fonts_[kFontGlass];
         TextWindow window{0, 0, surface_.width()};
         Rect clip{0, 0, surface_.width(), surface_.height()};
@@ -717,9 +710,6 @@ void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys
         int y = 0x12f;
         y += (0x150 - y - ch) >> 1;
         draw_text(surface_, font, window, 0xaf, y, nick(6), 0, clip);
-        y = 0x155;
-        y += (0x176 - y - ch) >> 1;
-        draw_text(surface_, font, window, 0xaf, y, text_->misc(0x1d), 0, clip);
         int bh = font.glyph('B').height;
         std::string_view title = text_->misc(0x1e);
         int ty = kBalanceBox.y + (kBalanceBox.h - bh * 2) / 2;
@@ -780,18 +770,12 @@ void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys
                 sound(kSfxNo);
                 next = State::MenuEnter;
                 break;
-            case kLowRes:
-            case kHighRes:
-                low_res_ = i == kLowRes;
-                sound(kSfxSelect);
-                break;
             }
             continue;
         }
         if (mouse.left_held && over(mouse.x, mouse.y, b.x, b.y, w, h))
             press();
-        bool chosen = (i == kTutorialOn && tutorial_) || (i == kTutorialOff && !tutorial_) ||
-                      (i == kLowRes && low_res_) || (i == kHighRes && !low_res_);
+        bool chosen = (i == kTutorialOn && tutorial_) || (i == kTutorialOff && !tutorial_);
         if (chosen)
             draw_button_edges(b.x, b.y, b.x1 - b.x, b.y1 - b.y, true);
     }
