@@ -1,5 +1,6 @@
 #include "core/render/view.h"
 
+#include "core/audio/sounds.h"
 #include "core/data/blocks.h"
 #include "core/data/gamedata.h"
 #include "core/render/blit.h"
@@ -99,7 +100,7 @@ Rect intersect(const Rect &a, const Rect &b)
 // the end of the cell's list. Returns the box of the frames drawn (the
 // game's frame_bounds); `extent`, if given, grows to every pixel drawn.
 Rect draw_cell_things(Surface &dst, const MapCell &cell, int x, int y, const World &world, const GameData &data,
-                      Rect *extent = nullptr)
+                      Rect *extent, std::vector<FrameSound> *sounds)
 {
     std::vector<std::pair<int, int16_t>> drawn; // (bucket, thing) in list order
     for (int16_t id = cell.first; id > 0 && id < kThingCount; id = world.things[size_t(id)].cell_next)
@@ -120,6 +121,9 @@ Rect draw_cell_things(Surface &dst, const MapCell &cell, int x, int y, const Wor
             int ty = y + ((int(t.x.frac) + int(t.y.frac)) >> 4);
             Rect sprites;
             grow(bounds, draw_frame(dst, tx, ty, t.sprite, t.flip != 0, 0, data, t.layers.data(), &sprites));
+            if (sounds && t.sprite < data.anims().frames.size())
+                sounds->push_back({uint16_t(it->second), data.anims().frames[t.sprite].sound,
+                                   t.type == kThingPatient || t.type == kThingStaff, tx, ty});
             if (extent)
                 grow(*extent, sprites);
         }
@@ -130,7 +134,7 @@ Rect draw_cell_things(Surface &dst, const MapCell &cell, int x, int y, const Wor
 } // namespace
 
 void draw_world(Surface &dst, Rect view, Point camera, const World &world, const GameData &data,
-                const ShadowSprites *shadows, Surface &scratch)
+                const ShadowSprites *shadows, Surface &scratch, std::vector<FrameSound> *sounds)
 {
     const SpriteSheet &blocks = data.blocks();
     const int tallest = tallest_block(blocks);
@@ -182,7 +186,7 @@ void draw_world(Surface &dst, Rect view, Point camera, const World &world, const
                 continue;
             int x = scan.x(col, row), top = base_y - kTileHeight;
             if (!(cell.flags & 0x10)) {
-                draw_cell_things(dst, cell, x, top, world, data);
+                draw_cell_things(dst, cell, x, top, world, data, nullptr, sounds);
                 continue;
             }
             // Behind a wall: draw into the scratch surface, blank out the
@@ -190,7 +194,7 @@ void draw_world(Surface &dst, Rect view, Point camera, const World &world, const
             // left (draw_window_into_pix_buffer).
             scratch.set_clip(view);
             Rect touched{};
-            Rect bounds = intersect(draw_cell_things(scratch, cell, x, top, world, data, &touched), view);
+            Rect bounds = intersect(draw_cell_things(scratch, cell, x, top, world, data, &touched, sounds), view);
             touched = intersect(touched, view);
             scratch.set_clip(bounds);
             scan.lines(bounds, tallest, [&](int mc0, int mc1, int mline) {

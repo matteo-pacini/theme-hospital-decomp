@@ -231,9 +231,11 @@ inline constexpr MenuItemDef kMenuItems[] = {
 };
 
 inline constexpr PulldownDef kPulldownDefs[] = {
-    {true, 1, 0, 4},    // File
-    {true, 2, 4, 9},    // Options
-    {true, 3, 13, 3},   // Display
+    {true, 1, 0, 4}, // File
+    {true, 2, 4, 9}, // Options
+    // Display: the game's High res and MCGA lo-res items (13, 14) are left
+    // off; only Shadows is offered.
+    {true, 3, 15, 1},
     {true, 4, 16, 9},   // Charts
     {false, 5, 25, 26}, // Debug
     {true, 0, 51, 8},   // File > Load

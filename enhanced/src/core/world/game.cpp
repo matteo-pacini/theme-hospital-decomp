@@ -1,6 +1,8 @@
 #include "core/world/game.h"
 
 #include "core/world/nav.h"
+#include "core/world/objects.h"
+#include "core/world/staff.h"
 
 #include <array>
 
@@ -36,6 +38,10 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     walkers_.assign(kThingCount, false);
     start_level(world, level, anims);
     world.entrances = level.entrances;
+    std::array<uint8_t, 3> refs = staff_market.ref_counts;
+    staff_market = {};
+    staff_market.ref_counts = refs;
+    create_job_market(world, staff_market, settings, 0, 1);
     date = {};
     turn_count = 1;
     paused = false;
@@ -79,6 +85,7 @@ void Game::turn()
                 date.year++;
             }
             arrivals.game_month = uint16_t(date.year * 12 + date.month);
+            create_job_market(world, staff_market, settings_, date.year * 12 + date.month, turn_count);
         }
     }
 
@@ -99,6 +106,8 @@ void Game::turn()
                 play_frame(t, *anims_, kPatientAnims[t.subtype % kPatientAnims.size()].stand);
         } else if (t.type == kThingPatient) {
             person_turn(world, *anims_, *complexes_, uint16_t(i), turn_count);
+        } else if (t.type == kThingStaff) {
+            staff_turn(world, *anims_, uint16_t(i), turn_count);
         } else if (t.type == kThingObject) {
             if (t.state == kObjectStatic) {
                 // object_static (src/objects.cpp).
@@ -109,6 +118,18 @@ void Game::turn()
             }
         }
     }
+}
+
+void Game::process_turn()
+{
+    Event e = event;
+    event = {};
+    // Each part's commands are carried out in its own file. EV_CANCEL_BUILD
+    // is both the staff side's and the objects': staff's part first.
+    if (e.type == EV_OPEN_HIRE_STAFF)
+        cancel_buy_objects(world.placing);
+    if (!apply_staff_event(*this, e))
+        apply_object_event(*this, e);
 }
 
 uint16_t Game::add_walker(int cell)

@@ -22,10 +22,12 @@ endif()
 
 # The engine: data loading and drawing, with no SDL dependency.
 add_library(th_core STATIC
+  src/core/audio/sounds.cpp
   src/core/data/anims.cpp
   src/core/data/balance.cpp
   src/core/data/fs.cpp
   src/core/data/rnc.cpp
+  src/core/data/smacker.cpp
   src/core/data/sprites.cpp
   src/core/data/text.cpp
   src/core/data/palette.cpp
@@ -39,13 +41,18 @@ add_library(th_core STATIC
   src/core/render/panel.cpp
   src/core/render/shadows.cpp
   src/core/render/view.cpp
+  src/core/ui/buy_objects.cpp
+  src/core/ui/hire_staff.cpp
   src/core/ui/layer.cpp
   src/core/ui/menubar.cpp
+  src/core/ui/startup.cpp
   src/core/ui/windows.cpp
   src/core/world/arrivals.cpp
   src/core/world/complex.cpp
   src/core/world/game.cpp
   src/core/world/nav.cpp
+  src/core/world/objects.cpp
+  src/core/world/staff.cpp
   src/core/world/world.cpp
 )
 target_include_directories(th_core PUBLIC src)
@@ -53,6 +60,7 @@ target_compile_options(th_core PRIVATE ${TH_WARNINGS})
 
 add_executable(th_enhanced
   src/app/main.cpp
+  src/app/audio/mixer.cpp
   src/app/datadir.cpp
   src/app/settings.cpp
   src/app/ui/nav_tool.cpp

@@ -3,11 +3,14 @@
 #include "core/render/iso.h"
 #include "core/render/surface.h"
 
+#include <vector>
+
 namespace th
 {
 
 class GameData;
 class ShadowSprites;
+struct FrameSound;
 struct World;
 
 // Draws the hospital view into `view` of `dst`, with `camera` the map pixel
@@ -21,8 +24,10 @@ struct World;
 //
 // `scratch` must be the size of `dst`; its contents are kept filled with
 // kMaskColour between calls.
+// With `sounds`, every thing's frame drawn is listed there with its sound
+// (0 for none), for SoundPlayer::frames_drawn.
 void draw_world(Surface &dst, Rect view, Point camera, const World &world, const GameData &data,
-                const ShadowSprites *shadows, Surface &scratch);
+                const ShadowSprites *shadows, Surface &scratch, std::vector<FrameSound> *sounds = nullptr);
 
 // The colour the masked drawing treats as empty (the game's 0xfe); sprite
 // pixels of this colour on masked cells are not drawn, as in the game.

@@ -63,7 +63,7 @@ bool RequesterArt::load(const std::filesystem::path &dir, std::string *error)
             return false;
         }
     }
-    return load_font(dir, 1, font_, error);
+    return load_font(dir, 1, font_, error) && load_font(dir, 2, highlight_font_, error);
 }
 
 Interface::Interface()
@@ -238,6 +238,7 @@ void Interface::callback(int window, int button, InterfaceEvents &events)
 {
     events.triggered_window = window;
     events.triggered_button = button;
+    events.old_left = old_left_;
     if (list_[size_t(window)].buttons[size_t(button - 1)].callback != 13)
         return;
     int n = 1;

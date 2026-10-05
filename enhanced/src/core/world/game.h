@@ -5,6 +5,8 @@
 #include "core/data/level.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
+#include "core/world/events.h"
+#include "core/world/staff.h"
 #include "core/world/world.h"
 
 #include <cstdint>
@@ -72,6 +74,16 @@ class Game
     int reputation = 500;
     // Patients arriving (src/peepmake.cpp).
     ArrivalState arrivals;
+    // The applicants for jobs (src/staff.cpp); the caller sets ref_counts
+    // from the language text before start().
+    StaffMarket staff_market;
+    // The player's command waiting to be carried out (player_events[player]).
+    Event event;
+    // Carries out `event` and clears it, as the game's process_turn does at
+    // the start of every frame, paused or not: run it before the frame's
+    // turns. Commands not ported yet are dropped.
+    void process_turn();
+
     // The patients that reached the map this turn, to be set going.
     std::vector<uint16_t> new_patients;
 
@@ -83,6 +95,11 @@ class Game
     // Path finding tool: sends person `id` to `cell`. A patient on an action
     // sequence leaves it and only walks from then on.
     void send_walker(uint16_t id, int cell);
+
+    // The level's settings, its number and the animations it was started with.
+    const Balance &settings() const { return settings_; }
+    int level_number() const { return level_number_; }
+    const AnimData &anims() const { return *anims_; }
 
   private:
     const AnimData *anims_ = nullptr;

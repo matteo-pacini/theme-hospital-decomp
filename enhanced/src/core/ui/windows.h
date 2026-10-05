@@ -40,7 +40,7 @@ class RequesterArt
   public:
     // Loads every 640 x 480 requester sheet (hires_req_filenames,
     // src/files.cpp: QDATA/REQ00V to REQ13V but 07 and 08, reqspr coding)
-    // and the font of cache slot 1. On failure says why in `error`.
+    // and the fonts of cache slots 1 and 2. On failure says why in `error`.
     bool load(const std::filesystem::path &dir, std::string *error = nullptr);
 
     // The sheet window `window` is drawn with (open_requester loads it into
@@ -48,10 +48,13 @@ class RequesterArt
     const SpriteSheet &sheet(int window) const { return sheets_.at(size_t(window)); }
     // Font cache slot 1 (QDATA/FONT01V), the requesters' text.
     const Font &font() const { return font_; }
+    // Font cache slot 2 (QDATA/FONT02V), the requesters' highlighted text.
+    const Font &highlight_font() const { return highlight_font_; }
 
   private:
     std::array<SpriteSheet, kWindowListSize> sheets_;
     Font font_;
+    Font highlight_font_;
 };
 
 // WindowButton.flags (include/hosp.h). The trigger bits say which mouse
@@ -123,6 +126,9 @@ struct InterfaceEvents {
     // window's list), in window `triggered_window`; -1 if none.
     int triggered_window = -1;
     int triggered_button = -1;
+    // The left button was down the frame before (OldLeftButton) when the
+    // callback ran: a release trigger came from the left button.
+    bool old_left = false;
 };
 
 // The game's window system (src/winproc.cpp, src/windraw.cpp) and requester
@@ -143,6 +149,10 @@ class Interface
     int window_count() const;
     int open_window_at(int i) const { return open_[size_t(i)]; }
     const Window &window(int window) const { return list_.at(size_t(window)); }
+    // Sets window `window`'s height, as a requester's drawing may (req14_overdraw
+    // fits the edit room requester to its list): the mouse is on the window
+    // within it.
+    void set_window_height(int window, int height) { list_.at(size_t(window)).height = uint16_t(height); }
 
     // The current requester (crequester.id).
     Requester requester() const { return requester_; }

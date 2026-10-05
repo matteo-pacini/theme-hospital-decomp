@@ -63,6 +63,8 @@ const ShapeInfo &shape_of(int kind, int dir)
     return kShapes[kObjects[size_t(kind)].shapes[size_t(dir)]];
 }
 
+} // namespace
+
 // can_place_object (src/objects.cpp) without force_place_objects.
 bool can_place_object(World &w, int tile, int kind, int dir, int owner)
 {
@@ -90,7 +92,7 @@ bool can_place_object(World &w, int tile, int kind, int dir, int owner)
 }
 
 // mark_object_shape (src/objects.cpp). Its cleanse of litter and rat holes
-// under the object is left out: there are none when a level starts.
+// under the object is left out: neither is ported.
 void mark_object_shape(World &w, int tile, int kind, int dir)
 {
     const ShapeInfo &shape = shape_of(kind, dir);
@@ -133,6 +135,9 @@ void remove_object_shape(World &w, int tile, int kind, int dir)
     }
 }
 
+namespace
+{
+
 // adjust_big_cell_flag (src/engine.cpp), for a cell holding only objects.
 void adjust_big_cell_flag(World &w, int tile)
 {
@@ -156,8 +161,6 @@ uint16_t compute_plant_frame(const Thing &plant, const AnimData &anims)
         f = anims.frames[f].next;
     return uint16_t(f);
 }
-
-uint16_t place_object(World &w, const AnimData &anims, int tile, int kind, int dir, int owner, bool force);
 
 // place_existing_object (src/objects.cpp). The level's objects are in no
 // room, so the room list, radiator count and reception bookkeeping do not
@@ -223,6 +226,8 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
         obj.sprite = compute_plant_frame(obj, anims);
 }
 
+} // namespace
+
 // place_object (src/objects.cpp) as at level start, `force` standing for
 // othervar.force_place_objects: no rooms, people or picked-up objects
 // exist, so which_room is always 0, check_no_peeps_in_way always passes and
@@ -263,6 +268,9 @@ uint16_t place_object(World &w, const AnimData &anims, int tile, int kind, int d
     return id;
 }
 
+namespace
+{
+
 // adjust_mapwho (src/town.cpp): places the object a level cell starts with
 // (kind in the high byte of first, facing in the low) for player 0.
 void adjust_mapwho(World &w, const AnimData &anims, int tile)
@@ -294,6 +302,7 @@ void start_level(World &world, const Level &level, const AnimData &anims, uint32
     world.map = {};
     world.things.assign(kThingCount, Thing{});
     world.first_of_kind = {};
+    world.placing = {};
     world.seed = seed;
     build_start_map(world.map, level, [&](int cell) {
         world.map[size_t(cell)].first = level.tiles[size_t(cell)].first;

@@ -4,6 +4,7 @@
 #include "core/data/level.h"
 #include "core/render/iso.h"
 #include "core/world/object_tables.h"
+#include "core/world/objects.h"
 
 #include <array>
 #include <cstdint>
@@ -189,6 +190,43 @@ struct Thing {
     uint16_t user = 0;
     // Objects: depth while not overlaid by its user.
     int8_t saved_depth = 0;
+
+    // Staff (staff.cpp)
+    // Staff: the step within their state (the game's substate).
+    uint8_t substate = 0;
+    // Staff: kSkill* bits (core/world/staff.h).
+    uint16_t skills = 0;
+    // Staff: 30-1000.
+    uint16_t ability = 0;
+    // Staff: the monthly wage paid, and the one asked for (appraise_staff).
+    int32_t salary = 0;
+    int32_t wage_demand = 0;
+    // Staff: 0-1000.
+    int16_t tiredness = 0;
+    // Applicants: they withdraw once the game turn passes this; 0 once hired.
+    uint32_t hire_expiry = 0;
+    // Staff: the game turn they were hired, kept in 16 bits as the game does.
+    int16_t hire_time = 0;
+    uint8_t work_delay = 0;
+    // Staff: their name, "<initial>. <surname_a><surname_b>" (the initial
+    // 'A'-'Z', the surname halves strings of language sections 8 and 9).
+    uint8_t initial = 0;
+    uint8_t surname_a = 0;
+    uint8_t surname_b = 0;
+    // Staff: their picture's head, body and legs in the faces file.
+    uint8_t face_head = 0;
+    uint8_t face_body = 0;
+    uint8_t face_legs = 0;
+    // Staff: their reference, strings of language sections 0x2d (general),
+    // 0x2e (good) and 0x2f (bad).
+    uint8_t ref_general = 0;
+    uint8_t ref_good = 0;
+    uint8_t ref_bad = 0;
+    uint8_t female = 0;
+    // Handymen: the priorities of litter, plants and repairs.
+    uint8_t prio_litter = 0;
+    uint8_t prio_plants = 0;
+    uint8_t prio_repair = 0;
 };
 
 // The map and the things on it.
@@ -206,6 +244,10 @@ struct World {
     // and leave (the door_tile of its ROOM_ENTRANCE rooms): Level::entrances
     // for the hospitals that play (load_level, src/io.cpp).
     std::array<std::array<uint16_t, 4>, 4> entrances{};
+
+    // The player's objects bought and being placed, and the requesters for
+    // them (core/world/objects.h).
+    ObjectPlacing placing;
 };
 
 // Advances `seed` as the game's old_newrand (src/rand.cpp) and returns its
@@ -220,6 +262,30 @@ uint32_t old_newrand(uint32_t &seed);
 // (flags, invisible walls, a second part on its list), as in the game.
 // Shadows are not computed. The random generator starts from `seed`.
 void start_level(World &world, const Level &level, const AnimData &anims, uint32_t seed = kLevelStartSeed);
+
+// can_place_object (src/objects.cpp): whether an object of `kind` facing
+// `dir` (kObjects index, 0-3) fits for player `owner` with its corner on
+// `tile`: no wall its shape forbids and nothing on its cells or its use
+// cells, all on the owner's land (litter bombs on anyone's) and `tile`
+// indoors. Shapes reaching off the map do not fit.
+bool can_place_object(World &world, int tile, int kind, int dir, int owner);
+
+// mark_object_shape and remove_object_shape (src/objects.cpp): mark the cells
+// an object covers and is used from (MapCell.flags 1 and 2, 4) and put up
+// the invisible walls round it, or take them down. Path checks mark an
+// object that is not placed yet; remove clears the bits whatever else set
+// them.
+void mark_object_shape(World &world, int tile, int kind, int dir);
+void remove_object_shape(World &world, int tile, int kind, int dir);
+
+// place_object (src/objects.cpp) without its checks of the hospital's
+// access, of people in the way and of picked-up objects, and without
+// charging: a new object of `kind` for `owner` on `tile` facing `dir`, and
+// its second part where that fits, linked into the map and
+// World::first_of_kind (player 0's). Unless `force`, refuses with 0 when it
+// does not fit (can_place_object). Returns its thing id, 0 if refused or the
+// things table is full. Draws two random numbers per object made.
+uint16_t place_object(World &world, const AnimData &anims, int tile, int kind, int dir, int owner, bool force);
 
 // Map pixel position (as cell_to_world) of the point a thing's frame is
 // drawn from, as the game's do_mapwho at 64 x 32 cells: the cell's top corner

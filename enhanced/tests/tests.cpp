@@ -1,10 +1,13 @@
 // Engine tests. Those that need the game data read it from TH_TEST_DATA_DIR
 // and are skipped (exit code 77) when it is unset or missing.
 
+#include "core/audio/sounds.h"
 #include "core/data/balance.h"
 #include "core/data/blocks.h"
+#include "core/data/fs.h"
 #include "core/data/gamedata.h"
 #include "core/data/rnc.h"
+#include "core/data/smacker.h"
 #include "core/data/text.h"
 #include "core/render/blit.h"
 #include "core/render/iso.h"
@@ -12,19 +15,26 @@
 #include "core/render/shadows.h"
 #include "core/render/text.h"
 #include "core/render/view.h"
+#include "core/ui/buy_objects.h"
+#include "core/ui/hire_staff.h"
 #include "core/ui/menubar.h"
+#include "core/ui/startup.h"
 #include "core/ui/windows.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
 #include "core/world/game.h"
 #include "core/world/nav.h"
+#include "core/world/objects.h"
+#include "core/world/staff.h"
 #include "core/world/world.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -1355,6 +1365,751 @@ void test_yes_no_requester(const char *dir)
     CHECK(ui.frame(m).yes_no == th::YesNoAnswer::No && ui.window_count() == 0);
 }
 
+// Hire staff (milestone 4 step 3): starts level 1 with its job market made
+// as setup_new_level makes it.
+struct HireFixture {
+    th::GameData gd;
+    std::optional<th::Level> level;
+    th::Balance settings;
+    std::unique_ptr<th::Game> game = std::make_unique<th::Game>();
+    th::StaffMarket market;
+    // The simulation's generator after the level started.
+    uint32_t seed = 0;
+
+    bool start(const char *dir)
+    {
+        std::string error;
+        if (!gd.load(dir, &error))
+            return false;
+        level = gd.load_level(1, &error);
+        if (!level || !th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error))
+            return false;
+        // Game::start makes the first applicants, as the game does.
+        game->staff_market.ref_counts = th::reference_counts(gd.text());
+        game->start(*level, 1, settings, gd.anims(), gd.person_complexes());
+        seed = game->world.seed;
+        market = game->staff_market;
+        return true;
+    }
+};
+
+// Carries out `e` as the app does: the interface's part, then the game's.
+void hire_command(HireFixture &f, th::HireStaff &hire, th::Interface &ui, th::Event e)
+{
+    f.game->event = e;
+    th::hire_staff_event(hire, ui, f.game->world, f.game->event);
+    f.game->process_turn();
+    th::hire_staff_after_turn(hire, f.game->world);
+}
+
+// Presses and releases button `button` (counted from 1) of the hire staff
+// requester; returns what the interface did on the release.
+th::InterfaceEvents click_hire_button(th::Interface &ui, int button)
+{
+    const th::Window &win = ui.window(int(th::Requester::HireStaff));
+    const th::WindowButton &b = win.buttons[size_t(button - 1)];
+    th::UiMouse m;
+    m.x = win.x + b.x + b.width / 2;
+    m.y = win.y + b.y + b.height / 2;
+    m.left_pressed = m.left_held = true;
+    ui.frame(m);
+    m.left_pressed = m.left_held = false;
+    m.left_released = true;
+    return ui.frame(m);
+}
+
+void test_applicants_level1(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    const th::World &w = f.game->world;
+    const th::Balance::Gbv &gbv = f.settings.gbv;
+    CHECK(f.market.ref_counts[0] > 0 && f.market.ref_counts[1] > 0 && f.market.ref_counts[2] > 0);
+    // FULL01.SAM staff_levels[0]: 8 nurses, 8 doctors, 3 handymen, 8
+    // receptionists.
+    CHECK(th::count_applicants(w, th::kStaffNurse) == 8 && th::count_applicants(w, th::kStaffDoctor) == 8);
+    CHECK(th::count_applicants(w, th::kStaffHandyman) == 3 && th::count_applicants(w, th::kStaffReceptionist) == 8);
+    bool valid = true;
+    long wages = 0;
+    int psychiatrists = 0, juniors = 0;
+    for (const th::Thing &t : w.things) {
+        if (t.type != th::kThingStaff)
+            continue;
+        valid &= t.state == th::kStaffApplicant && t.owner == th::kNoOwner && t.cell_next == 0 && t.cell_prev == 0;
+        valid &= t.hire_expiry >= 1 + 2500 && t.hire_expiry < 1 + 5000;
+        valid &= t.initial >= 'A' && t.initial <= 'Z' && t.surname_a < 33 && t.surname_b < 26;
+        valid &= t.ref_general < f.market.ref_counts[0] && t.ref_good < f.market.ref_counts[1] &&
+                 t.ref_bad < f.market.ref_counts[2];
+        valid &= t.face_head < 18 && t.face_body < 18 && t.face_legs < 18;
+        valid &= t.work_delay >= 1 && t.work_delay <= 10 && t.happiness <= 100;
+        // The wage: ability / divisor + the kind's minimum + the skills'
+        // additions, between the game's bounds for the kind.
+        int min_wage = f.settings.staff[t.subtype].min_salary;
+        int max_wage = min_wage + 1000 / gbv.salary_ability_divisor;
+        min_wage += 30 / gbv.salary_ability_divisor;
+        for (size_t i = 3; i < 9; i++) {
+            min_wage += std::min<int>(gbv.salary_add[i], 0);
+            max_wage += std::max<int>(gbv.salary_add[i], 0);
+        }
+        valid &= t.salary == t.wage_demand && t.salary >= min_wage && t.salary <= max_wage;
+        if (t.subtype == th::kStaffDoctor) {
+            valid &= (t.skills & th::kSkillDoctor) != 0;
+            bool junior = t.skills & th::kSkillJunior;
+            valid &= junior ? t.ability >= 30 && t.ability <= gbv.doctor_threshold
+                            : t.ability >= gbv.doctor_threshold && t.ability <= gbv.consultant_threshold;
+            psychiatrists += (t.skills & th::kSkillPsychiatrist) != 0;
+            juniors += junior;
+            // FULL01.SAM: no surgeons, researchers or consultants yet.
+            valid &= !(t.skills & (th::kSkillSurgeon | th::kSkillResearcher | th::kSkillConsultant));
+        } else {
+            valid &= t.ability >= 30 && t.ability <= 1000;
+        }
+        wages += t.salary;
+    }
+    CHECK(valid);
+    std::printf("applicants, level 1: wages %ld, %d psychiatrists, %d juniors, staff seed %#x\n", wages, psychiatrists,
+                juniors, unsigned(f.market.seed));
+    // Regression values, not checked against the game.
+    CHECK(wages == 2936 && psychiatrists == 2 && juniors == 1 && f.market.seed == 0x47138585);
+    // No draws from the simulation's generator.
+    CHECK(w.seed == f.seed);
+    // Again in month 0: everyone wanted is there, so no one is made.
+    th::StaffMarket again = f.market;
+    th::create_job_market(f.game->world, again, f.settings, 1, f.game->turn_count);
+    CHECK(again.seed == f.market.seed && th::count_applicants(w, th::kStaffNurse) == 8);
+}
+
+void test_hire_receptionist(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::World &w = f.game->world;
+    th::Interface ui;
+    th::HireStaff hire;
+
+    hire_command(f, hire, ui, {th::EV_OPEN_HIRE_STAFF});
+    CHECK(ui.requester() == th::Requester::HireStaff && hire.mode == 1);
+    // Hire is refused before a kind is chosen.
+    CHECK(th::hire_staff_click(hire, click_hire_button(ui, 0x2b), *f.game).type == th::EV_NONE);
+
+    th::Event e = th::hire_staff_click(hire, click_hire_button(ui, 0x29), *f.game);
+    CHECK(e.type == th::EV_HIRE_SELECT_KIND && e.value == th::kStaffReceptionist);
+    hire_command(f, hire, ui, e);
+    uint16_t first = th::alter_applicant(w, true, 0, th::kStaffReceptionist);
+    CHECK(hire.mode == 2 && hire.shown == first && first != 0);
+    // Previous from the first is refused; next pages on.
+    CHECK(th::hire_staff_click(hire, click_hire_button(ui, 0x2a), *f.game).type == th::EV_NONE);
+    e = th::hire_staff_click(hire, click_hire_button(ui, 0x2d), *f.game);
+    CHECK(e.type == th::EV_HIRE_NEXT_APPLICANT && e.value == 1);
+    hire_command(f, hire, ui, e);
+    uint16_t second = hire.shown;
+    CHECK(second > first && w.things[second].subtype == th::kStaffReceptionist);
+
+    e = th::hire_staff_click(hire, click_hire_button(ui, 0x2b), *f.game);
+    CHECK(e.type == th::EV_MARK_EMPLOYING && e.arg == second && e.value == th::kStaffReceptionist);
+    hire_command(f, hire, ui, e);
+    CHECK(ui.window_count() == 0 && ui.requester() == th::Requester::None);
+    CHECK(hire.placing() && hire.held == second && w.things[second].state == th::kStaffHeld);
+    CHECK(th::count_applicants(w, th::kStaffReceptionist) == 8);
+
+    // Off the hospital's land the click does nothing.
+    int outside = f.level->entrances[0][0];
+    CHECK(th::place_staff_click(hire, w, outside).type == th::EV_NONE && !hire.place_ok);
+    int cell = -1;
+    int start = f.level->camera_start[0];
+    for (int r = 0; r < 20 && cell < 0; r++)
+        for (int dy = -r; dy <= r && cell < 0; dy++)
+            for (int dx = -r; dx <= r && cell < 0; dx++) {
+                int c = start + dx + dy * th::kMapSize;
+                if (c >= 0 && c < th::kMapCells && w.map[size_t(c)].first == 0 && th::staff_place_ok(w, c))
+                    cell = c;
+            }
+    CHECK(cell >= 0);
+    if (cell < 0)
+        return;
+    int balance = f.game->balance;
+    int32_t salary = w.things[second].salary;
+    e = th::place_staff_click(hire, w, cell);
+    CHECK(e.type == th::EV_PLACE_STAFF && e.value == cell && e.arg == second && hire.place_ok);
+    hire_command(f, hire, ui, e);
+    const th::Thing &s = w.things[second];
+    CHECK(!hire.placing());
+    CHECK(s.type == th::kThingStaff && s.owner == 0 && s.state == th::kStaffReceptionistFindsReception);
+    CHECK(s.x.tile + s.y.tile * th::kMapSize == cell && s.x.frac == 0x80 && s.y.frac == 0x80);
+    CHECK(s.hire_expiry == 0 && s.hire_time == int16_t(f.game->turn_count) && s.speed != 0);
+    CHECK(f.game->balance == balance - salary * 12 / 10);
+    CHECK(th::count_applicants(w, th::kStaffReceptionist) == 7);
+    bool listed = false;
+    for (int id = w.map[size_t(cell)].first; id > 0; id = w.things[size_t(id)].cell_next)
+        listed |= id == second;
+    CHECK(listed && cell_lists_consistent(w));
+    // With no reception desk, she goes to wander (and, not ported further,
+    // stands).
+    th::staff_turn(w, f.gd.anims(), second, f.game->turn_count);
+    CHECK(s.state == th::kStaffWanders && s.substate == 6);
+    CHECK(s.sprite == f.gd.anims().starts[th::kStaffAnims[th::kStaffReceptionist].stand + s.facing].frame);
+
+    // A nurse taken to place, then dropped: back on the list.
+    hire_command(f, hire, ui, {th::EV_OPEN_HIRE_STAFF});
+    hire_command(f, hire, ui, {th::EV_HIRE_SELECT_KIND, th::kStaffNurse});
+    uint16_t nurse = hire.shown;
+    hire_command(f, hire, ui, th::hire_staff_click(hire, click_hire_button(ui, 0x2b), *f.game));
+    CHECK(hire.held == nurse && w.things[nurse].state == th::kStaffHeld);
+    hire_command(f, hire, ui, th::hire_staff_cancel(hire));
+    CHECK(!hire.placing() && w.things[nurse].state == th::kStaffApplicant && ui.window_count() == 0);
+
+    // An applicant withdraws once past their expiry.
+    uint32_t expiry = w.things[nurse].hire_expiry;
+    th::staff_turn(w, f.gd.anims(), nurse, expiry);
+    CHECK(w.things[nurse].type == th::kThingStaff);
+    th::staff_turn(w, f.gd.anims(), nurse, expiry + 1);
+    CHECK(w.things[nurse].type == th::kThingFree && th::count_applicants(w, th::kStaffNurse) == 7);
+}
+
+void write_ppm(const char *path, const std::vector<uint32_t> &argb, int width, int height)
+{
+    if (FILE *out = std::fopen(path, "wb")) {
+        std::fprintf(out, "P6\n%d %d\n255\n", width, height);
+        for (uint32_t p : argb) {
+            unsigned char rgb[3] = {uint8_t(p >> 16), uint8_t(p >> 8), uint8_t(p)};
+            std::fwrite(rgb, 1, 3, out);
+        }
+        std::fclose(out);
+    }
+}
+
+void test_hire_requester_image(const char *dir)
+{
+    HireFixture f;
+    th::RequesterArt art;
+    th::HireStaffArt hire_art;
+    std::string error;
+    CHECK(f.start(dir) && art.load(dir, &error) && hire_art.load(dir, &error));
+    if (!f.level)
+        return;
+    CHECK(hire_art.faces().size() == 65 * (29 + 24 + 22) * 18 && !hire_art.count_font().empty());
+    CHECK(art.sheet(int(th::Requester::HireStaff)).size() > 0x128);
+    th::Interface ui;
+    th::HireStaff hire;
+    hire_command(f, hire, ui, {th::EV_OPEN_HIRE_STAFF});
+    const th::Window &win = ui.window(int(th::Requester::HireStaff));
+
+    auto render = [&](const char *name) {
+        th::UiLayer layer;
+        layer.resize(th::kUiWidth, th::kUiHeight);
+        layer.clear();
+        th::draw_interface(layer, ui, art);
+        th::draw_hire_staff(layer, hire, ui, art, hire_art, f.game->world, f.gd.text());
+        std::vector<uint32_t> argb = layer.to_argb(f.gd.palette());
+        int inside = 0, outside = 0;
+        for (int y = 0; y < th::kUiHeight; y++)
+            for (int x = 0; x < th::kUiWidth; x++)
+                if (argb[size_t(y * th::kUiWidth + x)])
+                    (x >= win.x && x < win.x + win.width && y >= win.y && y < win.y + win.height ? inside : outside)++;
+        CHECK(inside > win.width * win.height * 9 / 10 && outside == 0);
+        if (const char *scratch = std::getenv("TH_TEST_SCRATCH"))
+            write_ppm((std::string(scratch) + "/" + name).c_str(), argb, th::kUiWidth, th::kUiHeight);
+        return argb;
+    };
+    std::vector<uint32_t> blank = render("hire_blank.ppm");
+    hire_command(f, hire, ui, {th::EV_HIRE_SELECT_KIND, th::kStaffDoctor});
+    std::vector<uint32_t> doctor = render("hire_doctor.ppm");
+    CHECK(doctor != blank);
+    // The face is the faces file's pixels, inside its border.
+    const th::Thing &d = f.game->world.things[hire.shown];
+    size_t head = size_t(d.face_head) * 65 * 29;
+    uint32_t want = f.gd.palette()[hire_art.faces()[head + 65 * 10 + 30]];
+    CHECK(doctor[size_t((win.y + 128 - 75 - 3 + 10) * th::kUiWidth + win.x + 157 + 3 + 30)] == want);
+    hire_command(f, hire, ui, {th::EV_HIRE_SELECT_KIND, th::kStaffHandyman});
+    CHECK(render("hire_handyman.ppm") != doctor);
+
+    // The held applicant under the pointer, coloured where they may be put
+    // down and greyed where not.
+    hire_command(f, hire, ui, th::hire_staff_click(hire, click_hire_button(ui, 0x2b), *f.game));
+    CHECK(hire.placing());
+    th::Surface view, scratch, base;
+    view.resize(320, 240);
+    scratch.resize(320, 240);
+    scratch.fill(th::kMaskColour);
+    int start = f.level->camera_start[0];
+    th::Point centre = th::cell_to_world(start % th::kMapSize, start / th::kMapSize);
+    th::Point camera = {centre.x - 160, centre.y - 120};
+    th::draw_world(view, {0, 0, 320, 240}, camera, f.game->world, f.gd, nullptr, scratch);
+    base = view;
+    th::update_staff_cursor(hire, f.game->world, start);
+    th::draw_held_staff(view, {0, 0, 320, 240}, camera, hire, f.game->world, start, f.gd, scratch);
+    int changed = 0;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            changed += view.row(y)[x] != base.row(y)[x];
+    CHECK(changed > 100);
+    th::Surface coloured = view;
+    view = base;
+    hire.place_ok = false;
+    th::draw_held_staff(view, {0, 0, 320, 240}, camera, hire, f.game->world, start, f.gd, scratch);
+    std::array<uint8_t, 256> grey = th::grey_remap(f.gd.palette());
+    // All but the see-through pixels (shadows) are the coloured ones greyed.
+    int greyed = 0, drawn = 0, differs = 0;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            if (coloured.row(y)[x] != base.row(y)[x]) {
+                greyed += view.row(y)[x] == grey[coloured.row(y)[x]];
+                drawn++;
+                differs += view.row(y)[x] != coloured.row(y)[x];
+            }
+    CHECK(drawn > 100 && greyed > drawn * 8 / 10 && differs > 0);
+    bool clean = true;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            clean &= scratch.row(y)[x] == th::kMaskColour;
+    CHECK(clean);
+}
+
+// Furnishing level 1's corridor: the buy objects requester, buying and
+// selling, and placing a reception desk through the commands.
+void test_furnish_corridor(const char *dir)
+{
+    th::GameData gd;
+    th::RequesterArt art;
+    std::string error;
+    CHECK(gd.load(dir, &error) && art.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    auto game = std::make_unique<th::Game>();
+    game->start(*level, 1, settings, gd.anims(), gd.person_complexes());
+    th::World &world = game->world;
+    th::ObjectPlacing &p = world.placing;
+    th::Interface ui;
+    th::ObjectUi oui;
+    th::init_object_ui(oui, gd.palette());
+    const int desk = 11, bench = 4;
+    const int desk_cost = settings.objects[desk].start_cost;
+    CHECK(desk_cost > 0);
+
+    th::furnish_corridor(*game);
+    game->process_turn();
+    CHECK(p.requester == th::ObjectRequester::BuyObjects && p.menu_disabled && p.arg == 1);
+    std::vector<int> offered;
+    for (uint8_t kind : p.offered)
+        if (kind)
+            offered.push_back(kind);
+    // Reception desk, bench, drinks machine, fire extinguisher, radiator and
+    // plant; level 1 makes no litter bombs available.
+    CHECK((offered == std::vector<int>{11, 4, 7, 43, 44, 45}));
+    CHECK(p.item == desk);
+    th::sync_object_requesters(ui, *game);
+    CHECK(ui.requester() == th::Requester::BuyObjects && ui.window_count() == 1);
+    const th::Window &win = ui.window(int(th::Requester::BuyObjects));
+
+    // A press then a release at (x, y), then the turn's commands.
+    auto click = [&](int x, int y, bool right) {
+        th::UiMouse m;
+        m.x = x;
+        m.y = y;
+        (right ? m.right_pressed : m.left_pressed) = true;
+        (right ? m.right_held : m.left_held) = true;
+        th::object_requesters_input(ui, oui, *game, ui.frame(m), m, false, false);
+        m = {};
+        m.x = x;
+        m.y = y;
+        (right ? m.right_released : m.left_released) = true;
+        th::object_requesters_input(ui, oui, *game, ui.frame(m), m, false, false);
+        game->process_turn();
+        th::sync_object_requesters(ui, *game);
+    };
+    int balance = game->balance;
+    click(win.x + 331 + 8, win.y + 37 + 8, false); // the desk's plus
+    CHECK(p.buy_count[desk] == 1 && game->balance == balance);
+    click(win.x + 200, win.y + 55 + 9, true); // sell a bench: none bought
+    CHECK(p.buy_count[bench] == 0 && p.item == bench);
+    click(win.x + 200, win.y + 55 + 9, false); // the bench's entry: buys
+    CHECK(p.buy_count[bench] == 1);
+    click(win.x + 287 + 8, win.y + 56 + 8, false); // its minus
+    CHECK(p.buy_count[bench] == 0);
+    game->balance = desk_cost + desk_cost / 2;
+    click(win.x + 331 + 8, win.y + 37 + 8, false); // a second desk: too dear
+    CHECK(p.buy_count[desk] == 1);
+    game->balance = balance;
+
+    // The requester's own drawing: text and the selected kind's picture.
+    th::UiLayer layer;
+    layer.resize(th::kUiWidth, th::kUiHeight);
+    layer.clear();
+    th::draw_interface(layer, ui, art);
+    std::vector<uint32_t> plain = layer.to_argb(gd.palette());
+    th::draw_object_requesters(layer, ui, oui, *game, art, gd);
+    std::vector<uint32_t> drawn = layer.to_argb(gd.palette());
+    int changed = 0;
+    for (size_t i = 0; i < drawn.size(); i++)
+        changed += drawn[i] != plain[i];
+    CHECK(changed > 1000);
+
+    click(win.x + 156 + 50, win.y + 240 + 10, false); // accept
+    CHECK(p.placing && p.kind == desk && p.mode == 2 && !p.menu_disabled);
+    CHECK(p.requester == th::ObjectRequester::EditRoom && ui.requester() == th::Requester::EditRoom);
+
+    // The first cell the desk may go on.
+    int tile = -1;
+    for (int t = 0; t < th::kMapCells && tile < 0; t++) {
+        th::update_placement(world, p, t);
+        if (p.ok && p.tile == t)
+            tile = t;
+    }
+    CHECK(tile >= 0);
+    if (tile < 0)
+        return;
+    th::update_placement(world, p, 0); // public land, off the hospital
+    CHECK(!p.ok);
+    game->event = {th::EV_PLACE_OBJECT, 0, 0, uint16_t(desk | p.dir << 8)};
+    game->process_turn();
+    CHECK(world.first_of_kind[desk] == 0 && game->balance == balance && p.buy_count[desk] == 1);
+
+    // The desk following the pointer, in colour and, where it may not go,
+    // in greys.
+    th::UiMouse m;
+    th::placement_mouse(oui, *game, tile, m, true);
+    CHECK(oui.cursor_shown && p.ok);
+    th::Surface view, base;
+    view.resize(320, 240);
+    view.fill(0);
+    base = view;
+    th::Point w = th::cell_to_world(tile % th::kMapSize, tile / th::kMapSize);
+    th::Point camera = {w.x - 160, w.y - 120};
+    th::draw_placement(view, {0, 0, 320, 240}, camera, p, oui, gd);
+    int coloured = 0;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            coloured += view.row(y)[x] != 0;
+    CHECK(coloured > 200);
+    th::Surface colour_view = view;
+    view = base;
+    p.ok = false;
+    th::draw_placement(view, {0, 0, 320, 240}, camera, p, oui, gd);
+    int greyed = 0;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            greyed += colour_view.row(y)[x] && view.row(y)[x] == oui.grey[colour_view.row(y)[x]];
+    CHECK(greyed > coloured * 8 / 10);
+    p.redraw = true;
+
+    // A left click places it: paid for, on the map and in the desks' list.
+    m.left_pressed = m.left_held = true;
+    th::placement_mouse(oui, *game, tile, m, true);
+    CHECK(game->event.type == th::EV_PLACE_OBJECT && game->event.value == tile);
+    game->process_turn();
+    th::sync_object_requesters(ui, *game);
+    CHECK(game->balance == balance - desk_cost);
+    uint16_t id = world.first_of_kind[desk];
+    CHECK(id != 0 && world.map[size_t(tile)].first == int16_t(id));
+    if (!id)
+        return;
+    const th::Thing &placed = world.things[id];
+    CHECK(placed.type == th::kThingObject && placed.subtype == desk && placed.owner == 0);
+    CHECK(placed.x.tile == tile % th::kMapSize && placed.y.tile == tile / th::kMapSize);
+    CHECK(world.map[size_t(tile)].flags & 3);
+    CHECK((world.map[placed.use_pos[0]].flags & 4) && (world.map[placed.use_pos[1]].flags & 4));
+    CHECK(!p.placing && p.requester == th::ObjectRequester::None && p.buy_count[desk] == 0);
+    CHECK(ui.window_count() == 0 && ui.requester() == th::Requester::None);
+
+    // A second desk may not go on the first; Escape drops it unbought.
+    game->event = {th::EV_BUY_OBJECT, uint16_t(desk), 0, 1};
+    game->process_turn();
+    game->event = {th::EV_PLACE_NEXT_OBJECT, 0, 0, 0};
+    game->process_turn();
+    CHECK(p.placing && p.kind == desk);
+    th::update_placement(world, p, tile);
+    CHECK(!p.ok);
+    CHECK(th::object_escape(*game));
+    game->process_turn();
+    CHECK(!p.placing && p.requester == th::ObjectRequester::None && p.buy_count[desk] == 0);
+    CHECK(game->balance == balance - desk_cost && world.things[world.first_of_kind[desk]].type_obj_next == 0);
+}
+
+// A sound bank file holding one sample, `pcm` (16-bit mono at `rate`), as
+// sample 1 with priority tag `priority`.
+std::vector<uint8_t> make_sound_bank(const std::vector<int16_t> &pcm, int rate, uint8_t priority)
+{
+    auto put32 = [](std::vector<uint8_t> &v, uint32_t x) {
+        for (int i = 0; i < 4; i++)
+            v.push_back(uint8_t(x >> (8 * i)));
+    };
+    auto put16 = [](std::vector<uint8_t> &v, uint16_t x) {
+        v.push_back(uint8_t(x));
+        v.push_back(uint8_t(x >> 8));
+    };
+    std::vector<uint8_t> wav;
+    uint32_t data_size = uint32_t(pcm.size() * 2);
+    wav.insert(wav.end(), {'R', 'I', 'F', 'F'});
+    put32(wav, 36 + data_size);
+    wav.insert(wav.end(), {'W', 'A', 'V', 'E', 'f', 'm', 't', ' '});
+    put32(wav, 16);
+    put16(wav, 1);
+    put16(wav, 1);
+    put32(wav, uint32_t(rate));
+    put32(wav, uint32_t(rate * 2));
+    put16(wav, 2);
+    put16(wav, 16);
+    wav.insert(wav.end(), {'d', 'a', 't', 'a'});
+    put32(wav, data_size);
+    for (int16_t s : pcm)
+        put16(wav, uint16_t(s));
+
+    std::vector<uint8_t> file = wav;
+    uint32_t records = uint32_t(file.size());
+    file.resize(file.size() + 64); // record 0 unused, record 1 the sample
+    uint8_t *rec = file.data() + records + 32;
+    std::memcpy(rec, "TEST.WAV", 8);
+    for (int i = 0; i < 4; i++)
+        rec[0x1a + i] = uint8_t(wav.size() >> (8 * i));
+    rec[0x1e] = priority;
+    uint32_t table = uint32_t(file.size());
+    file.resize(file.size() + 0x12);
+    for (int e = 0; e < 9; e++) {
+        bool ours = e == 2;
+        put32(file, ours ? records : 0xffffffff);
+        put32(file, ours ? 0 : 0xffffffff);
+        put32(file, ours ? 64 : 0xffffffff);
+        put32(file, ours ? records : 0xffffffff);
+    }
+    put32(file, table);
+    return file;
+}
+
+void test_sound_player()
+{
+    auto path = std::filesystem::temp_directory_path() / "th_enhanced_test_bank.dat";
+    {
+        std::vector<uint8_t> bytes = make_sound_bank({16384, 16384, 16384, 16384}, 100, 0);
+        std::FILE *f = std::fopen(path.string().c_str(), "wb");
+        CHECK(f != nullptr);
+        if (!f)
+            return;
+        std::fwrite(bytes.data(), 1, bytes.size(), f);
+        std::fclose(f);
+    }
+    th::SoundBank bank;
+    std::string error;
+    CHECK(bank.load_file(path, &error));
+    std::filesystem::remove(path);
+    CHECK(bank.count() == 2);
+    CHECK(!bank.sample(0));
+    const th::Sample *s = bank.sample(1);
+    CHECK(s && s->name == "TEST.WAV" && s->frames() == 4 && s->rate == 100 && s->bits == 16);
+
+    th::SoundPlayer player;
+    player.set_bank(&bank);
+    std::vector<float> out(16);
+    // Centred at full volume: both sides, once, then the voice is free.
+    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, 0, 1));
+    CHECK(player.playing(th::kSourceGeneral, 1));
+    player.mix(out.data(), 8, 100);
+    CHECK(out[0] == 0.5f && out[1] == 0.5f && out[6] == 0.5f && out[7] == 0.5f);
+    CHECK(out[8] == 0.0f && out[9] == 0.0f);
+    CHECK(!player.playing(th::kSourceGeneral, 0));
+    // Panned hard left at half volume.
+    CHECK(player.play_sample(th::kSourceGeneral, 1, 0x3f, 0, 100, 0, 1));
+    player.mix(out.data(), 1, 100);
+    CHECK(out[0] > 0.24f && out[0] < 0.25f && out[1] == 0.0f);
+    player.stop_all();
+    // Type 2 refuses a sample the source is playing; type 3 reuses its voice.
+    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, -1, 2));
+    CHECK(!player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, -1, 2));
+    CHECK(player.play_sample(th::kSourceClock, 1, 127, 64, 100, -1, 2));
+    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, -1, 3));
+    player.mix(out.data(), 8, 100); // two voices looping forever
+    CHECK(out[14] == 1.0f && player.playing(th::kSourceClock, 1));
+    player.stop_sample(th::kSourceClock, 1);
+    CHECK(!player.playing(th::kSourceClock, 1) && player.playing(th::kSourceGeneral, 1));
+    // Ten voices at most.
+    player.stop_all();
+    for (int i = 0; i < th::SoundPlayer::kVoices; i++)
+        CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, 0, 1));
+    CHECK(!player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, 0, 1));
+    // Half the output rate at pitch 200 plays a frame per output frame.
+    player.stop_all();
+    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 200, 0, 1));
+    player.mix(out.data(), 8, 200);
+    CHECK(out[6] == 0.5f && out[8] == 0.0f);
+
+    // play_sound: SFX_YESX plays sample 0x41, absent here; off, nothing plays.
+    player.play_sound(th::kSourceGeneral, th::kSfxYesX);
+    CHECK(!player.playing(th::kSourceGeneral, 0));
+    player.toggle_sound();
+    CHECK(!player.sfx_on());
+    player.toggle_sound();
+    CHECK(player.sfx_on());
+    player.set_volume_item(9);
+    CHECK(player.sfx_volume() == 12 && player.volume_item() == 9);
+    player.set_volume_item(0);
+    CHECK(player.sfx_volume() == 127 && player.volume_item() == 0);
+}
+
+void test_sound_bank(const char *dir)
+{
+    th::SoundBank bank;
+    std::string error;
+    CHECK(bank.load(dir, 0, &error));
+    if (!error.empty())
+        std::fprintf(stderr, "%s\n", error.c_str());
+    CHECK(bank.count() == 747);
+    int usable = 0;
+    for (int i = 1; i < bank.count(); i++) {
+        const th::Sample *s = bank.sample(i);
+        // init_sound_heap refuses a bank with a sample of 0x4b000 bytes or more.
+        if (s && s->rate == 22050 && s->frames() > 0 && s->data.size() < 0x4b000)
+            usable++;
+    }
+    CHECK(usable == bank.count() - 1);
+    const th::Sample *hlight = bank.sample(th::kSfxHighlightP2);
+    CHECK(hlight && hlight->name == "HLIGHTP2.WAV" && hlight->frames() == 0x88c0 / 2);
+    const th::Sample *yes = bank.sample(th::kSfxYesX);
+    CHECK(yes && yes->name == "YESX.WAV");
+    for (int language = 1; language < 6; language++) {
+        th::SoundBank other;
+        CHECK(other.load(dir, language) && other.count() > 500);
+    }
+
+    // Menu sounds play centred; a frame sound plays once until the frame
+    // changes, placed by its x.
+    th::SoundPlayer player;
+    player.set_bank(&bank);
+    player.play_sound(th::kSourceGeneral, th::kSfxSelectX);
+    CHECK(player.playing(th::kSourceGeneral, th::kSfxSelectX));
+    th::FrameSound frame{5, th::kSfxYesX, true, 0, 100};
+    player.frames_drawn({&frame, 1}, 640);
+    CHECK(player.playing(th::thing_source(5), th::kSfxYesX));
+    std::vector<float> out(2 * 64);
+    player.mix(out.data(), 64, 44100);
+    player.stop_all();
+    player.frames_drawn({&frame, 1}, 640);
+    CHECK(!player.playing(th::thing_source(5), 0));
+    frame.sound = 0;
+    player.frames_drawn({&frame, 1}, 640);
+    frame.sound = th::kSfxYesX;
+    frame.x = 320;
+    player.frames_drawn({&frame, 1}, 640);
+    CHECK(player.playing(th::thing_source(5), th::kSfxYesX));
+}
+
+// The intro movie decodes whole: every frame, its palette and its audio
+// (22 kHz stereo 16-bit, as long as the frames).
+void test_smacker_intro(const char *dir)
+{
+    auto path = th::resolve_ci(dir, th::movie_info(th::kMovieIntroSm4).file);
+    CHECK(path.has_value());
+    if (!path)
+        return;
+    th::SmackerVideo video;
+    std::string error;
+    CHECK(video.open(*path, &error));
+    CHECK(video.width() == 320 && video.height() == 200 && video.frame_count() == 1559);
+    CHECK(video.frame_duration_us() == 57000);
+    th::SmackerAudioFormat f = video.audio_format(0);
+    CHECK(f.rate == 22050 && f.channels == 2 && f.bits == 16);
+    size_t samples = 0;
+    int frames = 0;
+    while (video.next_frame()) {
+        frames++;
+        samples += video.audio(0).size();
+        if (frames == 1)
+            CHECK(video.palette_changed());
+        if (frames == 300) {
+            std::vector<bool> used(256);
+            for (uint8_t p : video.pixels())
+                used[p] = true;
+            CHECK(std::count(used.begin(), used.end(), true) > 64);
+        }
+    }
+    CHECK(frames == 1559 && video.frame_index() == 1558);
+    // 1559 frames of 57 ms.
+    CHECK(samples / 2 > 22050 * 88 && samples / 2 < 22050 * 90);
+}
+
+// The main menu's picture, palette and hover sprites, and the other screens'.
+void test_main_menu_art(const char *dir)
+{
+    auto pic = th::load_data_file(dir, "qdata/main01m.dat");
+    auto pal = th::load_data_file(dir, "qdata/main01m.pal");
+    CHECK(pic && pic->size() == 320 * 200 && pal && pal->size() == 768);
+    th::LanguageText text;
+    CHECK(th::load_language(dir, 0, text));
+    th::Startup startup;
+    std::string error;
+    CHECK(startup.load(dir, text, 0, &error));
+}
+
+// From the intro to level 1 on the default difficulty with clicks and keys
+// as a player gives them, skipping each movie.
+void test_startup_new_game(const char *dir)
+{
+    th::LanguageText text;
+    CHECK(th::load_language(dir, 0, text));
+    th::Startup s;
+    if (!s.load(dir, text, 0))
+        return;
+    th::StartupResult r;
+    auto run = [&](th::UiMouse m, std::vector<th::StartupKey> keys = {}, int frames = 1) {
+        for (int i = 0; i < frames && r.kind == th::StartupResult::Kind::Running; i++) {
+            r = s.frame(m, keys, 0.04);
+            keys.clear();
+            m.left_pressed = m.left_released = false;
+        }
+    };
+    auto click = [](int x, int y) {
+        th::UiMouse m;
+        m.x = x;
+        m.y = y;
+        m.left_pressed = m.left_released = true;
+        return m;
+    };
+    th::UiMouse still;
+    still.x = still.y = 0;
+    const th::StartupKey space{th::StartupKey::Space, 0};
+
+    run(still);
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieIntroSm4);
+    CHECK(s.surface().width() == 320 && s.surface().height() == 200);
+    CHECK(s.movie_audio_format().rate == 22050);
+    run(still, {space});
+    CHECK(s.screen() == th::StartupScreen::Title && s.surface().width() == 640);
+    run(click(5, 5));
+    run(still, {}, 60);
+    CHECK(s.screen() == th::StartupScreen::Name);
+    run(still, {{th::StartupKey::Letter, 'a'}, {th::StartupKey::Return, 0}}, 3);
+    CHECK(s.player_name() == "A");
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu1);
+    run(still, {space}, 2);
+    CHECK(s.screen() == th::StartupScreen::MainMenu && s.surface().width() == 320);
+
+    // New Game is the diamond's top quarter; Continue, refused without a
+    // save, its left one.
+    run(click(0x2e, 0x3a), {}, 2);
+    CHECK(s.screen() == th::StartupScreen::MainMenu);
+    run(click(0x55, 0x20), {}, 2);
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu2);
+    run(still, {space}, 80);
+    CHECK(s.screen() == th::StartupScreen::Preferences);
+    run(click(350, 390), {}, 2); // accept
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieArea);
+    run(still, {space}, 2);
+    CHECK(s.screen() == th::StartupScreen::Briefing);
+    run(click(320, 240));
+    CHECK(r.kind == th::StartupResult::Kind::StartLevel);
+    CHECK(r.level == 1 && r.balance_id == "FULL" && !r.tutorial);
+    auto sounds = s.take_sounds();
+    CHECK(std::count(sounds.begin(), sounds.end(), uint8_t(0x08)) == 1); // SFX_WRONG2 for Continue
+
+    auto page = th::level_briefing(text, 1);
+    CHECK(!page.empty());
+}
+
 int main()
 {
     test_blit_clips_and_skips();
@@ -1369,11 +2124,13 @@ int main()
     test_orthonav_whatnext();
     test_create_an_illness();
     test_set_complex();
+    test_sound_player();
 
     const char *dir = std::getenv("TH_TEST_DATA_DIR");
     bool have_data = dir && *dir && th::missing_data_files(dir).empty();
     if (have_data) {
         test_game_data(dir);
+        test_sound_bank(dir);
         test_shadow_sprites(dir);
         test_level_objects(dir);
         test_draw_world(dir);
@@ -1388,6 +2145,13 @@ int main()
         test_requester_art(dir);
         test_panel_buttons(dir);
         test_yes_no_requester(dir);
+        test_applicants_level1(dir);
+        test_hire_receptionist(dir);
+        test_hire_requester_image(dir);
+        test_furnish_corridor(dir);
+        test_smacker_intro(dir);
+        test_main_menu_art(dir);
+        test_startup_new_game(dir);
     }
 
     if (failures) {

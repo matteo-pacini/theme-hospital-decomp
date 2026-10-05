@@ -2,9 +2,11 @@
 // any window size, with the bottom panel centred at native size and ImGui
 // developer tools (F1).
 
+#include "app/audio/mixer.h"
 #include "app/datadir.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
+#include "core/audio/sounds.h"
 #include "core/data/gamedata.h"
 #include "core/render/blit.h"
 #include "core/render/iso.h"
@@ -12,6 +14,8 @@
 #include "core/render/shadows.h"
 #include "core/render/surface.h"
 #include "core/render/view.h"
+#include "core/ui/buy_objects.h"
+#include "core/ui/hire_staff.h"
 #include "core/ui/layer.h"
 #include "core/ui/menubar.h"
 #include "core/ui/windows.h"
@@ -75,6 +79,7 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
     if (!load_balance(data.dir(), number, kDefaultBalanceId, settings, error))
         return nullptr;
     auto view = std::make_unique<LevelView>();
+    view->game.staff_market.ref_counts = reference_counts(data.text());
     view->game.start(level, number, settings, data.anims(), data.person_complexes());
     // The shadowed blocks are made from the map as recreate_map leaves it,
     // before add_static_shadows.
@@ -84,7 +89,8 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
 }
 
 // Draws the hospital view into `surface`.
-void draw_view(Surface &surface, const GameData &data, LevelView *level, Point camera, bool shadows)
+void draw_view(Surface &surface, const GameData &data, LevelView *level, Point camera, bool shadows,
+               std::vector<FrameSound> *sounds = nullptr)
 {
     surface.fill(0);
     if (level) {
@@ -93,7 +99,7 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
             level->scratch.fill(kMaskColour);
         }
         draw_world(surface, {0, 0, surface.width(), surface.height()}, camera, level->game.world, data,
-                   shadows ? level->shadows.get() : nullptr, level->scratch);
+                   shadows ? level->shadows.get() : nullptr, level->scratch, sounds);
     }
 }
 
@@ -206,6 +212,19 @@ class App
     PanelState panel_state_;
     Interface interface_;
     RequesterArt requester_art_;
+    // Furnishing and hiring (milestone 4 steps 2 and 3).
+    // Sound effects: the bank, the game's rules for playing them and the
+    // device they are mixed to.
+    SoundBank bank_;
+    SoundPlayer sounds_;
+    Mixer mixer_;
+    std::vector<FrameSound> frame_sounds_;
+    ObjectUi object_ui_;
+    HireStaff hire_;
+    HireStaffArt hire_art_;
+    // The map cell under the pointer this frame (column + row * 128), -1
+    // when off the map.
+    int map_cell_ = -1;
     bool escape_ = false;      // Escape pressed this frame
     bool asking_quit_ = false; // the yes/no requester asks whether to quit
     SDL_Texture *pointer_ = nullptr;
@@ -260,7 +279,7 @@ bool App::init(int argc, char **argv)
             language_ = std::atoi(argv[++i]);
     }
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         std::fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
         return false;
     }
@@ -310,6 +329,14 @@ bool App::try_load_data(const std::filesystem::path &dir)
         std::fprintf(stderr, "%s\n", error.c_str());
     if (!requester_art_.load(dir, &error))
         std::fprintf(stderr, "%s\n", error.c_str());
+    if (!hire_art_.load(dir, &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
+    init_object_ui(object_ui_, data_->palette());
+    if (!bank_.load(dir, data_->language(), &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
+    sounds_.set_bank(&bank_);
+    if (!mixer_.is_open() && !mixer_.open(&error))
+        std::fprintf(stderr, "no sound: %s\n", error.c_str());
     make_ui_textures();
     data_error_.clear();
     load_level(level_);
@@ -331,6 +358,7 @@ void App::load_level(int number)
     }
     level_ = number;
     map_ = std::move(map);
+    sounds_.safeseed = kLevelStartSeed;
     // Centre the view on the player's starting cell, as load_level does.
     int start = level->camera_start[0];
     scroll_min_ = level->scroll_min;
@@ -356,16 +384,75 @@ void App::interface_step(int out_w, int out_h, int scale)
 {
     int ox = (out_w - kUiWidth * scale) / 2, oy = out_h - kUiHeight * scale;
     UiMouse mouse = ui_mouse(ox, oy, scale);
-    InterfaceEvents events = interface_.frame(mouse, escape_);
+    Game *game = map_ ? &map_->game : nullptr;
+
+    // Escape: with a modal requester up, the requester's; else it drops
+    // what is being hired, bought or placed (setup_abort_all_requesters).
+    bool escape = escape_;
     escape_ = false;
+    if (escape && game && !interface_.modal()) {
+        if (hire_.placing() || interface_.requester() == Requester::HireStaff) {
+            game->event = hire_staff_cancel(hire_);
+            escape = false;
+        } else if (object_escape(*game)) {
+            escape = false;
+        }
+    }
+    if (game)
+        sync_object_requesters(interface_, *game);
+    InterfaceEvents events = interface_.frame(mouse, escape);
+    if (game) {
+        const bool *keys = SDL_GetKeyboardState(nullptr);
+        bool shift = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+        bool ctrl = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
+        object_requesters_input(interface_, object_ui_, *game, events, mouse, shift, ctrl);
+        if (Event e = hire_staff_click(hire_, events, *game); e.type)
+            game->event = e;
+    }
+    if (events.yes_no != YesNoAnswer::None)
+        sounds_.play_sound(kSourceGeneral, events.yes_no == YesNoAnswer::Yes ? kSfxYesX : kSfxNo4);
     if (events.yes_no == YesNoAnswer::Yes && asking_quit_)
         running_ = false;
     if (events.yes_no != YesNoAnswer::None)
         asking_quit_ = false;
-    bool paused = map_ && map_->game.paused;
+    bool paused = game && game->paused;
     bool input = !events.mouse_on_window && !interface_.modal() && !menu_.active;
-    // The panel's buttons lead to requesters and screens not ported yet.
-    panel_frame(panel_state_, mouse, *data_, paused, input);
+    PanelAction action = panel_frame(panel_state_, mouse, *data_, paused, input);
+    if (game) {
+        bool placing = game->world.placing.placing || hire_.placing();
+        // The other panel buttons lead to requesters and screens not ported yet.
+        bool refused = action == PanelAction::Refused;
+        if (action == PanelAction::FurnishCorridor) {
+            refused = hire_.placing();
+            if (!refused)
+                furnish_corridor(*game);
+        } else if (action == PanelAction::HireStaff) {
+            refused = placing;
+            if (!refused)
+                game->event = {EV_OPEN_HIRE_STAFF};
+        }
+        if (action != PanelAction::None)
+            sounds_.play_sound(kSourceGeneral, refused ? kSfxWrong2 : kSfxSelectX);
+
+        // The map: what is being placed follows the pointer.
+        bool on_map = input && !paused && mouse.y < panel_top(*data_);
+        int cell = on_map ? map_cell_ : -1;
+        placement_mouse(object_ui_, *game, cell, mouse, on_map);
+        if (hire_.placing() && on_map && cell >= 0) {
+            update_staff_cursor(hire_, game->world, cell);
+            if (mouse.left_pressed) {
+                if (Event e = place_staff_click(hire_, game->world, cell); e.type)
+                    game->event = e;
+            } else if (mouse.right_pressed) {
+                game->event = hire_staff_cancel(hire_);
+            }
+        }
+
+        // The command, as process_turn: the interface's part, then the game's.
+        hire_staff_event(hire_, interface_, game->world, game->event);
+        game->process_turn();
+        hire_staff_after_turn(hire_, game->world);
+    }
 
     ui_.clear();
     PanelFigures figures;
@@ -375,6 +462,10 @@ void App::interface_step(int out_w, int out_h, int scale)
     }
     draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
     draw_interface(ui_, interface_, requester_art_);
+    if (game) {
+        draw_object_requesters(ui_, interface_, object_ui_, *game, requester_art_, *data_);
+        draw_hire_staff(ui_, hire_, interface_, requester_art_, hire_art_, game->world, data_->text());
+    }
     std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
     SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
     SDL_FRect dst = {float(ox), float(oy), float(kUiWidth * scale), float(kUiHeight * scale)};
@@ -446,13 +537,15 @@ void App::menu_step(int out_w, int scale)
     int ox = (out_w - width * scale) / 2;
     MenuContext context;
     context.shadows = shadows_;
+    context.sound = sounds_.sfx_on();
+    context.sound_volume = sounds_.volume_item();
     context.speed = speed_ == Speed::Slowest  ? 0
                     : speed_ == Speed::Slower ? 1
                     : speed_ == Speed::Normal ? 2
                     : speed_ == Speed::Max    ? 3
                                               : 4;
     context.paused = map_ && map_->game.paused;
-    context.disabled = interface_.modal();
+    context.disabled = interface_.modal() || (map_ && map_->game.world.placing.menu_disabled);
     perform(menu_frame(menu_, ui_mouse(ox, 0, scale), context));
 
     if (menu_layer_.width() != width)
@@ -479,6 +572,19 @@ void App::menu_step(int out_w, int scale)
 // ignored.
 void App::perform(const MenuEvent &event)
 {
+    switch (event.sound) {
+    case MenuSound::Highlight:
+        sounds_.play_sound(kSourceGeneral, kSfxHighlight5);
+        break;
+    case MenuSound::Select:
+        sounds_.play_sound(kSourceGeneral, kSfxSelectX);
+        break;
+    case MenuSound::Wrong:
+        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+        break;
+    case MenuSound::None:
+        break;
+    }
     switch (event.action) {
     case MenuAction::Speed:
         speed_ = event.value <= 10   ? Speed::Slowest
@@ -489,6 +595,12 @@ void App::perform(const MenuEvent &event)
         break;
     case MenuAction::ToggleShadows:
         shadows_ = !shadows_;
+        break;
+    case MenuAction::ToggleSound:
+        sounds_.toggle_sound();
+        break;
+    case MenuAction::SoundVolume:
+        sounds_.set_volume_item(event.value);
         break;
     case MenuAction::Quit:
         ask_quit();
@@ -563,6 +675,9 @@ void App::handle_event(const SDL_Event &e)
             buttons_.right = buttons_.right_pressed = true;
         // An open menu or a modal requester takes the clicks.
         if (menu_.active || interface_.modal())
+            break;
+        // While something is being placed, its clicks are the interface's.
+        if (map_ && (map_->game.world.placing.placing || hire_.placing()))
             break;
         if (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT)
             dragging_ = true;
@@ -686,7 +801,29 @@ void App::render()
             screen_h_ = vh;
         }
 
-        draw_view(surface_, *data_, map_.get(), camera_, shadows_);
+        frame_sounds_.clear();
+        draw_view(surface_, *data_, map_.get(), camera_, shadows_, &frame_sounds_);
+        if (map_) {
+            // The sounds of what was drawn, positioned on the view.
+            sounds_.frames_drawn(frame_sounds_, vw);
+            sounds_.manage_sound(map_->game.world, camera_, vw, vh);
+            sounds_.manage_background_sounds(map_->game.paused);
+        }
+        mixer_.update(sounds_);
+
+        // What is being placed, drawn over the view as the game does.
+        float cmx, cmy;
+        SDL_GetMouseState(&cmx, &cmy);
+        float cdensity = SDL_GetWindowPixelDensity(window_);
+        Point under = world_to_cell({camera_.x + int(cmx * cdensity) / z, camera_.y + int(cmy * cdensity) / z});
+        bool inside = under.x >= 0 && under.x < kMapSize && under.y >= 0 && under.y < kMapSize;
+        map_cell_ = inside ? under.x + under.y * kMapSize : -1;
+        if (map_) {
+            Rect view{0, 0, vw, vh};
+            draw_placement(surface_, view, camera_, map_->game.world.placing, object_ui_, *data_);
+            if (hire_.placing() && map_cell_ >= 0)
+                draw_held_staff(surface_, view, camera_, hire_, map_->game.world, map_cell_, *data_, map_->scratch);
+        }
 
         void *pixels;
         int pitch;
@@ -771,6 +908,7 @@ void App::run()
 
 void App::shutdown()
 {
+    mixer_.close();
     if (ui_tex_)
         SDL_DestroyTexture(ui_tex_);
     if (pointer_)
