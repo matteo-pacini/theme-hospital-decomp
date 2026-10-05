@@ -227,9 +227,61 @@ struct Thing {
     uint8_t prio_litter = 0;
     uint8_t prio_plants = 0;
     uint8_t prio_repair = 0;
+
+    // Staff at work (staff_complex.cpp)
+    // Staff: the patient they deal with, or their partner in an interaction
+    // (the game's slave), 0 for none.
+    uint16_t slave = 0;
+    // Staff: calls to their slave left before giving up (call_person_again).
+    int16_t call_retries = 0;
+    // People in an interaction (two_peeps_interact): the step reached in the
+    // interaction table, the times it plays again, and 1 while its animation
+    // plays, 2 once it has, 0 for none.
+    uint8_t seq_index = 0;
+    int8_t interact_repeat = 0;
+    uint8_t interact_anim = 0;
+    // Handymen: the nearest and second nearest litter cells spotted
+    // (handyman_check_for_litter), 0 for none.
+    uint16_t work_target = 0;
+    uint16_t work_target2 = 0;
+    // Handymen: litter swept, plants watered and machines repaired, which
+    // weigh their choice of job.
+    uint16_t litter_count = 0;
+    uint16_t plant_count = 0;
+    uint16_t repair_count = 0;
+};
+
+// Staff at work (staff_complex.cpp)
+// RoomInfo.type values (the game's ROOM_*).
+constexpr uint8_t kRoomFree = 0;
+constexpr uint8_t kRoomReception = 4;
+
+// Entries of the rooms table, including the unused entry 0 (the game's
+// room_info holds 100).
+constexpr int kRoomCount = 100;
+
+// One entry of the rooms table, with the fields of the game's RoomInfo
+// (include/hosp.h) used so far. Only receptions exist yet: one per group of
+// manned desks (allocate_reception_roominfo), a 1x1 room at cell 0x3fff.
+struct RoomInfo {
+    uint8_t type = kRoomFree;
+    int8_t width = 0;
+    int8_t height = 0;
+    // 0 or 1 in use; 3 blueprint, 4 being edited, 5 repair due, 6 closed.
+    int8_t state = 0;
+    // The cell (column + row * 128) of its top-left corner.
+    uint16_t pos = 0;
+    // Patients served by its receptionist.
+    uint16_t patients_seen = 0;
+    uint8_t owner = 0;
+    uint8_t queue_capacity = 0;
 };
 
 // The map and the things on it.
+// The route planner people use: A*, the default, or the game's wall
+// follower (wallhug_tricky), kept for comparing with the original.
+enum class PathFinder : uint8_t { AStar, Original };
+
 struct World {
     std::array<MapCell, kMapCells> map{};
     std::vector<Thing> things = std::vector<Thing>(kThingCount);
@@ -238,6 +290,8 @@ struct World {
     std::array<uint16_t, kObjectKinds> first_of_kind{};
     // The simulation's random generator state (the game's seed).
     uint32_t seed = kLevelStartSeed;
+    // How people's routes are planned (orthonav_init, core/world/nav.h).
+    PathFinder path_finder = PathFinder::AStar;
 
     // Action sequences (complex.cpp)
     // Per hospital, the cells of its four entrances, where patients arrive
@@ -248,6 +302,10 @@ struct World {
     // The player's objects bought and being placed, and the requesters for
     // them (core/world/objects.h).
     ObjectPlacing placing;
+
+    // Staff at work (staff_complex.cpp)
+    // The rooms (the game's room_info), indexed by Thing.room.
+    std::array<RoomInfo, kRoomCount> rooms{};
 };
 
 // Advances `seed` as the game's old_newrand (src/rand.cpp) and returns its

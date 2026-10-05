@@ -1,6 +1,7 @@
 // Engine tests. Those that need the game data read it from TH_TEST_DATA_DIR
 // and are skipped (exit code 77) when it is unset or missing.
 
+#include "core/audio/music.h"
 #include "core/audio/sounds.h"
 #include "core/data/balance.h"
 #include "core/data/blocks.h"
@@ -20,12 +21,15 @@
 #include "core/ui/menubar.h"
 #include "core/ui/startup.h"
 #include "core/ui/windows.h"
+#include "core/world/advisor.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
+#include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/nav.h"
 #include "core/world/objects.h"
 #include "core/world/staff.h"
+#include "core/world/staff_complex.h"
 #include "core/world/world.h"
 
 #include <algorithm>
@@ -604,7 +608,7 @@ void test_game_clock(const char *dir)
     if (!level)
         return;
     auto game = std::make_unique<th::Game>();
-    game->start(*level, 1, settings, gd.anims(), gd.person_complexes());
+    game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
     CHECK(game->balance == int(settings.towns[1].start_cash));
     CHECK(game->opening_countdown == settings.gbv.open_countdown && !game->open);
 
@@ -696,6 +700,8 @@ void test_wall_in_way()
 void test_wallhug()
 {
     auto w = std::make_unique<th::World>();
+    // These check the game's own planner, not the default A*.
+    w->path_finder = th::PathFinder::Original;
     th::WallhugPath path;
     path.start = {10, 10};
     path.end = {20, 15};
@@ -750,6 +756,13 @@ void test_wallhug()
     }
     CHECK(reachable(*comb, 50, 70, 80, 70));
     CHECK(th::wallhug_trivial(*comb, path) == th::kWallhugFailed);
+
+    // A*, the default planner, gets round the comb, ending at the goal.
+    CHECK(th::astar_route(*comb, path) != th::kWallhugFailed && route_walkable(*comb, path));
+    CHECK(path.count > 0 && path.route[path.count - 1].x == 80 && path.route[path.count - 1].y == 70);
+    // ... and fails only where nothing gets through: a goal walled in.
+    comb->map[size_t(80 + 70 * 128)].flags = 1; // an impassable footprint
+    CHECK(th::astar_route(*comb, path) == th::kWallhugFailed && path.count == 0);
 }
 
 // orthonav_whatnext steering a person round a wall one cell at a time, and
@@ -821,8 +834,12 @@ void test_walk_level1(const char *dir)
     if (!level)
         return;
     auto w = std::make_unique<th::World>();
-    for (int run = 0; run < 2; run++) {
+    // Twice with the game's planner (exact turns and draws), then with A*,
+    // whose walks must arrive and fail alike and take no longer.
+    for (int run = 0; run < 3; run++) {
+        bool astar = run == 2;
         th::start_level(*w, *level, gd.anims());
+        w->path_finder = astar ? th::PathFinder::AStar : th::PathFinder::Original;
         uint16_t id = 3; // after the two parts of the entrance door
         CHECK(w->things[id].type == th::kThingFree);
         th::Thing &p = w->things[id];
@@ -857,12 +874,13 @@ void test_walk_level1(const char *dir)
                 turns++;
             } while (r == th::WalkResult::Walking && turns < 5000);
             CHECK(consistent);
-            CHECK(r == leg.result && turns == leg.turns);
+            CHECK(r == leg.result && (astar ? turns <= leg.turns : turns == leg.turns));
             if (r == th::WalkResult::Arrived)
                 CHECK(p.x.tile == leg.x && p.y.tile == leg.y && p.x.frac == 0x80 && p.y.frac == 0x80);
-            std::printf("walk to %d,%d: result %d in %d turns\n", leg.x, leg.y, int(r), turns);
+            std::printf("walk to %d,%d%s: result %d in %d turns\n", leg.x, leg.y, astar ? " (A*)" : "", int(r), turns);
         }
-        CHECK(w->seed == 0x2b6c015b);
+        if (!astar)
+            CHECK(w->seed == 0x2b6c015b);
     }
 }
 
@@ -932,7 +950,7 @@ void test_arrivals_level1(const char *dir)
     const th::AnimData &anims = gd.anims();
     auto game = std::make_unique<th::Game>();
     for (int run = 0; run < 2; run++) {
-        game->start(*level, 1, settings, anims, gd.person_complexes());
+        game->start(*level, 1, settings, anims, gd.person_complexes(), gd.staff_complexes());
         const th::ArrivalState &state = game->arrivals;
         CHECK(state.visitors_per_month == 3 && state.peep_interval == 500); // popn[0]: month 0, change 3
         int ours = 0;
@@ -1386,7 +1404,7 @@ struct HireFixture {
             return false;
         // Game::start makes the first applicants, as the game does.
         game->staff_market.ref_counts = th::reference_counts(gd.text());
-        game->start(*level, 1, settings, gd.anims(), gd.person_complexes());
+        game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
         seed = game->world.seed;
         market = game->staff_market;
         return true;
@@ -1549,7 +1567,7 @@ void test_hire_receptionist(const char *dir)
     CHECK(listed && cell_lists_consistent(w));
     // With no reception desk, she goes to wander (and, not ported further,
     // stands).
-    th::staff_turn(w, f.gd.anims(), second, f.game->turn_count);
+    th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), f.gd.staff_complexes(), second, f.game->turn_count);
     CHECK(s.state == th::kStaffWanders && s.substate == 6);
     CHECK(s.sprite == f.gd.anims().starts[th::kStaffAnims[th::kStaffReceptionist].stand + s.facing].frame);
 
@@ -1564,9 +1582,9 @@ void test_hire_receptionist(const char *dir)
 
     // An applicant withdraws once past their expiry.
     uint32_t expiry = w.things[nurse].hire_expiry;
-    th::staff_turn(w, f.gd.anims(), nurse, expiry);
+    th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), f.gd.staff_complexes(), nurse, expiry);
     CHECK(w.things[nurse].type == th::kThingStaff);
-    th::staff_turn(w, f.gd.anims(), nurse, expiry + 1);
+    th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), f.gd.staff_complexes(), nurse, expiry + 1);
     CHECK(w.things[nurse].type == th::kThingFree && th::count_applicants(w, th::kStaffNurse) == 7);
 }
 
@@ -1683,7 +1701,7 @@ void test_furnish_corridor(const char *dir)
     if (!level)
         return;
     auto game = std::make_unique<th::Game>();
-    game->start(*level, 1, settings, gd.anims(), gd.person_complexes());
+    game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
     th::World &world = game->world;
     th::ObjectPlacing &p = world.placing;
     th::Interface ui;
@@ -2110,6 +2128,589 @@ void test_startup_new_game(const char *dir)
     CHECK(!page.empty());
 }
 
+// Staff at work on level 1 from its start: the first applicant of `kind`
+// hired and put down on the free cell of the player's land nearest the
+// level's view start, or 0 if none could be.
+uint16_t hire_and_place(HireFixture &f, uint8_t kind)
+{
+    th::World &w = f.game->world;
+    uint16_t id = 0;
+    for (uint16_t i = 1; i < w.things.size() && !id; i++)
+        if (w.things[i].type == th::kThingStaff && w.things[i].subtype == kind &&
+            w.things[i].state == th::kStaffApplicant)
+            id = i;
+    int start = f.level->camera_start[0];
+    for (int r = 0; r < 20 && id; r++)
+        for (int dy = -r; dy <= r; dy++)
+            for (int dx = -r; dx <= r; dx++) {
+                int c = start + dx + dy * th::kMapSize;
+                if (c < 0 || c >= th::kMapCells || w.map[size_t(c)].first != 0 || !th::staff_place_ok(w, c))
+                    continue;
+                bool placed = th::place_staff_on_map(w, f.gd.anims(), f.settings, c, id, false, f.game->turn_count);
+                return placed ? id : 0;
+            }
+    return 0;
+}
+
+// Runs the staff for a turn, in thing order, as process_things does.
+void staff_work_turn(HireFixture &f, const th::StaffComplexes &sc)
+{
+    th::World &w = f.game->world;
+    f.game->turn_count++;
+    for (uint16_t i = 1; i < w.things.size(); i++)
+        if (w.things[i].type == th::kThingStaff)
+            th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), sc, i, f.game->turn_count);
+}
+
+// With the game data: S_COMP.LEX's complex 80 (walk to the desk, take it);
+// on level 1, a receptionist put down near a reception desk walks to it,
+// mans it (the desk in use, hers, she at its use position) and works there
+// in a reception of her own, idling at the desk with no queue; a doctor
+// wanders the corridor. Fixed turn counts and generator from the level's
+// start, and the cell lists consistent every turn. A handyman strolls.
+void test_staff_at_work_level1(const char *dir)
+{
+    th::StaffComplexes sc;
+    std::string error;
+    CHECK(th::load_staff_complexes(dir, sc, &error));
+    CHECK(sc.group.size() == 2000 && sc.at(80) == 14 && sc.at(81) == 6 && sc.at(82) == 126 && sc.at(83) == 0);
+    for (int run = 0; run < 2; run++) {
+        HireFixture f;
+        CHECK(f.start(dir));
+        if (!f.level)
+            return;
+        th::World &w = f.game->world;
+        const th::AnimData &anims = f.gd.anims();
+
+        // A receptionist with no desk wanders off.
+        uint16_t recep = hire_and_place(f, th::kStaffReceptionist);
+        CHECK(recep != 0);
+        if (!recep)
+            return;
+        const th::Thing &r = w.things[recep];
+        CHECK(r.state == th::kStaffReceptionistFindsReception);
+        staff_work_turn(f, sc);
+        CHECK(r.state == th::kStaffWanders && r.substate == 6);
+
+        // A desk facing 0 a few cells off: she finds it and walks to it.
+        uint16_t desk = 0;
+        int start = r.x.tile + r.y.tile * th::kMapSize;
+        for (int d = 3; d < 10 && !desk; d++)
+            desk = th::place_object(w, anims, start + d, 11, 0, 0, false);
+        CHECK(desk != 0);
+        if (!desk)
+            return;
+        const th::Thing &dk = w.things[desk];
+        int turns = 0;
+        bool consistent = true;
+        bool walked = false;
+        while (turns < 2000 && !(dk.user == recep && r.state == th::kStaffReceptionistWorks)) {
+            staff_work_turn(f, sc);
+            turns++;
+            walked |= r.state == th::kStaffGotoObject;
+            consistent &= cell_lists_consistent(w);
+        }
+        CHECK(walked && consistent);
+        CHECK(dk.in_use == 1 && dk.user == recep && dk.state == 4 && r.object == desk);
+        CHECK(r.x.tile == dk.use_x.tile && r.y.tile == dk.use_y.tile && r.facing == dk.facing);
+        CHECK(r.room != 0 && w.rooms[r.room].type == th::kRoomReception && w.rooms[r.room].owner == 0);
+        std::printf("receptionist manned the desk in %d turns, seed %#x\n", turns, unsigned(w.seed));
+        // Regression values, not checked against the game.
+        CHECK(turns == 45 && w.seed == 0x7616f6f8);
+
+        // At the desk with no one queueing she keeps it, drawing for her
+        // idle tasks.
+        uint32_t seed = w.seed;
+        for (int i = 0; i < 500; i++) {
+            staff_work_turn(f, sc);
+            consistent &= cell_lists_consistent(w);
+        }
+        CHECK(consistent && w.seed != seed);
+        CHECK(dk.user == recep && r.state == th::kStaffReceptionistWorks);
+
+        // A doctor wanders, drawing from the generator every turn.
+        uint16_t doctor = hire_and_place(f, th::kStaffDoctor);
+        CHECK(doctor != 0);
+        if (!doctor)
+            return;
+        const th::Thing &d = w.things[doctor];
+        int from = d.x.tile + d.y.tile * th::kMapSize;
+        int moved = 0;
+        for (int i = 0; i < 1000; i++) {
+            staff_work_turn(f, sc);
+            moved += d.x.tile + d.y.tile * th::kMapSize != from;
+            consistent &= cell_lists_consistent(w);
+        }
+        CHECK(consistent && moved > 0 && d.state == th::kStaffWanders);
+        std::printf("doctor at %d,%d after 1000 turns, away %d turns, seed %#x\n", d.x.tile, d.y.tile, moved,
+                    unsigned(w.seed));
+        CHECK(d.x.tile == 59 && d.y.tile == 76 && moved == 994 && w.seed == 0xa5fc3943);
+
+        // A handyman, with nothing to sweep, water or repair, strolls.
+        uint16_t handyman = hire_and_place(f, th::kStaffHandyman);
+        CHECK(handyman != 0);
+        if (!handyman)
+            return;
+        const th::Thing &h = w.things[handyman];
+        from = h.x.tile + h.y.tile * th::kMapSize;
+        moved = 0;
+        for (int i = 0; i < 1000; i++) {
+            staff_work_turn(f, sc);
+            moved += h.x.tile + h.y.tile * th::kMapSize != from;
+            consistent &= cell_lists_consistent(w);
+        }
+        CHECK(consistent && moved > 0);
+        std::printf("handyman at %d,%d after 1000 turns, away %d turns, seed %#x\n", h.x.tile, h.y.tile, moved,
+                    unsigned(w.seed));
+        CHECK(h.x.tile == 65 && h.y.tile == 62 && moved == 987 && w.seed == 0xefe8e4f0);
+    }
+}
+
+// A cell near the level's camera start where staff may be put down.
+int free_staff_cell(const th::World &w, const th::Level &level)
+{
+    int start = level.camera_start[0];
+    for (int r = 0; r < 20; r++)
+        for (int dy = -r; dy <= r; dy++)
+            for (int dx = -r; dx <= r; dx++) {
+                int c = start + dx + dy * th::kMapSize;
+                if (c >= 0 && c < th::kMapCells && w.map[size_t(c)].first == 0 && th::staff_place_ok(w, c))
+                    return c;
+            }
+    return -1;
+}
+
+void test_finance_level1(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::World &w = f.game->world;
+    const th::Balance &settings = f.settings;
+    int32_t balance = f.game->balance;
+    th::Finance fin;
+    th::start_finance(fin, balance, settings, 1);
+    CHECK(fin.start_cash == settings.towns[1].start_cash && uint32_t(balance) == fin.start_cash);
+    CHECK(fin.heating_level == 5 && fin.heating_price == 750 && fin.statement_balance == balance);
+
+    // A receptionist hired: her wage is paid at month end, as one line.
+    uint16_t id = th::alter_applicant(w, true, 0, th::kStaffReceptionist);
+    int cell = free_staff_cell(w, *f.level);
+    CHECK(id != 0 && cell >= 0);
+    if (!id || cell < 0)
+        return;
+    CHECK(th::place_staff_on_map(w, f.gd.anims(), settings, cell, id, false, f.game->turn_count));
+    int32_t salary = w.things[id].salary;
+    CHECK(salary > 0);
+    th::month_end(fin, balance, w, settings, 1, 31, 0, 0, 500);
+    CHECK(balance == f.game->balance - salary);
+    CHECK(fin.entry_count == 1 && fin.entries[0].type == th::kTxWages && fin.entries[0].amount == -salary);
+    CHECK(fin.entries[0].day == 31 && fin.entries[0].month == 0);
+    CHECK(fin.history[th::kHistoryWages][11] == salary && fin.history[th::kHistoryExpenditure][11] == salary);
+    CHECK(fin.history[th::kHistoryBalance][11] == balance && fin.history[th::kHistoryReputation][11] == 500);
+    CHECK(fin.wages_this_month == 0 && fin.expenditure_this_month == 0 && fin.income_this_month == 0);
+
+    // Heating, loan interest and overdraft interest by the game's formulas.
+    int rate = settings.towns[1].interest_rate;
+    CHECK(rate > 0);
+    fin.loan = 20000;
+    balance = -3000 + salary; // overdrawn by 3000 once she is paid
+    th::month_end(fin, balance, w, settings, 1, 28, 1, 4, 500);
+    int32_t heating = 4 * 5 * 750 / 100;
+    int32_t interest = rate * 20000 / 10000 / 12;
+    int32_t after = -3000 - heating - interest;
+    int32_t overdraft = rate * after * 2 / 10000 / 12;
+    CHECK(fin.entry_count == 5);
+    CHECK(fin.entries[2].type == th::kTxHeating && fin.entries[2].amount == -heating);
+    CHECK(fin.entries[3].type == th::kTxLoanInterest && fin.entries[3].amount == -interest);
+    CHECK(fin.entries[4].type == th::kTxOverdraftInterest && fin.entries[4].amount == overdraft && overdraft < 0);
+    CHECK(balance == after + overdraft);
+
+    // Lines of the same type and day merge; a full statement drops its
+    // oldest ten into the opening balance.
+    th::Finance s;
+    int32_t b = 1000;
+    th::start_finance(s, b, settings, 1);
+    th::change_balance(s, b, 3, 2, th::kTxBuyObject, -10);
+    th::change_balance(s, b, 3, 2, th::kTxBuyObject, -15);
+    CHECK(s.entry_count == 1 && s.entries[0].amount == -25 && b == 975 && s.expenditure_this_month == 25);
+    for (int i = 0; i < 49; i++)
+        th::change_balance(s, b, 4 + i % 2, 2, th::kTxCheatMoney, 1);
+    CHECK(s.entry_count == 40 && s.statement_balance == 1000 - 25 + 9);
+    CHECK(s.income_this_month == 0 && b == 975 + 49);
+    th::change_balance(s, b, 9, 2, th::kTxCheatMoney, 99999999);
+    CHECK(b == 9999999);
+
+    // The year's end values the hospital and opens a new statement.
+    th::year_end(fin, balance, w, settings, 500);
+    int area = 0;
+    for (const th::MapCell &c : w.map)
+        area += c.owner_flags & 1;
+    CHECK(area > 0 && fin.area == area);
+    CHECK(fin.hospital_value == area * settings.gbv.land_cost_per_tile + 10000 + 10000);
+    CHECK(fin.max_loan == std::min(fin.hospital_value / 3 + 10000, 100000));
+    CHECK(fin.entry_count == 0 && fin.statement_balance == balance && fin.year_start_balance == balance);
+}
+
+void test_balance_roll(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto draw = [&](const th::PanelState &state, int balance) {
+        th::PanelFigures figures;
+        figures.balance = balance;
+        th::UiLayer layer;
+        layer.resize(th::kUiWidth, th::kUiHeight);
+        layer.clear();
+        th::draw_panel_ui(layer, state, &figures, gd);
+        return layer.to_argb(gd.palette());
+    };
+    // The digits' box, and its first column, which shows the new figure.
+    auto region = [](const std::vector<uint32_t> &argb, int x0, int x1) {
+        std::vector<uint32_t> out;
+        for (int y = 442; y < 460; y++)
+            for (int x = x0; x < x1; x++)
+                out.push_back(argb[size_t(y * th::kUiWidth + x)]);
+        return out;
+    };
+    th::PanelState still;
+    still.shown_balance = 1234;
+    std::vector<uint32_t> old_image = draw(still, 1234);
+    still.shown_balance = 1999;
+    std::vector<uint32_t> new_image = draw(still, 1999);
+    CHECK(region(old_image, 59, 135) != region(new_image, 59, 135));
+
+    th::PanelState state;
+    state.shown_balance = 1234;
+    std::vector<std::vector<uint32_t>> frames;
+    for (int frame = 0; frame < 4; frame++) {
+        CHECK(state.balance_roll_step == frame && state.shown_balance == 1234);
+        frames.push_back(draw(state, 1999));
+        th::advance_balance_roll(state, 1999);
+    }
+    CHECK(state.balance_roll_step == 0 && state.shown_balance == 1999);
+    th::advance_balance_roll(state, 1999);
+    CHECK(state.balance_roll_step == 0);
+    // Step 0 shows the old figures where they roll; then they move.
+    CHECK(region(frames[0], 59, 135) == region(old_image, 59, 135));
+    for (int i = 1; i < 4; i++) {
+        CHECK(region(frames[size_t(i)], 59, 135) != region(frames[size_t(i - 1)], 59, 135));
+        CHECK(region(frames[size_t(i)], 59, 135) != region(new_image, 59, 135));
+    }
+    CHECK(draw(state, 1999) == new_image);
+}
+
+struct AdvisorFixture {
+    HireFixture f;
+    th::Finance finance;
+    th::Advisor advisor;
+    th::Font font;
+    uint32_t safeseed = 0x546b2;
+    th::AdvisorInputs in;
+
+    bool start(const char *dir, bool tutorial)
+    {
+        std::string error;
+        if (!f.start(dir) || !th::load_font(dir, 0x1d, font, &error))
+            return false;
+        th::start_finance(finance, f.game->balance, f.settings, 1);
+        th::start_advisor(advisor, tutorial);
+        in.level = 1;
+        in.balance = f.game->balance;
+        in.finance = &finance;
+        in.settings = &f.settings;
+        in.world = &f.game->world;
+        in.text = &f.gd.text();
+        in.game_turn = f.game->turn_count;
+        return true;
+    }
+    // A frame: the advisor, then one game turn.
+    void frame()
+    {
+        th::advisor_frame(advisor, in, f.gd.anims(), safeseed);
+        in.game_turn++;
+        in.last = in.pending;
+        in.pending = {};
+    }
+    // Frames until he is up, at most `limit`.
+    bool until_up(int limit = 400)
+    {
+        for (int i = 0; i < limit; i++) {
+            frame();
+            if (th::kAdvisorUpStates[advisor.anim_state])
+                return true;
+        }
+        return false;
+    }
+};
+
+void test_advisor_tutorial(const char *dir)
+{
+    AdvisorFixture a;
+    CHECK(a.start(dir, true));
+    if (!a.f.level)
+        return;
+    CHECK(a.f.gd.anims().starts.size() > 2374);
+    const th::LanguageText &text = a.f.gd.text();
+    // The level starts with the tutorial's first message.
+    a.frame();
+    CHECK(a.advisor.text == text.advisor(29) && a.advisor.rewrap && a.advisor.tutorial_highlight == 0x13);
+    CHECK(a.advisor.advice_id == 1 && a.advisor.anim_state == 1 && a.advisor.drawn && !a.advisor.bubble);
+    CHECK(a.until_up());
+    a.frame();
+    CHECK(a.advisor.bubble && a.advisor.drawn);
+
+    // Drawn: the message wrapped into the narrowest bubble that holds it.
+    th::UiLayer layer;
+    layer.resize(th::kUiWidth, th::kUiHeight);
+    layer.clear();
+    a.advisor.drawn = false;
+    th::draw_advisor(layer, a.advisor, a.f.gd, a.font);
+    CHECK(!a.advisor.rewrap && a.advisor.line_count >= 1 && a.advisor.line_count <= 3);
+    int pieces = th::kAdvisorMinSegments + a.advisor.extra_segments;
+    CHECK(a.advisor.no_pieces == pieces + 1);
+    std::string wrapped = a.advisor.text;
+    int widest = 0;
+    int lines = 0;
+    for (size_t start = 0, end; (end = wrapped.find('\n', start)) != std::string::npos; start = end + 1) {
+        lines++;
+        widest = std::max(widest, th::text_width(a.font, std::string_view(wrapped).substr(start, end - start)));
+    }
+    CHECK(lines == a.advisor.line_count);
+    // Every pixel drawn is the bubble's or the text's, within the bubble.
+    const th::SpriteSheet &panel = a.f.gd.panel();
+    int left = 515 - panel.at(37).width - pieces * panel.at(38).width;
+    int right = 515 + panel.at(39).width;
+    CHECK(a.advisor.box_left == 515 - panel.at(38).width * (pieces + 1) - panel.at(39).width);
+    std::vector<uint32_t> argb = layer.to_argb(a.f.gd.palette());
+    int x0 = th::kUiWidth, x1 = 0, y0 = th::kUiHeight, y1 = 0;
+    for (int y = 0; y < th::kUiHeight; y++)
+        for (int x = 0; x < th::kUiWidth; x++)
+            if (argb[size_t(y * th::kUiWidth + x)]) {
+                x0 = std::min(x0, x);
+                x1 = std::max(x1, x);
+                y0 = std::min(y0, y);
+                y1 = std::max(y1, y);
+            }
+    CHECK(x0 == left && x1 < right && y0 >= 375 && y1 < th::kUiHeight);
+    // The text starts inside the left end and its widest line ends inside
+    // the right end.
+    int text_x = 515 - pieces * panel.at(38).width + 8 - panel.at(37).width;
+    CHECK(text_x > left && text_x + widest < right);
+
+    // Opening the furnish corridor requester moves on: its hints are help
+    // text in high resolution, and he is hidden.
+    a.in.pending = {th::EV_OPEN_FURNISH_CORRIDOR};
+    a.frame();
+    a.frame();
+    a.frame();
+    CHECK(a.advisor.tutorial_step == 0x28 && a.advisor.text.empty() && !a.advisor.drawn);
+    CHECK(a.advisor.tutorial_highlight == 0xa);
+}
+
+void test_advisor_advice(const char *dir)
+{
+    AdvisorFixture a;
+    CHECK(a.start(dir, false));
+    if (!a.f.level)
+        return;
+    const th::LanguageText &text = a.f.gd.text();
+    // Without the tutorial nothing is said at the start.
+    for (int i = 0; i < 50; i++)
+        a.frame();
+    CHECK(a.advisor.anim_state == 0 && !a.advisor.drawn && a.advisor.advice_id == 0);
+
+    // A reception desk with no receptionist on level 1, and an event's
+    // message: the event's comes first, being earlier in the table.
+    th::World &w = a.f.game->world;
+    int cell = free_staff_cell(w, *a.f.level);
+    CHECK(cell >= 0 && th::place_object(w, a.f.gd.anims(), cell, 11, 0, 0, true) != 0);
+    a.advisor.forced_advice_id = 7;
+    a.frame();
+    CHECK(a.advisor.text == text.at(th::TextSection::ForcedAdvice, 7) && a.advisor.forced_advice_id == 0);
+    CHECK(a.advisor.advice_id == 17 && a.advisor.time_left == 0x82 / 2);
+    CHECK(a.until_up());
+    for (int i = 0; i < 0x82 && a.advisor.advice_id == 17; i++)
+        a.frame();
+    CHECK(a.advisor.advice_id == 80 && a.advisor.text == text.advisor(0x69) && a.advisor.rewrap);
+    a.frame();
+    CHECK(a.advisor.bubble);
+
+    // A right click on the bubble sends him away; the advice is not given
+    // again soon.
+    th::UiLayer layer;
+    layer.resize(th::kUiWidth, th::kUiHeight);
+    th::draw_advisor(layer, a.advisor, a.f.gd, a.font);
+    CHECK(th::advisor_hit(a.advisor, a.advisor.box_left + 4, 400));
+    CHECK(th::advisor_hit(a.advisor, 560, 400) && !th::advisor_hit(a.advisor, a.advisor.box_left - 1, 400));
+    CHECK(!th::advisor_hit(a.advisor, 300, 200));
+    a.advisor.dismiss = true;
+    a.frame();
+    CHECK(a.advisor.advice_id == 0 && !a.advisor.bubble && !a.advisor.dismiss);
+    // Through the up states left (a special leads to 2, 2 to 3) to leaving.
+    for (int i = 0; i < 100 && a.advisor.anim_state != 4; i++) {
+        CHECK(!a.advisor.bubble);
+        a.frame();
+    }
+    CHECK(a.advisor.anim_state == 4);
+    for (int i = 0; i < 200 && a.advisor.anim_state; i++)
+        a.frame();
+    CHECK(a.advisor.anim_state == 0 && !th::advisor_hit(a.advisor, 560, 400));
+    CHECK(a.advisor.advice[80].times_given == 1);
+}
+
+// A minimal XMIDI file: FORM XDIR, then CAT XMID holding one FORM XMID with
+// TIMB and EVNT chunks; cut short, it no longer parses.
+void test_xmi_parse()
+{
+    auto be = [](std::vector<uint8_t> &v, uint32_t n) {
+        for (int s = 24; s >= 0; s -= 8)
+            v.push_back(uint8_t(n >> s));
+    };
+    std::vector<uint8_t> events = {0x90, 60, 100, 0x10, 0x20, 0xc0, 5, 0x7f, 0x01, 0xff, 0x2f, 0x00};
+    std::vector<uint8_t> f;
+    auto tag = [&](const char *t) { f.insert(f.end(), t, t + 4); };
+    tag("FORM"), be(f, 14), tag("XDIR"), tag("INFO"), be(f, 2), f.push_back(1), f.push_back(0);
+    uint32_t form = 4 + 8 + 4 + 8 + uint32_t(events.size());
+    tag("CAT "), be(f, 4 + 8 + form), tag("XMID");
+    tag("FORM"), be(f, form), tag("XMID");
+    tag("TIMB"), be(f, 4), f.insert(f.end(), {1, 0, 36, 127});
+    tag("EVNT"), be(f, uint32_t(events.size())), f.insert(f.end(), events.begin(), events.end());
+    th::XmiSong song;
+    std::string error;
+    CHECK(th::parse_xmi(f, song, &error));
+    CHECK(song.timbres.size() == 1 && song.timbres[0][0] == 127 && song.timbres[0][1] == 36);
+    CHECK(song.events_size == events.size() && song.ticks == 0x20 + 0x7f + 0x01);
+    f.resize(f.size() - 3);
+    CHECK(!th::parse_xmi(f, song, &error));
+}
+
+// FNV-1a of 16-bit samples.
+uint64_t hash_pcm(const std::vector<int16_t> &pcm)
+{
+    uint64_t h = 1469598103934665603ull;
+    for (int16_t v : pcm) {
+        h = (h ^ uint8_t(v)) * 1099511628211ull;
+        h = (h ^ uint8_t(uint16_t(v) >> 8)) * 1099511628211ull;
+    }
+    return h;
+}
+
+void test_music(const char *dir)
+{
+    th::TimbreBank gtl;
+    std::string error;
+    auto opl = th::resolve_ci(dir, "sound/sample.opl");
+    CHECK(opl && gtl.load(*opl, &error));
+    CHECK(gtl.count() == 190);
+    CHECK(gtl.find(0, 0).size() == 14 && gtl.find(127, 36).size() == 14 && gtl.find(1, 0).empty());
+
+    th::MusicPlayer music;
+    CHECK(music.load(dir, &error));
+    if (!error.empty())
+        std::fprintf(stderr, "%s\n", error.c_str());
+    CHECK(music.music_ok() && music.music_on() && music.count() == 8);
+    CHECK(music.title(0) == "Atlantis" && music.title(7) == "Steady Pulse");
+    // Every song parses and every timbre it lists is in the library.
+    const char *files[] = {"atlantis", "sixseven", "fortune", "candy", "mend", "doctor", "nightsh", "steady"};
+    for (const char *name : files) {
+        auto path = th::resolve_ci(dir, std::string("sound/midi/") + name + ".xmi");
+        auto bytes = path ? th::read_file(*path) : std::nullopt;
+        th::XmiSong song;
+        CHECK(bytes && th::parse_xmi(*bytes, song, &error));
+        CHECK(song.ticks > 60 * 120 && !song.timbres.empty());
+        for (const auto &t : song.timbres)
+            CHECK(!gtl.find(t[0], t[1]).empty());
+    }
+
+    // Nothing plays before a level starts; then the clock's track does.
+    std::vector<int16_t> pcm(2 * 44100);
+    music.render(pcm.data(), 4410, 44100);
+    CHECK(std::all_of(pcm.begin(), pcm.begin() + 2 * 4410, [](int16_t v) { return v == 0; }));
+    music.start_level(13);
+    CHECK(music.playing() && music.track() == 13 % 8);
+    // Three seconds of "Doctor Frog", in one-second blocks: sound, and the
+    // same sound every run.
+    pcm.assign(3 * 2 * 44100, 0);
+    for (int i = 0; i < 3; i++)
+        music.render(pcm.data() + i * 2 * 44100, 44100, 44100);
+    int peak = 0;
+    for (int16_t v : pcm)
+        peak = std::max(peak, std::abs(int(v)));
+    CHECK(peak > 2000);
+    // Regression: the hash of these three seconds as first rendered.
+    CHECK(hash_pcm(pcm) == 0xc1d258b809b14347ull);
+    th::MusicPlayer again;
+    CHECK(again.load(dir));
+    std::vector<int16_t> pcm2(pcm.size());
+    again.render(pcm2.data(), 4410, 44100);
+    again.start_level(5);
+    for (int i = 0; i < 3; i++)
+        again.render(pcm2.data() + i * 2 * 44100, 44100, 44100);
+    CHECK(pcm2 == pcm);
+
+    // The menu: off stops the song, on starts the track again; the volume
+    // items as the sound effects'.
+    music.toggle_music();
+    CHECK(!music.music_on() && !music.playing());
+    music.play_next(false);
+    CHECK(!music.playing());
+    music.toggle_music();
+    CHECK(music.music_on() && music.playing() && music.track() == 5);
+    music.set_volume_item(9);
+    CHECK(music.volume() == 12 && music.volume_item() == 9);
+    music.stop();
+    CHECK(!music.playing());
+}
+
+void test_announcer(const char *dir)
+{
+    // The announcer's samples are all in every language's bank.
+    th::SoundBank bank;
+    CHECK(bank.load(dir, 0));
+    int announcements = 0;
+    for (int i = 0; i < th::kAnnouncementCount; i++) {
+        int number = th::announcement_sample(i);
+        if (!number)
+            continue;
+        announcements++;
+        CHECK(number > 500 && bank.sample(number) != nullptr);
+    }
+    CHECK(announcements == 147);
+    CHECK(th::announcement_sample(0) == 0 && th::announcement_sample(7) == 548);
+    CHECK(th::announcement_sample(th::kAnnounceTooHot) == 682);
+    CHECK(th::announcement_sample(th::kAnnouncementCount) == 0);
+
+    th::SoundPlayer player;
+    player.set_bank(&bank);
+    CHECK(player.ambients_on() && player.ambient_volume() == 127);
+    // Without a receptionist, or paused, nothing is queued.
+    player.play_ambient(th::kAnnounceTooHot, false, false);
+    player.play_ambient(th::kAnnounceTooHot, true, true);
+    player.do_ambients(false, false, true);
+    CHECK(!player.playing(th::kSourceAmbient, 0));
+    player.play_ambient(th::kAnnounceTooHot, true, false);
+    player.play_ambient(th::kAnnounceTooCold, true, false);
+    player.do_ambients(true, false, true); // paused: waits
+    CHECK(!player.playing(th::kSourceAmbient, 0));
+    player.do_ambients(false, false, true);
+    CHECK(player.playing(th::kSourceAmbient, 682));
+    player.do_ambients(false, false, true); // the next waits for this one
+    CHECK(!player.playing(th::kSourceAmbient, 681));
+    player.stop_all();
+    player.do_ambients(false, false, true);
+    player.do_ambients(false, false, true);
+    CHECK(player.playing(th::kSourceAmbient, 681));
+    player.init_ambients();
+    // Off: nothing more; the volume items as the sound effects'.
+    player.toggle_ambient();
+    CHECK(!player.ambients_on());
+    player.set_ambient_volume_item(5);
+    CHECK(player.ambient_volume() == 63 && player.ambient_volume_item() == 5);
+}
+
 int main()
 {
     test_blit_clips_and_skips();
@@ -2125,6 +2726,7 @@ int main()
     test_create_an_illness();
     test_set_complex();
     test_sound_player();
+    test_xmi_parse();
 
     const char *dir = std::getenv("TH_TEST_DATA_DIR");
     bool have_data = dir && *dir && th::missing_data_files(dir).empty();
@@ -2152,6 +2754,13 @@ int main()
         test_smacker_intro(dir);
         test_main_menu_art(dir);
         test_startup_new_game(dir);
+        test_music(dir);
+        test_announcer(dir);
+        test_finance_level1(dir);
+        test_balance_roll(dir);
+        test_advisor_tutorial(dir);
+        test_advisor_advice(dir);
+        test_staff_at_work_level1(dir);
     }
 
     if (failures) {

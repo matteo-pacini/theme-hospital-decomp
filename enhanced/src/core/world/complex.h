@@ -72,6 +72,18 @@ bool set_complex(World &world, uint16_t id, uint16_t action, uint16_t arg);
 uint8_t process_person_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                                uint32_t game_turn);
 
+// find_nearest_free_object (0x37d28), outside rooms (there are none yet):
+// the nearest free object of `kind` of the seeker's hospital within 7 cells
+// on each axis whose use cell a path reaches, as can_i_get_to with the
+// object as the mover (a path from its own use cell 1). The use cell is the
+// seeker's: 1 for patients, 0 for staff, 2 for handymen. 0 if none.
+uint16_t find_nearest_free_object(const World &world, uint16_t id, uint8_t kind);
+
+// adjust_big_cell_flag (0xa8f78): sets MapCell.flags 0x20 on `cell` if a
+// person on it uses its object or an object on it covers more than one
+// cell, else clears it.
+void adjust_big_cell_flag(World &world, uint16_t cell);
+
 // fail_person_complex (0x41d54): ends patient `id`'s failed complex: back
 // to resume_state standing, the complex and its queue cleared; with no
 // resume_state, PS_COMPLEX_RETRY to retry the step.

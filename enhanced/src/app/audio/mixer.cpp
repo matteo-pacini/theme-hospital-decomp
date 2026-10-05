@@ -1,6 +1,9 @@
 #include "app/audio/mixer.h"
 
+#include "core/audio/music.h"
 #include "core/audio/sounds.h"
+
+#include <algorithm>
 
 #include <SDL3/SDL.h>
 
@@ -41,7 +44,7 @@ void Mixer::close()
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
-void Mixer::update(SoundPlayer &player)
+void Mixer::update(SoundPlayer &player, MusicPlayer *music)
 {
     if (!stream_)
         return;
@@ -54,6 +57,11 @@ void Mixer::update(SoundPlayer &player)
         return;
     buffer_.resize(size_t(frames) * 2);
     player.mix(buffer_.data(), frames, kRate);
+    if (music) {
+        music->render(buffer_.data(), frames, kRate);
+        for (float &v : buffer_)
+            v = std::clamp(v, -1.0f, 1.0f);
+    }
     SDL_PutAudioStreamData(stream_, buffer_.data(), frames * frame_bytes);
 }
 

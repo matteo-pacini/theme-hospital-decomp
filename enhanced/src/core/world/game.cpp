@@ -25,9 +25,10 @@ int days_in_month(int month)
 }
 
 void Game::start(const Level &level, int number, const Balance &settings, const AnimData &anims,
-                 const PersonComplexes &complexes)
+                 const PersonComplexes &complexes, const StaffComplexes &staff_complexes)
 {
     complexes_ = &complexes;
+    staff_complexes_ = &staff_complexes;
     int open_countdown = settings.gbv.open_countdown;
     anims_ = &anims;
     settings_ = settings;
@@ -38,6 +39,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     walkers_.assign(kThingCount, false);
     start_level(world, level, anims);
     world.entrances = level.entrances;
+    world.rooms = {};
     std::array<uint8_t, 3> refs = staff_market.ref_counts;
     staff_market = {};
     staff_market.ref_counts = refs;
@@ -50,6 +52,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     open = open_countdown == 0;
     balance = size_t(number) < settings.towns.size() ? int(settings.towns[size_t(number)].start_cash) : 0;
     reputation = 500;
+    start_finance(finance, balance, settings, number);
 }
 
 void Game::turn()
@@ -77,21 +80,25 @@ void Game::turn()
         // daily_admin, then month_end and year_end (src/finance.cpp).
         date.day++;
         if (date.day > days_in_month(date.month)) {
+            // month_end's money, before the month moves on.
+            month_end(finance, balance, world, settings_, level_number_, days_in_month(date.month), date.month,
+                      count_radiators(world, 0), reputation);
             calc_visitors_this_month(arrivals, settings_);
             date.day = 1;
             date.month++;
             if (date.month >= 12) {
                 date.month = 0;
                 date.year++;
+                year_end(finance, balance, world, settings_, reputation);
             }
             arrivals.game_month = uint16_t(date.year * 12 + date.month);
             create_job_market(world, staff_market, settings_, date.year * 12 + date.month, turn_count);
+            monthly_update_of_advisor_counts(advisor);
         }
     }
 
-    // The game holds the countdown while the advisor's opening message is
-    // up (advisor.flags & 1); there is no advisor yet.
-    if (!open && --opening_countdown <= 0) {
+    // The countdown is held while the tutorial runs (advisor.flags & 1).
+    if (!open && !(advisor.flags & kAdvisorTutorial) && --opening_countdown <= 0) {
         opening_countdown = 0;
         open = true;
     }
@@ -107,7 +114,7 @@ void Game::turn()
         } else if (t.type == kThingPatient) {
             person_turn(world, *anims_, *complexes_, uint16_t(i), turn_count);
         } else if (t.type == kThingStaff) {
-            staff_turn(world, *anims_, uint16_t(i), turn_count);
+            staff_turn(world, *anims_, *complexes_, *staff_complexes_, uint16_t(i), turn_count);
         } else if (t.type == kThingObject) {
             if (t.state == kObjectStatic) {
                 // object_static (src/objects.cpp).

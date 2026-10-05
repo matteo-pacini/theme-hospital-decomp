@@ -100,7 +100,10 @@ std::vector<uint32_t> panel_to_argb(const GameData &data, const PanelFigures *fi
     UiLayer layer;
     layer.resize(std::max(width, kUiWidth), kUiHeight);
     layer.clear();
-    draw_panel_ui(layer, PanelState{}, figures, data);
+    PanelState state;
+    if (figures)
+        state.shown_balance = figures->balance;
+    draw_panel_ui(layer, state, figures, data);
     std::vector<uint32_t> all = layer.to_argb(data.palette());
     std::vector<uint32_t> pixels(size_t(width) * size_t(height));
     for (int y = 0; y < height; y++) {
@@ -204,7 +207,23 @@ void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *
     int digit_height = money.glyph('1').height;
     char buf[16];
     std::snprintf(buf, sizeof buf, "%7d", figures->balance);
-    layer.draw_text(money, {0, 0, kUiWidth}, 44, 441, buf, 0, {46, 442, 89, digit_height});
+    if (state.shown_balance == figures->balance) {
+        layer.draw_text(money, {0, 0, kUiWidth}, 44, 441, buf, 0, {46, 442, 89, digit_height});
+    } else {
+        // The game's count of changed digit columns breaks out of its loop
+        // on the first column it counts, so it is always 1.
+        constexpr int kChangedColumns = 1;
+        constexpr int kDigitWidth = 13;
+        int step = state.balance_roll_step * 6;
+        layer.draw_text(money, {0, 0, kUiWidth}, 44, 441 - (digit_height - step), buf, 0,
+                        {46 + kDigitWidth * kChangedColumns, 442, 89 - kDigitWidth * kChangedColumns, digit_height});
+        char shown[16];
+        std::snprintf(shown, sizeof shown, "%7d", state.shown_balance);
+        layer.draw_text(money, {0, 0, kUiWidth}, 44, 441 + step, shown, 0,
+                        {46 + kDigitWidth * kChangedColumns, 442, 89 - kDigitWidth * kChangedColumns, digit_height});
+        layer.draw_text(money, {0, 0, kUiWidth}, 44, 441, buf, 0,
+                        {46, 442, kDigitWidth * (kChangedColumns - 3) + 37, digit_height});
+    }
 
     std::snprintf(buf, sizeof buf, "%d %s", figures->day, std::string(data.text().month(figures->month)).c_str());
     Rect date_box{144, 445, 52, 23};
@@ -222,6 +241,16 @@ void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *
         if (face >= 6)
             layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(1));
         layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(size_t(watch_face(face))));
+    }
+}
+
+void advance_balance_roll(PanelState &state, int balance)
+{
+    if (state.shown_balance == balance)
+        return;
+    if (++state.balance_roll_step == 4) {
+        state.balance_roll_step = 0;
+        state.shown_balance = balance;
     }
 }
 

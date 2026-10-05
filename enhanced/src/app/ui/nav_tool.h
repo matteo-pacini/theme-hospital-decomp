@@ -18,7 +18,7 @@ struct NavTool {
 };
 
 // The tool's section of the tools window, for a level in play.
-void draw_nav_tool(NavTool &tool, const World &world);
+void draw_nav_tool(NavTool &tool, World &world);
 
 // Draws the planned routes (the person, its next waypoints and its
 // destination) over the view with ImGui, the selected person's highlighted.

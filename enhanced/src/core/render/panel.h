@@ -101,6 +101,11 @@ struct PanelState {
     // A left press over the panel not yet acted on (lbDisplay.left_button):
     // the game acts on it once the button is up.
     bool left_click = false;
+    // The balance shown (othervar.shown_balance) and, while it differs from
+    // PanelFigures::balance, the step of the roll to the new one, 0-3
+    // (othervar.balance_roll_step).
+    int shown_balance = 0;
+    int balance_roll_step = 0;
 };
 
 // The top of the panel in 640 x 480 coordinates (statvar.panel_top).
@@ -126,8 +131,17 @@ PanelAction panel_frame(PanelState &state, const UiMouse &mouse, const GameData 
 // panel_ml_button (src/panel.cpp) do: the icon set `state` chooses, its
 // pressed icon, and with `figures` the balance, date and reputation marker
 // as draw_money_on_panel, draw_date_on_panel and draw_rep_on_panel draw
-// them (the balance not rolling), and the opening countdown's watch above
-// the panel's left end.
+// them, and the opening countdown's watch above the panel's left end.
+// While state.shown_balance differs from the balance, the balance is drawn
+// at roll step state.balance_roll_step: the new figures come down from
+// above as the shown ones go down, 6 pixels a step, but for the first digit
+// column, which shows the new figure at once (draw_money_on_panel always
+// counts one changed column).
 void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data);
+
+// After a frame's draw_panel_ui, advances the balance's roll to `balance`
+// as draw_money_on_panel does: a step a frame, the roll ending after the
+// fourth with `balance` shown. Nothing while it is shown.
+void advance_balance_roll(PanelState &state, int balance);
 
 } // namespace th

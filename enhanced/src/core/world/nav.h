@@ -69,8 +69,17 @@ uint32_t wallhug_trivial(const World &world, WallhugPath &path);
 // and detours shortened, for up to ten rounds). Returns as wallhug_trivial.
 uint32_t wallhug_tricky(const World &world, WallhugPath &path);
 
+// A* over the map's cells (four neighbours, steps blocked as wall_in_way
+// blocks them, Manhattan distance), then the cell path pulled taut: each
+// waypoint is the furthest cell along it in line of sight (line_of_sight) of
+// the one before. Finds a route whenever one exists, unlike wallhug_tricky.
+// Returns the steps of the cell path, or kWallhugFailed, filling `path` as
+// wallhug_tricky does (count 0 on failure).
+uint32_t astar_route(const World &world, WallhugPath &path);
+
 // orthonav_init (0x55454): plans `path` from (x0, y0) to (x1, y1) with
-// wallhug_tricky and keeps its first four waypoints. If no route is found,
+// world.path_finder's planner (astar_route, or the game's wallhug_tricky)
+// and keeps its first four waypoints. If no route is found,
 // count is 0 and the rest of `path`, the destination included, is left as
 // it was (docs/BUGS.md).
 void orthonav_init(const World &world, OrthonavPath &path, int x0, int y0, int x1, int y1);

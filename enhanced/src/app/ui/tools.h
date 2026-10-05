@@ -25,6 +25,6 @@ struct ToolsState {
 
 // The tools window; with `world` (a level in play), also the path finding
 // tool.
-void draw_tools(ToolsState &state, const World *world);
+void draw_tools(ToolsState &state, World *world);
 
 } // namespace th

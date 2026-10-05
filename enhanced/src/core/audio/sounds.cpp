@@ -131,6 +131,42 @@ constexpr SampleGroup kSampleGroups[7] = {
     {4, {176, 177, 178, 179}},
 };
 
+struct Ambient {
+    uint8_t sound; // sample - 500; 0 for none
+    uint8_t priority;
+};
+
+// Ambients (src/sfxtable.cpp), indexed by announcement.
+// clang-format off
+constexpr Ambient kAmbients[kAnnouncementCount] = {
+    {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {48, 1}, {42, 10}, {49, 10},
+    {50, 10}, {51, 10}, {40, 10}, {41, 10}, {47, 10}, {46, 10}, {52, 10}, {45, 10}, {54, 10}, {55, 10},
+    {44, 10}, {43, 10}, {56, 10}, {57, 10}, {58, 10}, {0, 10}, {0, 10}, {60, 10}, {61, 10}, {0, 10},
+    {62, 10}, {0, 10}, {0, 10}, {7, 10}, {8, 10}, {9, 10}, {6, 10}, {10, 10}, {11, 10}, {20, 10},
+    {5, 10}, {12, 10}, {13, 10}, {14, 10}, {15, 10}, {21, 10}, {22, 10}, {4, 10}, {16, 10}, {23, 10},
+    {24, 10}, {25, 10}, {26, 10}, {3, 10}, {27, 10}, {28, 10}, {29, 10}, {30, 10}, {31, 10}, {32, 10},
+    {2, 10}, {33, 10}, {17, 10}, {1, 10}, {19, 10}, {34, 10}, {18, 10}, {0, 10}, {0, 10}, {0, 10},
+    {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10},
+    {0, 10}, {0, 10}, {0, 10}, {0, 10}, {106, 10}, {0, 10}, {0, 10}, {0, 10}, {103, 10}, {0, 10},
+    {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {109, 10}, {99, 10}, {0, 10},
+    {100, 10}, {97, 10}, {98, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10},
+    {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {108, 10}, {0, 10}, {0, 10},
+    {0, 10}, {101, 10}, {102, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {105, 10},
+    {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {0, 10}, {200, 10}, {201, 10},
+    {202, 10}, {204, 10}, {205, 10}, {207, 10}, {208, 10}, {209, 10}, {211, 10}, {212, 10}, {215, 10}, {216, 10},
+    {217, 10}, {218, 10}, {220, 10}, {221, 10}, {223, 10}, {224, 10}, {225, 10}, {226, 10}, {227, 10}, {228, 10},
+    {229, 10}, {230, 10}, {231, 10}, {232, 10}, {233, 10}, {234, 10}, {235, 10}, {236, 10}, {240, 10}, {243, 10},
+    {244, 10}, {130, 10}, {131, 10}, {132, 10}, {133, 10}, {115, 10}, {116, 10}, {117, 10}, {120, 10}, {121, 10},
+    {122, 10}, {135, 10}, {136, 10}, {140, 10}, {135, 10}, {136, 10}, {137, 10}, {138, 10}, {139, 10}, {135, 10},
+    {136, 10}, {137, 10}, {138, 10}, {139, 10}, {150, 1}, {151, 1}, {190, 1}, {191, 1}, {192, 1}, {175, 1},
+    {176, 1}, {177, 1}, {178, 1}, {179, 1}, {160, 10}, {161, 10}, {162, 10}, {163, 10}, {164, 10}, {165, 10},
+    {166, 10}, {167, 10}, {168, 20}, {152, 10}, {53, 10}, {180, 10}, {181, 10}, {182, 10}, {183, 10},
+};
+// clang-format on
+
+// The announcer's samples follow the sound effects in the bank.
+constexpr int kAnnouncerBase = 500;
+
 uint32_t le32(const uint8_t *p)
 {
     return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24;
@@ -197,6 +233,13 @@ void place(int x, int screen_width, int sfx_volume, int &volume, int &pan)
 constexpr int kDirectoryEntry = 2;
 
 } // namespace
+
+int announcement_sample(int index)
+{
+    if (index < 0 || index >= kAnnouncementCount || !kAmbients[index].sound)
+        return 0;
+    return kAnnouncerBase + kAmbients[index].sound;
+}
 
 bool SoundBank::load(const std::filesystem::path &dir, int language, std::string *error)
 {
@@ -278,6 +321,60 @@ void SoundPlayer::toggle_sound()
 void SoundPlayer::set_volume_item(int item)
 {
     sfx_volume_ = (10 - std::clamp(item, 0, 9)) * kMaxVolume / 10;
+}
+
+void SoundPlayer::toggle_ambient()
+{
+    ambients_on_ = sound_ok() ? !ambients_on_ : false;
+}
+
+void SoundPlayer::set_ambient_volume_item(int item)
+{
+    ambient_volume_ = (10 - std::clamp(item, 0, 9)) * kMaxVolume / 10;
+}
+
+void SoundPlayer::init_ambients()
+{
+    ambient_queue_.fill({});
+}
+
+void SoundPlayer::play_ambient(int index, bool receptionist, bool paused)
+{
+    if (!ambients_on() || !announcement_sample(index) || !receptionist || paused)
+        return;
+    const Announcement a{kAmbients[index].sound, kAmbients[index].priority};
+    for (Announcement &q : ambient_queue_) {
+        if (!q.sound) {
+            q = a;
+            return;
+        }
+    }
+    size_t slot = 0;
+    for (size_t i = 1; i < ambient_queue_.size(); i++)
+        if (ambient_queue_[i].priority < a.priority)
+            slot = i;
+    if (slot)
+        ambient_queue_[slot] = a;
+}
+
+void SoundPlayer::do_ambients(bool paused, bool rat_level, bool receptionist)
+{
+    if (!ambients_on() || rat_level || paused)
+        return;
+    if (ambient_playing_) {
+        if (!playing(kSourceAmbient, 0))
+            ambient_playing_ = 0;
+    } else if (ambient_queue_[0].sound) {
+        if (play_sample(kSourceAmbient, kAnnouncerBase + ambient_queue_[0].sound, ambient_volume_, 0x40, 100, 0, 2))
+            ambient_playing_ = ambient_queue_[0].sound;
+        std::move(ambient_queue_.begin() + 1, ambient_queue_.end(), ambient_queue_.begin());
+        ambient_queue_.back() = {};
+        ambient_timer_ = 0;
+    }
+    if (++ambient_timer_ > 2000) {
+        play_ambient(kAnnounceRandom + saferand() % 34, receptionist, paused);
+        ambient_timer_ = 0;
+    }
 }
 
 uint16_t SoundPlayer::saferand()

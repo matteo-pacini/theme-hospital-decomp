@@ -107,7 +107,7 @@ bool no_peeps_in_way(const World &w, int tile, int kind, int dir)
 // place_object (src/objects.cpp) for the player in the corridor: which_room
 // is always 0 and nothing has been picked up, so a new object is bought at
 // object_stats' cost (the level's StartCost; research does not lower it yet)
-// and the balance is charged (change_balance TX_BUY_OBJECT; no ledger yet).
+// and the balance is charged (change_balance TX_BUY_OBJECT).
 uint16_t player_place_object(Game &game, int tile, int kind, int dir)
 {
     World &w = game.world;
@@ -126,7 +126,7 @@ uint16_t player_place_object(Game &game, int tile, int kind, int dir)
     if (id) {
         int cost = game.settings().objects[size_t(kind)].start_cost;
         if (cost)
-            game.balance -= cost;
+            change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuyObject, -cost);
     }
     return id;
 }

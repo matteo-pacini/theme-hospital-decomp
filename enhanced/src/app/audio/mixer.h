@@ -8,9 +8,11 @@ struct SDL_AudioStream;
 namespace th
 {
 
+class MusicPlayer;
 class SoundPlayer;
 
-// Plays a SoundPlayer's voices on the default audio device. All calls,
+// Plays a SoundPlayer's voices, and a MusicPlayer's music, on the default
+// audio device. All calls,
 // including the mixing, happen on the caller's thread: update() keeps a
 // short queue of mixed audio ahead of the device.
 class Mixer
@@ -27,9 +29,9 @@ class Mixer
     void close();
     bool is_open() const { return stream_ != nullptr; }
 
-    // Once a frame: mixes `player` into the device's queue until it holds
-    // kAhead seconds of audio.
-    void update(SoundPlayer &player);
+    // Once a frame: mixes `player` and `music` (if any) into the device's
+    // queue until it holds kAhead seconds of audio.
+    void update(SoundPlayer &player, MusicPlayer *music = nullptr);
 
     static constexpr int kRate = 44100;
     static constexpr double kAhead = 0.08;

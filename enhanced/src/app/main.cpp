@@ -6,6 +6,7 @@
 #include "app/datadir.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
+#include "core/audio/music.h"
 #include "core/audio/sounds.h"
 #include "core/data/gamedata.h"
 #include "core/render/blit.h"
@@ -82,7 +83,7 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
         return nullptr;
     auto view = std::make_unique<LevelView>();
     view->game.staff_market.ref_counts = reference_counts(data.text());
-    view->game.start(level, number, settings, data.anims(), data.person_complexes());
+    view->game.start(level, number, settings, data.anims(), data.person_complexes(), data.staff_complexes());
     // The shadowed blocks are made from the map as recreate_map leaves it,
     // before add_static_shadows.
     view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost(), view->game.world.map.data());
@@ -103,6 +104,16 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
         draw_world(surface, {0, 0, surface.width(), surface.height()}, camera, level->game.world, data,
                    shadows ? level->shadows.get() : nullptr, level->scratch, sounds);
     }
+}
+
+// Whether the hospital has a receptionist (the announcer's pages wait for
+// one).
+bool has_receptionist(const World &world)
+{
+    for (const Thing &t : world.things)
+        if (t.type == kThingStaff && t.subtype == kStaffReceptionist)
+            return true;
+    return false;
 }
 
 // A static texture of `width` x `height` 0xAARRGGBB pixels, scaled without
@@ -221,6 +232,7 @@ class App
     // device they are mixed to.
     SoundBank bank_;
     SoundPlayer sounds_;
+    MusicPlayer music_; // the songs of SOUND/MIDI, played on an emulated OPL3
     Mixer mixer_;
     std::vector<FrameSound> frame_sounds_;
     ObjectUi object_ui_;
@@ -239,6 +251,8 @@ class App
     SDL_AudioStream *movie_stream_ = nullptr;
     int movie_playing_ = -1; // the movie movie_stream_ plays
     std::string balance_id_{kDefaultBalanceId};
+    bool tutorial_ = false;    // the advisor's tutorial, chosen in the start-up screens
+    Event last_event_;         // the command carried out the frame before (the tutorial reads it)
     float frame_seconds_ = 0;  // the last frame's length
     bool escape_ = false;      // Escape pressed this frame
     bool asking_quit_ = false; // the yes/no requester asks whether to quit
@@ -351,6 +365,8 @@ bool App::try_load_data(const std::filesystem::path &dir)
     if (!bank_.load(dir, data_->language(), &error))
         std::fprintf(stderr, "%s\n", error.c_str());
     sounds_.set_bank(&bank_);
+    if (!music_.load(dir, &error))
+        std::fprintf(stderr, "no music: %s\n", error.c_str());
     if (!mixer_.is_open() && !mixer_.open(&error))
         std::fprintf(stderr, "no sound: %s\n", error.c_str());
     make_ui_textures();
@@ -378,7 +394,12 @@ void App::load_level(int number)
     }
     level_ = number;
     map_ = std::move(map);
+    start_advisor(map_->game.advisor, tutorial_);
+    panel_state_.shown_balance = map_->game.balance;
     sounds_.safeseed = kLevelStartSeed;
+    // A level starts on a song picked by the clock, as the game does.
+    music_.start_level(uint32_t(SDL_GetTicks()));
+    sounds_.init_ambients();
     // Centre the view on the player's starting cell, as load_level does.
     int start = level->camera_start[0];
     scroll_min_ = level->scroll_min;
@@ -468,6 +489,31 @@ void App::interface_step(int out_w, int out_h, int scale)
             }
         }
 
+        // The advisor: a right click on him or his bubble dismisses him; then
+        // his frame, which reads the command about to be carried out.
+        if (mouse.right_pressed && input && mouse.y < panel_top(*data_) && advisor_hit(game->advisor, mouse.x, mouse.y))
+            game->advisor.dismiss = true;
+        AdvisorInputs in;
+        in.game_turn = game->turn_count;
+        in.paused = paused;
+        in.requester_open = interface_.requester() != Requester::None && interface_.requester() != Requester::EditRoom;
+        in.level = game->level_number();
+        in.month = game->date.month;
+        in.open = game->open;
+        in.balance = game->balance;
+        in.reputation = game->reputation;
+        in.finance = &game->finance;
+        in.settings = &game->settings();
+        in.world = &game->world;
+        in.text = &data_->text();
+        in.pending = game->event;
+        in.last = last_event_;
+        in.staff_place_ok = hire_.place_ok;
+        if (game->world.placing.placing)
+            in.object_place_ok = game->world.placing.ok;
+        advisor_frame(game->advisor, in, game->anims(), sounds_.safeseed);
+        last_event_ = game->event;
+
         // The command, as process_turn: the interface's part, then the game's.
         hire_staff_event(hire_, interface_, game->world, game->event);
         game->process_turn();
@@ -479,8 +525,15 @@ void App::interface_step(int out_w, int out_h, int scale)
     if (map_) {
         const Game &g = map_->game;
         figures = {g.balance, g.date.day, g.date.month, g.reputation, g.opening_countdown, g.open_countdown};
+        // The watch is not shown while the tutorial holds the countdown.
+        if (g.advisor.flags & kAdvisorTutorial)
+            figures.opening_countdown = 0;
     }
     draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
+    if (game) {
+        draw_advisor(ui_, game->advisor, *data_, data_->font(0x1d));
+        advance_balance_roll(panel_state_, game->balance);
+    }
     draw_interface(ui_, interface_, requester_art_);
     if (game) {
         draw_object_requesters(ui_, interface_, object_ui_, *game, requester_art_, *data_);
@@ -585,6 +638,7 @@ void App::startup_step(int out_w, int out_h)
         movie_stream_ = nullptr;
         in_startup_ = false;
         balance_id_ = r.balance_id;
+        tutorial_ = r.tutorial;
         load_level(r.level);
     }
 }
@@ -647,6 +701,10 @@ void App::menu_step(int out_w, int scale)
     context.shadows = shadows_;
     context.sound = sounds_.sfx_on();
     context.sound_volume = sounds_.volume_item();
+    context.music = music_.music_on();
+    context.music_volume = music_.volume_item();
+    context.announcements = sounds_.ambients_on();
+    context.announcement_volume = sounds_.ambient_volume_item();
     context.speed = speed_ == Speed::Slowest  ? 0
                     : speed_ == Speed::Slower ? 1
                     : speed_ == Speed::Normal ? 2
@@ -709,6 +767,18 @@ void App::perform(const MenuEvent &event)
         break;
     case MenuAction::SoundVolume:
         sounds_.set_volume_item(event.value);
+        break;
+    case MenuAction::ToggleMusic:
+        music_.toggle_music();
+        break;
+    case MenuAction::MusicVolume:
+        music_.set_volume_item(event.value);
+        break;
+    case MenuAction::ToggleAnnouncements:
+        sounds_.toggle_ambient();
+        break;
+    case MenuAction::AnnouncementVolume:
+        sounds_.set_ambient_volume_item(event.value);
         break;
     case MenuAction::Quit:
         ask_quit();
@@ -912,7 +982,7 @@ void App::render()
             SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
     } else if (in_startup_) {
         startup_step(out_w, out_h);
-        mixer_.update(sounds_);
+        mixer_.update(sounds_, &music_);
         draw_pointer(ui_scale());
     } else {
         int z = zoom();
@@ -939,8 +1009,14 @@ void App::render()
             sounds_.frames_drawn(frame_sounds_, vw);
             sounds_.manage_sound(map_->game.world, camera_, vw, vh);
             sounds_.manage_background_sounds(map_->game.paused);
+            // The music moves on to the next song, and the announcer speaks, as
+            // the game does each frame; only the announcer while a modal
+            // requester is up.
+            if (!interface_.modal())
+                music_.play_next(map_->game.paused);
+            sounds_.do_ambients(map_->game.paused, false, has_receptionist(map_->game.world));
         }
-        mixer_.update(sounds_);
+        mixer_.update(sounds_, &music_);
 
         // What is being placed, drawn over the view as the game does.
         float cmx, cmy;

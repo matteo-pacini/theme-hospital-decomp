@@ -6,6 +6,7 @@
 #include "core/data/sprites.h"
 #include "core/data/text.h"
 #include "core/world/complex.h"
+#include "core/world/staff_complex.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -50,6 +51,8 @@ class GameData
     const AnimData &anims() const { return anims_; }
     // The patients' action sequences (DATA/P_COMP.LEX).
     const PersonComplexes &person_complexes() const { return person_complexes_; }
+    // The staff's action sequences (DATA/S_COMP.LEX).
+    const StaffComplexes &staff_complexes() const { return staff_complexes_; }
     // 256 x 256 blend table for see-through drawing (QDATA/GHOST66.DAT, the in-game table):
     // entry [a * 256 + b] mixes colour b into a.
     const std::vector<uint8_t> &ghost() const { return ghost_; }
@@ -69,6 +72,7 @@ class GameData
     SpriteSheet watch_;
     AnimData anims_;
     PersonComplexes person_complexes_;
+    StaffComplexes staff_complexes_;
     std::vector<uint8_t> ghost_;
     LanguageText text_;
     int language_ = 0;

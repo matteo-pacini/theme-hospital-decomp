@@ -48,7 +48,7 @@ MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::
     return action;
 }
 
-void draw_tools(ToolsState &state, const World *world)
+void draw_tools(ToolsState &state, World *world)
 {
     if (!state.open)
         return;

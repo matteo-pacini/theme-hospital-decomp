@@ -1,8 +1,13 @@
 #include "core/world/nav.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
+#include <queue>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 namespace th
 {
@@ -641,12 +646,81 @@ uint32_t wallhug_tricky(const World &world, WallhugPath &path)
     return wallhug_cleanup(world, path, result);
 }
 
+uint32_t astar_route(const World &world, WallhugPath &path)
+{
+    path.count = 0;
+    const int start = path.start.x + path.start.y * kMapSize;
+    const int goal = path.end.x + path.end.y * kMapSize;
+    if (path.start.x >= kMapSize || path.start.y >= kMapSize || path.end.x >= kMapSize || path.end.y >= kMapSize)
+        return kWallhugFailed;
+    if (start == goal) {
+        path.route[0] = path.end;
+        path.count = 1;
+        return 0;
+    }
+    auto h = [&](int cell) { return std::abs(cell % kMapSize - path.end.x) + std::abs(cell / kMapSize - path.end.y); };
+    constexpr int kUnseen = std::numeric_limits<int>::max();
+    std::vector<int> g(kMapCells, kUnseen);
+    std::vector<int> from(kMapCells, -1);
+    std::vector<bool> closed(kMapCells, false);
+    // Open cells by (f, h, insertion order): ties go to the cell nearer the
+    // goal, then to the earlier one, so routes are the same every time.
+    using Entry = std::tuple<int, int, uint32_t, int>;
+    std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> open;
+    uint32_t order = 0;
+    g[size_t(start)] = 0;
+    open.emplace(h(start), h(start), order++, start);
+    while (!open.empty()) {
+        int cell = std::get<3>(open.top());
+        open.pop();
+        if (closed[size_t(cell)])
+            continue;
+        closed[size_t(cell)] = true;
+        if (cell == goal)
+            break;
+        int x = cell % kMapSize, y = cell / kMapSize;
+        for (uint32_t dir = 0; dir < 4; dir++) {
+            if (wall_in_way(world, x, y, dir))
+                continue;
+            int next = (x + kAroundXy[dir][0]) + (y + kAroundXy[dir][1]) * kMapSize;
+            int cost = g[size_t(cell)] + 1;
+            if (closed[size_t(next)] || cost >= g[size_t(next)])
+                continue;
+            g[size_t(next)] = cost;
+            from[size_t(next)] = cell;
+            open.emplace(cost + h(next), h(next), order++, next);
+        }
+    }
+    if (g[size_t(goal)] == kUnseen)
+        return kWallhugFailed;
+
+    std::vector<Waypoint> cells;
+    for (int cell = goal; cell != -1; cell = from[size_t(cell)])
+        cells.push_back({uint8_t(cell % kMapSize), uint8_t(cell / kMapSize)});
+    std::reverse(cells.begin(), cells.end());
+    // Pull the path taut: from each waypoint, the furthest cell ahead still in
+    // line of sight (looking up to 64 cells on).
+    size_t cur = 0;
+    while (cur + 1 < cells.size() && path.count < path.route.size()) {
+        size_t best = cur + 1;
+        for (size_t j = cur + 2; j < cells.size() && j <= cur + 64; j++)
+            if (line_of_sight(world, cells[cur], cells[j]))
+                best = j;
+        path.route[path.count++] = cells[best];
+        cur = best;
+    }
+    if (cur + 1 < cells.size())
+        return kWallhugFailed; // more waypoints than a route holds
+    return uint32_t(g[size_t(goal)]);
+}
+
 void orthonav_init(const World &world, OrthonavPath &path, int x0, int y0, int x1, int y1)
 {
     WallhugPath hug;
     hug.start = {uint8_t(x0), uint8_t(y0)};
     hug.end = {uint8_t(x1), uint8_t(y1)};
-    if (wallhug_tricky(world, hug) == kWallhugFailed) {
+    uint32_t found = world.path_finder == PathFinder::AStar ? astar_route(world, hug) : wallhug_tricky(world, hug);
+    if (found == kWallhugFailed) {
         path.count = 0;
         return;
     }

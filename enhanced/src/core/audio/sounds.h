@@ -41,6 +41,28 @@ enum : uint8_t {
 // Entries of sfx_details; play_sound ignores higher numbers.
 constexpr int kSfxCount = 0xf2;
 
+// Announcements (play_ambient's index into Ambients, src/sfxtable.cpp) the
+// game makes, by first index; the announcer's samples are 500 on.
+enum : uint8_t {
+    kAnnounceRoom = 0x00,      // + room type (0-0x1e): a doctor or nurse wanted there (pager)
+    kAnnounceEmergency = 0x1f, // + illness (0-0x23): an emergency lands
+    kAnnounceMachine = 0x4c,   // + object (0-0x3d): a machine worn to 75% of its strength
+    kAnnounceRandom = 0x89,    // + 0-33: do_ambients every 2000 turns
+    kAnnounceQuake = 0xab,     // + 0-2: an earthquake starts and strikes
+    kAnnounceEpidemic = 0xaf,  // + 0-2: an epidemic
+    kAnnounceInspector = 0xb2, // + 0-2: the health inspector
+    kAnnounceMayor = 0xb7,     // + mayor name (0-5): the mayor arrives
+    kAnnounceCheat = 0xc4,     // + 0-1: a cheat
+    kAnnounceLitter = 0xd7,    // the advisor on litter
+    kAnnounceTooCold = 0xd8,   // the advisor on cold patients or staff
+    kAnnounceTooHot = 0xd9,    // the advisor on hot patients or staff
+};
+// Entries of Ambients.
+constexpr int kAnnouncementCount = 219;
+// The announcer's sample for announcement `index` (500 + its Ambients
+// sound), or 0 for an index with none.
+int announcement_sample(int index);
+
 // One sample of a sound bank: a RIFF WAVE file whose PCM data is `data`,
 // frames of `channels` interleaved values, unsigned 8-bit or signed 16-bit
 // little-endian.
@@ -123,6 +145,31 @@ class SoundPlayer
     // The ticked volume item, 9 - volume * 10 / 128 (MenuContext::sound_volume).
     int volume_item() const { return 9 - sfx_volume_ * 10 / 128; }
 
+    // myplayer.ambients_on and ambient_volume (0-127): the announcements,
+    // on at full volume at first; off without a bank.
+    bool ambients_on() const { return ambients_on_ && sound_ok(); }
+    int ambient_volume() const { return ambient_volume_; }
+    // pulldown_toggle_ambient.
+    void toggle_ambient();
+    // pulldown_sannounce: as set_volume_item for the announcements; the
+    // next announcement plays at the new volume.
+    void set_ambient_volume_item(int item);
+    int ambient_volume_item() const { return 9 - ambient_volume_ * 10 / 128; }
+    // init_ambients: empties the announcement queue (a level starts or
+    // loads).
+    void init_ambients();
+    // play_ambient: queues announcement `index` (kAnnounce*) if the
+    // announcements are on, it has a sample, the hospital has a
+    // receptionist and the game is not paused. With the four places taken
+    // it replaces the last of lower priority after the first, if any.
+    void play_ambient(int index, bool receptionist, bool paused);
+    // do_ambients, once a turn of the game view (and of a modal requester
+    // over it): plays the next queued announcement when the last has
+    // ended, at the announcements' volume, and every 2000 calls queues a
+    // random one (kAnnounceRandom). Nothing while `paused`, on the rat
+    // level or with the announcements off.
+    void do_ambients(bool paused, bool rat_level, bool receptionist);
+
     // play_sound: plays sound effect `sfx` (SFX_*) for `source`, choosing the
     // sample and pitch by its sfx_details entry, or stops it. At screen x
     // its volume falls off linearly towards the screen's sides and it pans
@@ -203,6 +250,16 @@ class SoundPlayer
     int crowd_volume_ = 0;
     int clock_volume_ = 0;
     int ambient_noise_timer_ = 0;
+
+    struct Announcement {
+        uint8_t sound = 0; // sample - 500
+        uint8_t priority = 0;
+    };
+    bool ambients_on_ = true;
+    int ambient_volume_ = kMaxVolume;
+    std::array<Announcement, 4> ambient_queue_{};
+    int ambient_playing_ = 0;
+    int ambient_timer_ = 0;
 };
 
 } // namespace th

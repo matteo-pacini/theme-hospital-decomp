@@ -3,6 +3,7 @@
 #include "core/data/anims.h"
 #include "core/data/balance.h"
 #include "core/data/text.h"
+#include "core/world/complex.h"
 #include "core/world/world.h"
 
 #include <array>
@@ -13,6 +14,7 @@ namespace th
 
 class Game;
 struct Event;
+struct StaffComplexes;
 
 // Staff kinds (Thing.subtype of kThingStaff), the game's STAFF_*.
 constexpr uint8_t kStaffNurse = 0;
@@ -33,12 +35,22 @@ constexpr uint16_t kSkillConsultant = 0x80;
 constexpr uint16_t kSkillResearcher = 0x100;
 
 // Staff states handled so far (the game's SS_*, include/enums.h).
+constexpr uint8_t kStaffReceptionistWorks = 0x0a;
+constexpr uint8_t kStaffReceptionistFindsReception = 0x0c;
+constexpr uint8_t kStaffPlayComplexAnim = 0x0e;
+constexpr uint8_t kStaffGotoObject = 0x12;
+constexpr uint8_t kStaffTwoPeepsInteract = 0x1a;
+constexpr uint8_t kStaffReceptWaitsForPatient = 0x20;
+constexpr uint8_t kStaffReceptAdmitsPatient = 0x22;
+constexpr uint8_t kStaffWaitForComplexSlave = 0x26;
 constexpr uint8_t kStaffInCorridor = 0x28;
+constexpr uint8_t kStaffComplexRetry = 0x2c;
 constexpr uint8_t kStaffApplicant = 0x2e;
 constexpr uint8_t kStaffWanders = 0x34;
-constexpr uint8_t kStaffHeld = 0x44;
 constexpr uint8_t kStaffHandymanWorks = 0x3c;
-constexpr uint8_t kStaffReceptionistFindsReception = 0xc;
+constexpr uint8_t kStaffHeld = 0x44;
+constexpr uint8_t kStaffReceptionistSetup = 0x4a;
+constexpr uint8_t kStaffStuck = 0x4e;
 
 // Thing.owner of applicants and of staff who left: no hospital's.
 constexpr uint8_t kNoOwner = 0x63;
@@ -122,13 +134,29 @@ bool staff_place_ok(const World &world, int cell);
 bool place_staff_on_map(World &world, const AnimData &anims, const Balance &settings, int cell, uint16_t id, bool force,
                         uint32_t game_turn);
 
-// One game turn of staff member `id`, as process_things's staff states:
-// an applicant past its expiry withdraws (the thing is freed); one in the
-// corridor or a receptionist with no reception desk (none can exist yet)
-// starts wandering (staff_in_corridor). Wandering itself
-// (staff_wanders: strolls, breaks, pages, resigning) and the other states
-// are not ported: wanderers stand.
-void staff_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
+// One game turn of staff member `id`, as process_things's staff states,
+// drawing from world.seed as the game does:
+// - an applicant past its expiry withdraws (the thing is freed);
+// - one in the corridor starts wandering (staff_in_corridor);
+// - wanderers stroll and pause (staff_wanders); a receptionist among them
+//   goes to find a free reception desk once there is one, and a handyman
+//   goes to work;
+// - a receptionist finds a free desk and walks to it, or wanders if there
+//   is none (receptionist_finds_reception), takes her place at it
+//   (receptionist_setup: a reception, World::rooms, shared with manned
+//   desks within 10 cells) and works there (receptionist_works,
+//   recept_waits_for_patient, recept_admits_patient), calling and serving
+//   the patients queueing for her through core/world/reception.h;
+// - a handyman with no litter, plant or machine to see to strolls to a
+//   random cell near by (handyman_works), sweeping litter he spots;
+// - walking to an object (staff_goto_object), the complexes' states
+//   (core/world/staff_complex.h) and being stuck (peep_stuck).
+// Not ported, as they need what does not exist yet: rooms (staff rooms,
+// pages, vaccinations, the doctors' and nurses' work), the per-turn
+// counts, status icons and modify_staff (tiredness, warmth, happiness and
+// discontent stay as they are, so no one resigns, tires or cracks up).
+void staff_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
+                const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
 
 // Carries out the simulation's part of the commands of hiring and placing
 // staff, as process_turn (src/io.cpp) for player 0: EV_MARK_EMPLOYING

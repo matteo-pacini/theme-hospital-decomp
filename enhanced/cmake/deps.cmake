@@ -32,3 +32,19 @@ add_library(th_imgui STATIC
 )
 target_include_directories(th_imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 target_link_libraries(th_imgui PUBLIC SDL3::SDL3)
+
+# ymfm (BSD-3-Clause): the YMF262 (OPL3) emulation the music plays on. No
+# CMake build of its own; built with its own flags, outside the project's
+# warnings.
+FetchContent_Declare(ymfm
+  URL https://github.com/aaronsgiles/ymfm/archive/81aec25ccbb98f4873a255f7551ac4dadac59b4a.tar.gz
+  URL_HASH SHA256=9bcf001b30f53754c49cf2fb864792a64702b8aeebb105baa908ad5dd33f443f)
+FetchContent_MakeAvailable(ymfm)
+
+add_library(th_ymfm STATIC
+  ${ymfm_SOURCE_DIR}/src/ymfm_adpcm.cpp
+  ${ymfm_SOURCE_DIR}/src/ymfm_misc.cpp
+  ${ymfm_SOURCE_DIR}/src/ymfm_opl.cpp
+  ${ymfm_SOURCE_DIR}/src/ymfm_pcm.cpp
+)
+target_include_directories(th_ymfm SYSTEM PUBLIC ${ymfm_SOURCE_DIR}/src)

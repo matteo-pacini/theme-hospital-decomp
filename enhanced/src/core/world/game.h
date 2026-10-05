@@ -3,10 +3,13 @@
 #include "core/data/anims.h"
 #include "core/data/balance.h"
 #include "core/data/level.h"
+#include "core/world/advisor.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
 #include "core/world/events.h"
+#include "core/world/finance.h"
 #include "core/world/staff.h"
+#include "core/world/staff_complex.h"
 #include "core/world/world.h"
 
 #include <cstdint>
@@ -51,7 +54,7 @@ class Game
     // countdown (gbv OpenCountdown turns; 0 opens the hospital at once), as
     // setup_new_level and init_player (src/start.cpp).
     void start(const Level &level, int number, const Balance &settings, const AnimData &anims,
-               const PersonComplexes &complexes);
+               const PersonComplexes &complexes, const StaffComplexes &staff_complexes);
 
     // Runs one game turn unless paused: advances the turn count and the
     // random values the game draws every turn, the date every 50 turns,
@@ -72,6 +75,11 @@ class Game
     // evaluate_reputation gives 500 at the start).
     int balance = 0;
     int reputation = 500;
+    // The bank statement, wages, interest and the hospital's value
+    // (src/finance.cpp), and the advisor (src/advisor.cpp); the app starts
+    // the advisor and runs its frames.
+    Finance finance;
+    Advisor advisor;
     // Patients arriving (src/peepmake.cpp).
     ArrivalState arrivals;
     // The applicants for jobs (src/staff.cpp); the caller sets ref_counts
@@ -104,6 +112,7 @@ class Game
   private:
     const AnimData *anims_ = nullptr;
     const PersonComplexes *complexes_ = nullptr;
+    const StaffComplexes *staff_complexes_ = nullptr;
     Balance settings_;
     std::unique_ptr<Level> level_;
     int level_number_ = 0;

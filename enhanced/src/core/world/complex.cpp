@@ -3,6 +3,7 @@
 #include "core/data/gamedata.h"
 #include "core/world/complex_tables.h"
 #include "core/world/nav.h"
+#include "core/world/staff.h"
 
 #include <cstdlib>
 
@@ -60,18 +61,17 @@ void head_off(const Run &r, uint16_t id)
     play_patient_anim(r.anims, p, kAnimWalk);
 }
 
-// find_nearest_free_object (0x37d28), outside rooms (there are none yet):
-// the nearest free object of `kind` of the seeker's hospital within 7 cells
-// on each axis whose use cell a path reaches, as can_i_get_to with the
-// object as the mover (a path from its own use cell 1). 0 if none.
+} // namespace
+
 uint16_t find_nearest_free_object(const World &world, uint16_t id, uint8_t kind)
 {
     const Thing &seeker = world.things[id];
     // Only player 0's objects exist (World::first_of_kind).
     if (seeker.owner != 0)
         return 0;
-    // Patients use cell 1 (staff 0, handymen 2).
-    constexpr size_t side = 1;
+    size_t side = 1;
+    if (seeker.type == kThingStaff)
+        side = seeker.subtype == kStaffHandyman ? 2 : 0;
     uint16_t best = 0;
     int best_dist = 9999;
     for (uint16_t o = world.first_of_kind[kind]; o; o = world.things[o].type_obj_next) {
@@ -94,9 +94,6 @@ uint16_t find_nearest_free_object(const World &world, uint16_t id, uint8_t kind)
     return best;
 }
 
-// adjust_big_cell_flag (0xa8f78): sets kCellBig on `cell` if a person on it
-// uses its object or an object on it covers more than one cell, else clears
-// it.
 void adjust_big_cell_flag(World &world, uint16_t cell)
 {
     MapCell &c = world.map[cell];
@@ -116,6 +113,9 @@ void adjust_big_cell_flag(World &world, uint16_t cell)
     }
     c.flags &= uint8_t(~kCellBig);
 }
+
+namespace
+{
 
 // person_nav_failure (0x1752c), for a patient in no room heading for no
 // room (there are none yet): back to queueing if it was to queue, else

@@ -24,7 +24,7 @@ Point cell_middle(int col, int row)
 
 } // namespace
 
-void draw_nav_tool(NavTool &tool, const World &world)
+void draw_nav_tool(NavTool &tool, World &world)
 {
     int people = 0;
     for (const Thing &t : world.things)
@@ -32,6 +32,10 @@ void draw_nav_tool(NavTool &tool, const World &world)
     if (!ImGui::CollapsingHeader("Path finding", ImGuiTreeNodeFlags_DefaultOpen))
         return;
     ImGui::Checkbox("Show planned paths", &tool.show_paths);
+    int planner = world.path_finder == PathFinder::AStar ? 0 : 1;
+    const char *planners[] = {"A*", "Original (wall following)"};
+    if (ImGui::Combo("Route planner", &planner, planners, IM_ARRAYSIZE(planners)))
+        world.path_finder = planner == 0 ? PathFinder::AStar : PathFinder::Original;
     if (ImGui::Button(tool.placing ? "Click the map to place..." : "Add a walker"))
         tool.placing = !tool.placing;
     ImGui::Text("%d people", people);
