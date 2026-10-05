@@ -9,8 +9,9 @@ namespace th
 const std::vector<std::string_view> &required_data_files()
 {
     static const std::vector<std::string_view> files = {
-        "data/mpalette.dat", "data/vblk-0.tab",   "data/vblk-0.dat",
-        "data/panel02v.tab", "data/panel02v.dat", "levels/level.l1",
+        "data/mpalette.dat", "data/vblk-0.tab",   "data/vblk-0.dat",   "data/panel02v.tab", "data/panel02v.dat",
+        "data/vspr-0.tab",   "data/vspr-0.dat",   "data/vstart-1.ani", "data/vfra-1.ani",   "data/vele-1.ani",
+        "data/vlist-1.ani",  "qdata/ghost66.dat", "data/mpointer.tab", "data/mpointer.dat", "levels/level.l1",
     };
     return files;
 }
@@ -83,8 +84,21 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error)
             *error = "data/mpalette.dat: too short for a palette";
         return false;
     }
-    return load_sheet(dir, "data/vblk-0", SpriteFormat::Rle, blocks_, error) &&
-           load_sheet(dir, "data/panel02v", SpriteFormat::Req, panel_, error);
+    if (!load_sheet(dir, "data/vblk-0", SpriteFormat::Rle, blocks_, error) ||
+        !load_sheet(dir, "data/panel02v", SpriteFormat::Req, panel_, error) ||
+        !load_sheet(dir, "data/vspr-0", SpriteFormat::Rle, sprites_, error) ||
+        !load_sheet(dir, "data/mpointer", SpriteFormat::Rle, pointers_, error) || !anims_.load(dir, error))
+        return false;
+    auto ghost = load_data_file(dir, "qdata/ghost66.dat", error);
+    if (!ghost)
+        return false;
+    if (ghost->size() < 0x10000) {
+        if (error)
+            *error = "qdata/ghost66.dat: too short for a blend table";
+        return false;
+    }
+    ghost_ = std::move(*ghost);
+    return true;
 }
 
 std::optional<Level> GameData::load_level(int number, std::string *error) const

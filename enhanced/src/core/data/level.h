@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <span>
 
 namespace th
@@ -40,11 +41,17 @@ struct Level {
 // Parses an unpacked level file. Returns false if it is too short.
 bool parse_level(std::span<const uint8_t> data, Level &out);
 
-// The playable map built from a level for a single-player game, as the
-// game's recreate_map does when a level starts (src/town.cpp): public land
-// and plot 1 as in the file, other plots blank grass with random decorations
-// and partition walls along unbought land. Objects in the level file and
-// shadows are not handled yet.
+// Builds into `map` the playable map of a level as the game's recreate_map
+// does when a level starts (src/town.cpp): cells are copied in index order,
+// public land and the hospitals' plots as in the file and other plots blank
+// grass; then grass is laid, decorations scattered over unbought land and
+// partition walls put along it. `copied(cell)` is called as soon as each
+// cell is copied, where the game places the object the level file puts
+// there (MapCell.first, which the copy leaves 0). Shadows are not computed.
+void build_start_map(std::array<MapCell, kMapCells> &map, const Level &level,
+                     const std::function<void(int cell)> &copied = {});
+
+// The starting map without the level's objects.
 std::array<MapCell, kMapCells> build_start_map(const Level &level);
 
 } // namespace th

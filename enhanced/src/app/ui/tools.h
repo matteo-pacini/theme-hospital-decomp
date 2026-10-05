@@ -25,10 +25,17 @@ struct ToolsState {
     bool open = true;
     int level = 1; // selected level number
     bool level_requested = false;
-    int zoom = 0;  // 0 automatic, else the integer scale
-    int sheet = 0; // 0 blocks, 1 panel
+    int zoom = 0;        // 0 automatic, else the integer scale
+    int ui_scale = 0;    // panel and pointer scale: 0 automatic, else the integer scale
+    bool shadows = true; // the game's shadows option, on by default
+    int sheet = 0;       // 0 blocks, 1 panel
     int sprite = 0;
     SDL_Texture *preview = nullptr; // sprite preview, created on first use
+    int anim = 0;                   // start[] index shown in the animation browser
+    int anim_frame = -1;            // frame being shown, -1 to restart from the animation's first
+    bool anim_playing = true;
+    double anim_clock = 0; // seconds since the frame last advanced
+    SDL_Texture *anim_preview = nullptr;
 };
 
 // What the tools window shows about the current view.

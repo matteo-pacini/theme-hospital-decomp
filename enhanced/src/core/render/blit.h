@@ -11,11 +11,21 @@ namespace th
 enum DrawFlags : unsigned {
     kDrawFlipX = 1,
     kDrawFlipY = 2,
+    // See-through: each pixel mixed with what is under it through the ghost
+    // table, the sprite's colour as the row (4) or the column (8).
+    kDrawGhost = 4,
+    kDrawGhostUnder = 8,
 };
 
 // Draws `sprite` with its top-left corner at (x, y), clipped to the
 // surface's clip rectangle. Transparent pixels leave the surface unchanged.
-void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flags = 0);
+// The ghost flags need `ghost` (GameData::ghost()); without it they draw
+// solid.
+void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flags = 0, const uint8_t *ghost = nullptr);
+
+// Draws `sprite`'s shape at (x, y) in the single colour `colour` (as
+// LbSpriteDrawOneColour without flags), clipped like draw_sprite.
+void draw_sprite_one_colour(Surface &dst, int x, int y, const Sprite &sprite, uint8_t colour);
 
 // Decodes `sprite` into 0xAARRGGBB pixels at `out` (rows `pitch` bytes
 // apart, at least width x height), transparent pixels as 0.

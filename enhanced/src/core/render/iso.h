@@ -1,8 +1,6 @@
 #pragma once
 
-#include "core/data/level.h"
-#include "core/data/sprites.h"
-#include "core/render/surface.h"
+#include <cstdint>
 
 namespace th
 {
@@ -27,9 +25,9 @@ inline Point cell_to_world(int col, int row)
 // The cell under map pixel position p (unclamped), as find_cell_at_point.
 Point world_to_cell(Point p);
 
-// Draws the map's floors, then its walls row by row from the back, into
-// `view` of `dst`, with `camera` the map pixel position at the view's
-// top-left. Cells outside the map are drawn as grass, as the game does.
-void draw_map(Surface &dst, Rect view, Point camera, const MapCell *map, const SpriteSheet &blocks);
+// True if map pixel position `p` (the view's centre) lies outside a level's
+// scroll area, the cells from `min_cell` to `max_cell` (column + row * 128),
+// as check_if_point_beyond_scroll_limit without its margin.
+bool beyond_scroll_limit(Point p, uint16_t min_cell, uint16_t max_cell);
 
 } // namespace th

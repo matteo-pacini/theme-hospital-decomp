@@ -25,7 +25,22 @@ Milestone 1, the map at any resolution:
 - developer tools (F1): frame time, view size, camera and cell under the
   mouse, level picker, palette and sprite viewer.
 
-Not yet: objects placed by the level, shadows, people, the simulation and the
+Milestone 2, the level as it starts:
+
+- the composite animations (VSTART/VFRA/VELE/VLIST with the VSPR sprites),
+  including mirroring, per-thing layer choices and see-through drawing
+  through the in-game blend table (GHOST66);
+- the objects a level places when it starts (as recreate_map, adjust_mapwho
+  and place_object do: for the campaign levels, the entrance doors), with
+  the game's random generator;
+- the game's drawing order: floors, then each row's walls and what stands on
+  its cells, with things behind a wall drawn through a mask of the walls in
+  front of them;
+- shadows cast by walls (on by default, a tools option);
+- each level's scroll area and the game's mouse pointer;
+- an animation browser in the tools.
+
+Not yet: people and the simulation, litter, the panel's figures and the
 game's screens.
 
 ## Game data
@@ -67,6 +82,7 @@ renders a level's start view to a BMP.
 ## Layout
 
     src/core/data/    file formats: RNC, sprites, palette, levels, the data folder
-    src/core/render/  indexed surface, sprite drawing, isometric map, panel
+    src/core/render/  indexed surface, sprites, frames, shadows, the hospital view, panel
+    src/core/world/   the map and its things, level start
     src/app/          SDL3 window and input, data-folder search, settings, ImGui tools
     tests/            ctest tests

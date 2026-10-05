@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/data/anims.h"
 #include "core/data/level.h"
 #include "core/data/palette.h"
 #include "core/data/sprites.h"
@@ -39,12 +40,22 @@ class GameData
     const Palette &palette() const { return palette_; }
     const SpriteSheet &blocks() const { return blocks_; }
     const SpriteSheet &panel() const { return panel_; }
+    const SpriteSheet &sprites() const { return sprites_; }
+    const SpriteSheet &pointers() const { return pointers_; }
+    const AnimData &anims() const { return anims_; }
+    // 256 x 256 blend table for see-through drawing (QDATA/GHOST66.DAT, the in-game table):
+    // entry [a * 256 + b] mixes colour b into a.
+    const std::vector<uint8_t> &ghost() const { return ghost_; }
 
   private:
     std::filesystem::path dir_;
     Palette palette_{};
     SpriteSheet blocks_;
     SpriteSheet panel_;
+    SpriteSheet sprites_;
+    SpriteSheet pointers_;
+    AnimData anims_;
+    std::vector<uint8_t> ghost_;
 };
 
 } // namespace th

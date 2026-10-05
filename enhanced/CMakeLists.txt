@@ -22,6 +22,7 @@ endif()
 
 # The engine: data loading and drawing, with no SDL dependency.
 add_library(th_core STATIC
+  src/core/data/anims.cpp
   src/core/data/fs.cpp
   src/core/data/rnc.cpp
   src/core/data/sprites.cpp
@@ -30,8 +31,12 @@ add_library(th_core STATIC
   src/core/data/gamedata.cpp
   src/core/render/surface.cpp
   src/core/render/blit.cpp
+  src/core/render/frame.cpp
   src/core/render/iso.cpp
   src/core/render/panel.cpp
+  src/core/render/shadows.cpp
+  src/core/render/view.cpp
+  src/core/world/world.cpp
 )
 target_include_directories(th_core PUBLIC src)
 target_compile_options(th_core PRIVATE ${TH_WARNINGS})

@@ -51,7 +51,7 @@ template <typename Put> void decode(const Sprite &sprite, Put &&put)
 
 } // namespace
 
-void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flags)
+void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flags, const uint8_t *ghost)
 {
     if (sprite.empty())
         return;
@@ -61,6 +61,25 @@ void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flag
     decode(sprite, [&](int row, int col, uint8_t colour) {
         int dx = (flags & kDrawFlipX) ? x + sprite.width - 1 - col : x + col;
         int dy = (flags & kDrawFlipY) ? y + sprite.height - 1 - row : y + row;
+        if (dx < clip.x || dx >= clip.x + clip.w || dy < clip.y || dy >= clip.y + clip.h)
+            return;
+        uint8_t &out = dst.row(dy)[dx];
+        if (ghost && (flags & kDrawGhost))
+            out = ghost[colour << 8 | out];
+        else if (ghost && (flags & kDrawGhostUnder))
+            out = ghost[out << 8 | colour];
+        else
+            out = colour;
+    });
+}
+
+void draw_sprite_one_colour(Surface &dst, int x, int y, const Sprite &sprite, uint8_t colour)
+{
+    if (sprite.empty())
+        return;
+    const Rect &clip = dst.clip();
+    decode(sprite, [&](int row, int col, uint8_t) {
+        int dx = x + col, dy = y + row;
         if (dx >= clip.x && dx < clip.x + clip.w && dy >= clip.y && dy < clip.y + clip.h)
             dst.row(dy)[dx] = colour;
     });

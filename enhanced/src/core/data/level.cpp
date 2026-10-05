@@ -56,9 +56,10 @@ bool parse_level(std::span<const uint8_t> data, Level &out)
     return true;
 }
 
-std::array<MapCell, kMapCells> build_start_map(const Level &level)
+void build_start_map(std::array<MapCell, kMapCells> &map, const Level &level,
+                     const std::function<void(int cell)> &copied)
 {
-    std::array<MapCell, kMapCells> map{};
+    map = {};
     std::array<uint16_t, kMapCells> plots = level.plots;
 
     for (int i = 0; i < kMapCells; i++) {
@@ -75,12 +76,22 @@ std::array<MapCell, kMapCells> build_start_map(const Level &level)
                 c.owner_flags = src.owner_flags & ~0x0f;
             else
                 c.owner_flags = src.owner_flags | uint8_t(1 << (plot - 1));
+            // The copy replaces whatever objects placed on earlier cells linked
+            // or marked here, as in the game.
+            c.first = 0;
             plots[i] = 0;
+            if (copied)
+                copied(i);
         } else {
-            // Unbought land: background[0]'s defaults (src/tables.cpp).
-            map[i] = MapCell{};
-            map[i].flags = 1;
-            map[i].owner_flags = kCellOutdoor;
+            // Unbought land: background[0]'s defaults (src/tables.cpp);
+            // litter_shadow is left as it was.
+            MapCell &c = map[i];
+            c.first = 0;
+            c.floor_block = 0;
+            c.wall_n = 0;
+            c.wall_w = 0;
+            c.flags = 1;
+            c.owner_flags = kCellOutdoor;
         }
     }
 
@@ -122,6 +133,12 @@ std::array<MapCell, kMapCells> build_start_map(const Level &level)
                 map[south].wall_n = kPartitionWallN;
         }
     }
+}
+
+std::array<MapCell, kMapCells> build_start_map(const Level &level)
+{
+    std::array<MapCell, kMapCells> map;
+    build_start_map(map, level);
     return map;
 }
 
