@@ -91,17 +91,46 @@ class MusicPlayer
     int track() const { return track_; }
     bool playing() const { return music_playing_; }
 
+    // othervar.midi_playing: cleared when no enabled track could be played,
+    // set again by the next try.
+    bool midi_playing() const { return midi_playing_; }
+    // othervar.loop_track: the jukebox's loop, which plays the current track
+    // again instead of moving on. Off at first.
+    bool loop() const { return loop_; }
+    void set_loop(bool loop) { loop_ = loop; }
+    // myplayer.track_enabled: whether `track` is in the jukebox's playlist;
+    // every track is after a load. Moving on skips the others.
+    bool track_enabled(int track) const { return enabled_.at(size_t(track)); }
+    void set_track_enabled(int track, bool enabled) { enabled_.at(size_t(track)) = enabled; }
+    // Sets othervar.music_playing, as the jukebox does before acting.
+    void set_playing(bool playing) { music_playing_ = playing; }
+    // !is_midi_playing: the song should be playing but has ended. Never
+    // while `paused`.
+    bool song_over(bool paused) const { return !paused && song_done(); }
+
     // start_level's music: picks track `clock` % count() (the game passes
     // LbTimerClock()) and plays it if the music is on.
     void start_level(uint32_t clock);
     // play_next_midi, once a frame of the game view: when the song has
-    // ended, plays the next one, wrapping after the last. Nothing happens
-    // while `paused`.
+    // ended, plays the next enabled one, wrapping after the last, or with
+    // loop() the current one again if it is enabled. Nothing happens while
+    // `paused`.
     void play_next(bool paused);
-    // play_midi: plays `track` from its start, or the next one if it cannot.
+    // play_last_midi: as play_next, but moving to the previous track.
+    void play_previous(bool paused);
+    // play_midi: plays `track` from its start, or the next one if it is not
+    // enabled or cannot play.
     void play(int track);
-    // stop_midi: ends the song (the game does so leaving a level).
+    // stop_midi: ends the song and turns the loop off (the game does so
+    // leaving a level).
     void stop();
+    // AIL_end_sequence: ends the song, leaving playing() as it is, so that
+    // play_next or play_previous moves on.
+    void end_song();
+    // AIL_stop_sequence and AIL_resume_sequence: pause the song where it is
+    // and go on from there. playing() is the caller's to set.
+    void pause_song();
+    void resume_song();
     // pulldown_toggle_music: music on (playing the current track from its
     // start) or off.
     void toggle_music();
@@ -138,6 +167,10 @@ class MusicPlayer
     int track_ = 8;
     bool midi_playing_ = true;
     bool music_playing_ = false;
+    bool loop_ = false;
+    // myplayer.track_enabled holds 11 entries, so that track count() (which
+    // play_next reaches before wrapping) has one.
+    std::array<bool, 11> enabled_ = {true, true, true, true, true, true, true, true, true, true, false};
 };
 
 } // namespace th

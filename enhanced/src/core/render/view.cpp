@@ -9,6 +9,7 @@
 #include "core/world/world.h"
 
 #include <algorithm>
+#include <array>
 #include <climits>
 #include <utility>
 #include <vector>
@@ -95,18 +96,86 @@ Rect intersect(const Rect &a, const Rect &b)
     return {x0, y0, std::max(x1 - x0, 0), std::max(y1 - y0, 0)};
 }
 
-// do_mapwho for the things on `cell`, whose diamond has its left edge at x
-// and its top corner at y: by ascending bucket and, within a bucket, from
-// the end of the cell's list. Returns the box of the frames drawn (the
-// game's frame_bounds); `extent`, if given, grows to every pixel drawn.
-Rect draw_cell_things(Surface &dst, const MapCell &cell, int x, int y, const World &world, const GameData &data,
-                      Rect *extent, std::vector<FrameSound> *sounds)
+// The game's litter_starts (src/anitable.cpp), by litter kind (MapCell's
+// litter nibble): the animation drawn, and whether it is drawn at the
+// cell's middle rather than at one of kLitterPos. Kinds 9-15 are zero there.
+struct LitterStart {
+    uint16_t anim;
+    bool centred;
+};
+constexpr std::array<LitterStart, 16> kLitterStarts = {{
+    {9999, false},
+    {947, false},
+    {948, false},
+    {949, false},
+    {1121, true},
+    {951, true},
+    {1124, true},
+    {952, true},
+    {953, true},
+}};
+
+// The game's litter_pos (src/tables.cpp), its table for 64 x 32 cells:
+// where uncentred litter is drawn, from the cell's middle, chosen by a hash
+// of the cell's index.
+constexpr std::array<Point, 8> kLitterPos = {{
+    {0, 0},
+    {10, 4},
+    {-21, -2},
+    {9, -8},
+    {-10, 5},
+    {-16, -3},
+    {0, 9},
+    {16, 3},
+}};
+
+// The first frame and mirroring of animation `anim` (AnimData::starts).
+AnimStart anim_start(const GameData &data, uint32_t anim)
+{
+    const auto &starts = data.anims().starts;
+    return anim < starts.size() ? starts[anim] : AnimStart{};
+}
+
+// do_mapwho for `cell` (map index `index`), whose diamond has its left edge
+// at x and its top corner at y: its overlay (flags bits 6-7), its litter,
+// then its things by ascending bucket and, within a bucket, from the end of
+// the cell's list. Blueprint markers are not drawn. Returns the box of the
+// frames drawn (the game's frame_bounds); `extent`, if given, grows to
+// every pixel drawn.
+Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y, const World &world,
+                      const GameData &data, Rect *extent, std::vector<FrameSound> *sounds)
 {
     std::vector<std::pair<int, int16_t>> drawn; // (bucket, thing) in list order
     for (int16_t id = cell.first; id > 0 && id < kThingCount; id = world.things[size_t(id)].cell_next)
         // The game indexes 32 buckets without a check; keep to them.
         drawn.emplace_back(std::clamp(thing_bucket(world.things[size_t(id)]), 0, kBuckets - 1), id);
     Rect bounds{};
+    auto draw_start = [&](int fx, int fy, AnimStart start) {
+        Rect sprites;
+        grow(bounds, draw_frame(dst, fx, fy, start.frame, start.flip != 0, 0, data, nullptr, &sprites));
+        if (extent)
+            grow(*extent, sprites);
+    };
+    if (cell.flags & 0xc0) {
+        // Behind a wall the floor is drawn again under the overlay, as the
+        // game does into the buffer it draws such cells in.
+        if (cell.flags & 0x10) {
+            Sprite f = block(data.blocks(), cell.floor_block);
+            draw_sprite(dst, x, y + kTileHeight - f.height, f);
+            if (extent)
+                grow(*extent, {x, y + kTileHeight - f.height, f.width, f.height});
+        }
+        draw_start(x + kTileWidth / 2, y + kTileHeight / 2, {anim_start(data, 625u + (cell.flags >> 6)).frame, 0});
+    }
+    if (uint8_t kind = cell.litter_shadow & 0xf) {
+        const LitterStart &litter = kLitterStarts[kind];
+        if (litter.centred) {
+            draw_start(x + kTileWidth / 2, y + kTileHeight / 2, anim_start(data, litter.anim));
+        } else {
+            Point at = kLitterPos[(uint32_t(uint16_t(index)) * 0x2e4a4321u >> 16) & 7];
+            draw_start(x + kTileWidth / 2 + at.x, y + kTileHeight / 2 + at.y, anim_start(data, litter.anim));
+        }
+    }
     for (int b = 0; b < kBuckets; b++) {
         for (auto it = drawn.rbegin(); it != drawn.rend(); ++it) {
             if (it->first != b)
@@ -182,11 +251,11 @@ void draw_world(Surface &dst, Rect view, Point camera, const World &world, const
             if (!on_map(col, row))
                 continue;
             const MapCell &cell = map[col + row * kMapSize];
-            if (cell.first <= 0)
+            if (cell.first <= 0 && !(cell.litter_shadow & 0xf) && !(cell.flags & 0xc0))
                 continue;
             int x = scan.x(col, row), top = base_y - kTileHeight;
             if (!(cell.flags & 0x10)) {
-                draw_cell_things(dst, cell, x, top, world, data, nullptr, sounds);
+                draw_cell_things(dst, cell, col + row * kMapSize, x, top, world, data, nullptr, sounds);
                 continue;
             }
             // Behind a wall: draw into the scratch surface, blank out the
@@ -194,7 +263,8 @@ void draw_world(Surface &dst, Rect view, Point camera, const World &world, const
             // left (draw_window_into_pix_buffer).
             scratch.set_clip(view);
             Rect touched{};
-            Rect bounds = intersect(draw_cell_things(scratch, cell, x, top, world, data, &touched, sounds), view);
+            Rect bounds = intersect(
+                draw_cell_things(scratch, cell, col + row * kMapSize, x, top, world, data, &touched, sounds), view);
             touched = intersect(touched, view);
             scratch.set_clip(bounds);
             scan.lines(bounds, tallest, [&](int mc0, int mc1, int mline) {

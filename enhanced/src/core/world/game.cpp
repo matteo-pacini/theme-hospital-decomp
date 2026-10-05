@@ -2,6 +2,7 @@
 
 #include "core/world/nav.h"
 #include "core/world/objects.h"
+#include "core/world/queue.h"
 #include "core/world/staff.h"
 
 #include <array>
@@ -40,6 +41,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     start_level(world, level, anims);
     world.entrances = level.entrances;
     world.rooms = {};
+    start_town_land(land, level, number);
     std::array<uint8_t, 3> refs = staff_market.ref_counts;
     staff_market = {};
     staff_market.ref_counts = refs;
@@ -53,6 +55,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     balance = size_t(number) < settings.towns.size() ? int(settings.towns[size_t(number)].start_cash) : 0;
     reputation = 500;
     start_finance(finance, balance, settings, number);
+    start_queues(world, settings_, arrivals.hospitals[0], reputation, finance);
 }
 
 void Game::turn()
@@ -60,12 +63,7 @@ void Game::turn()
     if (paused)
         return;
     turn_count++;
-    // The per-turn random values (rand_pct, queue_near_dist,
-    // object_near_dist): unused so far, but drawn to keep the generator in
-    // step with the game's.
-    old_newrand(world.seed);
-    old_newrand(world.seed);
-    old_newrand(world.seed);
+    draw_turn_randoms(world);
 
     new_patients.clear();
     if (turn_count % (kTurnsPerDay / 2) == 0) {
@@ -133,6 +131,8 @@ void Game::process_turn()
     event = {};
     // Each part's commands are carried out in its own file. EV_CANCEL_BUILD
     // is both the staff side's and the objects': staff's part first.
+    if (apply_town_event(*this, land, e) || apply_chart_event(*this, hospital, e))
+        return;
     if (e.type == EV_OPEN_HIRE_STAFF)
         cancel_buy_objects(world.placing);
     if (!apply_staff_event(*this, e))

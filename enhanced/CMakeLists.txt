@@ -43,18 +43,23 @@ add_library(th_core STATIC
   src/core/render/shadows.cpp
   src/core/render/view.cpp
   src/core/ui/buy_objects.cpp
+  src/core/ui/charts.cpp
   src/core/ui/hire_staff.cpp
+  src/core/ui/jukebox.cpp
   src/core/ui/layer.cpp
   src/core/ui/menubar.cpp
   src/core/ui/startup.cpp
+  src/core/ui/town_map.cpp
   src/core/ui/windows.cpp
   src/core/world/advisor.cpp
   src/core/world/arrivals.cpp
   src/core/world/complex.cpp
   src/core/world/finance.cpp
   src/core/world/game.cpp
+  src/core/world/litter.cpp
   src/core/world/nav.cpp
   src/core/world/objects.cpp
+  src/core/world/queue.cpp
   src/core/world/reception.cpp
   src/core/world/staff.cpp
   src/core/world/staff_complex.cpp

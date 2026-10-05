@@ -1,57 +1,230 @@
 #include "core/world/reception.h"
 
+#include "core/world/arrivals.h"
+#include "core/world/staff.h"
+
+#include <array>
+
 namespace th
 {
 
-// Stubs until queues are ported: no patient queues, so none is called.
-
-uint16_t reception_queue_head(const World &, uint16_t)
+namespace
 {
+
+// insurance_co[].extra_pay_pct (src/tables.cpp): per insurance company, the
+// percentage its patients pay over the most others will.
+constexpr std::array<uint8_t, 9> kInsuranceExtraPay = {0, 15, 10, 5, 8, 9, 40, 12, 3};
+
+// allhosps[0].insurance_accepted, which init_player sets to all three
+// companies and nothing changes.
+constexpr uint8_t kInsuranceAccepted = 7;
+
+HospitalMarket &market_of(World &world)
+{
+    static HospitalMarket none;
+    return world.market ? *world.market : none;
+}
+
+// max_price_for_treatment (0x58e34) in single player: the treatment's start
+// price scaled by the hospital's reputation for it (its overall reputation
+// for general practice and from treatment 0x24 on) over 500, never below the
+// start price.
+int32_t max_price_for_treatment(World &world, uint16_t treatment)
+{
+    static const Balance statics;
+    const Balance &settings = world.settings ? *world.settings : statics;
+    int32_t base = settings.expertise[treatment].start_price;
+    int32_t rep = treatment >= 0x24 || treatment == kIllGeneralPractice ? (world.reputation ? *world.reputation : 500)
+                                                                        : market_of(world).reputation[treatment];
+    int32_t price = base * rep / 500;
+    return base > price ? base : price;
+}
+
+// update_single_cure_cost (0x143e0): moves the price of `treatment` to its
+// share (price_scale, in hundredths of a percent) of the most patients will
+// pay, if that moves it by 1% or more.
+void update_single_cure_cost(World &world, uint16_t treatment)
+{
+    HospitalMarket &hosp = market_of(world);
+    int32_t target = max_price_for_treatment(world, treatment) * hosp.price_scale[treatment] / 10000;
+    int32_t diff = target - hosp.price[treatment];
+    if (diff < 0)
+        diff = -diff;
+    if (target / 100 <= diff)
+        hosp.price[treatment] = target;
+}
+
+} // namespace
+
+uint16_t reception_queue_head(const World &world, uint16_t room)
+{
+    return world.rooms[room].queue_head;
+}
+
+uint16_t reception_queue_next(const World &world, uint16_t patient)
+{
+    return world.things[patient].queue_next;
+}
+
+bool reception_emergency(const World &world, uint16_t patient)
+{
+    return world.things[patient].person_flags & kPfEmergency;
+}
+
+uint16_t call_person_to_room(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
+                             uint16_t id, uint16_t action, uint16_t arg, bool follow, uint32_t game_turn)
+{
+    for (;;) {
+        Thing &callee = world.things[id];
+        if (callee.health <= 0) {
+            uint16_t next = callee.queue_next;
+            if (next == 0)
+                break;
+            leave_queue(world, id);
+            id = next;
+            continue;
+        }
+        if (person_ok_to_call(world, id)) {
+            Thing &c = world.things[caller];
+            c.slave = id;
+            c.timer = 200;
+            c.call_retries = int16_t((old_newrand(world.seed) & 3) + 3);
+            leave_queue(world, id);
+            if (set_complex(world, id, action, arg))
+                process_person_complex(world, anims, complexes, id, game_turn);
+            callee.next_state = kPsArrivedFromCall;
+            return id;
+        }
+        if (!follow || callee.queue_next == 0)
+            break;
+        id = callee.queue_next;
+    }
     return 0;
 }
 
-uint16_t reception_queue_next(const World &, uint16_t)
+uint8_t call_person_again(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
+                          uint16_t action, uint16_t arg, uint32_t game_turn)
 {
-    return 0;
+    Thing &c = world.things[caller];
+    if (c.slave == 0)
+        return 0;
+    uint16_t id = c.slave;
+    Thing &callee = world.things[id];
+    if (callee.health <= 0 || callee.type != kThingPatient || callee.queue_room)
+        return 0;
+    if (!person_ok_to_call(world, id)) {
+        c.timer = 200;
+        return 2;
+    }
+    if (callee.complex_pc / 10 * 10 != action) {
+        if (callee.complex_pc == 0 || callee.complex_queued == 0) {
+            if (set_complex(world, id, action, arg))
+                process_person_complex(world, anims, complexes, id, game_turn);
+            callee.next_state = kPsArrivedFromCall;
+        } else if (callee.complex_queued != action) {
+            return 0;
+        }
+    } else if (uint16_t(callee.dest_x + (callee.dest_y << 7)) != arg) {
+        return 0;
+    }
+    callee.next_state = kPsArrivedFromCall;
+    c.timer = 200;
+    if (--c.call_retries <= 0)
+        return 1;
+    return 2;
 }
 
-bool reception_emergency(const World &, uint16_t)
+bool forget_about_my_slave(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
+                           uint16_t action, uint32_t game_turn)
 {
+    Thing &w = world.things[caller];
+    if (w.slave == 0)
+        return true;
+    const Thing &slave = world.things[w.slave];
+    if (slave.health <= 0 || slave.type != kThingPatient || slave.queue_room)
+        return true;
+    if (slave.next_state == kPsArrivedFromCall)
+        return false;
+    if (slave.next_state != kPsEntertainsThemself)
+        return true;
+    if (w.subtype == kStaffReceptionist) {
+        if (w.object)
+            call_person_to_room(world, anims, complexes, caller, w.slave, action, world.things[w.object].use_pos[1],
+                                false, game_turn);
+    } else if (uint16_t tile = world.rooms[w.room].door_tile) {
+        call_person_to_room(world, anims, complexes, caller, w.slave, action, tile, false, game_turn);
+    }
     return false;
 }
 
-int16_t all_queue_capacity(const World &, uint16_t, bool, uint8_t)
+void interrupt_person(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t person,
+                      uint32_t game_turn)
 {
-    return 0;
+    Thing &p = world.things[person];
+    bool was_deciding = p.state == kPsWaitsForDecision || p.next_state == kPsWaitsForDecision;
+    uint8_t state;
+    if (p.queue_room) {
+        state = kPsReturnToQueueArea;
+    } else if (p.dest_room) {
+        state = kPsGotoQueue;
+    } else {
+        leave_queue(world, person);
+        state = kPsGoForTreatment;
+    }
+    interrupt_complex(world, anims, complexes, person, game_turn);
+    p.state = was_deciding ? kPsWaitsForDecision : state;
 }
 
-uint16_t call_person_to_room(World &, const AnimData &, const PersonComplexes &, uint16_t, uint16_t, uint16_t, uint16_t,
-                             bool, uint32_t)
+bool reception_cure_available(const World &world, uint16_t patient)
 {
-    return 0;
+    const Thing &p = world.things[patient];
+    return p.owner == 0 && world.cure_available[p.treatment] == 1;
 }
 
-uint8_t call_person_again(World &, const AnimData &, const PersonComplexes &, uint16_t, uint16_t, uint16_t, uint32_t)
+bool shall_peep_pay(World &world, uint16_t id)
 {
-    return 0;
+    Thing &p = world.things[id];
+    HospitalMarket &hosp = market_of(world);
+    uint16_t treatment = p.treatment;
+    world.unpaid_treatment = p.treatment;
+    bool pays = false;
+    for (int attempt = 0; attempt < 2; attempt++) {
+        pays = false;
+        update_single_cure_cost(world, treatment);
+        // The game reads the price into 16 bits.
+        auto price = uint16_t(hosp.price[treatment]);
+        int32_t max = max_price_for_treatment(world, treatment);
+        if (uint8_t ins = p.insurance & kInsuranceAccepted) {
+            uint16_t company = world.ins_control[ins];
+            max += (company < kInsuranceExtraPay.size() ? kInsuranceExtraPay[company] : 0) * max / 100;
+        } else if (price > p.cash) {
+            max = 0;
+        }
+        max = int32_t(uint32_t(max) + old_newrand(world.seed) % uint32_t(price / 2 + 1));
+        if (price <= max)
+            pays = true;
+        treatment = p.next_treatment;
+        if (treatment == 0 || !pays)
+            break;
+    }
+    if (!pays) {
+        p.person_flags |= kPfTooExpensive;
+        if (p.owner == 0)
+            world.too_expensive = true;
+    }
+    return pays;
 }
 
-bool forget_about_my_slave(World &, const AnimData &, const PersonComplexes &, uint16_t, uint16_t, uint32_t)
+void reception_serves_patient(World &world, uint16_t, uint16_t patient)
 {
-    return true;
-}
-
-void interrupt_person(World &, const AnimData &, const PersonComplexes &, uint16_t, uint32_t)
-{
-}
-
-bool reception_cure_available(const World &, uint16_t)
-{
-    return false;
-}
-
-void reception_serves_patient(World &, uint16_t, uint16_t)
-{
+    Thing &p = world.things[patient];
+    p.impatience = 0;
+    p.waiting_time = 0;
+    if (shall_peep_pay(world, patient))
+        p.fee = market_of(world).price[p.treatment];
+    else
+        p.treatment = 0;
+    p.state = kPsGoForTreatment;
 }
 
 } // namespace th

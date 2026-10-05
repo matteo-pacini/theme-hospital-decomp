@@ -17,17 +17,22 @@
 #include "core/render/text.h"
 #include "core/render/view.h"
 #include "core/ui/buy_objects.h"
+#include "core/ui/charts.h"
 #include "core/ui/hire_staff.h"
+#include "core/ui/jukebox.h"
 #include "core/ui/menubar.h"
 #include "core/ui/startup.h"
+#include "core/ui/town_map.h"
 #include "core/ui/windows.h"
 #include "core/world/advisor.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
+#include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/objects.h"
+#include "core/world/queue.h"
 #include "core/world/staff.h"
 #include "core/world/staff_complex.h"
 #include "core/world/world.h"
@@ -1059,8 +1064,8 @@ void test_patient_leaves_level1(const char *dir)
             int turns;
             bool opens;
         };
-        // The second walk crosses indoor cells, where the game also runs the
-        // patient's needs and reactions (not ported): a regression value.
+        // The second walk crosses indoor cells, where the patient's needs and
+        // reactions draw from the generator: a regression value.
         const Start starts[] = {
             {entrance % th::kMapSize, entrance / th::kMapSize, 2, false},
             {64, 76, 314, true},
@@ -1102,7 +1107,7 @@ void test_patient_leaves_level1(const char *dir)
             CHECK(d.state == 0x14 && d.sprite == anims.starts[th::kObjects[d.subtype].anim_start + d.facing].frame);
         }
         std::printf("seed %#x\n", unsigned(w->seed));
-        CHECK(w->seed == 0xebe44801);
+        CHECK(w->seed == 0xd8255b23);
     }
 }
 
@@ -2711,6 +2716,827 @@ void test_announcer(const char *dir)
     CHECK(player.ambient_volume() == 63 && player.ambient_volume_item() == 5);
 }
 
+// The free cells of player 0's land indoors nearest level 1's view start,
+// at most `count`.
+std::vector<int> indoor_cells(const th::World &w, const th::Level &level, size_t count)
+{
+    std::vector<int> cells;
+    int start = level.camera_start[0];
+    for (int r = 0; r < 20 && cells.size() < count; r++)
+        for (int dy = -r; dy <= r; dy++)
+            for (int dx = -r; dx <= r; dx++) {
+                if (std::max(std::abs(dx), std::abs(dy)) != r || cells.size() >= count)
+                    continue;
+                int c = start + dx + dy * th::kMapSize;
+                if (c >= 0 && c < th::kMapCells && w.map[size_t(c)].first == 0 && w.map[size_t(c)].owner_flags == 1)
+                    cells.push_back(c);
+            }
+    return cells;
+}
+
+// With the game data: litter, vomit and the cell overlays are drawn on an
+// empty cell of level 1, also behind a wall, leaving the scratch surface
+// clean; a rat hole's cell is not swept clean by remove_litter.
+void test_litter_drawn(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    auto world = std::make_unique<th::World>();
+    th::start_level(*world, *level, gd.anims());
+    std::vector<int> cells = indoor_cells(*world, *level, 1);
+    CHECK(cells.size() == 1);
+    if (cells.empty())
+        return;
+    int cell = cells[0];
+    th::Point p = th::cell_to_world(cell % th::kMapSize, cell / th::kMapSize);
+    th::Point camera{p.x - 320, p.y - 240};
+    th::Rect view{0, 0, 640, 480};
+    th::Surface clean, drawn, scratch;
+    clean.resize(640, 480);
+    drawn.resize(640, 480);
+    scratch.resize(640, 480);
+    scratch.fill(th::kMaskColour);
+    th::draw_world(clean, view, camera, *world, gd, nullptr, scratch);
+    auto differs = [&](const th::World &w) {
+        th::draw_world(drawn, view, camera, w, gd, nullptr, scratch);
+        bool scratch_clean =
+            std::all_of(scratch.data(), scratch.data() + 640 * 480, [](uint8_t c) { return c == th::kMaskColour; });
+        return scratch_clean && !std::equal(drawn.data(), drawn.data() + 640 * 480, clean.data());
+    };
+    auto litter = std::make_unique<th::World>(*world);
+    for (int kind : {1, 2, 3, int(th::kLitterVomit), int(th::kLitterPuddle), 7}) {
+        litter->map[size_t(cell)].litter_shadow = uint8_t(kind);
+        CHECK(differs(*litter));
+        litter->map[size_t(cell)].flags |= 0x10;
+        CHECK(differs(*litter));
+        litter->map[size_t(cell)].flags &= uint8_t(~0x10);
+    }
+    th::place_litter(*litter, uint16_t(cell), 0, 1);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 7);
+    th::remove_litter(*litter, uint16_t(cell), 0);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 7);
+    litter->map[size_t(cell)].litter_shadow = 0;
+    CHECK(!differs(*litter));
+    th::place_litter(*litter, uint16_t(cell), 0, 2);
+    th::place_litter(*litter, uint16_t(cell), 0, 3);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 2);
+    th::place_litter(*litter, uint16_t(cell), 0, th::kLitterVomit);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == th::kLitterVomit);
+    th::place_litter(*litter, uint16_t(cell), 1, 1); // not player 1's land
+    th::remove_litter(*litter, uint16_t(cell), 0);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 0);
+
+    auto overlay = std::make_unique<th::World>(*world);
+    for (int bits : {0x40, 0x80, 0xc0}) {
+        overlay->map[size_t(cell)].flags = uint8_t(bits);
+        CHECK(differs(*overlay));
+        overlay->map[size_t(cell)].flags = uint8_t(bits | 0x10);
+        CHECK(differs(*overlay));
+    }
+}
+
+// With the game data: patients indoors on level 1, moved to another cell
+// every 50 turns and given a drink's litter urge every 400, their needs run
+// every turn (modify_person and do_reaction, as a walking patient's when it
+// decides its step): they drop litter, vomit and wet themselves, and their
+// reactions leave the mess on the map. Fixed counts and generator from the
+// level's start.
+void test_litter_dropping_level1(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::World &w = f.game->world;
+    const th::AnimData &anims = f.gd.anims();
+    std::vector<int> cells = indoor_cells(w, *f.level, 256);
+    CHECK(cells.size() == 256);
+    std::vector<uint16_t> patients;
+    for (size_t i = 0; i < 8 && i < cells.size(); i++) {
+        uint16_t id = f.game->add_walker(cells[i * 32]);
+        CHECK(id != 0);
+        if (id)
+            patients.push_back(id);
+    }
+    CHECK(patients.size() == 8);
+    th::Thing &first = w.things[patients[0]];
+    uint16_t urge = first.litter_urge;
+    th::add_litter_urge(first, 10);
+    CHECK(first.litter_urge == urge + 10);
+    int reactions = 0;
+    for (int turn = 1; turn <= 5000; turn++) {
+        f.game->turn_count++;
+        for (size_t i = 0; i < patients.size(); i++) {
+            uint16_t id = patients[i];
+            th::Thing &p = w.things[id];
+            if (turn % 400 == 0)
+                th::add_litter_urge(p, 10);
+            if (turn % 50 == 0 && p.state != th::kPsShowanim) {
+                int cell = cells[(i * 32 + size_t(turn / 50)) % cells.size()];
+                th::move_node(w, id, {0x80, uint8_t(cell % th::kMapSize)}, {0x80, uint8_t(cell / th::kMapSize)});
+            }
+            if (p.state == th::kPsShowanim)
+                th::person_showanim_turn(w, anims, id, f.game->turn_count);
+            else if (th::person_needs_turn(w, anims, f.settings, th::kStartHeatingLevel, id, f.game->turn_count))
+                reactions++;
+        }
+    }
+    int litter = 0, vomit = 0, puddles = 0;
+    for (const th::MapCell &c : w.map) {
+        uint8_t kind = c.litter_shadow & 0xf;
+        litter += kind >= 1 && kind <= 3;
+        vomit += kind == th::kLitterVomit;
+        puddles += kind == th::kLitterPuddle;
+    }
+    std::printf("patients' mess: %d litter, %d vomit, %d puddles, %d reactions, seed %#x\n", litter, vomit, puddles,
+                reactions, unsigned(w.seed));
+    CHECK(litter > 0 && vomit > 0 && puddles > 0);
+    // Regression values, not checked against the game.
+    CHECK(litter == 63 && vomit == 65 && puddles == 5 && reactions == 216 && w.seed == 0xe3e016bd);
+}
+
+// With the game data: a handyman on level 1 sweeps litter put beside him,
+// and the cell is clean afterwards.
+void test_handyman_sweeps(const char *dir)
+{
+    th::StaffComplexes sc;
+    std::string error;
+    CHECK(th::load_staff_complexes(dir, sc, &error));
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::World &w = f.game->world;
+    uint16_t handyman = hire_and_place(f, th::kStaffHandyman);
+    CHECK(handyman != 0);
+    if (!handyman)
+        return;
+    const th::Thing &h = w.things[handyman];
+    int cell = 0;
+    for (int offset : {1, -1, th::kMapSize, -th::kMapSize}) {
+        int c = h.x.tile + h.y.tile * th::kMapSize + offset;
+        if (w.map[size_t(c)].owner_flags == 1) {
+            cell = c;
+            break;
+        }
+    }
+    CHECK(cell != 0);
+    th::place_litter(w, uint16_t(cell), 0, 2);
+    CHECK((w.map[size_t(cell)].litter_shadow & 0xf) == 2);
+    int turns = 0;
+    while (turns < 2000 && (w.map[size_t(cell)].litter_shadow & 0xf) != 0) {
+        staff_work_turn(f, sc);
+        turns++;
+    }
+    std::printf("handyman swept in %d turns, seed %#x\n", turns, unsigned(w.seed));
+    CHECK((w.map[size_t(cell)].litter_shadow & 0xf) == 0 && h.litter_count == 1);
+    // Regression values, not checked against the game.
+    CHECK(turns == 44 && w.seed == 0xe7957f81);
+}
+
+// The town map: level 2 has plots 2 and 3 for sale, with no neighbour rule.
+void test_town_map(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(2, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 2, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    auto game = std::make_unique<th::Game>();
+    game->staff_market.ref_counts = th::reference_counts(gd.text());
+    game->start(*level, 2, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+
+    auto land = std::make_unique<th::TownLand>();
+    th::start_town_land(*land, *level, 2);
+    CHECK(land->for_sale[0] == 0x10 && land->for_sale[1] == 1 && land->for_sale[2] == 0 && land->for_sale[3] == 0);
+    CHECK(th::land_amount(*land, 1) == 0 && th::land_amount(*land, 2) == 518 && th::land_amount(*land, 3) == 220);
+    CHECK(th::can_buy_plot(*land, 2) == 2 && th::can_buy_plot(*land, 0) == 1);
+    // Level 8's plot 4 borders plot 5 alone.
+    auto level8 = gd.load_level(8, &error);
+    auto land8 = std::make_unique<th::TownLand>();
+    if (level8) {
+        th::start_town_land(*land8, *level8, 8);
+        CHECK(th::can_buy_plot(*land8, 4) == 0 && th::can_buy_plot(*land8, 3) == 3);
+        land8->for_sale[5] = 1;
+        CHECK(th::can_buy_plot(*land8, 4) == 4);
+    }
+
+    th::TownMap town;
+    CHECK(town.load(dir, gd.text(), &error));
+    if (!error.empty())
+        std::fprintf(stderr, "%s\n", error.c_str());
+    CHECK(!town.is_open());
+    th::PanelState panel;
+    panel.shown_balance = game->balance;
+    auto go_to = [](int, int) { return true; };
+    th::UiMouse m;
+    m.x = 320;
+    m.y = 470;
+    auto step = [&](bool escape = false) { return town.frame(m, escape, *game, *land, panel, "Test", go_to); };
+    town.open();
+    th::TownMapResult r = step();
+    CHECK(town.is_open() && !r.closed && r.event.type == th::EV_NONE && town.overlays() == 0x1f);
+    const th::Surface &s = town.surface();
+    CHECK(s.width() == th::kUiWidth && s.height() == th::kUiHeight);
+    CHECK(std::any_of(town.palette().begin(), town.palette().end(), [](uint32_t c) { return (c & 0xffffff) != 0; }));
+
+    // A cell of plot 2 and its pixel on the map.
+    int cell = 0;
+    for (int i = th::kMapSize + 1; i < th::kMapCells && !cell; i++)
+        if (land->level.plots[size_t(i)] == 2 && i % th::kMapSize > 1 && i / th::kMapSize > 1 &&
+            land->level.plots[size_t(i - 1)] == 2 && land->level.plots[size_t(i - th::kMapSize)] == 2 &&
+            land->level.plots[size_t(i - th::kMapSize - 1)] == 2)
+            cell = i;
+    CHECK(cell != 0);
+    const int px = 230 + (cell % th::kMapSize) * 3 + 1, py = 25 + (cell / th::kMapSize) * 3 + 1;
+    uint8_t for_sale_colour = s.data()[size_t(py) * th::kUiWidth + size_t(px)];
+
+    // A left click on it buys it, for 518 cells at the land's price.
+    game->balance = 1000000;
+    panel.shown_balance = game->balance;
+    m.x = px;
+    m.y = py;
+    m.left_pressed = m.left_held = true;
+    r = step();
+    m.left_pressed = m.left_held = false;
+    CHECK(r.event.type == th::EV_BUY_LAND && r.event.value == 2);
+    CHECK(r.sounds.size() == 1 && r.sounds[0] == 0x45);
+    game->event = r.event;
+    CHECK(th::apply_town_event(*game, *land, game->event));
+    const int cost = 518 * settings.gbv.land_cost_per_tile;
+    CHECK(cost > 0 && game->balance == 1000000 - cost);
+    CHECK(game->finance.entry_count > 0 &&
+          game->finance.entries[game->finance.entry_count - 1].type == th::kTxBuyLand);
+    CHECK((game->world.map[size_t(cell)].owner_flags & 1) && land->for_sale[2] == 1);
+    CHECK(th::land_amount(*land, 2) == 0 && land->level.plots[size_t(cell)] == 0);
+    step();
+    CHECK(s.data()[size_t(py) * th::kUiWidth + size_t(px)] != for_sale_colour);
+
+    // The heating: up, then down, as commands.
+    int heating = game->finance.heating_level;
+    auto click = [&](int x, int y, bool right = false) {
+        m.x = x;
+        m.y = y;
+        (right ? m.right_pressed : m.left_pressed) = true;
+        (right ? m.right_held : m.left_held) = true;
+        step();
+        m = {x, y};
+        (right ? m.right_released : m.left_released) = true;
+        th::TownMapResult out = step();
+        m = {x, y};
+        return out;
+    };
+    r = click(171 + 9, 315 + 9);
+    CHECK(r.event.type == th::EV_SET_HEATING && r.event.value == heating + 1);
+    CHECK(th::apply_town_event(*game, *land, r.event) && game->finance.heating_level == heating + 1);
+    r = click(70 + 9, 315 + 9);
+    CHECK(r.event.type == th::EV_SET_HEATING && r.event.value == heating);
+    // A right click on an overlay button shows that one alone; a left one
+    // toggles it.
+    click(140 + 27, 90 + 27, true);
+    CHECK(town.overlays() == 2);
+    click(140 + 27, 36 + 27);
+    CHECK(town.overlays() == 3);
+    // Escape closes the map on the next frame.
+    step(true);
+    CHECK(town.is_open());
+    r = step();
+    CHECK(r.closed && !town.is_open());
+}
+
+// The jukebox: the tracks of MIDI.TXT, its buttons and its track list.
+void test_jukebox(const char *dir)
+{
+    th::MusicPlayer music;
+    th::RequesterArt art;
+    std::string error;
+    CHECK(music.load(dir, &error) && art.load(dir, &error));
+    if (!error.empty())
+        std::fprintf(stderr, "%s\n", error.c_str());
+    th::Interface ui;
+    th::Jukebox jukebox;
+    th::jukebox_event(jukebox, ui, {th::EV_OPEN_JUKEBOX, 0, 0, 0});
+    CHECK(ui.requester() == th::Requester::Jukebox);
+    CHECK(music.count() == 8 && music.title(0) == "Atlantis");
+    for (int i = 0; i < music.count(); i++)
+        CHECK(music.track_enabled(i));
+
+    const th::Window &win = ui.window(int(th::Requester::Jukebox));
+    const th::Sprite row = art.sheet(int(th::Requester::Jukebox)).at(0x193);
+    const th::Sprite left_end = art.sheet(int(th::Requester::Jukebox)).at(0x192);
+    CHECK(row.width > 0 && row.height > 0);
+    th::UiLayer layer;
+    layer.resize(th::kUiWidth, th::kUiHeight);
+    th::draw_interface(layer, ui, art);
+    th::draw_jukebox(layer, ui, art, music);
+    th::Palette opaque;
+    opaque.fill(0xff000000);
+    auto argb = layer.to_argb(opaque);
+    // The list's last row, below the window, is drawn.
+    int last_y = win.y + 79 + 7 * row.height + row.height / 2;
+    CHECK(argb[size_t(last_y) * th::kUiWidth + size_t(win.x + 2 + left_end.width + 1)] != 0);
+
+    th::UiMouse m;
+    auto frame = [&](const th::InterfaceEvents &e) { return th::jukebox_frame(jukebox, ui, e, art, music, m, false); };
+    auto click_button = [&](int button) {
+        const th::WindowButton &b = win.buttons[size_t(button - 1)];
+        m = {};
+        m.x = win.x + b.x + b.width / 2;
+        m.y = win.y + b.y + b.height / 2;
+        m.left_pressed = m.left_held = true;
+        frame(ui.frame(m));
+        m.left_pressed = m.left_held = false;
+        m.left_released = true;
+        th::JukeboxResult r = frame(ui.frame(m));
+        m.left_released = false;
+        return r;
+    };
+
+    music.start_level(13);
+    CHECK(music.playing() && music.track() == 5);
+    // Next ends the song; the frame's play_next moves on.
+    th::JukeboxResult r = click_button(11);
+    CHECK(r.sounds.size() == 1 && r.sounds[0] == th::kSfxSelectX && music.song_over(false));
+    music.play_next(false);
+    CHECK(music.playing() && music.track() == 6);
+    // Previous goes back at once.
+    click_button(10);
+    CHECK(music.playing() && music.track() == 5 && !music.song_over(false));
+    // Pause and play again.
+    click_button(9);
+    CHECK(!music.playing());
+    click_button(9);
+    CHECK(music.playing() && music.track() == 5 && !music.song_over(false));
+    // Looping, next is ignored.
+    click_button(13);
+    CHECK(music.loop());
+    click_button(11);
+    CHECK(!music.song_over(false) && music.track() == 5);
+    // Stop ends the song and the loop.
+    click_button(12);
+    CHECK(!music.playing() && !music.loop());
+    click_button(9);
+    CHECK(music.playing() && music.track() == 5);
+
+    // The list: a click on track 2's title plays it, one on track 3's light
+    // takes it out of the playlist, so next skips it.
+    auto click_list = [&](int x, int y) {
+        m = {};
+        m.x = x;
+        m.y = y;
+        m.left_pressed = m.left_held = true;
+        frame({});
+        m = {};
+        m.x = x;
+        m.y = y;
+        return frame({});
+    };
+    int tiles_end = 2;
+    while (tiles_end < row.width * 7)
+        tiles_end += row.width;
+    auto row_y = [&](int track) { return win.y + 79 + track * row.height + row.height / 2; };
+    click_list(win.x + 2 + left_end.width + 1, row_y(2));
+    CHECK(music.playing() && music.track() == 2);
+    r = click_list(win.x + tiles_end + left_end.width + 2, row_y(3));
+    CHECK(!music.track_enabled(3) && music.track() == 2 && r.sounds.size() == 1);
+    click_button(11);
+    music.play_next(false);
+    CHECK(music.track() == 4);
+
+    r = click_button(16);
+    CHECK(r.close && r.sounds.size() == 1 && r.sounds[0] == th::kSfxNo4);
+}
+
+// Patients at reception: level 1 (FULL) opened at once, with the queues'
+// part of the world set up as Game::start is to set it.
+struct QueueFixture {
+    th::GameData gd;
+    std::optional<th::Level> level;
+    th::Balance settings;
+    std::unique_ptr<th::Game> game = std::make_unique<th::Game>();
+
+    bool start(const char *dir)
+    {
+        std::string error;
+        if (!gd.load(dir, &error))
+            return false;
+        level = gd.load_level(1, &error);
+        if (!level || !th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error))
+            return false;
+        settings.gbv.open_countdown = 0;
+        game->staff_market.ref_counts = th::reference_counts(gd.text());
+        game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        th::start_queues(game->world, game->settings(), game->arrivals.hospitals[0], game->reputation, game->finance);
+        return game->open;
+    }
+
+    // A game turn, with the turn's distances as draw_turn_randoms draws them
+    // at its start.
+    void turn()
+    {
+        uint32_t seed = game->world.seed;
+        th::draw_turn_randoms(game->world);
+        game->world.seed = seed;
+        game->turn();
+    }
+
+    // Places an object of `kind` facing 0 on the first cell from `from` on
+    // (along the row, then the next rows) where it fits.
+    uint16_t place_near(int from, int kind)
+    {
+        for (int d = 0; d < 6 * th::kMapSize; d++)
+            if (uint16_t id = th::place_object(game->world, gd.anims(), from + d, kind, 0, 0, false))
+                return id;
+        return 0;
+    }
+};
+
+// Every room's queue is well linked, its length is its patients' count, and
+// every patient in a queue is in its room's list.
+bool queues_consistent(const th::World &w)
+{
+    int queued = 0;
+    for (uint16_t r = 1; r < th::kRoomCount; r++) {
+        int count = 0;
+        uint16_t prev = 0;
+        for (uint16_t id = w.rooms[r].queue_head; id; id = w.things[id].queue_next) {
+            const th::Thing &p = w.things[id];
+            if (p.type != th::kThingPatient || p.queue_room != r || p.queue_prev != prev || count > th::kThingCount)
+                return false;
+            prev = id;
+            count++;
+        }
+        if (count != w.rooms[r].queue_length)
+            return false;
+        queued += count;
+    }
+    for (const th::Thing &t : w.things)
+        if (t.type == th::kThingPatient && t.queue_room)
+            queued--;
+    return queued == 0;
+}
+
+// The patients of a room's queue, head first.
+std::vector<uint16_t> queue_of(const th::World &w, uint16_t room)
+{
+    std::vector<uint16_t> ids;
+    for (uint16_t id = w.rooms[room].queue_head; id; id = w.things[id].queue_next)
+        ids.push_back(id);
+    return ids;
+}
+
+// With the game data: on level 1 opened at once, a receptionist mans a
+// reception desk with a bench and a drinks machine near by. With no GP's
+// office the hospital cannot give general practice, so, as in the game, she
+// calls no one: patients walk in to the desk, queue, sit on the bench, drink
+// and, past gbv.LeaveMax impatience, go home fed up; with the queue full,
+// new ones leave at once. Then, with a GP's office (a stand-in room: none
+// can be built yet) and general practice given, she calls them in queue
+// order and serves them; those who pay are sent to the office's queue.
+// The queues and cell lists are consistent every turn; fixed numbers from
+// the level's start (regression values, not checked against the game).
+void test_reception_queue_level1(const char *dir)
+{
+    for (int run = 0; run < 2; run++) {
+        QueueFixture f;
+        CHECK(f.start(dir));
+        if (!f.level)
+            return;
+        th::World &w = f.game->world;
+        CHECK(w.cure_available[0] == 1 && w.cure_available[th::kIllGeneralPractice] == 0);
+
+        uint16_t recep = 0;
+        for (uint16_t i = 1; i < w.things.size() && !recep; i++)
+            if (w.things[i].type == th::kThingStaff && w.things[i].subtype == th::kStaffReceptionist &&
+                w.things[i].state == th::kStaffApplicant)
+                recep = i;
+        int start = f.level->camera_start[0];
+        int cell = -1;
+        for (int d = 0; d < 400 && cell < 0; d++)
+            if (w.map[size_t(start + d)].first == 0 && th::staff_place_ok(w, start + d))
+                cell = start + d;
+        CHECK(recep != 0 && cell >= 0);
+        if (!recep || cell < 0)
+            return;
+        CHECK(th::place_staff_on_map(w, f.gd.anims(), f.settings, cell, recep, false, f.game->turn_count));
+        uint16_t desk = f.place_near(cell + 3, 11);
+        uint16_t bench = f.place_near(cell + 3 + 3 * th::kMapSize, 4);
+        uint16_t drinks = f.place_near(cell - 4 + 2 * th::kMapSize, 7);
+        CHECK(desk && bench && drinks);
+        if (!desk || !bench || !drinks)
+            return;
+        const th::Thing &r = w.things[recep];
+        int turns = 0;
+        while (turns < 2000 && !(w.things[desk].user == recep && r.state == th::kStaffReceptionistWorks)) {
+            f.turn();
+            turns++;
+        }
+        CHECK(r.state == th::kStaffReceptionistWorks && r.room != 0);
+        uint16_t reception = r.room;
+        CHECK(w.rooms[reception].type == th::kRoomReception && w.rooms[reception].queue_capacity == 20);
+
+        // No GP's office: patients queue and wait until fed up.
+        bool consistent = true;
+        bool called = false;
+        int queued = 0, sat = 0, fed_up = 0, max_queue = 0;
+        std::vector<bool> seen(th::kThingCount), was_queued(th::kThingCount);
+        for (int i = 0; i < 8000; i++) {
+            f.turn();
+            consistent &= queues_consistent(w) && cell_lists_consistent(w);
+            called |= r.slave != 0;
+            max_queue = std::max(max_queue, int(w.rooms[reception].queue_length));
+            for (uint16_t id = 1; id < w.things.size(); id++) {
+                const th::Thing &p = w.things[id];
+                if (p.type != th::kThingPatient) {
+                    seen[id] = was_queued[id] = false;
+                    continue;
+                }
+                if (p.queue_room == reception && !was_queued[id]) {
+                    was_queued[id] = true;
+                    queued++;
+                }
+                if (p.object == bench && w.things[bench].user == id && !seen[id]) {
+                    seen[id] = true;
+                    sat++;
+                }
+                if ((p.person_flags & th::kPfFedUp) && p.complex_action == th::kComplexLeave &&
+                    p.state == th::kPsGotoDestination && was_queued[id]) {
+                    was_queued[id] = false;
+                    fed_up++;
+                }
+            }
+        }
+        std::printf("reception, no GP: %d queued, %d sat, %d fed up (%u counted), queue up to %d, drinks %d, "
+                    "seed %#x\n",
+                    queued, sat, fed_up, unsigned(w.patients_left_count), max_queue, int(w.drinks_income),
+                    unsigned(w.seed));
+        CHECK(consistent && !called);
+        CHECK(queued > 0 && sat > 0 && fed_up > 0 && w.patients_left_count >= fed_up);
+        CHECK(queued == 8 && sat == 6 && fed_up == 5 && max_queue == 4 && w.drinks_income == 100 &&
+              w.seed == 0xe34d295b);
+
+        // A GP's office: she calls the patients in queue order and serves
+        // them.
+        uint16_t gp = 0;
+        for (uint16_t i = 1; i < th::kRoomCount && !gp; i++)
+            if (w.rooms[i].type == th::kRoomFree)
+                gp = i;
+        th::RoomInfo &office = w.rooms[gp];
+        office.type = th::kRoomGp;
+        office.owner = 0;
+        // Its floor off the hospital, its door on a free indoor cell some
+        // rows before the desk that patients can walk to.
+        office.pos = 1 + th::kMapSize;
+        office.width = office.height = 1;
+        uint16_t from = w.things[desk].use_pos[1];
+        for (int c = cell - 6 * th::kMapSize; c < th::kMapCells && !office.door_tile; c++) {
+            const th::MapCell &m = w.map[size_t(c)];
+            th::OrthonavPath path;
+            th::orthonav_init(w, path, from % th::kMapSize, from / th::kMapSize, c % th::kMapSize, c / th::kMapSize);
+            if (m.first == 0 && !(m.flags & 7) && m.owner_flags == 1 && path.count != 0)
+                office.door_tile = office.door_inside_tile = uint16_t(c);
+        }
+        CHECK(office.door_tile != 0);
+        office.queue_capacity = 30;
+        w.cure_available[th::kIllGeneralPractice] = 1;
+        bool in_order = true;
+        int calls = 0, served = 0, to_office = 0;
+        uint16_t slave = 0;
+        uint16_t seen_before = w.rooms[reception].patients_seen;
+        std::vector<bool> going(th::kThingCount);
+        for (int i = 0; i < 3000; i++) {
+            std::vector<uint16_t> before = queue_of(w, reception);
+            f.turn();
+            consistent &= queues_consistent(w) && cell_lists_consistent(w);
+            if (r.slave && r.slave != slave) {
+                calls++;
+                // Those queueing ahead of the one called have all left the
+                // queue.
+                for (uint16_t id : before) {
+                    if (id == r.slave)
+                        break;
+                    in_order &= w.things[id].queue_room != reception;
+                }
+            }
+            slave = r.slave;
+            for (uint16_t id = 1; id < w.things.size(); id++) {
+                const th::Thing &p = w.things[id];
+                if (p.type != th::kThingPatient) {
+                    going[id] = false;
+                    continue;
+                }
+                if (p.dest_room == gp && !going[id]) {
+                    going[id] = true;
+                    to_office++;
+                }
+            }
+        }
+        served = w.rooms[reception].patients_seen - seen_before;
+        std::printf("reception, GP: %d calls, %d served, %d sent to the office, its queue %d (%d coming), seed %#x\n",
+                    calls, served, to_office, int(office.queue_length), int(office.queue_incoming), unsigned(w.seed));
+        CHECK(consistent && in_order);
+        CHECK(calls > 0 && served > 0 && to_office > 0 && office.queue_length > 0);
+        CHECK(calls == 10 && served == 10 && to_office == 10 && office.queue_length == 5 && w.seed == 0xf2e283cb);
+
+        // With the reception's queue full, a new patient leaves at once.
+        w.rooms[reception].queue_capacity = w.rooms[reception].queue_length;
+        uint16_t late =
+            th::make_a_peep(w, f.game->arrivals, f.settings, f.gd.anims(), 1, f.level->entrances[0][0], 16, 0);
+        CHECK(late != 0);
+        if (!late)
+            return;
+        th::start_person_going(w, f.gd.anims(), f.gd.person_complexes(), late, f.game->turn_count);
+        CHECK(w.things[late].complex_action == th::kComplexLeave && w.things[late].dest_room == 0);
+    }
+}
+
+// queue.cpp's lists: joining, leaving, moving to the front and back, and a
+// patient on its way counted in queue_incoming until it joins.
+void test_queue_lists()
+{
+    auto w = std::make_unique<th::World>();
+    th::RoomInfo &room = w->rooms[1];
+    room.type = th::kRoomGp;
+    room.queue_capacity = 6;
+    for (uint16_t id = 1; id <= 4; id++)
+        w->things[id].type = th::kThingPatient;
+    w->things[4].dest_room = 1;
+    room.queue_incoming = 1;
+    for (uint16_t id = 1; id <= 4; id++)
+        th::join_queue(*w, id, 1);
+    CHECK((queue_of(*w, 1) == std::vector<uint16_t>{1, 2, 3, 4}) && room.queue_incoming == 0);
+    CHECK(queues_consistent(*w) && th::which_queue(*w, 3) == 1 && th::get_real_person_from_room(*w, 1, 2) == 2);
+    CHECK(th::spare_queue_capacity(*w, th::kIllGeneralPractice, true, 0, 0) == 2);
+    CHECK(th::all_queue_capacity(*w, th::kIllGeneralPractice, true, 0) == 0);
+    w->cure_available[th::kIllGeneralPractice] = 1;
+    CHECK(th::all_queue_capacity(*w, th::kIllGeneralPractice, true, 0) == 2);
+    th::front_queue(*w, 1, 3);
+    CHECK((queue_of(*w, 1) == std::vector<uint16_t>{3, 1, 2, 4}) && queues_consistent(*w));
+    th::back_queue(*w, 1, 1);
+    CHECK((queue_of(*w, 1) == std::vector<uint16_t>{1, 2, 4, 3}) && queues_consistent(*w));
+    th::leave_queue(*w, 2);
+    CHECK((queue_of(*w, 1) == std::vector<uint16_t>{1, 4, 3}) && queues_consistent(*w));
+    th::leave_queue(*w, 1);
+    th::leave_queue(*w, 3);
+    CHECK((queue_of(*w, 1) == std::vector<uint16_t>{4}) && queues_consistent(*w) && room.queue_length == 1);
+    w->things[2].dest_room = 1;
+    room.queue_incoming = 1;
+    th::leave_queue(*w, 2);
+    CHECK(room.queue_incoming == 0 && w->things[2].dest_room == 0);
+}
+
+// A game frame of the charts with the command it gives carried out, as the
+// app does: the interface's part, then the game's.
+th::ChartsResult chart_step(th::Charts &c, th::Game &game, th::HospitalSettings &hs, th::UiMouse m = {},
+                            th::ChartKeys k = {})
+{
+    th::ChartsResult r = th::chart_frame(c, m, k, 0.04, game, hs);
+    if (r.event.type) {
+        th::chart_command(c, r.event);
+        th::apply_chart_event(game, hs, r.event);
+    }
+    return r;
+}
+
+// Clicks (x, y) on the chart: the button down in one frame, up in the next.
+// Returns the second frame's result.
+th::ChartsResult chart_click(th::Charts &c, th::Game &game, th::HospitalSettings &hs, int x, int y)
+{
+    th::UiMouse m;
+    m.x = x;
+    m.y = y;
+    m.left_pressed = m.left_held = true;
+    chart_step(c, game, hs, m);
+    m.left_pressed = m.left_held = false;
+    m.left_released = true;
+    return chart_step(c, game, hs, m);
+}
+
+// Pixels of `r` the chart drew over its picture.
+int chart_drawn(const th::Charts &c, th::Rect r)
+{
+    const th::Surface &pic = c.pictures[size_t(c.chart)].pixels;
+    int n = 0;
+    for (int y = r.y; y < r.y + r.h; y++)
+        for (int x = r.x; x < r.x + r.w; x++)
+            n += c.surface.data()[y * 640 + x] != pic.data()[y * 640 + x];
+    return n;
+}
+
+void test_charts(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &game = *f.game;
+    th::Charts c;
+    std::string error;
+    CHECK(th::load_charts(c, dir, f.gd.text(), f.gd.palette(), &error));
+    c.hospital_names[0] = "Dr Theme Hospital";
+    th::HospitalSettings hs;
+    th::start_hospital_settings(hs, f.settings, 0);
+    CHECK(hs.illnesses[1].discovered == 1);
+    CHECK(hs.illnesses[1].price == f.settings.expertise[1].start_price);
+    CHECK(hs.rest_threshold == f.settings.gbv.tired && hs.insurers[0] != hs.insurers[1]);
+
+    // Each chart: its picture in its own palette, with its figures drawn over.
+    for (int n = 0; n < th::kChartCount; n++) {
+        th::chart_command(c, {th::EV_OPEN_SCREEN, uint16_t(n)});
+        CHECK(c.open && c.chart == n);
+        chart_step(c, game, hs);
+        CHECK(c.palette == c.pictures[size_t(n)].palette);
+        CHECK(c.pictures[size_t(n)].sprites.size() > 1);
+        int lit = 0;
+        for (int i = 0; i < 640 * 480; i++)
+            lit += c.surface.data()[i] != 0;
+        CHECK(lit > 640 * 480 / 2);
+        CHECK(chart_drawn(c, {0, 0, 640, 480}) > 100);
+    }
+
+    // The bank statement: no lines, then a purchase listed.
+    const th::Rect lines = {40, 70, 560, 14};
+    th::chart_command(c, {th::EV_OPEN_SCREEN, th::kChartStatement});
+    chart_step(c, game, hs);
+    CHECK(game.finance.entry_count == 0 && chart_drawn(c, lines) == 0);
+    th::change_balance(game.finance, game.balance, game.date.day, game.date.month, th::kTxBuyObject, -500);
+    chart_step(c, game, hs);
+    CHECK(chart_drawn(c, lines) > 0);
+
+    // A click on the statement opens the bank manager, valuing the hospital.
+    chart_click(c, game, hs, 300, 200);
+    CHECK(c.open && c.chart == th::kChartBank && game.finance.max_loan >= 5000);
+    chart_step(c, game, hs);
+    // Borrowing and repaying $5000.
+    int32_t before = game.balance;
+    th::ChartsResult r = chart_click(c, game, hs, 200, 275);
+    CHECK(r.event.type == th::EV_TAKE_LOAN);
+    CHECK(game.balance == before + 5000 && game.finance.loan == 5000);
+    const th::BankEntry &loan = game.finance.entries[game.finance.entry_count - 1u];
+    CHECK(loan.type == th::kTxBankLoan && loan.amount == 5000);
+    r = chart_click(c, game, hs, 60, 275);
+    CHECK(r.event.type == th::EV_REPAY_LOAN && game.balance == before && game.finance.loan == 0);
+    r = chart_click(c, game, hs, 60, 275);
+    CHECK(r.event.type == th::EV_NONE && std::count(r.sounds.begin(), r.sounds.end(), 0x08) == 1);
+    // The close button: back to the game on the next frame.
+    chart_click(c, game, hs, 615, 455);
+    CHECK(c.open);
+    r = chart_step(c, game, hs);
+    CHECK(r.event.type == th::EV_RETURN_FROM_SCREEN && !c.open);
+
+    // Policy: dragging the send-home slider, then Escape.
+    th::chart_command(c, {th::EV_OPEN_SCREEN, th::kChartPolicy});
+    chart_step(c, game, hs);
+    th::UiMouse m;
+    m.x = 250;
+    m.y = 140;
+    m.left_pressed = m.left_held = true;
+    chart_step(c, game, hs, m);
+    CHECK(hs.send_home_threshold != 10 && hs.send_home_threshold <= hs.guess_cure_threshold);
+    th::ChartKeys escape;
+    escape.escape = true;
+    chart_step(c, game, hs, {}, escape);
+    chart_step(c, game, hs);
+    chart_step(c, game, hs);
+    CHECK(!c.open);
+
+    // The staff list shows a hired staff member; a click selects them and
+    // the raise button raises their wage by a tenth.
+    uint16_t id = th::alter_applicant(game.world, true, 0, th::kStaffDoctor);
+    int cell = free_staff_cell(game.world, *f.level);
+    CHECK(id != 0 && cell >= 0);
+    if (!id || cell < 0)
+        return;
+    CHECK(th::place_staff_on_map(game.world, f.gd.anims(), f.settings, cell, id, false, game.turn_count));
+    th::chart_command(c, {th::EV_OPEN_SCREEN, th::kChartStaff});
+    chart_step(c, game, hs);
+    CHECK(chart_drawn(c, {49, 82, 581, 27}) > 0);
+    chart_click(c, game, hs, 150, 95);
+    CHECK(c.value == id);
+    int32_t salary = game.world.things[id].salary;
+    r = chart_click(c, game, hs, 370, 435);
+    CHECK(r.event.type == th::EV_INCREASE_STAFF_SALARIES && game.world.things[id].salary == salary + salary / 10);
+
+    // Switching charts with a key; research needs a research room.
+    bool refused = false;
+    th::Event e = th::open_chart_command(th::kChartGraphs, game, &refused);
+    CHECK(e.type == th::EV_OPEN_SCREEN && !refused);
+    th::chart_command(c, e);
+    CHECK(c.open && c.chart == th::kChartGraphs && c.state == 0);
+    e = th::open_chart_command(th::kChartResearch, game, &refused);
+    CHECK(e.type == th::EV_NONE && refused);
+    CHECK(th::chart_for_panel_action(th::PanelAction::BankStatement) == th::kChartStatement);
+    CHECK(th::chart_for_panel_action(th::PanelAction::HireStaff) == -1);
+}
+
 int main()
 {
     test_blit_clips_and_skips();
@@ -2725,6 +3551,7 @@ int main()
     test_orthonav_whatnext();
     test_create_an_illness();
     test_set_complex();
+    test_queue_lists();
     test_sound_player();
     test_xmi_parse();
 
@@ -2761,6 +3588,13 @@ int main()
         test_advisor_tutorial(dir);
         test_advisor_advice(dir);
         test_staff_at_work_level1(dir);
+        test_litter_drawn(dir);
+        test_litter_dropping_level1(dir);
+        test_handyman_sweeps(dir);
+        test_reception_queue_level1(dir);
+        test_town_map(dir);
+        test_jukebox(dir);
+        test_charts(dir);
     }
 
     if (failures) {

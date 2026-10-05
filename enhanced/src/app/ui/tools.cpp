@@ -52,7 +52,7 @@ void draw_tools(ToolsState &state, World *world)
 {
     if (!state.open)
         return;
-    if (ImGui::Begin("Tools (F1)", &state.open, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::Begin("Tools (F12)", &state.open, ImGuiWindowFlags_AlwaysAutoResize)) {
         const char *scales[] = {"Automatic", "1x", "2x", "3x", "4x"};
         ImGui::Combo("UI scale", &state.ui_scale, scales, IM_ARRAYSIZE(scales));
         if (world)

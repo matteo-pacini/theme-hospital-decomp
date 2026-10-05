@@ -249,6 +249,42 @@ struct Thing {
     uint16_t litter_count = 0;
     uint16_t plant_count = 0;
     uint16_t repair_count = 0;
+
+    // Litter (litter.cpp)
+    // Patients: the game's Thing.flags (PF_*; kPf* in core/world/litter.h).
+    uint32_t person_flags = 0;
+    // Patients: the game turn, in 16 bits, from which modify_person runs
+    // again.
+    uint16_t modify_time = 0;
+    // Patients: grows near litter and after a drink; past gbv.litter_drop
+    // they drop litter.
+    uint16_t litter_urge = 0;
+    // Patients: rises near litter and dead plants and when too hot; from
+    // gbv.vomit_limit they may vomit.
+    uint16_t nausea = 0;
+    // Patients: grow while they wait and are unhappy, thirsty or need the
+    // toilet.
+    uint16_t impatience = 0;
+    uint16_t waiting_time = 0;
+    // Patients: health changes held back while they are in a room.
+    int16_t health_delta = 0;
+    // Patients playing a reaction (PS_SHOWANIM): the frame and mirroring to
+    // go back to; the state is kept in substate.
+    uint16_t saved_sprite = 0;
+    uint8_t saved_flip = 0;
+
+    // Queues (queue.cpp)
+    // Patients: their neighbours in the queue of room queue_room (a
+    // World::rooms index; RoomInfo.queue_head), 0 for none.
+    uint16_t queue_prev = 0;
+    uint16_t queue_next = 0;
+    uint16_t queue_room = 0;
+    // Patients: the room they are on their way to queue for, 0 for none.
+    uint16_t dest_room = 0;
+    // Patients: the price quoted for their treatment.
+    int32_t fee = 0;
+    // Patients: the treatment after `treatment`, 0 for none.
+    uint8_t next_treatment = 0;
 };
 
 // Staff at work (staff_complex.cpp)
@@ -275,12 +311,29 @@ struct RoomInfo {
     uint16_t patients_seen = 0;
     uint8_t owner = 0;
     uint8_t queue_capacity = 0;
+
+    // Queues (queue.cpp)
+    // The cell outside its door, where patients queue, and the one inside;
+    // 0 for a reception.
+    uint16_t door_tile = 0;
+    uint16_t door_inside_tile = 0;
+    // The first patient queueing (Thing.queue_next), 0 for none; the
+    // patients queueing, and those on their way to queue (not counted for a
+    // reception).
+    uint16_t queue_head = 0;
+    uint8_t queue_length = 0;
+    uint8_t queue_incoming = 0;
 };
 
 // The map and the things on it.
 // The route planner people use: A*, the default, or the game's wall
 // follower (wallhug_tricky), kept for comparing with the original.
 enum class PathFinder : uint8_t { AStar, Original };
+
+// Queues (queue.cpp)
+struct Balance;
+struct HospitalMarket;
+struct Finance;
 
 struct World {
     std::array<MapCell, kMapCells> map{};
@@ -306,6 +359,40 @@ struct World {
     // Staff at work (staff_complex.cpp)
     // The rooms (the game's room_info), indexed by Thing.room.
     std::array<RoomInfo, kRoomCount> rooms{};
+
+    // Queues (queue.cpp)
+    // What the patients' states read from outside the world, set by
+    // start_queues (core/world/queue.h) and outliving the turns run: the
+    // level's settings, hospital 0's prices and reputations
+    // (ArrivalState::hospitals[0]), its reputation and its finances.
+    const Balance *settings = nullptr;
+    HospitalMarket *market = nullptr;
+    const int *reputation = nullptr;
+    const Finance *finance = nullptr;
+    // The turn's random distances (othervar.queue_near_dist, 0-5, and
+    // object_near_dist, 1-4; draw_turn_randoms): how near their queue's cell
+    // or their object patients count as there.
+    uint8_t queue_near_dist = 0;
+    uint8_t object_near_dist = 0;
+    // Hospital 0's treatments it can give (allhosps[0].rooms[].cure_available,
+    // 1 if so), by illness; 0 (no treatment) always.
+    std::array<uint8_t, 47> cure_available{};
+    // The insurance companies (insurance_co indices) the patients' insurance
+    // bits 1 and 2 pick (ins_control[1] and [2]); bit 4 reads ins_control[4],
+    // past the game's table, as 0.
+    std::array<uint16_t, 5> ins_control{1, 2, 3, 0, 0};
+    // For the advisor: patients of hospital 0 who left fed up
+    // (othervar.patients_left_count), the bench shortage
+    // (NRAdcounts.bench_shortage), and the last treatment a patient was asked
+    // to pay for (advisor.unpaid_treatment) with whether one would not pay
+    // (advisor.event_flags 2).
+    uint8_t patients_left_count = 0;
+    int32_t bench_shortage = 0;
+    uint16_t unpaid_treatment = 0;
+    bool too_expensive = false;
+    // Hospital 0's drinks sales this month (allhosps[0].drinks_income), which
+    // month_end banks.
+    int32_t drinks_income = 0;
 };
 
 // Advances `seed` as the game's old_newrand (src/rand.cpp) and returns its

@@ -24,16 +24,32 @@ namespace th
 // Patient states (Thing.state; the game's PS_*, include/enums.h).
 constexpr uint8_t kPsWaitsForBusy = 0x04;
 constexpr uint8_t kPsGotoDestination = 0x06;
+constexpr uint8_t kPsReturnToQueueArea = 0x08;
+constexpr uint8_t kPsGoHome = 0x0c;
 constexpr uint8_t kPsGone = 0x0e;
 constexpr uint8_t kPsPlayComplexAnim = 0x10;
+constexpr uint8_t kPsArrivesAtDoor = 0x12;
 constexpr uint8_t kPsInQueue = 0x14;
+constexpr uint8_t kPsGotoObject = 0x16;
 constexpr uint8_t kPsEntertainsThemself = 0x18;
+constexpr uint8_t kPsGotoQueue = 0x24;
+constexpr uint8_t kPsGoForTreatment = 0x26;
 constexpr uint8_t kPsComplexRetry = 0x2a;
+constexpr uint8_t kPsInBogs = 0x36;
 constexpr uint8_t kPsStuck = 0x3c;
+constexpr uint8_t kPsWaitsForDecision = 0x44;
 
 // The complex that sends a patient to its destination cell and off the
 // map (start_person_going, person_go_home).
 constexpr uint16_t kComplexLeave = 20;
+// The complexes a waiting patient runs: to a drinks machine for a drink,
+// to a bench to sit, to a free cell to stand (find_standing_place).
+constexpr uint16_t kComplexDrink = 60;
+constexpr uint16_t kComplexBench = 70;
+constexpr uint16_t kComplexStandingPlace = 430;
+// The complex that walks a patient to a reception desk's queue
+// (start_person_going).
+constexpr uint16_t kComplexToReception = 470;
 
 // The patients' complexes: DATA/P_COMP.LEX, as the game's
 // person_complex_group (loaded by src/files.cpp).
@@ -64,11 +80,13 @@ bool set_complex(World &world, uint16_t id, uint16_t action, uint16_t arg);
 // (fail_person_complex). Draws from world.seed as the game does. `game_turn` is the turn being played
 // (the game's actual_game_turn).
 //
+// complex_success (action 52) is ported for patients: a drink, a paid
+// amusement and the toilet (2, 4, 6); the use count of an object (24) is
+// not kept.
 // Not yet ported: the rooms, doors and staff the steps can involve (there
 // are none yet: find_door finds no door, so action 20 fails as in the game
-// and 14 does nothing), action 22 (leaving a door, which only follows a
-// successful 20) and complex_success (action 52, which only follows using
-// an object of a kind not yet placeable).
+// and 14 does nothing) and action 22 (leaving a door, which only follows a
+// successful 20).
 uint8_t process_person_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                                uint32_t game_turn);
 
@@ -89,30 +107,78 @@ void adjust_big_cell_flag(World &world, uint16_t cell);
 // resume_state, PS_COMPLEX_RETRY to retry the step.
 void fail_person_complex(World &world, const AnimData &anims, uint16_t id);
 
+// find_nearest_manned_reception (0x382d8): of the reception desks of
+// patient `id`'s hospital with a receptionist in a reception (in reception
+// `room`, or any with 0) and, if `need_space`, room in its queue, the one
+// scoring least by its queue's length (gbv.q_points), its distance
+// (gbv.dist_points) less its free places. 0 if none.
+uint16_t find_nearest_manned_reception(const World &world, uint16_t id, uint8_t room, bool need_space);
+
 // start_person_going (0x173c0): sends patient `id` on its way: to the
-// nearest manned reception desk with room in its queue or, there being
-// none, to a random one of its hospital's entrances (World::entrances) and
-// off the map (kComplexLeave), and runs the complex's first step. Draws
-// from world.seed.
-// There are no rooms or staff yet, so it always leaves.
+// nearest manned reception desk with room in its queue (complex
+// kComplexToReception to the desk's use cell 1, walking as PS_GOTO_QUEUE,
+// with the desk's reception as dest_room) or, there being none, to a
+// random one of its hospital's entrances (World::entrances) and off the
+// map (kComplexLeave), and runs the complex's first step. Draws from
+// world.seed when it leaves. Patients are never in a room yet, so the
+// game's first step out of one is not taken.
 void start_person_going(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                         uint32_t game_turn);
 
+// person_go_home (0x1665c): patient `id` stops what it is doing
+// (interrupt_person), leaves its queue and walks to its hospital's first
+// entrance (World::entrances[owner][0], the game's first ROOM_ENTRANCE room)
+// and off the map. Its player calls, statistics and status icon are not
+// ported.
+void person_go_home(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
+                    uint32_t game_turn);
+
+// person_ok_to_call (0x1905c): false if patient `id` is in the toilets or
+// on its way there (next_state PS_IN_BOGS).
+bool person_ok_to_call(const World &world, uint16_t id);
+
+// interrupt_complex (0x427d8) for patient `id`: clears its complex, the
+// complexes queued and to resume and its next and resume states, centres
+// it on its cell and, if it uses an object, gets it off (complex 160) at a
+// new patient's speed.
+void interrupt_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
+                       uint32_t game_turn);
+
 // remove_person (0x16760): takes patient `id` off the map and frees its
-// entry: abandons its complex (abandon_complex), then unlinks it from its
-// cell (remove_thing). Queues, rooms, vaccinations and the patient's
-// window, which do not exist yet, are not handled.
+// entry: leaves its queue, abandons its complex (abandon_complex), then
+// unlinks it from its cell (remove_thing). Rooms, vaccinations and the
+// patient's window, which do not exist yet, are not handled.
 void remove_person(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                    uint32_t game_turn);
 
 // One game turn of patient `id`, as process_things for a THING_PATIENT: its
 // state's routine. Returns whether it still exists (PS_GONE removes it).
-// Handled: PS_GOTO_DESTINATION (person_goto_destination, as walk_turn: the
-// blueprint, needs and reaction checks are not run, which is exact on
-// outdoor cells, where the game draws nothing for them; a failed walk goes
-// to person_nav_failure, which leads to PS_STUCK), PS_GONE,
-// PS_PLAY_COMPLEX_ANIM and PS_COMPLEX_RETRY. Other states do nothing yet,
-// and nor do the per-turn counts and status icon.
+// Draws from world.seed as the game does, and reads World::settings and
+// the rest set by start_queues (core/world/queue.h); before that, the
+// game's static settings (Balance{}) at the starting heating level.
+// Handled:
+// - walking (PS_GOTO_DESTINATION, PS_GOTO_OBJECT, PS_GOTO_QUEUE), each step
+//   decided after the patient's needs and reactions (person_needs_turn,
+//   core/world/litter.h); a failed walk goes to person_nav_failure, which
+//   leads back to queueing or to PS_STUCK, from which a patient tries random
+//   directions and, past gbv.leave_max impatience, goes home fed up;
+// - queueing (PS_IN_QUEUE, then PS_ENTERTAINS_THEMSELF): a thirsty
+//   patient fetches a drink from a drinks machine near by, others sit on a
+//   free bench near by or stand on a free cell, and one past gbv.leave_max
+//   impatience goes home fed up (PS_ARRIVES_AT_DOOR queues, as patients
+//   never enter a room yet; PS_RETURN_TO_QUEUE_AREA walks back to the
+//   queue);
+// - being sent on (PS_GO_FOR_TREATMENT, after the receptionist): the
+//   patient pays or not (shall_peep_pay, core/world/reception.h) and goes
+//   home without a treatment the hospital can give; with no room for it,
+//   waits for a decision (PS_WAITS_FOR_DECISION) up to 1500 turns, then
+//   goes home; else walks to the queue of the room for it (get_expertise_dest);
+// - PS_WAITS_FOR_BUSY, PS_GO_HOME, PS_GONE, PS_PLAY_COMPLEX_ANIM,
+//   PS_COMPLEX_RETRY, PS_SHOWANIM and PS_ARRIVED_FROM_CALL.
+// Not ported, as what they need does not exist yet: blueprints, rooms (the
+// toilets, entering a room, wards, research), paging staff, player calls,
+// statistics (person_count, the reputation of turning a patient away),
+// status icons and diagnosis.
 bool person_turn(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                  uint32_t game_turn);
 

@@ -1,6 +1,6 @@
 // Theme Hospital Enhanced: draws a level's map from the game's own data at
 // any window size, with the bottom panel centred at native size and ImGui
-// developer tools (F1).
+// developer tools (F12).
 
 #include "app/audio/mixer.h"
 #include "app/datadir.h"
@@ -16,10 +16,13 @@
 #include "core/render/surface.h"
 #include "core/render/view.h"
 #include "core/ui/buy_objects.h"
+#include "core/ui/charts.h"
 #include "core/ui/hire_staff.h"
+#include "core/ui/jukebox.h"
 #include "core/ui/layer.h"
 #include "core/ui/menubar.h"
 #include "core/ui/startup.h"
+#include "core/ui/town_map.h"
 #include "core/ui/windows.h"
 #include "core/world/game.h"
 
@@ -35,6 +38,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace th
 {
@@ -114,6 +118,16 @@ bool has_receptionist(const World &world)
         if (t.type == kThingStaff && t.subtype == kStaffReceptionist)
             return true;
     return false;
+}
+
+// Where `src` goes in an `out_w` x `out_h` window, as large as fits whole and
+// centred.
+SDL_FRect fit_rect(const Surface &src, int out_w, int out_h)
+{
+    int sw = std::max(src.width(), 1), sh = std::max(src.height(), 1);
+    float fit = std::min(float(out_w) / float(sw), float(out_h) / float(sh));
+    float dw = sw * fit, dh = sh * fit;
+    return {(out_w - dw) / 2, (out_h - dh) / 2, dw, dh};
 }
 
 // A static texture of `width` x `height` 0xAARRGGBB pixels, scaled without
@@ -214,6 +228,16 @@ class App
     void ask_quit();
     void draw_pointer(int scale);
     void startup_step(int out_w, int out_h);
+    void open_town_map();
+    void town_step(int out_w, int out_h);
+    void charts_step(int out_w, int out_h);
+    // Carries out the frame's command (Game::event): the interface's part,
+    // then the game's (process_turn).
+    void run_command(Game &game);
+    // The mouse in `src` drawn at `at` (from fit_rect).
+    UiMouse fitted_mouse(const SDL_FRect &at, const Surface &src) const;
+    // Draws `src` in `palette` into `dst` of the window through `tex`.
+    void draw_fitted(const Surface &src, const Palette &palette, SDL_Texture *&tex, const SDL_FRect &dst);
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -238,6 +262,17 @@ class App
     ObjectUi object_ui_;
     HireStaff hire_;
     HireStaffArt hire_art_;
+    Jukebox jukebox_;
+    // The town map: while open it takes the window from the view, the
+    // interface and the menu bar; the game keeps running behind it.
+    TownMap town_;
+    bool open_town_ = false; // the T key asked for it this frame
+    SDL_Texture *town_tex_ = nullptr;
+    // The full-screen charts (F1-F8, the Charts menu, the panel), shown in
+    // place of everything else while open, the game running behind them.
+    Charts charts_;
+    bool chart_space_ = false; // Space pressed for the charts this frame
+    SDL_Texture *charts_tex_ = nullptr;
     // The map cell under the pointer this frame (column + row * 128), -1
     // when off the map.
     int map_cell_ = -1;
@@ -361,6 +396,10 @@ bool App::try_load_data(const std::filesystem::path &dir)
         std::fprintf(stderr, "%s\n", error.c_str());
     if (!hire_art_.load(dir, &error))
         std::fprintf(stderr, "%s\n", error.c_str());
+    if (!town_.load(dir, data_->text(), &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
+    if (!load_charts(charts_, dir, data_->text(), data_->palette(), &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
     init_object_ui(object_ui_, data_->palette());
     if (!bank_.load(dir, data_->language(), &error))
         std::fprintf(stderr, "%s\n", error.c_str());
@@ -395,6 +434,10 @@ void App::load_level(int number)
     level_ = number;
     map_ = std::move(map);
     start_advisor(map_->game.advisor, tutorial_);
+    start_hospital_settings(map_->game.hospital, map_->game.settings(), uint32_t(SDL_GetTicks()));
+    charts_.hospital_names[0] = startup_.player_name();
+    charts_.open = false;
+    town_.close();
     panel_state_.shown_balance = map_->game.balance;
     sounds_.safeseed = kLevelStartSeed;
     // A level starts on a song picked by the clock, as the game does.
@@ -432,7 +475,8 @@ void App::interface_step(int out_w, int out_h, int scale)
     bool escape = escape_;
     escape_ = false;
     if (escape && game && !interface_.modal()) {
-        if (hire_.placing() || interface_.requester() == Requester::HireStaff) {
+        if (hire_.placing() || interface_.requester() == Requester::HireStaff ||
+            interface_.requester() == Requester::Jukebox) {
             game->event = hire_staff_cancel(hire_);
             escape = false;
         } else if (object_escape(*game)) {
@@ -442,6 +486,13 @@ void App::interface_step(int out_w, int out_h, int scale)
     if (game)
         sync_object_requesters(interface_, *game);
     InterfaceEvents events = interface_.frame(mouse, escape);
+    if (game && interface_.requester() == Requester::Jukebox) {
+        JukeboxResult jr = jukebox_frame(jukebox_, interface_, events, requester_art_, music_, mouse, game->paused);
+        for (uint8_t sfx : jr.sounds)
+            sounds_.play_sound(kSourceGeneral, sfx);
+        if (jr.close)
+            game->event = hire_staff_cancel(hire_);
+    }
     if (game) {
         const bool *keys = SDL_GetKeyboardState(nullptr);
         bool shift = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
@@ -471,6 +522,12 @@ void App::interface_step(int out_w, int out_h, int scale)
             refused = placing;
             if (!refused)
                 game->event = {EV_OPEN_HIRE_STAFF};
+        } else if (action == PanelAction::TownMap) {
+            open_town_map();
+        } else if (int chart = chart_for_panel_action(action); chart >= 0) {
+            Event e = open_chart_command(chart, *game, &refused);
+            if (!refused)
+                game->event = e;
         }
         if (action != PanelAction::None)
             sounds_.play_sound(kSourceGeneral, refused ? kSfxWrong2 : kSfxSelectX);
@@ -515,9 +572,7 @@ void App::interface_step(int out_w, int out_h, int scale)
         last_event_ = game->event;
 
         // The command, as process_turn: the interface's part, then the game's.
-        hire_staff_event(hire_, interface_, game->world, game->event);
-        game->process_turn();
-        hire_staff_after_turn(hire_, game->world);
+        run_command(*game);
     }
 
     ui_.clear();
@@ -535,6 +590,8 @@ void App::interface_step(int out_w, int out_h, int scale)
         advance_balance_roll(panel_state_, game->balance);
     }
     draw_interface(ui_, interface_, requester_art_);
+    if (interface_.requester() == Requester::Jukebox)
+        draw_jukebox(ui_, interface_, requester_art_, music_);
     if (game) {
         draw_object_requesters(ui_, interface_, object_ui_, *game, requester_art_, *data_);
         draw_hire_staff(ui_, hire_, interface_, requester_art_, hire_art_, game->world, data_->text());
@@ -570,21 +627,131 @@ void App::draw_pointer(int scale)
     }
 }
 
+UiMouse App::fitted_mouse(const SDL_FRect &at, const Surface &src) const
+{
+    float mx, my;
+    SDL_GetMouseState(&mx, &my);
+    float density = SDL_GetWindowPixelDensity(window_);
+    float fit = at.w / float(std::max(src.width(), 1));
+    UiMouse mouse = ui_mouse(0, 0, 1);
+    mouse.x = int((mx * density - at.x) / fit);
+    mouse.y = int((my * density - at.y) / fit);
+    return mouse;
+}
+
+void App::draw_fitted(const Surface &src, const Palette &palette, SDL_Texture *&tex, const SDL_FRect &dst)
+{
+    int sw = std::max(src.width(), 1), sh = std::max(src.height(), 1);
+    if (!tex || tex->w != sw || tex->h != sh) {
+        if (tex)
+            SDL_DestroyTexture(tex);
+        tex = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sw, sh);
+        SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
+    }
+    void *pixels;
+    int pitch;
+    if (tex && src.width() > 0 && SDL_LockTexture(tex, nullptr, &pixels, &pitch)) {
+        const uint8_t *p = src.data();
+        for (int y = 0; y < sh; y++) {
+            auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(pixels) + y * pitch);
+            for (int x = 0; x < sw; x++)
+                row[x] = palette[*p++];
+        }
+        SDL_UnlockTexture(tex);
+        SDL_RenderTexture(renderer_, tex, nullptr, &dst);
+    }
+}
+
+// Opens the town map, first dropping what is being hired, bought or placed
+// (setup_abort_all_requesters), as the game does.
+void App::open_town_map()
+{
+    if (!map_ || town_.is_open())
+        return;
+    Game &game = map_->game;
+    if (hire_.placing() || interface_.requester() == Requester::HireStaff ||
+        interface_.requester() == Requester::Jukebox)
+        game.event = hire_staff_cancel(hire_);
+    else
+        object_escape(game);
+    town_.open();
+}
+
+// One frame of the town map, in place of the view and the interface, drawn
+// aspect-fit in the window; then the turn's command, as interface_step
+// carries it out.
+void App::town_step(int out_w, int out_h)
+{
+    Game &game = map_->game;
+    const Surface &src = town_.surface();
+    SDL_FRect at = fit_rect(src, out_w, out_h);
+    UiMouse mouse = fitted_mouse(at, src);
+    bool escape = escape_;
+    escape_ = false;
+    auto go_to = [this](int column, int row) {
+        Point centre = cell_to_world(column, row);
+        if (beyond_scroll_limit(centre, scroll_min_, scroll_max_))
+            return false;
+        camera_ = {centre.x - surface_.width() / 2, centre.y - surface_.height() / 2};
+        return true;
+    };
+    TownMapResult r = town_.frame(mouse, escape, game, game.land, panel_state_, startup_.player_name(), go_to);
+    for (uint8_t sfx : r.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    if (r.event.type)
+        game.event = r.event;
+    if (r.closed || r.event.type == EV_OPEN_SCREEN)
+        town_.close();
+    last_event_ = game.event;
+    run_command(game);
+    draw_fitted(src, town_.palette(), town_tex_, at);
+}
+
+void App::run_command(Game &game)
+{
+    hire_staff_event(hire_, interface_, game.world, game.event);
+    jukebox_event(jukebox_, interface_, game.event);
+    chart_command(charts_, game.event);
+    game.process_turn();
+    hire_staff_after_turn(hire_, game.world);
+}
+
+// One frame of the open chart, in place of the view and the interface,
+// drawn aspect-fit in the window; then the turn's command.
+void App::charts_step(int out_w, int out_h)
+{
+    Game &game = map_->game;
+    SDL_FRect at = fit_rect(charts_.surface, out_w, out_h);
+    UiMouse mouse = fitted_mouse(at, charts_.surface);
+    const bool *held = SDL_GetKeyboardState(nullptr);
+    ChartKeys keys;
+    keys.escape = std::exchange(escape_, false);
+    keys.space = std::exchange(chart_space_, false);
+    keys.up = held[SDL_SCANCODE_UP];
+    keys.down = held[SDL_SCANCODE_DOWN];
+    keys.left = held[SDL_SCANCODE_LEFT];
+    keys.right = held[SDL_SCANCODE_RIGHT];
+    ChartsResult r = chart_frame(charts_, mouse, keys, frame_seconds_, game, game.hospital);
+    for (uint8_t sfx : r.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    if (r.event.type)
+        game.event = r.event;
+    last_event_ = game.event;
+    run_command(game);
+    draw_fitted(charts_.surface, charts_.palette, charts_tex_, at);
+    if (r.town_map) {
+        charts_.open = false;
+        open_town_map();
+    }
+}
+
 // One frame of the start-up screens: drawn aspect-fit in the window, with
 // the movies' sound on a stream of its own. Starts the level they choose.
 void App::startup_step(int out_w, int out_h)
 {
     const Surface &src = startup_.surface();
-    int sw = std::max(src.width(), 1), sh = std::max(src.height(), 1);
-    float fit = std::min(float(out_w) / float(sw), float(out_h) / float(sh));
-    float dw = sw * fit, dh = sh * fit, dx = (out_w - dw) / 2, dy = (out_h - dh) / 2;
-
-    float mx, my;
-    SDL_GetMouseState(&mx, &my);
-    float density = SDL_GetWindowPixelDensity(window_);
-    UiMouse mouse = ui_mouse(0, 0, 1);
-    mouse.x = int((mx * density - dx) / fit);
-    mouse.y = int((my * density - dy) / fit);
+    SDL_FRect at = fit_rect(src, out_w, out_h);
+    UiMouse mouse = fitted_mouse(at, src);
     StartupResult r = startup_.frame(mouse, startup_keys_, frame_seconds_);
     startup_keys_.clear();
     for (uint8_t sfx : startup_.take_sounds())
@@ -610,25 +777,7 @@ void App::startup_step(int out_w, int out_h)
     if (movie_stream_ && !pcm.empty())
         SDL_PutAudioStreamData(movie_stream_, pcm.data(), int(pcm.size() * sizeof(int16_t)));
 
-    if (!startup_tex_ || startup_tex_->w != sw || startup_tex_->h != sh) {
-        if (startup_tex_)
-            SDL_DestroyTexture(startup_tex_);
-        startup_tex_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sw, sh);
-        SDL_SetTextureScaleMode(startup_tex_, SDL_SCALEMODE_NEAREST);
-    }
-    void *pixels;
-    int pitch;
-    if (startup_tex_ && src.width() > 0 && SDL_LockTexture(startup_tex_, nullptr, &pixels, &pitch)) {
-        const uint8_t *p = src.data();
-        for (int y = 0; y < sh; y++) {
-            auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(pixels) + y * pitch);
-            for (int x = 0; x < sw; x++)
-                row[x] = startup_.palette()[*p++];
-        }
-        SDL_UnlockTexture(startup_tex_);
-        SDL_FRect dst{dx, dy, dw, dh};
-        SDL_RenderTexture(renderer_, startup_tex_, nullptr, &dst);
-    }
+    draw_fitted(src, startup_.palette(), startup_tex_, at);
 
     if (r.kind == StartupResult::Kind::Quit) {
         running_ = false;
@@ -783,6 +932,20 @@ void App::perform(const MenuEvent &event)
     case MenuAction::Quit:
         ask_quit();
         break;
+    case MenuAction::Screen:
+        if (map_) {
+            bool refused = false;
+            Event e = open_chart_command(event.value, map_->game, &refused);
+            if (refused)
+                sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+            else
+                map_->game.event = e;
+        }
+        break;
+    case MenuAction::Jukebox:
+        if (map_)
+            map_->game.event = {EV_OPEN_JUKEBOX};
+        break;
     default:
         break;
     }
@@ -844,7 +1007,7 @@ void App::handle_event(const SDL_Event &e)
             startup_keys_.push_back(k);
             break;
         }
-        if (e.key.key == SDLK_F1) {
+        if (e.key.key == SDLK_F12) {
             tools_.open = !tools_.open;
         } else if (!data_) {
             if (e.key.key == SDLK_ESCAPE)
@@ -852,8 +1015,21 @@ void App::handle_event(const SDL_Event &e)
         } else if (e.key.key == SDLK_ESCAPE && !(e.key.mod & SDL_KMOD_SHIFT)) {
             // Closes the front requester (the game's Escape).
             escape_ = true;
-        } else if (interface_.modal()) {
-            // A modal requester takes the keys.
+        } else if (interface_.modal() || town_.is_open()) {
+            // A modal requester takes the keys; the town map only Escape.
+        } else if (e.key.key >= SDLK_F1 && e.key.key <= SDLK_F8 && map_) {
+            // The charts, from the game or another chart; not while paused.
+            if (!map_->game.paused) {
+                bool refused = false;
+                Event ev = open_chart_command(int(e.key.key - SDLK_F1), map_->game, &refused);
+                if (refused)
+                    sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+                else
+                    map_->game.event = ev;
+            }
+        } else if (charts_.open) {
+            // The charts take Escape, Space and the arrows only.
+            chart_space_ = chart_space_ || e.key.key == SDLK_SPACE;
         } else if ((e.key.key == SDLK_ESCAPE && (e.key.mod & SDL_KMOD_SHIFT)) ||
                    ((e.key.key == SDLK_Q || e.key.key == SDLK_X) &&
                     (e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_SHIFT)))) {
@@ -861,6 +1037,10 @@ void App::handle_event(const SDL_Event &e)
             ask_quit();
         } else if (e.key.key == SDLK_P && map_) {
             map_->game.paused = !map_->game.paused;
+        } else if (e.key.key == SDLK_T && map_) {
+            open_town_ = true;
+        } else if (e.key.key == SDLK_J && !(e.key.mod & SDL_KMOD_SHIFT) && map_ && !map_->game.paused) {
+            map_->game.event = {EV_OPEN_JUKEBOX};
         }
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -870,8 +1050,8 @@ void App::handle_event(const SDL_Event &e)
             buttons_.left = buttons_.left_pressed = true;
         if (e.button.button == SDL_BUTTON_RIGHT)
             buttons_.right = buttons_.right_pressed = true;
-        // An open menu or a modal requester takes the clicks.
-        if (menu_.active || interface_.modal())
+        // An open menu, a modal requester or the town map takes the clicks.
+        if (menu_.active || interface_.modal() || town_.is_open() || charts_.open)
             break;
         // While something is being placed, its clicks are the interface's.
         if (map_ && (map_->game.world.placing.placing || hire_.placing()))
@@ -921,6 +1101,8 @@ void App::update(float dt)
         for (; turn_clock_ >= 1; turn_clock_ -= 1)
             map_->game.turn();
     }
+    if (town_.is_open() || charts_.open)
+        return;
     const ImGuiIO &io = ImGui::GetIO();
     if (!io.WantCaptureKeyboard) {
         const bool *keys = SDL_GetKeyboardState(nullptr);
@@ -982,6 +1164,16 @@ void App::render()
             SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
     } else if (in_startup_) {
         startup_step(out_w, out_h);
+        mixer_.update(sounds_, &music_);
+        draw_pointer(ui_scale());
+    } else if (map_ && charts_.open) {
+        charts_step(out_w, out_h);
+        mixer_.update(sounds_, &music_);
+        draw_pointer(ui_scale());
+    } else if (map_ && (town_.is_open() || std::exchange(open_town_, false))) {
+        if (!town_.is_open())
+            open_town_map();
+        town_step(out_w, out_h);
         mixer_.update(sounds_, &music_);
         draw_pointer(ui_scale());
     } else {
@@ -1110,6 +1302,10 @@ void App::shutdown()
         SDL_DestroyAudioStream(movie_stream_);
     if (startup_tex_)
         SDL_DestroyTexture(startup_tex_);
+    if (town_tex_)
+        SDL_DestroyTexture(town_tex_);
+    if (charts_tex_)
+        SDL_DestroyTexture(charts_tex_);
     if (ui_tex_)
         SDL_DestroyTexture(ui_tex_);
     if (pointer_)

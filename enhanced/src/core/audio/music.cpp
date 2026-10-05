@@ -653,6 +653,8 @@ class Sequencer
     bool start(const XmiSong &song, const TimbreBank &bank, int volume);
     void stop();
     void end();
+    // AIL_resume_sequence.
+    void resume();
     // AIL_set_sequence_volume.
     void set_volume(int volume, int milliseconds);
     // XMI_serve.
@@ -758,6 +760,22 @@ void Sequencer::stop()
         if (shadow_voice_protect_[size_t(ch)] >= 64)
             driver_.message(0xb0 | ch, 112, 0);
     }
+}
+
+// AIL_resume_sequence. Its XMI_refresh_channel resends every controller the
+// sequence set; the driver still holds them all, nothing having played
+// since, but for the sustain and voice protection stop() released.
+void Sequencer::resume()
+{
+    if (status_ != Stopped)
+        return;
+    for (int ch = 0; ch < 16; ch++) {
+        if (shadow_voice_protect_[size_t(ch)] != -1)
+            driver_.message(0xb0 | ch, 112, shadow_voice_protect_[size_t(ch)]);
+        if (shadow_sustain_[size_t(ch)] != -1)
+            driver_.message(0xb0 | ch, 64, shadow_sustain_[size_t(ch)]);
+    }
+    status_ = Playing;
 }
 
 // AIL_end_sequence.
@@ -1155,6 +1173,10 @@ bool MusicPlayer::load(const std::filesystem::path &dir, std::string *error)
     engine_ = std::make_unique<Engine>();
     music_playing_ = false;
     midi_playing_ = true;
+    // init_midi turns the ten tracks on.
+    enabled_.fill(true);
+    enabled_.back() = false;
+    loop_ = false;
     track_ = 8;
     auto gtl = resolve_ci(dir, "sound/sample.opl");
     if (!gtl) {
@@ -1242,11 +1264,49 @@ void MusicPlayer::play_next(bool paused)
     midi_playing_ = true;
     if (paused || !song_done())
         return;
+    if (loop_) {
+        if (enabled_[size_t(track_)]) {
+            if (start_song(track_))
+                music_playing_ = true;
+            else
+                midi_playing_ = false;
+        }
+        return;
+    }
     int i = 0;
     for (; i < count(); i++) {
         if (++track_ > count())
             track_ = 0;
-        if (start_song(track_)) {
+        if (enabled_[size_t(track_)] && start_song(track_)) {
+            music_playing_ = true;
+            break;
+        }
+    }
+    if (i == count())
+        midi_playing_ = false;
+}
+
+void MusicPlayer::play_previous(bool paused)
+{
+    midi_playing_ = true;
+    if (paused || !song_done())
+        return;
+    if (loop_) {
+        if (enabled_[size_t(track_)]) {
+            if (start_song(track_))
+                music_playing_ = true;
+            else
+                midi_playing_ = false;
+        }
+        return;
+    }
+    int i = 0;
+    for (; i < count(); i++) {
+        if (track_ == 0)
+            track_ = count();
+        else
+            track_--;
+        if (enabled_[size_t(track_)] && start_song(track_)) {
             music_playing_ = true;
             break;
         }
@@ -1260,7 +1320,7 @@ void MusicPlayer::play(int track)
     engine_->sequencer.end();
     if (!music_on() || !midi_playing_)
         return;
-    if (start_song(track)) {
+    if (enabled_.at(size_t(track)) && start_song(track)) {
         track_ = track;
         music_playing_ = true;
     } else {
@@ -1274,6 +1334,22 @@ void MusicPlayer::stop()
 {
     music_playing_ = false;
     engine_->sequencer.end();
+    loop_ = false;
+}
+
+void MusicPlayer::end_song()
+{
+    engine_->sequencer.end();
+}
+
+void MusicPlayer::pause_song()
+{
+    engine_->sequencer.stop();
+}
+
+void MusicPlayer::resume_song()
+{
+    engine_->sequencer.resume();
 }
 
 void MusicPlayer::toggle_music()

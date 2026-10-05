@@ -16,7 +16,7 @@ enum class MissingDataAction { None, Choose, Quit };
 // problem with the last folder chosen, if any.
 MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::string &error);
 
-// State of the tools window (F1).
+// State of the tools window (F12).
 struct ToolsState {
     bool open = false;
     int ui_scale = 0; // panel and pointer scale: 0 automatic, else the integer scale

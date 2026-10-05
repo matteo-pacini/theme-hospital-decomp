@@ -10,6 +10,8 @@
 #include "core/world/finance.h"
 #include "core/world/staff.h"
 #include "core/world/staff_complex.h"
+#include "core/ui/charts.h"
+#include "core/ui/town_map.h"
 #include "core/world/world.h"
 
 #include <cstdint>
@@ -82,6 +84,11 @@ class Game
     Advisor advisor;
     // Patients arriving (src/peepmake.cpp).
     ArrivalState arrivals;
+    // The land: plots for sale and their prices (src/town.cpp).
+    TownLand land;
+    // The player's policy, research, prices and insurers, which the charts
+    // show and change; the app starts it (start_hospital_settings).
+    HospitalSettings hospital;
     // The applicants for jobs (src/staff.cpp); the caller sets ref_counts
     // from the language text before start().
     StaffMarket staff_market;

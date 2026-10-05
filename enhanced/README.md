@@ -22,7 +22,7 @@ Milestone 1, the map at any resolution:
 - the bottom panel at native size, centred;
 - scrolling (arrow keys or WASD, the window edges, middle or right drag) and
   zoom (mouse wheel; automatic keeps at least 480 lines);
-- a tools window (F1) with the UI scale.
+- a tools window (F12) with the UI scale.
 
 Milestone 2, the level as it starts:
 
@@ -61,7 +61,7 @@ Milestone 3b, people:
   no reception desk, a patient goes home through an entrance, as in the game;
 - the game's path finding (wall following, its four-waypoint plans and its
   limits), walking, and the sliding entrance doors;
-- a path finding tool in the tools window (F1): planned routes drawn over
+- a path finding tool in the tools window (F12): planned routes drawn over
   the view, click a person to select them and a cell to send them there,
   or add a test walker.
 
@@ -74,10 +74,19 @@ Milestone 4 so far, the game's interface:
   quitting asks first; Options speed, sound and volume, Display shadows;
 - the panel's buttons; furnish corridor (buy, place, rotate, cost) and hire
   staff (applicants, faces, placing them) through the game's commands;
-- sound effects from the game's sound bank.
+- sound effects from the game's sound bank, and the music (the XMI songs on
+  an emulated OPL3) with the jukebox (J, or Options > Jukebox);
+- staff at work, the advisor, wages and the month's accounts;
+- patients at reception: the queues, waiting, drinks, benches, going home
+  fed up; and the litter, vomit and puddles they leave;
+- the town map (T, or the panel): the land and its plots, buying them, the
+  overlays and the heating;
+- the full-screen charts (F1-F8, the Charts menu, the panel): statement,
+  bank manager and loans, policy, research, graphs, staff list, casebook
+  prices and the status screen.
 
-Not yet: the receptionist at work, queues, the advisor, wages, rooms,
-building, litter, music and the full-screen charts.
+Not yet: rooms, building and treatment. Route planning defaults to A*;
+the game's wall following stays selectable in the tools window.
 
 ## Game data
 

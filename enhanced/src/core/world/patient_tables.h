@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/world/complex_tables.h"
+
 #include <array>
 #include <cstdint>
 
@@ -8,7 +10,8 @@ namespace th
 
 // The game's tables for making patients (make_a_peep, effect_illness,
 // add_contagiousness; src/peepmake.cpp, src/examine.cpp), copied from
-// src/tables.cpp and src/array.cpp.
+// src/tables.cpp and src/array.cpp. change_person_who is kChangePersonWho
+// (core/world/complex_tables.h).
 
 // generate_person[] (PeepType in include/hosp.h): a kind of visitor, its
 // heads and, per head, its kVariations entry.
@@ -65,26 +68,6 @@ constexpr std::array<std::array<uint8_t, 5>, 16> kSuitableIllness = {{
     {1, 1, 1, 1, 1},
     {0, 0, 0, 1, 1},
     {1, 1, 1, 1, 1},
-}};
-
-// change_person_who[change][subtype]: the patient kind a kind becomes
-// (transform_peep_who), -1 for none.
-constexpr std::array<std::array<int8_t, 15>, 15> kChangePersonWho = {{
-    {4, 5, -1, 4, -1, -1, -1, 4, -1, -1, -1, -1, -1, -1, -1},
-    {2, 11, -1, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {-1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1},
-    {6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {-1, -1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, 1, -1, -1},
-    {3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {-1, -1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {-1, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1, -1},
-    {8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {-1, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1},
-    {9, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {-1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, -1, -1, -1, -1},
-    {13, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, -1},
 }};
 
 // expertise[].not_contagious (src/array.cpp; not a balance key): nonzero
