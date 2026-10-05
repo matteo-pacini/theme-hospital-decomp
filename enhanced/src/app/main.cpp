@@ -12,6 +12,9 @@
 #include "core/render/shadows.h"
 #include "core/render/surface.h"
 #include "core/render/view.h"
+#include "core/ui/layer.h"
+#include "core/ui/menubar.h"
+#include "core/ui/windows.h"
 #include "core/world/game.h"
 
 #include <SDL3/SDL.h>
@@ -179,21 +182,32 @@ class App
     void load_level(int number);
     void handle_event(const SDL_Event &e);
     void nav_click(uint8_t button, float x, float y);
+    // The mouse in a layer drawn at (ox, oy) at `scale`.
+    UiMouse ui_mouse(int ox, int oy, int scale) const;
+    void menu_step(int out_w, int scale);
+    void perform(const MenuEvent &event);
     void update(float dt);
     void render();
     int zoom() const;
     int ui_scale() const;
     void make_ui_textures();
-    void update_panel();
+    void interface_step(int out_w, int out_h, int scale);
+    void ask_quit();
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
     SDL_Texture *screen_ = nullptr;
     int screen_w_ = 0, screen_h_ = 0;
     // The panel and the pointer, drawn at the UI scale over the view.
-    SDL_Texture *panel_ = nullptr;
-    int panel_w_ = 0, panel_h_ = 0;
-    PanelFigures panel_figures_; // what the panel texture shows
+    // The game's interface (panel and requesters), drawn in its 640 x 480
+    // canvas.
+    UiLayer ui_;
+    SDL_Texture *ui_tex_ = nullptr;
+    PanelState panel_state_;
+    Interface interface_;
+    RequesterArt requester_art_;
+    bool escape_ = false;      // Escape pressed this frame
+    bool asking_quit_ = false; // the yes/no requester asks whether to quit
     SDL_Texture *pointer_ = nullptr;
     int pointer_w_ = 0, pointer_h_ = 0;
 
@@ -217,6 +231,18 @@ class App
     Speed speed_ = Speed::Normal;
     double turn_clock_ = 0; // turns due but not yet run
     ToolsState tools_;
+    // The game's menu bar, drawn into its own layer across the top of the
+    // window at the UI scale.
+    MenuBar menu_;
+    UiLayer menu_layer_;
+    SDL_Texture *menu_tex_ = nullptr;
+    // The mouse buttons as the game's interface sees them; the pressed and
+    // released flags last one frame.
+    struct {
+        bool left = false, right = false;
+        bool left_pressed = false, right_pressed = false;
+        bool left_released = false, right_released = false;
+    } buttons_;
     bool running_ = true;
     bool imgui_ready_ = false;
 };
@@ -280,6 +306,10 @@ bool App::try_load_data(const std::filesystem::path &dir)
         return false;
     }
     data_ = std::move(data);
+    if (!menu_.load(dir, data_->text(), &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
+    if (!requester_art_.load(dir, &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
     make_ui_textures();
     data_error_.clear();
     load_level(level_);
@@ -318,33 +348,59 @@ int App::ui_scale() const
     return std::max(1, h / kMinViewHeight);
 }
 
-// Remakes the panel texture when the figures it shows have changed.
-void App::update_panel()
+// Runs and draws the game's interface for the frame: the requester windows
+// and the panel, in the 640 x 480 canvas at the window's bottom centre.
+// The windows go first: the front one takes the mouse, a modal one (the
+// yes/no requester) everything.
+void App::interface_step(int out_w, int out_h, int scale)
 {
-    PanelFigures f;
+    int ox = (out_w - kUiWidth * scale) / 2, oy = out_h - kUiHeight * scale;
+    UiMouse mouse = ui_mouse(ox, oy, scale);
+    InterfaceEvents events = interface_.frame(mouse, escape_);
+    escape_ = false;
+    if (events.yes_no == YesNoAnswer::Yes && asking_quit_)
+        running_ = false;
+    if (events.yes_no != YesNoAnswer::None)
+        asking_quit_ = false;
+    bool paused = map_ && map_->game.paused;
+    bool input = !events.mouse_on_window && !interface_.modal() && !menu_.active;
+    // The panel's buttons lead to requesters and screens not ported yet.
+    panel_frame(panel_state_, mouse, *data_, paused, input);
+
+    ui_.clear();
+    PanelFigures figures;
     if (map_) {
         const Game &g = map_->game;
-        f = {g.balance, g.date.day, g.date.month, g.reputation, g.opening_countdown, g.open_countdown};
+        figures = {g.balance, g.date.day, g.date.month, g.reputation, g.opening_countdown, g.open_countdown};
     }
-    if (panel_ && f.balance == panel_figures_.balance && f.day == panel_figures_.day &&
-        f.month == panel_figures_.month && f.reputation == panel_figures_.reputation &&
-        f.opening_countdown == panel_figures_.opening_countdown)
+    draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
+    draw_interface(ui_, interface_, requester_art_);
+    std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
+    SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
+    SDL_FRect dst = {float(ox), float(oy), float(kUiWidth * scale), float(kUiHeight * scale)};
+    SDL_RenderTexture(renderer_, ui_tex_, nullptr, &dst);
+}
+
+// Asks "really quit?" with the yes/no requester, as the game does.
+void App::ask_quit()
+{
+    if (interface_.modal() || !data_)
         return;
-    if (panel_)
-        SDL_DestroyTexture(panel_);
-    panel_figures_ = f;
-    auto pixels = panel_to_argb(*data_, map_ ? &f : nullptr, panel_w_, panel_h_);
-    panel_ = argb_texture(renderer_, pixels, panel_w_, panel_h_);
+    interface_.open_yes_no(data_->text().at(TextSection::YesNo, 0));
+    asking_quit_ = true;
 }
 
 void App::make_ui_textures()
 {
-    if (panel_)
-        SDL_DestroyTexture(panel_);
     if (pointer_)
         SDL_DestroyTexture(pointer_);
-    panel_ = nullptr;
-    update_panel();
+    if (!ui_tex_) {
+        ui_.resize(kUiWidth, kUiHeight);
+        ui_tex_ =
+            SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, kUiWidth, kUiHeight);
+        SDL_SetTextureScaleMode(ui_tex_, SDL_SCALEMODE_NEAREST);
+        SDL_SetTextureBlendMode(ui_tex_, SDL_BLENDMODE_BLEND);
+    }
     Sprite s = data_->pointers().at(kPointerDefault);
     pointer_w_ = s.width;
     pointer_h_ = s.height;
@@ -365,6 +421,83 @@ int App::zoom() const
 // The path finding tool's clicks on the view (window coordinates): left
 // places a walker, selects the person on the cell or sends the selected one
 // there; right deselects.
+UiMouse App::ui_mouse(int ox, int oy, int scale) const
+{
+    float mx, my;
+    SDL_GetMouseState(&mx, &my);
+    float density = SDL_GetWindowPixelDensity(window_);
+    UiMouse m;
+    m.x = (int(mx * density) - ox) / scale;
+    m.y = (int(my * density) - oy) / scale;
+    m.left_held = buttons_.left;
+    m.right_held = buttons_.right;
+    m.left_pressed = buttons_.left_pressed;
+    m.right_pressed = buttons_.right_pressed;
+    m.left_released = buttons_.left_released;
+    m.right_released = buttons_.right_released;
+    return m;
+}
+
+// Runs and draws the menu bar for the frame: it spans the window's width
+// (at least the game's 640) across the top.
+void App::menu_step(int out_w, int scale)
+{
+    int width = std::max(kUiWidth, out_w / scale);
+    int ox = (out_w - width * scale) / 2;
+    MenuContext context;
+    context.shadows = shadows_;
+    context.speed = speed_ == Speed::Slowest  ? 0
+                    : speed_ == Speed::Slower ? 1
+                    : speed_ == Speed::Normal ? 2
+                    : speed_ == Speed::Max    ? 3
+                                              : 4;
+    context.paused = map_ && map_->game.paused;
+    context.disabled = interface_.modal();
+    perform(menu_frame(menu_, ui_mouse(ox, 0, scale), context));
+
+    if (menu_layer_.width() != width)
+        menu_layer_.resize(width, kUiHeight);
+    menu_layer_.clear();
+    draw_menu_bar(menu_layer_, menu_);
+    std::vector<uint32_t> pixels = menu_layer_.to_argb(data_->palette());
+    if (menu_tex_ && menu_tex_->w != width) {
+        SDL_DestroyTexture(menu_tex_);
+        menu_tex_ = nullptr;
+    }
+    if (!menu_tex_) {
+        menu_tex_ =
+            SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, kUiHeight);
+        SDL_SetTextureScaleMode(menu_tex_, SDL_SCALEMODE_NEAREST);
+        SDL_SetTextureBlendMode(menu_tex_, SDL_BLENDMODE_BLEND);
+    }
+    SDL_UpdateTexture(menu_tex_, nullptr, pixels.data(), width * 4);
+    SDL_FRect dst = {float(ox), 0, float(width * scale), float(kUiHeight * scale)};
+    SDL_RenderTexture(renderer_, menu_tex_, nullptr, &dst);
+}
+
+// Carries out what the menu bar asked for; what does not exist yet is
+// ignored.
+void App::perform(const MenuEvent &event)
+{
+    switch (event.action) {
+    case MenuAction::Speed:
+        speed_ = event.value <= 10   ? Speed::Slowest
+                 : event.value <= 20 ? Speed::Slower
+                 : event.value <= 30 ? Speed::Normal
+                 : event.value <= 40 ? Speed::Max
+                                     : Speed::AndThenSome;
+        break;
+    case MenuAction::ToggleShadows:
+        shadows_ = !shadows_;
+        break;
+    case MenuAction::Quit:
+        ask_quit();
+        break;
+    default:
+        break;
+    }
+}
+
 void App::nav_click(uint8_t button, float x, float y)
 {
     NavTool &nav = tools_.nav;
@@ -402,25 +535,49 @@ void App::handle_event(const SDL_Event &e)
     case SDL_EVENT_KEY_DOWN:
         if (io.WantCaptureKeyboard)
             break;
-        if (e.key.key == SDLK_F1)
+        if (e.key.key == SDLK_F1) {
             tools_.open = !tools_.open;
-        else if (e.key.key == SDLK_P && map_)
+        } else if (!data_) {
+            if (e.key.key == SDLK_ESCAPE)
+                running_ = false;
+        } else if (e.key.key == SDLK_ESCAPE && !(e.key.mod & SDL_KMOD_SHIFT)) {
+            // Closes the front requester (the game's Escape).
+            escape_ = true;
+        } else if (interface_.modal()) {
+            // A modal requester takes the keys.
+        } else if ((e.key.key == SDLK_ESCAPE && (e.key.mod & SDL_KMOD_SHIFT)) ||
+                   ((e.key.key == SDLK_Q || e.key.key == SDLK_X) &&
+                    (e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_SHIFT)))) {
+            // The game's quit keys ask first.
+            ask_quit();
+        } else if (e.key.key == SDLK_P && map_) {
             map_->game.paused = !map_->game.paused;
-        // Until the game's menu bar exists, 1-5 pick the Speed menu's
-        // entries, slowest to "and then some".
-        else if (e.key.key >= SDLK_1 && e.key.key <= SDLK_5)
-            speed_ = std::array{Speed::Slowest, Speed::Slower, Speed::Normal, Speed::Max,
-                                Speed::AndThenSome}[e.key.key - SDLK_1];
-        else if (e.key.key == SDLK_ESCAPE && !data_)
-            running_ = false;
+        }
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        if (!io.WantCaptureMouse && (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT))
+        if (io.WantCaptureMouse)
+            break;
+        if (e.button.button == SDL_BUTTON_LEFT)
+            buttons_.left = buttons_.left_pressed = true;
+        if (e.button.button == SDL_BUTTON_RIGHT)
+            buttons_.right = buttons_.right_pressed = true;
+        // An open menu or a modal requester takes the clicks.
+        if (menu_.active || interface_.modal())
+            break;
+        if (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT)
             dragging_ = true;
-        if (!io.WantCaptureMouse && tools_.open && map_)
+        if (tools_.open && map_)
             nav_click(e.button.button, e.button.x, e.button.y);
         break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (e.button.button == SDL_BUTTON_LEFT && buttons_.left) {
+            buttons_.left = false;
+            buttons_.left_released = true;
+        }
+        if (e.button.button == SDL_BUTTON_RIGHT && buttons_.right) {
+            buttons_.right = false;
+            buttons_.right_released = true;
+        }
         if (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT)
             dragging_ = false;
         break;
@@ -547,14 +704,12 @@ void App::render()
             SDL_RenderTexture(renderer_, screen_, nullptr, &dst);
         }
 
-        // The panel and the pointer keep their size whatever the view's zoom.
-        update_panel();
+        // The interface and the pointer keep their size whatever the view's
+        // zoom.
         int s = ui_scale();
-        if (panel_) {
-            SDL_FRect p = {float((out_w - panel_w_ * s) / 2), float(out_h - panel_h_ * s), float(panel_w_ * s),
-                           float(panel_h_ * s)};
-            SDL_RenderTexture(renderer_, panel_, nullptr, &p);
-        }
+        interface_step(out_w, out_h, s);
+        menu_step(out_w, s);
+
         // The game's own pointer replaces the system one over the view; its
         // hotspot is its top-left corner.
         float pmx, pmy;
@@ -579,6 +734,8 @@ void App::render()
     SDL_SetRenderScale(renderer_, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer_);
     SDL_RenderPresent(renderer_);
+    buttons_.left_pressed = buttons_.right_pressed = false;
+    buttons_.left_released = buttons_.right_released = false;
 }
 
 void App::run()
@@ -614,8 +771,8 @@ void App::run()
 
 void App::shutdown()
 {
-    if (panel_)
-        SDL_DestroyTexture(panel_);
+    if (ui_tex_)
+        SDL_DestroyTexture(ui_tex_);
     if (pointer_)
         SDL_DestroyTexture(pointer_);
     if (screen_)

@@ -39,6 +39,9 @@ add_library(th_core STATIC
   src/core/render/panel.cpp
   src/core/render/shadows.cpp
   src/core/render/view.cpp
+  src/core/ui/layer.cpp
+  src/core/ui/menubar.cpp
+  src/core/ui/windows.cpp
   src/core/world/arrivals.cpp
   src/core/world/complex.cpp
   src/core/world/game.cpp

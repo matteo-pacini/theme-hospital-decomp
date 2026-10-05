@@ -73,13 +73,14 @@ void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flag
     });
 }
 
-void draw_sprite_one_colour(Surface &dst, int x, int y, const Sprite &sprite, uint8_t colour)
+void draw_sprite_one_colour(Surface &dst, int x, int y, const Sprite &sprite, uint8_t colour, unsigned flags)
 {
     if (sprite.empty())
         return;
     const Rect &clip = dst.clip();
     decode(sprite, [&](int row, int col, uint8_t) {
-        int dx = x + col, dy = y + row;
+        int dx = (flags & kDrawFlipX) ? x + sprite.width - 1 - col : x + col;
+        int dy = (flags & kDrawFlipY) ? y + sprite.height - 1 - row : y + row;
         if (dx >= clip.x && dx < clip.x + clip.w && dy >= clip.y && dy < clip.y + clip.h)
             dst.row(dy)[dx] = colour;
     });
