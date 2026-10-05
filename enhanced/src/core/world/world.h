@@ -3,6 +3,7 @@
 #include "core/data/anims.h"
 #include "core/data/level.h"
 #include "core/render/iso.h"
+#include "core/world/build.h"
 #include "core/world/object_tables.h"
 #include "core/world/objects.h"
 
@@ -285,6 +286,12 @@ struct Thing {
     int32_t fee = 0;
     // Patients: the treatment after `treatment`, 0 for none.
     uint8_t next_treatment = 0;
+
+    // Building (build.cpp)
+    // Double doors (kThingDoor): on the main half, the other half (an
+    // object); on that half, the main one; 0 for none.
+    uint16_t door_partner = 0;
+    uint16_t door_main = 0;
 };
 
 // Staff at work (staff_complex.cpp)
@@ -297,8 +304,9 @@ constexpr uint8_t kRoomReception = 4;
 constexpr int kRoomCount = 100;
 
 // One entry of the rooms table, with the fields of the game's RoomInfo
-// (include/hosp.h) used so far. Only receptions exist yet: one per group of
-// manned desks (allocate_reception_roominfo), a 1x1 room at cell 0x3fff.
+// (include/hosp.h) used so far: the rooms the player builds
+// (core/world/build.h) and the receptions, one per group of manned desks
+// (allocate_reception_roominfo), a 1x1 room at cell 0x3fff.
 struct RoomInfo {
     uint8_t type = kRoomFree;
     int8_t width = 0;
@@ -323,6 +331,19 @@ struct RoomInfo {
     uint16_t queue_head = 0;
     uint8_t queue_length = 0;
     uint8_t queue_incoming = 0;
+
+    // Building (build.cpp)
+    // The first object in the room (Thing.room_obj_next), 0 for none.
+    uint16_t first_object = 0;
+    // The game turn its blueprint was laid down.
+    uint32_t created_turn = 0;
+    // Radiators in the room, and windows in its walls.
+    uint8_t radiators = 0;
+    uint8_t windows = 0;
+    // 1 once its price was paid (when it first opened).
+    uint8_t paid_for = 0;
+    // 1 while it waits for the people in it to leave before it is edited.
+    uint8_t being_edited = 0;
 };
 
 // The map and the things on it.
@@ -393,6 +414,10 @@ struct World {
     // Hospital 0's drinks sales this month (allhosps[0].drinks_income), which
     // month_end banks.
     int32_t drinks_income = 0;
+
+    // Building (build.cpp)
+    // The room the player builds and the build tool's state.
+    Building building;
 };
 
 // Advances `seed` as the game's old_newrand (src/rand.cpp) and returns its

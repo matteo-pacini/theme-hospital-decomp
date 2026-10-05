@@ -33,6 +33,12 @@ struct ObjectUi {
     bool cursor_shown = false;
 };
 
+// draw_a_frame_scaled into `layer`: composite frame `frame` with its origin
+// at (x, y), mirrored if `flip`, its elements placed and sized by `scale`
+// (16.16; 0x10000 draws it as draw_a_frame), each pixel from the nearest
+// sprite pixel. Ghost flags are not applied.
+void draw_layer_frame(UiLayer &layer, const GameData &data, uint32_t frame, int x, int y, bool flip, int scale);
+
 // Sets up `ui` for the game's palette (generate_bw_remap, setup_colors).
 void init_object_ui(ObjectUi &ui, const Palette &palette);
 
@@ -51,10 +57,12 @@ void sync_object_requesters(Interface &ui, const Game &game);
 // After Interface::frame, with what it did: the buy objects requester's
 // clicks (req11, clicked_buy_objects: an entry, its plus or minus buys or
 // sells one, five with `shift`, ten with `ctrl`; accept places what was
-// bought; cancel empties the list) and the entry under the pointer becoming
-// its selection (req11_overdraw); the edit room requester's cancel (req14)
-// and its list, where holding the left button on an entry places that kind
-// next (req14_overdraw), which also fits the window's height to the list.
+// bought; cancel empties the list; furnishing a room, both go back to
+// placing, cancel with the list as it was) and the entry under the pointer
+// becoming its selection (req11_overdraw); the edit room requester's cancel
+// (req14) and its list, where holding the left button on an entry places
+// that kind next (req14_overdraw), which also fits the window's height to
+// the list.
 // The commands go to Game::event.
 void object_requesters_input(Interface &ui, ObjectUi &oui, Game &game, const InterfaceEvents &events,
                              const UiMouse &mouse, bool shift, bool ctrl);
@@ -66,13 +74,18 @@ void object_requesters_input(Interface &ui, ObjectUi &oui, Game &game, const Int
 // finds where the object would go (draw_object_cursor); a left click places
 // it there if it may go (EV_PLACE_OBJECT), a right click turns it to its
 // next facing first. Not placing, a right click while a requester of these
-// is up cancels (as Escape).
+// is up cancels (as Escape), but for the edit room requester of a room built
+// or furnished.
 void placement_mouse(ObjectUi &oui, Game &game, int cell, const UiMouse &mouse, bool on_map);
 
 // Escape (setup_abort_all_requesters, src/utils.cpp) while a requester of
-// these is up or an object is being placed: EV_CANCEL_BUILD, which drops
-// what was bought and not placed. Returns whether it did. EV_CANCEL_BUILD's
-// value is the held staff member, 0 here.
+// these is up, an object is being placed or a room built: while a room is
+// furnished, the buy objects requester goes back to placing
+// (EV_BACK_TO_PLACE_OBJECT, restoring the list); the edit room requester
+// abandons the blueprint (EV_DELETE_ROOM) or takes the room back to one
+// (EV_EDIT_BLUEPRINT); otherwise EV_CANCEL_BUILD, which drops what was
+// bought and not placed. Returns whether it did. EV_CANCEL_BUILD's value is
+// the held staff member, 0 here.
 bool object_escape(Game &game);
 
 // After draw_interface: the buy objects requester's own drawing

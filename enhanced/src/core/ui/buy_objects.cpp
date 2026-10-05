@@ -75,9 +75,6 @@ constexpr int kTitleText = 3;
 constexpr int kPriceText = 5;
 constexpr int kTotalText = 6;
 
-// rooms[ROOM_CORRIDOR].id (src/tables.cpp): the corridor's room_names index.
-constexpr int kCorridorName = 28;
-
 // The game draws below the view's bottom only on the panel: requester text
 // is clipped to the view's height (statvar.view_height, 480 - 0x30).
 constexpr Rect kViewClip = {0, 0, kUiWidth, kUiHeight - 0x30};
@@ -98,9 +95,13 @@ constexpr uint16_t kPlantAnim = 0x3cf;
 constexpr uint8_t kObjLitterBomb = 17;
 constexpr uint8_t kObjPlant = 45;
 
-// MM_NORMAL and MM_PLACE_OBJECT (include/enums.h), EV_CANCEL_BUILD's arg.
+// MM_NORMAL, MM_BLUEPRINT, MM_PLACE_DOOR, MM_PLACE_OBJECT and 0x10
+// (include/enums.h), EV_CANCEL_BUILD's arg.
 constexpr uint16_t kMouseNormal = 0;
+constexpr uint16_t kMouseBlueprint = 1;
+constexpr uint16_t kMousePlaceDoor = 2;
 constexpr uint16_t kMousePlaceObject = 5;
+constexpr uint16_t kMouseWaitClear = 0x10;
 
 // over_hotspot (src/utils.cpp).
 bool over(int x, int y, int rx, int ry, int w, int h)
@@ -261,13 +262,7 @@ void draw_buy_objects(UiLayer &layer, const Window &win, const ObjectUi &oui, co
             if (scale_y < 0x10000 && scale_x < 0x10000)
                 scale = std::min(scale_x, scale_y);
         }
-        Surface &pixels = layer.pixels();
-        walk_frame(data, start.frame, x, y, start.flip != 0, scale, [&](int px, int py, uint8_t c) {
-            if (px >= 0 && px < kUiWidth && py >= 0 && py < kUiHeight) {
-                pixels.row(py)[px] = c;
-                layer.mark({px, py, 1, 1});
-            }
-        });
+        draw_layer_frame(layer, data, start.frame, x, y, start.flip != 0, scale);
     }
 
     for (int i = 0; i < kEntries && p.offered[size_t(i)]; i++) {
@@ -292,9 +287,9 @@ void draw_edit_room(UiLayer &layer, const Window &win, const ObjectUi &oui, cons
             layer.draw_sprite(ox + win.buttons[j - 1].x, oy + win.buttons[j - 1].y,
                               sheet.at(size_t(kEditDisabledSprite[size_t(k)])));
     }
-    // Only the corridor is furnished so far.
     layer.draw_text(art.font(), {ox + kRoomNameBox.x, oy + kRoomNameBox.y, kRoomNameBox.width}, 0, 0,
-                    text.at(TextSection::RoomNames, kCorridorName), kTextCentre, kViewClip);
+                    text.at(TextSection::RoomNames, kRoomTypeInfo[p.room_type % kRoomTypes].name), kTextCentre,
+                    kViewClip);
     layer.draw_text(art.font(), {ox + kHintBox.x, oy + kHintBox.y, kHintBox.width}, 0, 0, text.misc(p.hint), kTextWrap,
                     kViewClip);
     if (p.requester_mode < 6)
@@ -327,6 +322,17 @@ void draw_edit_room(UiLayer &layer, const Window &win, const ObjectUi &oui, cons
 }
 
 } // namespace
+
+void draw_layer_frame(UiLayer &layer, const GameData &data, uint32_t frame, int x, int y, bool flip, int scale)
+{
+    Surface &pixels = layer.pixels();
+    walk_frame(data, frame, x, y, flip, scale, [&](int px, int py, uint8_t c) {
+        if (px >= 0 && px < layer.width() && py >= 0 && py < layer.height()) {
+            pixels.row(py)[px] = c;
+            layer.mark({px, py, 1, 1});
+        }
+    });
+}
 
 void init_object_ui(ObjectUi &ui, const Palette &palette)
 {
@@ -410,11 +416,14 @@ void object_requesters_input(Interface &ui, ObjectUi &oui, Game &game, const Int
         } else if (i >= kBuyMinus && i < kBuyMinus + kEntries) {
             clicked_buy_objects(game, i - kBuyMinus, false, shift, ctrl);
         } else if (i == kBuyAccept) {
-            // With arg3 (furnishing a room) the game goes back to placing
-            // (EV_BACK_TO_PLACE_OBJECT); rooms do not exist yet.
+            // Furnishing a room (arg3), back to placing with what was bought.
             if (p.arg == 1)
                 game.event = {EV_PLACE_NEXT_OBJECT, 0, 0, 0};
-        } else if (i == kBuyCancel && !p.arg3) {
+            else if (p.arg3)
+                game.event = {EV_BACK_TO_PLACE_OBJECT, 0, 0, 0};
+        } else if (i == kBuyCancel && p.arg3) {
+            game.event = {EV_BACK_TO_PLACE_OBJECT, 1, 0, 0};
+        } else if (i == kBuyCancel) {
             for (int k = 0; k < kObjectKinds - 1; k++)
                 p.buy_count[size_t(k)] = 0;
             game.event = {EV_CANCEL_BUY_OBJECTS, 0, 0, 0};
@@ -433,7 +442,10 @@ void placement_mouse(ObjectUi &oui, Game &game, int cell, const UiMouse &mouse, 
     if (!on_map)
         return;
     if (!p.placing) {
-        if (mouse.right_pressed && p.requester != ObjectRequester::None)
+        // Not while a room is built or furnished: its edit room requester
+        // stays (process_right_button).
+        bool room_edited = game.world.building.build.room && p.requester == ObjectRequester::EditRoom;
+        if (mouse.right_pressed && p.requester != ObjectRequester::None && !room_edited)
             object_escape(game);
         return;
     }
@@ -451,11 +463,29 @@ void placement_mouse(ObjectUi &oui, Game &game, int cell, const UiMouse &mouse, 
 bool object_escape(Game &game)
 {
     const ObjectPlacing &p = game.world.placing;
-    if (p.requester == ObjectRequester::None && !p.placing)
+    BuildMouse build = game.world.building.mouse;
+    if (p.requester == ObjectRequester::None && !p.placing && build == BuildMouse::None)
         return false;
-    // The buy objects requester goes back to placing instead while
-    // furnishing a room (arg3); rooms do not exist yet.
-    game.event = {EV_CANCEL_BUILD, 0, 0, p.placing ? kMousePlaceObject : kMouseNormal};
+    if (p.requester == ObjectRequester::BuyObjects && p.arg3) {
+        // Furnishing a room: back to placing what was to be placed before.
+        game.event = {EV_BACK_TO_PLACE_OBJECT, 1, 0, 0};
+        return true;
+    }
+    if (p.requester == ObjectRequester::EditRoom && p.requester_mode == 0) {
+        // The game first asks while a room is edited, which is not ported.
+        game.event = {EV_DELETE_ROOM, 0, 0, 0};
+        return true;
+    }
+    if (p.requester == ObjectRequester::EditRoom && p.room_type != kRoomCorridor) {
+        game.event = {EV_EDIT_BLUEPRINT, 0, 0, 0};
+        return true;
+    }
+    uint16_t mouse = build == BuildMouse::Blueprint   ? kMouseBlueprint
+                     : build == BuildMouse::PlaceDoor ? kMousePlaceDoor
+                     : build == BuildMouse::WaitClear ? kMouseWaitClear
+                     : p.placing                      ? kMousePlaceObject
+                                                      : kMouseNormal;
+    game.event = {EV_CANCEL_BUILD, 0, 0, mouse};
     return true;
 }
 

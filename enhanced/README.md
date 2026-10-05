@@ -83,10 +83,13 @@ Milestone 4 so far, the game's interface:
   overlays and the heating;
 - the full-screen charts (F1-F8, the Charts menu, the panel): statement,
   bank manager and loans, policy, research, graphs, staff list, casebook
-  prices and the status screen.
+  prices and the status screen;
+- building rooms (the panel's build room): the requester, the blueprint,
+  doors and windows, the walls, the cost and the room's objects.
 
-Not yet: rooms, building and treatment. Route planning defaults to A*;
-the game's wall following stays selectable in the tools window.
+Not yet: rooms in use (staff, diagnosis, treatment) and editing rooms.
+Route planning defaults to A*; the game's wall following stays selectable
+in the tools window.
 
 ## Game data
 
@@ -124,6 +127,13 @@ read it from the development folder and are skipped without it.
 Without a window, `--screenshot OUT.bmp --data FOLDER [--level N] [--size WxH]`
 renders a level's start view to a BMP.
 
+Replay check against the original: `tools/replay/orig_trace.sh` relinks an
+instrumented HOSPITAL.EXE from the decompilation and runs it in DOSBox-X
+without a window, writing a trace of every turn (the random seed, date,
+balance, hospitals and things); `th_replay` writes the same trace from this
+engine, and `tools/replay/compare.py` reports the first turn they differ.
+See the scripts for their arguments.
+
 ## Layout
 
     src/core/data/    file formats: RNC, sprites, palette, levels, the data folder
@@ -132,3 +142,4 @@ renders a level's start view to a BMP.
                       sequences, path finding
     src/app/          SDL3 window and input, data-folder search, settings, ImGui tools
     tests/            ctest tests
+    tools/replay/     the replay check against the original

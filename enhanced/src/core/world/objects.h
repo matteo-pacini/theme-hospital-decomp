@@ -21,10 +21,12 @@ constexpr uint16_t kRoomCorridor = 3;
 // OBJ_PLANT and OBJ_LITTER_BOMB.
 inline constexpr std::array<uint8_t, 7> kCorridorObjects = {11, 4, 7, 43, 44, 45, 17};
 
-// The requesters the commands of buying and placing objects open: the buy
-// objects requester (REQ_BUY_OBJECTS, window 10) and the edit room requester
-// (REQ_EDIT_ROOM, window 5), which lists what is left to place.
-enum class ObjectRequester : uint8_t { None, BuyObjects, EditRoom };
+// The requesters the commands of buying, placing objects and building rooms
+// open (crequester.id): the buy objects requester (REQ_BUY_OBJECTS, window
+// 10), the edit room requester (REQ_EDIT_ROOM, window 5), which lists what
+// is left to place and leads building a room, and the build room requester
+// (REQ_BUILD_ROOM, window 9).
+enum class ObjectRequester : uint8_t { None, BuyObjects, EditRoom, BuildRoom };
 
 // The edit room requester's buttons, counted from 1 in its window
 // (hires_requester_buttons[0x4f] to [0x52], src/reqbut.cpp): cancel, buy
@@ -64,19 +66,25 @@ struct ObjectPlacing {
     int mouse_cell = -1;
 
     ObjectRequester requester = ObjectRequester::None;
-    // crequester.kind: the room type furnished (kRoomCorridor).
+    // crequester.kind: the room type furnished or built (kRoomCorridor for
+    // the corridor); in the build room requester, the room type under the
+    // pointer.
     uint16_t room_type = 0;
-    // crequester.mode: 3 buying; 6 or 0xa (corridor) placing.
+    // crequester.mode: 3 buying; 6 or 0xa (corridor) placing; building a
+    // room, 0 the blueprint, 2 the door, 4 windows; in the build room
+    // requester, 1 until a department is chosen, then 4.
     uint8_t requester_mode = 0;
     // crequester.item: the buy objects requester's selected kind.
     uint16_t item = 0;
     // crequester.arg: 1 while the buy objects requester furnishes the
     // corridor; in the edit room requester, bit n disables its button n
-    // (counted from 1).
+    // (counted from 1); in the build room requester, the department shown.
     uint32_t arg = 0;
-    // crequester.arg3: the kind being placed (0 while buying).
+    // crequester.arg3: the kind being placed (0 while buying); while the
+    // buy objects requester furnishes a room, the low byte of its cell.
     uint16_t arg3 = 0;
-    // The buy objects requester's entries (req_indices), 0 past the last.
+    // The buy objects requester's entries, or the build room requester's
+    // room types (req_indices), 0 past the last.
     std::array<uint8_t, 10> offered{};
     // The edit room requester's instructions (othervar.edit_room_hint, a
     // misc_text index).
@@ -115,10 +123,12 @@ bool change_placing_angle(ObjectPlacing &p, int angle);
 int next_object_to_build(const ObjectPlacing &p);
 
 // draw_object_cursor's computation (src/cursor.cpp): for the pointer on
-// `mouse_cell`, where the object being placed would go (p.tile) and whether
-// it may (p.ok: it fits, with its second part, and leaves what patients use
-// in the corridor reachable from the entrance). Only corridor placing (mode
-// 2) is ported; rooms do not exist yet.
+// `mouse_cell`, where the object being placed would go (p.tile: in room
+// p.room for modes 0 and 1, against its wall for mode 1, which also sets
+// p.dir) and whether it may (p.ok: it fits, with its second part, and leaves
+// the room's objects usable from its door, or in the corridor what patients
+// use reachable from the entrance; corridor objects go into rooms only if
+// movable into them).
 void update_placement(World &world, ObjectPlacing &p, int mouse_cell);
 
 // cancel_top_level_requesters' part for the buy objects requester

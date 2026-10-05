@@ -42,6 +42,7 @@ add_library(th_core STATIC
   src/core/render/panel.cpp
   src/core/render/shadows.cpp
   src/core/render/view.cpp
+  src/core/ui/build_room.cpp
   src/core/ui/buy_objects.cpp
   src/core/ui/charts.cpp
   src/core/ui/hire_staff.cpp
@@ -53,6 +54,7 @@ add_library(th_core STATIC
   src/core/ui/windows.cpp
   src/core/world/advisor.cpp
   src/core/world/arrivals.cpp
+  src/core/world/build.cpp
   src/core/world/complex.cpp
   src/core/world/finance.cpp
   src/core/world/game.cpp
@@ -63,6 +65,7 @@ add_library(th_core STATIC
   src/core/world/reception.cpp
   src/core/world/staff.cpp
   src/core/world/staff_complex.cpp
+  src/core/world/trace.cpp
   src/core/world/world.cpp
 )
 target_include_directories(th_core PUBLIC src)
@@ -81,6 +84,14 @@ target_link_libraries(th_enhanced PRIVATE th_core th_imgui SDL3::SDL3)
 target_compile_options(th_enhanced PRIVATE ${TH_WARNINGS})
 if(TH_DEV_DATA_DIR)
   target_compile_definitions(th_enhanced PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
+endif()
+
+# The replay check: runs a level headless and writes its trace (no SDL).
+add_executable(th_replay tools/replay/main.cpp)
+target_link_libraries(th_replay PRIVATE th_core)
+target_compile_options(th_replay PRIVATE ${TH_WARNINGS})
+if(TH_DEV_DATA_DIR)
+  target_compile_definitions(th_replay PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
 endif()
 
 include(CTest)

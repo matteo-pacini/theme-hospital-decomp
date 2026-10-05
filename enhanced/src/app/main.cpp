@@ -15,6 +15,7 @@
 #include "core/render/shadows.h"
 #include "core/render/surface.h"
 #include "core/render/view.h"
+#include "core/ui/build_room.h"
 #include "core/ui/buy_objects.h"
 #include "core/ui/charts.h"
 #include "core/ui/hire_staff.h"
@@ -262,6 +263,7 @@ class App
     ObjectUi object_ui_;
     HireStaff hire_;
     HireStaffArt hire_art_;
+    BuildUi build_ui_;
     Jukebox jukebox_;
     // The town map: while open it takes the window from the view, the
     // interface and the menu bar; the game keeps running behind it.
@@ -483,8 +485,10 @@ void App::interface_step(int out_w, int out_h, int scale)
             escape = false;
         }
     }
-    if (game)
+    if (game) {
         sync_object_requesters(interface_, *game);
+        sync_build_requester(interface_, *game);
+    }
     InterfaceEvents events = interface_.frame(mouse, escape);
     if (game && interface_.requester() == Requester::Jukebox) {
         JukeboxResult jr = jukebox_frame(jukebox_, interface_, events, requester_art_, music_, mouse, game->paused);
@@ -498,6 +502,7 @@ void App::interface_step(int out_w, int out_h, int scale)
         bool shift = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
         bool ctrl = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
         object_requesters_input(interface_, object_ui_, *game, events, mouse, shift, ctrl);
+        build_requesters_input(interface_, build_ui_, *game, events, mouse);
         if (Event e = hire_staff_click(hire_, events, *game); e.type)
             game->event = e;
     }
@@ -515,13 +520,17 @@ void App::interface_step(int out_w, int out_h, int scale)
         // The other panel buttons lead to requesters and screens not ported yet.
         bool refused = action == PanelAction::Refused;
         if (action == PanelAction::FurnishCorridor) {
-            refused = hire_.placing();
+            refused = hire_.placing() || build_tool_busy(*game);
             if (!refused)
                 furnish_corridor(*game);
         } else if (action == PanelAction::HireStaff) {
-            refused = placing;
+            refused = placing || build_tool_busy(*game);
             if (!refused)
                 game->event = {EV_OPEN_HIRE_STAFF};
+        } else if (action == PanelAction::BuildRoom) {
+            refused = hire_.placing() || build_tool_busy(*game);
+            if (!refused)
+                open_build_room(*game);
         } else if (action == PanelAction::TownMap) {
             open_town_map();
         } else if (int chart = chart_for_panel_action(action); chart >= 0) {
@@ -536,6 +545,7 @@ void App::interface_step(int out_w, int out_h, int scale)
         bool on_map = input && !paused && mouse.y < panel_top(*data_);
         int cell = on_map ? map_cell_ : -1;
         placement_mouse(object_ui_, *game, cell, mouse, on_map);
+        build_mouse(build_ui_, *game, cell, mouse, on_map);
         if (hire_.placing() && on_map && cell >= 0) {
             update_staff_cursor(hire_, game->world, cell);
             if (mouse.left_pressed) {
@@ -594,6 +604,7 @@ void App::interface_step(int out_w, int out_h, int scale)
         draw_jukebox(ui_, interface_, requester_art_, music_);
     if (game) {
         draw_object_requesters(ui_, interface_, object_ui_, *game, requester_art_, *data_);
+        draw_build_requester(ui_, interface_, build_ui_, *game, requester_art_, *data_);
         draw_hire_staff(ui_, hire_, interface_, requester_art_, hire_art_, game->world, data_->text());
     }
     std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
@@ -714,6 +725,9 @@ void App::run_command(Game &game)
     chart_command(charts_, game.event);
     game.process_turn();
     hire_staff_after_turn(hire_, game.world);
+    for (uint8_t sfx : game.world.building.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    game.world.building.sounds.clear();
 }
 
 // One frame of the open chart, in place of the view and the interface,
@@ -1220,6 +1234,7 @@ void App::render()
         if (map_) {
             Rect view{0, 0, vw, vh};
             draw_placement(surface_, view, camera_, map_->game.world.placing, object_ui_, *data_);
+            draw_build_overlay(surface_, view, camera_, map_->game, build_ui_, object_ui_, *data_);
             if (hire_.placing() && map_cell_ >= 0)
                 draw_held_staff(surface_, view, camera_, hire_, map_->game.world, map_cell_, *data_, map_->scratch);
         }

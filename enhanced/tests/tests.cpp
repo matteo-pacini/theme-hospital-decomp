@@ -16,6 +16,7 @@
 #include "core/render/shadows.h"
 #include "core/render/text.h"
 #include "core/render/view.h"
+#include "core/ui/build_room.h"
 #include "core/ui/buy_objects.h"
 #include "core/ui/charts.h"
 #include "core/ui/hire_staff.h"
@@ -26,6 +27,7 @@
 #include "core/ui/windows.h"
 #include "core/world/advisor.h"
 #include "core/world/arrivals.h"
+#include "core/world/build.h"
 #include "core/world/complex.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
@@ -3537,6 +3539,351 @@ void test_charts(const char *dir)
     CHECK(th::chart_for_panel_action(th::PanelAction::HireStaff) == -1);
 }
 
+// Carries out the turn's command as Game::process_turn will once the build
+// commands are wired into it: the build tool's first.
+void run_build_command(th::Game &game)
+{
+    th::Event e = game.event;
+    if (th::apply_build_event(game, e))
+        game.event = {};
+    else
+        game.process_turn();
+}
+
+void test_build_gp_office(const char *dir)
+{
+    th::GameData gd;
+    th::RequesterArt art;
+    std::string error;
+    CHECK(gd.load(dir, &error) && art.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    auto game = std::make_unique<th::Game>();
+    game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    th::World &world = game->world;
+    th::ObjectPlacing &p = world.placing;
+    th::Building &bd = world.building;
+    th::BuildState &b = bd.build;
+    th::Interface ui;
+    th::BuildUi bui;
+    th::ObjectUi oui;
+    th::init_object_ui(oui, gd.palette());
+    const int gp = th::kRoomGp, desk = 1, cabinet = 2, chair = 6;
+    const int room_cost = settings.rooms[gp].cost;
+    const int objects_cost =
+        settings.objects[desk].start_cost + settings.objects[cabinet].start_cost + settings.objects[chair].start_cost;
+    CHECK(room_cost > 0 && objects_cost > 0);
+
+    // The panel's icon opens the requester; the diagnosis department lists
+    // the GP's office first.
+    CHECK(!th::build_tool_busy(*game));
+    th::open_build_room(*game);
+    run_build_command(*game);
+    CHECK(p.requester == th::ObjectRequester::BuildRoom && p.requester_mode == 1 && p.menu_disabled);
+    th::sync_build_requester(ui, *game);
+    CHECK(ui.requester() == th::Requester::BuildRoom);
+    const th::Window &win = ui.window(int(th::Requester::BuildRoom));
+    th::UiMouse m;
+    th::InterfaceEvents ev;
+    ev.triggered_window = int(th::Requester::BuildRoom);
+    ev.triggered_button = 1;
+    th::build_requesters_input(ui, bui, *game, ev, m);
+    CHECK(game->event.type == th::EV_REQ1_RESET_ROOMS && game->event.value == 3);
+    run_build_command(*game);
+    CHECK(p.requester_mode == 4 && p.arg == 3 && p.offered[0] == gp);
+
+    // The requester's own drawing.
+    th::UiLayer layer;
+    layer.resize(th::kUiWidth, th::kUiHeight);
+    layer.clear();
+    th::draw_interface(layer, ui, art);
+    std::vector<uint32_t> plain = layer.to_argb(gd.palette());
+    m.x = win.x + 170;
+    m.y = win.y + 40;
+    th::build_requesters_input(ui, bui, *game, {}, m);
+    CHECK(p.room_type == gp && bui.hovered_entry == 0);
+    th::draw_build_requester(layer, ui, bui, *game, art, gd);
+    std::vector<uint32_t> drawn = layer.to_argb(gd.palette());
+    int changed = 0;
+    for (size_t i = 0; i < drawn.size(); i++)
+        changed += drawn[i] != plain[i];
+    CHECK(changed > 1000);
+
+    // Refused while the balance does not cover the room and its objects.
+    int balance = game->balance;
+    game->balance = room_cost + objects_cost;
+    ev.triggered_button = 16;
+    th::build_requesters_input(ui, bui, *game, ev, m);
+    CHECK(game->event.type == th::EV_NONE);
+    game->balance = balance;
+    th::build_requesters_input(ui, bui, *game, ev, m);
+    CHECK(game->event.type == th::EV_INIT_BLUEPRINT && game->event.value == gp);
+    run_build_command(*game);
+    CHECK(p.requester == th::ObjectRequester::EditRoom && p.requester_mode == 0 && !p.menu_disabled);
+    CHECK(p.buy_count[desk] == 1 && p.buy_count[cabinet] == 1 && p.buy_count[chair] == 1);
+    CHECK(bd.mouse == th::BuildMouse::Blueprint && th::build_tool_busy(*game) && b.room != 0);
+    const uint16_t r = b.room;
+    CHECK(world.rooms[r].type == gp && world.rooms[r].state == th::kRoomStateBlueprint);
+    th::sync_build_requester(ui, *game);
+    th::sync_object_requesters(ui, *game);
+    CHECK(ui.requester() == th::Requester::EditRoom && ui.window_count() == 1);
+
+    // Dragging a blueprint out with the mouse, on public land: invalid.
+    auto drag = [&](int x0, int y0, int x1, int y1) {
+        th::UiMouse d;
+        d.left_pressed = d.left_held = true;
+        th::build_mouse(bui, *game, x0 + y0 * th::kMapSize, d, true);
+        run_build_command(*game);
+        d = {};
+        d.left_held = true;
+        th::build_mouse(bui, *game, x1 + y1 * th::kMapSize, d, true);
+        run_build_command(*game);
+        th::build_mouse(bui, *game, x1 + y1 * th::kMapSize, {}, true);
+        run_build_command(*game);
+    };
+    drag(2, 2, 6, 6);
+    CHECK(b.x0 == 2 && b.y0 == 2 && b.x1 == 6 && b.y1 == 6 && b.drag == th::kDragNone && b.draw_mode == 1);
+    CHECK(th::blueprint_floor_invalid(world, 3, 3));
+    game->event = {th::EV_COMMIT_BLUEPRINT};
+    run_build_command(*game);
+    CHECK(bd.mouse == th::BuildMouse::Blueprint && game->advisor.forced_advice_id == 4 && p.requester_mode == 0);
+
+    // A 5 x 5 site on the hospital's land with a clear ring round it.
+    int site = -1;
+    th::BuildState saved = b;
+    for (int y = 1; y + 6 < th::kMapSize && site < 0; y++) {
+        for (int x = 1; x + 6 < th::kMapSize && site < 0; x++) {
+            b.x0 = uint8_t(x - 1);
+            b.y0 = uint8_t(y - 1);
+            b.x1 = uint8_t(x + 5);
+            b.y1 = uint8_t(y + 5);
+            bool ok = true;
+            for (int cy = y - 1; cy <= y + 5 && ok; cy++)
+                for (int cx = x - 1; cx <= x + 5 && ok; cx++)
+                    ok = !th::blueprint_floor_invalid(world, cx, cy);
+            if (ok)
+                site = x + y * th::kMapSize;
+        }
+    }
+    b = saved;
+    CHECK(site >= 0);
+    if (site < 0)
+        return;
+    const int x0 = site % th::kMapSize, y0 = site / th::kMapSize, x1 = x0 + 4, y1 = y0 + 4;
+    // Too small for a GP's office.
+    drag(x0, y0, x0 + 2, y0 + 2);
+    CHECK(th::blueprint_floor_invalid(world, x0, y0));
+    drag(x0 + 2, y0 + 2, x1, y1); // the bottom-right corner, dragged out
+    CHECK(b.x0 == x0 && b.y0 == y0 && b.x1 == x1 && b.y1 == y1);
+    CHECK(!th::blueprint_floor_invalid(world, x0, y0) && !th::blueprint_outline_invalid(world, x1 + 1, y1 + 1));
+
+    // Drawn over the view.
+    th::Surface view;
+    view.resize(640, 480);
+    view.fill(0);
+    th::Point centre = th::cell_to_world(x0 + 2, y0 + 2);
+    th::Point camera = {centre.x - 320, centre.y - 240};
+    th::build_mouse(bui, *game, x0 + 2 + (y0 + 2) * th::kMapSize, {}, true);
+    run_build_command(*game);
+    th::draw_build_overlay(view, {0, 0, 640, 480}, camera, *game, bui, oui, gd);
+    int lit = 0;
+    for (int y = 0; y < 480; y++)
+        for (int x = 0; x < 640; x++)
+            lit += view.row(y)[x] != 0;
+    CHECK(lit > 5000);
+
+    // The edit room requester's confirm commits it: its outline goes on the
+    // map, and the door is placed next.
+    ev.triggered_window = int(th::Requester::EditRoom);
+    ev.triggered_button = th::kEditRoomConfirm;
+    th::build_requesters_input(ui, bui, *game, ev, {});
+    CHECK(game->event.type == th::EV_COMMIT_BLUEPRINT);
+    run_build_command(*game);
+    CHECK(bd.mouse == th::BuildMouse::PlaceDoor && p.requester_mode == 2 && b.state == 1 && b.door_kind == 1);
+    const th::RoomInfo &room = world.rooms[r];
+    CHECK(room.pos == x0 + y0 * th::kMapSize && room.width == 5 && room.height == 5);
+    CHECK(th::find_small_thing(world, site) == 3 && th::find_small_thing(world, site + 2) == 1 &&
+          th::find_small_thing(world, site + 2 * th::kMapSize) == 2);
+    CHECK(world.map[size_t(site + 1 + th::kMapSize)].floor_block == 0x17);
+    CHECK(game->balance == balance);
+
+    // The door, in the north wall's middle; then a window can not go on it.
+    const int door_cell = x0 + 2 + y0 * th::kMapSize;
+    bui.prev_cell = door_cell - th::kMapSize;
+    th::build_mouse(bui, *game, door_cell - th::kMapSize, {}, true);
+    CHECK(game->event.type == th::EV_TEMP_PLACE_DOOR);
+    run_build_command(*game);
+    CHECK(bd.door_shown && !bd.door_invalid && b.door_tile == door_cell && b.door_type == 4);
+    th::UiMouse click;
+    click.left_pressed = click.left_held = true;
+    th::build_mouse(bui, *game, door_cell - th::kMapSize, click, true);
+    run_build_command(*game);
+    CHECK(p.requester_mode == 4 && b.door_kind == 2 && th::find_small_thing(world, door_cell) == 4);
+    CHECK(room.door_tile == door_cell - th::kMapSize && room.door_inside_tile == door_cell);
+    game->event = {th::EV_TEMP_PLACE_DOOR, uint16_t(door_cell - th::kMapSize)};
+    run_build_command(*game);
+    CHECK(bd.door_invalid && b.door_type == 8);
+    game->event = {th::EV_PLACE_BP_DOOR, 0};
+    run_build_command(*game);
+    CHECK(room.windows == 0 && th::find_small_thing(world, door_cell) == 4);
+
+    // A window in the west wall, taken out with a right click and put back.
+    const int window_cell = x0 + (y0 + 2) * th::kMapSize;
+    game->event = {th::EV_TEMP_PLACE_DOOR, uint16_t(window_cell - 1)};
+    run_build_command(*game);
+    CHECK(!bd.door_invalid && b.door_tile == window_cell && b.door_type == 10);
+    game->event = {th::EV_PLACE_BP_DOOR, 0};
+    run_build_command(*game);
+    CHECK(room.windows == 1 && th::find_small_thing(world, window_cell) == 9);
+    game->event = {th::EV_PLACE_BP_DOOR, 1};
+    run_build_command(*game);
+    CHECK(room.windows == 0 && th::find_small_thing(world, window_cell) == 2);
+    game->event = {th::EV_PLACE_BP_DOOR, 0};
+    run_build_command(*game);
+    CHECK(room.windows == 1);
+
+    // Confirmed: the walls, door and window built, the room's floor and
+    // colours, and its objects to place.
+    th::build_requesters_input(ui, bui, *game, ev, {});
+    CHECK(game->event.type == th::EV_COMMIT_DOORS && game->event.value == gp);
+    run_build_command(*game);
+    CHECK(bd.mouse == th::BuildMouse::None && b.state == 0 && room.state == th::kRoomStateEdited);
+    auto cell = [&](int x, int y) -> const th::MapCell & { return world.map[size_t(x + y * th::kMapSize)]; };
+    CHECK(cell(x0 + 1, y0).wall_n == 0x50 && cell(x0, y0 + 1).wall_w == 0x51);
+    CHECK(cell(x0 + 1, y1 + 1).wall_n == 0x58 && cell(x1 + 1, y0 + 1).wall_w == 0x59);
+    // The blueprint's invisible wall, and the door's nested in it.
+    CHECK(cell(x0 + 2, y0).wall_n == 0x90);
+    CHECK(cell(x0, y0 + 2).wall_w == 0x7f);
+    CHECK(cell(x0 + 2, y0 + 2).floor_block == th::kRoomTypeInfo[gp].floor_block);
+    CHECK(th::room_at(world, uint16_t(site + 2 + 2 * th::kMapSize)) == r &&
+          th::room_at(world, uint16_t(site - 1)) == 0);
+    int doors = 0;
+    for (int id = cell(x0 + 2, y0).first; id > 0; id = world.things[size_t(id)].cell_next) {
+        const th::Thing &t = world.things[size_t(id)];
+        if (t.type == th::kThingDoor && t.subtype == 3 && t.room_id == r && t.facing == 0)
+            doors++;
+    }
+    CHECK(doors == 1);
+    CHECK(th::find_small_thing(world, site) == 3);
+    CHECK(p.placing && p.kind == desk && p.mode == 0 && p.room == r && p.requester_mode == 6);
+    CHECK(p.arg == 1u << th::kEditRoomConfirm && p.hint == 0xd);
+    CHECK(th::check_room_access(world, 0));
+
+    // The objects, each where it may go in the room; one tried off the room
+    // is refused.
+    game->event = {th::EV_PLACE_OBJECT, 0, 0, uint16_t(desk)};
+    run_build_command(*game);
+    CHECK(room.first_object == 0 && game->balance == balance);
+    int placed = 0;
+    while (p.placing && placed < 3) {
+        int kind = p.kind;
+        int tile = -1;
+        for (int t = 0; t < th::kMapCells && tile < 0; t++) {
+            th::update_placement(world, p, t);
+            if (p.ok)
+                tile = p.tile;
+        }
+        CHECK(tile >= 0 && th::room_at(world, uint16_t(tile)) == r);
+        if (tile < 0)
+            break;
+        int before = game->balance;
+        game->event = {th::EV_PLACE_OBJECT, uint16_t(tile), 0, uint16_t(kind | p.dir << 8)};
+        run_build_command(*game);
+        CHECK(game->balance == before - settings.objects[size_t(kind)].start_cost);
+        CHECK(room.first_object && world.things[room.first_object].subtype == kind &&
+              world.things[room.first_object].room_id == r);
+        placed++;
+    }
+    CHECK(placed == 3 && !p.placing && th::room_has_compulsory_objects(world, r));
+    CHECK(p.requester == th::ObjectRequester::EditRoom && p.arg == 0 && p.hint == 0xe);
+    CHECK(game->balance == balance - objects_cost);
+
+    // Each object left to place, where it first may go.
+    auto place_all = [&]() {
+        int n = 0;
+        while (p.placing && n < 8) {
+            int kind = p.kind, tile = -1;
+            for (int t = 0; t < th::kMapCells && tile < 0; t++) {
+                th::update_placement(world, p, t);
+                if (p.ok)
+                    tile = p.tile;
+            }
+            if (tile < 0)
+                break;
+            game->event = {th::EV_PLACE_OBJECT, uint16_t(tile), 0, uint16_t(kind | p.dir << 8)};
+            run_build_command(*game);
+            n++;
+        }
+        return n;
+    };
+
+    // Buy more: a plant, then back to placing it in the room.
+    const int plant = 45;
+    ev.triggered_button = th::kEditRoomFurnish;
+    th::build_requesters_input(ui, bui, *game, ev, {});
+    CHECK(game->event.type == th::EV_FURNISH_EDITED_ROOM);
+    run_build_command(*game);
+    CHECK(p.requester == th::ObjectRequester::BuyObjects && p.arg3 == (room.pos & 0xff) && p.room_type == gp);
+    CHECK(std::find(p.offered.begin(), p.offered.end(), plant) != p.offered.end());
+    game->event = {th::EV_BUY_OBJECT, plant, 0, 1};
+    run_build_command(*game);
+    game->event = {th::EV_BACK_TO_PLACE_OBJECT, 0};
+    run_build_command(*game);
+    CHECK(p.requester == th::ObjectRequester::EditRoom && p.placing && p.kind == plant && p.room == r);
+    CHECK(place_all() == 1 && game->balance == balance - objects_cost - settings.objects[plant].start_cost);
+    ev.triggered_button = th::kEditRoomConfirm;
+
+    // Back to a blueprint (Escape): the objects lifted, the walls and door
+    // down; built again, the objects go back at no charge and no draw.
+    const int spent = balance - game->balance;
+    CHECK(th::object_escape(*game) && game->event.type == th::EV_EDIT_BLUEPRINT);
+    run_build_command(*game);
+    CHECK(bd.mouse == th::BuildMouse::Blueprint && p.requester_mode == 0 && room.state == th::kRoomStateBlueprint);
+    CHECK(room.width == 0 && room.first_object == 0 && b.draw_mode == 1 && b.x0 == x0 && b.y1 == y1);
+    CHECK(p.buy_count[desk] == 1 && p.buy_count[chair] == 1 && p.buy_count[cabinet] == 1 && p.buy_count[plant] == 1);
+    CHECK(std::count_if(b.objects.begin(), b.objects.end(), [](uint16_t id) { return id != 0; }) == 4);
+    CHECK(cell(x0 + 1, y0).wall_n == 0 && th::find_small_thing(world, site) == 0);
+    game->event = {th::EV_COMMIT_BLUEPRINT};
+    run_build_command(*game);
+    CHECK(bd.mouse == th::BuildMouse::PlaceDoor);
+    game->event = {th::EV_TEMP_PLACE_DOOR, uint16_t(door_cell - th::kMapSize)};
+    run_build_command(*game);
+    game->event = {th::EV_PLACE_BP_DOOR, 0};
+    run_build_command(*game);
+    game->event = {th::EV_COMMIT_DOORS, uint16_t(gp)};
+    run_build_command(*game);
+    CHECK(p.placing && room.state == th::kRoomStateEdited);
+    uint32_t seed = world.seed;
+    CHECK(place_all() == 4 && game->balance == balance - spent && world.seed == seed);
+
+    // Confirmed: the room opens and is paid for.
+    th::build_requesters_input(ui, bui, *game, ev, {});
+    CHECK(game->event.type == th::EV_OPEN_ROOM);
+    run_build_command(*game);
+    CHECK(room.state == 0 && room.paid_for == 1 && b.room == 0 && bd.last_built_room == gp);
+    CHECK(p.requester == th::ObjectRequester::None && th::find_small_thing(world, site) == 0);
+    CHECK(game->balance == balance - spent - room_cost);
+    CHECK(game->finance.entry_count >= 2 &&
+          game->finance.entries[game->finance.entry_count - 1u].type == th::kTxBuildRoom);
+    CHECK(th::check_room_access(world, 0));
+
+    // A second blueprint abandoned with Escape: no charge, the room freed.
+    balance = game->balance;
+    th::open_build_room(*game);
+    run_build_command(*game);
+    game->event = {th::EV_INIT_BLUEPRINT, uint16_t(gp), 0, uint16_t(gp)};
+    run_build_command(*game);
+    uint16_t r2 = b.room;
+    CHECK(r2 != 0 && r2 != r && world.rooms[r2].type == gp);
+    CHECK(th::object_escape(*game) && game->event.type == th::EV_DELETE_ROOM);
+    run_build_command(*game);
+    CHECK(world.rooms[r2].type == th::kRoomFree && b.room == 0 && bd.mouse == th::BuildMouse::None);
+    CHECK(p.requester == th::ObjectRequester::None && p.buy_count[desk] == 0 && game->balance == balance);
+}
+
 int main()
 {
     test_blit_clips_and_skips();
@@ -3595,6 +3942,7 @@ int main()
         test_town_map(dir);
         test_jukebox(dir);
         test_charts(dir);
+        test_build_gp_office(dir);
     }
 
     if (failures) {

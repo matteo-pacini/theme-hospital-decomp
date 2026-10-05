@@ -1,5 +1,6 @@
 #include "core/world/game.h"
 
+#include "core/world/build.h"
 #include "core/world/nav.h"
 #include "core/world/objects.h"
 #include "core/world/queue.h"
@@ -123,6 +124,7 @@ void Game::turn()
             }
         }
     }
+    build_turn(*this);
 }
 
 void Game::process_turn()
@@ -130,7 +132,9 @@ void Game::process_turn()
     Event e = event;
     event = {};
     // Each part's commands are carried out in its own file. EV_CANCEL_BUILD
-    // is both the staff side's and the objects': staff's part first.
+    // is the build tool's, the staff side's and the objects', in that order.
+    if (apply_build_event(*this, e))
+        return;
     if (apply_town_event(*this, land, e) || apply_chart_event(*this, hospital, e))
         return;
     if (e.type == EV_OPEN_HIRE_STAFF)

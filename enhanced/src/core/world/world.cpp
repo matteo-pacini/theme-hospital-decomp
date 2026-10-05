@@ -162,9 +162,10 @@ uint16_t compute_plant_frame(const Thing &plant, const AnimData &anims)
     return uint16_t(f);
 }
 
-// place_existing_object (src/objects.cpp). The level's objects are in no
-// room, so the room list, radiator count and reception bookkeeping do not
-// apply; hardware statistics and advert counts are not kept.
+} // namespace
+
+// place_existing_object (src/objects.cpp) without the hardware statistics,
+// advert counts and the reception's room list, which are not kept.
 void place_existing_object(World &w, const AnimData &anims, uint16_t id, int tile, int dir)
 {
     Thing &obj = w.things[id];
@@ -197,14 +198,25 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
     }
     cell.first = int16_t(id);
 
-    // insert_object: at the head of the owner's list of the kind.
-    obj.room_id = 0;
+    // insert_object: at the head of the list of the room holding the cell,
+    // and of the owner's list of the kind.
+    obj.room_id = room_at(w, uint16_t(tile));
+    if (obj.room_id) {
+        RoomInfo &room = w.rooms[obj.room_id];
+        if (room.first_object) {
+            obj.room_obj_next = room.first_object;
+            w.things[room.first_object].room_obj_prev = id;
+        }
+        room.first_object = id;
+    }
     uint16_t &first = w.first_of_kind[obj.subtype];
     if (first) {
         obj.type_obj_next = first;
         w.things[first].type_obj_prev = id;
     }
     first = id;
+    if (control.category == 6 && obj.room_id)
+        w.rooms[obj.room_id].radiators++;
 
     if (control.next_part != -1) {
         const NextPartInfo &part = kNextParts[size_t(control.next_part)];
@@ -226,15 +238,13 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
         obj.sprite = compute_plant_frame(obj, anims);
 }
 
-} // namespace
-
-// place_object (src/objects.cpp) as at level start, `force` standing for
-// othervar.force_place_objects: no rooms, people or picked-up objects
-// exist, so which_room is always 0, check_no_peeps_in_way always passes and
-// a new thing is always taken. check_room_access then has no rooms to reach
-// and only checks reception desks already placed; it is taken to pass.
-// Prices and strengths come from allhosps' object_stats, still zero then
-// (init_player fills them after the map is built), so nothing is charged.
+// place_object (src/objects.cpp), `force` standing for
+// othervar.force_place_objects, as at level start: no people or picked-up
+// objects exist, so check_no_peeps_in_way always passes and a new thing is
+// always taken; check_room_access is taken to pass. Prices and strengths
+// come from allhosps' object_stats, still zero then (init_player fills them
+// after the map is built), so nothing is charged. The player's placing does
+// those checks and the charge first (core/world/objects.cpp).
 uint16_t place_object(World &w, const AnimData &anims, int tile, int kind, int dir, int owner, bool force)
 {
     if (tile < 0 || tile >= kMapCells)
@@ -303,6 +313,7 @@ void start_level(World &world, const Level &level, const AnimData &anims, uint32
     world.things.assign(kThingCount, Thing{});
     world.first_of_kind = {};
     world.placing = {};
+    world.building = {};
     world.seed = seed;
     build_start_map(world.map, level, [&](int cell) {
         world.map[size_t(cell)].first = level.tiles[size_t(cell)].first;

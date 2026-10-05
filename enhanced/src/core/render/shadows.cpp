@@ -8,28 +8,9 @@ namespace th
 namespace
 {
 
-// The flags of each block id, from the game's blocks[] (src/blocks.cpp).
-// add_static_shadows tests bits 0x01, 0x20, 0x40 and 0x80 of wall blocks.
-constexpr std::array<uint8_t, kBlockCount> kBlockFlags = {
-    0,  0,  0,  0,  0,   0,   0,   0,   0,   0,   0,   0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 32, 32, 32,
-    32, 32, 32, 32, 32,  32,  32,  32,  32,  32,  32,  32,  32, 32, 0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,
-    0,  0,  0,  0,  0,   0,   0,   0,   0,   0,   0,   0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,
-    0,  0,  1,  1,  1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,  1,  5,  5,  5,  5,  5, 5,  5,  5,
-    5,  5,  5,  5,  5,   5,   5,   5,   17,  17,  17,  17,  17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 3, 3,  3,  3,
-    3,  3,  3,  3,  0,   0,   0,   0,   0,   0,   17,  17,  65, 64, 65, 64, 17, 17, 0,  0,  1,  0,  0, 0,  0,  0,
-    8,  8,  0,  0,  8,   8,   8,   8,   8,   8,   8,   8,   8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8, 8,  8,  8,
-    8,  8,  8,  8,  8,   8,   8,   8,   8,   8,   8,   8,   8,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5, 5,  5,  5,
-    5,  5,  5,  0,  133, 133, 133, 133, 133, 133, 133, 133, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,
-};
-
 constexpr uint8_t kFullShadowBlock = 73;
 constexpr uint8_t kHalfShadowBlock = 74;
 constexpr uint8_t kWallShadowBlock = 150;
-
-uint8_t block_flags(uint8_t id)
-{
-    return id < kBlockCount ? kBlockFlags[id] : 0;
-}
 
 // The game's create_overlay_sprite: `src` with the opaque pixels of `ovr`
 // (aligned on the top-left corner) mixed into it through `ghost`, entry

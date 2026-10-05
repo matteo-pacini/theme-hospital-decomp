@@ -38,4 +38,26 @@ inline int block_sprite(uint8_t id)
     return id >= 0x50 ? sprite + 0x51 : sprite;
 }
 
+// The flags of each block id, from the game's blocks[] (src/blocks.cpp).
+// add_static_shadows tests bits 0x01, 0x20, 0x40 and 0x80 of wall blocks;
+// building tests 0x04 (half-height walls) and 0x10 of walls, and floors
+// whose flags are exactly 0x20 (the blueprint floors).
+inline constexpr std::array<uint8_t, kBlockCount> kBlockFlags = {
+    0,  0,  0,  0,  0,   0,   0,   0,   0,   0,   0,   0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 32, 32, 32,
+    32, 32, 32, 32, 32,  32,  32,  32,  32,  32,  32,  32,  32, 32, 0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,
+    0,  0,  0,  0,  0,   0,   0,   0,   0,   0,   0,   0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,
+    0,  0,  1,  1,  1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,  1,  5,  5,  5,  5,  5, 5,  5,  5,
+    5,  5,  5,  5,  5,   5,   5,   5,   17,  17,  17,  17,  17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 3, 3,  3,  3,
+    3,  3,  3,  3,  0,   0,   0,   0,   0,   0,   17,  17,  65, 64, 65, 64, 17, 17, 0,  0,  1,  0,  0, 0,  0,  0,
+    8,  8,  0,  0,  8,   8,   8,   8,   8,   8,   8,   8,   8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8, 8,  8,  8,
+    8,  8,  8,  8,  8,   8,   8,   8,   8,   8,   8,   8,   8,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5, 5,  5,  5,
+    5,  5,  5,  0,  133, 133, 133, 133, 133, 133, 133, 133, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,
+};
+
+// The flags of block `id`, 0 if it is not a block.
+inline uint8_t block_flags(uint8_t id)
+{
+    return id < kBlockCount ? kBlockFlags[id] : 0;
+}
+
 } // namespace th

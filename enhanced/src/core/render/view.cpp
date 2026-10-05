@@ -137,18 +137,19 @@ AnimStart anim_start(const GameData &data, uint32_t anim)
 }
 
 // do_mapwho for `cell` (map index `index`), whose diamond has its left edge
-// at x and its top corner at y: its overlay (flags bits 6-7), its litter,
-// then its things by ascending bucket and, within a bucket, from the end of
-// the cell's list. Blueprint markers are not drawn. Returns the box of the
+// at x and its top corner at y: its overlay (flags bits 6-7), the blueprint
+// marker ending its list, its litter, then its things by ascending bucket
+// and, within a bucket, from the end of the cell's list. Returns the box of the
 // frames drawn (the game's frame_bounds); `extent`, if given, grows to
 // every pixel drawn.
 Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y, const World &world,
                       const GameData &data, Rect *extent, std::vector<FrameSound> *sounds)
 {
     std::vector<std::pair<int, int16_t>> drawn; // (bucket, thing) in list order
-    for (int16_t id = cell.first; id > 0 && id < kThingCount; id = world.things[size_t(id)].cell_next)
+    int16_t marker = cell.first;
+    for (; marker > 0 && marker < kThingCount; marker = world.things[size_t(marker)].cell_next)
         // The game indexes 32 buckets without a check; keep to them.
-        drawn.emplace_back(std::clamp(thing_bucket(world.things[size_t(id)]), 0, kBuckets - 1), id);
+        drawn.emplace_back(std::clamp(thing_bucket(world.things[size_t(marker)]), 0, kBuckets - 1), marker);
     Rect bounds{};
     auto draw_start = [&](int fx, int fy, AnimStart start) {
         Rect sprites;
@@ -167,6 +168,8 @@ Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y
         }
         draw_start(x + kTileWidth / 2, y + kTileHeight / 2, {anim_start(data, 625u + (cell.flags >> 6)).frame, 0});
     }
+    if (marker < 0 && size_t(-marker) < kBlueprints.size())
+        draw_start(x + kTileWidth / 2, y + kTileHeight / 2, anim_start(data, kBlueprints[size_t(-marker)].anim));
     if (uint8_t kind = cell.litter_shadow & 0xf) {
         const LitterStart &litter = kLitterStarts[kind];
         if (litter.centred) {
@@ -181,10 +184,10 @@ Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y
             if (it->first != b)
                 continue;
             const Thing &t = world.things[size_t(it->second)];
-            // mapwho_object and mapwho_person's usual case
-            // (draw_special_id_frame); people's glow, wobble and status icons
-            // are not drawn yet.
-            if (t.type != kThingObject && t.type != kThingPatient && t.type != kThingStaff)
+            // mapwho_object (objects and doors) and mapwho_person's usual
+            // case (draw_special_id_frame); people's glow, wobble and status
+            // icons are not drawn yet.
+            if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff)
                 continue;
             int tx = x + kTileWidth / 2 + ((int(t.x.frac) - int(t.y.frac)) >> 3);
             int ty = y + ((int(t.x.frac) + int(t.y.frac)) >> 4);
@@ -251,7 +254,7 @@ void draw_world(Surface &dst, Rect view, Point camera, const World &world, const
             if (!on_map(col, row))
                 continue;
             const MapCell &cell = map[col + row * kMapSize];
-            if (cell.first <= 0 && !(cell.litter_shadow & 0xf) && !(cell.flags & 0xc0))
+            if (cell.first == 0 && !(cell.litter_shadow & 0xf) && !(cell.flags & 0xc0))
                 continue;
             int x = scan.x(col, row), top = base_y - kTileHeight;
             if (!(cell.flags & 0x10)) {

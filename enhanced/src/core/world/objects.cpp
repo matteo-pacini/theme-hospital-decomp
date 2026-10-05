@@ -23,6 +23,12 @@ constexpr uint8_t kPsWaitsForDecision = 0x44;
 // The local player; the engine has no other.
 constexpr int kPlayer = 0;
 
+// ROOM_DESTROYED (include/enums.h).
+constexpr uint8_t kRoomDestroyed = 6;
+
+// forced_advice_id 7 (language section 0x14): an object would block access.
+constexpr uint16_t kAdviceObjectBlocks = 7;
+
 // next_angle (src/tables.cpp).
 constexpr std::array<uint8_t, 4> kNextAngle = {1, 2, 3, 0};
 
@@ -50,20 +56,6 @@ bool points_connected(const World &w, int from, int to)
 int entrance_tile(const World &w)
 {
     return w.entrances[kPlayer][0];
-}
-
-// check_room_access (src/blueprnt.cpp) with no rooms: both use cells of each
-// of the player's reception desks reachable from the entrance.
-bool check_room_access(const World &w)
-{
-    int pos = entrance_tile(w);
-    for (size_t i = 1; i < w.things.size(); i++) {
-        const Thing &t = w.things[i];
-        if (t.type == kThingObject && t.subtype == kObjReceptionDesk && t.owner == kPlayer &&
-            (!points_connected(w, pos, t.use_pos[0]) || !points_connected(w, pos, t.use_pos[1])))
-            return false;
-    }
-    return true;
 }
 
 // check_no_peeps_on_cell (src/objects.cpp) outside rooms: false if someone
@@ -104,10 +96,12 @@ bool no_peeps_in_way(const World &w, int tile, int kind, int dir)
     return true;
 }
 
-// place_object (src/objects.cpp) for the player in the corridor: which_room
-// is always 0 and nothing has been picked up, so a new object is bought at
-// object_stats' cost (the level's StartCost; research does not lower it yet)
-// and the balance is charged (change_balance TX_BUY_OBJECT).
+// place_object (src/objects.cpp) for the player: outside rooms it must
+// leave the rooms and desks reachable (check_room_access); an object of
+// the kind lifted off the map while a room went back to a blueprint
+// (BuildState::objects) is put back at no charge, else a new one is bought
+// at object_stats' cost (the level's StartCost; research does not lower it
+// yet) and the balance is charged (change_balance TX_BUY_OBJECT).
 uint16_t player_place_object(Game &game, int tile, int kind, int dir)
 {
     World &w = game.world;
@@ -115,13 +109,25 @@ uint16_t player_place_object(Game &game, int tile, int kind, int dir)
         return 0;
     if (!(kind == kObjGatesOfHell || can_place_object(w, tile, kind, dir, kPlayer)))
         return 0;
-    mark_object_shape(w, tile, kind, dir);
-    bool blocked = !check_room_access(w);
-    remove_object_shape(w, tile, kind, dir);
-    // The game also sets advisor.forced_advice_id 7 when blocked; there is no
-    // advisor yet.
-    if (blocked || !no_peeps_in_way(w, tile, kind, dir))
+    if (!room_at(w, uint16_t(tile))) {
+        mark_object_shape(w, tile, kind, dir);
+        bool blocked = !check_room_access(w, kPlayer);
+        remove_object_shape(w, tile, kind, dir);
+        if (blocked) {
+            game.advisor.forced_advice_id = kAdviceObjectBlocks;
+            return 0;
+        }
+    }
+    if (!no_peeps_in_way(w, tile, kind, dir))
         return 0;
+    for (uint16_t &lifted : w.building.build.objects) {
+        if (lifted && w.things[lifted].subtype == kind && w.things[lifted].owner == kPlayer) {
+            uint16_t id = lifted;
+            place_existing_object(w, game.anims(), id, tile, dir);
+            lifted = 0;
+            return id;
+        }
+    }
     uint16_t id = place_object(w, game.anims(), tile, kind, dir, kPlayer, true);
     if (id) {
         int cost = game.settings().objects[size_t(kind)].start_cost;
@@ -131,8 +137,8 @@ uint16_t player_place_object(Game &game, int tile, int kind, int dir)
     return id;
 }
 
-// corridor_object_nav_check (src/build.cpp) with no rooms. Only the first
-// thing on each nearby cell is looked at, as in the game.
+// corridor_object_nav_check (src/build.cpp). Only the first thing on each
+// nearby cell outside rooms is looked at, as in the game.
 bool corridor_object_nav_check(World &w, int pos, int kind, int dir)
 {
     const ShapeInfo &shape = shape_of(kind, dir);
@@ -149,7 +155,7 @@ bool corridor_object_nav_check(World &w, int pos, int kind, int dir)
     } else {
         for (int16_t d : kAround24) {
             int tile = pos + d;
-            if (tile < 0 || tile >= kMapCells)
+            if (tile < 0 || tile >= kMapCells || room_at(w, uint16_t(tile)))
                 continue;
             int id = w.map[size_t(tile)].first;
             if (id <= 0)
@@ -175,8 +181,11 @@ void set_edit_room_requester_mode(ObjectPlacing &p, int mode)
 {
     p.requester_mode = uint8_t(mode);
     if (mode == 6) {
-        // Picking up is refused in the corridor, or in a room with no objects.
-        p.arg |= 1u << kEditRoomPickUp;
+        // Picking up is refused in the corridor. In a room the buttons follow
+        // its objects (set_room_requester_mode, core/world/build.h), which
+        // the build commands set again after each change.
+        if (p.room_type == kRoomCorridor)
+            p.arg |= 1u << kEditRoomPickUp;
     } else if (mode == 0xa) {
         p.arg = 1u << kEditRoomConfirm | 1u << kEditRoomFurnish | 1u << kEditRoomPickUp;
         p.hint = 0x10;
@@ -268,8 +277,8 @@ void init_place_object(ObjectPlacing &p, int kind, int mode, int room, int offse
 {
     if (mode == 1)
         mode = 0;
-    // The game then makes mode 0 mode 1 for objects hugging walls
-    // (wall_hug), which are placed in rooms; rooms do not exist yet.
+    if (mode == 0 && kObjectWallHug[size_t(kind)] != -1)
+        mode = 1;
     p.kind = uint8_t(kind);
     p.mode = uint8_t(mode);
     p.room = uint16_t(room);
@@ -298,31 +307,47 @@ void update_placement(World &world, ObjectPlacing &p, int mouse_cell)
     p.mouse_cell = mouse_cell;
     bool force = p.redraw;
     p.redraw = false;
-    // Modes 0 and 1 keep the object inside room p.room
-    // (place_object_restrict_to_room, place_object_wall_hug); there are no
-    // rooms yet.
-    if (p.mode != 2)
-        return;
-    int tile = mouse_cell + p.offset;
-    if (tile == p.tile && !force)
+    int kind = p.kind, dir = p.dir;
+    int8_t part = kObjects[size_t(kind)].next_part;
+    int tile;
+    if (p.mode == 1) {
+        tile = place_object_wall_hug(world, p, mouse_cell + p.offset, kind);
+        dir = p.dir;
+    } else if (p.mode == 0) {
+        tile = place_object_restrict_to_room(world, p, mouse_cell + p.offset, 0, kind, dir);
+        if (part != -1) {
+            const NextPartInfo &next = kNextParts[size_t(part)];
+            tile = place_object_restrict_to_room(world, p, tile, next.offset[size_t(dir)], next.kind,
+                                                 next.dir[size_t(dir)]);
+        }
+    } else {
+        tile = mouse_cell + p.offset;
+    }
+    if (uint16_t(tile) == p.tile && !force)
         return;
     p.tile = uint16_t(tile);
-    int kind = p.kind, dir = p.dir;
     p.ok = tile >= 0 && tile < kMapCells && can_place_object(world, tile, kind, dir, kPlayer);
     if (!p.ok)
         return;
-    int8_t part = kObjects[size_t(kind)].next_part;
+    int tile2 = 0, kind2 = 0, dir2 = 0;
     if (part != -1) {
         const NextPartInfo &next = kNextParts[size_t(part)];
-        int tile2 = tile + next.offset[size_t(dir)];
-        p.ok = tile2 >= 0 && tile2 < kMapCells &&
-               can_place_object(world, tile2, next.kind, next.dir[size_t(dir)], kPlayer);
+        tile2 = tile + next.offset[size_t(dir)];
+        kind2 = next.kind;
+        dir2 = next.dir[size_t(dir)];
+        p.ok = tile2 >= 0 && tile2 < kMapCells && can_place_object(world, tile2, kind2, dir2, kPlayer);
         if (!p.ok)
             return;
     }
-    // In a room (which_room) the game checks the room's objects instead
-    // (corridor_object_room_nav_check); there are no rooms yet.
-    p.ok = corridor_object_nav_check(world, tile, kind, dir);
+    if (p.mode != 2) {
+        p.ok = place_object_nav_check(world, p.room, tile, kind, dir, tile2, kind2, dir2);
+    } else if (uint16_t room = room_at(world, uint16_t(tile))) {
+        // Only objects movable into rooms may go into one.
+        p.ok = (kObjectFlags[size_t(kind)] & 8) && world.rooms[room].type != kRoomDestroyed &&
+               corridor_object_room_nav_check(world, tile, kind, dir, room);
+    } else {
+        p.ok = corridor_object_nav_check(world, tile, kind, dir);
+    }
 }
 
 void cancel_buy_objects(ObjectPlacing &p)
@@ -339,8 +364,8 @@ bool apply_object_event(Game &game, const Event &event)
     switch (event.type) {
     case EV_OPEN_FURNISH_CORRIDOR:
         // cancel_top_level_requesters(REQ_BUY_OBJECTS) closes the build room
-        // and hire staff requesters: the interface does (see
-        // core/ui/buy_objects.h).
+        // requester (apply_build_event, core/world/build.h) and the hire staff
+        // one (the interface; see core/ui/buy_objects.h).
         if (p.requester != ObjectRequester::None)
             return true;
         p.arg = 1;

@@ -579,4 +579,37 @@ inline constexpr std::array<NextPartInfo, 4> kNextParts = {{
     {8, {0, 1, 2, 3}, {-1, -128, -1, -128}},
 }};
 
+// objects[].wall_hug (the low byte of ObjectControl's word at 0x18;
+// src/tables.cpp): the kWallHugs entry that places the kind against a room's
+// wall (gamevar.place_wall_hug), or -1.
+inline constexpr std::array<int8_t, kObjectKinds> kObjectWallHug = {
+    -1, -1, -1, -1, -1, -1, -1, -1, 1,  -1, -1, -1, -1, -1, -1, 0,  -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, 2,  -1, -1, -1, 2,  -1, -1, -1, 0,  -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, 1,  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
+// objects[].flags (src/tables.cpp): bit 0 cannot be picked up, bit 1
+// hovering shows panel info 6, bit 2 a click opens no query window, bit 3
+// can be picked up from inside a room and placed in one (fire extinguishers,
+// radiators, plants).
+inline constexpr std::array<uint8_t, kObjectKinds> kObjectFlags = {
+    0, 0, 0, 0, 6, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 0, 0, 1, 0, 0, 6, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+};
+
+// The game's wall_hug[] (src/tables.cpp): an object placed against a room's
+// wall. `kind` 4 may go against any of the four walls, 2 only the north and
+// west ones; `angle` is the facing it takes against the north, east, south
+// and west wall (0xff where it cannot go).
+struct WallHugInfo {
+    uint8_t kind;
+    std::array<uint8_t, 4> angle;
+};
+
+inline constexpr std::array<WallHugInfo, 3> kWallHugs = {{
+    {2, {0, 0xff, 0xff, 1}},
+    {4, {0, 1, 2, 3}},
+    {2, {1, 0xff, 0xff, 0}},
+}};
+
 } // namespace th
