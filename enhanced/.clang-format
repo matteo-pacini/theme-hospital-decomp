@@ -1,0 +1,11 @@
+# Formatting for enhanced/: the project's style, with short accessors on one
+# line and sorted includes (unlike the decompiled sources).
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+BreakBeforeBraces: Linux
+PointerAlignment: Right
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+SortIncludes: CaseSensitive

@@ -186,6 +186,15 @@ an enum-typed declaration changes layout and mangled names. Bit masks are
 `field & 8`. The data-only table files start with `// clang-format off` to
 keep their hand-laid-out initialisers.
 
+## Enhanced
+
+`enhanced/` is a new engine for the game, in C++20 with SDL3 and Dear ImGui,
+for Windows, macOS and Linux, that reads your own copy of the game's data and
+runs at any resolution and aspect ratio. It ports the game's behaviour from
+the decompilation. So far it draws a level's map and the panel; see
+[enhanced/README.md](enhanced/README.md). Build and run it with
+`nix run path:./nix#enhanced`.
+
 ## Names from the 1997 demo
 
 The March 1997 demo of the game (`HOSPITAL.EXE`, sha1
@@ -233,6 +242,7 @@ register allocation). Library flags are in `config/cflags.txt`.
 | `include/` | shared headers |
 | `tools/` | LE reader, splitter, compiler wrapper, OMF-to-ELF converter, matching aids |
 | `nix/` | the flake (toolchain, dev shell, `nix run` apps), its play and unpack scripts, the owdemangle filter |
+| `enhanced/` | a new SDL3 + Dear ImGui engine for the game at any resolution, using the decompilation as its reference (see `enhanced/README.md`) |
 
 ## Matching a function
 

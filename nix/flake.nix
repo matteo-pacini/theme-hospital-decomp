@@ -160,6 +160,20 @@
         runtimeInputs = with pkgs; [ innoextract coreutils ];
         text = builtins.readFile ./gog-unpack.sh;
       };
+
+      # CMake, Ninja and SDL3 for enhanced/ (Dear ImGui is fetched by CMake).
+      enhancedTools = with pkgs; [ cmake ninja pkg-config sdl3 git ];
+
+      # `nix run path:./nix#enhanced`: build enhanced/ and run it with the
+      # game data in orig/.
+      enhanced = pkgs.writeShellApplication {
+        name = "theme-hospital-enhanced";
+        runtimeInputs = enhancedTools ++ [ pkgs.stdenv.cc ];
+        # Outside the dev shell the compiler wrapper adds no include paths, so
+        # CMake has to find SDL3 through its package config.
+        runtimeEnv.CMAKE_PREFIX_PATH = "${pkgs.sdl3.dev}";
+        text = builtins.readFile ./enhanced.sh;
+      };
     in
     {
       overlays.default = overlay;
@@ -177,20 +191,29 @@
           type = "app";
           program = "${gog-unpack}/bin/gog-unpack";
         };
+        enhanced = {
+          type = "app";
+          program = "${enhanced}/bin/theme-hospital-enhanced";
+        };
       };
 
-      devShells.${system}.default = pkgs.mkShell (
-        {
-          packages =
-            buildTools
-            ++ (with pkgs; [
-              (rizin.withPlugins (p: [ p.rz-ghidra ]))
-              jq
-              innoextract
-              clang-tools # clang-format for src/ and include/ (.clang-format)
-            ]);
-        }
-        // watcomEnv
-      );
+      devShells.${system} = {
+        default = pkgs.mkShell (
+          {
+            packages =
+              buildTools
+              ++ (with pkgs; [
+                (rizin.withPlugins (p: [ p.rz-ghidra ]))
+                jq
+                innoextract
+                clang-tools # clang-format for src/ and include/ (.clang-format)
+              ]);
+          }
+          // watcomEnv
+        );
+
+        # `nix develop path:./nix#enhanced`
+        enhanced = pkgs.mkShell { packages = enhancedTools; };
+      };
     };
 }
