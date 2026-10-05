@@ -22,7 +22,7 @@ Milestone 1, the map at any resolution:
 - the bottom panel at native size, centred;
 - scrolling (arrow keys or WASD, the window edges, middle or right drag) and
   zoom (mouse wheel; automatic keeps at least 480 lines);
-- a tools window (F1) with the UI scale; levels are chosen with `--level N`.
+- a tools window (F1) with the UI scale.
 
 Milestone 2, the level as it starts:
 
@@ -65,8 +65,19 @@ Milestone 3b, people:
   the view, click a person to select them and a cell to send them there,
   or add a test walker.
 
-Not yet: rooms, staff, building, litter, the menu bar and the game's
-screens.
+Milestone 4 so far, the game's interface:
+
+- the start-up flow: the intro, title and name, main menu, difficulty and
+  tutorial choice, and the level's area movie (Smacker movies with their
+  sound); `--level N` skips it and starts level N at once;
+- the pull-down menu bar and the requester windows, with the original art;
+  quitting asks first; Options speed, sound and volume, Display shadows;
+- the panel's buttons; furnish corridor (buy, place, rotate, cost) and hire
+  staff (applicants, faces, placing them) through the game's commands;
+- sound effects from the game's sound bank.
+
+Not yet: the receptionist at work, queues, the advisor, wages, rooms,
+building, litter, music and the full-screen charts.
 
 ## Game data
 

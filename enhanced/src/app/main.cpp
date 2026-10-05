@@ -18,6 +18,7 @@
 #include "core/ui/hire_staff.h"
 #include "core/ui/layer.h"
 #include "core/ui/menubar.h"
+#include "core/ui/startup.h"
 #include "core/ui/windows.h"
 #include "core/world/game.h"
 
@@ -71,12 +72,13 @@ struct LevelView {
     Surface scratch;
 };
 
-// Starts level `number` with its settings (the default FULL set), or
-// returns nothing and says why.
-std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level, int number, std::string *error)
+// Starts level `number` with its settings (the balance set `balance_id`:
+// "EASY", "FULL" or "HARD"), or returns nothing and says why.
+std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level, int number,
+                                       std::string_view balance_id, std::string *error)
 {
     Balance settings;
-    if (!load_balance(data.dir(), number, kDefaultBalanceId, settings, error))
+    if (!load_balance(data.dir(), number, balance_id, settings, error))
         return nullptr;
     auto view = std::make_unique<LevelView>();
     view->game.staff_market.ref_counts = reference_counts(data.text());
@@ -133,7 +135,7 @@ int screenshot(const std::filesystem::path &data_dir, int level_number, int widt
         std::fprintf(stderr, "%s\n", error.c_str());
         return 1;
     }
-    auto map = begin_level(data, *level, level_number, &error);
+    auto map = begin_level(data, *level, level_number, kDefaultBalanceId, &error);
     if (!map) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 1;
@@ -199,6 +201,8 @@ class App
     void make_ui_textures();
     void interface_step(int out_w, int out_h, int scale);
     void ask_quit();
+    void draw_pointer(int scale);
+    void startup_step(int out_w, int out_h);
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -225,6 +229,17 @@ class App
     // The map cell under the pointer this frame (column + row * 128), -1
     // when off the map.
     int map_cell_ = -1;
+    // The start-up screens (intro, menus, the level's area movie), shown
+    // until they start a level; skipped with --level.
+    Startup startup_;
+    bool in_startup_ = false;
+    bool level_from_cli_ = false;
+    std::vector<StartupKey> startup_keys_; // keys pressed since the last frame
+    SDL_Texture *startup_tex_ = nullptr;
+    SDL_AudioStream *movie_stream_ = nullptr;
+    int movie_playing_ = -1; // the movie movie_stream_ plays
+    std::string balance_id_{kDefaultBalanceId};
+    float frame_seconds_ = 0;  // the last frame's length
     bool escape_ = false;      // Escape pressed this frame
     bool asking_quit_ = false; // the yes/no requester asks whether to quit
     SDL_Texture *pointer_ = nullptr;
@@ -273,9 +288,10 @@ bool App::init(int argc, char **argv)
         std::string arg = argv[i];
         if (arg == "--data" && i + 1 < argc)
             data_arg = argv[++i];
-        else if (arg == "--level" && i + 1 < argc)
+        else if (arg == "--level" && i + 1 < argc) {
             level_ = std::atoi(argv[++i]);
-        else if (arg == "--language" && i + 1 < argc)
+            level_from_cli_ = true;
+        } else if (arg == "--language" && i + 1 < argc)
             language_ = std::atoi(argv[++i]);
     }
 
@@ -339,7 +355,11 @@ bool App::try_load_data(const std::filesystem::path &dir)
         std::fprintf(stderr, "no sound: %s\n", error.c_str());
     make_ui_textures();
     data_error_.clear();
-    load_level(level_);
+    // The start-up screens choose the level, unless --level did.
+    if (!level_from_cli_ && startup_.load(dir, data_->text(), data_->language(), &error))
+        in_startup_ = true;
+    else
+        load_level(level_);
     return true;
 }
 
@@ -351,7 +371,7 @@ void App::load_level(int number)
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
     }
-    auto map = begin_level(*data_, *level, number, &error);
+    auto map = begin_level(*data_, *level, number, balance_id_, &error);
     if (!map) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
@@ -479,6 +499,94 @@ void App::ask_quit()
         return;
     interface_.open_yes_no(data_->text().at(TextSection::YesNo, 0));
     asking_quit_ = true;
+}
+
+// The game's own pointer, in place of the system one over the game; its
+// hotspot is its top-left corner.
+void App::draw_pointer(int scale)
+{
+    float mx, my;
+    SDL_GetMouseState(&mx, &my);
+    float density = SDL_GetWindowPixelDensity(window_);
+    if (pointer_ && SDL_GetMouseFocus() == window_ && !ImGui::GetIO().WantCaptureMouse) {
+        SDL_HideCursor();
+        SDL_FRect p = {mx * density, my * density, float(pointer_w_ * scale), float(pointer_h_ * scale)};
+        SDL_RenderTexture(renderer_, pointer_, nullptr, &p);
+    } else {
+        SDL_ShowCursor();
+    }
+}
+
+// One frame of the start-up screens: drawn aspect-fit in the window, with
+// the movies' sound on a stream of its own. Starts the level they choose.
+void App::startup_step(int out_w, int out_h)
+{
+    const Surface &src = startup_.surface();
+    int sw = std::max(src.width(), 1), sh = std::max(src.height(), 1);
+    float fit = std::min(float(out_w) / float(sw), float(out_h) / float(sh));
+    float dw = sw * fit, dh = sh * fit, dx = (out_w - dw) / 2, dy = (out_h - dh) / 2;
+
+    float mx, my;
+    SDL_GetMouseState(&mx, &my);
+    float density = SDL_GetWindowPixelDensity(window_);
+    UiMouse mouse = ui_mouse(0, 0, 1);
+    mouse.x = int((mx * density - dx) / fit);
+    mouse.y = int((my * density - dy) / fit);
+    StartupResult r = startup_.frame(mouse, startup_keys_, frame_seconds_);
+    startup_keys_.clear();
+    for (uint8_t sfx : startup_.take_sounds())
+        sounds_.play_sound(kSourceGeneral, sfx);
+
+    // The movie's sound: a stream of the movie's format, emptied when the
+    // movie changes.
+    SmackerAudioFormat format = startup_.movie_audio_format();
+    if (startup_.movie() != movie_playing_ || !format.present()) {
+        if (movie_stream_)
+            SDL_DestroyAudioStream(movie_stream_);
+        movie_stream_ = nullptr;
+        movie_playing_ = startup_.movie();
+        if (format.present()) {
+            SDL_AudioSpec spec{SDL_AUDIO_S16, format.channels, format.rate};
+            movie_stream_ = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+            if (movie_stream_)
+                SDL_ResumeAudioStreamDevice(movie_stream_);
+        }
+    }
+    std::vector<int16_t> pcm;
+    startup_.take_movie_audio(pcm);
+    if (movie_stream_ && !pcm.empty())
+        SDL_PutAudioStreamData(movie_stream_, pcm.data(), int(pcm.size() * sizeof(int16_t)));
+
+    if (!startup_tex_ || startup_tex_->w != sw || startup_tex_->h != sh) {
+        if (startup_tex_)
+            SDL_DestroyTexture(startup_tex_);
+        startup_tex_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sw, sh);
+        SDL_SetTextureScaleMode(startup_tex_, SDL_SCALEMODE_NEAREST);
+    }
+    void *pixels;
+    int pitch;
+    if (startup_tex_ && src.width() > 0 && SDL_LockTexture(startup_tex_, nullptr, &pixels, &pitch)) {
+        const uint8_t *p = src.data();
+        for (int y = 0; y < sh; y++) {
+            auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(pixels) + y * pitch);
+            for (int x = 0; x < sw; x++)
+                row[x] = startup_.palette()[*p++];
+        }
+        SDL_UnlockTexture(startup_tex_);
+        SDL_FRect dst{dx, dy, dw, dh};
+        SDL_RenderTexture(renderer_, startup_tex_, nullptr, &dst);
+    }
+
+    if (r.kind == StartupResult::Kind::Quit) {
+        running_ = false;
+    } else if (r.kind == StartupResult::Kind::StartLevel) {
+        if (movie_stream_)
+            SDL_DestroyAudioStream(movie_stream_);
+        movie_stream_ = nullptr;
+        in_startup_ = false;
+        balance_id_ = r.balance_id;
+        load_level(r.level);
+    }
 }
 
 void App::make_ui_textures()
@@ -647,6 +755,25 @@ void App::handle_event(const SDL_Event &e)
     case SDL_EVENT_KEY_DOWN:
         if (io.WantCaptureKeyboard)
             break;
+        if (in_startup_) {
+            // The start-up screens read keys as lbInkey.
+            StartupKey k;
+            SDL_Keycode key = e.key.key;
+            if (key >= SDLK_A && key <= SDLK_Z) {
+                k.code = StartupKey::Letter;
+                k.letter = char('A' + (key - SDLK_A));
+            } else if (key == SDLK_ESCAPE) {
+                k.code = StartupKey::Escape;
+            } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+                k.code = StartupKey::Return;
+            } else if (key == SDLK_BACKSPACE || key == SDLK_KP_PERIOD) {
+                k.code = StartupKey::Backspace;
+            } else if (key == SDLK_SPACE) {
+                k.code = StartupKey::Space;
+            }
+            startup_keys_.push_back(k);
+            break;
+        }
         if (e.key.key == SDLK_F1) {
             tools_.open = !tools_.open;
         } else if (!data_) {
@@ -716,7 +843,7 @@ void App::handle_event(const SDL_Event &e)
 
 void App::update(float dt)
 {
-    if (!data_)
+    if (!data_ || in_startup_)
         return;
     if (map_ && !map_->game.paused) {
         // At most a few frames' worth of turns after a stall.
@@ -783,6 +910,10 @@ void App::render()
             running_ = false;
         else if (action == MissingDataAction::Choose)
             SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
+    } else if (in_startup_) {
+        startup_step(out_w, out_h);
+        mixer_.update(sounds_);
+        draw_pointer(ui_scale());
     } else {
         int z = zoom();
         int vw = std::max(out_w / z, 1), vh = std::max(out_h / z, 1);
@@ -847,18 +978,7 @@ void App::render()
         interface_step(out_w, out_h, s);
         menu_step(out_w, s);
 
-        // The game's own pointer replaces the system one over the view; its
-        // hotspot is its top-left corner.
-        float pmx, pmy;
-        SDL_GetMouseState(&pmx, &pmy);
-        float pdensity = SDL_GetWindowPixelDensity(window_);
-        if (pointer_ && SDL_GetMouseFocus() == window_ && !ImGui::GetIO().WantCaptureMouse) {
-            SDL_HideCursor();
-            SDL_FRect p = {pmx * pdensity, pmy * pdensity, float(pointer_w_ * s), float(pointer_h_ * s)};
-            SDL_RenderTexture(renderer_, pointer_, nullptr, &p);
-        } else {
-            SDL_ShowCursor();
-        }
+        draw_pointer(s);
 
         draw_tools(tools_, map_ ? &map_->game.world : nullptr);
         if (tools_.open && map_)
@@ -901,7 +1021,8 @@ void App::run()
         uint64_t now = SDL_GetTicksNS();
         float dt = float(now - last) / 1e9f;
         last = now;
-        update(std::min(dt, 0.1f));
+        frame_seconds_ = std::min(dt, 0.1f);
+        update(frame_seconds_);
         render();
     }
 }
@@ -909,6 +1030,10 @@ void App::run()
 void App::shutdown()
 {
     mixer_.close();
+    if (movie_stream_)
+        SDL_DestroyAudioStream(movie_stream_);
+    if (startup_tex_)
+        SDL_DestroyTexture(startup_tex_);
     if (ui_tex_)
         SDL_DestroyTexture(ui_tex_);
     if (pointer_)
