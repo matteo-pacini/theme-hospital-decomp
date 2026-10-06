@@ -6,6 +6,8 @@
 #include "core/render/blit.h"
 #include "core/render/frame.h"
 #include "core/render/shadows.h"
+#include "core/world/complex.h"
+#include "core/world/reaper.h"
 #include "core/world/staff.h"
 #include "core/world/world.h"
 
@@ -160,183 +162,275 @@ bool pointed_testable(const Thing &t)
     }
 }
 
-// do_mapwho for `cell` (map index `index`), whose diamond has its left edge
-// at x and its top corner at y: its overlay (flags bits 6-7), the blueprint
-// marker ending its list, its litter, then its things by ascending bucket
-// and, within a bucket, from the end of the cell's list. Returns the box of the
-// frames drawn (the game's frame_bounds); `extent`, if given, grows to
-// every pixel drawn.
-Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y, const World &world,
-                      const GameData &data, Rect *extent, std::vector<FrameSound> *sounds, PointedThing *pointed)
-{
-    std::vector<std::pair<int, int16_t>> drawn; // (bucket, thing) in list order
-    int16_t marker = cell.first;
-    for (; marker > 0 && marker < kThingCount; marker = world.things[size_t(marker)].cell_next)
-        // The game indexes 32 buckets without a check; keep to them.
-        drawn.emplace_back(std::clamp(thing_bucket(world.things[size_t(marker)]), 0, kBuckets - 1), marker);
+// What draw_cell_things draws from and reports to.
+struct CellDrawing {
+    const World &world;
+    const GameData &data;
+    DrawnThings drawn;
+};
+
+// The frames draw_cell_things has drawn so far: their box (the game's
+// frame_bounds) and, if `extent` is given, every pixel drawn.
+struct CellFrames {
+    Surface &dst;
+    const GameData &data;
+    Rect *extent;
     Rect bounds{};
-    auto draw_start = [&](int fx, int fy, AnimStart start) {
+
+    void draw_start(int fx, int fy, AnimStart start)
+    {
         Rect sprites;
-        grow(bounds, draw_frame(dst, fx, fy, start.frame, start.flip != 0, 0, data, nullptr, &sprites));
+        grow(bounds, draw_frame(dst, {fx, fy}, start.frame, start.flip != 0, data, {.extent = &sprites}));
         if (extent)
             grow(*extent, sprites);
-    };
+    }
+};
+
+// draw_cell_things' overlay (flags bits 6-7), blueprint marker and litter.
+void draw_cell_overlays(CellFrames &frames, const MapCell &cell, int index, int16_t marker, Point at)
+{
+    const GameData &data = frames.data;
+    const int x = at.x, y = at.y;
     if (cell.flags & 0xc0) {
         // Behind a wall the floor is drawn again under the overlay, as the
         // game does into the buffer it draws such cells in.
         if (cell.flags & 0x10) {
             Sprite f = block(data.blocks(), cell.floor_block);
-            draw_sprite(dst, x, y + kTileHeight - f.height, f);
-            if (extent)
-                grow(*extent, {x, y + kTileHeight - f.height, f.width, f.height});
+            draw_sprite(frames.dst, x, y + kTileHeight - f.height, f);
+            if (frames.extent)
+                grow(*frames.extent, {x, y + kTileHeight - f.height, f.width, f.height});
         }
-        draw_start(x + kTileWidth / 2, y + kTileHeight / 2, {anim_start(data, 625u + (cell.flags >> 6)).frame, 0});
+        frames.draw_start(x + kTileWidth / 2, y + kTileHeight / 2,
+                          {anim_start(data, 625u + (cell.flags >> 6)).frame, 0});
     }
     if (marker < 0 && size_t(-marker) < kBlueprints.size())
-        draw_start(x + kTileWidth / 2, y + kTileHeight / 2, anim_start(data, kBlueprints[size_t(-marker)].anim));
+        frames.draw_start(x + kTileWidth / 2, y + kTileHeight / 2, anim_start(data, kBlueprints[size_t(-marker)].anim));
     if (uint8_t kind = cell.litter_shadow & 0xf) {
         const LitterStart &litter = kLitterStarts[kind];
         if (litter.centred) {
-            draw_start(x + kTileWidth / 2, y + kTileHeight / 2, anim_start(data, litter.anim));
+            frames.draw_start(x + kTileWidth / 2, y + kTileHeight / 2, anim_start(data, litter.anim));
         } else {
-            Point at = kLitterPos[(uint32_t(uint16_t(index)) * 0x2e4a4321u >> 16) & 7];
-            draw_start(x + kTileWidth / 2 + at.x, y + kTileHeight / 2 + at.y, anim_start(data, litter.anim));
+            Point pos = kLitterPos[(uint32_t(uint16_t(index)) * 0x2e4a4321u >> 16) & 7];
+            frames.draw_start(x + kTileWidth / 2 + pos.x, y + kTileHeight / 2 + pos.y, anim_start(data, litter.anim));
         }
     }
+}
+
+// Whether draw_cell_things draws thing `t`. mapwho_object (objects and
+// doors), mapwho_person's usual case (draw_special_id_frame) and
+// mapwho_reaper are drawn; people's glow, wobble and status icons, and a
+// machine's user drawn split (draw_split_frame) or energised, are not drawn
+// yet.
+bool cell_thing_drawn(const Thing &t)
+{
+    if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff &&
+        t.type != kThingReaper)
+        return false;
+    // mapwho_person draws no patient gone, merged into a member of staff's
+    // animation or gone into the gates of hell; mapwho_reaper no reaper being
+    // removed.
+    if (t.type == kThingPatient && (t.state == kPsGone || t.state == kPsMerged || t.state == kPsAtHellGate))
+        return false;
+    if (t.type == kThingReaper && t.state == kReaperRemove)
+        return false;
+    // mapwho_staff draws no applicant, nor staff going back to the applicants
+    // or in state 42.
+    return !(t.type == kThingStaff &&
+             (t.state == 42 || t.state == kStaffApplicant || t.state == kStaffBackToApplicants));
+}
+
+// draw_cell_things for one thing `id` of the cell whose diamond's top-left
+// is `at`.
+void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id, Point at)
+{
+    const GameData &data = drawing.data;
+    const Thing &t = drawing.world.things[size_t(id)];
+    int tx = at.x + kTileWidth / 2 + ((int(t.x.frac) - int(t.y.frac)) >> 3);
+    int ty = at.y + ((int(t.x.frac) + int(t.y.frac)) >> 4);
+    // A dead patient floating away is drawn its height up (fly_height).
+    if (t.type == kThingPatient && t.state == kPsFlys)
+        ty -= t.countdown;
+    Rect sprites;
+    Rect box =
+        draw_frame(frames.dst, {tx, ty}, t.sprite, t.flip != 0, data, {.layers = t.layers.data(), .extent = &sprites});
+    grow(frames.bounds, box);
+    PointedThing *pointed = drawing.drawn.pointed;
+    if (pointed && pointed_testable(t) && box.x < pointed->at.x && box.x + box.w > pointed->at.x &&
+        box.y < pointed->at.y && box.y + box.h > pointed->at.y)
+        pointed->thing = uint16_t(id);
+    if (std::vector<FrameSound> *sounds = drawing.drawn.sounds; sounds && t.sprite < data.anims().frames.size())
+        sounds->push_back({uint16_t(id), data.anims().frames[t.sprite].sound,
+                           t.type == kThingPatient || t.type == kThingStaff, tx, ty});
+    if (frames.extent)
+        grow(*frames.extent, sprites);
+}
+
+// do_mapwho for `cell` (map index `index`), whose diamond has its left edge
+// at `at.x` and its top corner at `at.y`: its overlay (flags bits 6-7), the blueprint
+// marker ending its list, its litter, then its things by ascending bucket
+// and, within a bucket, from the end of the cell's list. Returns the box of the
+// frames drawn (the game's frame_bounds); `extent`, if given, grows to
+// every pixel drawn.
+Rect draw_cell_things(Surface &dst, const CellDrawing &drawing, const MapCell &cell, int index, Point at, Rect *extent)
+{
+    const World &world = drawing.world;
+    std::vector<std::pair<int, int16_t>> drawn; // (bucket, thing) in list order
+    int16_t marker = cell.first;
+    for (; marker > 0 && marker < kThingCount; marker = world.things[size_t(marker)].cell_next)
+        // The game indexes 32 buckets without a check; keep to them.
+        drawn.emplace_back(std::clamp(thing_bucket(world.things[size_t(marker)]), 0, kBuckets - 1), marker);
+    CellFrames frames{dst, drawing.data, extent};
+    draw_cell_overlays(frames, cell, index, marker, at);
     for (int b = 0; b < kBuckets; b++) {
         for (auto it = drawn.rbegin(); it != drawn.rend(); ++it) {
-            if (it->first != b)
-                continue;
-            const Thing &t = world.things[size_t(it->second)];
-            // mapwho_object (objects and doors) and mapwho_person's usual
-            // case (draw_special_id_frame); people's glow, wobble and status
-            // icons are not drawn yet.
-            if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff)
-                continue;
-            // mapwho_staff draws no applicant, nor staff going back to the
-            // applicants or in state 42.
-            if (t.type == kThingStaff &&
-                (t.state == 42 || t.state == kStaffApplicant || t.state == kStaffBackToApplicants))
-                continue;
-            int tx = x + kTileWidth / 2 + ((int(t.x.frac) - int(t.y.frac)) >> 3);
-            int ty = y + ((int(t.x.frac) + int(t.y.frac)) >> 4);
-            Rect sprites;
-            Rect box = draw_frame(dst, tx, ty, t.sprite, t.flip != 0, 0, data, t.layers.data(), &sprites);
-            grow(bounds, box);
-            if (pointed && pointed_testable(t) && box.x < pointed->at.x && box.x + box.w > pointed->at.x &&
-                box.y < pointed->at.y && box.y + box.h > pointed->at.y)
-                pointed->thing = uint16_t(it->second);
-            if (sounds && t.sprite < data.anims().frames.size())
-                sounds->push_back({uint16_t(it->second), data.anims().frames[t.sprite].sound,
-                                   t.type == kThingPatient || t.type == kThingStaff, tx, ty});
-            if (extent)
-                grow(*extent, sprites);
+            if (it->first == b && cell_thing_drawn(world.things[size_t(it->second)]))
+                draw_cell_thing(frames, drawing, it->second, at);
         }
     }
-    return bounds;
+    return frames.bounds;
 }
+
+// draw_world's passes over the cells in view: floors, then line by line
+// each cell's walls and things.
+class WorldDrawing
+{
+  public:
+    WorldDrawing(const ViewTarget &target, const World &world, const GameData &data, const ShadowSprites *shadows,
+                 Surface &scratch, const DrawnThings &drawn)
+        : dst_(target.dst), view_(target.view), blocks_(data.blocks()), tallest_(tallest_block(blocks_)),
+          map_(world.map.data()), scan_{view_, target.camera}, drawing_{world, data, drawn}, shadows_(shadows),
+          scratch_(scratch)
+    {
+    }
+
+    void floors() const
+    {
+        scan_.lines(view_, tallest_, [&](int col0, int col1, int line) {
+            int base_y = scan_.base_y(line);
+            for (int col = col0; col <= col1; col++) {
+                int row = line - col, x = scan_.x(col, row);
+                if (on_map(col, row) && shadows_) {
+                    ShadedSprite f = shadows_->floor(map_[col + row * kMapSize]);
+                    draw_sprite(dst_, x, base_y - f.lift, f.sprite);
+                } else {
+                    Sprite s = block(blocks_, on_map(col, row) ? map_[col + row * kMapSize].floor_block : kOffMapBlock);
+                    draw_sprite(dst_, x, base_y - s.height, s);
+                }
+            }
+        });
+    }
+
+    void walls_and_things()
+    {
+        scan_.lines(view_, tallest_, [&](int col0, int col1, int line) {
+            int base_y = scan_.base_y(line);
+            for (int col = col0; col <= col1; col++) {
+                int row = line - col;
+                if (on_map(col, row))
+                    draw_walls(map_[col + row * kMapSize], scan_.x(col, row), base_y);
+            }
+            for (int col = col0; col <= col1; col++)
+                cell_things(col, line - col, base_y);
+        });
+    }
+
+  private:
+    void draw_walls(const MapCell &cell, int x, int base_y) const
+    {
+        if (cell.wall_n && shadows_) {
+            ShadedSprite w = shadows_->wall_n(cell);
+            draw_sprite(dst_, x, base_y - w.lift, w.sprite);
+        } else if (cell.wall_n) {
+            Sprite w = block(blocks_, cell.wall_n);
+            draw_sprite(dst_, x, base_y - w.height, w);
+        }
+        if (cell.wall_w) {
+            Sprite w = block(blocks_, cell.wall_w);
+            draw_sprite(dst_, x, base_y - w.height, w);
+        }
+    }
+
+    void cell_things(int col, int row, int base_y)
+    {
+        if (!on_map(col, row))
+            return;
+        const MapCell &cell = map_[col + row * kMapSize];
+        if (cell.first == 0 && !(cell.litter_shadow & 0xf) && !(cell.flags & 0xc0))
+            return;
+        int x = scan_.x(col, row), top = base_y - kTileHeight;
+        if (!(cell.flags & 0x10)) {
+            draw_cell_things(dst_, drawing_, cell, col + row * kMapSize, {x, top}, nullptr);
+            return;
+        }
+        // Behind a wall: draw into the scratch surface, blank out the walls of
+        // every cell further east or south, then copy what is left
+        // (draw_window_into_pix_buffer).
+        scratch_.set_clip(view_);
+        Rect touched{};
+        Rect bounds =
+            intersect(draw_cell_things(scratch_, drawing_, cell, col + row * kMapSize, {x, top}, &touched), view_);
+        touched = intersect(touched, view_);
+        scratch_.set_clip(bounds);
+        mask_walls_in_front(bounds, col, row);
+        // Only the frames' box is copied, as the game does; sprites reaching
+        // outside it are cut off.
+        for (int py = bounds.y; py < bounds.y + bounds.h; py++) {
+            const uint8_t *src = scratch_.row(py);
+            uint8_t *out = dst_.row(py);
+            for (int px = bounds.x; px < bounds.x + bounds.w; px++)
+                if (src[px] != kMaskColour)
+                    out[px] = src[px];
+        }
+        grow(touched, bounds);
+        for (int py = touched.y; py < touched.y + touched.h; py++)
+            std::fill(scratch_.row(py) + touched.x, scratch_.row(py) + touched.x + touched.w, kMaskColour);
+    }
+
+    // Masks out on the scratch surface the walls of every cell east or south
+    // of (col, row) within `bounds`.
+    void mask_walls_in_front(Rect bounds, int col, int row)
+    {
+        scan_.lines(bounds, tallest_, [&](int mc0, int mc1, int mline) {
+            int mbase = scan_.base_y(mline);
+            for (int mc = mc0; mc <= mc1; mc++) {
+                int mr = mline - mc;
+                if (!on_map(mc, mr) || !(mc > col || mr > row))
+                    continue;
+                const MapCell &m = map_[mc + mr * kMapSize];
+                for (uint8_t wall : {m.wall_n, m.wall_w}) {
+                    if (!wall)
+                        continue;
+                    Sprite w = block(blocks_, wall);
+                    draw_sprite_one_colour(scratch_, scan_.x(mc, mr), mbase - w.height, w, kMaskColour);
+                }
+            }
+        });
+    }
+
+    Surface &dst_;
+    const Rect view_;
+    const SpriteSheet &blocks_;
+    const int tallest_;
+    const MapCell *map_;
+    const CellScan scan_;
+    const CellDrawing drawing_;
+    const ShadowSprites *shadows_;
+    Surface &scratch_;
+};
 
 } // namespace
 
-void draw_world(Surface &dst, Rect view, Point camera, const World &world, const GameData &data,
-                const ShadowSprites *shadows, Surface &scratch, std::vector<FrameSound> *sounds, PointedThing *pointed)
+void draw_world(const ViewTarget &target, const World &world, const GameData &data, const ShadowSprites *shadows,
+                Surface &scratch, const DrawnThings &drawn)
 {
-    if (pointed)
-        pointed->thing = 0;
-    const SpriteSheet &blocks = data.blocks();
-    const int tallest = tallest_block(blocks);
-    const MapCell *map = world.map.data();
-    CellScan scan{view, camera};
-    dst.set_clip(view);
-
-    scan.lines(view, tallest, [&](int col0, int col1, int line) {
-        int base_y = scan.base_y(line);
-        for (int col = col0; col <= col1; col++) {
-            int row = line - col, x = scan.x(col, row);
-            if (on_map(col, row) && shadows) {
-                ShadedSprite f = shadows->floor(map[col + row * kMapSize]);
-                draw_sprite(dst, x, base_y - f.lift, f.sprite);
-            } else {
-                Sprite s = block(blocks, on_map(col, row) ? map[col + row * kMapSize].floor_block : kOffMapBlock);
-                draw_sprite(dst, x, base_y - s.height, s);
-            }
-        }
-    });
-
-    auto draw_walls = [&](Surface &s, const MapCell &cell, int x, int base_y) {
-        if (cell.wall_n && shadows) {
-            ShadedSprite w = shadows->wall_n(cell);
-            draw_sprite(s, x, base_y - w.lift, w.sprite);
-        } else if (cell.wall_n) {
-            Sprite w = block(blocks, cell.wall_n);
-            draw_sprite(s, x, base_y - w.height, w);
-        }
-        if (cell.wall_w) {
-            Sprite w = block(blocks, cell.wall_w);
-            draw_sprite(s, x, base_y - w.height, w);
-        }
-    };
-
-    scan.lines(view, tallest, [&](int col0, int col1, int line) {
-        int base_y = scan.base_y(line);
-        for (int col = col0; col <= col1; col++) {
-            int row = line - col;
-            if (on_map(col, row))
-                draw_walls(dst, map[col + row * kMapSize], scan.x(col, row), base_y);
-        }
-        for (int col = col0; col <= col1; col++) {
-            int row = line - col;
-            if (!on_map(col, row))
-                continue;
-            const MapCell &cell = map[col + row * kMapSize];
-            if (cell.first == 0 && !(cell.litter_shadow & 0xf) && !(cell.flags & 0xc0))
-                continue;
-            int x = scan.x(col, row), top = base_y - kTileHeight;
-            if (!(cell.flags & 0x10)) {
-                draw_cell_things(dst, cell, col + row * kMapSize, x, top, world, data, nullptr, sounds, pointed);
-                continue;
-            }
-            // Behind a wall: draw into the scratch surface, blank out the
-            // walls of every cell further east or south, then copy what is
-            // left (draw_window_into_pix_buffer).
-            scratch.set_clip(view);
-            Rect touched{};
-            Rect bounds = intersect(
-                draw_cell_things(scratch, cell, col + row * kMapSize, x, top, world, data, &touched, sounds, pointed),
-                view);
-            touched = intersect(touched, view);
-            scratch.set_clip(bounds);
-            scan.lines(bounds, tallest, [&](int mc0, int mc1, int mline) {
-                int mbase = scan.base_y(mline);
-                for (int mc = mc0; mc <= mc1; mc++) {
-                    int mr = mline - mc;
-                    if (!on_map(mc, mr) || !(mc > col || mr > row))
-                        continue;
-                    const MapCell &m = map[mc + mr * kMapSize];
-                    for (uint8_t wall : {m.wall_n, m.wall_w}) {
-                        if (!wall)
-                            continue;
-                        Sprite w = block(blocks, wall);
-                        draw_sprite_one_colour(scratch, scan.x(mc, mr), mbase - w.height, w, kMaskColour);
-                    }
-                }
-            });
-            // Only the frames' box is copied, as the game does; sprites reaching
-            // outside it are cut off.
-            for (int py = bounds.y; py < bounds.y + bounds.h; py++) {
-                const uint8_t *src = scratch.row(py);
-                uint8_t *out = dst.row(py);
-                for (int px = bounds.x; px < bounds.x + bounds.w; px++)
-                    if (src[px] != kMaskColour)
-                        out[px] = src[px];
-            }
-            grow(touched, bounds);
-            for (int py = touched.y; py < touched.y + touched.h; py++)
-                std::fill(scratch.row(py) + touched.x, scratch.row(py) + touched.x + touched.w, kMaskColour);
-        }
-    });
+    if (drawn.pointed)
+        drawn.pointed->thing = 0;
+    WorldDrawing drawing(target, world, data, shadows, scratch, drawn);
+    target.dst.set_clip(target.view);
+    drawing.floors();
+    drawing.walls_and_things();
     scratch.reset_clip();
-    dst.reset_clip();
+    target.dst.reset_clip();
 }
 
 } // namespace th

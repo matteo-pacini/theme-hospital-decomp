@@ -116,27 +116,13 @@ int rle_width(const th::Sprite &s)
     return widest <= s.width ? s.width : -1;
 }
 
-} // namespace
-
-void test_shadow_sprites(const char *dir)
+// Every shaded floor and north wall of `map` has a shaded sprite the size of
+// its plain one.
+void check_cell_shadows(const th::GameData &gd, th::ShadowSprites &shadows,
+                        const std::array<th::MapCell, th::kMapCells> &map)
 {
-    th::GameData gd;
-    auto level = gd.load(dir, nullptr) ? gd.load_level(1) : std::nullopt;
-    CHECK(level.has_value());
-    if (!level)
-        return;
-    auto map = std::make_unique<std::array<th::MapCell, th::kMapCells>>(th::build_start_map(*level));
-    // The game draws the map with the 66% table of the game palette
-    // (LbGhostTableGenerate in src/pchost.cpp).
-    auto ghost = th::load_data_file(dir, "qdata/ghost66.dat");
-    CHECK(ghost && ghost->size() >= 0x10000);
-    if (!ghost || ghost->size() < 0x10000)
-        return;
-    th::ShadowSprites shadows(gd.blocks(), *ghost);
-    th::add_static_shadows(*map);
-
     int floors = 0, walls = 0;
-    for (const th::MapCell &c : *map) {
+    for (const th::MapCell &c : map) {
         th::Sprite plain = gd.blocks().at(size_t(th::block_sprite(c.floor_block)));
         if (c.litter_shadow & (th::kShadowFloorFull | th::kShadowFloorHalf)) {
             floors++;
@@ -157,8 +143,11 @@ void test_shadow_sprites(const char *dir)
     }
     CHECK(floors > 0);
     CHECK(walls > 0);
+}
 
-    // The overlay keeps the runs of the floor and changes some colours.
+// The overlay keeps the runs of the floor and changes some colours.
+void check_shadow_overlay(const th::GameData &gd, th::ShadowSprites &shadows)
+{
     th::MapCell grass;
     grass.litter_shadow = th::kShadowFloorFull;
     th::Sprite plain = gd.blocks().at(size_t(th::block_sprite(grass.floor_block)));
@@ -178,6 +167,118 @@ void test_shadow_sprites(const char *dir)
     CHECK(after < before); // a shadow darkens
 }
 
+} // namespace
+
+void test_shadow_sprites(const char *dir)
+{
+    th::GameData gd;
+    auto level = gd.load(dir, nullptr) ? gd.load_level(1) : std::nullopt;
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    auto map = std::make_unique<std::array<th::MapCell, th::kMapCells>>(th::build_start_map(*level));
+    // The game draws the map with the 66% table of the game palette
+    // (LbGhostTableGenerate in src/pchost.cpp).
+    auto ghost = th::load_data_file(dir, "qdata/ghost66.dat");
+    CHECK(ghost && ghost->size() >= 0x10000);
+    if (!ghost || ghost->size() < 0x10000)
+        return;
+    th::ShadowSprites shadows(gd.blocks(), *ghost);
+    th::add_static_shadows(*map);
+    check_cell_shadows(gd, shadows, *map);
+    check_shadow_overlay(gd, shadows);
+}
+
+namespace
+{
+
+// `world`'s map is build_start_map's of `level` but for what objects mark
+// (footprint and big-cell flags, invisible walls).
+void check_map_as_level(const th::World &world, const th::Level &level)
+{
+    auto base = th::build_start_map(level);
+    for (int i = 0; i < th::kMapCells; i++) {
+        const th::MapCell &a = world.map[size_t(i)];
+        const th::MapCell &b = base[size_t(i)];
+        CHECK(a.floor_block == b.floor_block && a.owner_flags == b.owner_flags);
+        CHECK(a.litter_shadow == b.litter_shadow);
+        CHECK((a.flags & ~0x27) == (b.flags & ~0x27));
+        CHECK(a.wall_n == b.wall_n || (b.wall_n == 0 && (a.wall_n == 0x8e || a.wall_n == 0x90)));
+        CHECK(a.wall_w == b.wall_w || (b.wall_w == 0 && (a.wall_w == 0x8f || a.wall_w == 0x91)));
+    }
+}
+
+// The objects of `world`, started from `level`, are its objects and are on
+// well-linked cell lists, and the map is the level's but for what they mark.
+// Returns the objects, the level cells holding one, and those linked.
+std::array<int, 3> check_level_start(const th::World &world, const th::GameData &gd, const th::Level &level)
+{
+    int objects = 0;
+    int in_level = 0;
+    for (int i = 0; i < th::kMapCells; i++) {
+        uint16_t plot = level.plots[size_t(i)];
+        bool copied = plot == 0 || (plot <= 4 && level.player_count >= plot);
+        in_level += copied && level.tiles[size_t(i)].first != 0;
+    }
+    for (size_t id = 1; id < world.things.size(); id++) {
+        const th::Thing &t = world.things[id];
+        if (t.type == th::kThingFree)
+            continue;
+        objects++;
+        CHECK(t.type == th::kThingObject);
+        CHECK(t.subtype < th::kObjectKinds && t.facing < 4);
+        CHECK(t.sprite < gd.anims().frames.size());
+        CHECK(t.x.frac == 0x80 && t.y.frac == 0x80);
+    }
+
+    // Every list is well linked and holds things of its own cell.
+    int linked = 0;
+    for (int i = 0; i < th::kMapCells; i++) {
+        int prev = 0;
+        for (int id = world.map[size_t(i)].first; id > 0; id = world.things[size_t(id)].cell_next) {
+            const th::Thing &t = world.things[size_t(id)];
+            CHECK(t.cell_prev == prev);
+            CHECK(t.x.tile + t.y.tile * th::kMapSize == i);
+            prev = id;
+            linked++;
+        }
+    }
+    // Two-part objects whose second part lands on a later cell lose it
+    // from the list when that cell is copied, as in the game.
+    CHECK(linked <= objects && objects >= in_level);
+
+    check_map_as_level(world, level);
+    return {objects, in_level, linked};
+}
+
+// The levels hold only entrance doors; a made-up one tries the rest. All
+// of it is plot 1. A radiation shield (28) facing 0 brings its console
+// (15) on the cell before; an operating table (30) facing 1 would bring
+// its lamp on a cell after, not yet copied, so the lamp does not fit.
+void check_made_up_level(th::World &world, const th::GameData &gd)
+{
+    auto level = std::make_unique<th::Level>();
+    level->player_count = 1;
+    level->plots.fill(1);
+    const int shield = 10 + 10 * th::kMapSize;
+    const int table = 20 + 10 * th::kMapSize;
+    const int plant = 30 + 10 * th::kMapSize;
+    level->tiles[shield].first = 28 << 8;
+    level->tiles[table].first = 30 << 8 | 1;
+    level->tiles[plant].first = 45 << 8;
+    th::start_level(world, *level, gd.anims());
+    const th::Thing &shield_obj = world.things[1];
+    const th::Thing &console = world.things[2];
+    CHECK(shield_obj.subtype == 28 && console.subtype == 15 && console.facing == 1);
+    CHECK(shield_obj.pair == 2 && console.pair == 1);
+    CHECK(world.map[shield].first == 1 && world.map[shield - 1].first == 2);
+    CHECK(world.things[3].subtype == 30 && world.things[3].pair == 0);
+    CHECK(world.things[4].subtype == 45 && world.things[5].type == th::kThingFree);
+    CHECK(world.things[4].sprite == gd.anims().starts[0x3cf].frame);
+}
+
+} // namespace
+
 // With the game data: each level's starting objects are placed, each on its
 // cell's list, with a valid frame, and the map is build_start_map's but for
 // what objects mark (footprint and big-cell flags, invisible walls).
@@ -193,77 +294,46 @@ void test_level_objects(const char *dir)
         if (!level)
             continue;
         th::start_level(*world, *level, gd.anims());
-
-        int objects = 0;
-        int in_level = 0;
-        for (int i = 0; i < th::kMapCells; i++) {
-            uint16_t plot = level->plots[size_t(i)];
-            bool copied = plot == 0 || (plot <= 4 && level->player_count >= plot);
-            in_level += copied && level->tiles[size_t(i)].first != 0;
-        }
-        for (size_t id = 1; id < world->things.size(); id++) {
-            const th::Thing &t = world->things[id];
-            if (t.type == th::kThingFree)
-                continue;
-            objects++;
-            CHECK(t.type == th::kThingObject);
-            CHECK(t.subtype < th::kObjectKinds && t.facing < 4);
-            CHECK(t.sprite < gd.anims().frames.size());
-            CHECK(t.x.frac == 0x80 && t.y.frac == 0x80);
-        }
-
-        // Every list is well linked and holds things of its own cell.
-        int linked = 0;
-        for (int i = 0; i < th::kMapCells; i++) {
-            int prev = 0;
-            for (int id = world->map[size_t(i)].first; id > 0; id = world->things[size_t(id)].cell_next) {
-                const th::Thing &t = world->things[size_t(id)];
-                CHECK(t.cell_prev == prev);
-                CHECK(t.x.tile + t.y.tile * th::kMapSize == i);
-                prev = id;
-                linked++;
-            }
-        }
-        // Two-part objects whose second part lands on a later cell lose it
-        // from the list when that cell is copied, as in the game.
-        CHECK(linked <= objects && objects >= in_level);
-
-        auto base = th::build_start_map(*level);
-        for (int i = 0; i < th::kMapCells; i++) {
-            const th::MapCell &a = world->map[size_t(i)];
-            const th::MapCell &b = base[size_t(i)];
-            CHECK(a.floor_block == b.floor_block && a.owner_flags == b.owner_flags);
-            CHECK(a.litter_shadow == b.litter_shadow);
-            CHECK((a.flags & ~0x27) == (b.flags & ~0x27));
-            CHECK(a.wall_n == b.wall_n || (b.wall_n == 0 && (a.wall_n == 0x8e || a.wall_n == 0x90)));
-            CHECK(a.wall_w == b.wall_w || (b.wall_w == 0 && (a.wall_w == 0x8f || a.wall_w == 0x91)));
-        }
+        auto [objects, in_level, linked] = check_level_start(*world, gd, *level);
         std::printf("level %d: %d objects from %d level cells, %d on cell lists\n", n, objects, in_level, linked);
     }
-
-    // The levels hold only entrance doors; a made-up one tries the rest. All
-    // of it is plot 1. A radiation shield (28) facing 0 brings its console
-    // (15) on the cell before; an operating table (30) facing 1 would bring
-    // its lamp on a cell after, not yet copied, so the lamp does not fit.
-    auto level = std::make_unique<th::Level>();
-    level->player_count = 1;
-    level->plots.fill(1);
-    const int shield = 10 + 10 * th::kMapSize;
-    const int table = 20 + 10 * th::kMapSize;
-    const int plant = 30 + 10 * th::kMapSize;
-    level->tiles[shield].first = 28 << 8;
-    level->tiles[table].first = 30 << 8 | 1;
-    level->tiles[plant].first = 45 << 8;
-    th::start_level(*world, *level, gd.anims());
-    const th::Thing &shield_obj = world->things[1];
-    const th::Thing &console = world->things[2];
-    CHECK(shield_obj.subtype == 28 && console.subtype == 15 && console.facing == 1);
-    CHECK(shield_obj.pair == 2 && console.pair == 1);
-    CHECK(world->map[shield].first == 1 && world->map[shield - 1].first == 2);
-    CHECK(world->things[3].subtype == 30 && world->things[3].pair == 0);
-    CHECK(world->things[4].subtype == 45 && world->things[5].type == th::kThingFree);
-    CHECK(world->things[4].sprite == gd.anims().starts[0x3cf].frame);
+    check_made_up_level(*world, gd);
 }
+
+namespace
+{
+
+// Centred on each object of `world` in turn, the view differs from `bare`'s
+// (with no things) both plain and drawn through the mask, and the scratch
+// surface is left blank.
+void check_objects_drawn(const th::GameData &gd, th::ShadowSprites &shadows, const th::World &world,
+                         const th::World &masked, const th::World &bare)
+{
+    th::Surface with, without, scratch;
+    with.resize(640, 480);
+    without.resize(640, 480);
+    scratch.resize(640, 480);
+    scratch.fill(th::kMaskColour);
+    for (int id = 1; id < th::kThingCount; id++) {
+        const th::Thing &t = world.things[size_t(id)];
+        if (t.type != th::kThingObject)
+            continue;
+        th::Point p = th::thing_to_world(t);
+        th::Point camera{p.x - 320, p.y - 240};
+        th::Rect view{0, 0, 640, 480};
+        th::draw_world({with, view, camera}, world, gd, &shadows, scratch);
+        th::draw_world({without, view, camera}, bare, gd, &shadows, scratch);
+        CHECK(!std::equal(with.data(), with.data() + 640 * 480, without.data()));
+        CHECK(std::all_of(scratch.data(), scratch.data() + 640 * 480, [](uint8_t c) { return c == th::kMaskColour; }));
+        th::Surface through_mask;
+        through_mask.resize(640, 480);
+        th::draw_world({through_mask, view, camera}, masked, gd, &shadows, scratch);
+        CHECK(!std::equal(through_mask.data(), through_mask.data() + 640 * 480, without.data()));
+        CHECK(std::all_of(scratch.data(), scratch.data() + 640 * 480, [](uint8_t c) { return c == th::kMaskColour; }));
+    }
+}
+
+} // namespace
 
 // Each level's starting objects show up in the view, and the masked drawing
 // leaves its scratch surface blank.
@@ -291,30 +361,7 @@ void test_draw_world(const char *dir)
         for (th::MapCell &c : bare->map)
             c.first = 0;
 
-        th::Surface with, without, scratch;
-        with.resize(640, 480);
-        without.resize(640, 480);
-        scratch.resize(640, 480);
-        scratch.fill(th::kMaskColour);
-        for (int id = 1; id < th::kThingCount; id++) {
-            const th::Thing &t = world->things[size_t(id)];
-            if (t.type != th::kThingObject)
-                continue;
-            th::Point p = th::thing_to_world(t);
-            th::Point camera{p.x - 320, p.y - 240};
-            th::Rect view{0, 0, 640, 480};
-            th::draw_world(with, view, camera, *world, gd, &shadows, scratch);
-            th::draw_world(without, view, camera, *bare, gd, &shadows, scratch);
-            CHECK(!std::equal(with.data(), with.data() + 640 * 480, without.data()));
-            CHECK(std::all_of(scratch.data(), scratch.data() + 640 * 480,
-                              [](uint8_t c) { return c == th::kMaskColour; }));
-            th::Surface through_mask;
-            through_mask.resize(640, 480);
-            th::draw_world(through_mask, view, camera, *masked, gd, &shadows, scratch);
-            CHECK(!std::equal(through_mask.data(), through_mask.data() + 640 * 480, without.data()));
-            CHECK(std::all_of(scratch.data(), scratch.data() + 640 * 480,
-                              [](uint8_t c) { return c == th::kMaskColour; }));
-        }
+        check_objects_drawn(gd, shadows, *world, *masked, *bare);
     }
 }
 
@@ -364,16 +411,16 @@ void test_text_layout()
     surf.resize(20, 4);
     surf.fill(1);
     // Centred in a 20-wide window: (20 - 7) / 2 = 6.
-    th::draw_text(surf, font, {0, 1, 20}, 0, 0, "A A", th::kTextCentre, {0, 0, 20, 4});
+    th::draw_text(surf, font, 0, 0, "A A", {{0, 1, 20}, {0, 0, 20, 4}, th::kTextCentre});
     CHECK(surf.row(1)[5] == 1 && surf.row(1)[6] == 5 && surf.row(2)[7] == 5 && surf.row(1)[8] == 1);
     CHECK(surf.row(1)[11] == 5 && surf.row(1)[12] == 5 && surf.row(1)[13] == 1 && surf.row(0)[6] == 1);
     // The clip window cuts the second 'A' and leaves the surface's clip alone.
     surf.fill(1);
-    th::draw_text(surf, font, {0, 0, 20}, 0, 0, "A A", th::kTextCentre, {0, 0, 7, 4});
+    th::draw_text(surf, font, 0, 0, "A A", {{0, 0, 20}, {0, 0, 7, 4}, th::kTextCentre});
     CHECK(surf.row(0)[6] == 5 && surf.row(0)[11] == 1);
     CHECK(surf.clip().w == 20);
     // Wrapped at the window's width, the second line one line height down.
     surf.fill(1);
-    th::draw_text(surf, font, {0, 0, 4}, 0, 0, "A A", th::kTextWrap, {0, 0, 20, 4});
+    th::draw_text(surf, font, 0, 0, "A A", {{0, 0, 4}, {0, 0, 20, 4}, th::kTextWrap});
     CHECK(surf.row(0)[0] == 5 && surf.row(2)[0] == 5 && surf.row(0)[5] == 1);
 }

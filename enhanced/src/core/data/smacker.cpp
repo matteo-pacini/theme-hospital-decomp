@@ -36,6 +36,38 @@ bool fail(std::string *error, std::string message)
     return false;
 }
 
+// A two-colour block: each pixel of the 4x4 block at `out` (rows `pitch`
+// apart) is the high byte of `colours` where its bit of `map` is set, the
+// low byte where clear.
+void draw_mono_block(uint8_t *out, int pitch, int colours, int map)
+{
+    uint8_t hi = uint8_t(colours >> 8), lo = uint8_t(colours);
+    for (int y = 0; y < 4; y++, out += pitch) {
+        for (int x = 0; x < 4; x++, map >>= 1)
+            out[x] = map & 1 ? hi : lo;
+    }
+}
+
+// A one-colour block: the 4x4 block at `out` (rows `pitch` apart) set to
+// `colour`.
+void fill_block(uint8_t *out, int pitch, int colour)
+{
+    for (int y = 0; y < 4; y++, out += pitch)
+        std::memset(out, colour, 4);
+}
+
+// An uncompressed audio chunk, as 16-bit samples.
+void decode_raw_audio(const SmackerAudioFormat &f, std::span<const uint8_t> data, std::vector<int16_t> &out)
+{
+    if (f.bits == 16) {
+        for (size_t i = 0; i + 1 < data.size(); i += 2)
+            out.push_back(int16_t(data[i] | data[i + 1] << 8));
+    } else {
+        for (uint8_t v : data)
+            out.push_back(int16_t((v - 128) * 256));
+    }
+}
+
 } // namespace
 
 // A little-endian bit stream: bits are taken from each byte lowest first.
@@ -102,16 +134,15 @@ bool SmackerVideo::read_byte_tree(Bits &bits, Tree &tree)
     return !bits.overrun();
 }
 
-int SmackerVideo::build_big_tree(Bits &bits, Tree &tree, const Tree &lo, const Tree &hi,
-                                 const std::array<int, 3> &escapes, std::array<int, 3> &last, size_t limit, int depth)
+int SmackerVideo::build_big_tree(Bits &bits, Tree &tree, BigTreeCodes &codes, int depth)
 {
-    if (depth > kMaxBigDepth || bits.overrun() || tree.nodes.size() >= limit)
+    if (depth > kMaxBigDepth || bits.overrun() || tree.nodes.size() >= codes.limit)
         return -1;
     if (!bits.bit()) {
-        int value = byte_code(bits, lo) | byte_code(bits, hi) << 8;
+        int value = byte_code(bits, codes.lo) | byte_code(bits, codes.hi) << 8;
         for (int i = 0; i < 3; i++) {
-            if (value == escapes[size_t(i)]) {
-                last[size_t(i)] = int(tree.nodes.size());
+            if (value == codes.escapes[size_t(i)]) {
+                codes.last[size_t(i)] = int(tree.nodes.size());
                 value = 0;
                 break;
             }
@@ -121,11 +152,11 @@ int SmackerVideo::build_big_tree(Bits &bits, Tree &tree, const Tree &lo, const T
     }
     size_t at = tree.nodes.size();
     tree.nodes.push_back(kNode);
-    int left = build_big_tree(bits, tree, lo, hi, escapes, last, limit, depth + 1);
+    int left = build_big_tree(bits, tree, codes, depth + 1);
     if (left < 0)
         return -1;
     tree.nodes[at] = kNode | left;
-    int right = build_big_tree(bits, tree, lo, hi, escapes, last, limit, depth + 1);
+    int right = build_big_tree(bits, tree, codes, depth + 1);
     return right < 0 ? -1 : 1 + left + right;
 }
 
@@ -142,20 +173,19 @@ bool SmackerVideo::read_big_tree(Bits &bits, Tree &tree, size_t limit)
     Tree lo, hi;
     if (!read_byte_tree(bits, lo) || !read_byte_tree(bits, hi))
         return false;
-    std::array<int, 3> escapes{};
-    for (int &e : escapes)
+    BigTreeCodes codes{lo, hi, {}, {-1, -1, -1}, limit};
+    for (int &e : codes.escapes)
         e = bits.bits(16);
-    std::array<int, 3> last = {-1, -1, -1};
     tree.nodes.clear();
-    if (build_big_tree(bits, tree, lo, hi, escapes, last, limit, 0) < 0)
+    if (build_big_tree(bits, tree, codes, 0) < 0)
         return false;
     bits.bit();
     for (size_t i = 0; i < 3; i++) {
-        if (last[i] < 0) {
-            last[i] = int(tree.nodes.size());
+        if (codes.last[i] < 0) {
+            codes.last[i] = int(tree.nodes.size());
             tree.nodes.push_back(0);
         }
-        tree.last[i] = size_t(last[i]);
+        tree.last[i] = size_t(codes.last[i]);
     }
     return !bits.overrun();
 }
@@ -213,8 +243,26 @@ bool SmackerVideo::open(std::vector<uint8_t> file, std::string *error)
     // ms100perframe in SmackOpen: hundredths of a millisecond.
     int64_t ms100 = ms_per_frame < 0 ? -int64_t(ms_per_frame) : int64_t(ms_per_frame) * 100;
     frame_us_ = ms100 * 10;
+    read_track_types(h);
+    if (!read_frame_tables(type, table_size, tree_sizes, error))
+        return false;
+
+    size_t total = 0;
+    for (uint32_t s : frame_sizes_)
+        total += s;
+    if (file_.size() < first_frame_ + total)
+        return fail(error, "Smacker file cut short");
+
+    pixels_.assign(size_t(width_) * size_t(height_), 0);
+    frame_pos_ = first_frame_;
+    return true;
+}
+
+// The header's seven track types and the audio formats they give.
+void SmackerVideo::read_track_types(const uint8_t *header)
+{
     for (int t = 0; t < 7; t++) {
-        uint32_t tt = le32(h + 72 + t * 4);
+        uint32_t tt = le32(header + 72 + t * 4);
         track_type_[size_t(t)] = tt;
         if ((tt >> 24) & 0x40) {
             SmackerAudioFormat &f = audio_formats_[size_t(t)];
@@ -223,7 +271,14 @@ bool SmackerVideo::open(std::vector<uint8_t> file, std::string *error)
             f.bits = (tt >> 29) & 1 ? 16 : 8;
         }
     }
+}
 
+// The frame sizes and types after the header, then the four 16-bit trees;
+// sets first_frame_ past them.
+bool SmackerVideo::read_frame_tables(uint32_t type, uint32_t table_size, const std::array<uint32_t, 4> &tree_sizes,
+                                     std::string *error)
+{
+    const uint8_t *h = file_.data();
     // The ring frame (SmackerType bit 0) follows the last.
     size_t n = size_t(frames_) + (type & 1);
     size_t pos = kHeaderSize;
@@ -243,15 +298,6 @@ bool SmackerVideo::open(std::vector<uint8_t> file, std::string *error)
             return fail(error, "damaged Smacker tree");
     }
     first_frame_ = pos + table_size;
-
-    size_t total = 0;
-    for (uint32_t s : frame_sizes_)
-        total += s;
-    if (file_.size() < first_frame_ + total)
-        return fail(error, "Smacker file cut short");
-
-    pixels_.assign(size_t(width_) * size_t(height_), 0);
-    frame_pos_ = first_frame_;
     return true;
 }
 
@@ -274,47 +320,65 @@ bool SmackerVideo::next_frame()
         size_t chunk = size_t(data[0]) * 4;
         if (chunk == 0 || chunk > size)
             return false;
-        // setuptheframe's palette chunk: 0x80 + n keeps n + 1 colours, 0x40 + n
-        // copies n + 1 colours of the previous palette from the next byte's
-        // index, anything else is a colour (three 6-bit values).
-        std::array<uint8_t, 768> old = vga_;
-        size_t src = 1;
-        int i = 0;
-        while (i < 256) {
-            if (src >= chunk)
-                return false;
-            uint8_t c = data[src];
-            if (c & 0x80) {
-                int keep = (c & 0x7f) + 1;
-                if (i + keep > 256)
-                    return false;
-                std::memcpy(&vga_[size_t(i) * 3], &old[size_t(i) * 3], size_t(keep) * 3);
-                i += keep;
-                src++;
-            } else if (c & 0x40) {
-                int copy = (c & 0x3f) + 1;
-                if (src + 1 >= chunk)
-                    return false;
-                int from = data[src + 1];
-                if (i + copy > 256 || from + copy > 256)
-                    return false;
-                std::memcpy(&vga_[size_t(i) * 3], &old[size_t(from) * 3], size_t(copy) * 3);
-                i += copy;
-                src += 2;
-            } else {
-                if (src + 2 >= chunk)
-                    return false;
-                vga_[size_t(i) * 3] = c & 0x3f;
-                vga_[size_t(i) * 3 + 1] = data[src + 1] & 0x3f;
-                vga_[size_t(i) * 3 + 2] = data[src + 2] & 0x3f;
-                i++;
-                src += 3;
-            }
-        }
+        if (!read_palette(data, chunk))
+            return false;
         palette_from_vga(vga_, palette_);
         palette_changed_ = true;
         pos = chunk;
     }
+    if (!read_audio_chunks(type, {data, size}, pos))
+        return false;
+    return decode_video({data + pos, size - pos});
+}
+
+// setuptheframe's palette chunk, `chunk` bytes at `data`: 0x80 + n keeps
+// n + 1 colours, 0x40 + n copies n + 1 colours of the previous palette from
+// the next byte's index, anything else is a colour (three 6-bit values).
+bool SmackerVideo::read_palette(const uint8_t *data, size_t chunk)
+{
+    std::array<uint8_t, 768> old = vga_;
+    size_t src = 1;
+    int i = 0;
+    while (i < 256) {
+        if (src >= chunk)
+            return false;
+        uint8_t c = data[src];
+        if (c & 0x80) {
+            int keep = (c & 0x7f) + 1;
+            if (i + keep > 256)
+                return false;
+            std::memcpy(&vga_[size_t(i) * 3], &old[size_t(i) * 3], size_t(keep) * 3);
+            i += keep;
+            src++;
+        } else if (c & 0x40) {
+            int copy = (c & 0x3f) + 1;
+            if (src + 1 >= chunk)
+                return false;
+            int from = data[src + 1];
+            if (i + copy > 256 || from + copy > 256)
+                return false;
+            std::memcpy(&vga_[size_t(i) * 3], &old[size_t(from) * 3], size_t(copy) * 3);
+            i += copy;
+            src += 2;
+        } else {
+            if (src + 2 >= chunk)
+                return false;
+            vga_[size_t(i) * 3] = c & 0x3f;
+            vga_[size_t(i) * 3 + 1] = data[src + 1] & 0x3f;
+            vga_[size_t(i) * 3 + 2] = data[src + 2] & 0x3f;
+            i++;
+            src += 3;
+        }
+    }
+    return true;
+}
+
+// The frame's audio chunks from `pos`, one per track its type flags,
+// decoded for the tracks with a format; leaves `pos` past them.
+bool SmackerVideo::read_audio_chunks(uint8_t type, std::span<const uint8_t> frame, size_t &pos)
+{
+    const uint8_t *data = frame.data();
+    const size_t size = frame.size();
     for (int t = 0; t < 7; t++) {
         if (!(type & (2 << t)))
             continue;
@@ -327,7 +391,29 @@ bool SmackerVideo::next_frame()
             return false;
         pos += len;
     }
-    return decode_video({data + pos, size - pos});
+    return true;
+}
+
+// The top-left pixel of 4x4 block `block`.
+uint8_t *SmackerVideo::block_pixels(int block)
+{
+    int bw = width_ / 4;
+    return pixels_.data() + size_t(block / bw) * 4 * size_t(width_) + size_t(block % bw) * 4;
+}
+
+// A full block: each row of block `block` as two 16-bit codes, the right
+// pair of pixels first.
+void SmackerVideo::decode_full_block(Bits &bits, int block)
+{
+    uint8_t *out = block_pixels(block);
+    for (int y = 0; y < 4; y++, out += width_) {
+        int right = big_code(bits, full_);
+        int left = big_code(bits, full_);
+        out[0] = uint8_t(left);
+        out[1] = uint8_t(left >> 8);
+        out[2] = uint8_t(right);
+        out[3] = uint8_t(right >> 8);
+    }
 }
 
 bool SmackerVideo::decode_video(std::span<const uint8_t> data)
@@ -348,36 +434,19 @@ bool SmackerVideo::decode_video(std::span<const uint8_t> data)
             for (; run > 0 && block < blocks; run--, block++) {
                 int colours = big_code(bits, mclr_);
                 int map = big_code(bits, mmap_);
-                uint8_t hi = uint8_t(colours >> 8), lo = uint8_t(colours);
-                uint8_t *out = pixels_.data() + size_t(block / bw) * 4 * size_t(width_) + size_t(block % bw) * 4;
-                for (int y = 0; y < 4; y++, out += width_) {
-                    for (int x = 0; x < 4; x++, map >>= 1)
-                        out[x] = map & 1 ? hi : lo;
-                }
+                draw_mono_block(block_pixels(block), width_, colours, map);
             }
             break;
         case 1: // every pixel, two at a time, right pair first
-            for (; run > 0 && block < blocks; run--, block++) {
-                uint8_t *out = pixels_.data() + size_t(block / bw) * 4 * size_t(width_) + size_t(block % bw) * 4;
-                for (int y = 0; y < 4; y++, out += width_) {
-                    int right = big_code(bits, full_);
-                    int left = big_code(bits, full_);
-                    out[0] = uint8_t(left);
-                    out[1] = uint8_t(left >> 8);
-                    out[2] = uint8_t(right);
-                    out[3] = uint8_t(right >> 8);
-                }
-            }
+            for (; run > 0 && block < blocks; run--, block++)
+                decode_full_block(bits, block);
             break;
         case 2: // unchanged
             block += run;
             break;
         case 3: // one colour, the type code's high byte
-            for (; run > 0 && block < blocks; run--, block++) {
-                uint8_t *out = pixels_.data() + size_t(block / bw) * 4 * size_t(width_) + size_t(block % bw) * 4;
-                for (int y = 0; y < 4; y++, out += width_)
-                    std::memset(out, type >> 8, 4);
-            }
+            for (; run > 0 && block < blocks; run--, block++)
+                fill_block(block_pixels(block), width_, type >> 8);
             break;
         }
         if (bits.overrun())
@@ -391,13 +460,7 @@ bool SmackerVideo::decode_audio(int track, std::span<const uint8_t> data)
     std::vector<int16_t> &out = audio_[size_t(track)];
     const SmackerAudioFormat &f = audio_formats_[size_t(track)];
     if (!(track_type_[size_t(track)] & 0x80000000u)) {
-        if (f.bits == 16) {
-            for (size_t i = 0; i + 1 < data.size(); i += 2)
-                out.push_back(int16_t(data[i] | data[i + 1] << 8));
-        } else {
-            for (uint8_t v : data)
-                out.push_back(int16_t((v - 128) * 256));
-        }
+        decode_raw_audio(f, data, out);
         return true;
     }
     // Compressed: the unpacked size, then a bit for any data, a bit for
@@ -420,8 +483,16 @@ bool SmackerVideo::decode_audio(int track, std::span<const uint8_t> data)
         if (!read_byte_tree(bits, trees[size_t(i)]))
             return false;
     }
+    unpack_audio(bits, trees, stereo, wide, wide ? unpacked / 2 : unpacked, out);
+    return !bits.overrun();
+}
+
+// decode_audio's compressed samples after the trees: each channel's first
+// sample, then the differences.
+void SmackerVideo::unpack_audio(Bits &bits, const std::array<Tree, 4> &trees, int stereo, int wide, size_t samples,
+                                std::vector<int16_t> &out)
+{
     int channels = stereo + 1;
-    size_t samples = wide ? unpacked / 2 : unpacked;
     out.reserve(samples);
     std::array<int, 2> pred{};
     if (wide) {
@@ -446,7 +517,6 @@ bool SmackerVideo::decode_audio(int track, std::span<const uint8_t> data)
         }
         out.push_back(wide ? int16_t(pred[size_t(c)]) : int16_t((pred[size_t(c)] - 128) * 256));
     }
-    return !bits.overrun();
 }
 
 namespace
@@ -484,6 +554,17 @@ constexpr std::array<MovieInfo, kMovieCount> kMovies = {{
     {"intro/attract.smk", 0},
 }};
 
+// copy_frame_to_screen's copy of one source row to the screen's row `dst`,
+// `out_w` pixels from `x0`, each source pixel twice if `wide`.
+void copy_movie_row(uint8_t *dst, const uint8_t *src, int x0, int out_w, bool wide, int screen_width)
+{
+    for (int x = 0; x < out_w; x++) {
+        int dx = x0 + x;
+        if (dx >= 0 && dx < screen_width)
+            dst[dx] = src[wide ? x / 2 : x];
+    }
+}
+
 } // namespace
 
 const MovieInfo &movie_info(int index)
@@ -506,12 +587,7 @@ void copy_frame_to_screen(const SmackerVideo &video, Surface &screen, unsigned f
         for (int r = 0; r < rows; r++) {
             if (dy + r < 0 || dy + r >= screen.height())
                 continue;
-            uint8_t *dst = screen.row(dy + r);
-            for (int x = 0; x < out_w; x++) {
-                int dx = x0 + x;
-                if (dx >= 0 && dx < screen.width())
-                    dst[dx] = src[wide ? x / 2 : x];
-            }
+            copy_movie_row(screen.row(dy + r), src, x0, out_w, wide, screen.width());
         }
     }
 }

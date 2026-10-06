@@ -12,6 +12,48 @@ constexpr uint8_t kFullShadowBlock = 73;
 constexpr uint8_t kHalfShadowBlock = 74;
 constexpr uint8_t kWallShadowBlock = 150;
 
+// The game's line is 64 bytes and overruns it on wider sprites; it is made
+// wide enough for any sprite instead.
+using OverlayLine = std::array<uint8_t, 256>;
+
+// Unpacks the RLE row at `o` into `line`; returns the start of the next row.
+const uint8_t *overlay_line(const uint8_t *o, OverlayLine &line)
+{
+    size_t col = 0;
+    for (int8_t n; (n = static_cast<int8_t>(*o++)) != 0;) {
+        if (n < 0) {
+            col += size_t(-n);
+            continue;
+        }
+        for (int i = 0; i < n; i++, col++)
+            if (col < line.size())
+                line[col] = o[i];
+        o += n;
+    }
+    return o;
+}
+
+// Appends the RLE row at `s` to `out`, mixing `line` into its pixels;
+// returns the start of the next row.
+const uint8_t *overlay_row(const uint8_t *s, const OverlayLine &line, std::span<const uint8_t> ghost,
+                           std::vector<uint8_t> &out)
+{
+    size_t col = 0;
+    for (int8_t n; (n = static_cast<int8_t>(*s)) != 0;) {
+        out.push_back(*s++);
+        if (n < 0) {
+            col += size_t(-n);
+            continue;
+        }
+        for (int i = 0; i < n; i++, col++, s++) {
+            uint8_t shade = col < line.size() ? line[col] : 0;
+            out.push_back(shade ? ghost[size_t(shade) << 8 | *s] : *s);
+        }
+    }
+    out.push_back(*s++);
+    return s;
+}
+
 // The game's create_overlay_sprite: `src` with the opaque pixels of `ovr`
 // (aligned on the top-left corner) mixed into it through `ghost`, entry
 // [ovr << 8 | src]. The result has the same runs as `src`.
@@ -23,35 +65,10 @@ std::vector<uint8_t> overlay(const Sprite &src, const Sprite &ovr, std::span<con
     const uint8_t *s = src.data;
     const uint8_t *o = ovr.data;
     for (int row = 0; row < src.height; row++) {
-        // The game's line is 64 bytes and overruns it on wider sprites; it
-        // is made wide enough for any sprite instead.
-        std::array<uint8_t, 256> line{};
-        if (o && row < ovr.height) {
-            size_t col = 0;
-            for (int8_t n; (n = static_cast<int8_t>(*o++)) != 0;) {
-                if (n < 0) {
-                    col += size_t(-n);
-                    continue;
-                }
-                for (int i = 0; i < n; i++, col++)
-                    if (col < line.size())
-                        line[col] = o[i];
-                o += n;
-            }
-        }
-        size_t col = 0;
-        for (int8_t n; (n = static_cast<int8_t>(*s)) != 0;) {
-            out.push_back(*s++);
-            if (n < 0) {
-                col += size_t(-n);
-                continue;
-            }
-            for (int i = 0; i < n; i++, col++, s++) {
-                uint8_t shade = col < line.size() ? line[col] : 0;
-                out.push_back(shade ? ghost[size_t(shade) << 8 | *s] : *s);
-            }
-        }
-        out.push_back(*s++);
+        OverlayLine line{};
+        if (o && row < ovr.height)
+            o = overlay_line(o, line);
+        s = overlay_row(s, line, ghost, out);
     }
     return out;
 }

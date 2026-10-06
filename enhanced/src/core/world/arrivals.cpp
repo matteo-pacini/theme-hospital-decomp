@@ -255,6 +255,139 @@ uint8_t create_an_illness(uint32_t &seed, const ArrivalState &state, const Balan
     return illness;
 }
 
+namespace
+{
+
+// who_owns_peep's market allocation: each hospital bids its reputation for
+// `illness`, scaled by how its price compares with the most patients will
+// pay, and a roll weighted by the bids picks the winner. -1 when every bid is
+// 0.
+int who_owns_peep_by_bids(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness,
+                          std::source_location caller)
+{
+    const Balance::Gbv &gbv = settings.gbv;
+    std::array<PeepBid, 4> bids{};
+    for (uint8_t i = 0; i < 4; i++) {
+        HospitalMarket &hosp = state.hospitals[i];
+        bids[i].player = i;
+        bids[i].score = hosp.reputation[illness] * gbv.alloc_ind_rep;
+        update_single_cure_cost(hosp, settings, illness);
+        int32_t pct = max_price_for_treatment(hosp, settings, illness) * 100 / hosp.price[illness];
+        if (pct < 50)
+            pct = 50;
+        else if (pct > 150)
+            pct = 150;
+        bids[i].score = bids[i].score * pct / 100;
+    }
+    sort_peep_bids(bids);
+    int32_t total = 0;
+    for (PeepBid &bid : bids) {
+        total += bid.score;
+        bid.score = total;
+    }
+    if (!total)
+        return -1;
+    int32_t roll = int32_t(old_newrand(seed, caller) % uint32_t(total));
+    for (const PeepBid &bid : bids) {
+        if (bid.score > roll)
+            return bid.player;
+    }
+    return -1;
+}
+
+// One head make_a_peep may give a patient with a visual illness.
+struct VisualChoice {
+    uint8_t kind, head, palette;
+};
+
+// make_a_peep's choices[] for each visual illness, in the order the game
+// fills it.
+struct VisualChoices {
+    std::array<VisualChoice, 10> choices{};
+    uint32_t count = 0;
+};
+
+constexpr std::array<VisualChoices, 16> make_visual_choices()
+{
+    std::array<VisualChoices, 16> table{};
+    for (size_t illness = 0; illness < table.size(); illness++) {
+        VisualChoices &list = table[illness];
+        for (size_t i = kGeneratePerson.size(); i-- > 0;) {
+            if (!kSuitableIllness[illness][i])
+                continue;
+            const PeepType &type = kGeneratePerson[i];
+            for (size_t k = type.count; k-- > 0;)
+                list.choices[list.count++] = {type.kind, type.head[k], type.palette[k]};
+        }
+    }
+    return table;
+}
+
+constexpr std::array<VisualChoices, 16> kVisualChoices = make_visual_choices();
+
+constexpr bool every_visual_illness_has_a_choice()
+{
+    for (size_t illness = kIllBloatyHead; illness < kVisualChoices.size(); illness++) {
+        if (!kVisualChoices[illness].count)
+            return false;
+    }
+    return true;
+}
+
+static_assert(every_visual_illness_has_a_choice(), "make_a_peep picks among a visual illness's choices");
+
+// The sum of kGeneratePerson's weights.
+constexpr uint32_t generate_person_weight()
+{
+    uint32_t total = 0;
+    for (const PeepType &type : kGeneratePerson)
+        total += type.weight;
+    return total;
+}
+
+constexpr uint32_t kGeneratePersonWeight = generate_person_weight();
+static_assert(kGeneratePersonWeight > 0);
+
+// make_a_peep's looks: picks the patient's kind and head (by kind weight for a
+// non-visual illness, among the kinds suited to a visual one) and returns the
+// palette for the other layers.
+const PeepPalette &make_a_peep_pick_head(uint32_t &seed, Thing &peep, uint8_t illness, std::source_location caller)
+{
+    if (illness >= 16) {
+        uint32_t total = kGeneratePersonWeight;
+        uint32_t r = old_newrand(seed, caller) % total;
+        size_t i = kGeneratePerson.size() - 1;
+        for (;; i--) {
+            total -= kGeneratePerson[i].weight;
+            if (r >= total)
+                break;
+        }
+        const PeepType &type = kGeneratePerson[i];
+        peep.subtype = type.kind;
+        uint32_t k = old_newrand(seed, caller) % type.count;
+        peep.layers[0] = type.head[k];
+        return kVariations[type.palette[k]];
+    }
+    const VisualChoices &list = kVisualChoices[illness];
+    const VisualChoice &pick = list.choices[old_newrand(seed, caller) % list.count];
+    peep.subtype = pick.kind;
+    peep.layers[0] = pick.head;
+    return kVariations[pick.palette];
+}
+
+// make_a_peep's thing: the first free one outside the people reserve (0 for
+// none).
+uint16_t make_a_peep_free_thing(const World &world)
+{
+    for (size_t i = 1; i < world.things.size() - kPeopleReserve; i++) {
+        if (world.things[i].type == kThingFree)
+            return uint16_t(i);
+    }
+    return 0;
+}
+
+} // namespace
+
 int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness, bool hospital_open)
 {
     const Balance::Gbv &gbv = settings.gbv;
@@ -266,34 +399,7 @@ int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, 
     } else if (old_newrand(seed) % gbv.alloc_rand == 0) {
         owner = int(old_newrand(seed) % players);
     } else {
-        std::array<PeepBid, 4> bids{};
-        for (uint8_t i = 0; i < 4; i++) {
-            HospitalMarket &hosp = state.hospitals[i];
-            bids[i].player = i;
-            bids[i].score = hosp.reputation[illness] * gbv.alloc_ind_rep;
-            update_single_cure_cost(hosp, settings, illness);
-            int32_t pct = max_price_for_treatment(hosp, settings, illness) * 100 / hosp.price[illness];
-            if (pct < 50)
-                pct = 50;
-            else if (pct > 150)
-                pct = 150;
-            bids[i].score = bids[i].score * pct / 100;
-        }
-        sort_peep_bids(bids);
-        int32_t total = 0;
-        for (PeepBid &bid : bids) {
-            total += bid.score;
-            bid.score = total;
-        }
-        if (total) {
-            int32_t roll = int32_t(old_newrand(seed) % uint32_t(total));
-            for (const PeepBid &bid : bids) {
-                if (bid.score > roll) {
-                    owner = bid.player;
-                    break;
-                }
-            }
-        }
+        owner = who_owns_peep_by_bids(seed, state, settings, illness, std::source_location::current());
         if (owner < 0)
             owner = int(old_newrand(seed) % players);
     }
@@ -301,16 +407,10 @@ int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, 
     return open ? owner : -1;
 }
 
-uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &settings, const AnimData &anims,
-                     int level_number, uint16_t pos, uint8_t illness, uint8_t owner)
+uint16_t make_a_peep(World &world, const ArrivalState &state, const PeepSetup &setup, uint16_t pos, uint8_t illness,
+                     uint8_t owner)
 {
-    uint16_t id = 0;
-    for (size_t i = 1; i < world.things.size() - kPeopleReserve; i++) {
-        if (world.things[i].type == kThingFree) {
-            id = uint16_t(i);
-            break;
-        }
-    }
+    uint16_t id = make_a_peep_free_thing(world);
     if (!id)
         return 0;
     uint32_t &seed = world.seed;
@@ -324,59 +424,25 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &set
     peep.speed = kPeepSpeed;
     peep.anim_speed = kPeepAnimSpeed;
 
-    const PeepPalette *pal;
-    if (illness >= 16) {
-        uint32_t total = 0;
-        for (const PeepType &type : kGeneratePerson)
-            total += type.weight;
-        uint32_t r = old_newrand(seed) % total;
-        size_t i = kGeneratePerson.size() - 1;
-        for (;; i--) {
-            total -= kGeneratePerson[i].weight;
-            if (r >= total)
-                break;
-        }
-        const PeepType &type = kGeneratePerson[i];
-        peep.subtype = type.kind;
-        uint32_t k = old_newrand(seed) % type.count;
-        peep.layers[0] = type.head[k];
-        pal = &kVariations[type.palette[k]];
-    } else {
-        struct Choice {
-            uint8_t kind, head, palette;
-        };
-        std::array<Choice, 10> choices{};
-        uint32_t count = 0;
-        for (size_t i = kGeneratePerson.size(); i-- > 0;) {
-            if (!kSuitableIllness[illness][i])
-                continue;
-            const PeepType &type = kGeneratePerson[i];
-            for (size_t k = type.count; k-- > 0;)
-                choices[count++] = {type.kind, type.head[k], type.palette[k]};
-        }
-        const Choice &pick = choices[old_newrand(seed) % count];
-        peep.subtype = pick.kind;
-        peep.layers[0] = pick.head;
-        pal = &kVariations[pick.palette];
-    }
+    const PeepPalette *pal = &make_a_peep_pick_head(seed, peep, illness, std::source_location::current());
     peep.layers[1] = pal->layer1[old_newrand(seed) % pal->count1];
     peep.layers[2] = pal->layer2[old_newrand(seed) % pal->count2];
     peep.layers[3] = pal->layer3[old_newrand(seed) % pal->count3];
     peep.layers[4] = 0;
     effect_illness(seed, peep, illness);
-    add_contagiousness(seed, peep, state, settings);
+    add_contagiousness(seed, peep, state, setup.settings);
     peep.icon_id = 0;
-    play_frame(peep, anims, kPatientAnims[peep.subtype].walk);
+    play_frame(peep, setup.anims, kPatientAnims[peep.subtype].walk);
     peep.happiness = 100;
     peep.warmth = 50;
     peep.refreshment = 100;
-    peep.bladder = illness == kIllTheSquits ? int16_t(settings.gbv.bowel_full / 2) : int16_t(0);
+    peep.bladder = illness == kIllTheSquits ? int16_t(setup.settings.gbv.bowel_full / 2) : int16_t(0);
     peep.health = int16_t(old_normal_rand(seed, 200, 1000));
     peep.health_history.fill(int8_t(peep.health));
     peep.treatment = kIllGeneralPractice;
     peep.known_illness = kIllGeneralPractice;
-    peep.diagnosis_handicap = uint16_t(old_normal_rand(seed, 1, settings.expertise[illness].max_diag_diff));
-    if (old_newrand(seed) % kTownExtras[town_index(level_number)].insurance_odds == 0)
+    peep.diagnosis_handicap = uint16_t(old_normal_rand(seed, 1, setup.settings.expertise[illness].max_diag_diff));
+    if (old_newrand(seed) % kTownExtras[town_index(setup.level_number)].insurance_odds == 0)
         peep.insurance = uint8_t(1 << old_newrand(seed) % 3);
     else
         peep.insurance = 0;
@@ -389,22 +455,22 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &set
     return id;
 }
 
-uint16_t create_a_peep(World &world, ArrivalState &state, const Balance &settings, const AnimData &anims,
-                       int level_number, bool hospital_open, uint32_t game_turn)
+uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup, bool hospital_open,
+                       uint32_t game_turn)
 {
-    if (kTownExtras[town_index(level_number)].special_kind == 1 || !state.peep_interval)
+    if (kTownExtras[town_index(setup.level_number)].special_kind == 1 || !state.peep_interval)
         return 0;
     if (game_turn % uint32_t(state.peep_interval) >= 25)
         return 0;
-    uint8_t illness = create_an_illness(world.seed, state, settings, level_number);
-    int owner = who_owns_peep(world.seed, state, settings, illness, hospital_open);
+    uint8_t illness = create_an_illness(world.seed, state, setup.settings, setup.level_number);
+    int owner = who_owns_peep(world.seed, state, setup.settings, illness, hospital_open);
     if (owner < 0)
         return 0;
     uint16_t id = 0;
     if (owner == 0) {
         uint16_t door = world.rooms[world.entrances[0][old_newrand(world.seed) & 3]].door_tile;
-        id = make_a_peep(world, state, settings, anims, level_number, door, illness, 0);
-    } else if (uint16_t rival = make_a_peep(world, state, settings, anims, level_number, 0, illness, uint8_t(owner))) {
+        id = make_a_peep(world, state, setup, door, illness, 0);
+    } else if (uint16_t rival = make_a_peep(world, state, setup, 0, illness, uint8_t(owner))) {
         // process_computer_peep would treat them here.
         trace_event("remove_thing %u type=%u", unsigned(rival), unsigned(world.things[rival].type));
         remove_node(world, rival);

@@ -20,7 +20,9 @@
 #include <cstdio>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // With the game data: a snapshot of level 1 with a manned reception desk and
@@ -98,42 +100,44 @@ void test_snapshot_refused(const char *dir)
     CHECK(th::load_snapshot(fresh, bytes, f.gd, &error));
 }
 
-// With the game data: level 1 played as the app plays it, frame by frame
-// (turns, then the interface, then the frame's command): furnishing the
-// corridor through the buy objects requester and the pointer, pausing,
-// switching the route planner, the path finding tool's walker, hiring a
-// receptionist and the insurers picked by another clock. Its command log
-// run from the level's start as th_replay runs a script gives the same
-// trace every turn, the same state and the same command log.
-void test_command_log_replay(const char *dir)
+namespace
 {
+
+// Level 1 as the app and th_replay start it.
+struct ReplayFixture {
     th::GameData gd;
-    std::string error;
-    CHECK(gd.load(dir, &error));
-    auto level = gd.load_level(1, &error);
+    std::optional<th::Level> level;
     th::Balance settings;
-    CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
-    if (!level)
-        return;
-    auto start_game = [&](th::Game &g, uint32_t clock) {
+
+    bool load(const char *dir)
+    {
+        std::string error;
+        CHECK(gd.load(dir, &error));
+        level = gd.load_level(1, &error);
+        CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+        return level.has_value();
+    }
+
+    // Starts `g` with the insurers picked by `clock`.
+    void start_game(th::Game &g, uint32_t clock) const
+    {
         g.staff_market.ref_counts = th::reference_counts(gd.text());
         g.start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
         th::add_static_shadows(g.world.map);
         th::start_advisor(g.advisor, false);
         th::start_hospital_settings(g.hospital, g.settings());
         th::setup_insurances(g.world, clock);
-    };
-    auto app = std::make_unique<th::Game>();
-    start_game(*app, 12345);
-    th::Game &g = *app;
-    // Companies 2, 6 and 5: 12345 % 8, then % 7 and % 6 of those left.
-    CHECK((g.world.ins_control == std::array<uint16_t, 5>{2, 6, 5, 0, 0}));
-    th::ObjectPlacing &p = g.world.placing;
-    th::ObjectUi oui;
-    th::init_object_ui(oui, gd.palette());
+    }
+};
+
+// A game played as the app plays it, keeping every turn's trace.
+struct AppPlay {
+    th::Game &g;
     std::vector<std::string> traces;
+
     // A frame: `turns` turns, then `ui` and the frame's command.
-    auto frame = [&](int turns, const std::function<void()> &ui) {
+    void frame(int turns, const std::function<void()> &ui)
+    {
         for (int i = 0; i < turns && !g.paused; i++) {
             g.turn();
             traces.push_back(th::trace_turn(g, &g.events));
@@ -141,33 +145,48 @@ void test_command_log_replay(const char *dir)
         }
         ui();
         g.process_turn();
-    };
-    const int start = level->camera_start[0];
+    }
+};
+
+// Furnishes the corridor with a reception desk near `start` through the buy
+// objects requester and the pointer, turning it once.
+void furnish_desk(AppPlay &app, const th::GameData &gd, int start)
+{
+    th::Game &g = app.g;
+    th::ObjectPlacing &p = g.world.placing;
+    th::ObjectUi oui;
+    th::init_object_ui(oui, gd.palette());
     const int desk = 11;
 
-    frame(3, [&] { th::furnish_corridor(g); });
-    frame(1, [&] { p.item = desk; }); // the pointer over its entry
-    frame(1, [&] { g.event = {th::EV_BUY_OBJECT, uint16_t(desk), 0, 1}; });
-    frame(1, [&] { g.event = {th::EV_PLACE_NEXT_OBJECT}; });
+    app.frame(3, [&] { th::furnish_corridor(g); });
+    app.frame(1, [&] { p.item = desk; }); // the pointer over its entry
+    app.frame(1, [&] { g.event = {th::EV_BUY_OBJECT, uint16_t(desk), 0, 1}; });
+    app.frame(1, [&] { g.event = {th::EV_PLACE_NEXT_OBJECT}; });
     CHECK(p.placing && p.kind == desk);
     th::UiMouse turn_it;
     turn_it.right_pressed = turn_it.right_held = true;
-    frame(1, [&] { th::placement_mouse(oui, g, start, turn_it, true); });
+    app.frame(1, [&] { th::placement_mouse(oui, g, start, turn_it, true); });
     int cell = start;
     while (!p.ok && ++cell < start + 4 * th::kMapSize)
-        frame(0, [&] { th::placement_mouse(oui, g, cell, {}, true); });
+        app.frame(0, [&] { th::placement_mouse(oui, g, cell, {}, true); });
     CHECK(p.ok);
     th::UiMouse click;
     click.left_pressed = click.left_held = true;
-    frame(1, [&] { th::placement_mouse(oui, g, cell, click, true); });
+    app.frame(1, [&] { th::placement_mouse(oui, g, cell, click, true); });
     CHECK(!p.placing && g.world.first_of_kind[desk] != 0);
+}
 
-    frame(1, [&] { g.paused = true; });
-    frame(2, [&] { g.event = {th::EV_SET_HEATING, 7}; });
+// Pauses, sets the heating, switches the route planner, sends the path
+// finding tool's walker and hires a receptionist near `start`, then plays on.
+void pause_walk_and_hire(AppPlay &app, int start)
+{
+    th::Game &g = app.g;
+    app.frame(1, [&] { g.paused = true; });
+    app.frame(2, [&] { g.event = {th::EV_SET_HEATING, 7}; });
     g.paused = false;
     g.world.path_finder = th::PathFinder::Original; // the tools window, after the frame
     uint16_t walker = g.add_walker(start + 2);
-    frame(20, [] {});
+    app.frame(20, [] {});
     g.send_walker(walker, start + 6 * th::kMapSize);
     uint16_t applicant = 0;
     for (uint16_t i = 1; i < g.world.things.size() && !applicant; i++)
@@ -175,23 +194,25 @@ void test_command_log_replay(const char *dir)
             g.world.things[i].state == th::kStaffApplicant)
             applicant = i;
     CHECK(walker && applicant);
-    frame(2, [&] { g.event = {th::EV_MARK_EMPLOYING, 0, 0, applicant}; });
+    app.frame(2, [&] { g.event = {th::EV_MARK_EMPLOYING, 0, 0, applicant}; });
     int at = start + 2 * th::kMapSize;
     while (at < start + 10 * th::kMapSize &&
            (g.world.map[size_t(at)].first || !th::staff_place_ok(g.world, at, th::kStaffReceptionist)))
         at++;
-    frame(1, [&] { g.event = {th::EV_PLACE_STAFF, uint16_t(at), 0, applicant}; });
+    app.frame(1, [&] { g.event = {th::EV_PLACE_STAFF, uint16_t(at), 0, applicant}; });
     for (int i = 0; i < 1500; i++)
-        frame(2, [] {});
+        app.frame(2, [] {});
+}
 
-    // th_replay's loop, from the level's start.
-    auto replay = std::make_unique<th::Game>();
-    start_game(*replay, 0);
-    th::Game &r = *replay;
-    r.world.path_finder = th::PathFinder::AStar;
+// th_replay's loop: runs `r` from the level's start on `g`'s command log up
+// to `g`'s turn. Returns every turn's trace; `understood` is whether every
+// line was.
+std::vector<std::string> replay_log(th::Game &r, const th::Game &g, bool &understood)
+{
+    std::string error;
     std::vector<std::string> replayed;
     size_t next = 0;
-    bool understood = true;
+    understood = true;
     while (r.turn_count < g.turn_count && understood) {
         for (; next < g.command_log.size(); next++) {
             const std::string &line = g.command_log[next];
@@ -209,6 +230,40 @@ void test_command_log_replay(const char *dir)
     }
     if (!understood)
         std::fprintf(stderr, "%s\n", error.c_str());
+    return replayed;
+}
+
+} // namespace
+
+// With the game data: level 1 played as the app plays it, frame by frame
+// (turns, then the interface, then the frame's command): furnishing the
+// corridor through the buy objects requester and the pointer, pausing,
+// switching the route planner, the path finding tool's walker, hiring a
+// receptionist and the insurers picked by another clock. Its command log
+// run from the level's start as th_replay runs a script gives the same
+// trace every turn, the same state and the same command log.
+void test_command_log_replay(const char *dir)
+{
+    ReplayFixture f;
+    if (!f.load(dir))
+        return;
+    auto app = std::make_unique<th::Game>();
+    f.start_game(*app, 12345);
+    th::Game &g = *app;
+    // Companies 2, 6 and 5: 12345 % 8, then % 7 and % 6 of those left.
+    CHECK((g.world.ins_control == std::array<uint16_t, 5>{2, 6, 5, 0, 0}));
+    AppPlay play{g, {}};
+    const int start = f.level->camera_start[0];
+    furnish_desk(play, f.gd, start);
+    pause_walk_and_hire(play, start);
+    const std::vector<std::string> &traces = play.traces;
+
+    auto replay = std::make_unique<th::Game>();
+    f.start_game(*replay, 0);
+    th::Game &r = *replay;
+    r.world.path_finder = th::PathFinder::AStar;
+    bool understood = true;
+    std::vector<std::string> replayed = replay_log(r, g, understood);
     size_t differs = 0;
     while (differs < traces.size() && differs < replayed.size() && traces[differs] == replayed[differs])
         differs++;

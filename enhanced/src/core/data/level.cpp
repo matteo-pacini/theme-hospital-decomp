@@ -56,44 +56,78 @@ bool parse_level(std::span<const uint8_t> data, Level &out)
     return true;
 }
 
-void build_start_map(std::array<MapCell, kMapCells> &map, const Level &level,
-                     const std::function<void(int cell)> &copied)
+namespace
 {
-    map = {};
-    std::array<uint16_t, kMapCells> plots = level.plots;
 
+// build_start_map's copy of the level's cells: the players' plots and the
+// common land as the level has them, unbought land reset. Marks each cell
+// copied in `plots` (set to 0).
+void copy_start_cells(std::array<MapCell, kMapCells> &map, const Level &level, std::array<uint16_t, kMapCells> &plots,
+                      const std::function<void(int cell)> &copied)
+{
     for (int i = 0; i < kMapCells; i++) {
         const MapCell &src = level.tiles[i];
         uint16_t plot = plots[i];
-        if (plot == 0 || (plot <= 4 && level.player_count >= plot)) {
-            MapCell &c = map[i];
-            c.wall_n = src.wall_n;
-            c.wall_w = src.wall_w;
-            c.floor_block = src.floor_block;
-            c.flags = src.flags & 0x3f;
-            c.litter_shadow = src.litter_shadow & 0xf0;
-            if (plot == 0)
-                c.owner_flags = src.owner_flags & ~0x0f;
-            else
-                c.owner_flags = src.owner_flags | uint8_t(1 << (plot - 1));
-            // The copy replaces whatever objects placed on earlier cells linked
-            // or marked here, as in the game.
-            c.first = 0;
-            plots[i] = 0;
-            if (copied)
-                copied(i);
-        } else {
+        MapCell &c = map[i];
+        if (!(plot == 0 || (plot <= 4 && level.player_count >= plot))) {
             // Unbought land: background[0]'s defaults (src/tables.cpp);
             // litter_shadow is left as it was.
-            MapCell &c = map[i];
             c.first = 0;
             c.floor_block = 0;
             c.wall_n = 0;
             c.wall_w = 0;
             c.flags = 1;
             c.owner_flags = kCellOutdoor;
+            continue;
+        }
+        c.wall_n = src.wall_n;
+        c.wall_w = src.wall_w;
+        c.floor_block = src.floor_block;
+        c.flags = src.flags & 0x3f;
+        c.litter_shadow = src.litter_shadow & 0xf0;
+        if (plot == 0)
+            c.owner_flags = src.owner_flags & ~0x0f;
+        else
+            c.owner_flags = src.owner_flags | uint8_t(1 << (plot - 1));
+        // The copy replaces whatever objects placed on earlier cells linked
+        // or marked here, as in the game.
+        c.first = 0;
+        plots[i] = 0;
+        if (copied)
+            copied(i);
+    }
+}
+
+// place_partition_walls. The game indexes x + 1 and y + 1 without wrapping,
+// so x = 127 looks at the next row's first cell; indexes past the map are
+// skipped here.
+void place_partition_walls(std::array<MapCell, kMapCells> &map, const Level &level)
+{
+    for (int x = 0; x < kMapSize; x++) {
+        for (int y = 0; y < kMapSize; y++) {
+            int i = x + y * kMapSize;
+            if (map[i].owner_flags & kCellOutdoor)
+                continue;
+            int east = i + 1;
+            if (east < kMapCells && (map[east].owner_flags & kCellOutdoor) &&
+                level.tiles[east].wall_w == kPartitionWallW)
+                map[east].wall_w = kPartitionWallW;
+            int south = i + kMapSize;
+            if (south < kMapCells && (map[south].owner_flags & kCellOutdoor) &&
+                level.tiles[south].wall_n == kPartitionWallN)
+                map[south].wall_n = kPartitionWallN;
         }
     }
+}
+
+} // namespace
+
+void build_start_map(std::array<MapCell, kMapCells> &map, const Level &level,
+                     const std::function<void(int cell)> &copied)
+{
+    map = {};
+    std::array<uint16_t, kMapCells> plots = level.plots;
+    copy_start_cells(map, level, plots, copied);
 
     // mow_grass: alternate the two grass blocks along each row.
     for (int y = 0; y < kMapSize; y++) {
@@ -115,24 +149,7 @@ void build_start_map(std::array<MapCell, kMapCells> &map, const Level &level,
             map[i].wall_n = uint8_t((r & 7) + kFirstDecoration);
     }
 
-    // place_partition_walls. The game indexes x + 1 and y + 1 without
-    // wrapping, so x = 127 looks at the next row's first cell; indexes past
-    // the map are skipped here.
-    for (int x = 0; x < kMapSize; x++) {
-        for (int y = 0; y < kMapSize; y++) {
-            int i = x + y * kMapSize;
-            if (map[i].owner_flags & kCellOutdoor)
-                continue;
-            int east = i + 1;
-            if (east < kMapCells && (map[east].owner_flags & kCellOutdoor) &&
-                level.tiles[east].wall_w == kPartitionWallW)
-                map[east].wall_w = kPartitionWallW;
-            int south = i + kMapSize;
-            if (south < kMapCells && (map[south].owner_flags & kCellOutdoor) &&
-                level.tiles[south].wall_n == kPartitionWallN)
-                map[south].wall_n = kPartitionWallN;
-        }
-    }
+    place_partition_walls(map, level);
 }
 
 std::array<MapCell, kMapCells> build_start_map(const Level &level)

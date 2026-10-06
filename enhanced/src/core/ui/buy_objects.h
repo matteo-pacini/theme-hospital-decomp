@@ -34,10 +34,10 @@ struct ObjectUi {
 };
 
 // draw_a_frame_scaled into `layer`: composite frame `frame` with its origin
-// at (x, y), mirrored if `flip`, its elements placed and sized by `scale`
+// at `at`, mirrored if `flip`, its elements placed and sized by `scale`
 // (16.16; 0x10000 draws it as draw_a_frame), each pixel from the nearest
 // sprite pixel. Ghost flags are not applied.
-void draw_layer_frame(UiLayer &layer, const GameData &data, uint32_t frame, int x, int y, bool flip, int scale);
+void draw_layer_frame(UiLayer &layer, const GameData &data, uint32_t frame, Point at, bool flip, int scale);
 
 // Sets up `ui` for the game's palette (generate_bw_remap, setup_colors).
 void init_object_ui(ObjectUi &ui, const Palette &palette);
@@ -56,7 +56,7 @@ void sync_object_requesters(Interface &ui, const Game &game);
 
 // After Interface::frame, with what it did: the buy objects requester's
 // clicks (req11, clicked_buy_objects: an entry, its plus or minus buys or
-// sells one, five with `shift`, ten with `ctrl`; accept places what was
+// sells one, five with `keys.shift`, ten with `keys.ctrl`; accept places what was
 // bought; cancel empties the list; furnishing a room, both go back to
 // placing, cancel with the list as it was) and the entry under the pointer
 // becoming its selection (req11_overdraw); the edit room requester's cancel
@@ -65,7 +65,7 @@ void sync_object_requesters(Interface &ui, const Game &game);
 // the list.
 // The commands go to Game::event.
 void object_requesters_input(Interface &ui, ObjectUi &oui, Game &game, const InterfaceEvents &events,
-                             const UiMouse &mouse, bool shift, bool ctrl);
+                             const UiMouse &mouse, UiModifiers keys);
 
 // The map's part of process_mouse for objects, every frame: `on_map` is the
 // pointer over the hospital view and not over a window, the panel or the

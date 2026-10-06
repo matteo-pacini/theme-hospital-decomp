@@ -41,15 +41,14 @@ bool reception_emergency(const World &world, uint16_t patient);
 // caller's slave and sets the caller's timer to 200 and call_retries to 3-6
 // (a draw from world.seed). Dead patients met on the way leave the queue.
 // Returns the patient called, or 0.
-uint16_t call_person_to_room(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
-                             uint16_t id, uint16_t action, uint16_t arg, bool follow, uint32_t game_turn);
+uint16_t call_person_to_room(const PersonRun &run, uint16_t caller, uint16_t id, uint16_t action, uint16_t arg,
+                             bool follow);
 
 // call_person_again (0x16cdc): calls `caller`'s slave again, as
 // call_person_to_room. Returns 0 if the call is void (the slave is gone,
 // dead or busy elsewhere), 1 when the caller's call_retries have run out, 2
 // to keep waiting (the caller's timer reset to 200).
-uint8_t call_person_again(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
-                          uint16_t action, uint16_t arg, uint32_t game_turn);
+uint8_t call_person_again(const PersonRun &run, uint16_t caller, uint16_t action, uint16_t arg);
 
 // forget_about_my_slave (0x3c1e8): whether `caller` should give up on its
 // slave (dead, not a patient, queueing, or doing something other than

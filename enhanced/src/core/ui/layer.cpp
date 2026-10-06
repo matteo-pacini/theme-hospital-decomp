@@ -27,11 +27,10 @@ void UiLayer::draw_sprite(int x, int y, const Sprite &sprite, unsigned flags, co
     drawn_.reset_clip();
 }
 
-void UiLayer::draw_text(const Font &font, TextWindow window, int x, int y, std::string_view text, unsigned flags,
-                        Rect clip, uint8_t colour)
+void UiLayer::draw_text(const Font &font, int x, int y, std::string_view text, const TextSettings &settings)
 {
-    th::draw_text(pixels_, font, window, x, y, text, flags, clip, colour);
-    th::draw_text(drawn_, font, window, x, y, text, flags | kTextOneColour, clip, 1);
+    th::draw_text(pixels_, font, x, y, text, settings);
+    th::draw_text(drawn_, font, x, y, text, {settings.window, settings.clip, settings.flags | kTextOneColour, 1});
 }
 
 void UiLayer::fill(Rect r, uint8_t colour)

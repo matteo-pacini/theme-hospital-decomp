@@ -128,7 +128,22 @@ class Startup
         uint8_t blue_grey = 0, white = 0, black = 0;
     };
 
+    // Loads the `width` x `height` picture qdata/<name>.dat with its palette
+    // qdata/<name>.pal into `out`, or says why not.
+    static bool load_picture(const std::filesystem::path &dir, std::string_view name, int width, int height,
+                             Picture &out, std::string *error);
+
     void tick(const UiMouse &mouse, std::span<const StartupKey> keys);
+    void attract(const UiMouse &mouse, std::span<const StartupKey> keys);
+    void enter_title();
+    void enter_name();
+    void enter_menu();
+    void enter_preferences();
+    void enter_area();
+    void finish_quit();
+    // Shows `picture`; once the delay is over, zooms in boxes `mask` and
+    // goes on to `next`.
+    void zoom_after_delay(const Picture &picture, int mask, State next);
     void advance_movie(double seconds, bool skip);
     void play_movie(int index, State next);
     void show(const Picture &picture);
@@ -136,10 +151,26 @@ class Startup
     void main_menu(const UiMouse &mouse, std::span<const StartupKey> keys);
     void name_screen(std::span<const StartupKey> keys);
     void preferences(const UiMouse &mouse, std::span<const StartupKey> keys);
+    void draw_new_prefs_screen(const UiMouse &mouse, bool several);
+    // process_mouse_nickname's preferences button `i`, setting the state
+    // that follows in `next`.
+    void prefs_button(const UiMouse &mouse, int i, State &next);
+    void process_nickname_button(int i, State &next);
     void briefing(const UiMouse &mouse, std::span<const StartupKey> keys);
     void init_zoom_boxes(int mask);
     bool draw_zoom_boxes();
+    // draw_zoom_boxes' levels: boxes of a type above `lo` are skipped, those
+    // of type `hi` open or close, and `incomplete` is whether an active box's
+    // group is not to be shown.
+    void zoom_levels(int &lo, int &hi, bool &incomplete) const;
+    // A box of a shown group: opens a step, or is drawn open. True while it
+    // is still opening.
+    bool open_zoom_box(ZoomBox &z, int hi, bool incomplete);
+    // A box of a hidden group: closes a step. True when it did.
+    bool close_zoom_box(ZoomBox &z, int hi);
     void draw_box(const ZoomBox &box);
+    void fill_box(Rect box, uint8_t colour, bool ghost);
+    void outline_box(Rect box, uint8_t colour);
     void draw_glass_text(const UiMouse &mouse, int button, std::string_view text, bool highlight);
     void draw_button_edges(int x, int y, int w, int h, bool sunken);
     void sound(uint8_t sfx) { sounds_.push_back(sfx); }

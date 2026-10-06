@@ -2,6 +2,7 @@
 
 #include "core/data/balance.h"
 #include "core/world/arrivals.h"
+#include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/trace.h"
 
@@ -96,9 +97,22 @@ bool can_place_object(World &w, int tile, int kind, int dir, int owner)
     return true;
 }
 
-// mark_object_shape (src/objects.cpp). Its cleanse of litter and rat holes
-// under the object is left out: neither is ported.
-void mark_object_shape(World &w, int tile, int kind, int dir)
+namespace
+{
+
+// mark_object_shape: the hospital whose litter lies on `c`.
+uint8_t mark_object_shape_litter_owner(const MapCell &c)
+{
+    if (c.owner_flags & 2)
+        return 1;
+    if (c.owner_flags & 4)
+        return 2;
+    return c.owner_flags & 8 ? 3 : 0;
+}
+
+} // namespace
+
+void mark_object_shape(World &w, int tile, int kind, int dir, bool cleanse)
 {
     const ShapeInfo &shape = shape_of(kind, dir);
     for (int i = 0; i < shape.count; i++) {
@@ -106,8 +120,12 @@ void mark_object_shape(World &w, int tile, int kind, int dir)
         bool use = false;
         for (int16_t u : shape.use_offsets)
             use |= u == p;
-        if (MapCell *c = cell_at(w, tile + p))
-            c->flags |= use ? 2 : 1;
+        MapCell *c = cell_at(w, tile + p);
+        if (!c)
+            continue;
+        c->flags |= use ? 2 : 1;
+        if (cleanse && (c->litter_shadow & 0xf))
+            remove_litter(w, uint16_t(tile + p), mark_object_shape_litter_owner(*c));
     }
     for (int16_t u : shape.use_offsets)
         if (MapCell *c = cell_at(w, tile + u))
@@ -167,6 +185,41 @@ uint16_t compute_plant_frame(const Thing &plant, const AnimData &anims)
     return uint16_t(f);
 }
 
+// place_existing_object's insert_node: at the head of the cell's list.
+void place_existing_object_insert_node(World &w, uint16_t id, int tile)
+{
+    Thing &obj = w.things[id];
+    MapCell &cell = w.map[size_t(tile)];
+    if (cell.first) {
+        obj.cell_next = cell.first;
+        if (obj.cell_next > 0)
+            w.things[size_t(cell.first)].cell_prev = int16_t(id);
+    }
+    cell.first = int16_t(id);
+}
+
+// place_existing_object's insert_object: at the head of the list of the room
+// holding the cell, and of the owner's list of the kind.
+void place_existing_object_insert_object(World &w, uint16_t id, int tile)
+{
+    Thing &obj = w.things[id];
+    obj.room_id = room_at(w, uint16_t(tile));
+    if (obj.room_id) {
+        RoomInfo &room = w.rooms[obj.room_id];
+        if (room.first_object) {
+            obj.room_obj_next = room.first_object;
+            w.things[room.first_object].room_obj_prev = id;
+        }
+        room.first_object = id;
+    }
+    uint16_t &first = w.first_of_kind[obj.subtype];
+    if (first) {
+        obj.type_obj_next = first;
+        w.things[first].type_obj_prev = id;
+    }
+    first = id;
+}
+
 } // namespace
 
 // place_existing_object (src/objects.cpp) without the hardware statistics,
@@ -183,7 +236,7 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
         obj.sprite = uint16_t(anims.starts[start].frame);
         obj.flip = uint8_t(anims.starts[start].flip);
     }
-    mark_object_shape(w, tile, obj.subtype, dir);
+    mark_object_shape(w, tile, obj.subtype, dir, true);
     for (size_t i = 0; i < obj.use_pos.size(); i++)
         obj.use_pos[i] = uint16_t(tile + shape.use_offsets[i]);
     obj.depth = shape.depth;
@@ -194,39 +247,15 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
     obj.x.frac = obj.use_x.frac = 0x80;
     obj.y.frac = obj.use_y.frac = 0x80;
 
-    // insert_node: at the head of the cell's list.
-    MapCell &cell = w.map[size_t(tile)];
-    if (cell.first) {
-        obj.cell_next = cell.first;
-        if (obj.cell_next > 0)
-            w.things[size_t(cell.first)].cell_prev = int16_t(id);
-    }
-    cell.first = int16_t(id);
-
-    // insert_object: at the head of the list of the room holding the cell,
-    // and of the owner's list of the kind.
-    obj.room_id = room_at(w, uint16_t(tile));
-    if (obj.room_id) {
-        RoomInfo &room = w.rooms[obj.room_id];
-        if (room.first_object) {
-            obj.room_obj_next = room.first_object;
-            w.things[room.first_object].room_obj_prev = id;
-        }
-        room.first_object = id;
-    }
-    uint16_t &first = w.first_of_kind[obj.subtype];
-    if (first) {
-        obj.type_obj_next = first;
-        w.things[first].type_obj_prev = id;
-    }
-    first = id;
+    place_existing_object_insert_node(w, id, tile);
+    place_existing_object_insert_object(w, id, tile);
     if (control.category == 6 && obj.room_id)
         w.rooms[obj.room_id].radiators++;
 
     if (control.next_part != -1) {
         const NextPartInfo &part = kNextParts[size_t(control.next_part)];
-        uint16_t other = place_object(w, anims, uint16_t(tile + part.offset[size_t(dir)]), part.kind,
-                                      part.dir[size_t(dir)], obj.owner, false);
+        uint16_t other = place_object(
+            w, anims, {uint16_t(tile + part.offset[size_t(dir)]), part.kind, part.dir[size_t(dir)]}, obj.owner, false);
         if (other) {
             w.things[other].pair = id;
             obj.pair = other;
@@ -252,8 +281,9 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
 // level's StartStrength (World::settings; research does not raise it yet).
 // The player's placing does those checks and the charge first
 // (core/world/objects.cpp).
-uint16_t place_object(World &w, const AnimData &anims, int tile, int kind, int dir, int owner, bool force)
+uint16_t place_object(World &w, const AnimData &anims, ObjectAt object, int owner, bool force)
 {
+    const int tile = object.pos, kind = object.kind, dir = object.dir;
     if (tile < 0 || tile >= kMapCells)
         return 0;
     if (!(kind == kObjGatesOfHell || force || can_place_object(w, tile, kind, dir, owner)))
@@ -341,7 +371,7 @@ void adjust_mapwho(World &w, const AnimData &anims, int tile)
     // game would read beyond them.
     if (kind >= kObjectKinds || dir >= 4)
         return;
-    if (uint16_t id = place_object(w, anims, tile, kind, dir, 0, true))
+    if (uint16_t id = place_object(w, anims, {tile, kind, dir}, 0, true))
         w.things[id].owner = 0;
 }
 
@@ -409,6 +439,42 @@ uint16_t get_room_info(const World &world, uint8_t kind, uint8_t mode, uint8_t o
             found = r;
     }
     return found;
+}
+
+uint16_t get_room_info_rand(World &world, uint8_t kind, uint8_t mode, uint8_t owner)
+{
+    std::array<uint16_t, 30> list{};
+    uint8_t count = 0;
+    for (uint16_t r = 1; r < kRoomCount; r++) {
+        const RoomInfo &room = world.rooms[r];
+        if (room.state < 0 || room.owner != owner || room.type != kind || !(mode == 0x65 || room.state == 0))
+            continue;
+        if (count < list.size())
+            list[count++] = r;
+    }
+    if (count == 0)
+        return 0;
+    return list[old_newrand(world.seed) % count];
+}
+
+uint16_t get_nearest_room_info(const World &world, const Thing &person, uint8_t kind)
+{
+    auto pos = uint16_t(person.x.tile + (person.y.tile << 7));
+    uint16_t best = 0;
+    uint16_t best_dist = 9999;
+    for (uint16_t r = 1; r < kRoomCount; r++) {
+        const RoomInfo &room = world.rooms[r];
+        if (!(room.state == 0 || room.state == 1) || room.owner != person.owner || room.type != kind)
+            continue;
+        int dx = pos % 128 - room.door_tile % 128;
+        int dy = pos / 128 - room.door_tile / 128;
+        auto dist = uint16_t(dx * dx + dy * dy);
+        if (dist < best_dist) {
+            best = r;
+            best_dist = dist;
+        }
+    }
+    return best;
 }
 
 } // namespace th

@@ -1,0 +1,106 @@
+# Level 1: treatment.txt, then a staff room with its sofa alone, two
+# handymen and the policy sending staff for a rest from tiredness 50: many
+# take breaks at once, more than the sofa seats, and rest standing and move
+# off each other's cells. Compare up to turn 18000: the year's end awards
+# (from turn 18250) are not ported.
+# gp_office.txt's: a GP's office (62,65)-(66,69) with its door, desk, cabinet
+# and chair, opened, and a doctor (applicant 11) placed.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# A general diagnosis room (51,60)-(55,64), its door below it, a crash
+# trolley (cell 7860) and a screen (cell 8119), both facing 0; opened.
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+# A second doctor: hire applicant 13, place at cell 10044.
+142 48 1 13
+143 5 10044 13
+# A pharmacy (57,60)-(60,63), its door below it, a pharmacy cabinet (cell
+# 7740 facing 0); opened. A nurse: hire applicant 3, place at cell 10044.
+160 55 0 0
+161 53 11 11
+162 2 7737 0
+163 2 8124 0
+164 8 8124 0
+165 18 0 0
+166 26 8250 0
+167 3 0 0
+168 4 11 0
+169 7 7740 39
+170 1 0 0
+171 48 0 3
+172 5 10044 3
+# An inflation room (68,65)-(71,68), its door on its left, an inflator (cell
+# 8518 facing 0); opened. A third doctor: hire applicant 12, place at cell
+# 10044.
+190 55 0 0
+191 53 17 17
+192 2 8388 0
+193 2 8775 0
+194 8 8775 0
+195 18 0 0
+196 26 8515 0
+197 3 0 0
+198 4 17 0
+199 7 8518 9
+200 1 0 0
+201 48 1 12
+202 5 10044 12
+# Policy (EV_SET_POLICY): send home at 0%, guess a cure from 10%.
+220 113 1 0
+221 113 2 10
+# A staff room (58,52)-(62,56), its door below it (nearest to cell 7356).
+240 55 0 0
+241 53 25 25
+242 2 6714 0
+243 2 7230 0
+244 8 7230 0
+245 18 0 0
+246 26 7356 0
+247 3 0 0
+248 4 25 0
+# The sofa (cell 6973 facing 0); the room opened.
+249 7 6973 19
+250 1 0 0
+# Two handymen (applicants 19 and 20), at cell 10044.
+260 48 2 19
+261 5 10044 19
+262 48 2 20
+263 5 10044 20
+# Policy: staff rest at tiredness 50.
+270 113 4 50

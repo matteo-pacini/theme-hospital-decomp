@@ -9,7 +9,8 @@
 namespace th
 {
 
-struct Date;
+class Game;
+struct Event;
 struct Finance;
 struct HospitalSettings;
 struct PersonComplexes;
@@ -65,10 +66,11 @@ inline constexpr std::array<uint16_t, 31> kRoomDoctorSkills = {
     0, 0, 0, 0, 0, 0, 0, 16, 64, 4, 32, 4, 16, 16, 16, 16, 16, 16, 16, 16, 16, 4, 0, 16, 16, 0, 0, 16, 256, 0, 16};
 
 // Sets up the rooms in use for a level, after start_queues: no pages (to
-// staff or to repair machines), no rooms listed, no player calls; and points `world` at what treatments read
-// and change (World::hospital and on), which must outlive the turns run.
-void start_rooms_in_use(World &world, HospitalSettings &hospital, Finance &ledger, int &balance, const Date &date,
-                        const PersonComplexes &person_complexes, const StaffComplexes &staff_complexes);
+// staff or to repair machines), no rooms listed, no player calls; and points
+// `game`'s world at what treatments read and change (World::hospital and
+// on): `game`'s policy, accounts, balance and date, and the complexes, which
+// must outlive the turns run.
+void start_rooms_in_use(Game &game, const PersonComplexes &person_complexes, const StaffComplexes &staff_complexes);
 
 // listhead[owner].staff_by_skill[skill] (insert_skill, remove_skill): the
 // hired staff of hospital `owner` with skill bit 1 << `skill`.
@@ -190,8 +192,40 @@ void done_treatment(World &world, const AnimData &anims, uint16_t staff, uint16_
 // ability this time (calc_ability: a random 250 either way drawn from
 // world.seed, grade, tiredness, madness and the room) plus the room's worth
 // for its illness (diag_register), if that is more; a room that does it
-// harm costs 5 health. The staff's ability grows by 1 (30 to 1000).
-void affect_diagnosis(World &world, Thing &staff, Thing &patient);
+// harm costs 5 health (change_health). The staff's ability grows by 1 (30
+// to 1000).
+void affect_diagnosis(World &world, const AnimData &anims, uint16_t staff, uint16_t patient, uint32_t game_turn);
+
+// change_health (0x3cb5c): patient `id`'s health changes by `amount`
+// (0-1000), held back (Thing.health_delta) while it is in a room and
+// added with the next change outside; its health history kept
+// (add_health_to_history). At 0 it dies (person_dies, core/world/reaper.h).
+// The dead do not change. The status icons are not ported.
+void change_health(World &world, const AnimData &anims, uint16_t id, int16_t amount, uint32_t game_turn);
+
+// effect_illness (0x54444) with cured 1: patient `id`'s looks back to
+// health, its cure counted (hospital 0's illnesses[].cured, Finance cures
+// and cures_this_month), the
+// reputation for it, its illness gone, contagion cleared
+// (clean_contagious_peep, without the vaccination queue), no longer an
+// emergency patient, and recorded (record_person_as_patient). The
+// emergency's cures are not counted.
+void cure_illness(World &world, uint16_t id);
+
+// pre_administer_drugs (0x3dcfc): whether hospital 0 has a drug for patient
+// `id`'s illness (its effectiveness not 0); false for a rival's patient.
+bool pre_administer_drugs(const World &world, uint16_t id);
+
+// administer_drugs (0x3dd7c): member of staff `staff` gives patient `id`
+// the drug for its illness: cured (cure_illness, full health) with a
+// chance of its effectiveness in percent (old_normal_rand from world.seed;
+// none after a wrong guess); else it pays all the same and loses health,
+// all of it for an emergency or an illness that kills then (the game's
+// not_contagious), else 1000 less ten times the effectiveness, and goes
+// back to the GP, quoted its fee. Either way it walks out of the room
+// (complex 90) to go for treatment, and the dose's cost (drug_cost) is
+// charged. Its sounds and icons are not ported.
+void administer_drugs(World &world, const AnimData &anims, uint16_t staff, uint16_t id, uint32_t game_turn);
 
 // setup_next_treatment (0x3c4ec): patient `id` pays for the treatment
 // given by member of staff `staff` (0 for none: a ward's bed) and moves on
@@ -247,5 +281,21 @@ bool treatment_machine_used(World &world, uint8_t illness, uint16_t tile);
 // patient `id`'s illness and that it has not been to, picked at random
 // (world.seed), set as its treatment; 0 (also set) if none.
 uint16_t find_possible_diagnosis(World &world, uint16_t id);
+
+// force_peep_to_be_cured (0x194a0): patient `id`, by the player's order
+// (the patient window's guess cure), loses its status flags, leaves its
+// queue, is interrupted (interrupt_person) and sent on to the treatment for
+// its illness as best guessed (best_guess_treatment, a draw from
+// world.seed), as next_treatment_now_setup decides, not from a room.
+void force_peep_to_be_cured(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
+
+// Carries out the patient window's commands, as process_turn (src/io.cpp):
+// - EV_PERSON_GO_HOME: patient `value` sent home: no treatment, counted
+//   turned away for its illness, going home (person_go_home) and marked
+//   kPfSentHome; ending an epidemic for a contagious one is not ported;
+// - EV_FORCE_CURE: force_peep_to_be_cured on patient `value`.
+// The game checks nothing more; the window offers them only when it may.
+// Returns false for other commands.
+bool apply_patient_event(Game &game, const Event &event);
 
 } // namespace th

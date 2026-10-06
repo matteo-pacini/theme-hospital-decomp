@@ -177,6 +177,36 @@ bool fail(std::string *error, const char *why)
     return false;
 }
 
+// One chunk of rnc_unpack: its tables, then its literal-run/match pairs
+// appended to `out`. Returns the failure, or nullptr.
+const char *unpack_chunk(BitStream &bs, std::vector<uint8_t> &out)
+{
+    HuffTable literal, distance, length;
+    literal.read(bs);
+    distance.read(bs);
+    length.read(bs);
+    long pairs = static_cast<long>(bs.read(0xffff, 16));
+    for (;;) {
+        long run = literal.decode(bs);
+        if (run < 0)
+            return "bad RNC literal code";
+        if (run > 0 && !bs.copy_literal(out, static_cast<size_t>(run)))
+            return "RNC literal run past end of input";
+        if (--pairs <= 0)
+            return nullptr;
+        long dist = distance.decode(bs);
+        long len = length.decode(bs);
+        if (dist < 0 || len < 0)
+            return "bad RNC match code";
+        dist += 1;
+        len += 2;
+        if (static_cast<size_t>(dist) > out.size())
+            return "RNC match before start of output";
+        for (long i = 0; i < len; i++)
+            out.push_back(out[out.size() - dist]);
+    }
+}
+
 } // namespace
 
 bool rnc_is_packed(std::span<const uint8_t> in)
@@ -209,38 +239,10 @@ std::optional<std::vector<uint8_t>> rnc_unpack(std::span<const uint8_t> in, std:
     out.reserve(unpacked_size);
     BitStream bs(packed, 0);
     bs.advance(2); // lock and key flags, unused by the game's files
-    HuffTable literal, distance, length;
     for (int chunk = 0; chunk < chunks; chunk++) {
-        literal.read(bs);
-        distance.read(bs);
-        length.read(bs);
-        long pairs = static_cast<long>(bs.read(0xffff, 16));
-        for (;;) {
-            long run = literal.decode(bs);
-            if (run < 0) {
-                fail(error, "bad RNC literal code");
-                return std::nullopt;
-            }
-            if (run > 0 && !bs.copy_literal(out, static_cast<size_t>(run))) {
-                fail(error, "RNC literal run past end of input");
-                return std::nullopt;
-            }
-            if (--pairs <= 0)
-                break;
-            long dist = distance.decode(bs);
-            long len = length.decode(bs);
-            if (dist < 0 || len < 0) {
-                fail(error, "bad RNC match code");
-                return std::nullopt;
-            }
-            dist += 1;
-            len += 2;
-            if (static_cast<size_t>(dist) > out.size()) {
-                fail(error, "RNC match before start of output");
-                return std::nullopt;
-            }
-            for (long i = 0; i < len; i++)
-                out.push_back(out[out.size() - dist]);
+        if (const char *why = unpack_chunk(bs, out)) {
+            fail(error, why);
+            return std::nullopt;
         }
     }
     if (out.size() != unpacked_size) {

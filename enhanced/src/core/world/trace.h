@@ -100,10 +100,19 @@ void trace_rand(const char *function, uint32_t seed);
 //   pay <id> kind=<n> fee=<n> cash=<n>     pay_for_treatment
 //   call <caller> id=<n> action=<n> result=<n>  call_person_to_room, at its end
 //   go_home <id>                           person_go_home
+//   force_cure <patient>                   force_peep_to_be_cured
 //   diagnose <patient> staff=<id>          diagnose_patient
 //   next_treatment <patient> staff=<id>    setup_next_treatment (staff 0: a
 //                                          ward's bed)
 //   done_treatment <patient> staff=<id>    done_treatment
+//   treat <staff> patient=<id> room=<n>    doctor_waits_for_patient_to_arrive,
+//                                          as the patient called has come
+//                                          and the room's work starts
+//   drugs <patient> staff=<id>             administer_drugs
+//   cure <patient> illness=<n>             effect_illness curing
+//   dies <patient>                         person_dies
+//   dead <patient> substate=<n>            person_dead
+//   summon_reaper <patient>                summon_the_reaper
 //   page room=<n> mask=<hex> wanted=<n> result=<0 or 1>  page_member_of_staff,
 //                                          at its end
 //   check_pager <staff> result=<room>      check_pager, at its end, when it
@@ -118,6 +127,9 @@ void trace_rand(const char *function, uint32_t seed);
 //   place_staff <id> tile=<n>  place_staff_on_map, on entry
 //   staff_picked_up <id>                   staff_picked_up
 //   sack_staff <id> mode=<n>               sack_staff
+//   handyman_values <id> litter=<n> plants=<n> repair=<n>  adjust_handyman_values,
+//                                          the priorities as set, before the
+//                                          job counts are reset
 //   back_to_applicants <id>                process_things, a member of staff
 //                                          in SS_BACK_TO_APPLICANTS
 //   litter <tile> type=<n> owner=<n>       place_litter
@@ -127,6 +139,29 @@ void trace_rand(const char *function, uint32_t seed);
 //   delete_room <room>                     delete_room
 //   reception <room>                       allocate_reception_roominfo, at
 //                                          its end
+//   take_a_break <staff> room=<n> tired=<n>  take_a_break, once a staff room
+//                                          is found (tiredness then)
+//   rest_staff <staff> amount=<n> tired=<n>  rest_staff (amount before its
+//                                          scaling, tiredness before)
+//   staff_room <staff> pastime=<pool, video or sofa>  staff_in_staff_room,
+//                                          as it starts one
+//   rested <staff> discontent=<n> crazy=<n>  staff_in_staff_room, no longer
+//                                          tired (before discontent halves)
+//   room_move <id> from=<room> to=<room>   move_person_in_room_list (to: the
+//                                          room of the cell, 0 for none)
+//   use_object <id> obj=<n> kind=<n>       process_person_complex and
+//                                          process_staff_complex, taking
+//                                          their object (step action 6)
+//   to_toilets <patient> room=<n> bladder=<n>  person_entertains_themself,
+//                                          leaving its queue for the toilets
+//   in_bogs <patient> substate=<n>         person_in_bogs
+//   leave_toilets <patient>                leave_toilets
+//   relieved <patient> bladder=<n>         complex_success of the toilet
+//                                          (kind 6; bladder before)
+//   wets <patient> bladder=<n>             do_reaction, the bladder
+//                                          overflowing
+//   policy_rest <n>                        process_turn's EV_SET_POLICY of
+//                                          the rest threshold (value 4)
 // Whoever ports one of these functions writes its event on both sides.
 std::string trace_turn(const Game &game, const EventLog *events = nullptr);
 

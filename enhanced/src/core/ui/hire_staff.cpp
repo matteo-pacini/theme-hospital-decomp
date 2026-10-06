@@ -83,18 +83,10 @@ constexpr int kFaceParts = 18;
 // MM_PLACE_STAFF, the mouse mode EV_CANCEL_BUILD carries while placing.
 constexpr uint16_t kMousePlaceStaff = 3;
 
-// The requesters EV_CANCEL_BUILD closes, then close_irequesters' windows.
+// The requesters EV_CANCEL_BUILD closes before close_irequesters.
 constexpr Requester kCancelCloses[] = {Requester::Staff,       Requester::HireStaff, Requester::Jukebox,
                                        Requester::Queue,       Requester::BuildRoom, Requester::BuyObjects,
                                        Requester::StaffDemand, Requester::EditRoom};
-constexpr Requester kIrequesters[] = {Requester::Patient, Requester::Staff, Requester::Handyman, Requester::Machine};
-
-void close_irequesters(Interface &ui)
-{
-    for (Requester r : kIrequesters)
-        ui.close_window(int(r));
-}
-
 // LbSqrL: the integer square root, rounded down.
 uint32_t isqrt(uint32_t n)
 {
@@ -110,52 +102,48 @@ uint32_t isqrt(uint32_t n)
     return r;
 }
 
+// The candidates of `list` whose `key` is the smallest, in `list`'s order.
+template <typename Key> std::vector<int> smallest(const std::vector<int> &list, Key &&key)
+{
+    int best = 999999;
+    for (int i : list)
+        best = std::min(best, key(i));
+    std::vector<int> out;
+    for (int i : list)
+        if (key(i) == best)
+            out.push_back(i);
+    return out;
+}
+
 // LbPaletteFindColour (0xc960c) on a palette of 6-bit channels.
 uint8_t find_colour(const std::array<std::array<int, 3>, 256> &pal, int r, int g, int b)
 {
     auto sq = [](int v) { return v * v; };
-    int best = 999999;
-    for (int i = 0; i < 256; i++) {
-        int d = sq(r - pal[size_t(i)][0]) + sq(g - pal[size_t(i)][1]) + sq(b - pal[size_t(i)][2]);
-        if (d < best) {
-            best = d;
-            if (best == 0)
-                return uint8_t(i);
-        }
-    }
-    std::vector<int> list1;
-    for (int i = 0; i < 256; i++)
-        if (sq(r - pal[size_t(i)][0]) + sq(g - pal[size_t(i)][1]) + sq(b - pal[size_t(i)][2]) == best)
-            list1.push_back(i);
-    if (list1.size() == 1)
-        return uint8_t(list1[0]);
+    auto dist = [&](int i) {
+        return sq(r - pal[size_t(i)][0]) + sq(g - pal[size_t(i)][1]) + sq(b - pal[size_t(i)][2]);
+    };
     auto manhattan = [&](int i) {
         return std::abs(r - pal[size_t(i)][0]) + std::abs(g - pal[size_t(i)][1]) + std::abs(b - pal[size_t(i)][2]);
     };
-    best = 999999;
-    for (int i : list1)
-        best = std::min(best, manhattan(i));
-    std::vector<int> list2;
-    for (int i : list1)
-        if (manhattan(i) == best)
-            list2.push_back(i);
-    if (list2.size() == 1)
-        return uint8_t(list2[0]);
-    best = 999999;
-    int colour = list2[0];
-    for (int i : list2) {
+    auto darkness = [&](int i) {
         const auto &p = pal[size_t(i)];
-        int d = p[1] * 2 * p[1] + p[0] * 2 * p[0] + p[2] * p[2];
-        if (d < best) {
-            best = d;
-            colour = i;
-        }
-    }
-    return uint8_t(colour);
+        return p[1] * 2 * p[1] + p[0] * 2 * p[0] + p[2] * p[2];
+    };
+    std::vector<int> list(256);
+    for (int i = 0; i < 256; i++)
+        list[size_t(i)] = i;
+    list = smallest(list, dist);
+    // An exact match is the first one, whatever the ties.
+    if (list.size() == 1 || dist(list[0]) == 0)
+        return uint8_t(list[0]);
+    list = smallest(list, manhattan);
+    if (list.size() == 1)
+        return uint8_t(list[0]);
+    return uint8_t(smallest(list, darkness)[0]);
 }
 
-// draw_face (0x6ae00): the face of `staff` in its border, its bottom left
-// at (x, y).
+} // namespace
+
 void draw_face(UiLayer &layer, const std::vector<uint8_t> &faces, const Thing &staff, int x, int y)
 {
     Surface &px = layer.pixels();
@@ -190,8 +178,6 @@ void draw_face(UiLayer &layer, const std::vector<uint8_t> &faces, const Thing &s
     layer.fill({x, y - kFaceBorder, outer_w, kFaceBorder}, kFaceBorderColour);
     layer.fill({x + kFaceW + kFaceBorder, outer_top, kFaceBorder, outer_h}, kFaceBorderColour);
 }
-
-} // namespace
 
 bool HireStaffArt::load(const std::filesystem::path &dir, std::string *error)
 {
@@ -357,47 +343,38 @@ Event place_staff_click(HireStaff &hire, const World &world, int cell)
     return {EV_PLACE_STAFF, uint16_t(cell), 0, hire.held};
 }
 
-void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const RequesterArt &art,
-                     const HireStaffArt &hire_art, const World &world, const LanguageText &text)
+namespace
 {
-    bool open = false;
-    for (int i = 0; i < ui.window_count(); i++)
-        open |= ui.open_window_at(i) == kHireWindow;
-    if (!open)
-        return;
-    if (hire.shown >= world.things.size())
-        hire.shown = 0;
-    if (hire.shown && world.things[hire.shown].state != kStaffApplicant)
-        hire.shown = alter_applicant(world, true, 0, hire.kind);
 
-    const Window &win = ui.window(kHireWindow);
-    const SpriteSheet &sheet = art.sheet(kHireWindow);
-    const int x0 = win.x, y0 = win.y;
+// The lit button of the kind of staff whose applicant is shown.
+void draw_hire_staff_kind(UiLayer &layer, const Window &win, const SpriteSheet &sheet, int kind)
+{
+    int button = 0, sprite = 0;
+    switch (kind) {
+    case kStaffDoctor:
+        button = kDoctorButton, sprite = kDoctorLit;
+        break;
+    case kStaffNurse:
+        button = kNurseButton, sprite = kNurseLit;
+        break;
+    case kStaffReceptionist:
+        button = kReceptionistButton, sprite = kReceptionistLit;
+        break;
+    case kStaffHandyman:
+        button = kHandymanButton, sprite = kHandymanLit;
+        break;
+    }
+    if (button) {
+        const WindowButton &b = win.buttons[size_t(button - 1)];
+        layer.draw_sprite(win.x + b.x, win.y + b.y, sheet.at(size_t(sprite)));
+    }
+}
+
+// The number of applicants of each kind.
+void draw_hire_staff_counts(UiLayer &layer, const Window &win, const HireStaffArt &hire_art, const World &world)
+{
     const Rect screen = {0, 0, kUiWidth, kUiHeight};
     const TextWindow whole = {0, 0, kUiWidth};
-
-    if (hire.shown && hire.mode == 2) {
-        int button = 0, sprite = 0;
-        switch (hire.kind) {
-        case kStaffDoctor:
-            button = kDoctorButton, sprite = kDoctorLit;
-            break;
-        case kStaffNurse:
-            button = kNurseButton, sprite = kNurseLit;
-            break;
-        case kStaffReceptionist:
-            button = kReceptionistButton, sprite = kReceptionistLit;
-            break;
-        case kStaffHandyman:
-            button = kHandymanButton, sprite = kHandymanLit;
-            break;
-        }
-        if (button) {
-            const WindowButton &b = win.buttons[size_t(button - 1)];
-            layer.draw_sprite(x0 + b.x, y0 + b.y, sheet.at(size_t(sprite)));
-        }
-    }
-
     const uint8_t count_kinds[4] = {kStaffDoctor, kStaffNurse, kStaffHandyman, kStaffReceptionist};
     int counts[4] = {};
     for (const Thing &t : world.things)
@@ -405,21 +382,15 @@ void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const
             for (int i = 0; i < 4; i++)
                 counts[i] += t.subtype == count_kinds[i];
     for (int i = 0; i < 4; i++)
-        layer.draw_text(hire_art.count_font(), whole, x0 + kCountAt[i].x, y0 + kCountAt[i].y, std::to_string(counts[i]),
-                        0, screen);
+        layer.draw_text(hire_art.count_font(), win.x + kCountAt[i].x, win.y + kCountAt[i].y, std::to_string(counts[i]),
+                        {whole, screen});
+}
 
-    if (hire.mode != 2 || !hire.shown) {
-        layer.fill({x0 + kBlankBox.x, y0 + kBlankBox.y, kBlankBox.w, kBlankBox.h}, kBoxColour);
-        return;
-    }
-    const Thing &s = world.things[hire.shown];
-    std::string name = std::string(1, char(s.initial)) + ". " +
-                       std::string(text.at(TextSection::StaffNames1, s.surname_a)) +
-                       std::string(text.at(TextSection::StaffNames2, s.surname_b));
-    layer.draw_text(art.font(), whole, x0 + kNameAt.x, y0 + kNameAt.y, name, 0, screen);
-    layer.draw_text(art.font(), whole, x0 + kWageAt.x, y0 + kWageAt.y, "$" + std::to_string(s.salary), 0, screen);
-    draw_face(layer, hire_art.faces(), s, x0 + kFaceAt.x, y0 + kFaceAt.y);
-
+// Applicant `s`'s qualifications, the cover over the doctors' ones for other
+// staff, and the ability gauge.
+void draw_hire_staff_skills(UiLayer &layer, const Window &win, const SpriteSheet &sheet, const Thing &s)
+{
+    const int x0 = win.x, y0 = win.y;
     const bool shows[6] = {
         (s.skills & kSkillJunior) && !(s.skills & kSkillConsultant),
         (s.skills & kSkillDoctor) && !(s.skills & kSkillConsultant) && !(s.skills & kSkillJunior),
@@ -445,13 +416,56 @@ void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const
     Sprite gauge = sheet.at(kGaugeSprite);
     for (long i = 0; i < filled; i++)
         layer.draw_sprite(x0 + kGauge.x + 5 + int(i), y0 + kGauge.y, gauge);
+}
+
+// Applicant `s`'s details: name, wage, face, qualifications and reference.
+void draw_hire_staff_applicant(UiLayer &layer, const Window &win, const WindowArt &window_art, const Thing &s)
+{
+    const RequesterArt &art = window_art.art;
+    const LanguageText &text = window_art.text;
+    const int x0 = win.x, y0 = win.y;
+    const Rect screen = {0, 0, kUiWidth, kUiHeight};
+    const TextWindow whole = {0, 0, kUiWidth};
+    std::string name = std::string(1, char(s.initial)) + ". " +
+                       std::string(text.at(TextSection::StaffNames1, s.surname_a)) +
+                       std::string(text.at(TextSection::StaffNames2, s.surname_b));
+    layer.draw_text(art.font(), x0 + kNameAt.x, y0 + kNameAt.y, name, {whole, screen});
+    layer.draw_text(art.font(), x0 + kWageAt.x, y0 + kWageAt.y, "$" + std::to_string(s.salary), {whole, screen});
+    draw_face(layer, window_art.hire_art.faces(), s, x0 + kFaceAt.x, y0 + kFaceAt.y);
+    draw_hire_staff_skills(layer, win, art.sheet(kHireWindow), s);
 
     // In 640 x 480 the reference is the general text followed by the good or
     // the bad one.
     std::string reference(text.at(TextSection::RefGeneral, s.ref_general));
     reference += s.ability > 500 ? text.at(TextSection::RefGood, s.ref_good) : text.at(TextSection::RefBad, s.ref_bad);
     Rect box = {x0 + kReferenceBox.x, y0 + kReferenceBox.y, kReferenceBox.w, kReferenceBox.h};
-    layer.draw_text(art.font(), {box.x, box.y, box.w}, 0, 0, reference, kTextWrap, box);
+    layer.draw_text(art.font(), 0, 0, reference, {{box.x, box.y, box.w}, box, kTextWrap});
+}
+
+} // namespace
+
+void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const WindowArt &window_art,
+                     const World &world)
+{
+    bool open = false;
+    for (int i = 0; i < ui.window_count(); i++)
+        open |= ui.open_window_at(i) == kHireWindow;
+    if (!open)
+        return;
+    if (hire.shown >= world.things.size())
+        hire.shown = 0;
+    if (hire.shown && world.things[hire.shown].state != kStaffApplicant)
+        hire.shown = alter_applicant(world, true, 0, hire.kind);
+
+    const Window &win = ui.window(kHireWindow);
+    if (hire.shown && hire.mode == 2)
+        draw_hire_staff_kind(layer, win, window_art.art.sheet(kHireWindow), hire.kind);
+    draw_hire_staff_counts(layer, win, window_art.hire_art, world);
+    if (hire.mode != 2 || !hire.shown) {
+        layer.fill({win.x + kBlankBox.x, win.y + kBlankBox.y, kBlankBox.w, kBlankBox.h}, kBoxColour);
+        return;
+    }
+    draw_hire_staff_applicant(layer, win, window_art, world.things[hire.shown]);
 }
 
 std::array<uint8_t, 256> grey_remap(const Palette &palette)
@@ -470,9 +484,94 @@ std::array<uint8_t, 256> grey_remap(const Palette &palette)
     return out;
 }
 
-void draw_held_staff(Surface &dst, Rect view, Point camera, const HireStaff &hire, const World &world, int cell,
+namespace
+{
+
+// The greying remap and the see-through blending table.
+struct GreyRemap {
+    std::array<uint8_t, 256> grey;
+    const uint8_t *ghost;
+};
+
+// Copies the pixels `scratch` holds within `r` (clipped to `view`) to `dst`
+// through the grey remap, blended as `flags` asks, and clears them from
+// `scratch`.
+void blend_grey_element(Surface &dst, Surface &scratch, Rect r, Rect view, unsigned flags, const GreyRemap &remap)
+{
+    const std::array<uint8_t, 256> &grey = remap.grey;
+    const uint8_t *ghost = remap.ghost;
+    int x0 = std::max(r.x, view.x), y0 = std::max(r.y, view.y);
+    int x1 = std::min(r.x + r.w, view.x + view.w), y1 = std::min(r.y + r.h, view.y + view.h);
+    for (int py = y0; py < y1; py++) {
+        uint8_t *src = scratch.row(py);
+        uint8_t *out = dst.row(py);
+        for (int px = x0; px < x1; px++) {
+            if (src[px] == kMaskColour)
+                continue;
+            uint8_t c = grey[src[px]];
+            if (flags & kDrawGhost)
+                out[px] = ghost[c << 8 | out[px]];
+            else if (flags & kDrawGhostUnder)
+                out[px] = ghost[out[px] << 8 | c];
+            else
+                out[px] = c;
+            src[px] = kMaskColour;
+        }
+    }
+}
+
+// Whether `held`'s layers show element `e`.
+bool element_shown(const AnimElement &e, const Thing &held)
+{
+    if (!(e.flags & 0xffb0))
+        return true;
+    int layer = (e.flags >> 4) & 0x1f;
+    return layer < kLayerCount && held.layers[size_t(layer)] == e.flags >> 9;
+}
+
+// Greyed (LbSpriteDrawRemap), element by element as draw_frame draws them:
+// each sprite is drawn apart, then its pixels remapped before any
+// see-through blending with the view (assumed to be LbSpriteDrawRemap's
+// order).
+void draw_held_staff_greyed(const ViewTarget &target, Point at, AnimStart start, const Thing &held,
+                            const GameData &data, Surface &scratch)
+{
+    const AnimData &anims = data.anims();
+    const Rect view = target.view;
+    const GreyRemap remap = {grey_remap(data.palette()), data.ghost().data()};
+    if (start.frame >= anims.frames.size())
+        return;
+    const AnimFrame &f = anims.frames[start.frame];
+    const bool flip = start.flip != 0;
+    scratch.set_clip(view);
+    for (size_t i = f.list; i < anims.lists.size() && anims.lists[i] != kListEnd; i++) {
+        if (anims.lists[i] >= anims.elements.size())
+            continue;
+        const AnimElement &e = anims.elements[anims.lists[i]];
+        if (!element_shown(e, held) || e.sprite == 0)
+            continue;
+        Sprite s = data.sprites().at(e.sprite / 6);
+        int ex = e.x - kElementBiasX;
+        unsigned flags = e.flags & 0xf;
+        if (flip) {
+            flags ^= kDrawFlipX;
+            ex = -ex - s.width;
+        }
+        Rect r = {at.x + ex, at.y + e.y - kElementBiasY, s.width, s.height};
+        draw_sprite(scratch, r.x, r.y, s, flags & (kDrawFlipX | kDrawFlipY));
+        blend_grey_element(target.dst, scratch, r, view, flags, remap);
+    }
+    scratch.reset_clip();
+}
+
+} // namespace
+
+void draw_held_staff(const ViewTarget &target, const HireStaff &hire, const World &world, int cell,
                      const GameData &data, Surface &scratch)
 {
+    Surface &dst = target.dst;
+    const Rect view = target.view;
+    const Point camera = target.camera;
     if (!hire.placing() || hire.held >= world.things.size() || cell < 0 || cell >= kMapCells)
         return;
     const Thing &held = world.things[hire.held];
@@ -487,60 +586,11 @@ void draw_held_staff(Surface &dst, Rect view, Point camera, const HireStaff &hir
     bool flip = anims.starts[start].flip != 0;
     if (hire.place_ok) {
         dst.set_clip(view);
-        draw_frame(dst, x, y, frame, flip, 0, data, held.layers.data());
+        draw_frame(dst, {x, y}, frame, flip, data, {.layers = held.layers.data()});
         dst.reset_clip();
         return;
     }
-    // Greyed (LbSpriteDrawRemap), element by element as draw_frame draws
-    // them: each sprite is drawn apart, then its pixels remapped before any
-    // see-through blending with the view (assumed to be LbSpriteDrawRemap's
-    // order).
-    std::array<uint8_t, 256> grey = grey_remap(data.palette());
-    const uint8_t *ghost = data.ghost().data();
-    if (frame >= anims.frames.size())
-        return;
-    const AnimFrame &f = anims.frames[frame];
-    scratch.set_clip(view);
-    for (size_t i = f.list; i < anims.lists.size() && anims.lists[i] != kListEnd; i++) {
-        if (anims.lists[i] >= anims.elements.size())
-            continue;
-        const AnimElement &e = anims.elements[anims.lists[i]];
-        if (e.flags & 0xffb0) {
-            int layer = (e.flags >> 4) & 0x1f;
-            if (layer >= kLayerCount || held.layers[size_t(layer)] != e.flags >> 9)
-                continue;
-        }
-        if (e.sprite == 0)
-            continue;
-        Sprite s = data.sprites().at(e.sprite / 6);
-        int ex = e.x - kElementBiasX;
-        unsigned flags = e.flags & 0xf;
-        if (flip) {
-            flags ^= kDrawFlipX;
-            ex = -ex - s.width;
-        }
-        Rect r = {x + ex, y + e.y - kElementBiasY, s.width, s.height};
-        draw_sprite(scratch, r.x, r.y, s, flags & (kDrawFlipX | kDrawFlipY));
-        int x0 = std::max(r.x, view.x), y0 = std::max(r.y, view.y);
-        int x1 = std::min(r.x + r.w, view.x + view.w), y1 = std::min(r.y + r.h, view.y + view.h);
-        for (int py = y0; py < y1; py++) {
-            uint8_t *src = scratch.row(py);
-            uint8_t *out = dst.row(py);
-            for (int px = x0; px < x1; px++) {
-                if (src[px] == kMaskColour)
-                    continue;
-                uint8_t c = grey[src[px]];
-                if (flags & kDrawGhost)
-                    out[px] = ghost[c << 8 | out[px]];
-                else if (flags & kDrawGhostUnder)
-                    out[px] = ghost[out[px] << 8 | c];
-                else
-                    out[px] = c;
-                src[px] = kMaskColour;
-            }
-        }
-    }
-    scratch.reset_clip();
+    draw_held_staff_greyed(target, {x, y}, anims.starts[start], held, data, scratch);
 }
 
 } // namespace th

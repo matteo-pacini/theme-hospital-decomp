@@ -64,9 +64,10 @@ bool reception_emergency(const World &world, uint16_t patient)
     return world.things[patient].person_flags & kPfEmergency;
 }
 
-uint16_t call_person_to_room(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
-                             uint16_t id, uint16_t action, uint16_t arg, bool follow, uint32_t game_turn)
+uint16_t call_person_to_room(const PersonRun &run, uint16_t caller, uint16_t id, uint16_t action, uint16_t arg,
+                             bool follow)
 {
+    World &world = run.world;
     trace_event("call %u id=%u action=%u arg=%u", unsigned(caller), unsigned(id), unsigned(action), unsigned(arg));
     for (;;) {
 
@@ -86,7 +87,7 @@ uint16_t call_person_to_room(World &world, const AnimData &anims, const PersonCo
             c.call_retries = int16_t((old_newrand(world.seed) & 3) + 3);
             leave_queue(world, id);
             if (set_complex(world, id, action, arg))
-                process_person_complex(world, anims, complexes, id, game_turn);
+                process_person_complex(world, run.anims, run.complexes, id, run.game_turn);
             callee.next_state = kPsArrivedFromCall;
             return id;
         }
@@ -97,9 +98,9 @@ uint16_t call_person_to_room(World &world, const AnimData &anims, const PersonCo
     return 0;
 }
 
-uint8_t call_person_again(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
-                          uint16_t action, uint16_t arg, uint32_t game_turn)
+uint8_t call_person_again(const PersonRun &run, uint16_t caller, uint16_t action, uint16_t arg)
 {
+    World &world = run.world;
     Thing &c = world.things[caller];
     if (c.slave == 0)
         return 0;
@@ -114,7 +115,7 @@ uint8_t call_person_again(World &world, const AnimData &anims, const PersonCompl
     if (callee.complex_pc / 10 * 10 != action) {
         if (callee.complex_pc == 0 || callee.complex_queued == 0) {
             if (set_complex(world, id, action, arg))
-                process_person_complex(world, anims, complexes, id, game_turn);
+                process_person_complex(world, run.anims, run.complexes, id, run.game_turn);
             callee.next_state = kPsArrivedFromCall;
         } else if (callee.complex_queued != action) {
             return 0;
@@ -144,10 +145,10 @@ bool forget_about_my_slave(World &world, const AnimData &anims, const PersonComp
         return true;
     if (w.subtype == kStaffReceptionist) {
         if (w.object)
-            call_person_to_room(world, anims, complexes, caller, w.slave, action, world.things[w.object].use_pos[1],
-                                false, game_turn);
+            call_person_to_room({world, anims, complexes, game_turn}, caller, w.slave, action,
+                                world.things[w.object].use_pos[1], false);
     } else if (uint16_t tile = world.rooms[w.room].door_tile) {
-        call_person_to_room(world, anims, complexes, caller, w.slave, action, tile, false, game_turn);
+        call_person_to_room({world, anims, complexes, game_turn}, caller, w.slave, action, tile, false);
     }
     return false;
 }

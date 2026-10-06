@@ -1,11 +1,13 @@
 #include "core/world/staff.h"
 
 #include "core/data/blocks.h"
+#include "core/world/arrivals.h"
 #include "core/world/complex_tables.h"
 #include "core/world/events.h"
 #include "core/world/game.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
+#include "core/world/object_tables.h"
 #include "core/world/patient_tables.h"
 #include "core/world/queue.h"
 #include "core/world/reception.h"
@@ -36,7 +38,6 @@ constexpr std::array<uint8_t, 5> kHeldAnim = {5, 5, 5, 0, 5};
 
 // Staff states not handled yet (the game's SS_*), which kStaffStates names.
 constexpr uint8_t kStaffDoctorInMachineRoom = 0x24;
-constexpr uint8_t kStaffInStaffRoom = 0x30;
 constexpr uint8_t kStaffNurseInWard = 0x32;
 constexpr uint8_t kStaffDoctorResearches = 0x3e;
 constexpr uint8_t kStaffDoctorInTheatre = 0x42;
@@ -70,14 +71,22 @@ constexpr uint8_t kRoomUltrascan = 14;
 constexpr uint8_t kRoomBloodMachine = 15;
 constexpr uint8_t kRoomXray = 16;
 constexpr uint8_t kRoomGeneralDiag = 27;
+constexpr uint8_t kRoomPharmacy = 11;
+constexpr uint8_t kRoomInflation = 17;
 constexpr uint8_t kRoomTraining = 22;
 constexpr uint8_t kRoomStaffRoom = 25;
 
 // Thing.orders: notice handed in (the game's ORD_RESIGN), and the player
 // call that announces it.
 constexpr uint8_t kOrderResign = 0x20;
-// Thing.orders: a rest ordered (ORD_REST).
+// Thing.orders: a rest ordered (ORD_REST), and leaving the room ordered
+// (ORD_LEAVE_ROOM). EV_ORDER_REST, EV_ORDER_TRAIN, EV_ORDER_LEAVE_ROOM and
+// command 0x60 replace the low four bits.
 constexpr uint8_t kOrderRest = 0x1;
+constexpr uint8_t kOrderTrain = 0x4;
+constexpr uint8_t kOrderLeaveRoom = 0x8;
+// The command, unnamed in the game, that orders 2.
+constexpr uint8_t kEvOrder2 = 0x60;
 constexpr uint16_t kCallStaffResigns = 1;
 constexpr uint8_t kRoomResearch = 28;
 constexpr uint8_t kRoomWard = 9;
@@ -97,6 +106,14 @@ constexpr uint8_t kObjChair = 6;
 // A psychiatrist's bookcase; a ward's bed.
 constexpr uint8_t kObjBookcase = 56;
 constexpr uint8_t kObjBed = 8;
+// A staff room's sofa, pool table and video game.
+constexpr uint8_t kObjSofa = 19;
+constexpr uint8_t kObjPoolTable = 10;
+constexpr uint8_t kObjVideoGame = 57;
+
+// The game's staff_abilities (src/tables.cpp), by staff kind: [0] plays the
+// video game, [1] plays pool.
+constexpr std::array<std::array<uint8_t, 2>, 5> kStaffAbilities = {{{1, 0}, {1, 1}, {0, 1}, {0, 0}, {0, 0}}};
 
 // The player whose hospital the engine plays.
 constexpr uint8_t kPlayer = 0;
@@ -233,6 +250,12 @@ constexpr uint16_t kComplexSweepUp = 0x46;
 constexpr uint16_t kComplexAfterSweeping = 0x30c;
 // A handyman's to a room's door and in, and to the machine to repair.
 constexpr uint16_t kComplexToRoomToRepair = 0x96;
+// The same complex taking anyone to a staff room for a break; in it, a sit
+// on the sofa, a game of pool and one of the video game.
+constexpr uint16_t kComplexToStaffRoom = 0x96;
+constexpr uint16_t kComplexSofa = 0x2da;
+constexpr uint16_t kComplexPool = 0x2ee;
+constexpr uint16_t kComplexVideoGame = 0x2f8;
 constexpr uint16_t kComplexToMachine = 0x2d0;
 // A doctor's at a GP's office: sitting at the desk, the filing cabinet
 // (then back to the desk's state), the cabinet before waiting for the
@@ -290,6 +313,8 @@ struct Ctx {
     const PersonComplexes &person;
     const StaffComplexes &staff;
     uint32_t game_turn;
+
+    PersonRun person_run() const { return {world, anims, person, game_turn}; }
 };
 
 // A Ctx with the action sequences start_rooms_in_use gave the world (none
@@ -475,14 +500,19 @@ const HospitalSettings &policy_of(const World &world)
     return world.hospital ? *world.hospital : statics;
 }
 
-// The decision of staff_wanders: a page answered (obey_pager), else a
-// stroll of 3 cells back the way they came (85%), else, standing, a pause of
-// 20-49 turns, a stroll of 3 cells in a random direction or one to a random
-// cell within 3. Vaccinating and ordered rests are not ported.
+// The decision of staff_wanders: an ordered break (kOrderRest,
+// take_a_break), a page answered (obey_pager), a break when more tired than
+// the policy's rest_threshold, else a stroll of 3 cells back the way they
+// came (85%), else, standing, a pause of 20-49 turns, a stroll of 3 cells in
+// a random direction or one to a random cell within 3. The orders to go
+// back to research or training are dropped. Vaccinating is not ported.
 void wander_decide(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
     Thing &e = world.things[id];
+    e.orders &= uint8_t(~(kOrderReturnToResearch | kOrderReturnToTraining));
+    if ((e.orders & kOrderRest) && take_a_break(c, id))
+        return;
     if (obey_pager(c, id))
         return;
     if (e.tiredness > policy_of(world).rest_threshold && take_a_break(c, id))
@@ -534,6 +564,47 @@ bool off_blueprint(World &world, uint16_t id)
     return block_flags(world.map[cell_of(t)].floor_block) == 0x20 && move_peep_from_blueprint(world, id);
 }
 
+// staff_wanders with the countdown run out: a receptionist with a free desk
+// off to it; else, unless sent off a blueprint or resigning, the next step
+// towards the destination, a new decision there or with no path. Returns
+// whether they step on.
+bool staff_wanders_head_on(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &e = world.things[id];
+    if (e.subtype == kStaffReceptionist && has_reception(world, e.owner) &&
+        find_free_object_anywhere(world, id, kObjReceptionDesk)) {
+        e.state = kStaffReceptionistFindsReception;
+        return false;
+    }
+    if (off_blueprint(world, id))
+        return false;
+    if (shall_i_resign(c, id))
+        return false;
+    e.countdown = int16_t(0x100 / e.speed);
+    int dir = person_head_for(world, id);
+    switch (dir) {
+    case kNavArrived:
+    case kNavNoPath:
+        e.countdown = 1;
+        wander_decide(c, id);
+        return false;
+    case kNavBlockedByPeople:
+        play_staff_anim(c.anims, e, kAnimStand);
+        e.countdown = 0;
+        return false;
+    case kNavWalledIn:
+        staff_nav_failure(c, id);
+        return false;
+    default:
+        if (e.facing != dir) {
+            e.facing = uint8_t(dir);
+            play_staff_anim(c.anims, e, kAnimWalk);
+        }
+        return true;
+    }
+}
+
 // staff_wanders (0x77ab8). The idle nurses' count is not kept.
 void staff_wanders(const Ctx &c, uint16_t id)
 {
@@ -559,39 +630,8 @@ void staff_wanders(const Ctx &c, uint16_t id)
     }
     if (c.game_turn % e.anim_speed == 0)
         e.sprite = c.anims.frames[e.sprite].next;
-    if (--e.countdown <= 0) {
-        if (e.subtype == kStaffReceptionist && has_reception(world, e.owner) &&
-            find_free_object_anywhere(world, id, kObjReceptionDesk)) {
-            e.state = kStaffReceptionistFindsReception;
-            return;
-        }
-        if (off_blueprint(world, id))
-            return;
-        if (shall_i_resign(c, id))
-            return;
-        e.countdown = int16_t(0x100 / e.speed);
-        int dir = person_head_for(world, id);
-        switch (dir) {
-        case kNavArrived:
-        case kNavNoPath:
-            e.countdown = 1;
-            wander_decide(c, id);
-            return;
-        case kNavBlockedByPeople:
-            play_staff_anim(c.anims, e, kAnimStand);
-            e.countdown = 0;
-            return;
-        case kNavWalledIn:
-            staff_nav_failure(c, id);
-            return;
-        default:
-            if (e.facing != dir) {
-                e.facing = uint8_t(dir);
-                play_staff_anim(c.anims, e, kAnimWalk);
-            }
-            break;
-        }
-    }
+    if (--e.countdown <= 0 && !staff_wanders_head_on(c, id))
+        return;
     step_on(world, id);
 }
 
@@ -657,12 +697,8 @@ bool handyman_try_litter(const Ctx &c, uint16_t id)
     return true;
 }
 
-// The game's objects[].is_machine and repair_aniseq (src/tables.cpp), by
-// object kind: machines, and the ani_seq_choice group a handyman plays
-// repairing one (0 none).
-constexpr std::array<uint8_t, 63> kIsMachine = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
-                                                0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+// The game's objects[].repair_aniseq (src/tables.cpp), by object kind: the
+// ani_seq_choice group a handyman plays repairing a machine (0 none).
 constexpr std::array<uint8_t, 63> kRepairAniseq = {0, 0,  0, 0, 0,  0, 0, 0, 0, 9,  0, 0, 0, 10, 11, 0, 0, 0, 0, 0, 0,
                                                    0, 12, 0, 4, 13, 8, 7, 0, 0, 14, 0, 0, 0, 0,  0,  0, 0, 0, 0, 0, 0,
                                                    5, 0,  0, 0, 2,  1, 0, 0, 0, 0,  0, 0, 3, 6,  0,  0, 0, 0, 0, 0, 0};
@@ -700,15 +736,25 @@ void setup_next_aniseq(const AnimData &anims, Thing &s)
     }
 }
 
+// How many sequences each group of kAniSeqChoice picks among. Group 0 has
+// none, and choose_aniseq would divide by zero on it, as the game would:
+// kRepairAniseq's 0 means no group, so it is never asked for.
+constexpr std::array<uint32_t, kAniSeqChoice.size()> kAniSeqChoiceCount = [] {
+    std::array<uint32_t, kAniSeqChoice.size()> count{};
+    for (size_t group = 0; group < kAniSeqChoice.size(); group++)
+        while (kAniSeqChoice[group][count[group]])
+            count[group]++;
+    return count;
+}();
+static_assert(std::all_of(kAniSeqChoiceCount.begin() + 1, kAniSeqChoiceCount.end(), [](uint32_t n) { return n > 0; }));
+
 // choose_aniseq (0x9b510) for a member of staff: a sequence of `group`
 // drawn from world.seed, played in SS_PLAY_ANISEQ (setup_aniseq), then
 // `next_state`.
 void choose_aniseq(World &world, const AnimData &anims, Thing &s, uint8_t group, uint8_t next_state)
 {
     const std::array<uint8_t, 10> &choice = kAniSeqChoice[group % kAniSeqChoice.size()];
-    uint32_t count = 0;
-    while (choice[count])
-        count++;
+    uint32_t count = kAniSeqChoiceCount[group % kAniSeqChoice.size()];
     uint8_t seq = choice[old_newrand(world.seed, "choose_aniseq") % count];
     s.state = kStaffPlayAniseq;
     s.next_state = next_state;
@@ -762,6 +808,205 @@ bool handyman_try_fix(const Ctx &c, uint16_t id)
     return true;
 }
 
+// handyman_works's decision in a room: he pages its first worn machine,
+// unless someone owns it, and takes a repair page there (substate 8), or
+// leaves.
+void handyman_works_in_room(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    RoomInfo &room = world.rooms[h.room];
+    for (uint16_t o = room.first_object; o; o = world.things[o].room_obj_next) {
+        const Thing &machine = world.things[o];
+        if (machine.type != kThingObject || !kObjectIsMachine[machine.subtype % kObjectIsMachine.size()] ||
+            machine.times_used <= 0)
+            continue;
+        if (machine.owner == 0)
+            thingpage_request(world.repair_pager, o, 100);
+        break;
+    }
+    if (thingpage_respond(world, world.repair_pager, id, h.room, 0, c.game_turn)) {
+        h.substate = 8;
+        if (room.state != kRoomClosed)
+            room.state = kRoomRepairDue;
+        return;
+    }
+    h.state = kStaffEvacuate;
+}
+
+// handyman_works's jobs, least done (for their priority) first: litter,
+// plants and repairs; plants have no pages. Returns whether he took one.
+bool handyman_works_take_job(const Ctx &c, uint16_t id)
+{
+    const Thing &h = c.world.things[id];
+    std::array<uint32_t, 3> scores = {uint32_t(h.litter_count * 100 / (h.prio_litter + 1)),
+                                      uint32_t(h.plant_count * 1000 / (h.prio_plants + 1)),
+                                      uint32_t(h.repair_count * 2000 / (h.prio_repair + 1))};
+    for (;;) {
+        uint32_t best = 2000000;
+        size_t idx = 0;
+        for (size_t n = 0; n < 3; n++) {
+            if (scores[n] < best) {
+                best = scores[n];
+                idx = n;
+            }
+        }
+        // The game tries again while a score is from 1000000 to 1999999,
+        // never to end; here it gives up.
+        if (best >= 1000000)
+            return false;
+        scores[idx] = 2000000;
+        if ((idx == 0 && handyman_try_litter(c, id)) || (idx == 2 && handyman_try_fix(c, id)))
+            return true;
+    }
+}
+
+// handyman_works's stroll to a random cell within 7 of his hospital's,
+// indoors, that he can reach.
+void handyman_works_stroll(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    // Unsigned arithmetic into a signed int, as in the game.
+    auto dx = int32_t(old_newrand(world.seed, "handyman_works") % 15 - 7);
+    auto dy = int32_t(old_newrand(world.seed, "handyman_works") % 15 - 7);
+    auto pos = uint16_t(cell_of(h) + (dy << 7) + dx);
+    // The game reads past the map for cells off its end; here they are
+    // not his land.
+    if (pos < kMapCells && world.map[pos].owner_flags == 1 << h.owner && can_i_get_to(world, h, pos) &&
+        !(world.map[pos].owner_flags & kCellOutdoor)) {
+        h.next_state = h.resume_state = kStaffHandymanWorks;
+        set_complex(world, id, kComplexWalkTo, pos);
+        process(c, id);
+    }
+}
+
+// handyman_works's substate 0: the decision.
+void handyman_works_decide(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    if (shall_i_resign(c, id))
+        return;
+    if (((h.orders & kOrderRest) || h.tiredness > policy_of(world).rest_threshold) && take_a_break(c, id))
+        return;
+    if (h.room) {
+        handyman_works_in_room(c, id);
+        return;
+    }
+    if (thingpage_find_highest_priority(world.repair_pager) && handyman_try_fix(c, id))
+        return;
+    if (handyman_works_take_job(c, id))
+        return;
+    handyman_works_stroll(c, id);
+}
+
+// handyman_works's substate 2: arrived at the litter, he sweeps it up
+// (substate 3); elsewhere, he decides again.
+void handyman_works_start_sweeping(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    if (h.x.tile != h.dest_x || h.y.tile != h.dest_y) {
+        h.substate = 0;
+        return;
+    }
+    if (h.work_target == cell_of(h))
+        h.work_target = 0;
+    h.facing = kShowanimAngle[h.facing & 3];
+    h.next_state = kStaffHandymanWorks;
+    h.substate = 3;
+    set_complex(world, id, kComplexSweepUp, 0);
+    process(c, id);
+}
+
+// handyman_works's substate 3: the litter swept, counted, and back to
+// deciding.
+void handyman_works_swept(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    remove_litter(world, cell_of(h), h.owner);
+    set_complex(world, id, kComplexAfterSweeping, 0);
+    h.next_state = kStaffHandymanWorks;
+    process(c, id);
+    h.substate = 0;
+    h.litter_count++;
+}
+
+// handyman_works's substate 8: once the room is closed, to the machine
+// paged (substate 9); else he closes it with no doctor, nurse or surgeon
+// in it, or strolls to a random cell of it.
+void handyman_works_close_room(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    RoomInfo &room = world.rooms[h.room];
+    if (room.state == kRoomClosed) {
+        h.next_state = kStaffHandymanWorks;
+        h.substate = 9;
+        h.resume_state = kStaffEvacuate;
+        h.object = thingpage_remind_me(world.repair_pager, id);
+        set_complex(world, id, kComplexToMachine, 0);
+        process(c, id);
+        return;
+    }
+    if (!person_in_room(world, h.room, kThingStaff, kStaffDoctor) &&
+        !person_in_room(world, h.room, kThingStaff, kStaffNurse) &&
+        !person_in_room(world, h.room, kThingStaff, kStaffSurgeon)) {
+        room.state = kRoomClosed;
+        return;
+    }
+    // The row is drawn first, as the game's code does.
+    auto row = int16_t(old_newrand(world.seed, "handyman_works") % uint32_t(room.height));
+    auto column = int16_t(old_newrand(world.seed, "handyman_works") % uint32_t(room.width));
+    auto pos = uint16_t(room.pos + ((row << 7) + column));
+    if (pos != cell_of(h) && can_i_get_to(world, h, pos)) {
+        h.next_state = h.resume_state = kStaffHandymanWorks;
+        set_complex(world, id, kComplexWalkTo, pos);
+        process(c, id);
+    }
+}
+
+// handyman_works's substate 9: the machine's repair sequence, a puff of
+// smoke cleared.
+void handyman_works_repair(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    Thing &machine = world.things[h.object];
+    if (uint8_t seq = kRepairAniseq[machine.subtype % kRepairAniseq.size()])
+        choose_aniseq(world, c.anims, h, seq, kStaffHandymanWorks);
+    if (h.object)
+        machine.smoke[old_newrand(world.seed, "handyman_works") % 3] = 0;
+    h.substate = 10;
+}
+
+// handyman_works's substate 10: the machine's wear gone (its strength
+// maybe one less), the page dropped, the room open again and he out of it.
+void handyman_works_repaired(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &h = world.things[id];
+    if (h.object) {
+        Thing &machine = world.things[h.object];
+        thingpage_cancel(world.repair_pager, h.object);
+        if (machine.strength > 2 &&
+            old_newrand(world.seed, "handyman_works") % uint32_t(machine.strength) < uint32_t(machine.times_used))
+            machine.strength--;
+        machine.times_used = 0;
+        machine.smoke = {};
+    }
+    RoomInfo &room = world.rooms[h.room];
+    room.state = 0;
+    set_complex(world, id, kComplexLeaveRoom, room.door_inside_tile);
+    h.resume_state = kStaffEvacuate;
+    h.next_state = kStaffHandymanWorks;
+    h.substate = 0;
+    h.repair_count++;
+    process(c, id);
+}
+
 // handyman_works (0x7a8a8). Substate 0 decides: in a room, he pages its
 // first worn machine and takes a repair page there (substate 8), or leaves;
 // in the corridor, the most urgent repair if urgent enough
@@ -771,156 +1016,72 @@ bool handyman_try_fix(const Ctx &c, uint16_t id)
 // room is closed (its doctor closes it, or no staff are in it) to the
 // machine, its repair (the machine's sequence, a puff of smoke cleared),
 // then its wear gone (its strength maybe one less), the page dropped and
-// the room open again. Plants (4-6) have no pages yet; breaks are not
-// ported.
+// the room open again. Plants (4-6) have no pages yet. Before deciding,
+// with a rest ordered or more tired than the policy's rest_threshold, he
+// takes a break (take_a_break) if there is a staff room.
 void handyman_works(const Ctx &c, uint16_t id)
 {
-    World &world = c.world;
-    Thing &h = world.things[id];
-    switch (h.substate) {
-    case 0: {
-        if (shall_i_resign(c, id))
-            break;
-        if (h.room) {
-            RoomInfo &room = world.rooms[h.room];
-            for (uint16_t o = room.first_object; o; o = world.things[o].room_obj_next) {
-                const Thing &machine = world.things[o];
-                if (machine.type == kThingObject && kIsMachine[machine.subtype % kIsMachine.size()] &&
-                    machine.times_used > 0) {
-                    if (machine.owner == 0)
-                        thingpage_request(world.repair_pager, o, 100);
-                    break;
-                }
-            }
-            if (thingpage_respond(world, world.repair_pager, id, h.room, 0, c.game_turn)) {
-                h.substate = 8;
-                if (room.state != kRoomClosed)
-                    room.state = kRoomRepairDue;
-                break;
-            }
-            h.state = kStaffEvacuate;
-            break;
-        }
-        if (thingpage_find_highest_priority(world.repair_pager) && handyman_try_fix(c, id))
-            break;
-        // The jobs, least done (for their priority) first: litter, plants
-        // and repairs; plants have no pages.
-        std::array<uint32_t, 3> scores = {uint32_t(h.litter_count * 100 / (h.prio_litter + 1)),
-                                          uint32_t(h.plant_count * 1000 / (h.prio_plants + 1)),
-                                          uint32_t(h.repair_count * 2000 / (h.prio_repair + 1))};
-        for (;;) {
-            uint32_t best = 2000000;
-            size_t idx = 0;
-            for (size_t n = 0; n < 3; n++) {
-                if (scores[n] < best) {
-                    best = scores[n];
-                    idx = n;
-                }
-            }
-            // The game tries again while a score is from 1000000 to 1999999,
-            // never to end; here it gives up.
-            if (best >= 1000000)
-                break;
-            scores[idx] = 2000000;
-            if ((idx == 0 && handyman_try_litter(c, id)) || (idx == 2 && handyman_try_fix(c, id)))
-                return;
-        }
-        // Unsigned arithmetic into a signed int, as in the game.
-        auto dx = int32_t(old_newrand(world.seed) % 15 - 7);
-        auto dy = int32_t(old_newrand(world.seed) % 15 - 7);
-        auto pos = uint16_t(cell_of(h) + (dy << 7) + dx);
-        // The game reads past the map for cells off its end; here they are
-        // not his land.
-        if (pos < kMapCells && world.map[pos].owner_flags == 1 << h.owner && can_i_get_to(world, h, pos) &&
-            !(world.map[pos].owner_flags & kCellOutdoor)) {
-            h.next_state = h.resume_state = kStaffHandymanWorks;
-            set_complex(world, id, kComplexWalkTo, pos);
-            process(c, id);
-        }
+    switch (c.world.things[id].substate) {
+    case 0:
+        handyman_works_decide(c, id);
         break;
-    }
     case 2:
-        if (h.x.tile != h.dest_x || h.y.tile != h.dest_y) {
-            h.substate = 0;
-            break;
-        }
-        if (h.work_target == cell_of(h))
-            h.work_target = 0;
-        h.facing = kShowanimAngle[h.facing & 3];
-        h.next_state = kStaffHandymanWorks;
-        h.substate = 3;
-        set_complex(world, id, kComplexSweepUp, 0);
-        process(c, id);
+        handyman_works_start_sweeping(c, id);
         break;
-    case 3: {
-        // remove_litter (0x7a814); the hospital's litter count is not kept.
-        MapCell &cell = world.map[cell_of(h)];
-        if (cell.owner_flags == 1 << h.owner && has_litter(cell))
-            cell.litter_shadow &= 0xf0;
-        set_complex(world, id, kComplexAfterSweeping, 0);
-        h.next_state = kStaffHandymanWorks;
-        process(c, id);
-        h.substate = 0;
-        h.litter_count++;
+    case 3:
+        handyman_works_swept(c, id);
         break;
-    }
-    case 8: {
-        RoomInfo &room = world.rooms[h.room];
-        if (room.state == kRoomClosed) {
-            h.next_state = kStaffHandymanWorks;
-            h.substate = 9;
-            h.resume_state = kStaffEvacuate;
-            h.object = thingpage_remind_me(world.repair_pager, id);
-            set_complex(world, id, kComplexToMachine, 0);
-            process(c, id);
-        } else if (!person_in_room(world, h.room, kThingStaff, kStaffDoctor) &&
-                   !person_in_room(world, h.room, kThingStaff, kStaffNurse) &&
-                   !person_in_room(world, h.room, kThingStaff, kStaffSurgeon)) {
-            room.state = kRoomClosed;
-        } else {
-            // The row is drawn first, as the game's code does.
-            auto row = int16_t(old_newrand(world.seed) % uint32_t(room.height));
-            auto column = int16_t(old_newrand(world.seed) % uint32_t(room.width));
-            auto pos = uint16_t(room.pos + ((row << 7) + column));
-            if (pos != cell_of(h) && can_i_get_to(world, h, pos)) {
-                h.next_state = h.resume_state = kStaffHandymanWorks;
-                set_complex(world, id, kComplexWalkTo, pos);
-                process(c, id);
-            }
-        }
+    case 8:
+        handyman_works_close_room(c, id);
         break;
-    }
-    case 9: {
-        Thing &machine = world.things[h.object];
-        if (uint8_t seq = kRepairAniseq[machine.subtype % kRepairAniseq.size()])
-            choose_aniseq(world, c.anims, h, seq, kStaffHandymanWorks);
-        if (h.object)
-            machine.smoke[old_newrand(world.seed) % 3] = 0;
-        h.substate = 10;
+    case 9:
+        handyman_works_repair(c, id);
         break;
-    }
-    case 10: {
-        if (h.object) {
-            Thing &machine = world.things[h.object];
-            thingpage_cancel(world.repair_pager, h.object);
-            if (machine.strength > 2 &&
-                old_newrand(world.seed) % uint32_t(machine.strength) < uint32_t(machine.times_used))
-                machine.strength--;
-            machine.times_used = 0;
-            machine.smoke = {};
-        }
-        RoomInfo &room = world.rooms[h.room];
-        room.state = 0;
-        set_complex(world, id, kComplexLeaveRoom, room.door_inside_tile);
-        h.resume_state = kStaffEvacuate;
-        h.next_state = kStaffHandymanWorks;
-        h.substate = 0;
-        h.repair_count++;
-        process(c, id);
+    case 10:
+        handyman_works_repaired(c, id);
         break;
-    }
     default:
         break;
+    }
+}
+
+// staff_goto_object with the countdown run out: unless sent off a
+// blueprint, the next step towards the destination, the complex's next step
+// there. Returns whether they step on.
+bool staff_goto_object_head_on(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &e = world.things[id];
+    if (off_blueprint(world, id))
+        return false;
+    e.countdown = int16_t(0x100 / e.speed);
+    int dir = person_head_for(world, id);
+    switch (dir) {
+    case kNavArrived:
+        e.dest_room = 0;
+        process(c, id);
+        return false;
+    case kNavBlockedByPeople:
+        play_staff_anim(c.anims, e, kAnimStand);
+        e.countdown = 0;
+        return false;
+    case kNavWalledIn:
+        staff_nav_failure(c, id);
+        return false;
+    case kNavNoPath:
+        if (e.resume_state)
+            fail_staff_complex(world, c.anims, id);
+        else
+            staff_nav_failure(c, id);
+        return false;
+    default: {
+        size_t stand = size_t(kStaffAnimStarts[e.subtype][kAnimStand]) + e.facing;
+        if (e.facing != dir || (stand < c.anims.starts.size() && c.anims.starts[stand].frame == e.sprite)) {
+            e.facing = uint8_t(dir);
+            play_staff_anim(c.anims, e, kAnimWalk);
+        }
+        return true;
+    }
     }
 }
 
@@ -934,39 +1095,8 @@ void staff_goto_object(const Ctx &c, uint16_t id)
         handyman_check_for_litter(world, e);
     if (c.game_turn % e.anim_speed == 0)
         e.sprite = c.anims.frames[e.sprite].next;
-    if (--e.countdown <= 0) {
-        if (off_blueprint(world, id))
-            return;
-        e.countdown = int16_t(0x100 / e.speed);
-        int dir = person_head_for(world, id);
-        switch (dir) {
-        case kNavArrived:
-            e.dest_room = 0;
-            process(c, id);
-            return;
-        case kNavBlockedByPeople:
-            play_staff_anim(c.anims, e, kAnimStand);
-            e.countdown = 0;
-            return;
-        case kNavWalledIn:
-            staff_nav_failure(c, id);
-            return;
-        case kNavNoPath:
-            if (e.resume_state)
-                fail_staff_complex(world, c.anims, id);
-            else
-                staff_nav_failure(c, id);
-            return;
-        default: {
-            size_t stand = size_t(kStaffAnimStarts[e.subtype][kAnimStand]) + e.facing;
-            if (e.facing != dir || (stand < c.anims.starts.size() && c.anims.starts[stand].frame == e.sprite)) {
-                e.facing = uint8_t(dir);
-                play_staff_anim(c.anims, e, kAnimWalk);
-            }
-            break;
-        }
-        }
-    }
+    if (--e.countdown <= 0 && !staff_goto_object_head_on(c, id))
+        return;
     step_on(world, id);
 }
 
@@ -1098,11 +1228,223 @@ bool obey_pager(const Ctx &c, uint16_t id)
     return true;
 }
 
-// take_a_break (0x2adfc): staff rooms (SS_IN_STAFF_ROOM) are not ported, so
-// no one goes for a rest.
-bool take_a_break(const Ctx &, uint16_t)
+void interrupt_staff_in(const Ctx &c, uint16_t id);
+
+// take_a_break (0x2adfc): the member of staff goes to the nearest staff room
+// in use (get_nearest_room_info) for a rest, SS_IN_STAFF_ROOM there: a
+// receptionist stops what she does first (interrupt_staff); out of their
+// room by its door, then to the staff room's door and in. False, doing
+// nothing, if there is no staff room.
+bool take_a_break(const Ctx &c, uint16_t id)
 {
+    World &world = c.world;
+    Thing &s = world.things[id];
+    uint16_t room = get_nearest_room_info(world, s, kRoomStaffRoom);
+    if (!room)
+        return false;
+    trace_event("take_a_break %u room=%u tired=%d", unsigned(id), unsigned(room), int(s.tiredness));
+    if (s.subtype == kStaffReceptionist)
+        interrupt_staff_in(c, id);
+    staff_exit_room_check(world, s);
+    s.next_state = kStaffInStaffRoom;
+    if (s.room) {
+        set_complex(world, id, kComplexLeaveRoom, world.rooms[s.room].door_inside_tile);
+        process(c, id);
+        s.resume_state = kStaffEvacuate;
+        set_complex(world, id, kComplexToStaffRoom, world.rooms[room].door_tile);
+    } else {
+        set_complex(world, id, kComplexToStaffRoom, world.rooms[room].door_tile);
+        s.resume_state = kStaffEvacuate;
+        process(c, id);
+    }
+    s.dest_room = room;
+    return true;
+}
+
+// is_staff_stepping_on_toes (0x2ce9c): whether another member of staff
+// comes after them in their cell's list of things.
+bool is_staff_stepping_on_toes(const World &world, const Thing &s)
+{
+    for (int16_t i = s.cell_next; i > 0; i = world.things[size_t(i)].cell_next)
+        if (world.things[size_t(i)].type == kThingStaff)
+            return true;
     return false;
+}
+
+// overlapping_staff_check (0x2cf14): on every 47th turn, or standing on the
+// cell inside their room's door, on another member of staff's cell, or on
+// an object's cell without using an object, the member of staff walks to
+// a random cell of the room (row drawn first) they can get to, back in
+// `state` there. Returns whether they set off.
+bool overlapping_staff_check(const Ctx &c, uint16_t id, uint8_t state)
+{
+    World &world = c.world;
+    Thing &s = world.things[id];
+    const RoomInfo &room = world.rooms[s.room];
+    uint16_t tile = cell_of(s);
+    const Thing &obj = world.things[s.object];
+    bool uses_object = s.object && (obj.type == kThingObject || obj.type == kThingDoor) && obj.user == id;
+    if (!(c.game_turn % 47 == 0 || tile == room.door_inside_tile || is_staff_stepping_on_toes(world, s) ||
+          (!uses_object && (world.map[tile].flags & 7))))
+        return false;
+    auto row = int16_t(old_newrand(world.seed) % uint32_t(room.height));
+    auto column = int16_t(old_newrand(world.seed) % uint32_t(room.width));
+    auto dest = uint16_t(room.pos + ((row << 7) + column));
+    if (tile == dest || !can_i_get_to(world, s, dest))
+        return false;
+    s.resume_state = state;
+    s.next_state = state;
+    set_complex(world, id, kComplexWalkTo, dest);
+    process(c, id);
+    return true;
+}
+
+// nurse_check_for_work (0x6c6f4): the nurse heads for a ward in use of her
+// hospital drawn at random (get_room_info_rand), SS_NURSE_IN_WARD there.
+// False if there is none.
+bool nurse_check_for_work(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &nurse = world.things[id];
+    uint16_t room = get_room_info_rand(world, kRoomWard, 100, nurse.owner);
+    if (!room)
+        return false;
+    set_complex(world, id, kComplexToRoom, world.rooms[room].door_tile);
+    nurse.substate = 0;
+    nurse.next_state = kStaffNurseInWard;
+    nurse.resume_state = kStaffInCorridor;
+    nurse.dest_room = room;
+    process(c, id);
+    return true;
+}
+
+// The member of staff in a staff room plays `complex` (the sofa, pool or
+// the video game), back in SS_IN_STAFF_ROOM after it.
+void staff_room_pastime(const Ctx &c, uint16_t id, uint16_t complex)
+{
+    Thing &s = c.world.things[id];
+    s.resume_state = kStaffInStaffRoom;
+    s.next_state = kStaffInStaffRoom;
+    set_complex(c.world, id, complex, 0);
+    process(c, id);
+}
+
+// staff_in_staff_room's pastimes: by a draw of ten, pool, the video game
+// (the staff who cannot play it then doing nothing more) or, not on the
+// sofa already, the sofa. Returns whether they took one or stay put.
+bool staff_in_staff_room_pastime(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    const Thing &s = world.things[id];
+    uint32_t roll = old_newrand(world.seed, "staff_in_staff_room") % 10;
+    const std::array<uint8_t, 2> &can = kStaffAbilities[s.subtype % kStaffAbilities.size()];
+    if (find_object(world, cell_of(s), kObjPoolTable, true, true, s.owner) && s.complex_action != kComplexPool &&
+        roll == 1 && can[1]) {
+        trace_event("staff_room %u pastime=pool", unsigned(id));
+        staff_room_pastime(c, id, kComplexPool);
+        return true;
+    }
+    if (find_object(world, cell_of(s), kObjVideoGame, true, true, s.owner) && s.complex_action != kComplexVideoGame &&
+        roll == 2) {
+        if (can[0]) {
+            trace_event("staff_room %u pastime=video", unsigned(id));
+            staff_room_pastime(c, id, kComplexVideoGame);
+        }
+        return true;
+    }
+    if (s.complex_action != kComplexSofa && find_object(world, cell_of(s), kObjSofa, true, true, s.owner)) {
+        trace_event("staff_room %u pastime=sofa", unsigned(id));
+        staff_room_pastime(c, id, kComplexSofa);
+        return true;
+    }
+    return false;
+}
+
+// staff_in_staff_room once rested: discontent halved, a crazy doctor cured,
+// the others back to work out of `room`, their speed again by `settings`.
+// Returns false for a handyman or receptionist, sent out (SS_EVACUATE) with
+// nothing more.
+bool staff_in_staff_room_rested(const Ctx &c, uint16_t id, const Balance &settings, const RoomInfo &room)
+{
+    World &world = c.world;
+    Thing &s = world.things[id];
+    trace_event("rested %u discontent=%u crazy=%u", unsigned(id), unsigned(s.discontent), unsigned(s.crazy));
+    s.discontent = uint16_t(int16_t(s.discontent) / 2);
+    if (s.subtype == kStaffDoctor && s.crazy) {
+        if (s.layers[5] == 3)
+            s.layers[5] = 1;
+        else if (s.layers[5] == 4)
+            s.layers[5] = 2;
+        s.crazy = 0;
+    } else if (s.subtype == kStaffDoctor) {
+        if (!obey_pager(c, id)) {
+            set_complex(world, id, kComplexLeaveRoom, room.door_inside_tile);
+            s.next_state = kStaffInCorridor;
+            process(c, id);
+        }
+    } else if (s.subtype == kStaffNurse) {
+        set_complex(world, id, kComplexLeaveRoom, room.door_inside_tile);
+        if (!nurse_check_for_work(c, id)) {
+            s.next_state = kStaffInCorridor;
+            process(c, id);
+        }
+    } else if (s.subtype == kStaffHandyman || s.subtype == kStaffReceptionist) {
+        s.state = kStaffEvacuate;
+        return false;
+    }
+    calculate_speed(s, settings);
+    return true;
+}
+
+// staff_in_staff_room (0x2af04): at each end of their animation, once their
+// countdown runs out (every 256 / speed of them), the member of staff rests
+// (rest_staff: gbv.rest_sofa on the sofa, else gbv.rest_standing), their
+// ordered rest done; ordered out of the room (kOrderLeaveRoom, the low
+// orders cleared) or with the room being edited, they leave
+// (evacuate_staff). Else, by a draw of ten, one time in ten they play pool
+// (doctors and handymen) and one in ten the video game (doctors and
+// nurses; the others then do nothing more) on a free one they are not
+// already playing; else, not on the sofa already, they sit on a free one;
+// else they move off a crowded cell (overlapping_staff_check); then, at
+// speed 0x20, once no longer tired
+// (tiredness 0 or less) their discontent halves and a crazy doctor is cured
+// and stays, another doctor answers a page (obey_pager) or goes back to
+// the corridor, a nurse goes to a ward (nurse_check_for_work) or the
+// corridor, and a handyman or receptionist goes out (SS_EVACUATE). The
+// orders to go back to research or training, which are never given here
+// (those rooms' work is not ported), are not looked at.
+void staff_in_staff_room(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &s = world.things[id];
+    if (c.game_turn % s.anim_speed != 0)
+        return;
+    s.sprite = c.anims.frames[s.sprite].next;
+    if (!(c.anims.frames[s.sprite].flags & 1) || --s.countdown > 0)
+        return;
+    static const Balance statics;
+    const Balance &settings = world.settings ? *world.settings : statics;
+    const Balance::Gbv &gbv = settings.gbv;
+    rest_staff(world, s, int16_t(s.complex_action == kComplexSofa ? gbv.rest_sofa : gbv.rest_standing));
+    s.orders &= uint8_t(~kOrderRest);
+    if (s.orders & kOrderLeaveRoom) {
+        s.orders &= 0xf0;
+        evacuate_staff(c, id);
+        return;
+    }
+    const RoomInfo &room = world.rooms[s.room];
+    if (room.being_edited || room.state == kRoomEdited) {
+        evacuate_staff(c, id);
+        return;
+    }
+    if (staff_in_staff_room_pastime(c, id))
+        return;
+    if (overlapping_staff_check(c, id, kStaffInStaffRoom))
+        return;
+    s.speed = 0x20;
+    if (s.tiredness <= 0 && !staff_in_staff_room_rested(c, id, settings, room))
+        return;
+    s.countdown = int16_t(0x100 / s.speed);
 }
 
 // interrupt_complex (0x427d8) for a member of staff: their complex, the
@@ -1166,7 +1508,7 @@ void private_interrupt_staff(const Ctx &c, uint16_t id)
         };
         if (uint16_t target = thingpage_remind_me(world.repair_pager, id); target && world.things[target].room_id)
             reopen(world.rooms[world.things[target].room_id]);
-        if (s.room && s.object && kIsMachine[world.things[s.object].subtype % kIsMachine.size()])
+        if (s.room && s.object && kObjectIsMachine[world.things[s.object].subtype % kObjectIsMachine.size()])
             reopen(world.rooms[s.room]);
         thingpage_cancel_my_response(world.repair_pager, id);
     }
@@ -1285,7 +1627,7 @@ void sack(const Ctx &c, uint16_t id, uint8_t mode)
         return;
     interrupt_staff_in(c, id);
     if (mode == 0 && world.ledger && world.balance && world.date)
-        change_balance(*world.ledger, *world.balance, world.date->day, world.date->month, kTxSeverancePay, -s.salary);
+        change_balance(*world.ledger, *world.balance, world.date->day, world.date->month, {kTxSeverancePay, -s.salary});
     else if (mode == 1)
         s.orders &= uint8_t(~kOrderResign);
     if (mode != 2) {
@@ -1379,54 +1721,36 @@ void doctor_in_office(const Ctx &c, uint16_t id)
     }
 }
 
-// doctor_works_at_desk (0x3a7a8): at each end of the desk's animation,
-// out if the room is being edited; else, a quarter of the time, the next
-// patient of the room's queue called (call_person_to_room, the filing
-// cabinet visited on the way if there is one); 7% of the rest a visit to
-// the cabinet; else, free (staff_free) and with the policy letting staff
-// leave rooms and no one queueing, a page answered every work_delay + 1
-// turns (2 * work_delay + 1 tired); first, they may resign or leave
-// (shall_i_resign). Orders, breaks (no staff rooms) and status icons are
-// not ported.
-void doctor_works_at_desk(const Ctx &c, uint16_t id)
+// doctor_works_at_desk's call: the next patient of `room`'s queue called
+// (call_person_to_room), the doctor to wait for them, visiting the filing
+// cabinet on the way if there is one.
+void doctor_works_at_desk_call_patient(const Ctx &c, uint16_t id, const RoomInfo &room)
 {
     World &world = c.world;
     Thing &d = world.things[id];
-    if (c.game_turn % d.anim_speed != 0)
+    uint16_t queue = room.queue_head;
+    if (!queue || !call_person_to_room(c.person_run(), id, queue, kComplexCalledToRoom, room.door_tile, true))
         return;
-    d.sprite = c.anims.frames[d.sprite].next;
-    if (!(c.anims.frames[d.sprite].flags & 1))
-        return;
-    if (!holds_room(c, id) || shall_i_resign(c, id))
-        return;
-    RoomInfo &room = world.rooms[d.room];
-    if (room.being_edited || room.state == kRoomEdited) {
-        evacuate_staff(c, id);
-        return;
+    if (find_object(world, cell_of(d), kObjCabinet, true, true, d.owner)) {
+        d.next_state = kStaffDoctorWaitsForPatient;
+        set_complex(world, id, kComplexCabinetThenWait, 0);
+        process(c, id);
+    } else {
+        d.state = kStaffDoctorWaitsForPatient;
     }
-    if (old_newrand(world.seed) % 100 < 25) {
-        uint16_t queue = room.queue_head;
-        if (queue && call_person_to_room(world, c.anims, c.person, id, queue, kComplexCalledToRoom, room.door_tile,
-                                         true, c.game_turn)) {
-            if (find_object(world, cell_of(d), kObjCabinet, true, true, d.owner)) {
-                d.next_state = kStaffDoctorWaitsForPatient;
-                set_complex(world, id, kComplexCabinetThenWait, 0);
-                process(c, id);
-            } else {
-                d.state = kStaffDoctorWaitsForPatient;
-            }
-        }
-        return;
-    }
-    uint32_t pct = old_newrand(world.seed) % 100;
-    if (pct >= 25 && pct < 32) {
-        if (find_object(world, cell_of(d), kObjCabinet, true, true, d.owner)) {
-            d.resume_state = kStaffDoctorInOffice;
-            set_complex(world, id, kComplexCabinet, 0);
-            process(c, id);
-        }
-        return;
-    }
+}
+
+// The end of doctor_works_at_desk and doctor_in_machine_room: free in their
+// room (staff_free), a member of staff takes a break (take_a_break) when
+// more tired than the policy's rest_threshold or, with the policy letting
+// staff leave rooms and no one queueing, answers a page every
+// work_delay + 1 turns (2 * work_delay + 1 tired); gone, a member of staff
+// with `skills` is paged in their place if patients queue.
+void free_staff_break_or_page(const Ctx &c, uint16_t id, uint16_t skills)
+{
+    World &world = c.world;
+    const Thing &d = world.things[id];
+    const RoomInfo &room = world.rooms[d.room];
     if (!room.staff_free)
         return;
     const HospitalSettings &policy = policy_of(world);
@@ -1439,13 +1763,60 @@ void doctor_works_at_desk(const Ctx &c, uint16_t id)
         paged = true;
     }
     if (paged && room.queue_head)
-        page_member_of_staff(world, kSkillDoctor, d.room, false, 1, d.owner);
+        page_member_of_staff(world, skills, d.room, false, 1, d.owner);
+}
+
+// doctor_works_at_desk (0x3a7a8): at each end of the desk's animation,
+// out if the room is being edited; else, a quarter of the time, the next
+// patient of the room's queue called (call_person_to_room, the filing
+// cabinet visited on the way if there is one); 7% of the rest a visit to
+// the cabinet; else, free (staff_free), a break (take_a_break) when more
+// tired than the policy's rest_threshold or, with the policy letting staff
+// leave rooms and no one queueing, a page answered every work_delay + 1
+// turns (2 * work_delay + 1 tired), a doctor paged in their place if
+// patients queue; first, they may resign or leave (shall_i_resign), and
+// take an ordered break (kOrderRest). The orders to go back to research or
+// training are dropped. Status icons are not ported.
+void doctor_works_at_desk(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    if (c.game_turn % d.anim_speed != 0)
+        return;
+    d.sprite = c.anims.frames[d.sprite].next;
+    if (!(c.anims.frames[d.sprite].flags & 1))
+        return;
+    d.orders &= uint8_t(~(kOrderReturnToResearch | kOrderReturnToTraining));
+    if (!holds_room(c, id) || shall_i_resign(c, id))
+        return;
+    RoomInfo &room = world.rooms[d.room];
+    if (room.being_edited || room.state == kRoomEdited) {
+        evacuate_staff(c, id);
+        return;
+    }
+    if ((d.orders & kOrderRest) && take_a_break(c, id))
+        return;
+    if (old_newrand(world.seed) % 100 < 25) {
+        doctor_works_at_desk_call_patient(c, id, room);
+        return;
+    }
+    uint32_t pct = old_newrand(world.seed) % 100;
+    if (pct >= 25 && pct < 32) {
+        if (find_object(world, cell_of(d), kObjCabinet, true, true, d.owner)) {
+            d.resume_state = kStaffDoctorInOffice;
+            set_complex(world, id, kComplexCabinet, 0);
+            process(c, id);
+        }
+        return;
+    }
+    free_staff_break_or_page(c, id, kSkillDoctor);
 }
 
 // The examinations a doctor starts once the patient called has arrived
 // (doctor_waits_for_patient_to_arrive), by room type: the doctor's complex
 // (S_COMP.LEX) and the SS_DOCTOR_EXAMINES substate it leads to; complex 0
-// for rooms not ported (the treatment rooms').
+// for rooms not ported (the operating theatre, research and the treatment
+// rooms not listed).
 struct Examination {
     uint16_t complex;
     uint8_t substate;
@@ -1459,6 +1830,8 @@ constexpr std::array<Examination, kRoomTypes> kExaminations = [] {
     e[kRoomBloodMachine] = {0x398, 90};
     e[kRoomXray] = {0x276, 100};
     e[kRoomGeneralDiag] = {0x442, 110};
+    e[kRoomInflation] = {0x1e0, 10};
+    e[kRoomPharmacy] = {0x244, 180};
     return e;
 }();
 
@@ -1486,6 +1859,17 @@ constexpr uint16_t kComplexCardioTune = 0x122;
 constexpr std::array<uint16_t, 3> kComplexGeneralDiag = {0x456, 0x460, 0x46a};
 constexpr uint16_t kComplexGeneralDiagEnd = 0x474;
 constexpr uint16_t kComplexBackToWork = 0x154;
+// The pharmacy's: the nurse giving the drug, and fetching it for the
+// patient to drink in the cabinet (transparency, invisibility).
+constexpr uint16_t kComplexGiveDrug = 500;
+constexpr uint16_t kComplexFetchDrug = 0x21c;
+constexpr uint16_t kComplexAfterCabinet = 0x230;
+// The patient's and staff's animation columns of drinking in the cabinet.
+constexpr size_t kAnimDrink = 43;
+constexpr uint16_t kStaffAnimDrink = 15;
+// Illnesses (the game's ILL_*) the pharmacy cures in its cabinet.
+constexpr uint8_t kIllInvisibility = 5;
+constexpr uint8_t kIllTransparency = 15;
 // The psychiatrist's on a patient of kind kPatientBigHead.
 constexpr uint16_t kComplexPsychHead = 500;
 constexpr uint16_t kComplexPsychHeadDoctor = 0x2b2;
@@ -1501,14 +1885,83 @@ void send_person_somewhere_else(const Ctx &c, uint16_t id)
         process_person_complex(c.world, c.anims, c.person, id, c.game_turn);
 }
 
+// doctor_waits_for_patient's examination in a diagnosis room `room`, as
+// kExaminations lists: the cardiogram's patient on the machine, the
+// psychiatrist first at the bookcase and the patient then on the couch, the
+// scanner's second complex for some illnesses.
+void doctor_waits_for_patient_examine(const Ctx &c, uint16_t id, const RoomInfo &room)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    Thing &patient = world.things[pid];
+    const Examination &exam = kExaminations[room.type % kRoomTypes];
+    if (!exam.complex)
+        return;
+    if (room.type == kRoomCardio) {
+        patient.next_state = kPsSlaveReady;
+        set_complex(world, pid, kComplexCardioOn, 0);
+        process_person_complex(world, c.anims, c.person, pid, c.game_turn);
+    } else if (room.type == kRoomPsych && find_object(world, cell_of(d), kObjBookcase, true, true, d.owner)) {
+        set_complex(world, id, kComplexBookcase, 0);
+    }
+    d.next_state = kStaffDoctorExamines;
+    d.substate = exam.substate;
+    uint16_t complex = exam.complex;
+    if (room.type == kRoomScanner && !kIllnessAbilities[patient.illness % kIllnessAbilities.size()])
+        complex = kComplexScanAlt;
+    set_complex(world, id, complex, 0);
+    process(c, id);
+    if (room.type == kRoomPsych) {
+        patient.next_state = kPsSlaveReady;
+        set_complex(world, pid, kComplexOnCouch, 0);
+        process_person_complex(world, c.anims, c.person, pid, c.game_turn);
+    }
+}
+
+// doctor_waits_for_patient with the patient called arrived in `room`: a
+// crazy doctor sends one in four on elsewhere; else both start the
+// examination, a GP's consultation with the patient to the chair.
+void doctor_waits_for_patient_arrived(const Ctx &c, uint16_t id, const RoomInfo &room)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    Thing &patient = world.things[pid];
+    patient.state = kPsSlaveReady;
+    if (d.subtype == kStaffDoctor && d.crazy &&
+        (old_newrand(world.seed, "doctor_waits_for_patient_to_arrive") & 3) == 0) {
+        send_person_somewhere_else(c, pid);
+        d.state = get_state(room.type, d);
+        d.slave = 0;
+        return;
+    }
+    trace_event("treat %u patient=%u room=%u", unsigned(id), unsigned(pid), unsigned(d.room));
+    patient.resume_state = 0;
+    if (room.type != kRoomGp) {
+        doctor_waits_for_patient_examine(c, id, room);
+        return;
+    }
+    if (find_object(world, cell_of(patient), kObjChair, true, true, patient.owner)) {
+        patient.next_state = kPsSlaveReady;
+        if (set_complex(world, pid, kComplexSitOnChair, 0))
+            process_person_complex(world, c.anims, c.person, pid, c.game_turn);
+        d.substate++;
+    }
+    d.next_state = kStaffDoctorExamines;
+    d.substate = 1;
+    set_complex(world, id, kComplexConsultation, 0);
+    process(c, id);
+}
+
 // doctor_waits_for_patient_to_arrive (0x3aba4): once the patient called
 // has arrived, both start the room's examination (a GP's consultation, the
 // patient to the chair; the diagnosis rooms' in kExaminations), the doctor
 // to SS_DOCTOR_EXAMINES; a cracked-up doctor first sends one patient in
 // four (a draw from world.seed) on elsewhere. Until then the call is
 // repeated every 200 turns (call_person_again) and given up on a patient
-// who no longer comes (forget_about_my_slave). The treatment rooms'
-// examinations are not ported: their patients wait.
+// who no longer comes (forget_about_my_slave). The rooms kExaminations does
+// not list are not ported: their patients wait.
 void doctor_waits_for_patient(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -1518,58 +1971,14 @@ void doctor_waits_for_patient(const Ctx &c, uint16_t id)
         return;
     }
     uint16_t pid = d.slave;
-    Thing &patient = world.things[pid];
+    const Thing &patient = world.things[pid];
     const RoomInfo &room = world.rooms[d.room];
     if (patient.state == kPsArrivedFromCall) {
-        patient.state = kPsSlaveReady;
-        if (d.subtype == kStaffDoctor && d.crazy &&
-            (old_newrand(world.seed, "doctor_waits_for_patient_to_arrive") & 3) == 0) {
-            send_person_somewhere_else(c, pid);
-            d.state = get_state(room.type, d);
-            d.slave = 0;
-            return;
-        }
-        patient.resume_state = 0;
-        if (room.type == kRoomGp) {
-            if (find_object(world, cell_of(patient), kObjChair, true, true, patient.owner)) {
-                patient.next_state = kPsSlaveReady;
-                if (set_complex(world, pid, kComplexSitOnChair, 0))
-                    process_person_complex(world, c.anims, c.person, pid, c.game_turn);
-                d.substate++;
-            }
-            d.next_state = kStaffDoctorExamines;
-            d.substate = 1;
-            set_complex(world, id, kComplexConsultation, 0);
-            process(c, id);
-            return;
-        }
-        const Examination &exam = kExaminations[room.type % kRoomTypes];
-        if (!exam.complex)
-            return;
-        if (room.type == kRoomCardio) {
-            patient.next_state = kPsSlaveReady;
-            set_complex(world, pid, kComplexCardioOn, 0);
-            process_person_complex(world, c.anims, c.person, pid, c.game_turn);
-        } else if (room.type == kRoomPsych && find_object(world, cell_of(d), kObjBookcase, true, true, d.owner)) {
-            set_complex(world, id, kComplexBookcase, 0);
-        }
-        d.next_state = kStaffDoctorExamines;
-        d.substate = exam.substate;
-        uint16_t complex = exam.complex;
-        if (room.type == kRoomScanner && !kIllnessAbilities[patient.illness % kIllnessAbilities.size()])
-            complex = kComplexScanAlt;
-        set_complex(world, id, complex, 0);
-        process(c, id);
-        if (room.type == kRoomPsych) {
-            patient.next_state = kPsSlaveReady;
-            set_complex(world, pid, kComplexOnCouch, 0);
-            process_person_complex(world, c.anims, c.person, pid, c.game_turn);
-        }
+        doctor_waits_for_patient_arrived(c, id, room);
         return;
     }
     if (--d.timer <= 0) {
-        uint8_t result =
-            call_person_again(world, c.anims, c.person, id, kComplexCalledToRoom, room.door_tile, c.game_turn);
+        uint8_t result = call_person_again(c.person_run(), id, kComplexCalledToRoom, room.door_tile);
         if (result == 0) {
             stop_waiting_for_patient(world, d);
         } else if (result == 1) {
@@ -1626,6 +2035,332 @@ uint32_t examination_pct(World &world)
     return old_newrand(world.seed, "doctor_carries_out_examination") % 100;
 }
 
+// start[anim + facing] of kPatientAnimStarts row `kind` column `column`,
+// into `sprite` and `flip`, as the game sets a machine's aux_sprite.
+void patient_start_frame(const AnimData &anims, uint8_t kind, size_t column, uint8_t facing, uint16_t &sprite,
+                         uint8_t &flip)
+{
+    uint16_t anim = kPatientAnimStarts[kind % kPatientAnimStarts.size()][column];
+    size_t start = size_t(anim == 9999 ? 0 : anim) + facing;
+    if (start >= anims.starts.size())
+        return;
+    sprite = uint16_t(anims.starts[start].frame);
+    flip = anims.starts[start].flip ? 1 : 0;
+}
+
+// The pharmacy's cabinet stages (doctor_carries_out_examination's 201 to
+// 206): until the machine's split_height reaches `until` (moving 10 a turn
+// towards it), then on to the next substate with the drawing effect `flags`
+// and parameter `param` and split_height `height`. Returns whether it moved
+// on.
+bool cabinet_stage(Thing &d, Thing &obj, uint8_t until, uint8_t flags, uint8_t param, uint8_t height)
+{
+    if (obj.split_height != until) {
+        obj.split_height = uint8_t(until ? obj.split_height + 10 : obj.split_height - 10);
+        return false;
+    }
+    d.substate++;
+    obj.aux_draw_flags = flags;
+    obj.aux_param = param;
+    obj.split_height = height;
+    return true;
+}
+
+// doctor_examines's substate 1: the GP's consultation over, the doctor back
+// to the desk, the patient's diagnosis and what comes next
+// (done_treatment), the doctor free again.
+void doctor_examines_consultation_done(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    d.state = kStaffDoctorWorksAtDesk;
+    d.slave = 0;
+    done_treatment(world, c.anims, id, pid, c.game_turn);
+    world.rooms[d.room].staff_free = 1;
+}
+
+// doctor_examines's substates 30 and 31: until the cardiogram's patient is
+// ready the doctor now and then idles; then the patient's run (30) or the
+// doctor's check (31).
+void doctor_examines_cardio_ready(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    if (world.things[pid].state != kPsSlaveReady) {
+        uint32_t pct = examination_pct(world);
+        uint32_t low = d.substate == 30 ? 30 : 33;
+        if (pct >= low && pct < low + 2)
+            examine_with(c, id, kComplexCardioIdle);
+        return;
+    }
+    d.substate++;
+    if (d.substate == 31)
+        patient_does(c, pid, kComplexCardioRun);
+    else
+        examine_with(c, id, kComplexCardioCheck);
+}
+
+// doctor_examines's substate 32: the cardiogram's jolts, the patient's
+// animation speed drawn, the doctor checking again; or the patient jolted
+// (33); or the doctor's tune.
+void doctor_examines_cardio_jolts(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    Thing &patient = world.things[pid];
+    // Each test draws again, as the game's.
+    uint32_t pct = examination_pct(world);
+    if (pct < 5) {
+        patient.anim_speed = 2;
+    } else if (pct = examination_pct(world), pct >= 5 && pct < 30) {
+        patient.anim_speed = 1;
+    } else if (pct = examination_pct(world), pct >= 30 && pct < 35) {
+        patient.anim_speed = 4;
+    } else if (pct = examination_pct(world), pct >= 35 && pct < 50) {
+        patient.anim_speed = kPeepAnimSpeed;
+        d.substate = 33;
+        patient_does(c, pid, kComplexCardioJolt);
+        examine_with(c, id, kComplexCardioIdle);
+        return;
+    } else {
+        examine_with(c, id, kComplexCardioTune);
+        return;
+    }
+    examine_with(c, id, kComplexCardioCheck);
+}
+
+// doctor_examines's substate 33: the jolted patient ready, off the
+// cardiogram (40).
+void doctor_examines_cardio_off(const Ctx &c, uint16_t id)
+{
+    Thing &d = c.world.things[id];
+    uint16_t pid = d.slave;
+    if (c.world.things[pid].state != kPsSlaveReady)
+        return;
+    d.substate = 40;
+    patient_does(c, pid, kComplexCardioOff);
+}
+
+// doctor_examines's substate 40: the patient off the cardiogram, the doctor
+// back to the room's work and, unless the machine broke down
+// (treatment_machine_used), the patient's diagnosis and what comes next,
+// the doctor free.
+void doctor_examines_cardio_done(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    const Thing &patient = world.things[pid];
+    if (patient.state != kPsSlaveReady)
+        return;
+    d.state = kStaffDoctorInMachineRoom;
+    d.slave = 0;
+    if (treatment_machine_used(world, patient.treatment, cell_of(patient)))
+        return;
+    done_treatment(world, c.anims, id, pid, c.game_turn);
+    world.rooms[d.room].staff_free = 1;
+}
+
+// doctor_examines's substate 60: the psychiatrist with a big-headed
+// patient first (the bookcase if there is one), then the end (230).
+void doctor_examines_psych(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    Thing &patient = world.things[pid];
+    if (patient.subtype == kPatientBigHead) {
+        if (set_complex(world, pid, kComplexPsychHead, 0))
+            process_person_complex(world, c.anims, c.person, pid, c.game_turn);
+        patient.next_state = kPsSlaveReady;
+        if (find_object(world, cell_of(d), kObjBookcase, true, true, d.owner) &&
+            set_complex(world, id, kComplexBookcase, 0))
+            process(c, id);
+        if (set_complex(world, id, kComplexPsychHeadDoctor, 0))
+            process(c, id);
+        d.next_state = kStaffDoctorExamines;
+    }
+    d.substate = 230;
+}
+
+// doctor_examines's substate 110: one of general diagnosis's three
+// examinations, then its last (111).
+void doctor_examines_general_diag(const Ctx &c, uint16_t id)
+{
+    c.world.things[id].substate = 111;
+    examine_with(
+        c, id,
+        kComplexGeneralDiag[old_newrand(c.world.seed, "doctor_carries_out_examination") % kComplexGeneralDiag.size()]);
+}
+
+// doctor_examines's substate 180: in a pharmacy, a patient without a drug
+// goes home; else the drug fetched for transparency (190) and invisibility
+// (200), or given (181).
+void doctor_examines_pharmacy_drug(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    const Thing &patient = world.things[pid];
+    if (!pre_administer_drugs(world, pid)) {
+        person_go_home(world, c.anims, c.person, pid, c.game_turn);
+        d.slave = 0;
+        d.state = kStaffDoctorInMachineRoom;
+        world.rooms[d.room].staff_free = 1;
+    } else if (patient.illness == kIllTransparency) {
+        d.substate = 190;
+        examine_with(c, id, kComplexFetchDrug);
+    } else if (patient.illness == kIllInvisibility) {
+        d.substate = 200;
+        examine_with(c, id, kComplexFetchDrug);
+    } else {
+        d.substate = 181;
+        examine_with(c, id, kComplexGiveDrug);
+    }
+}
+
+// doctor_examines's substate 181: the drug given (administer_drugs), the
+// nurse back to the room's work, free.
+void doctor_examines_drug_given(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    d.next_state = kStaffDoctorInMachineRoom;
+    d.slave = 0;
+    set_complex(world, id, kComplexBackToWork, 0);
+    process(c, id);
+    administer_drugs(world, c.anims, id, pid, c.game_turn);
+    world.rooms[d.room].staff_free = 1;
+}
+
+// doctor_examines's substate 190: the patient drinks the transparency drug
+// in the cabinet (191).
+void doctor_examines_drink_transparency(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    Thing &patient = world.things[d.slave];
+    d.substate++;
+    play_staff_anim(c.anims, d, kStaffAnimDrink);
+    patient.state = kPsFills;
+    patient.object = d.object;
+    Thing &obj = world.things[patient.object];
+    play_frame(patient, c.anims, kPatientAnimStarts[patient.subtype][kAnimDrink]);
+    patient_start_frame(c.anims, patient.subtype == 6 ? 0 : 1, kAnimDrink, patient.facing, obj.aux_sprite,
+                        obj.aux_flip);
+    obj.split_height = 0;
+}
+
+// doctor_examines's substate 191: the patient done drinking, their looks
+// changed back, the drug given (181).
+void doctor_examines_transparency_drunk(const Ctx &c, uint16_t id)
+{
+    Thing &d = c.world.things[id];
+    Thing &patient = c.world.things[d.slave];
+    if (patient.state != kPsSlaveReady)
+        return;
+    transform_peep_who(patient, 4);
+    d.substate = 181;
+    examine_with(c, id, kComplexAfterCabinet);
+    patient.state = kPsMerged;
+}
+
+// doctor_examines's substate 200: the patient drinks the invisibility drug
+// in the cabinet (201).
+void doctor_examines_drink_invisibility(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    Thing &patient = world.things[d.slave];
+    d.substate++;
+    play_staff_anim(c.anims, d, kStaffAnimDrink);
+    patient.state = kPsEnergises;
+    patient.object = d.object;
+    Thing &obj = world.things[patient.object];
+    play_frame(patient, c.anims, kPatientAnimStarts[patient.subtype][kAnimDrink]);
+    obj.aux_draw_flags = 4;
+    patient_start_frame(c.anims, 0, kAnimDrink, patient.facing, obj.aux_sprite, obj.aux_flip);
+    obj.aux_param = 0;
+    obj.split_height = 0;
+}
+
+// doctor_examines's substate 203: the cabinet's stage after which the
+// patient takes the machine's drawing (204).
+void doctor_examines_invisibility_shown(const Ctx &c, uint16_t id)
+{
+    Thing &d = c.world.things[id];
+    Thing &patient = c.world.things[d.slave];
+    Thing &obj = c.world.things[patient.object];
+    if (cabinet_stage(d, obj, 200, 0xff, 1, 200)) {
+        patient.sprite = obj.aux_sprite;
+        patient.flip = obj.aux_flip;
+    }
+}
+
+// doctor_examines's substate 206: the cabinet's last stage, then the
+// patient's looks changed back and the drug given (181).
+void doctor_examines_invisibility_drunk(const Ctx &c, uint16_t id)
+{
+    Thing &d = c.world.things[id];
+    Thing &patient = c.world.things[d.slave];
+    Thing &obj = c.world.things[patient.object];
+    if (obj.split_height != 0) {
+        obj.split_height = uint8_t(obj.split_height - 10);
+        return;
+    }
+    transform_peep_who(patient, 0xa);
+    d.substate = 181;
+    examine_with(c, id, kComplexAfterCabinet);
+    patient.state = kPsMerged;
+}
+
+// doctor_examines's pharmacy substates (180-206); the others do nothing.
+void doctor_examines_pharmacy(const Ctx &c, uint16_t id)
+{
+    Thing &d = c.world.things[id];
+    switch (d.substate) {
+    case 180:
+        doctor_examines_pharmacy_drug(c, id);
+        break;
+    case 181:
+        doctor_examines_drug_given(c, id);
+        break;
+    case 190:
+        doctor_examines_drink_transparency(c, id);
+        break;
+    case 191:
+        doctor_examines_transparency_drunk(c, id);
+        break;
+    case 200:
+        doctor_examines_drink_invisibility(c, id);
+        break;
+    case 201:
+        cabinet_stage(d, c.world.things[c.world.things[d.slave].object], 200, 8, 1, 0);
+        break;
+    case 202:
+        cabinet_stage(d, c.world.things[c.world.things[d.slave].object], 200, 0xff, 1, 0);
+        break;
+    case 203:
+        doctor_examines_invisibility_shown(c, id);
+        break;
+    case 204:
+        cabinet_stage(d, c.world.things[c.world.things[d.slave].object], 0, 8, 5, 200);
+        break;
+    case 205:
+        cabinet_stage(d, c.world.things[c.world.things[d.slave].object], 0, 4, 0, 200);
+        break;
+    case 206:
+        doctor_examines_invisibility_drunk(c, id);
+        break;
+    default:
+        break;
+    }
+}
+
 // doctor_carries_out_examination (0x530e0), by the doctor's substate: in a
 // GP's office (1), the consultation over, back to the desk, the patient's
 // diagnosis and what comes next (done_treatment), the doctor free again;
@@ -1633,100 +2368,46 @@ uint32_t examination_pct(World &world)
 // checks and the jolts (the patient's animation speed drawn), then the
 // patient off; general diagnosis (110, 111), one of three examinations,
 // then the last; the psychiatrist (60) with a big-headed patient first;
-// then (50, 80, 90, 100, 230) the end of the examination
-// (examination_done). The treatment rooms' stages are not ported.
+// then (10, 50, 80, 90, 100, 230) the end of the examination or treatment
+// (examination_done; 10 is inflation's). In a pharmacy (180), a patient
+// without a drug goes home; else the nurse gives the drug (181,
+// administer_drugs), first, for transparency (190, 191) and invisibility
+// (200-206), the patient drinking it in the cabinet, its looks changed
+// back. The operating theatre's, research's and the other treatment rooms'
+// stages are not ported.
 void doctor_examines(const Ctx &c, uint16_t id)
 {
-    World &world = c.world;
-    Thing &d = world.things[id];
-    uint16_t pid = d.slave;
-    if (!pid)
+    Thing &d = c.world.things[id];
+    if (!d.slave)
         return;
-    Thing &patient = world.things[pid];
     switch (d.substate) {
     case 1:
-        d.state = kStaffDoctorWorksAtDesk;
-        d.slave = 0;
-        done_treatment(world, c.anims, id, pid, c.game_turn);
-        world.rooms[d.room].staff_free = 1;
+        doctor_examines_consultation_done(c, id);
         break;
     case 30:
     case 31:
-        if (patient.state != kPsSlaveReady) {
-            uint32_t pct = examination_pct(world);
-            uint32_t low = d.substate == 30 ? 30 : 33;
-            if (pct >= low && pct < low + 2)
-                examine_with(c, id, kComplexCardioIdle);
-            break;
-        }
-        d.substate++;
-        if (d.substate == 31)
-            patient_does(c, pid, kComplexCardioRun);
-        else
-            examine_with(c, id, kComplexCardioCheck);
+        doctor_examines_cardio_ready(c, id);
         break;
-    case 32: {
-        // Each test draws again, as the game's.
-        uint32_t pct = examination_pct(world);
-        if (pct < 5) {
-            patient.anim_speed = 2;
-        } else if (pct = examination_pct(world), pct >= 5 && pct < 30) {
-            patient.anim_speed = 1;
-        } else if (pct = examination_pct(world), pct >= 30 && pct < 35) {
-            patient.anim_speed = 4;
-        } else if (pct = examination_pct(world), pct >= 35 && pct < 50) {
-            patient.anim_speed = kPeepAnimSpeed;
-            d.substate = 33;
-            patient_does(c, pid, kComplexCardioJolt);
-            examine_with(c, id, kComplexCardioIdle);
-            break;
-        } else {
-            examine_with(c, id, kComplexCardioTune);
-            break;
-        }
-        examine_with(c, id, kComplexCardioCheck);
+    case 32:
+        doctor_examines_cardio_jolts(c, id);
         break;
-    }
     case 33:
-        if (patient.state != kPsSlaveReady)
-            break;
-        d.substate = 40;
-        patient_does(c, pid, kComplexCardioOff);
+        doctor_examines_cardio_off(c, id);
         break;
     case 40:
-        if (patient.state != kPsSlaveReady)
-            break;
-        d.state = kStaffDoctorInMachineRoom;
-        d.slave = 0;
-        if (treatment_machine_used(world, patient.treatment, cell_of(patient)))
-            break;
-        done_treatment(world, c.anims, id, pid, c.game_turn);
-        world.rooms[d.room].staff_free = 1;
+        doctor_examines_cardio_done(c, id);
         break;
     case 60:
-        if (patient.subtype == kPatientBigHead) {
-            if (set_complex(world, pid, kComplexPsychHead, 0))
-                process_person_complex(world, c.anims, c.person, pid, c.game_turn);
-            patient.next_state = kPsSlaveReady;
-            if (find_object(world, cell_of(d), kObjBookcase, true, true, d.owner) &&
-                set_complex(world, id, kComplexBookcase, 0))
-                process(c, id);
-            if (set_complex(world, id, kComplexPsychHeadDoctor, 0))
-                process(c, id);
-            d.next_state = kStaffDoctorExamines;
-        }
-        d.substate = 230;
+        doctor_examines_psych(c, id);
         break;
     case 110:
-        d.substate = 111;
-        examine_with(c, id,
-                     kComplexGeneralDiag[old_newrand(world.seed, "doctor_carries_out_examination") %
-                                         kComplexGeneralDiag.size()]);
+        doctor_examines_general_diag(c, id);
         break;
     case 111:
         d.substate = 230;
         examine_with(c, id, kComplexGeneralDiagEnd);
         break;
+    case 10:
     case 50:
     case 80:
     case 90:
@@ -1735,7 +2416,32 @@ void doctor_examines(const Ctx &c, uint16_t id)
         examination_done(c, id);
         break;
     default:
+        doctor_examines_pharmacy(c, id);
         break;
+    }
+}
+
+// doctor_in_machine_room's stroll to a random cell of the room they stand
+// in (1% of the time its middle) they can get to.
+void doctor_in_machine_room_stroll(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t tile = cell_of(d);
+    const RoomInfo &here = world.rooms[room_at(world, tile)];
+    uint16_t pos;
+    if (old_newrand(world.seed, "doctor_in_machine_room") % 100 == 25) {
+        pos = uint16_t(((here.height / 2) << 7) + here.width / 2 + here.pos);
+    } else {
+        // The row is drawn first, as the game's code does.
+        auto row = int16_t(old_newrand(world.seed, "doctor_in_machine_room") % uint32_t(here.height));
+        auto column = int16_t(old_newrand(world.seed, "doctor_in_machine_room") % uint32_t(here.width));
+        pos = uint16_t((row << 7) + column + here.pos);
+    }
+    if (tile != pos && can_i_get_to(world, d, pos)) {
+        d.next_state = d.resume_state = kStaffDoctorInMachineRoom;
+        set_complex(world, id, kComplexWalkTo, pos);
+        process(c, id);
     }
 }
 
@@ -1745,13 +2451,14 @@ void doctor_examines(const Ctx &c, uint16_t id)
 // of the room's queue is called (call_person_to_room) unless the room is
 // closed; 2% of the rest, or always on the cell inside the door, they walk
 // to a random cell of the room (1% of those its middle) they can get to;
-// else, free (staff_free) and with the policy letting staff leave rooms and
+// else, free (staff_free), a break (take_a_break) when more tired than the
+// policy's rest_threshold or, with the policy letting staff leave rooms and
 // no one queueing, a page answered every work_delay + 1 turns
 // (2 * work_delay + 1 tired), another doctor paged if a queue is left.
-// First, they may resign or leave (shall_i_resign), and a room due a
-// repair is closed. A doctor in an operating theatre goes to
-// SS_DOCTOR_IN_THEATRE; the theatre's calls (by its lead surgeon), breaks
-// (no staff rooms), nurses' vaccinations and status icons are not ported.
+// First, they may resign or leave (shall_i_resign), take an ordered break
+// (kOrderRest), and a room due a repair is closed. A doctor in an
+// operating theatre goes to SS_DOCTOR_IN_THEATRE; the theatre's calls (by
+// its lead surgeon), nurses' vaccinations and status icons are not ported.
 void doctor_in_machine_room(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -1773,51 +2480,25 @@ void doctor_in_machine_room(const Ctx &c, uint16_t id)
         evacuate_staff(c, id);
         return;
     }
+    if ((d.orders & kOrderRest) && take_a_break(c, id))
+        return;
     if (room.state == kRoomRepairDue)
         room.state = kRoomClosed;
     if (old_newrand(world.seed) % 100 < 25) {
         uint16_t queue = room.queue_head;
         if (room.state != kRoomClosed && queue && room.type != kRoomTheatre &&
-            call_person_to_room(world, c.anims, c.person, id, queue, kComplexCalledToRoom, room.door_tile, true,
-                                c.game_turn)) {
+            call_person_to_room(c.person_run(), id, queue, kComplexCalledToRoom, room.door_tile, true)) {
             play_staff_anim(c.anims, d, kAnimStand);
             d.state = kStaffDoctorWaitsForPatient;
         }
         return;
     }
     uint32_t pct = old_newrand(world.seed) % 100;
-    uint16_t tile = cell_of(d);
-    if ((pct >= 25 && pct < 27) || tile == room.door_inside_tile) {
-        const RoomInfo &here = world.rooms[room_at(world, tile)];
-        uint16_t pos;
-        if (old_newrand(world.seed) % 100 == 25) {
-            pos = uint16_t(((here.height / 2) << 7) + here.width / 2 + here.pos);
-        } else {
-            // The row is drawn first, as the game's code does.
-            auto row = int16_t(old_newrand(world.seed) % uint32_t(here.height));
-            auto column = int16_t(old_newrand(world.seed) % uint32_t(here.width));
-            pos = uint16_t((row << 7) + column + here.pos);
-        }
-        if (tile != pos && can_i_get_to(world, d, pos)) {
-            d.next_state = d.resume_state = kStaffDoctorInMachineRoom;
-            set_complex(world, id, kComplexWalkTo, pos);
-            process(c, id);
-        }
+    if ((pct >= 25 && pct < 27) || cell_of(d) == room.door_inside_tile) {
+        doctor_in_machine_room_stroll(c, id);
         return;
     }
-    if (!room.staff_free)
-        return;
-    const HospitalSettings &policy = policy_of(world);
-    bool tired = d.tiredness > policy.rest_threshold;
-    bool paged = false;
-    if (tired && take_a_break(c, id)) {
-        paged = true;
-    } else if (policy.staff_leave_rooms && room.queue_head == 0 &&
-               c.game_turn % (tired ? d.work_delay * 2 + 1 : d.work_delay + 1) == 0 && obey_pager(c, id)) {
-        paged = true;
-    }
-    if (paged && room.queue_head)
-        page_member_of_staff(world, kRoomDoctorSkills[room.type % kRoomTypes], d.room, false, 1, d.owner);
+    free_staff_break_or_page(c, id, kRoomDoctorSkills[room.type % kRoomTypes]);
 }
 
 // find_peep (0x1720c): a person of hospital `owner` in room `room` of thing
@@ -1875,18 +2556,114 @@ void reinit_nurse(World &world, uint16_t id)
     nurse.substate = 0;
 }
 
+// nurse_in_ward's call: the next patient of ward `room`'s queue called to
+// a free bed (find_unallocated_bed), the nurse to it (substate 1). Returns
+// whether she called one.
+bool nurse_in_ward_call_patient(const Ctx &c, uint16_t id, const RoomInfo &room)
+{
+    World &world = c.world;
+    Thing &nurse = world.things[id];
+    uint16_t queue = room.queue_head;
+    if (!queue)
+        return false;
+    uint16_t bed = find_unallocated_bed(world, nurse.room);
+    if (!bed || !call_person_to_room(c.person_run(), id, queue, kComplexCalledToRoom, room.door_tile, false))
+        return false;
+    nurse.object = bed;
+    nurse.next_state = kStaffNurseInWard;
+    nurse.substate = 1;
+    set_complex(world, id, kComplexNurseToBed, 0);
+    process(c, id);
+    return true;
+}
+
+// nurse_in_ward's stroll to a random cell of the room she stands in (5% its
+// middle) she can get to; staying put, now and then she forgets the
+// patient she visited last.
+void nurse_in_ward_stroll(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &nurse = world.things[id];
+    uint16_t cur = cell_of(nurse);
+    const RoomInfo &here = world.rooms[room_at(world, cur)];
+    uint32_t pct = old_newrand(world.seed, "nurse_in_ward") % 100;
+    uint16_t target;
+    if (pct >= 15 && pct < 20) {
+        target = uint16_t(here.pos + (((here.height / 2) << 7) + here.width / 2));
+    } else {
+        // The row is drawn first, as the game's code does.
+        auto row = int16_t(old_newrand(world.seed, "nurse_in_ward") % uint32_t(here.height));
+        auto column = int16_t(old_newrand(world.seed, "nurse_in_ward") % uint32_t(here.width));
+        target = uint16_t(here.pos + ((row << 7) + column));
+    }
+    if (cur != target && can_i_get_to(world, nurse, target)) {
+        nurse.next_state = nurse.resume_state = kStaffNurseInWard;
+        set_complex(world, id, kComplexWalkTo, target);
+        process(c, id);
+        return;
+    }
+    pct = old_newrand(world.seed, "nurse_in_ward") % 100;
+    if (pct >= 0x46 && pct < 0x50)
+        nurse.work_target = 0;
+}
+
+// nurse_in_ward's substate 0 in ward `room` with desk `desk` (0 if none):
+// the decision.
+void nurse_in_ward_decide(const Ctx &c, uint16_t id, RoomInfo &room, uint16_t desk)
+{
+    World &world = c.world;
+    Thing &nurse = world.things[id];
+    if (room.state != kRoomEdited)
+        room.state = 1;
+    if (!holds_room(c, id) || shall_i_resign(c, id))
+        return;
+    if ((nurse.orders & kOrderRest) && take_a_break(c, id))
+        return;
+    const HospitalSettings &policy = policy_of(world);
+    bool tired = nurse.tiredness > policy.rest_threshold;
+    if (policy.staff_leave_rooms && c.game_turn % (tired ? nurse.work_delay * 2 + 1 : nurse.work_delay + 1) == 0 &&
+        obey_pager(c, id))
+        return;
+    if (tired && take_a_break(c, id))
+        return;
+    if (room.being_edited || room.state == kRoomEdited) {
+        evacuate_staff(c, id);
+        return;
+    }
+    if (nurse_in_ward_call_patient(c, id, room))
+        return;
+    if (desk && nurse.work_target != desk && old_newrand(world.seed, "nurse_in_ward") % 100 < 10) {
+        nurse.work_target = desk;
+        set_complex(world, id, kComplexNurseToDesk, 0);
+        nurse.next_state = kStaffNurseInWard;
+        process(c, id);
+        return;
+    }
+    uint16_t patient = find_peep(world, nurse.room, true, kThingPatient, kPsInBed, nurse.owner);
+    if (patient && patient != nurse.work_target) {
+        nurse.work_target = patient;
+        nurse.object = world.things[patient].object;
+        nurse.next_state = kStaffNurseInWard;
+        set_complex(world, id, kComplexNurseVisit, 0);
+        process(c, id);
+        return;
+    }
+    nurse_in_ward_stroll(c, id);
+}
+
 // nurse_in_ward (0x6c8d8). Substate 0, at each turn: the ward in use (unless
-// edited); out if she cannot hold it or it is being edited; she may resign,
-// answer a page every work_delay + 1 turns (2 * work_delay + 1 tired) as
-// the policy lets staff leave rooms; else the queue's next patient called
+// edited); out if she cannot hold it; she may resign, take an ordered
+// break (kOrderRest, take_a_break), answer a page every work_delay + 1
+// turns (2 * work_delay + 1 tired) as the policy lets staff leave rooms, or
+// take a break when more tired than the policy's rest_threshold; out if the
+// ward is being edited; else the queue's next patient called
 // to a free bed (find_unallocated_bed); else, 10% of the time, to the
 // desk; else to a patient in bed she did not visit last (find_peep, drawn
 // from world.seed); else to a random cell of the ward (5% its middle).
 // Substate 1: the patient called arrived, she examines them
 // (affect_diagnosis) and they go to bed (PS_IN_BED); until then the call is
 // repeated every 200 turns (call_person_again) and given up on a patient
-// who no longer comes. Breaks, vaccinations and status icons are not
-// ported.
+// who no longer comes. Vaccinations and status icons are not ported.
 void nurse_in_ward(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -1894,74 +2671,7 @@ void nurse_in_ward(const Ctx &c, uint16_t id)
     uint16_t desk = find_object(world, cell_of(nurse), kObjDesk, false, false, nurse.owner);
     RoomInfo &room = world.rooms[nurse.room];
     if (nurse.substate == 0) {
-        if (room.state != kRoomEdited)
-            room.state = 1;
-        if (!holds_room(c, id) || shall_i_resign(c, id))
-            return;
-        if ((nurse.orders & kOrderRest) && take_a_break(c, id))
-            return;
-        const HospitalSettings &policy = policy_of(world);
-        bool tired = nurse.tiredness > policy.rest_threshold;
-        if (policy.staff_leave_rooms && c.game_turn % (tired ? nurse.work_delay * 2 + 1 : nurse.work_delay + 1) == 0 &&
-            obey_pager(c, id))
-            return;
-        if (tired && take_a_break(c, id))
-            return;
-        if (room.being_edited || room.state == kRoomEdited) {
-            evacuate_staff(c, id);
-            return;
-        }
-        if (uint16_t queue = room.queue_head) {
-            if (uint16_t bed = find_unallocated_bed(world, nurse.room)) {
-                if (call_person_to_room(world, c.anims, c.person, id, queue, kComplexCalledToRoom, room.door_tile,
-                                        false, c.game_turn)) {
-                    nurse.object = bed;
-                    nurse.next_state = kStaffNurseInWard;
-                    nurse.substate = 1;
-                    set_complex(world, id, kComplexNurseToBed, 0);
-                    process(c, id);
-                    return;
-                }
-            }
-        }
-        if (desk && nurse.work_target != desk && old_newrand(world.seed) % 100 < 10) {
-            nurse.work_target = desk;
-            set_complex(world, id, kComplexNurseToDesk, 0);
-            nurse.next_state = kStaffNurseInWard;
-            process(c, id);
-            return;
-        }
-        if (uint16_t patient = find_peep(world, nurse.room, true, kThingPatient, kPsInBed, nurse.owner)) {
-            if (patient != nurse.work_target) {
-                nurse.work_target = patient;
-                nurse.object = world.things[patient].object;
-                nurse.next_state = kStaffNurseInWard;
-                set_complex(world, id, kComplexNurseVisit, 0);
-                process(c, id);
-                return;
-            }
-        }
-        uint16_t cur = cell_of(nurse);
-        const RoomInfo &here = world.rooms[room_at(world, cur)];
-        uint32_t pct = old_newrand(world.seed) % 100;
-        uint16_t target;
-        if (pct >= 15 && pct < 20) {
-            target = uint16_t(here.pos + (((here.height / 2) << 7) + here.width / 2));
-        } else {
-            // The row is drawn first, as the game's code does.
-            auto row = int16_t(old_newrand(world.seed) % uint32_t(here.height));
-            auto column = int16_t(old_newrand(world.seed) % uint32_t(here.width));
-            target = uint16_t(here.pos + ((row << 7) + column));
-        }
-        if (cur != target && can_i_get_to(world, nurse, target)) {
-            nurse.next_state = nurse.resume_state = kStaffNurseInWard;
-            set_complex(world, id, kComplexWalkTo, target);
-            process(c, id);
-            return;
-        }
-        pct = old_newrand(world.seed) % 100;
-        if (pct >= 0x46 && pct < 0x50)
-            nurse.work_target = 0;
+        nurse_in_ward_decide(c, id, room, desk);
         return;
     }
     if (nurse.substate != 1)
@@ -1969,7 +2679,7 @@ void nurse_in_ward(const Ctx &c, uint16_t id)
     uint16_t pid = nurse.slave;
     Thing &patient = world.things[pid];
     if (patient.state == kPsArrivedFromCall) {
-        affect_diagnosis(world, nurse, patient);
+        affect_diagnosis(world, c.anims, id, pid, c.game_turn);
         nurse.substate = 0;
         nurse.slave = 0;
         patient.object = nurse.object;
@@ -1978,8 +2688,7 @@ void nurse_in_ward(const Ctx &c, uint16_t id)
         patient.next_state = kPsInBed;
         process_person_complex(world, c.anims, c.person, pid, c.game_turn);
     } else if (--nurse.timer <= 0) {
-        uint8_t result =
-            call_person_again(world, c.anims, c.person, id, kComplexCalledToRoom, room.door_tile, c.game_turn);
+        uint8_t result = call_person_again(c.person_run(), id, kComplexCalledToRoom, room.door_tile);
         if (result == 0) {
             nurse.substate = 0;
             nurse.slave = 0;
@@ -2075,7 +2784,7 @@ void receptionist_works(const Ctx &c, uint16_t id)
             if (uint16_t(all_queue_capacity(world, world.things[p].treatment, true, r.owner)) == 0 || !r.object)
                 continue;
             uint16_t pos = world.things[r.object].use_pos[1];
-            if (call_person_to_room(world, c.anims, c.person, id, p, kComplexToDesk, pos, false, c.game_turn)) {
+            if (call_person_to_room(c.person_run(), id, p, kComplexToDesk, pos, false)) {
                 r.next_state = kStaffReceptWaitsForPatient;
                 set_complex(world, id, kComplexCallPatient, 0);
                 process(c, id);
@@ -2116,7 +2825,7 @@ void recept_waits_for_patient(const Ctx &c, uint16_t id)
         if (!r.object)
             return;
         uint16_t pos = world.things[r.object].use_pos[1];
-        uint8_t result = call_person_again(world, c.anims, c.person, id, kComplexToDesk, pos, c.game_turn);
+        uint8_t result = call_person_again(c.person_run(), id, kComplexToDesk, pos);
         if (result == 0) {
             r.state = kStaffReceptionistWorks;
             r.slave = 0;
@@ -2203,16 +2912,97 @@ void appraise_staff(Thing &staff, const Balance &settings)
     staff.happiness = uint16_t(std::clamp(int(int16_t(happiness)), 0, 100));
 }
 
+namespace
+{
+// place_staff_in_struct's slot: the first free thing short of the
+// kStaffReserve last, 0 if none.
+uint16_t place_staff_in_struct_free_thing(const World &world)
+{
+    for (size_t i = 1; i < world.things.size() - kStaffReserve; i++)
+        if (world.things[i].type == kThingFree)
+            return uint16_t(i);
+    return 0;
+}
+
+// place_staff_in_struct's nurse: her skill and looks, drawn from `seed`.
+void place_staff_in_struct_nurse(Thing &s, uint32_t &seed)
+{
+    s.skills = kSkillNurse;
+    s.female = 1;
+    s.face_head = 12;
+    s.face_body = uint8_t(staffrand(seed) % 5 + 10);
+    s.face_legs = uint8_t(staffrand(seed) % 5 + 10);
+}
+
+// place_staff_in_struct's doctor: their skills, each by the market's rate,
+// the range of their ability by gbv's thresholds (a consultant's above a
+// doctor's, a junior's below) into `ability_min` and `ability_max`, and
+// their looks, all drawn from the market's seed.
+void place_staff_in_struct_doctor(Thing &s, StaffMarket &market, const Balance::Gbv &gbv, uint32_t &ability_min,
+                                  uint32_t &ability_max)
+{
+    uint32_t &seed = market.seed;
+    ability_min = gbv.doctor_threshold;
+    ability_max = gbv.consultant_threshold;
+    s.skills |= kSkillDoctor;
+    if (market.shrink_rate > 0 && staffrand(seed) % market.shrink_rate == 0)
+        s.skills |= kSkillPsychiatrist;
+    if (market.surgeon_rate > 0 && staffrand(seed) % market.surgeon_rate == 0)
+        s.skills |= kSkillSurgeon;
+    if (market.researcher_rate > 0 && staffrand(seed) % market.researcher_rate == 0)
+        s.skills |= kSkillResearcher;
+    if (market.consultant_rate > 0 && staffrand(seed) % market.consultant_rate == 0) {
+        s.skills |= kSkillConsultant;
+        ability_min = gbv.consultant_threshold;
+        ability_max = 1000;
+    } else if (market.junior_rate > 0 && staffrand(seed) % market.junior_rate == 0) {
+        s.skills |= kSkillJunior;
+        ability_min = 30;
+        ability_max = gbv.doctor_threshold;
+    }
+    s.female = staffrand(seed) % 100 < 53;
+    s.face_head = uint8_t(staffrand(seed) % 5);
+    s.face_body = uint8_t(staffrand(seed) % 5);
+    s.face_legs = uint8_t(staffrand(seed) % 5);
+    if (s.layers[5] == 2) {
+        s.face_legs += 5;
+        s.face_body += 5;
+        s.face_head += 5;
+    }
+}
+
+// place_staff_in_struct's handyman: his skill, priorities and looks, drawn
+// from `seed`.
+void place_staff_in_struct_handyman(Thing &s, uint32_t &seed)
+{
+    s.skills = kSkillHandyman;
+    s.female = 0;
+    s.prio_litter = 0x21;
+    s.prio_plants = 0x21;
+    s.prio_repair = 0x22;
+    s.face_head = uint8_t(staffrand(seed) % 3 + 15);
+    s.face_body = uint8_t(staffrand(seed) % 3 + 15);
+    s.face_legs = uint8_t(staffrand(seed) % 3 + 15);
+}
+
+// place_staff_in_struct's receptionist: her skill and looks, drawn from
+// `seed`.
+void place_staff_in_struct_receptionist(Thing &s, uint32_t &seed)
+{
+    s.skills = kSkillReceptionist;
+    s.female = 1;
+    s.face_head = uint8_t(staffrand(seed) % 4 + 10);
+    s.face_body = uint8_t(staffrand(seed) % 5 + 10);
+    s.face_legs = uint8_t(staffrand(seed) % 5 + 10);
+    if (s.face_head == 12)
+        s.face_head = 14;
+}
+} // namespace
+
 uint16_t place_staff_in_struct(World &world, StaffMarket &market, const Balance &settings, uint8_t kind,
                                uint16_t extra_skills, uint32_t game_turn)
 {
-    uint16_t id = 0;
-    for (size_t i = 1; i < world.things.size() - kStaffReserve; i++) {
-        if (world.things[i].type == kThingFree) {
-            id = uint16_t(i);
-            break;
-        }
-    }
+    uint16_t id = place_staff_in_struct_free_thing(world);
     if (!id)
         return 0;
     uint32_t &seed = market.seed;
@@ -2232,63 +3022,19 @@ uint16_t place_staff_in_struct(World &world, StaffMarket &market, const Balance 
     s.warmth = 50;
     s.state = kStaffApplicant;
 
-    const Balance::Gbv &gbv = settings.gbv;
     uint32_t ability_min = 30, ability_max = 1000;
     switch (kind) {
     case kStaffNurse:
-        s.skills = kSkillNurse;
-        s.female = 1;
-        s.face_head = 12;
-        s.face_body = uint8_t(staffrand(seed) % 5 + 10);
-        s.face_legs = uint8_t(staffrand(seed) % 5 + 10);
+        place_staff_in_struct_nurse(s, seed);
         break;
     case kStaffDoctor:
-        ability_min = gbv.doctor_threshold;
-        ability_max = gbv.consultant_threshold;
-        s.skills |= kSkillDoctor;
-        if (market.shrink_rate > 0 && staffrand(seed) % market.shrink_rate == 0)
-            s.skills |= kSkillPsychiatrist;
-        if (market.surgeon_rate > 0 && staffrand(seed) % market.surgeon_rate == 0)
-            s.skills |= kSkillSurgeon;
-        if (market.researcher_rate > 0 && staffrand(seed) % market.researcher_rate == 0)
-            s.skills |= kSkillResearcher;
-        if (market.consultant_rate > 0 && staffrand(seed) % market.consultant_rate == 0) {
-            s.skills |= kSkillConsultant;
-            ability_min = gbv.consultant_threshold;
-            ability_max = 1000;
-        } else if (market.junior_rate > 0 && staffrand(seed) % market.junior_rate == 0) {
-            s.skills |= kSkillJunior;
-            ability_min = 30;
-            ability_max = gbv.doctor_threshold;
-        }
-        s.female = staffrand(seed) % 100 < 53;
-        s.face_head = uint8_t(staffrand(seed) % 5);
-        s.face_body = uint8_t(staffrand(seed) % 5);
-        s.face_legs = uint8_t(staffrand(seed) % 5);
-        if (s.layers[5] == 2) {
-            s.face_legs += 5;
-            s.face_body += 5;
-            s.face_head += 5;
-        }
+        place_staff_in_struct_doctor(s, market, settings.gbv, ability_min, ability_max);
         break;
     case kStaffHandyman:
-        s.skills = kSkillHandyman;
-        s.female = 0;
-        s.prio_litter = 0x21;
-        s.prio_plants = 0x21;
-        s.prio_repair = 0x22;
-        s.face_head = uint8_t(staffrand(seed) % 3 + 15);
-        s.face_body = uint8_t(staffrand(seed) % 3 + 15);
-        s.face_legs = uint8_t(staffrand(seed) % 3 + 15);
+        place_staff_in_struct_handyman(s, seed);
         break;
     case kStaffReceptionist:
-        s.skills = kSkillReceptionist;
-        s.female = 1;
-        s.face_head = uint8_t(staffrand(seed) % 4 + 10);
-        s.face_body = uint8_t(staffrand(seed) % 5 + 10);
-        s.face_legs = uint8_t(staffrand(seed) % 5 + 10);
-        if (s.face_head == 12)
-            s.face_head = 14;
+        place_staff_in_struct_receptionist(s, seed);
         break;
     }
     s.skills |= extra_skills;
@@ -2357,9 +3103,29 @@ bool staff_place_ok(const World &world, int cell, uint8_t kind)
     return path.count != 0;
 }
 
-bool place_staff_on_map(World &world, const AnimData &anims, const Balance &settings, int cell, uint16_t id, bool force,
-                        uint32_t game_turn)
+namespace
 {
+// place_staff_on_map's new hire, hired at `game_turn`: no orders,
+// discontent or resignations yet, and their skills now count
+// (staff_with_skill). The staff counts are not kept.
+void place_staff_on_map_hire(World &world, uint16_t id, uint32_t game_turn)
+{
+    Thing &s = world.things[id];
+    s.resign_count = 0;
+    s.resign_time = 0;
+    s.orders = 0;
+    s.discontent = 0;
+    s.icon_id = 0;
+    s.hire_expiry = 0;
+    s.hire_time = int16_t(game_turn);
+    set_expertise_staff(world, id);
+}
+} // namespace
+
+bool place_staff_on_map(World &world, const StaffSetup &setup, int cell, uint16_t id, bool force)
+{
+    const AnimData &anims = setup.anims;
+    const uint32_t game_turn = setup.game_turn;
     trace_event("place_staff %u tile=%d", unsigned(id), cell);
     if (id == 0 || id >= world.things.size() || cell < 0 || cell >= kMapCells)
         return false;
@@ -2389,20 +3155,11 @@ bool place_staff_on_map(World &world, const AnimData &anims, const Balance &sett
     }
     s.substate = 0;
     s.complex_action = 0;
-    calculate_speed(s, settings);
+    calculate_speed(s, setup.settings);
     insert_node(world, id, s.x, s.y);
-    // With no one held, a new hire, whose skills now count
-    // (staff_with_skill). The staff counts are not kept.
-    if (world.held_staff == 0) {
-        s.resign_count = 0;
-        s.resign_time = 0;
-        s.orders = 0;
-        s.discontent = 0;
-        s.icon_id = 0;
-        s.hire_expiry = 0;
-        s.hire_time = int16_t(game_turn);
-        set_expertise_staff(world, id);
-    }
+    // With no one held, a new hire.
+    if (world.held_staff == 0)
+        place_staff_on_map_hire(world, id, game_turn);
     if (s.subtype == kStaffNurse)
         reinit_nurse(world, id);
     else if (s.subtype == kStaffHandyman)
@@ -2414,6 +3171,61 @@ bool place_staff_on_map(World &world, const AnimData &anims, const Balance &sett
     world.held_staff_tile = 0;
     return true;
 }
+
+namespace
+{
+// staff_turn for the states of doctors and nurses at work in their rooms.
+// Returns whether the member of staff is in one.
+bool staff_turn_at_work(const Ctx &c, uint16_t id)
+{
+    switch (c.world.things[id].state) {
+    case kStaffDoctorInOffice:
+        doctor_in_office(c, id);
+        return true;
+    case kStaffDoctorWorksAtDesk:
+        doctor_works_at_desk(c, id);
+        return true;
+    case kStaffDoctorWaitsForPatient:
+        doctor_waits_for_patient(c, id);
+        return true;
+    case kStaffDoctorExamines:
+        doctor_examines(c, id);
+        return true;
+    case kStaffDoctorInMachineRoom:
+        doctor_in_machine_room(c, id);
+        return true;
+    case kStaffNurseInWard:
+        nurse_in_ward(c, id);
+        return true;
+    default:
+        return false;
+    }
+}
+
+// staff_turn for the receptionists' states; the others do nothing.
+void staff_turn_receptionist(const Ctx &c, uint16_t id)
+{
+    switch (c.world.things[id].state) {
+    case kStaffReceptionistFindsReception:
+        receptionist_finds_reception(c, id);
+        break;
+    case kStaffReceptionistSetup:
+        receptionist_setup(c.world, id);
+        break;
+    case kStaffReceptionistWorks:
+        receptionist_works(c, id);
+        break;
+    case kStaffReceptWaitsForPatient:
+        recept_waits_for_patient(c, id);
+        break;
+    case kStaffReceptAdmitsPatient:
+        recept_admits_patient(c.world, id);
+        break;
+    default:
+        break;
+    }
+}
+} // namespace
 
 void staff_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                 const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn)
@@ -2444,44 +3256,14 @@ void staff_turn(World &world, const AnimData &anims, const PersonComplexes &pers
     case kStaffHandymanWorks:
         handyman_works(c, id);
         break;
-    case kStaffReceptionistFindsReception:
-        receptionist_finds_reception(c, id);
-        break;
-    case kStaffReceptionistSetup:
-        receptionist_setup(world, id);
-        break;
-    case kStaffReceptionistWorks:
-        receptionist_works(c, id);
-        break;
-    case kStaffReceptWaitsForPatient:
-        recept_waits_for_patient(c, id);
-        break;
-    case kStaffReceptAdmitsPatient:
-        recept_admits_patient(world, id);
-        break;
-    case kStaffDoctorInOffice:
-        doctor_in_office(c, id);
-        break;
-    case kStaffDoctorWorksAtDesk:
-        doctor_works_at_desk(c, id);
-        break;
-    case kStaffDoctorWaitsForPatient:
-        doctor_waits_for_patient(c, id);
-        break;
-    case kStaffDoctorExamines:
-        doctor_examines(c, id);
-        break;
-    case kStaffDoctorInMachineRoom:
-        doctor_in_machine_room(c, id);
-        break;
     case kStaffEvacuate:
         evacuate_staff(c, id);
         break;
     case kStaffPlayAniseq:
         play_aniseq(c, s);
         break;
-    case kStaffNurseInWard:
-        nurse_in_ward(c, id);
+    case kStaffInStaffRoom:
+        staff_in_staff_room(c, id);
         break;
     case kStaffBpGoto:
         peep_bp_goto_turn(world, anims, id, game_turn);
@@ -2493,6 +3275,8 @@ void staff_turn(World &world, const AnimData &anims, const PersonComplexes &pers
         s.hire_time = int16_t(game_turn);
         break;
     default:
+        if (!staff_turn_at_work(c, id))
+            staff_turn_receptionist(c, id);
         break;
     }
 }
@@ -2507,15 +3291,127 @@ void sack_staff(World &world, const AnimData &anims, uint16_t id, uint8_t mode, 
     sack(ctx_of(world, anims, game_turn), id, mode);
 }
 
+void adjust_handyman_values(World &world, uint16_t id, uint8_t button)
+{
+    Thing &h = world.things[id];
+    uint8_t *raised = nullptr, *other1 = nullptr, *other2 = nullptr;
+    if (button == kHandymanLitterButton) {
+        raised = &h.prio_litter, other1 = &h.prio_plants, other2 = &h.prio_repair;
+    } else if (button == kHandymanPlantsButton) {
+        raised = &h.prio_plants, other1 = &h.prio_litter, other2 = &h.prio_repair;
+    } else if (button == kHandymanRepairButton) {
+        raised = &h.prio_repair, other1 = &h.prio_plants, other2 = &h.prio_litter;
+    }
+    if (raised) {
+        uint8_t r = *raised, o1 = *other1, o2 = *other2;
+        if (r < 94) {
+            r += 6;
+            while (r + o1 + o2 > 100) {
+                if (o1 > o2)
+                    o1--;
+                else
+                    o2--;
+            }
+        } else {
+            r = 100;
+            o1 = 0;
+            o2 = 0;
+        }
+        *raised = r, *other1 = o1, *other2 = o2;
+    }
+    trace_event("handyman_values %u litter=%u plants=%u repair=%u", unsigned(id), unsigned(h.prio_litter),
+                unsigned(h.prio_plants), unsigned(h.prio_repair));
+    h.litter_count = 0;
+    h.plant_count = 0;
+    h.repair_count = 0;
+}
+
 bool put_back_held_staff(Game &game)
 {
     World &world = game.world;
     if (!world.held_staff)
         return false;
-    place_staff_on_map(world, game.anims(), game.settings(), world.held_staff_tile, world.held_staff, true,
-                       game.turn_count);
+    place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, world.held_staff_tile, world.held_staff,
+                       true);
     return true;
 }
+
+namespace
+{
+// apply_staff_event's EV_PLACE_STAFF: member of staff event.arg placed on
+// cell event.value, a new hire paid for.
+void apply_staff_event_place(Game &game, const Event &event)
+{
+    World &world = game.world;
+    const Thing &s = world.things[event.arg];
+    // A picked-up member of staff is placed again for nothing.
+    bool hiring = world.held_staff == 0;
+    if (place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, event.value, event.arg, false) &&
+        hiring)
+        change_balance(game.finance, game.balance, game.date.day, game.date.month,
+                       {kTxHireStaff, -(s.salary * 12) / 10});
+}
+
+// apply_staff_event's EV_PICK_UP_STAFF: member of staff event.value held
+// and, unless resigning or behind a surgeon's screen, picked up.
+void apply_staff_event_pick_up(Game &game, const Event &event)
+{
+    World &world = game.world;
+    // Held even when the pick-up is refused below, as in the game.
+    world.held_staff = event.value;
+    const Ctx c = ctx_of(world, game.anims(), game.turn_count);
+    if (!(world.things[event.value].orders & kOrderResign) && surgeon_screen_free(world, event.value)) {
+        interrupt_staff_in(c, event.value);
+        staff_picked_up(c, event.value);
+    }
+}
+
+// Whether an event's argument `index` names a thing (not the first, unused
+// one).
+bool is_staff_event_thing(const World &world, uint16_t index)
+{
+    return index && index < world.things.size();
+}
+
+// apply_staff_event's orders: member of staff event.value's low orders
+// replaced by the one event.type gives.
+void apply_staff_event_order(World &world, const Event &event)
+{
+    uint8_t order = event.type == EV_ORDER_REST         ? kOrderRest
+                    : event.type == EV_ORDER_TRAIN      ? kOrderTrain
+                    : event.type == EV_ORDER_LEAVE_ROOM ? kOrderLeaveRoom
+                                                        : 2;
+    Thing &s = world.things[event.value];
+    s.orders = uint8_t((s.orders & 0xf0) | order);
+}
+
+// apply_staff_event's answers to a member of staff's demand (event.value):
+// refused, they may leave (the more often they asked, the likelier);
+// else, given a raise or a bonus of event.arg, they are happy and stay.
+void apply_staff_event_demand(Game &game, const Event &event)
+{
+    World &world = game.world;
+    Thing &s = world.things[event.value];
+    if (event.type == EV_REFUSE_STAFF_DEMAND &&
+        old_newrand(world.seed, "process_turn") % uint32_t(s.resign_count + 1)) {
+        sack_staff(world, game.anims(), event.value, 1, game.turn_count);
+        return;
+    }
+    if (event.type == EV_RAISE_STAFF_SALARY) {
+        s.salary += event.arg;
+        s.happiness = 100;
+    } else if (event.type == EV_GIVE_STAFF_BONUS) {
+        // pay_staff_bonus (0x2b998) for one member of staff; happiness,
+        // clamped, is then set to 100 anyway.
+        change_balance(game.finance, game.balance, game.date.day, game.date.month,
+                       {kTxPersonalBonus, -int32_t(event.arg), event.value});
+        s.happiness = 100;
+    }
+    s.orders &= uint8_t(~kOrderResign);
+    game.advisor.event_flags &= ~kAdvisorEventResign;
+    s.discontent = 0;
+}
+} // namespace
 
 bool apply_staff_event(Game &game, const Event &event)
 {
@@ -2524,44 +3420,41 @@ bool apply_staff_event(Game &game, const Event &event)
     case EV_MARK_EMPLOYING:
         // req2_mark_employing; the advisor's staff happiness total is not
         // ported.
-        if (event.arg && event.arg < world.things.size())
+        if (is_staff_event_thing(world, event.arg))
             world.things[event.arg].state = kStaffHeld;
         return true;
     case EV_PLACE_STAFF:
-        if (event.arg && event.arg < world.things.size()) {
-            Thing &s = world.things[event.arg];
-            // A picked-up member of staff is placed again for nothing.
-            bool hiring = world.held_staff == 0;
-            if (place_staff_on_map(world, game.anims(), game.settings(), event.value, event.arg, false,
-                                   game.turn_count) &&
-                hiring)
-                change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxHireStaff,
-                               -(s.salary * 12) / 10);
-        }
+        if (is_staff_event_thing(world, event.arg))
+            apply_staff_event_place(game, event);
         return true;
     case EV_PICK_UP_STAFF:
-        if (event.value && event.value < world.things.size()) {
-            // Held even when the pick-up is refused below, as in the game.
-            world.held_staff = event.value;
-            const Ctx c = ctx_of(world, game.anims(), game.turn_count);
-            if (!(world.things[event.value].orders & kOrderResign) && surgeon_screen_free(world, event.value)) {
-                interrupt_staff_in(c, event.value);
-                staff_picked_up(c, event.value);
-            }
-        }
+        if (is_staff_event_thing(world, event.value))
+            apply_staff_event_pick_up(game, event);
         return true;
     case EV_STAFF_PICKED_UP:
-        if (event.value && event.value < world.things.size())
+        if (is_staff_event_thing(world, event.value))
             staff_picked_up(ctx_of(world, game.anims(), game.turn_count), event.value);
         return true;
     case EV_CANCEL_BUILD:
         // req2_exit_employing.
-        if (!put_back_held_staff(game) && event.value && event.value < world.things.size())
+        if (!put_back_held_staff(game) && is_staff_event_thing(world, event.value))
             world.things[event.value].state = kStaffApplicant;
         return false;
+    case EV_ORDER_REST:
+    case EV_ORDER_TRAIN:
+    case EV_ORDER_LEAVE_ROOM:
+    case kEvOrder2:
+        if (event.value < world.things.size())
+            apply_staff_event_order(world, event);
+        return true;
     case EV_SACK_STAFF:
-        if (event.value && event.value < world.things.size())
+        if (is_staff_event_thing(world, event.value))
             sack_staff(world, game.anims(), event.value, uint8_t(event.arg), game.turn_count);
+        return true;
+    case EV_ADJUST_HANDYMAN_VALUES:
+        // The game's argb[0].
+        if (event.value < world.things.size())
+            adjust_handyman_values(world, event.value, uint8_t(event.arg));
         return true;
     case EV_ANSWER_PLAYERCALL:
         if (event.value != kCallStaffResigns)
@@ -2570,30 +3463,10 @@ bool apply_staff_event(Game &game, const Event &event)
         return true;
     case EV_REFUSE_STAFF_DEMAND:
     case EV_RAISE_STAFF_SALARY:
-    case EV_GIVE_STAFF_BONUS: {
-        if (event.value == 0 || event.value >= world.things.size())
-            return true;
-        Thing &s = world.things[event.value];
-        if (event.type == EV_REFUSE_STAFF_DEMAND &&
-            old_newrand(world.seed, "process_turn") % uint32_t(s.resign_count + 1)) {
-            sack_staff(world, game.anims(), event.value, 1, game.turn_count);
-            return true;
-        }
-        if (event.type == EV_RAISE_STAFF_SALARY) {
-            s.salary += event.arg;
-            s.happiness = 100;
-        } else if (event.type == EV_GIVE_STAFF_BONUS) {
-            // pay_staff_bonus (0x2b998) for one member of staff; happiness,
-            // clamped, is then set to 100 anyway.
-            change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxPersonalBonus,
-                           -int32_t(event.arg), event.value);
-            s.happiness = 100;
-        }
-        s.orders &= uint8_t(~kOrderResign);
-        game.advisor.event_flags &= ~kAdvisorEventResign;
-        s.discontent = 0;
+    case EV_GIVE_STAFF_BONUS:
+        if (is_staff_event_thing(world, event.value))
+            apply_staff_event_demand(game, event);
         return true;
-    }
     default:
         return false;
     }

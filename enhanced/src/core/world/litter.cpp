@@ -4,6 +4,7 @@
 #include "core/world/complex.h"
 #include "core/world/complex_tables.h"
 #include "core/world/patient_tables.h"
+#include "core/world/rooms.h"
 #include "core/world/trace.h"
 
 #include <array>
@@ -110,44 +111,6 @@ void add_nausea(Thing &p, int amount)
     p.nausea = uint16_t(p.nausea + amount);
     if (int16_t(p.nausea) < 0)
         p.nausea = 0;
-}
-
-// add_health_to_history (0x3d188 in src/treat.cpp).
-void add_health_to_history(Thing &p)
-{
-    int last = 0;
-    size_t i = 0;
-    for (; i < p.health_history.size(); i++) {
-        if (p.health_history[i] == 0)
-            break;
-        last = p.health_history[i] * 10;
-    }
-    if (std::abs(last - p.health) >= 50) {
-        if (i >= p.health_history.size()) {
-            // As the game: entry 0 stays, entries 2-9 move down one.
-            for (i = 1; i < 9; i++)
-                p.health_history[i] = p.health_history[i + 1];
-        }
-        p.health_history[i] = int8_t(p.health / 10);
-    }
-}
-
-// change_health (0x3cb5c in src/treat.cpp), without its status icons and
-// without dying.
-void change_health(Thing &p, int16_t amount)
-{
-    int health = p.health;
-    if (health <= 0)
-        return;
-    if (p.room != 0) {
-        p.health_delta = int16_t(p.health_delta + amount);
-        return;
-    }
-    amount = int16_t(amount + p.health_delta);
-    p.health_delta = 0;
-    health += amount;
-    p.health = int16_t(health < 0 ? 0 : health > 1000 ? 1000 : health);
-    add_health_to_history(p);
 }
 
 } // namespace
@@ -335,7 +298,8 @@ void add_litter_urge(Thing &patient, uint16_t amount)
     patient.litter_urge = uint16_t(patient.litter_urge + amount);
 }
 
-void modify_person(World &world, const Balance &settings, int heating_level, uint16_t id, uint32_t game_turn)
+void modify_person(World &world, const AnimData &anims, const Balance &settings, int heating_level, uint16_t id,
+                   uint32_t game_turn)
 {
     Thing &p = world.things[id];
     const Balance::Gbv &gbv = settings.gbv;
@@ -375,10 +339,56 @@ void modify_person(World &world, const Balance &settings, int heating_level, uin
         p.happiness = 100;
     if (p.refreshment < 0)
         p.refreshment = 0;
-    change_health(p, -1);
+    change_health(world, anims, id, -1, game_turn);
 }
 
-bool do_reaction(World &world, const AnimData &anims, const Balance &settings, uint16_t id)
+namespace
+{
+
+// do_reaction: whether person `p` may play the idle animation `s`.
+bool do_reaction_anim_suits(const Thing &p, const Balance::Gbv &gbv, const ShowAnim &s)
+{
+    if (s.illness != p.illness && s.illness != 0)
+        return false;
+    if (s.ability != 0 && !kAbilities[p.subtype % 15][s.ability])
+        return false;
+    // The game reads facings[4], which is any_facing, for a patient
+    // stuck (facing 4).
+    if (!s.any_facing && !(p.facing < 4 ? s.facings[p.facing] : s.any_facing))
+        return false;
+    switch (s.condition) {
+    case 0:
+        return true;
+    case 1:
+        return p.impatience > gbv.leave_max / 2;
+    case 2:
+    case 3:
+        return p.impatience > gbv.leave_max * 3 / 4;
+    default:
+        return false;
+    }
+}
+
+// do_reaction's idle animation: picks one of the animations that suit `p` and
+// starts it. False when none does.
+bool do_reaction_show_anim(World &world, const AnimData &anims, const Balance::Gbv &gbv, Thing &p,
+                           std::source_location caller)
+{
+    std::array<uint16_t, kShowAnims.size()> list{};
+    uint32_t count = 0;
+    for (const ShowAnim &s : kShowAnims) {
+        if (do_reaction_anim_suits(p, gbv, s))
+            list[count++] = s.anim;
+    }
+    if (count == 0)
+        return false;
+    setup_showanim(p, anims, list[old_newrand(world.seed, caller) % count]);
+    return true;
+}
+
+} // namespace
+
+bool do_reaction(World &world, const AnimData &anims, const Balance &settings, uint16_t id, uint32_t game_turn)
 {
     Thing &p = world.things[id];
     const Balance::Gbv &gbv = settings.gbv;
@@ -389,51 +399,20 @@ bool do_reaction(World &world, const AnimData &anims, const Balance &settings, u
         setup_showanim(p, anims, kAnimVomit);
         p.nausea = 5;
         p.person_flags |= kPfVomits;
-        change_health(p, -10);
+        change_health(world, anims, id, -10, game_turn);
         return true;
     }
     if (p.bladder >= gbv.bowel_overflows && old_newrand(world.seed) % 5 == 0) {
+        trace_event("wets %u bladder=%d", unsigned(id), int(p.bladder));
         setup_showanim(p, anims, kAnimWet);
         p.bladder = p.illness == kIllTheSquits ? int16_t(gbv.bowel_full / 2) : int16_t(0);
         p.person_flags |= kPfWets;
-        change_health(p, -10);
+        change_health(world, anims, id, -10, game_turn);
         return true;
     }
-    if (old_newrand(world.seed) % 200 == 0) {
-        std::array<uint16_t, kShowAnims.size()> list{};
-        uint32_t count = 0;
-        for (const ShowAnim &s : kShowAnims) {
-            if (s.illness != p.illness && s.illness != 0)
-                continue;
-            if (s.ability != 0 && !kAbilities[p.subtype % 15][s.ability])
-                continue;
-            // The game reads facings[4], which is any_facing, for a patient
-            // stuck (facing 4).
-            if (!s.any_facing && !(p.facing < 4 ? s.facings[p.facing] : s.any_facing))
-                continue;
-            bool ok = false;
-            switch (s.condition) {
-            case 0:
-                ok = true;
-                break;
-            case 1:
-                ok = p.impatience > gbv.leave_max / 2;
-                break;
-            case 2:
-            case 3:
-                ok = p.impatience > gbv.leave_max * 3 / 4;
-                break;
-            default:
-                break;
-            }
-            if (ok)
-                list[count++] = s.anim;
-        }
-        if (count > 0) {
-            setup_showanim(p, anims, list[old_newrand(world.seed) % count]);
-            return true;
-        }
-    }
+    if (old_newrand(world.seed) % 200 == 0 &&
+        do_reaction_show_anim(world, anims, gbv, p, std::source_location::current()))
+        return true;
     uint32_t chance = gbv.litter_random > 0 ? old_newrand(world.seed) % gbv.litter_random : 1;
     if ((p.litter_urge > gbv.litter_drop || chance == 0) && old_newrand(world.seed) % 10 == 0) {
         place_litter(world, pos, p.owner, uint8_t(old_newrand(world.seed) % 3 + 1));
@@ -445,8 +424,8 @@ bool do_reaction(World &world, const AnimData &anims, const Balance &settings, u
 bool person_needs_turn(World &world, const AnimData &anims, const Balance &settings, int heating_level, uint16_t id,
                        uint32_t game_turn)
 {
-    modify_person(world, settings, heating_level, id, game_turn);
-    return do_reaction(world, anims, settings, id);
+    modify_person(world, anims, settings, heating_level, id, game_turn);
+    return do_reaction(world, anims, settings, id, game_turn);
 }
 
 void person_showanim_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn)

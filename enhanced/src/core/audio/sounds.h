@@ -116,6 +116,16 @@ struct FrameSound {
     int y = 0;
 };
 
+// How SoundPlayer::play_sample plays a sample: at `volume` and `pan` (0-127,
+// 64 the centre), `pitch` percent of its rate, `loop` + 1 times (-1: until
+// stopped).
+struct SamplePlayback {
+    int volume;
+    int pan;
+    int pitch;
+    int loop;
+};
+
 // The game's sound effects: its rules for choosing, placing and repeating
 // samples (src/sound.cpp, src/sndheap.cpp) over the sound library's ten
 // voices (src/lib/bf1/opt: PlaySampleFromAddress and the rest, on Miles),
@@ -180,13 +190,11 @@ class SoundPlayer
     void play_sound(uint32_t source, int sfx, int x = -1, int y = -1, int screen_width = 640);
 
     // play_sample_using_heap and PlaySampleFromAddress: plays sample
-    // `number` for `source` at `volume` and `pan` (0-127, 64 the centre),
-    // `pitch` percent of its rate, `loop` + 1 times (-1: until stopped).
-    // `type` chooses the voice: 1 any free one, 2 a free one unless the
+    // `number` for `source` as `playback` says. `type` chooses the voice: 1 any free one, 2 a free one unless the
     // source is already playing the sample, 3 the voice of the source's
     // same sample (or same priority tag) whether or not it still plays,
     // else a free one. Returns false if nothing started.
-    bool play_sample(uint32_t source, int number, int volume, int pan, int pitch, int loop, int type);
+    bool play_sample(uint32_t source, int number, const SamplePlayback &playback, int type);
     // StopSample: stops the first voice playing `number` for `source`.
     void stop_sample(uint32_t source, int number);
     // StopAllSamples.
@@ -242,6 +250,11 @@ class SoundPlayer
 
     uint16_t saferand();
     Voice *find(uint32_t source, int number);
+    Voice *free_voice();
+    // The voice a sample of play type `type` plays on, or nullptr for none.
+    Voice *voice_for(uint32_t source, int number, const Sample &sample, int type);
+    // Mixes `v` into `out` as mix() does, freeing it when it ends.
+    static void mix_voice(Voice &v, float *out, int frames, int rate);
 
     const SoundBank *bank_ = nullptr;
     bool sfx_on_ = true;

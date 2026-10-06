@@ -114,6 +114,12 @@ struct Finance {
     // Set by change_balance once the balance is under 7/8 of the starting
     // cash (advisor.event_flags 0x20); the advisor reads it.
     bool low_balance = false;
+    // The patients cured and dead (allhosps.cures and deaths), and this
+    // month's (cures_this_month, deaths_this_month).
+    uint16_t cures = 0;
+    uint16_t deaths = 0;
+    uint16_t cures_this_month = 0;
+    uint16_t deaths_this_month = 0;
 };
 
 // Sets `finance` up for a level whose starting balance is `balance`, as
@@ -121,38 +127,54 @@ struct Finance {
 // 750, the year and the statement opening at `balance`.
 void start_finance(Finance &finance, int32_t balance, const Balance &settings, int level);
 
-// change_balance (src/finance.cpp) for the local player: adds `amount`
-// (negative to spend) to `balance` as a transaction of `type`, capped at
-// 9999999; records it in the statement dated `day` `month` (merged into the
-// last line if that has the same type and date), and in the month's income
-// or expenditure (but kTxCheatMoney) and, for kTxWages and kTxHireStaff,
-// wages. Sets low_balance as the game warns the advisor. `arg` is the
-// line's illness, or for kTxInsurance the company's slot (0-2), whose
-// company the caller passes in `company` (ins_control[arg], which the game
-// looks up itself): that is what the line keeps.
-void change_balance(Finance &finance, int32_t &balance, int day, int month, uint8_t type, int32_t amount,
-                    uint16_t arg = 0, uint16_t company = 0);
+// A transaction for change_balance: `amount` (negative to spend) of `type`.
+// `arg` is the line's illness, or for kTxInsurance the company's slot
+// (0-2), whose company the caller passes in `company` (ins_control[arg],
+// which the game looks up itself): that is what the line keeps.
+struct BalanceChange {
+    uint8_t type = 0; // Transaction
+    int32_t amount = 0;
+    uint16_t arg = 0;
+    uint16_t company = 0;
+};
+
+// change_balance (src/finance.cpp) for the local player: adds
+// `change.amount` to `balance`, capped at 9999999; records it in the
+// statement dated `day` `month` (merged into the last line if that has the
+// same type and date), and in the month's income or expenditure (but
+// kTxCheatMoney) and, for kTxWages and kTxHireStaff, wages. Sets
+// low_balance as the game warns the advisor.
+void change_balance(Finance &finance, int32_t &balance, int day, int month, const BalanceChange &change);
 
 // The radiators player `owner` has (allhosps.radiator_count, which the game
 // counts as they are placed and sold).
 int count_radiators(const World &world, uint8_t owner);
 
+// What month_end closes the month with: its last day `day` of `month`, and
+// the hospital's `radiators` and `reputation`.
+struct MonthEndFigures {
+    int day = 0;
+    int month = 0;
+    int radiators = 0;
+    int reputation = 0;
+};
+
 // The money part of month_end (src/finance.cpp) for the local player (player
-// 0), on the month's last day `day` of `month`: appraises every hired staff
+// 0), on the month's last day (`figures`): appraises every hired staff
 // member (appraise_staff) and pays their salaries as one kTxWages line;
 // banks the month's drinks sales (World::drinks_income) and the insurers'
 // payments due this month (World::hospital's insurance_claims); charges
-// heating for `radiators`, the loan's monthly interest and, if overdrawn,
+// heating for the radiators, the loan's monthly interest and, if overdrawn,
 // twice that rate on the overdraft (towns[level].interest_rate, in
 // hundredths of a percent a year); then moves the month's figures into the
-// history (adjust_monthly_figures, with the balance and `reputation`).
+// history (adjust_monthly_figures, with the balance and the reputation).
 // Jukebox takings, which complex_success does not keep, are not ported;
 // the prices month_end updates last (update_cure_costs) are the caller's,
 // which has the hospitals' markets. The game also adds up held
 // applicants' wages, under no hospital (owner 0x63, out of its table's
 // bounds): they are appraised but not paid here.
-void month_end(Finance &finance, int32_t &balance, World &world, const Balance &settings, int level, int day, int month,
-               int radiators, int reputation);
+void month_end(Finance &finance, int32_t &balance, World &world, const Balance &settings, int level,
+               const MonthEndFigures &figures);
 
 // The money part of year_end (src/finance.cpp): values the hospital
 // (calculate_value), totals the last 12 months' income and expenditure,

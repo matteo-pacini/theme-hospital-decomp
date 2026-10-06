@@ -46,6 +46,7 @@ add_library(th_core STATIC
   src/core/ui/buy_objects.cpp
   src/core/ui/charts.cpp
   src/core/ui/hire_staff.cpp
+  src/core/ui/info_windows.cpp
   src/core/ui/jukebox.cpp
   src/core/ui/layer.cpp
   src/core/ui/menubar.cpp
@@ -64,6 +65,7 @@ add_library(th_core STATIC
   src/core/world/nav.cpp
   src/core/world/objects.cpp
   src/core/world/queue.cpp
+  src/core/world/reaper.cpp
   src/core/world/reception.cpp
   src/core/world/reputation.cpp
   src/core/world/rooms.cpp

@@ -25,6 +25,8 @@ namespace th
 constexpr uint8_t kPsWaitsForBusy = 0x04;
 constexpr uint8_t kPsGotoDestination = 0x06;
 constexpr uint8_t kPsInBed = 0x2c;
+constexpr uint8_t kPsFills = 0x2e;
+constexpr uint8_t kPsEnergises = 0x30;
 constexpr uint8_t kPsReturnToQueueArea = 0x08;
 constexpr uint8_t kPsGoHome = 0x0c;
 constexpr uint8_t kPsGone = 0x0e;
@@ -39,6 +41,7 @@ constexpr uint8_t kPsSlaveReady = 0x20;
 constexpr uint8_t kPsMerged = 0x28;
 constexpr uint8_t kPsComplexRetry = 0x2a;
 constexpr uint8_t kPsInBogs = 0x36;
+constexpr uint8_t kPsLeaveToilets = 0x38;
 constexpr uint8_t kPsStuck = 0x3c;
 constexpr uint8_t kPsBpGoto = 0x40;
 constexpr uint8_t kPsWaitsForDecision = 0x44;
@@ -62,6 +65,16 @@ struct PersonComplexes {
 
     // The step byte at `pc`; 0 (the end of a complex) past the file's end.
     uint8_t at(uint32_t pc) const { return pc < group.size() ? group[pc] : 0; }
+};
+
+// What running patients' complexes reads and changes: the world, the
+// animations, the complexes and the turn being played (the game's
+// actual_game_turn).
+struct PersonRun {
+    World &world;
+    const AnimData &anims;
+    const PersonComplexes &complexes;
+    uint32_t game_turn;
 };
 
 // Loads DATA/P_COMP.LEX from the game data folder `dir`. Fails, saying why
@@ -170,6 +183,14 @@ void interrupt_complex(World &world, const AnimData &anims, const PersonComplexe
 void remove_person(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                    uint32_t game_turn);
 
+// person_nav_failure (0x1752c): person `id`, failing to find its way:
+// heading from the corridor for a room built in the last 500 turns, it is
+// sent on again (start_person_going); else back to queueing if it was to
+// queue, or PS_STUCK. The game also announces a stuck patient of the
+// player's, which is not ported.
+void person_nav_failure(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
+                        uint32_t game_turn);
+
 // One game turn of patient `id`, as process_things for a THING_PATIENT: its
 // state's routine. Returns whether it still exists (PS_GONE removes it).
 // Draws from world.seed as the game does, and reads World::settings and
@@ -198,13 +219,22 @@ void remove_person(World &world, const AnimData &anims, const PersonComplexes &c
 //   treatment needs (page_staff_i_need, core/world/rooms.h); called in, it
 //   waits for the member of staff who called it (PS_ARRIVED_FROM_CALL), or
 //   leaves if there is none;
+// - the toilets: waiting (PS_ENTERTAINS_THEMSELF) with a full bladder
+//   (past gbv.bowel_full), a patient leaves its queue for the nearest
+//   toilets in use (get_nearest_room_info), uses a free toilet there and
+//   then, with an illness from 16 on, a free sink (person_in_bogs), and
+//   walks out to go for treatment again (leave_toilets); with no toilet
+//   free it walks straight out;
 // - lying in a ward's bed (PS_IN_BED) for its diagnosis, then on to its
 //   next treatment (setup_next_treatment);
 // - stepping off a blueprint (PS_BP_GOTO) before walking or waiting on it;
+// - in a treatment machine, filling it (PS_FILLS) or played to its end
+//   (PS_ENERGISES);
+// - dead (PS_DEAD, PS_FLYS, PS_AT_HELL_GATE; core/world/reaper.h);
 // - PS_WAITS_FOR_BUSY, PS_GO_HOME, PS_GONE, PS_PLAY_COMPLEX_ANIM,
 //   PS_COMPLEX_RETRY, PS_SHOWANIM, PS_SLAVE_READY and PS_MERGED.
-// Not ported, as what they need does not exist yet: the toilets,
-// research, statistics (person_count) and status icons.
+// Not ported, as what they need does not exist yet: research, statistics
+// (person_count) and status icons.
 bool person_turn(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                  uint32_t game_turn);
 

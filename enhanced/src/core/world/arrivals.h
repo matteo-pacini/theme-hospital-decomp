@@ -122,6 +122,14 @@ int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, 
 // row has one for them.
 void transform_peep_who(Thing &person, uint8_t change);
 
+// What making a patient reads besides the world and the arrivals: the
+// level's settings, the animations and the level's number.
+struct PeepSetup {
+    const Balance &settings;
+    const AnimData &anims;
+    int level_number;
+};
+
 // make_a_peep (0x70918): makes a patient of hospital `owner` with `illness`
 // on cell `pos` (column + row * 128): looks to suit the illness, its
 // effects on them (effect_illness), contagion, health, insurance and cash,
@@ -129,8 +137,8 @@ void transform_peep_who(Thing &person, uint8_t change);
 // heading for its own cell. Hospital 0's is put on the map (nav_init,
 // insert_node); a rival's is not. Takes the first free thing but the last
 // 50. Returns its id, or 0 if none was free.
-uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &settings, const AnimData &anims,
-                     int level_number, uint16_t pos, uint8_t illness, uint8_t owner);
+uint16_t make_a_peep(World &world, const ArrivalState &state, const PeepSetup &setup, uint16_t pos, uint8_t illness,
+                     uint8_t owner);
 
 // create_a_peep (0x6ffec) without emergencies: in the first 25 turns of
 // every peep_interval turns (by `game_turn`, the game's actual_game_turn),
@@ -142,7 +150,7 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &set
 // Nothing comes on rat levels.
 // The game calls it from twice_daily_admin, on turns that are multiples of
 // 25, after the turn's three draws and before daily_admin and month_end.
-uint16_t create_a_peep(World &world, ArrivalState &state, const Balance &settings, const AnimData &anims,
-                       int level_number, bool hospital_open, uint32_t game_turn);
+uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup, bool hospital_open,
+                       uint32_t game_turn);
 
 } // namespace th

@@ -4,6 +4,7 @@
 #include "core/world/nav.h"
 #include "core/world/objects.h"
 #include "core/world/queue.h"
+#include "core/world/reaper.h"
 #include "core/world/rooms.h"
 #include "core/world/snapshot.h"
 #include "core/world/staff.h"
@@ -104,7 +105,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     balance = size_t(number) < settings.towns.size() ? int(settings.towns[size_t(number)].start_cash) : 0;
     start_finance(finance, balance, settings, number);
     start_queues(world, settings_, arrivals.hospitals[0], finance);
-    start_rooms_in_use(world, hospital, finance, balance, date, complexes, staff_complexes);
+    start_rooms_in_use(*this, complexes, staff_complexes);
     connect_world();
     disasters = {};
     setup_next_emergency(disasters, world, settings_, date);
@@ -126,6 +127,94 @@ void Game::connect_world()
     world.staff_complexes = staff_complexes_;
 }
 
+namespace
+{
+
+// Game::turn's month_end (src/finance.cpp), with year_end at the end of
+// the year.
+void turn_month_end(Game &g)
+{
+    Date &date = g.date;
+    const Balance &settings = g.settings();
+    // month_end's money, before the month moves on.
+    month_end(g.finance, g.balance, g.world, settings, g.level_number(),
+              {days_in_month(date.month), date.month, count_radiators(g.world, 0), g.reputation()});
+    calc_visitors_this_month(g.arrivals, settings);
+    date.day = 1;
+    date.month++;
+    if (date.month >= 12) {
+        date.month = 0;
+        date.year++;
+        year_end(g.finance, g.balance, g.world, settings, g.reputation());
+    }
+    g.arrivals.game_month = uint16_t(date.year * 12 + date.month);
+    create_job_market(g.world, g.staff_market, settings, date.year * 12 + date.month, g.turn_count);
+    monthly_update_of_advisor_counts(g.advisor);
+    update_cure_costs(g.arrivals, settings);
+    // The game's year_end, which puts the held member of staff back
+    // (start_year_end), runs after month_end.
+    if (date.month == 0)
+        put_back_held_staff(g);
+}
+
+// Game::turn's daily_admin, then month_end and year_end (src/finance.cpp).
+void turn_daily_admin(Game &g)
+{
+    g.date.day++;
+    try_to_generate_emergency(g.disasters, g.world, g.settings(), g.date, g.open, g.turn_count);
+    expire_playercalls(g.world);
+    if (g.date.day > days_in_month(g.date.month))
+        turn_month_end(g);
+}
+
+// process_things' turn of object `id`.
+void process_things_object(World &world, const AnimData &anims, uint16_t id, uint32_t turn_count)
+{
+    Thing &t = world.things[id];
+    if (t.state == kObjectStatic) {
+        // object_static (src/objects.cpp).
+        if (t.anim_speed && turn_count % t.anim_speed == 0 && t.sprite < anims.frames.size())
+            t.sprite = anims.frames[t.sprite].next;
+    } else if (t.state == kObjectHell) {
+        object_hell(world, anims, id, turn_count);
+    } else {
+        sliding_door_turn(world, anims, id, turn_count);
+    }
+}
+
+// process_things, after the turn starts, in thing order. `walkers` are the
+// path finding tool's.
+void process_things(Game &g, std::vector<bool> &walkers, const PersonComplexes &complexes,
+                    const StaffComplexes &staff_complexes)
+{
+    World &world = g.world;
+    const AnimData &anims = g.anims();
+    uint32_t turn_count = g.turn_count;
+    for (size_t i = 1; i < world.things.size(); i++) {
+        Thing &t = world.things[i];
+        if (t.type == kThingFree)
+            walkers[i] = false;
+        if (t.type == kThingPatient && walkers[i]) {
+            if (walk_turn(world, anims, uint16_t(i), turn_count) != WalkResult::Walking)
+                play_frame(t, anims, kPatientAnims[t.subtype % kPatientAnims.size()].stand);
+        } else if (t.type == kThingPatient) {
+            person_turn(world, anims, complexes, uint16_t(i), turn_count);
+        } else if (t.type == kThingStaff) {
+            staff_turn(world, anims, complexes, staff_complexes, uint16_t(i), turn_count);
+        } else if (t.type == kThingDoor) {
+            door_turn(world, anims, uint16_t(i), turn_count);
+        } else if (t.type == kThingNumfx) {
+            numfx_ages(world, uint16_t(i));
+        } else if (t.type == kThingReaper) {
+            reaper_turn(world, anims, uint16_t(i), turn_count);
+        } else if (t.type == kThingObject) {
+            process_things_object(world, anims, uint16_t(i), turn_count);
+        }
+    }
+}
+
+} // namespace
+
 void Game::turn()
 {
     log_inputs();
@@ -138,38 +227,13 @@ void Game::turn()
     new_patients.clear();
     if (turn_count % (kTurnsPerDay / 2) == 0) {
         // twice_daily_admin
-        if (uint16_t id = create_a_peep(world, arrivals, settings_, *anims_, level_number_, open, turn_count)) {
+        if (uint16_t id = create_a_peep(world, arrivals, {settings_, *anims_, level_number_}, open, turn_count)) {
             new_patients.push_back(id);
             start_person_going(world, *anims_, *complexes_, id, turn_count);
         }
     }
-    if (turn_count % kTurnsPerDay == 0) {
-        // daily_admin, then month_end and year_end (src/finance.cpp).
-        date.day++;
-        try_to_generate_emergency(disasters, world, settings_, date, open, turn_count);
-        expire_playercalls(world);
-        if (date.day > days_in_month(date.month)) {
-            // month_end's money, before the month moves on.
-            month_end(finance, balance, world, settings_, level_number_, days_in_month(date.month), date.month,
-                      count_radiators(world, 0), reputation());
-            calc_visitors_this_month(arrivals, settings_);
-            date.day = 1;
-            date.month++;
-            if (date.month >= 12) {
-                date.month = 0;
-                date.year++;
-                year_end(finance, balance, world, settings_, reputation());
-            }
-            arrivals.game_month = uint16_t(date.year * 12 + date.month);
-            create_job_market(world, staff_market, settings_, date.year * 12 + date.month, turn_count);
-            monthly_update_of_advisor_counts(advisor);
-            update_cure_costs(arrivals, settings_);
-            // The game's year_end, which puts the held member of staff back
-            // (start_year_end), runs after month_end.
-            if (date.month == 0)
-                put_back_held_staff(*this);
-        }
-    }
+    if (turn_count % kTurnsPerDay == 0)
+        turn_daily_admin(*this);
 
     // The countdown is held while the tutorial runs (advisor.flags & 1).
     if (!open && !(advisor.flags & kAdvisorTutorial) && --opening_countdown <= 0) {
@@ -177,32 +241,13 @@ void Game::turn()
         open = true;
     }
 
-    // process_things, after the turn starts, in thing order.
-    for (size_t i = 1; i < world.things.size(); i++) {
-        Thing &t = world.things[i];
-        if (t.type == kThingFree)
-            walkers_[i] = false;
-        if (t.type == kThingPatient && walkers_[i]) {
-            if (walk_turn(world, *anims_, uint16_t(i), turn_count) != WalkResult::Walking)
-                play_frame(t, *anims_, kPatientAnims[t.subtype % kPatientAnims.size()].stand);
-        } else if (t.type == kThingPatient) {
-            person_turn(world, *anims_, *complexes_, uint16_t(i), turn_count);
-        } else if (t.type == kThingStaff) {
-            staff_turn(world, *anims_, *complexes_, *staff_complexes_, uint16_t(i), turn_count);
-        } else if (t.type == kThingDoor) {
-            door_turn(world, *anims_, uint16_t(i), turn_count);
-        } else if (t.type == kThingNumfx) {
-            numfx_ages(world, uint16_t(i));
-        } else if (t.type == kThingObject) {
-            if (t.state == kObjectStatic) {
-                // object_static (src/objects.cpp).
-                if (t.anim_speed && turn_count % t.anim_speed == 0 && t.sprite < anims_->frames.size())
-                    t.sprite = anims_->frames[t.sprite].next;
-            } else {
-                sliding_door_turn(world, *anims_, uint16_t(i), turn_count);
-            }
-        }
-    }
+    // effect_illness and person_dies tell the advisor (advisor.event_flags).
+    const uint16_t cures = finance.cures, deaths = finance.deaths;
+    process_things(*this, walkers_, *complexes_, *staff_complexes_);
+    if (finance.cures != cures)
+        advisor.event_flags |= kAdvisorEventCure;
+    if (finance.deaths != deaths)
+        advisor.event_flags |= kAdvisorEventDeath;
     build_turn(*this);
     remember_inputs();
 }
@@ -230,7 +275,7 @@ void Game::carry_out(const Event &e)
         apply_staff_event(*this, e);
     if (apply_build_event(*this, e))
         return;
-    if (apply_town_event(*this, land, e) || apply_chart_event(*this, hospital, e))
+    if (apply_town_event(*this, land, e) || apply_chart_event(*this, hospital, e) || apply_patient_event(*this, e))
         return;
     if (e.type == EV_OPEN_HIRE_STAFF)
         cancel_buy_objects(world.placing);
@@ -244,7 +289,7 @@ uint16_t Game::add_walker(int cell)
     log_line(std::format("@walker_add {}", cell));
     // Illness 16, the first of the illnesses that do not change a patient's
     // looks.
-    uint16_t id = make_a_peep(world, arrivals, settings_, *anims_, level_number_, uint16_t(cell), 16, 0);
+    uint16_t id = make_a_peep(world, arrivals, {settings_, *anims_, level_number_}, uint16_t(cell), 16, 0);
     if (id)
         walkers_[id] = true;
     return id;
@@ -314,36 +359,90 @@ void Game::remember_inputs()
     inputs_logged_ = true;
 }
 
+namespace
+{
+
+// Game::replay_input's failure: says `why` in `error`, if wanted.
+bool replay_input_fail(std::string_view line, std::string *error, const char *why)
+{
+    if (error)
+        *error = std::format("{}: {}", why, line);
+    return false;
+}
+
+// Game::replay_input's next number from `in`, if from `low` to `high`.
+std::optional<long> replay_input_value(std::istream &in, long low, long high)
+{
+    long v = low - 1;
+    in >> v;
+    return v >= low && v <= high ? std::optional<long>(v) : std::nullopt;
+}
+
+// Game::replay_input's command line: "<type> <value> <arg>".
+bool replay_input_command(Game &g, std::string_view line, std::string *error)
+{
+    std::istringstream fields{std::string(line)};
+    unsigned type = 256, v = 0x10000, arg = 0x10000;
+    fields >> type >> v >> arg;
+    if (!fields || type > 0xff || v > 0xffff || arg > 0xffff)
+        return replay_input_fail(line, error, "not a command");
+    g.event = {uint8_t(type), uint16_t(v), 0, uint16_t(arg)};
+    g.process_turn();
+    return true;
+}
+
+// Game::replay_input's @paused, @tutorial, @path_finder and @build_mouse.
+bool replay_input_setting(Game &g, const std::string &name, std::istream &in, std::string_view line, std::string *error)
+{
+    auto v = replay_input_value(in, 0, name == "@build_mouse" ? int(BuildMouse::WaitClear) : 1);
+    if (!v)
+        return replay_input_fail(line, error, "bad value");
+    if (name == "@paused")
+        g.paused = *v;
+    else if (name == "@path_finder")
+        g.world.path_finder = PathFinder(*v);
+    else if (name == "@build_mouse")
+        g.world.building.mouse = BuildMouse(*v);
+    else if (*v)
+        g.advisor.flags |= kAdvisorTutorial;
+    else
+        g.advisor.flags &= uint8_t(~kAdvisorTutorial);
+    return true;
+}
+
+// Game::replay_input's byte changes: "<name> <offset> <hex>".
+bool replay_input_bytes(Game &g, const std::string &name, std::istream &in, std::string_view line, std::string *error)
+{
+    size_t offset = 0;
+    std::string hex;
+    in >> offset >> hex;
+    bool ok = !in.fail();
+    if (name == "@placing")
+        ok = ok && set_bytes(g.world.placing, offset, hex);
+    else if (name == "@build")
+        ok = ok && set_bytes(g.world.building.build, offset, hex);
+    else if (name == "@hospital")
+        ok = ok && set_bytes(g.hospital, offset, hex);
+    else if (name == "@ins_control")
+        ok = ok && set_bytes(g.world.ins_control, offset, hex);
+    else
+        return replay_input_fail(line, error, "unknown input");
+    return ok || replay_input_fail(line, error, "bad bytes");
+}
+
+} // namespace
+
 bool Game::replay_input(std::string_view line, std::string *error)
 {
     std::istringstream in{std::string(line)};
     std::string name;
     in >> name;
-    auto fail = [&](const char *why) {
-        if (error)
-            *error = std::format("{}: {}", why, line);
-        return false;
-    };
-    auto value = [&](long low, long high) {
-        long v = low - 1;
-        in >> v;
-        return v >= low && v <= high ? std::optional<long>(v) : std::nullopt;
-    };
-    if (name.empty() || name[0] != '@') {
-        // A command: "<type> <value> <arg>".
-        std::istringstream fields{std::string(line)};
-        unsigned type = 256, v = 0x10000, arg = 0x10000;
-        fields >> type >> v >> arg;
-        if (!fields || type > 0xff || v > 0xffff || arg > 0xffff)
-            return fail("not a command");
-        event = {uint8_t(type), uint16_t(v), 0, uint16_t(arg)};
-        process_turn();
-        return true;
-    }
+    if (name.empty() || name[0] != '@')
+        return replay_input_command(*this, line, error);
     if (name == "@walker_add" || name == "@cursor") {
-        auto cell = value(0, kMapCells - 1);
+        auto cell = replay_input_value(in, 0, kMapCells - 1);
         if (!cell)
-            return fail("bad cell");
+            return replay_input_fail(line, error, "bad cell");
         if (name == "@cursor")
             update_placement(int(*cell));
         else
@@ -351,44 +450,16 @@ bool Game::replay_input(std::string_view line, std::string *error)
         return true;
     }
     if (name == "@walker_send") {
-        auto id = value(0, kThingCount - 1);
-        auto cell = value(0, kMapCells - 1);
+        auto id = replay_input_value(in, 0, kThingCount - 1);
+        auto cell = replay_input_value(in, 0, kMapCells - 1);
         if (!id || !cell)
-            return fail("bad walker or cell");
+            return replay_input_fail(line, error, "bad walker or cell");
         send_walker(uint16_t(*id), int(*cell));
         return true;
     }
-    if (name == "@paused" || name == "@tutorial" || name == "@path_finder" || name == "@build_mouse") {
-        auto v = value(0, name == "@build_mouse" ? int(BuildMouse::WaitClear) : 1);
-        if (!v)
-            return fail("bad value");
-        if (name == "@paused")
-            paused = *v;
-        else if (name == "@path_finder")
-            world.path_finder = PathFinder(*v);
-        else if (name == "@build_mouse")
-            world.building.mouse = BuildMouse(*v);
-        else if (*v)
-            advisor.flags |= kAdvisorTutorial;
-        else
-            advisor.flags &= uint8_t(~kAdvisorTutorial);
-        return true;
-    }
-    size_t offset = 0;
-    std::string hex;
-    in >> offset >> hex;
-    bool ok = !in.fail();
-    if (name == "@placing")
-        ok = ok && set_bytes(world.placing, offset, hex);
-    else if (name == "@build")
-        ok = ok && set_bytes(world.building.build, offset, hex);
-    else if (name == "@hospital")
-        ok = ok && set_bytes(hospital, offset, hex);
-    else if (name == "@ins_control")
-        ok = ok && set_bytes(world.ins_control, offset, hex);
-    else
-        return fail("unknown input");
-    return ok || fail("bad bytes");
+    if (name == "@paused" || name == "@tutorial" || name == "@path_finder" || name == "@build_mouse")
+        return replay_input_setting(*this, name, in, line, error);
+    return replay_input_bytes(*this, name, in, line, error);
 }
 
 } // namespace th

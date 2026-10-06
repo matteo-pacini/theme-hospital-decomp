@@ -170,6 +170,19 @@ constexpr std::array<PlotAdjacent, 54> kAdjacentPlots = {{
     {40, 25, {17, 21, 24, 29}},
 }};
 
+// The candidates of `list` whose `key` is the smallest, in `list`'s order.
+template <typename Key> std::vector<int> smallest(const std::vector<int> &list, Key &&key)
+{
+    int best = 999999;
+    for (int i : list)
+        best = std::min(best, key(i));
+    std::vector<int> out;
+    for (int i : list)
+        if (key(i) == best)
+            out.push_back(i);
+    return out;
+}
+
 // LbPaletteFindColour (src/lib/bf1/gpalette.cpp): the nearest colour of a
 // 6-bit palette by squared distance, ties broken by the sum of the
 // differences, then by the darkest (green and red weighted double).
@@ -178,38 +191,19 @@ uint8_t find_colour(const std::array<uint8_t, 768> &pal, int r, int g, int b)
     auto at = [&](int i, int k) { return int(pal[size_t(i) * 3 + size_t(k)]); };
     auto sq = [](int v) { return v * v; };
     auto dist = [&](int i) { return sq(r - at(i, 0)) + sq(g - at(i, 1)) + sq(b - at(i, 2)); };
-    int best = 999999;
-    for (int i = 0; i < 256; i++) {
-        best = std::min(best, dist(i));
-        if (best == 0)
-            return uint8_t(i);
-    }
-    std::vector<int> list1;
-    for (int i = 0; i < 256; i++)
-        if (dist(i) == best)
-            list1.push_back(i);
-    if (list1.size() == 1)
-        return uint8_t(list1[0]);
     auto manhattan = [&](int i) { return std::abs(r - at(i, 0)) + std::abs(g - at(i, 1)) + std::abs(b - at(i, 2)); };
-    best = 999999;
-    for (int i : list1)
-        best = std::min(best, manhattan(i));
-    std::vector<int> list2;
-    for (int i : list1)
-        if (manhattan(i) == best)
-            list2.push_back(i);
-    if (list2.size() == 1)
-        return uint8_t(list2[0]);
-    uint8_t colour = 0;
-    best = 999999;
-    for (int i : list2) {
-        int d = at(i, 1) * 2 * at(i, 1) + at(i, 0) * 2 * at(i, 0) + at(i, 2) * at(i, 2);
-        if (d < best) {
-            best = d;
-            colour = uint8_t(i);
-        }
-    }
-    return colour;
+    auto darkness = [&](int i) { return at(i, 1) * 2 * at(i, 1) + at(i, 0) * 2 * at(i, 0) + at(i, 2) * at(i, 2); };
+    std::vector<int> list(256);
+    for (int i = 0; i < 256; i++)
+        list[size_t(i)] = i;
+    list = smallest(list, dist);
+    // An exact match is the first one, whatever the ties.
+    if (list.size() == 1 || dist(list[0]) == 0)
+        return uint8_t(list[0]);
+    list = smallest(list, manhattan);
+    if (list.size() == 1)
+        return uint8_t(list[0]);
+    return uint8_t(smallest(list, darkness)[0]);
 }
 
 bool over(const UiMouse &m, int x, int y, int w, int h)
@@ -298,7 +292,7 @@ void adjust_mapwho(World &world, const AnimData &anims, int tile)
     // Kinds and facings past the game's tables are not in its levels.
     if (kind >= kObjectKinds || dir >= 4)
         return;
-    if (uint16_t id = place_object(world, anims, tile, kind, dir, 0, true))
+    if (uint16_t id = place_object(world, anims, {tile, kind, dir}, 0, true))
         world.things[id].owner = 0;
 }
 
@@ -388,7 +382,7 @@ void buy_land(Game &game, TownLand &land, int plot)
     place_partition_walls(world, land.level);
     mow_grass(world);
     if (total > 0)
-        change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuyLand, -total);
+        change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxBuyLand, -total});
     add_static_shadows(world.map);
 }
 
@@ -463,7 +457,7 @@ void TownMap::box(int x, int y, int w, int h, uint8_t colour)
 
 void TownMap::text(const Font &font, int x, int y, std::string_view s)
 {
-    draw_text(surface_, font, {0, 0, kUiWidth}, x, y, s, 0, {0, 0, kUiWidth, kUiHeight});
+    draw_text(surface_, font, x, y, s, {{0, 0, kUiWidth}, {0, 0, kUiWidth, kUiHeight}});
 }
 
 void TownMap::draw_overhead_walls(const Game &game)
@@ -488,39 +482,42 @@ void TownMap::draw_overhead_walls(const Game &game)
 void TownMap::draw_map(const Game &game, const TownLand &land)
 {
     // display_hospital_map_sale and draw_sale_area_outlines.
+    for (int x = 1; x < kMapSize; x++)
+        for (int y = 1; y < kMapSize; y++)
+            draw_map_cell(game, land, x, y);
+}
+
+void TownMap::draw_map_cell(const Game &game, const TownLand &land, int x, int y)
+{
     const auto &map = game.world.map;
     const auto &plots = land.level.plots;
-    auto at = [](int x, int y) { return size_t(x + y * kMapSize); };
-    for (int x = 1; x < kMapSize; x++) {
-        for (int y = 1; y < kMapSize; y++) {
-            const MapCell &c = map[at(x, y)];
-            int px = kMapX + x * kCellW, py = kMapY + y * kCellH;
-            uint8_t colour = colours_.dark_blue;
-            if (c.owner_flags & 2)
-                colour = colours_.purple;
-            if (c.owner_flags & 4)
-                colour = colours_.orange;
-            if (c.owner_flags & 8)
-                colour = colours_.green;
-            if (shown_on_map(c.floor_block))
-                box(px, py, kCellW, kCellH, colour);
-            if (plots[at(x, y)] && can_buy_plot(land, plots[at(x, y)]))
-                box(px, py, kCellW, kCellH, colours_.red);
-            if (plots[at(x, y)] != plots[at(x - 1, y)])
-                box(px, py, kCellW / 2, kCellH, colours_.white);
-            if (plots[at(x, y)] != plots[at(x, y - 1)])
-                box(px, py, kCellW, kCellH / 2, colours_.white);
-            if (x > 1 && y > 1 && plots[at(x, y)] != plots[at(x - 1, y - 1)])
-                box(px, py, 1, 1, colours_.white);
-            if (c.wall_n && solid_wall(c.wall_n))
-                box(px, py, kCellW, kCellH / 2, colours_.white);
-            if (c.wall_w && solid_wall(c.wall_w))
-                box(px, py, kCellW / 2, kCellH, colours_.white);
-            uint8_t west_n = map[at(x - 1, y)].wall_n, north_w = map[at(x, y - 1)].wall_w;
-            if (west_n && north_w && solid_wall(west_n) && solid_wall(north_w))
-                box(px, py, 1, 1, colours_.white);
-        }
-    }
+    auto at = [](int cx, int cy) { return size_t(cx + cy * kMapSize); };
+    const MapCell &c = map[at(x, y)];
+    int px = kMapX + x * kCellW, py = kMapY + y * kCellH;
+    uint8_t colour = colours_.dark_blue;
+    if (c.owner_flags & 2)
+        colour = colours_.purple;
+    if (c.owner_flags & 4)
+        colour = colours_.orange;
+    if (c.owner_flags & 8)
+        colour = colours_.green;
+    if (shown_on_map(c.floor_block))
+        box(px, py, kCellW, kCellH, colour);
+    if (plots[at(x, y)] && can_buy_plot(land, plots[at(x, y)]))
+        box(px, py, kCellW, kCellH, colours_.red);
+    if (plots[at(x, y)] != plots[at(x - 1, y)])
+        box(px, py, kCellW / 2, kCellH, colours_.white);
+    if (plots[at(x, y)] != plots[at(x, y - 1)])
+        box(px, py, kCellW, kCellH / 2, colours_.white);
+    if (x > 1 && y > 1 && plots[at(x, y)] != plots[at(x - 1, y - 1)])
+        box(px, py, 1, 1, colours_.white);
+    if (c.wall_n && solid_wall(c.wall_n))
+        box(px, py, kCellW, kCellH / 2, colours_.white);
+    if (c.wall_w && solid_wall(c.wall_w))
+        box(px, py, kCellW / 2, kCellH, colours_.white);
+    uint8_t west_n = map[at(x - 1, y)].wall_n, north_w = map[at(x, y - 1)].wall_w;
+    if (west_n && north_w && solid_wall(west_n) && solid_wall(north_w))
+        box(px, py, 1, 1, colours_.white);
 }
 
 void TownMap::draw_things(const Game &game)
@@ -537,43 +534,7 @@ void TownMap::draw_things(const Game &game)
             int px = kMapX + x * kCellW, py = kMapY + y * kCellH;
             switch (t.type) {
             case kThingObject:
-                switch (t.subtype) {
-                case kObjPlant:
-                    if (value_ & 2)
-                        box(px, py, 3, 3, colours_.pale_green);
-                    break;
-                case kObjFireExtinguisher:
-                    if (value_ & 4)
-                        box(px, py, 3, 3, colours_.red);
-                    break;
-                case kObjRadiator:
-                    if (value_ & 0x10) {
-                        box(px, py, 1, 1, colours_.light_red);
-                        if (t.owner == 0 && heat_icon_time_ && heating) {
-                            Sprite icon = sprites_.at(size_t(heating + 9));
-                            draw_sprite(surface_, px - icon.width / 2, py - icon.height / 2, icon, kDrawGhost,
-                                        ghost_.data());
-                        }
-                    }
-                    break;
-                case kObjEntranceLeftDoor:
-                case kObjEntranceRightDoor:
-                    if (t.facing == 0 || t.facing == 2)
-                        box(px, py, 7, 3, colours_.grey);
-                    else
-                        box(px, py, 3, 7, colours_.grey);
-                    break;
-                case kObjDoor:
-                case kObjSwingDoor:
-                case kObjSwingDoor2:
-                    box(px, py, 3, 3, colours_.grey);
-                    break;
-                default:
-                    if (t.subtype < kObjectKinds &&
-                        (kObjects[t.subtype].category == 1 || kObjects[t.subtype].category == 2) && (value_ & 8))
-                        box(px, py, 3, 3, colours_.cyan);
-                    break;
-                }
+                draw_object_on_map(t, px, py, heating);
                 break;
             case kThingStaff:
                 if (value_ & 1)
@@ -588,7 +549,53 @@ void TownMap::draw_things(const Game &game)
             }
         }
     }
+    draw_map_counts(game);
+}
 
+void TownMap::draw_object_on_map(const Thing &t, int px, int py, int heating)
+{
+    switch (t.subtype) {
+    case kObjPlant:
+        if (value_ & 2)
+            box(px, py, 3, 3, colours_.pale_green);
+        break;
+    case kObjFireExtinguisher:
+        if (value_ & 4)
+            box(px, py, 3, 3, colours_.red);
+        break;
+    case kObjRadiator:
+        if (!(value_ & 0x10))
+            break;
+        box(px, py, 1, 1, colours_.light_red);
+        if (t.owner == 0 && heat_icon_time_ && heating) {
+            Sprite icon = sprites_.at(size_t(heating + 9));
+            draw_sprite(surface_, px - icon.width / 2, py - icon.height / 2, icon, kDrawGhost, ghost_.data());
+        }
+        break;
+    case kObjEntranceLeftDoor:
+    case kObjEntranceRightDoor:
+        if (t.facing == 0 || t.facing == 2)
+            box(px, py, 7, 3, colours_.grey);
+        else
+            box(px, py, 3, 7, colours_.grey);
+        break;
+    case kObjDoor:
+    case kObjSwingDoor:
+    case kObjSwingDoor2:
+        box(px, py, 3, 3, colours_.grey);
+        break;
+    default:
+        if (t.subtype < kObjectKinds && (kObjects[t.subtype].category == 1 || kObjects[t.subtype].category == 2) &&
+            (value_ & 8))
+            box(px, py, 3, 3, colours_.cyan);
+        break;
+    }
+}
+
+void TownMap::draw_map_counts(const Game &game)
+{
+    const World &world = game.world;
+    const int heating = game.finance.heating_level;
     // The counts: adcounts.patients (the player's patients indoors, from 1,
     // as the statistics pass counts them) and the hospital's plants, fire
     // extinguishers, machines and radiators, counted here from the map.
@@ -624,8 +631,8 @@ void TownMap::draw_plot_under_mouse(const Game &game, const TownLand &land, cons
     const Font &font = detail_font_;
     int h = font.glyph('A').height;
     const Rect name = {kTownName.x, kTownName.y - h / 2, kTownName.w, kTownName.h};
-    draw_text(surface_, font, {name.x, name.y, name.w}, 0, 0, text_->at(TextSection::TownNames, land.level_number),
-              kTextCentre, name);
+    draw_text(surface_, font, 0, 0, text_->at(TextSection::TownNames, land.level_number),
+              {{name.x, name.y, name.w}, name, kTextCentre});
     for (size_t i = 0; i < kDetailLabels.size(); i++)
         text(font, kDetailLabels[i].x, kDetailLabels[i].y, text_->at(TextSection::TownDetails, 4 + int(i)));
 
@@ -663,8 +670,8 @@ void TownMap::draw_money(PanelState &panel, int balance)
     std::snprintf(now, sizeof now, "%7d", balance);
     const TextWindow screen = {0, 0, kUiWidth};
     if (panel.shown_balance == balance) {
-        draw_text(surface_, font, screen, kBalance.x, kBalance.y, now, 0,
-                  {kBalanceClip.x, kBalanceClip.y, kBalanceClip.w, h});
+        draw_text(surface_, font, kBalance.x, kBalance.y, now,
+                  {screen, {kBalanceClip.x, kBalanceClip.y, kBalanceClip.w, h}});
         return;
     }
     std::snprintf(shown, sizeof shown, "%7d", panel.shown_balance);
@@ -678,11 +685,12 @@ void TownMap::draw_money(PanelState &panel, int balance)
                                   : 6;
     const Rect roll = {kBalanceClip.x + kDigitWidth * digits, kBalanceClip.y, kBalanceClip.w - kDigitWidth * digits, h};
     int step = panel.balance_roll_step;
-    draw_text(surface_, font, screen, kBalance.x, kBalance.y - (h - step * 6), now, 0, roll);
-    draw_text(surface_, font, screen, kBalance.x, kBalance.y + step * 6, shown, 0, roll);
+    draw_text(surface_, font, kBalance.x, kBalance.y - (h - step * 6), now, {screen, roll});
+    draw_text(surface_, font, kBalance.x, kBalance.y + step * 6, shown, {screen, roll});
     if (digits)
-        draw_text(surface_, font, screen, kBalance.x, kBalance.y, now, 0,
-                  {kBalanceFixedClip.x, kBalanceFixedClip.y, kDigitWidth * (digits - 3) + kBalanceFixedClip.w, h});
+        draw_text(
+            surface_, font, kBalance.x, kBalance.y, now,
+            {screen, {kBalanceFixedClip.x, kBalanceFixedClip.y, kDigitWidth * (digits - 3) + kBalanceFixedClip.w, h}});
     if (++panel.balance_roll_step == 4) {
         panel.balance_roll_step = 0;
         panel.shown_balance = balance;
@@ -699,25 +707,7 @@ bool TownMap::process_panel(const UiMouse &mouse, const Game &game, TownMapResul
             if (!over(mouse, b.x, b.y, b.w, b.h))
                 continue;
             hit = true;
-            int heating = game.finance.heating_level;
-            if (i <= 4) {
-                if (mouse.right_released)
-                    value_ = 0;
-                value_ ^= 1u << i;
-                if (i == 4 && (value_ & 0x10))
-                    heat_icon_time_ = kHeatIconFrames;
-                result.sounds.push_back(kSfxSelectX);
-            } else if (i == 5 || i == 6) {
-                int to = i == 6 ? heating + 1 : heating - 1;
-                if (i == 6 ? heating < 10 : heating > 1) {
-                    result.event = {EV_SET_HEATING, uint16_t(to), 0, 0};
-                    result.sounds.push_back(kSfxSelectX);
-                }
-                heat_icon_time_ = kHeatIconFrames;
-            } else {
-                state_ = State::Closing;
-                result.sounds.push_back(kSfxNo4);
-            }
+            process_town_button(i, mouse.right_released, game.finance.heating_level, result);
             if (b.sprite)
                 draw_sprite(surface_, b.sprite_x, b.sprite_y, sprites_.at(size_t(b.sprite)));
             break;
@@ -736,35 +726,60 @@ bool TownMap::process_panel(const UiMouse &mouse, const Game &game, TownMapResul
     return hit;
 }
 
-TownMapResult TownMap::frame(const UiMouse &mouse, bool escape, const Game &game, const TownLand &land,
-                             PanelState &panel, std::string_view hospital_name,
-                             const std::function<bool(int column, int row)> &go_to)
+void TownMap::process_town_button(size_t i, bool right, int heating, TownMapResult &result)
 {
-    TownMapResult result;
-    UiMouse m = mouse;
-    // draw_town_select.
-    switch (state_) {
-    case State::Closed:
-        return result;
-    case State::Closing:
-        state_ = State::Closed;
-        result.closed = true;
-        return result;
-    case State::Opening:
-        m.left_pressed = m.left_released = false;
-        if (!value_)
-            value_ = 0x1f;
-        for (int plot = 0; plot < kPlotCount; plot++)
-            land_amount_[size_t(plot)] = uint16_t(land_amount(land, plot));
-        // load_ingame_pic puts the picture back in bscreen.
-        background_ = picture_;
-        dirty_ = true;
-        state_ = State::Shown;
+    if (i <= 4) {
+        if (right)
+            value_ = 0;
+        value_ ^= 1u << i;
+        if (i == 4 && (value_ & 0x10))
+            heat_icon_time_ = kHeatIconFrames;
+        result.sounds.push_back(kSfxSelectX);
+    } else if (i == 5 || i == 6) {
+        int to = i == 6 ? heating + 1 : heating - 1;
+        if (i == 6 ? heating < 10 : heating > 1) {
+            result.event = {EV_SET_HEATING, uint16_t(to), 0, 0};
+            result.sounds.push_back(kSfxSelectX);
+        }
         heat_icon_time_ = kHeatIconFrames;
-        break;
-    case State::Shown:
-        break;
+    } else {
+        state_ = State::Closing;
+        result.sounds.push_back(kSfxNo4);
     }
+}
+
+void TownMap::open_map(const TownLand &land)
+{
+    if (!value_)
+        value_ = 0x1f;
+    for (int plot = 0; plot < kPlotCount; plot++)
+        land_amount_[size_t(plot)] = uint16_t(land_amount(land, plot));
+    // load_ingame_pic puts the picture back in bscreen.
+    background_ = picture_;
+    dirty_ = true;
+    state_ = State::Shown;
+    heat_icon_time_ = kHeatIconFrames;
+}
+
+void TownMap::buy_plot(const UiMouse &m, const Game &game, const TownLand &land, TownMapResult &result)
+{
+    int plot = 0;
+    if (over(m, kMapX, kMapY, kCellW * kMapSize, kCellH * kMapSize)) {
+        int x = (m.x - kMapX) / kCellW, y = (m.y - kMapY) / kCellH;
+        if (int p = land.level.plots[size_t(x + y * kMapSize)])
+            plot = can_buy_plot(land, p);
+    }
+    if (plot && game.balance > land_amount_[size_t(plot)] * game.settings().gbv.land_cost_per_tile) {
+        result.sounds.push_back(kSfxCashRegister);
+        result.event = {EV_BUY_LAND, uint16_t(plot), 0, 0};
+    }
+    if (plot)
+        dirty_ = true;
+}
+
+void TownMap::display_overhead_map(const Game &game, const TownLand &land, const UiMouse &mouse,
+                                   std::string_view hospital_name, PanelState &panel)
+{
     // display_overhead_map and draw_money_on_town.
     if (dirty_)
         draw_overhead_walls(game);
@@ -775,8 +790,31 @@ TownMapResult TownMap::frame(const UiMouse &mouse, bool escape, const Game &game
         if (!(value_ & (1u << i)))
             draw_sprite(surface_, kOverlayOff[i].x, kOverlayOff[i].y, sprites_.at(i + 1));
     }
-    draw_plot_under_mouse(game, land, m, hospital_name);
+    draw_plot_under_mouse(game, land, mouse, hospital_name);
     draw_money(panel, game.balance);
+}
+
+TownMapResult TownMap::frame(const TownMapInput &input, const Game &game, const TownLand &land, PanelState &panel,
+                             std::string_view hospital_name, const std::function<bool(int column, int row)> &go_to)
+{
+    TownMapResult result;
+    UiMouse m = input.mouse;
+    // draw_town_select.
+    switch (state_) {
+    case State::Closed:
+        return result;
+    case State::Closing:
+        state_ = State::Closed;
+        result.closed = true;
+        return result;
+    case State::Opening:
+        m.left_pressed = m.left_released = false;
+        open_map(land);
+        break;
+    case State::Shown:
+        break;
+    }
+    display_overhead_map(game, land, m, hospital_name, panel);
     const Rect &bank = kBankHotspot;
     if (m.left_released && over(m, bank.x, bank.y, bank.w, bank.h)) {
         // process_keys(0, KC_F7), then the map is set up again.
@@ -790,27 +828,15 @@ TownMapResult TownMap::frame(const UiMouse &mouse, bool escape, const Game &game
     if (state_ != State::Shown)
         return result;
     // process_keys_town_select.
-    if (escape) {
+    if (input.escape) {
         state_ = State::Closing;
         return result;
     }
     // process_mouse_town_select.
     if (process_panel(m, game, result))
         return result;
-    if (m.left_pressed) {
-        int plot = 0;
-        if (over(m, kMapX, kMapY, kCellW * kMapSize, kCellH * kMapSize)) {
-            int x = (m.x - kMapX) / kCellW, y = (m.y - kMapY) / kCellH;
-            if (int p = land.level.plots[size_t(x + y * kMapSize)])
-                plot = can_buy_plot(land, p);
-        }
-        if (plot && game.balance > land_amount_[size_t(plot)] * game.settings().gbv.land_cost_per_tile) {
-            result.sounds.push_back(kSfxCashRegister);
-            result.event = {EV_BUY_LAND, uint16_t(plot), 0, 0};
-        }
-        if (plot)
-            dirty_ = true;
-    }
+    if (m.left_pressed)
+        buy_plot(m, game, land, result);
     if (m.right_pressed && go_to && go_to((m.x - kMapX) / kCellW, (m.y - kMapY) / kCellH)) {
         state_ = State::Closing;
         result.sounds.push_back(kSfxYesX);

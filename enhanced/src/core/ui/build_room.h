@@ -1,7 +1,6 @@
 #pragma once
 
-#include "core/render/iso.h"
-#include "core/render/surface.h"
+#include "core/render/view.h"
 #include "core/ui/layer.h"
 #include "core/ui/windows.h"
 
@@ -71,14 +70,14 @@ void build_mouse(BuildUi &bui, Game &game, int cell, const UiMouse &mouse, bool 
 void draw_build_requester(UiLayer &layer, const Interface &ui, const BuildUi &bui, const Game &game,
                           const RequesterArt &art, const GameData &data);
 
-// The build tool's drawing over the hospital view, in `view` of `dst` with
-// `camera` as draw_world: the blueprint being laid out (draw_blueprint_area:
+// The build tool's drawing over the hospital view, into `target` as
+// draw_world: the blueprint being laid out (draw_blueprint_area:
 // its floor, block 66 where the room may not go, and its outline, in red
 // where invalid) with the cell under the pointer outlined in red
 // (draw_cell_no), and while the door is placed the door or window shown
 // (temp_place_door: its floor and its picture, red where it may not go).
 // `oui` gives the red.
-void draw_build_overlay(Surface &dst, Rect view, Point camera, const Game &game, const BuildUi &bui,
-                        const ObjectUi &oui, const GameData &data);
+void draw_build_overlay(const ViewTarget &target, const Game &game, const BuildUi &bui, const ObjectUi &oui,
+                        const GameData &data);
 
 } // namespace th

@@ -24,11 +24,11 @@ Point world_to_cell(Point p)
     return {int(floor_div(u + v, area)), int(floor_div(v - u, area))};
 }
 
-bool beyond_scroll_limit(Point p, uint16_t min_cell, uint16_t max_cell)
+bool beyond_scroll_limit(Point p, uint16_t min_cell, uint16_t max_cell, int margin)
 {
     Point c = world_to_cell(p);
-    return c.x < min_cell % kMapSize || c.x >= max_cell % kMapSize || c.y < min_cell / kMapSize ||
-           c.y >= max_cell / kMapSize;
+    return c.x + margin < min_cell % kMapSize || c.x - margin >= max_cell % kMapSize ||
+           c.y + margin < min_cell / kMapSize || c.y - margin >= max_cell / kMapSize;
 }
 
 } // namespace th

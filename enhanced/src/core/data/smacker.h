@@ -79,16 +79,35 @@ class SmackerVideo
         // decoded (the escape codes' leaves).
         std::array<size_t, 3> last{};
     };
+    // What build_big_tree builds a 16-bit tree's leaves from: the byte trees
+    // of their low and high bytes and the three escape codes; and what it
+    // keeps: the entries of the leaves holding the escape codes (-1 for
+    // none yet). The tree may have at most `limit` entries.
+    struct BigTreeCodes {
+        const Tree &lo;
+        const Tree &hi;
+        std::array<int, 3> escapes;
+        std::array<int, 3> last;
+        size_t limit;
+    };
     class Bits;
     static bool read_byte_tree(Bits &bits, Tree &tree);
     static int build_byte_tree(Bits &bits, Tree &tree, int depth);
     static bool read_big_tree(Bits &bits, Tree &tree, size_t limit);
-    static int build_big_tree(Bits &bits, Tree &tree, const Tree &lo, const Tree &hi, const std::array<int, 3> &escapes,
-                              std::array<int, 3> &last, size_t limit, int depth);
+    static int build_big_tree(Bits &bits, Tree &tree, BigTreeCodes &codes, int depth);
     static int byte_code(Bits &bits, const Tree &tree);
     static int big_code(Bits &bits, Tree &tree);
+    void read_track_types(const uint8_t *header);
+    bool read_frame_tables(uint32_t type, uint32_t table_size, const std::array<uint32_t, 4> &tree_sizes,
+                           std::string *error);
+    bool read_palette(const uint8_t *data, size_t chunk);
+    bool read_audio_chunks(uint8_t type, std::span<const uint8_t> frame, size_t &pos);
+    uint8_t *block_pixels(int block);
+    void decode_full_block(Bits &bits, int block);
     bool decode_video(std::span<const uint8_t> data);
     bool decode_audio(int track, std::span<const uint8_t> data);
+    static void unpack_audio(Bits &bits, const std::array<Tree, 4> &trees, int stereo, int wide, size_t samples,
+                             std::vector<int16_t> &out);
 
     std::vector<uint8_t> file_;
     int width_ = 0, height_ = 0, frames_ = 0;

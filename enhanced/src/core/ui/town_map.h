@@ -21,6 +21,7 @@ namespace th
 
 class Game;
 struct PanelState;
+struct Thing;
 
 // Plot numbers a level may use (for_sale and land_amount hold 200).
 inline constexpr int kPlotCount = 200;
@@ -76,6 +77,13 @@ struct TownMapResult {
     std::vector<uint8_t> sounds;
 };
 
+// A frame's input to the town map: the mouse (640 x 480) and whether Escape
+// was pressed.
+struct TownMapInput {
+    UiMouse mouse;
+    bool escape = false;
+};
+
 // The town map (display_mode DM_TOWN_MAP; src/town.cpp, draw_town_select
 // and its keys and mouse): full screen in its own picture and palette
 // (QDATA/TOWN01V, sprites TOWN02V), 640 x 480. It shows the hospital's
@@ -107,13 +115,13 @@ class TownMap
     bool is_open() const { return state_ != State::Closed; }
 
     // One game frame of the town map, before Game::process_turn: draws it
-    // into surface() and handles Escape (`escape`) and `mouse` (640 x 480).
+    // into surface() and handles `input`.
     // `hospital_name` is the player's hospital's (allhosps[0].name).
     // `panel` holds the balance shown and its roll, which the panel shares.
     // A right click on the map calls `go_to(column, row)`, which centres the
     // view on that cell and returns true, or leaves it and returns false if
     // it would pass the scroll limits (the map then stays open).
-    TownMapResult frame(const UiMouse &mouse, bool escape, const Game &game, const TownLand &land, PanelState &panel,
+    TownMapResult frame(const TownMapInput &input, const Game &game, const TownLand &land, PanelState &panel,
                         std::string_view hospital_name, const std::function<bool(int column, int row)> &go_to);
 
     const Surface &surface() const { return surface_; }
@@ -130,12 +138,27 @@ class TownMap
     };
 
     void draw_overhead_walls(const Game &game);
+    void display_overhead_map(const Game &game, const TownLand &land, const UiMouse &mouse,
+                              std::string_view hospital_name, PanelState &panel);
     void draw_map(const Game &game, const TownLand &land);
+    void draw_map_cell(const Game &game, const TownLand &land, int x, int y);
     void draw_things(const Game &game);
+    // Object `t`'s mark on the map at (px, py), if its overlay is on.
+    void draw_object_on_map(const Thing &t, int px, int py, int heating);
+    // The panel's counts of patients and objects and the heating bar.
+    void draw_map_counts(const Game &game);
     void draw_plot_under_mouse(const Game &game, const TownLand &land, const UiMouse &mouse,
                                std::string_view hospital_name);
     void draw_money(PanelState &panel, int balance);
     bool process_panel(const UiMouse &mouse, const Game &game, TownMapResult &result);
+    // process_town_button: panel button `i` released, the right button if
+    // `right`.
+    void process_town_button(size_t i, bool right, int heating, TownMapResult &result);
+    // The map's setup as it opens.
+    void open_map(const TownLand &land);
+    // process_mouse_town_select's left click: buys the plot under the mouse
+    // if it is for sale and affordable.
+    void buy_plot(const UiMouse &m, const Game &game, const TownLand &land, TownMapResult &result);
     void box(int x, int y, int w, int h, uint8_t colour);
     void text(const Font &font, int x, int y, std::string_view s);
 

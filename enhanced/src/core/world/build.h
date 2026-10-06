@@ -301,10 +301,17 @@ bool blueprint_outline_invalid(const World &world, int x, int y);
 int place_object_restrict_to_room(const World &world, const ObjectPlacing &p, int pos, int offset, int kind, int dir);
 int place_object_wall_hug(World &world, ObjectPlacing &p, int pos, int kind);
 
-// place_object_nav_check (src/build.cpp): whether an object of `kind` at
-// `pos` facing `dir` (and its second part at `pos2`, unless 0) in room
-// `room` leaves each object of the room usable from its door.
-bool place_object_nav_check(World &world, uint16_t room, int pos, int kind, int dir, int pos2, int kind2, int dir2);
+// An object of `kind` on cell `pos` (column + row * 128) facing `dir`.
+struct ObjectAt {
+    int pos = 0;
+    int kind = 0;
+    int dir = 0;
+};
+
+// place_object_nav_check (src/build.cpp): whether `object` (and its second
+// part `part2`, unless its pos is 0) in room `room` leaves each object of
+// the room usable from its door.
+bool place_object_nav_check(World &world, uint16_t room, ObjectAt object, ObjectAt part2);
 
 // corridor_object_room_nav_check (src/build.cpp): place_object_nav_check
 // for an object moved into room `room`, and the people in it still able to
@@ -318,6 +325,11 @@ bool room_has_compulsory_objects(const World &world, uint16_t room);
 // blueprint, 2 placing the door, 4 windows, 6 placing objects (confirm
 // enabled once the room has its compulsory objects), 8 picking them up.
 void set_room_requester_mode(World &world, int mode);
+
+// remove_object (src/objects.cpp): takes object `id` off the map and frees
+// it if it stands on `owner`'s land (or is the gates of hell or a litter
+// bomb). Returns whether it did.
+bool remove_object(World &world, uint16_t id, int owner);
 
 // place_existing_object (src/objects.cpp; defined in core/world/world.cpp):
 // puts object `id`, off the map, on `tile` facing `dir`, linked into the

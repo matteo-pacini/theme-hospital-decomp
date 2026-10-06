@@ -32,8 +32,7 @@ class UiLayer
     // As th::draw_sprite, marking the sprite's opaque pixels drawn.
     void draw_sprite(int x, int y, const Sprite &sprite, unsigned flags = 0, const uint8_t *ghost = nullptr);
     // As th::draw_text, marking the glyphs' pixels drawn.
-    void draw_text(const Font &font, TextWindow window, int x, int y, std::string_view text, unsigned flags, Rect clip,
-                   uint8_t colour = 0);
+    void draw_text(const Font &font, int x, int y, std::string_view text, const TextSettings &settings);
     // Fills `r` with `colour` and marks it drawn.
     void fill(Rect r, uint8_t colour);
 
@@ -62,6 +61,12 @@ struct UiMouse {
     bool right_pressed = false;
     bool left_released = false;
     bool right_released = false;
+};
+
+// The modifier keys held, as the interface sees them.
+struct UiModifiers {
+    bool shift = false;
+    bool ctrl = false;
 };
 
 } // namespace th

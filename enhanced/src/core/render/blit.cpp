@@ -6,46 +6,61 @@ namespace th
 namespace
 {
 
+// Decodes one RLE row starting at `p`, calling put(row, col, colour) for each
+// opaque pixel; returns the start of the next row.
+template <typename Put> const uint8_t *decode_rle_row(const uint8_t *p, int row, Put &put)
+{
+    int col = 0;
+    for (int8_t n; (n = static_cast<int8_t>(*p++)) != 0;) {
+        if (n < 0) {
+            col -= n;
+            continue;
+        }
+        for (int i = 0; i < n; i++)
+            put(row, col++, p[i]);
+        p += n;
+    }
+    return p;
+}
+
+// As decode_rle_row, for the packed format's runs and fills.
+template <typename Put> const uint8_t *decode_packed_row(const uint8_t *p, int row, Put &put)
+{
+    int col = 0;
+    for (uint8_t c; (c = *p++) != 0;) {
+        int fill;
+        if (c < 0x40) {
+            for (int i = 0; i < c; i++)
+                put(row, col++, p[i]);
+            p += c;
+            continue;
+        } else if (c < 0x80) {
+            fill = c - 60;
+        } else if (c < 0xc0) {
+            col += c & 0x3f;
+            continue;
+        } else if (c < 0xff) {
+            fill = (c & 0x3f) + 68;
+        } else {
+            fill = *p++;
+        }
+        uint8_t colour = *p++;
+        for (int i = 0; i < fill; i++)
+            put(row, col++, colour);
+    }
+    return p;
+}
+
 // Walks `sprite` row by row, calling put(row, col, colour) for each opaque
 // pixel in the sprite's own coordinates.
 template <typename Put> void decode(const Sprite &sprite, Put &&put)
 {
     const uint8_t *p = sprite.data;
     for (int row = 0; row < sprite.height; row++) {
-        int col = 0;
-        if (sprite.format == SpriteFormat::Rle) {
-            for (int8_t n; (n = static_cast<int8_t>(*p++)) != 0;) {
-                if (n < 0) {
-                    col -= n;
-                    continue;
-                }
-                for (int i = 0; i < n; i++)
-                    put(row, col++, p[i]);
-                p += n;
-            }
-        } else {
-            for (uint8_t c; (c = *p++) != 0;) {
-                int fill;
-                if (c < 0x40) {
-                    for (int i = 0; i < c; i++)
-                        put(row, col++, p[i]);
-                    p += c;
-                    continue;
-                } else if (c < 0x80) {
-                    fill = c - 60;
-                } else if (c < 0xc0) {
-                    col += c & 0x3f;
-                    continue;
-                } else if (c < 0xff) {
-                    fill = (c & 0x3f) + 68;
-                } else {
-                    fill = *p++;
-                }
-                uint8_t colour = *p++;
-                for (int i = 0; i < fill; i++)
-                    put(row, col++, colour);
-            }
-        }
+        if (sprite.format == SpriteFormat::Rle)
+            p = decode_rle_row(p, row, put);
+        else
+            p = decode_packed_row(p, row, put);
     }
 }
 

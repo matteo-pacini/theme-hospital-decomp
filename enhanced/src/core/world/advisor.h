@@ -47,6 +47,9 @@ constexpr uint8_t kAdvisorBadPlacement = 0x2;
 // Advisor::event_flags bits (advisor.event_flags): what happened since the
 // advice about it was last given.
 constexpr uint32_t kAdvisorEventResign = 0x1;
+// A patient of the player's cured, or dead (set by Game::turn).
+constexpr uint32_t kAdvisorEventCure = 0x40;
+constexpr uint32_t kAdvisorEventDeath = 0x80;
 
 // The game's speech bubble limits in high resolution
 // (resvars.advisor_min_segments, advisor_max_segments): the middle pieces
@@ -177,11 +180,13 @@ void start_advisor(Advisor &advisor, bool tutorial);
 // low (0x48) or near the level's money target (0x14), the reputation and
 // hospital value targets (0x42, 0x43), too many staff for no staff room
 // (0x49), a reception desk with no receptionist on level 1 (0x69), a staff
-// member threatening to resign (0x1c, kAdvisorEventResign), and the event
-// and mouse-help messages (forced_advice_id 1 and 3-0x11 but 2 and 8, and
-// mouse_advice_id). The others need what is not ported yet (rooms, the
-// statistics pass, research, emergencies, epidemics, rats, earthquakes,
-// cures and deaths, prices) and are never given.
+// member threatening to resign (0x1c, kAdvisorEventResign), the cures and
+// deaths so far (0x51, 0x4c, kAdvisorEventCure and kAdvisorEventDeath),
+// and the event and mouse-help messages (forced_advice_id 1 and 3-0x11 but
+// 2 and 8, and mouse_advice_id). The others need what is not ported yet
+// (rooms, the statistics pass, research, emergencies, epidemics, rats,
+// earthquakes, the level's cures and deaths targets, prices) and are never
+// given.
 //
 // The tutorial is ported to the "build a GP's office" message (steps 0x1d
 // to 0x24 and 0x20): the reception desk and the receptionist. Its hints that

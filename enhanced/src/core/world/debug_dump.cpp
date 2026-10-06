@@ -2,6 +2,7 @@
 
 #include "core/world/arrivals.h"
 #include "core/world/build.h"
+#include "core/world/complex.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/staff.h"
@@ -38,63 +39,84 @@ void pos(std::string &out, const char *name, MapPos x, MapPos y)
 }
 
 #define F(s, name) field(out, #name, s.name)
+
+// RoomInfo.type of a staff room and of the toilets (ROOM_STAFF_ROOM,
+// ROOM_TOILETS).
+constexpr uint8_t kRoomStaffRoom = 25;
+constexpr uint8_t kRoomToilets = 29;
+
+// A member of staff's break: "resting" in a staff room (SS_IN_STAFF_ROOM),
+// "going" to one (take_a_break's next state), else "none".
+const char *break_state(const World &w, const Thing &t)
+{
+    if (t.state == kStaffInStaffRoom || (t.room && w.rooms[t.room].type == kRoomStaffRoom))
+        return "resting";
+    if (t.next_state == kStaffInStaffRoom)
+        return "going";
+    return "none";
+}
+
+// A patient's visit to the toilets: "going" (PS_IN_BOGS its next state), "in"
+// them (PS_IN_BOGS, or in their room), "leaving" (PS_LEAVE_TOILETS), else
+// "none".
+const char *toilet_state(const World &w, const Thing &t)
+{
+    if (t.state == kPsLeaveToilets)
+        return "leaving";
+    if (t.state == kPsInBogs || (t.room && w.rooms[t.room].type == kRoomToilets))
+        return "in";
+    if (t.next_state == kPsInBogs)
+        return "going";
+    return "none";
+}
 #define L(s, name) list(out, #name, s.name)
 
-void dump_thing(std::string &out, const Thing &t, int id)
+void dump_thing_object(std::string &out, const Thing &t)
 {
-    const char *kind = t.type == kThingPatient                               ? "patient"
-                       : t.type == kThingStaff && t.state == kStaffApplicant ? "applicant"
-                       : t.type == kThingStaff                               ? "staff"
-                       : t.type == kThingObject                              ? "object"
-                                                                             : "thing";
-    out += std::format("{} {}", kind, id);
-    F(t, type);
-    F(t, subtype);
-    F(t, state);
-    pos(out, "at", t.x, t.y);
-    F(t, facing);
-    F(t, flip);
-    F(t, sprite);
-    F(t, anim_speed);
-    F(t, countdown);
-    F(t, speed);
-    F(t, depth);
-    F(t, owner);
-    F(t, cell_prev);
-    F(t, cell_next);
-    out += std::format(" dest={},{}", t.dest_x, t.dest_y);
-    out += std::format(" path={},{}->{},{}:", t.path.x0, t.path.y0, t.path.x1, t.path.y1);
-    for (int i = 0; i < t.path.count && i < int(t.path.steps.size()); i++)
-        out += std::format("{}{},{}", i ? ";" : "", t.path.steps[size_t(i)].x, t.path.steps[size_t(i)].y);
+    out += " object:";
+    L(t, layers);
+    pos(out, "use", t.use_x, t.use_y);
+    L(t, use_pos);
+    F(t, use_style);
+    F(t, room_id);
+    F(t, pair);
+    F(t, room_obj_prev);
+    F(t, room_obj_next);
+    F(t, type_obj_prev);
+    F(t, type_obj_next);
+    F(t, plant_health);
+    F(t, in_use);
+    F(t, user);
+    F(t, door_partner);
+    F(t, door_main);
+    F(t, door_cell_flag);
+    F(t, times_used);
+    F(t, strength);
+    L(t, smoke);
+    F(t, aux_sprite);
+    F(t, aux_flip);
+    F(t, split_height);
+    F(t, aux_draw_flags);
+    F(t, aux_param);
+    F(t, remove_after_anim);
     out += '\n';
+}
 
-    if (t.type == kThingObject) {
-        out += " object:";
-        L(t, layers);
-        pos(out, "use", t.use_x, t.use_y);
-        L(t, use_pos);
-        F(t, use_style);
-        F(t, room_id);
-        F(t, pair);
-        F(t, room_obj_prev);
-        F(t, room_obj_next);
-        F(t, type_obj_prev);
-        F(t, type_obj_next);
-        F(t, plant_health);
-        F(t, in_use);
-        F(t, user);
-        F(t, door_partner);
-        F(t, door_main);
-        F(t, door_cell_flag);
-        F(t, times_used);
-        F(t, strength);
-        L(t, smoke);
-        out += '\n';
-        return;
-    }
-    if (t.type != kThingPatient && t.type != kThingStaff)
-        return;
+void dump_thing_reaper(std::string &out, const Thing &t)
+{
+    out += " reaper:";
+    F(t, slave);
+    F(t, gate);
+    F(t, timer);
+    F(t, reaper_next_state);
+    F(t, next_sprite);
+    F(t, next_flip);
+    out += '\n';
+}
 
+// dump_thing's action sequence and queue lines of a person.
+void dump_thing_sequence(std::string &out, const Thing &t)
+{
     out += " sequence:";
     F(t, complex_pc);
     F(t, complex_action);
@@ -135,39 +157,45 @@ void dump_thing(std::string &out, const Thing &t, int id)
     F(t, waiting_time);
     F(t, impatience);
     out += '\n';
+}
 
-    if (t.type == kThingPatient) {
-        out += " patient:";
-        F(t, illness);
-        F(t, known_illness);
-        F(t, treatment);
-        F(t, next_treatment);
-        L(t, treatments);
-        F(t, diagnosis);
-        F(t, diagnosis_handicap);
-        F(t, orig_subtype);
-        F(t, insurance);
-        F(t, contagion);
-        F(t, icon_id);
-        F(t, cash);
-        F(t, fee);
-        out += '\n';
-        out += " needs:";
-        F(t, health);
-        F(t, health_delta);
-        L(t, health_history);
-        F(t, happiness);
-        F(t, warmth);
-        F(t, refreshment);
-        F(t, bladder);
-        F(t, nausea);
-        F(t, litter_urge);
-        F(t, modify_time);
-        out += std::format(" person_flags={:#x}", t.person_flags);
-        out += '\n';
-        return;
-    }
+void dump_thing_patient(std::string &out, const World &w, const Thing &t)
+{
+    out += " patient:";
+    F(t, illness);
+    F(t, known_illness);
+    F(t, treatment);
+    F(t, next_treatment);
+    L(t, treatments);
+    F(t, diagnosis);
+    F(t, diagnosis_handicap);
+    F(t, orig_subtype);
+    F(t, insurance);
+    F(t, contagion);
+    F(t, icon_id);
+    F(t, cash);
+    F(t, fee);
+    F(t, substate);
+    F(t, slave);
+    out += '\n';
+    out += " needs:";
+    F(t, health);
+    F(t, health_delta);
+    L(t, health_history);
+    F(t, happiness);
+    F(t, warmth);
+    F(t, refreshment);
+    F(t, bladder);
+    F(t, nausea);
+    F(t, litter_urge);
+    F(t, modify_time);
+    out += std::format(" person_flags={:#x}", t.person_flags);
+    out += '\n';
+    out += std::format(" toilets: {}\n", toilet_state(w, t));
+}
 
+void dump_thing_staff(std::string &out, const World &w, const Thing &t)
+{
     out += " staff:";
     F(t, substate);
     F(t, skills);
@@ -195,6 +223,13 @@ void dump_thing(std::string &out, const Thing &t, int id)
     F(t, happiness);
     out += std::format(" person_flags={:#x}", t.person_flags);
     out += '\n';
+    out += std::format(" rest: break={}", break_state(w, t));
+    F(t, tiredness);
+    out += std::format(" orders={:#x}", t.orders);
+    F(t, resign_time);
+    F(t, warmth);
+    F(t, modify_time);
+    out += '\n';
     out += " work:";
     F(t, prio_litter);
     F(t, prio_plants);
@@ -205,6 +240,56 @@ void dump_thing(std::string &out, const Thing &t, int id)
     F(t, plant_count);
     F(t, repair_count);
     out += '\n';
+}
+
+const char *dump_thing_kind(const Thing &t)
+{
+    return t.type == kThingPatient                               ? "patient"
+           : t.type == kThingStaff && t.state == kStaffApplicant ? "applicant"
+           : t.type == kThingStaff                               ? "staff"
+           : t.type == kThingObject                              ? "object"
+           : t.type == kThingReaper                              ? "reaper"
+                                                                 : "thing";
+}
+
+void dump_thing(std::string &out, const World &w, const Thing &t, int id)
+{
+    out += std::format("{} {}", dump_thing_kind(t), id);
+    F(t, type);
+    F(t, subtype);
+    F(t, state);
+    pos(out, "at", t.x, t.y);
+    F(t, facing);
+    F(t, flip);
+    F(t, sprite);
+    F(t, anim_speed);
+    F(t, countdown);
+    F(t, speed);
+    F(t, depth);
+    F(t, owner);
+    F(t, cell_prev);
+    F(t, cell_next);
+    out += std::format(" dest={},{}", t.dest_x, t.dest_y);
+    out += std::format(" path={},{}->{},{}:", t.path.x0, t.path.y0, t.path.x1, t.path.y1);
+    for (int i = 0; i < t.path.count && i < int(t.path.steps.size()); i++)
+        out += std::format("{}{},{}", i ? ";" : "", t.path.steps[size_t(i)].x, t.path.steps[size_t(i)].y);
+    out += '\n';
+
+    if (t.type == kThingObject) {
+        dump_thing_object(out, t);
+        return;
+    }
+    if (t.type == kThingReaper) {
+        dump_thing_reaper(out, t);
+        return;
+    }
+    if (t.type != kThingPatient && t.type != kThingStaff)
+        return;
+    dump_thing_sequence(out, t);
+    if (t.type == kThingPatient)
+        dump_thing_patient(out, w, t);
+    else
+        dump_thing_staff(out, w, t);
 }
 
 void dump_room(std::string &out, const RoomInfo &r, int id)
@@ -248,18 +333,8 @@ void dump_hospital(std::string &out, const HospitalMarket &h, int id)
     out += '\n';
 }
 
-} // namespace
-
-std::string dump_game(const Game &game, int focus, int radius)
+void dump_game_finance(std::string &out, const Game &game)
 {
-    const World &w = game.world;
-    std::string out;
-
-    out += "## Game\n";
-    out += std::format("date year={} month={} day={} turn={} paused={} open={} opening_countdown={}\n", game.date.year,
-                       game.date.month, game.date.day, game.turn_count, game.paused, game.open, game.opening_countdown);
-    out += std::format("balance={} seed={:08x} route_planner={}\n", game.balance, w.seed,
-                       w.path_finder == PathFinder::AStar ? "A*" : "original");
     const Finance &f = game.finance;
     out += "finance:";
     F(f, wages_this_month);
@@ -271,14 +346,32 @@ std::string dump_game(const Game &game, int focus, int radius)
     F(f, heating_price);
     F(f, hospital_value);
     F(f, area);
+    F(f, cures);
+    F(f, deaths);
+    F(f, cures_this_month);
+    F(f, deaths_this_month);
     out += '\n';
+    for (size_t i = 0; i < game.hospital.illnesses.size(); i++) {
+        const IllnessFigures &ill = game.hospital.illnesses[i];
+        out += std::format("illness {}", i);
+        F(ill, discovered);
+        F(ill, income);
+        F(ill, cured);
+        F(ill, deaths);
+        F(ill, turned_away);
+        F(ill, drug_effectiveness);
+        F(ill, drug_cost);
+        out += '\n';
+    }
     for (int i = 0; i < f.entry_count && i < int(f.entries.size()); i++) {
         const BankEntry &e = f.entries[size_t(i)];
         out += std::format("statement {} amount={} type={} day={} month={} extra={}\n", i, e.amount, e.type, e.day,
                            e.month, e.extra);
     }
-    for (size_t i = 0; i < game.arrivals.hospitals.size(); i++)
-        dump_hospital(out, game.arrivals.hospitals[i], int(i));
+}
+
+void dump_game_world(std::string &out, const World &w)
+{
     out += "world:";
     F(w, queue_near_dist);
     F(w, object_near_dist);
@@ -294,7 +387,10 @@ std::string dump_game(const Game &game, int focus, int radius)
     L(w, ins_control);
     L(w, room_of_type);
     out += '\n';
-    const Disasters &d = game.disasters;
+}
+
+void dump_game_disasters(std::string &out, const Disasters &d)
+{
     out += "disasters:";
     F(d, next_emergency_turn);
     F(d, emergency_illness);
@@ -315,7 +411,33 @@ std::string dump_game(const Game &game, int focus, int radius)
             out += std::format("emergency_offer {} call={} illness={} count={} bonus={} win_percent={}\n", i, o.call,
                                o.illness, o.count, o.bonus, o.win_percent);
     }
+}
 
+// dump_game's pagers, calls and repair pages.
+void dump_game_pagers(std::string &out, const World &w)
+{
+    for (size_t i = 0; i < w.pagers.size(); i++) {
+        const World::Pager &pg = w.pagers[i];
+        if (pg.mask || pg.room)
+            out += std::format("pager {} mask={:#x} room={} claimed_until={} responder={} owner={}\n", i, pg.mask,
+                               pg.room, pg.claimed_until, pg.responder, pg.owner);
+    }
+    for (size_t i = 0; i < w.calls.size(); i++) {
+        const World::PlayerCall &c = w.calls[i];
+        if (c.type)
+            out += std::format("call {} type={} subject={} id={} owner={} timer={}\n", i, c.type, c.subject, c.id,
+                               c.owner, c.timer);
+    }
+    for (size_t i = 0; i < w.repair_pager.count && i < w.repair_pager.pages.size(); i++) {
+        const World::ThingPage &pg = w.repair_pager.pages[i];
+        out += std::format("repair_page {} id={} priority={} responder={} claimed_until={}\n", i, pg.id, pg.priority,
+                           pg.responder, pg.claimed_until);
+    }
+}
+
+// dump_game's building and placing, and the pagers, calls and repair pages.
+void dump_game_building(std::string &out, const World &w)
+{
     out += "\n## Building and placing\n";
     const Building &bd = w.building;
     const BuildState &b = bd.build;
@@ -346,23 +468,45 @@ std::string dump_game(const Game &game, int focus, int radius)
     L(p, offered);
     L(p, buy_count);
     out += '\n';
-    for (size_t i = 0; i < w.pagers.size(); i++) {
-        const World::Pager &pg = w.pagers[i];
-        if (pg.mask || pg.room)
-            out += std::format("pager {} mask={:#x} room={} claimed_until={} responder={} owner={}\n", i, pg.mask,
-                               pg.room, pg.claimed_until, pg.responder, pg.owner);
+    dump_game_pagers(out, w);
+}
+
+// dump_game's map cells within `radius` of cell `focus`.
+void dump_game_map(std::string &out, const World &w, int focus, int radius)
+{
+    int fc = focus % kMapSize, fr = focus / kMapSize;
+    out += std::format("\n## Map around {},{} (hex: floor wall_n wall_w flags litter_shadow owner_flags)\n", fc, fr);
+    for (int r = fr - radius; r <= fr + radius; r++) {
+        for (int c = fc - radius; c <= fc + radius; c++) {
+            if (r < 0 || r >= kMapSize || c < 0 || c >= kMapSize)
+                continue;
+            const MapCell &m = w.map[size_t(c + r * kMapSize)];
+            out += std::format("cell {},{} {:02x} {:02x} {:02x} {:02x} {:02x} {:02x} first={} room={}\n", c, r,
+                               m.floor_block, m.wall_n, m.wall_w, m.flags, m.litter_shadow, m.owner_flags, m.first,
+                               room_at(w, uint16_t(c + r * kMapSize)));
+        }
     }
-    for (size_t i = 0; i < w.calls.size(); i++) {
-        const World::PlayerCall &c = w.calls[i];
-        if (c.type)
-            out += std::format("call {} type={} subject={} id={} owner={} timer={}\n", i, c.type, c.subject, c.id,
-                               c.owner, c.timer);
-    }
-    for (size_t i = 0; i < w.repair_pager.count && i < w.repair_pager.pages.size(); i++) {
-        const World::ThingPage &pg = w.repair_pager.pages[i];
-        out += std::format("repair_page {} id={} priority={} responder={} claimed_until={}\n", i, pg.id, pg.priority,
-                           pg.responder, pg.claimed_until);
-    }
+}
+
+} // namespace
+
+std::string dump_game(const Game &game, int focus, int radius)
+{
+    const World &w = game.world;
+    std::string out;
+
+    out += "## Game\n";
+    out += std::format("date year={} month={} day={} turn={} paused={} open={} opening_countdown={}\n", game.date.year,
+                       game.date.month, game.date.day, game.turn_count, game.paused, game.open, game.opening_countdown);
+    out += std::format("balance={} seed={:08x} route_planner={}\n", game.balance, w.seed,
+                       w.path_finder == PathFinder::AStar ? "A*" : "original");
+    dump_game_finance(out, game);
+    for (size_t i = 0; i < game.arrivals.hospitals.size(); i++)
+        dump_hospital(out, game.arrivals.hospitals[i], int(i));
+    dump_game_world(out, w);
+    dump_game_disasters(out, game.disasters);
+
+    dump_game_building(out, w);
 
     out += "\n## Rooms\n";
     for (size_t i = 0; i < w.rooms.size(); i++)
@@ -372,23 +516,10 @@ std::string dump_game(const Game &game, int focus, int radius)
     out += "\n## Things (patients, staff, job applicants, objects; at = tile.frac)\n";
     for (size_t i = 1; i < w.things.size(); i++)
         if (w.things[i].type != kThingFree)
-            dump_thing(out, w.things[i], int(i));
+            dump_thing(out, w, w.things[i], int(i));
 
-    if (focus >= 0 && focus < kMapCells) {
-        int fc = focus % kMapSize, fr = focus / kMapSize;
-        out +=
-            std::format("\n## Map around {},{} (hex: floor wall_n wall_w flags litter_shadow owner_flags)\n", fc, fr);
-        for (int r = fr - radius; r <= fr + radius; r++) {
-            for (int c = fc - radius; c <= fc + radius; c++) {
-                if (r < 0 || r >= kMapSize || c < 0 || c >= kMapSize)
-                    continue;
-                const MapCell &m = w.map[size_t(c + r * kMapSize)];
-                out += std::format("cell {},{} {:02x} {:02x} {:02x} {:02x} {:02x} {:02x} first={} room={}\n", c, r,
-                                   m.floor_block, m.wall_n, m.wall_w, m.flags, m.litter_shadow, m.owner_flags, m.first,
-                                   room_at(w, uint16_t(c + r * kMapSize)));
-            }
-        }
-    }
+    if (focus >= 0 && focus < kMapCells)
+        dump_game_map(out, w, focus, radius);
 
     out += "\n## Recent events (turn, event; core/world/trace.h)\n";
     for (const TraceEvent &e : game.events.events)

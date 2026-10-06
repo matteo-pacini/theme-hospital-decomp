@@ -223,6 +223,13 @@ class OplDriver
     void release(int slot);
     void update_voice(int slot);
     void update_channel(int ch, uint8_t flags);
+    void control_change(int ch, int controller, uint8_t value);
+    void reset_controllers(int ch);
+    void all_notes_off(int ch);
+    int set_steal_priorities();
+    bool steal_candidates(int &needy, int &victim) const;
+    void write_levels(const Slot &s, const Channel &c, const int (&ops)[2]);
+    void write_frequency(Slot &s, const Channel &c);
 
     Chip &chip_;
     std::array<Slot, kSlots> slots_{};
@@ -322,12 +329,18 @@ void OplDriver::message(int status, int data1, int data2)
         c.timbre = find_timbre(c.bank, c.program);
         return;
     case 0xb0:
-        break;
+        control_change(ch, data1, uint8_t(data2));
+        return;
     default:
         return;
     }
-    const auto value = uint8_t(data2);
-    switch (data1) {
+}
+
+// message's controller changes (status 0xb0).
+void OplDriver::control_change(int ch, int controller, uint8_t value)
+{
+    Channel &c = channels_[size_t(ch)];
+    switch (controller) {
     case 114: // PATCH_BANK_SEL
         c.bank = value;
         break;
@@ -357,19 +370,11 @@ void OplDriver::message(int status, int data1, int data2)
         if (value < 64)
             release_sustain(ch);
         break;
-    case 121: // reset all controllers
-        c.sustain = 0;
-        release_sustain(ch);
-        c.modulation = 0;
-        c.expression = 127;
-        c.bend_lsb = 0;
-        c.bend_msb = 0x40;
-        update_channel(ch, kUpdateFlags | kUpdateLevel | kUpdateFreq);
+    case 121:
+        reset_controllers(ch);
         break;
-    case 123: // all notes off; matched by the played key (see release_sustain)
-        for (const Slot &s : slots_)
-            if (s.status == 1 && s.channel == ch)
-                note_off(ch, s.key);
+    case 123:
+        all_notes_off(ch);
         break;
     case 6: // data entry: the bend range, whatever the RPN
         c.bend_range = value;
@@ -377,6 +382,28 @@ void OplDriver::message(int status, int data1, int data2)
     default:
         break;
     }
+}
+
+// Controller 121, reset all controllers.
+void OplDriver::reset_controllers(int ch)
+{
+    Channel &c = channels_[size_t(ch)];
+    c.sustain = 0;
+    release_sustain(ch);
+    c.modulation = 0;
+    c.expression = 127;
+    c.bend_lsb = 0;
+    c.bend_msb = 0x40;
+    update_channel(ch, kUpdateFlags | kUpdateLevel | kUpdateFreq);
+}
+
+// Controller 123, all notes off; matched by the played key (see
+// release_sustain).
+void OplDriver::all_notes_off(int ch)
+{
+    for (const Slot &s : slots_)
+        if (s.status == 1 && s.channel == ch)
+            note_off(ch, s.key);
 }
 
 void OplDriver::update_channel(int ch, uint8_t flags)
@@ -468,33 +495,10 @@ void OplDriver::assign_voice(int slot)
 // is cut and its voice goes to the waiting one.
 void OplDriver::steal_voices()
 {
-    int active = 0;
-    for (Slot &s : slots_) {
-        if (!s.status)
-            continue;
-        active++;
-        const Channel &c = channels_[s.channel];
-        int p = c.voice_protect >= 64 ? 0xffff : s.priority;
-        s.steal_priority = uint16_t(std::max(p - int(c.voices), 0));
-    }
+    int active = set_steal_priorities();
     while (active) {
-        unsigned best = 0, lowest = 0xffff;
         int needy = -1, victim = -1;
-        for (int i = 0; i < kSlots; i++) {
-            const Slot &s = slots_[size_t(i)];
-            if (!s.status)
-                continue;
-            if (s.voice == kNone) {
-                if (s.steal_priority >= best) {
-                    best = s.steal_priority;
-                    needy = i;
-                }
-            } else if (s.steal_priority <= lowest) {
-                lowest = s.steal_priority;
-                victim = i;
-            }
-        }
-        if (best < lowest || best == 0 || needy < 0 || victim < 0)
+        if (!steal_candidates(needy, victim))
             return;
         uint8_t voice = slots_[size_t(victim)].voice;
         release(victim);
@@ -506,6 +510,45 @@ void OplDriver::steal_voices()
         update_voice(needy);
         active--;
     }
+}
+
+// steal_voices' priorities, set on each sounding slot; returns how many
+// there are.
+int OplDriver::set_steal_priorities()
+{
+    int active = 0;
+    for (Slot &s : slots_) {
+        if (!s.status)
+            continue;
+        active++;
+        const Channel &c = channels_[s.channel];
+        int p = c.voice_protect >= 64 ? 0xffff : s.priority;
+        s.steal_priority = uint16_t(std::max(p - int(c.voices), 0));
+    }
+    return active;
+}
+
+// steal_voices' choice: the waiting slot with the highest priority
+// (`needy`) and the sounding one with the lowest (`victim`), the last of
+// equals; false when no voice is to be stolen.
+bool OplDriver::steal_candidates(int &needy, int &victim) const
+{
+    unsigned best = 0, lowest = 0xffff;
+    for (int i = 0; i < kSlots; i++) {
+        const Slot &s = slots_[size_t(i)];
+        if (!s.status)
+            continue;
+        if (s.voice == kNone) {
+            if (s.steal_priority >= best) {
+                best = s.steal_priority;
+                needy = i;
+            }
+        } else if (s.steal_priority <= lowest) {
+            lowest = s.steal_priority;
+            victim = i;
+        }
+    }
+    return !(best < lowest || best == 0 || needy < 0 || victim < 0);
 }
 
 // 0x312e: keys the voice off and frees it, and the slot with it.
@@ -563,20 +606,8 @@ void OplDriver::update_voice(int slot)
         for (int op = 0; op < 2; op++)
             write_op(ops[op], 0x20, s.flags20[op] | s.mult[op] | vibrato);
     }
-    if (s.flags & kUpdateLevel) {
-        // Rounded up unless zero, as the driver does after each product.
-        auto scale = [](int a, int b) {
-            int v = (a * b) >> 7 & 0xff;
-            return v ? v + 1 : 0;
-        };
-        int volume = scale(scale(c.volume, c.expression), s.velocity);
-        for (int op = 0; op < 2; op++) {
-            int level = s.level[op];
-            if (s.scale & (1 << op))
-                level = level * volume / 127;
-            write_op(ops[op], 0x40, uint8_t((~level & 0x3f) | s.ksl[op]));
-        }
-    }
+    if (s.flags & kUpdateLevel)
+        write_levels(s, c, ops);
     if (s.flags & kUpdateEnvelope) {
         for (int op = 0; op < 2; op++) {
             write_op(ops[op], 0x60, s.ad[op]);
@@ -597,37 +628,61 @@ void OplDriver::update_voice(int slot)
         write_voice(voice, 0xc0, value);
     }
     if (s.flags & kUpdateFreq) {
-        if (!(s.kon & 0x20)) {
+        if (!(s.kon & 0x20))
             write_voice(voice, 0xb0, s.b0 & ~0x20);
-        } else {
-            // The pitch in 1/16 semitones: the note (moved by octaves into
-            // 12-107, then less 12) plus the bend times its range.
-            int bend = ((c.bend_msb << 7 | c.bend_lsb) - 0x2000) >> 5;
-            int note = s.key + s.transpose - 12;
-            while (note < 0)
-                note += 12;
-            while (note > 95)
-                note -= 12;
-            int pitch = int16_t(uint16_t(bend * c.bend_range + (note << 8) + 8)) >> 4;
-            while (pitch < 0)
-                pitch += 0xc0;
-            while (pitch > 0x5ff)
-                pitch -= 0xc0;
-            int semitone = pitch >> 4;
-            uint16_t f = kFreq[(semitone % 12) * 16 + (pitch & 0xf)];
-            int block = semitone / 12 - 1;
-            if (f & 0x8000)
-                block++;
-            if (block < 0) {
-                block = 0;
-                f >>= 1;
-            }
-            s.b0 = uint8_t(((f >> 8) & 3) | block << 2 | s.kon);
-            write_voice(voice, 0xa0, uint8_t(f));
-            write_voice(voice, 0xb0, s.b0);
-        }
+        else
+            write_frequency(s, c);
     }
     s.flags = 0;
+}
+
+// update_voice's levels (registers 40): the volume, expression and
+// velocity scaling the operators scale picks.
+void OplDriver::write_levels(const Slot &s, const Channel &c, const int (&ops)[2])
+{
+    // Rounded up unless zero, as the driver does after each product.
+    auto scale = [](int a, int b) {
+        int v = (a * b) >> 7 & 0xff;
+        return v ? v + 1 : 0;
+    };
+    int volume = scale(scale(c.volume, c.expression), s.velocity);
+    for (int op = 0; op < 2; op++) {
+        int level = s.level[op];
+        if (s.scale & (1 << op))
+            level = level * volume / 127;
+        write_op(ops[op], 0x40, uint8_t((~level & 0x3f) | s.ksl[op]));
+    }
+}
+
+// update_voice's frequency and key on (registers A0 and B0) for a keyed-on
+// slot.
+void OplDriver::write_frequency(Slot &s, const Channel &c)
+{
+    // The pitch in 1/16 semitones: the note (moved by octaves into 12-107,
+    // then less 12) plus the bend times its range.
+    int bend = ((c.bend_msb << 7 | c.bend_lsb) - 0x2000) >> 5;
+    int note = s.key + s.transpose - 12;
+    while (note < 0)
+        note += 12;
+    while (note > 95)
+        note -= 12;
+    int pitch = int16_t(uint16_t(bend * c.bend_range + (note << 8) + 8)) >> 4;
+    while (pitch < 0)
+        pitch += 0xc0;
+    while (pitch > 0x5ff)
+        pitch -= 0xc0;
+    int semitone = pitch >> 4;
+    uint16_t f = kFreq[(semitone % 12) * 16 + (pitch & 0xf)];
+    int block = semitone / 12 - 1;
+    if (f & 0x8000)
+        block++;
+    if (block < 0) {
+        block = 0;
+        f >>= 1;
+    }
+    s.b0 = uint8_t(((f >> 8) & 3) | block << 2 | s.kon);
+    write_voice(s.voice, 0xa0, uint8_t(f));
+    write_voice(s.voice, 0xb0, s.b0);
 }
 
 // --- The XMIDI sequencer ---------------------------------------------------
@@ -664,7 +719,17 @@ class Sequencer
     static constexpr int kMaxNotes = 32;
     static constexpr int kForNest = 4;
 
+    enum class Events { Wait, Done, Overflow };
+
     void send(int status, int data1, int data2);
+    void for_loop(int count);
+    void next_loop(int value);
+    void branch(int index);
+    void expire_notes();
+    Events play_events();
+    bool meta_event();
+    bool channel_event(int status);
+    void fade_volume();
     void update_volume();
     void flush_notes();
 
@@ -831,44 +896,14 @@ void Sequencer::send(int status, int data1, int data2)
             driver_.message(0xb0 | ch, 38, 0);
             break;
         case 116: // FOR_LOOP
-            for (int i = 0; i < kForNest; i++) {
-                if (for_count_[size_t(i)] == -1) {
-                    for_count_[size_t(i)] = data2;
-                    for_pos_[size_t(i)] = pos_;
-                    break;
-                }
-            }
+            for_loop(data2);
             return;
-        case 117: { // NEXT_LOOP
-            if (data2 < 64)
-                return;
-            int i = kForNest - 1;
-            while (i >= 0 && for_count_[size_t(i)] == -1)
-                i--;
-            if (i < 0)
-                return;
-            if (for_count_[size_t(i)] == 0 || --for_count_[size_t(i)] != 0)
-                pos_ = for_pos_[size_t(i)];
-            else
-                for_count_[size_t(i)] = -1;
+        case 117: // NEXT_LOOP
+            next_loop(data2);
             return;
-        }
-        case 109: { // SEQ_BRANCH: AIL_branch_index
-            if (!song_->branches)
-                return;
-            const uint8_t *r = song_->image.data() + song_->branches;
-            int n = int16_t(le16(r + 8));
-            for (int i = 0; i < n; i++) {
-                const uint8_t *e = r + 10 + 6 * i;
-                if (le16(e) == data2 && le32(e + 2) < song_->events_size) {
-                    pos_ = song_->events + le32(e + 2);
-                    interval_count_ = 0;
-                    for_count_.fill(-1);
-                    break;
-                }
-            }
+        case 109: // SEQ_BRANCH: AIL_branch_index
+            branch(data2);
             return;
-        }
         case 108: // CALLBACK_PFX
         case 110: // CHAN_LOCK
         case 111: // CHAN_PROTECT
@@ -883,6 +918,53 @@ void Sequencer::send(int status, int data1, int data2)
     driver_.message(status, data1, data2);
 }
 
+// FOR_LOOP: opens a loop of `count` passes in the first free nesting level.
+void Sequencer::for_loop(int count)
+{
+    for (int i = 0; i < kForNest; i++) {
+        if (for_count_[size_t(i)] == -1) {
+            for_count_[size_t(i)] = count;
+            for_pos_[size_t(i)] = pos_;
+            break;
+        }
+    }
+}
+
+// NEXT_LOOP: for a value of 64 or more, jumps back to the innermost loop's
+// start, or closes it after its last pass.
+void Sequencer::next_loop(int value)
+{
+    if (value < 64)
+        return;
+    int i = kForNest - 1;
+    while (i >= 0 && for_count_[size_t(i)] == -1)
+        i--;
+    if (i < 0)
+        return;
+    if (for_count_[size_t(i)] == 0 || --for_count_[size_t(i)] != 0)
+        pos_ = for_pos_[size_t(i)];
+    else
+        for_count_[size_t(i)] = -1;
+}
+
+// AIL_branch_index: jumps to the RBRN entry `index`, if the song has it.
+void Sequencer::branch(int index)
+{
+    if (!song_->branches)
+        return;
+    const uint8_t *r = song_->image.data() + song_->branches;
+    int n = int16_t(le16(r + 8));
+    for (int i = 0; i < n; i++) {
+        const uint8_t *e = r + 10 + 6 * i;
+        if (le16(e) == index && le32(e + 2) < song_->events_size) {
+            pos_ = song_->events + le32(e + 2);
+            interval_count_ = 0;
+            for_count_.fill(-1);
+            break;
+        }
+    }
+}
+
 void Sequencer::serve()
 {
     if (status_ != Playing)
@@ -894,91 +976,137 @@ void Sequencer::serve()
     tempo_error_ += 100;
     while (tempo_error_ >= 100) {
         tempo_error_ -= 100;
-        for (int i = 0; i < kMaxNotes && note_count_ > 0; i++) {
-            if (note_chan_[size_t(i)] == -1 || --note_time_[size_t(i)] > 0)
-                continue;
-            send(note_chan_[size_t(i)] | 0x80, note_num_[size_t(i)], 0);
-            note_chan_[size_t(i)] = -1;
-            note_count_--;
-        }
+        expire_notes();
         if (--interval_count_ > 0)
             continue;
-        while (!done) {
-            // parse_xmi checked the events up to the end of track; a jump
-            // elsewhere may still run off the chunk, taken as its end.
-            const int status = pos_ < end ? data[pos_] : 0xff;
-            if (status < 0x80)
-                break;
-            if (pos_ >= end || status == 0xff) {
-                int type = 0x2f;
-                if (pos_ < end) {
-                    const uint8_t *p = data + pos_ + 2;
-                    type = pos_ + 1 < end ? data[pos_ + 1] : 0x2f;
-                    uint32_t len = read_vln(p, data + end);
-                    pos_ = size_t(p - data) + len;
-                }
-                if (type != 0x2f)
-                    continue;
-                done = true;
-                if (loop_count_ == 0 || --loop_count_ != 0) {
-                    pos_ = song_->events;
-                } else {
-                    loop_count_ = 1;
-                    stop();
-                    status_ = Done;
-                }
-            } else if (status == 0xf0 || status == 0xf7) {
-                // The driver ignores system exclusive messages.
-                const uint8_t *p = data + pos_ + 1;
-                uint32_t len = read_vln(p, data + end);
-                pos_ = size_t(p - data) + len;
-            } else {
-                const int size = message_size(status);
-                if (pos_ + size_t(size) > end) {
-                    pos_ = end;
-                    continue;
-                }
-                const size_t at = pos_;
-                pos_ += size_t(size);
-                send(status, data[at + 1], size == 3 ? data[at + 2] : 0);
-                if ((status & 0xf0) != 0x90)
-                    continue;
-                int slot = 0;
-                while (slot < kMaxNotes && note_chan_[size_t(slot)] != -1)
-                    slot++;
-                if (slot == kMaxNotes) {
-                    // "Internal note queue overflow".
-                    stop();
-                    status_ = Done;
-                    return;
-                }
-                note_count_++;
-                note_chan_[size_t(slot)] = status & 0x0f;
-                note_num_[size_t(slot)] = data[at + 1];
-                const uint8_t *p = data + pos_;
-                note_time_[size_t(slot)] = int(read_vln(p, data + end));
-                pos_ = size_t(p - data);
-            }
-        }
-        if (done)
+        const Events events = play_events();
+        if (events == Events::Overflow)
+            return;
+        if (events == Events::Done) {
+            done = true;
             break;
+        }
         interval_count_ = pos_ < end ? data[pos_++] : 0;
     }
     if (done || status_ != Playing)
         return;
-    if (volume_ != volume_target_) {
-        volume_accum_ += kIntervalTime;
-        while (volume_accum_ >= volume_period_) {
-            volume_accum_ -= volume_period_;
-            volume_ += volume_target_ > volume_ ? 1 : -1;
-            if (volume_ == volume_target_)
-                break;
-        }
-        // Only every eighth service resends the volume, so a fade can end
-        // a few steps short of its target.
-        if (!(interval_num_ & 7))
-            update_volume();
+    fade_volume();
+}
+
+// serve's note timers: ends each note whose time has run out.
+void Sequencer::expire_notes()
+{
+    for (int i = 0; i < kMaxNotes && note_count_ > 0; i++) {
+        if (note_chan_[size_t(i)] == -1 || --note_time_[size_t(i)] > 0)
+            continue;
+        send(note_chan_[size_t(i)] | 0x80, note_num_[size_t(i)], 0);
+        note_chan_[size_t(i)] = -1;
+        note_count_--;
     }
+}
+
+// serve's events up to the next delay: Wait at a delay byte, Done at the end
+// of the song, Overflow when the note queue overflowed and the sequence
+// ended.
+Sequencer::Events Sequencer::play_events()
+{
+    const uint8_t *data = song_->image.data();
+    const size_t end = song_->events + song_->events_size;
+    for (;;) {
+        // parse_xmi checked the events up to the end of track; a jump
+        // elsewhere may still run off the chunk, taken as its end.
+        const int status = pos_ < end ? data[pos_] : 0xff;
+        if (status < 0x80)
+            return Events::Wait;
+        if (pos_ >= end || status == 0xff) {
+            if (meta_event())
+                return Events::Done;
+        } else if (status == 0xf0 || status == 0xf7) {
+            // The driver ignores system exclusive messages.
+            const uint8_t *p = data + pos_ + 1;
+            uint32_t len = read_vln(p, data + end);
+            pos_ = size_t(p - data) + len;
+        } else if (!channel_event(status)) {
+            return Events::Overflow;
+        }
+    }
+}
+
+// A meta event at pos_ (or the chunk's end): skipped, but for the end of
+// track, which loops the song or ends it, returning true.
+bool Sequencer::meta_event()
+{
+    const uint8_t *data = song_->image.data();
+    const size_t end = song_->events + song_->events_size;
+    int type = 0x2f;
+    if (pos_ < end) {
+        const uint8_t *p = data + pos_ + 2;
+        type = pos_ + 1 < end ? data[pos_ + 1] : 0x2f;
+        uint32_t len = read_vln(p, data + end);
+        pos_ = size_t(p - data) + len;
+    }
+    if (type != 0x2f)
+        return false;
+    if (loop_count_ == 0 || --loop_count_ != 0) {
+        pos_ = song_->events;
+    } else {
+        loop_count_ = 1;
+        stop();
+        status_ = Done;
+    }
+    return true;
+}
+
+// A channel message at pos_, sent; a note-on is queued for its note-off.
+// False when the note queue overflows, which ends the sequence.
+bool Sequencer::channel_event(int status)
+{
+    const uint8_t *data = song_->image.data();
+    const size_t end = song_->events + song_->events_size;
+    const int size = message_size(status);
+    if (pos_ + size_t(size) > end) {
+        pos_ = end;
+        return true;
+    }
+    const size_t at = pos_;
+    pos_ += size_t(size);
+    send(status, data[at + 1], size == 3 ? data[at + 2] : 0);
+    if ((status & 0xf0) != 0x90)
+        return true;
+    int slot = 0;
+    while (slot < kMaxNotes && note_chan_[size_t(slot)] != -1)
+        slot++;
+    if (slot == kMaxNotes) {
+        // "Internal note queue overflow".
+        stop();
+        status_ = Done;
+        return false;
+    }
+    note_count_++;
+    note_chan_[size_t(slot)] = status & 0x0f;
+    note_num_[size_t(slot)] = data[at + 1];
+    const uint8_t *p = data + pos_;
+    note_time_[size_t(slot)] = int(read_vln(p, data + end));
+    pos_ = size_t(p - data);
+    return true;
+}
+
+// serve's volume fade towards volume_target_.
+void Sequencer::fade_volume()
+{
+    if (volume_ == volume_target_)
+        return;
+    volume_accum_ += kIntervalTime;
+    while (volume_accum_ >= volume_period_) {
+        volume_accum_ -= volume_period_;
+        volume_ += volume_target_ > volume_ ? 1 : -1;
+        if (volume_ == volume_target_)
+            break;
+    }
+    // Only every eighth service resends the volume, so a fade can end a few
+    // steps short of its target.
+    if (!(interval_num_ & 7))
+        update_volume();
 }
 
 } // namespace
@@ -1024,52 +1152,59 @@ std::span<const uint8_t> TimbreBank::find(int bank, int patch) const
     return {};
 }
 
-bool parse_xmi(std::span<const uint8_t> file, XmiSong &song, std::string *error)
+namespace
 {
-    auto fail = [&](const char *why) {
-        if (error)
-            *error = why;
-        return false;
-    };
-    song = XmiSong{};
-    song.image.assign(file.begin(), file.end());
-    const std::vector<uint8_t> &d = song.image;
-    auto chunk_end = [&](size_t at) -> size_t {
-        uint64_t end = uint64_t(at) + 8 + be32(&d[at + 4]);
-        return end > d.size() ? 0 : size_t(end);
-    };
-    // XMI_find_sequence, sequence 0: skip chunks until one whose form type
-    // is XMID; a FORM is the sequence, a CAT holds it as its first FORM XMID.
-    size_t at = 0;
+
+// The end of the IFF chunk at `at`, or 0 if it runs past the file.
+size_t chunk_end(const std::vector<uint8_t> &d, size_t at)
+{
+    uint64_t end = uint64_t(at) + 8 + be32(&d[at + 4]);
+    return end > d.size() ? 0 : size_t(end);
+}
+
+// XMI_find_sequence, sequence 0: skip chunks until one whose form type is
+// XMID; a FORM is the sequence, a CAT holds it as its first FORM XMID. Sets
+// `at` to the FORM; returns the failure, or nullptr.
+const char *find_sequence(const std::vector<uint8_t> &d, size_t &at)
+{
+    at = 0;
     for (;;) {
         if (at + 12 > d.size() || (std::memcmp(&d[at], "FORM", 4) && std::memcmp(&d[at], "CAT ", 4)))
-            return fail("no XMIDI sequence");
+            return "no XMIDI sequence";
         if (!std::memcmp(&d[at + 8], "XMID", 4))
             break;
-        if (!chunk_end(at))
-            return fail("truncated chunk");
-        at = chunk_end(at);
+        if (!chunk_end(d, at))
+            return "truncated chunk";
+        at = chunk_end(d, at);
     }
-    if (!std::memcmp(&d[at], "CAT ", 4)) {
-        size_t end = chunk_end(at);
-        if (!end)
-            return fail("truncated CAT");
-        at += 12;
-        while (at + 12 <= end && std::memcmp(&d[at + 8], "XMID", 4)) {
-            if (!chunk_end(at))
-                return fail("truncated chunk");
-            at = chunk_end(at);
-        }
-        if (at + 12 > end)
-            return fail("no XMIDI sequence");
-    }
-    size_t end = chunk_end(at);
+    if (std::memcmp(&d[at], "CAT ", 4))
+        return nullptr;
+    size_t end = chunk_end(d, at);
     if (!end)
-        return fail("truncated FORM");
+        return "truncated CAT";
+    at += 12;
+    while (at + 12 <= end && std::memcmp(&d[at + 8], "XMID", 4)) {
+        if (!chunk_end(d, at))
+            return "truncated chunk";
+        at = chunk_end(d, at);
+    }
+    if (at + 12 > end)
+        return "no XMIDI sequence";
+    return nullptr;
+}
+
+// Reads the TIMB, RBRN and EVNT chunks of the FORM XMID at `at` into
+// `song`; returns the failure, or nullptr.
+const char *read_form(size_t at, XmiSong &song)
+{
+    const std::vector<uint8_t> &d = song.image;
+    size_t end = chunk_end(d, at);
+    if (!end)
+        return "truncated FORM";
     for (at += 12; at + 8 <= end;) {
-        size_t next = chunk_end(at);
+        size_t next = chunk_end(d, at);
         if (!next || next > end)
-            return fail("truncated chunk");
+            return "truncated chunk";
         if (!std::memcmp(&d[at], "TIMB", 4) && next - at >= 10) {
             size_t n = le16(&d[at + 8]);
             for (size_t i = 0; i < n && at + 12 + 2 * i <= next; i++)
@@ -1083,8 +1218,14 @@ bool parse_xmi(std::span<const uint8_t> file, XmiSong &song, std::string *error)
         // Miles steps chunk by chunk without IFF's pad byte.
         at = next;
     }
-    if (!song.events)
-        return fail("no EVNT chunk");
+    return nullptr;
+}
+
+// Walks the song's events, adding up its ticks; true if they reach an end
+// of track within their chunk.
+bool scan_events(XmiSong &song)
+{
+    const std::vector<uint8_t> &d = song.image;
     const size_t ev_end = song.events + song.events_size;
     const uint8_t *p = d.data() + song.events, *e = d.data() + ev_end;
     while (p < e) {
@@ -1094,12 +1235,12 @@ bool parse_xmi(std::span<const uint8_t> file, XmiSong &song, std::string *error)
             p++;
         } else if (status == 0xff) {
             if (e - p < 2)
-                break;
+                return false;
             uint8_t type = p[1];
             p += 2;
             uint32_t len = read_vln(p, e);
             if (len > size_t(e - p))
-                break;
+                return false;
             p += len;
             if (type == 0x2f)
                 return true;
@@ -1107,21 +1248,84 @@ bool parse_xmi(std::span<const uint8_t> file, XmiSong &song, std::string *error)
             p++;
             uint32_t len = read_vln(p, e);
             if (len > size_t(e - p))
-                break;
+                return false;
             p += len;
         } else {
             int size = message_size(status);
             if (e - p < size)
-                break;
+                return false;
             p += size;
             if ((status & 0xf0) == 0x90)
                 read_vln(p, e);
         }
     }
+    return false;
+}
+
+} // namespace
+
+bool parse_xmi(std::span<const uint8_t> file, XmiSong &song, std::string *error)
+{
+    auto fail = [&](const char *why) {
+        if (error)
+            *error = why;
+        return false;
+    };
+    song = XmiSong{};
+    song.image.assign(file.begin(), file.end());
+    size_t at = 0;
+    if (const char *why = find_sequence(song.image, at))
+        return fail(why);
+    if (const char *why = read_form(at, song))
+        return fail(why);
+    if (!song.events)
+        return fail("no EVNT chunk");
+    if (scan_events(song))
+        return true;
     return fail("events run past their chunk without an end of track");
 }
 
 // --- The player ----------------------------------------------------------------
+
+namespace
+{
+
+// read_line_from_buf's lines of midi.txt.
+std::vector<std::string> split_lines(const std::vector<uint8_t> &text)
+{
+    std::vector<std::string> lines;
+    std::string line;
+    for (uint8_t c : text) {
+        if (c == '\n') {
+            lines.push_back(line);
+            line.clear();
+        } else if (c != '\r') {
+            line += char(c);
+        }
+    }
+    if (!line.empty())
+        lines.push_back(line);
+    return lines;
+}
+
+// Sets `*error`, if given, to `why`; returns false.
+bool fail(std::string *error, const char *why)
+{
+    if (error)
+        *error = why;
+    return false;
+}
+
+// The printable characters `s` starts with, at most `max`.
+std::string printable(const std::string &s, size_t max)
+{
+    size_t n = 0;
+    while (n < s.size() && n < max && s[n] >= 0x20 && s[n] < 0x7f)
+        n++;
+    return s.substr(0, n);
+}
+
+} // namespace
 
 struct MusicPlayer::Engine {
     Chip chip;
@@ -1179,11 +1383,8 @@ bool MusicPlayer::load(const std::filesystem::path &dir, std::string *error)
     loop_ = false;
     track_ = 8;
     auto gtl = resolve_ci(dir, "sound/sample.opl");
-    if (!gtl) {
-        if (error)
-            *error = "missing sound/sample.opl";
-        return false;
-    }
+    if (!gtl)
+        return fail(error, "missing sound/sample.opl");
     if (!timbres_.load(*gtl, error))
         return false;
     auto list = resolve_ci(dir, "sound/midi/midi.txt");
@@ -1191,30 +1392,10 @@ bool MusicPlayer::load(const std::filesystem::path &dir, std::string *error)
     if (!text) {
         // load_midi clears othervar.midi_playing.
         midi_playing_ = false;
-        if (error)
-            *error = "missing sound/midi/midi.txt";
-        return false;
+        return fail(error, "missing sound/midi/midi.txt");
     }
-    // read_line_from_buf's lines; a name keeps its printable characters up
-    // to 29, a title up to 25.
-    std::vector<std::string> lines;
-    std::string line;
-    for (uint8_t c : *text) {
-        if (c == '\n') {
-            lines.push_back(line);
-            line.clear();
-        } else if (c != '\r') {
-            line += char(c);
-        }
-    }
-    if (!line.empty())
-        lines.push_back(line);
-    auto printable = [](const std::string &s, size_t max) {
-        size_t n = 0;
-        while (n < s.size() && n < max && s[n] >= 0x20 && s[n] < 0x7f)
-            n++;
-        return s.substr(0, n);
-    };
+    // A name keeps its printable characters up to 29, a title up to 25.
+    const std::vector<std::string> lines = split_lines(*text);
     for (size_t i = 0; i < lines.size() && songs_.size() < 10; i++) {
         std::string name = printable(lines[i], 29);
         auto path = name.empty() ? std::nullopt : resolve_ci(dir, "sound/midi/" + name);

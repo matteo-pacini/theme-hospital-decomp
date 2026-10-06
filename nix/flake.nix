@@ -213,7 +213,10 @@
         );
 
         # `nix develop path:./nix#enhanced`
-        enhanced = pkgs.mkShell { packages = enhancedTools; };
+        enhanced = pkgs.mkShell {
+          # clang-tools for clang-tidy (enhanced/tools/tidy.sh) and clang-format
+          packages = enhancedTools ++ [ pkgs.clang-tools ];
+        };
       };
     };
 }

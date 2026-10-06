@@ -158,56 +158,47 @@ int sqr(int v)
     return v * v;
 }
 
+// The candidates of `list` whose `key` is the smallest, in `list`'s order.
+template <typename Key> std::vector<int> smallest(const std::vector<int> &list, Key &&key)
+{
+    int best = 999999;
+    for (int i : list)
+        best = std::min(best, key(i));
+    std::vector<int> out;
+    for (int i : list)
+        if (key(i) == best)
+            out.push_back(i);
+    return out;
+}
+
 // LbPaletteFindColour (src/lib/bf1/gpalette.cpp): the nearest colour of a
 // 6-bit palette by squared distance, ties broken by the sum of the
 // differences, then by the darkest (green and red weighted double).
 uint8_t find_colour(const std::array<uint8_t, 768> &pal, int r, int g, int b)
 {
     auto at = [&](int i, int k) { return int(pal[size_t(i) * 3 + size_t(k)]); };
-    int best = 999999;
-    for (int i = 0; i < 256; i++) {
-        int d = sqr(r - at(i, 0)) + sqr(g - at(i, 1)) + sqr(b - at(i, 2));
-        if (d < best) {
-            best = d;
-            if (best == 0)
-                return uint8_t(i);
-        }
-    }
-    std::vector<int> list1;
-    for (int i = 0; i < 256; i++) {
-        if (sqr(r - at(i, 0)) + sqr(g - at(i, 1)) + sqr(b - at(i, 2)) == best)
-            list1.push_back(i);
-    }
-    if (list1.size() == 1)
-        return uint8_t(list1[0]);
+    auto dist = [&](int i) { return sqr(r - at(i, 0)) + sqr(g - at(i, 1)) + sqr(b - at(i, 2)); };
     auto manhattan = [&](int i) { return std::abs(r - at(i, 0)) + std::abs(g - at(i, 1)) + std::abs(b - at(i, 2)); };
-    best = 999999;
-    for (int i : list1)
-        best = std::min(best, manhattan(i));
-    std::vector<int> list2;
-    for (int i : list1) {
-        if (manhattan(i) == best)
-            list2.push_back(i);
-    }
-    if (list2.size() == 1)
-        return uint8_t(list2[0]);
-    uint8_t colour = 0;
-    best = 999999;
-    for (int i : list2) {
-        int d = at(i, 1) * 2 * at(i, 1) + at(i, 0) * 2 * at(i, 0) + at(i, 2) * at(i, 2);
-        if (d < best) {
-            best = d;
-            colour = uint8_t(i);
-        }
-    }
-    return colour;
+    auto darkness = [&](int i) { return at(i, 1) * 2 * at(i, 1) + at(i, 0) * 2 * at(i, 0) + at(i, 2) * at(i, 2); };
+    std::vector<int> list(256);
+    for (int i = 0; i < 256; i++)
+        list[size_t(i)] = i;
+    list = smallest(list, dist);
+    // An exact match is the first one, whatever the ties.
+    if (list.size() == 1 || dist(list[0]) == 0)
+        return uint8_t(list[0]);
+    list = smallest(list, manhattan);
+    if (list.size() == 1)
+        return uint8_t(list[0]);
+    return uint8_t(smallest(list, darkness)[0]);
 }
 
 // check_tri (src/mainmenu.cpp): (x, y) inside or on the triangle, its
 // corners counterclockwise on screen. Coordinates are 16-bit unsigned, as
 // the game passes them.
-bool check_tri(int x1, int y1, int x2, int y2, int x3, int y3, int mx, int my)
+bool check_tri(Point p1, Point p2, Point p3, int mx, int my)
 {
+    const int x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y, x3 = p3.x, y3 = p3.y;
     int x = uint16_t(mx), y = uint16_t(my);
     auto side = [](int64_t a, int64_t b, int64_t c, int64_t d) { return a * d - b * c > 0; };
     return !(side(x2 - x1, y2 - y1, x - x1, y - y1) || side(x3 - x2, y3 - y2, x - x2, y - y2) ||
@@ -217,28 +208,6 @@ bool check_tri(int x1, int y1, int x2, int y2, int x3, int y3, int mx, int my)
 bool over(int mx, int my, int x, int y, int w, int h)
 {
     return mx >= x && mx < x + w && my >= y && my < y + h;
-}
-
-bool load_picture(const std::filesystem::path &dir, std::string_view name, int width, int height, Surface &pixels,
-                  Palette &palette, std::array<uint8_t, 768> &vga, std::string *error)
-{
-    auto dat = load_data_file(dir, "qdata/" + std::string(name) + ".dat", error);
-    if (!dat)
-        return false;
-    auto pal = load_data_file(dir, "qdata/" + std::string(name) + ".pal", error);
-    if (!pal)
-        return false;
-    if (dat->size() < size_t(width) * size_t(height) || pal->size() < vga.size()) {
-        if (error)
-            *error = std::string(name) + ": not a full-screen picture";
-        return false;
-    }
-    pixels.resize(width, height);
-    for (int y = 0; y < height; y++)
-        std::memcpy(pixels.row(y), dat->data() + size_t(y) * size_t(width), size_t(width));
-    std::memcpy(vga.data(), pal->data(), vga.size());
-    palette_from_vga(vga, palette);
-    return true;
 }
 
 bool load_sheet(const std::filesystem::path &dir, std::string_view name, SpriteSheet &sheet, std::string *error)
@@ -286,14 +255,38 @@ bool ieq(std::string_view a, std::string_view b)
 
 } // namespace
 
+bool Startup::load_picture(const std::filesystem::path &dir, std::string_view name, int width, int height, Picture &out,
+                           std::string *error)
+{
+    Surface &pixels = out.pixels;
+    std::array<uint8_t, 768> &vga = out.vga;
+    auto dat = load_data_file(dir, "qdata/" + std::string(name) + ".dat", error);
+    if (!dat)
+        return false;
+    auto pal = load_data_file(dir, "qdata/" + std::string(name) + ".pal", error);
+    if (!pal)
+        return false;
+    if (dat->size() < size_t(width) * size_t(height) || pal->size() < vga.size()) {
+        if (error)
+            *error = std::string(name) + ": not a full-screen picture";
+        return false;
+    }
+    pixels.resize(width, height);
+    for (int y = 0; y < height; y++)
+        std::memcpy(pixels.row(y), dat->data() + size_t(y) * size_t(width), size_t(width));
+    std::memcpy(vga.data(), pal->data(), vga.size());
+    palette_from_vga(vga, out.palette);
+    return true;
+}
+
 bool Startup::load(const std::filesystem::path &dir, const LanguageText &text, int language, std::string *error)
 {
     dir_ = dir;
     text_ = &text;
     language_ = language;
-    if (!load_picture(dir, "title01v", kUiWidth, kUiHeight, title_.pixels, title_.palette, title_.vga, error) ||
-        !load_picture(dir, "main01m", 320, 200, main_menu_.pixels, main_menu_.palette, main_menu_.vga, error) ||
-        !load_picture(dir, "pref01v", kUiWidth, kUiHeight, prefs_.pixels, prefs_.palette, prefs_.vga, error) ||
+    if (!load_picture(dir, "title01v", kUiWidth, kUiHeight, title_, error) ||
+        !load_picture(dir, "main01m", 320, 200, main_menu_, error) ||
+        !load_picture(dir, "pref01v", kUiWidth, kUiHeight, prefs_, error) ||
         !load_sheet(dir, "main02m", main_sprites_, error) || !load_sheet(dir, "pref02v", prefs_sprites_, error))
         return false;
     // LbGhostTableGenerate(ppalette, 0x1e, "qdata/ghost1.dat") on the
@@ -446,39 +439,16 @@ void Startup::tick(const UiMouse &mouse, std::span<const StartupKey> keys)
         play_movie(kMovieIntroSm4, State::TitleEnter);
         break;
     case State::TitleEnter:
-        show(title_);
-        screen_ = StartupScreen::Title;
-        timer_ = kAttractFrames;
-        state_ = State::Title;
+        enter_title();
         break;
     case State::Title:
-        // MMS_ATTRACT: any click or key goes on to the name screen; after
-        // 1000 frames the attract and intro movies take turns.
-        if (mouse.left_pressed || mouse.right_pressed || !keys.empty()) {
-            state_ = State::NameEnter;
-            break;
-        }
-        show(title_);
-        if (resolve_ci(dir_, movie_info(kMovieAttract).file) && --timer_ == 0) {
-            attract_count_++;
-            play_movie(attract_count_ % 2 == 1 ? kMovieAttract : kMovieIntroSm4, State::TitleEnter);
-        }
+        attract(mouse, keys);
         break;
     case State::NameEnter:
-        // draw_nickname state 0.
-        name_.clear();
-        show(title_);
-        calculate_grey(title_);
-        screen_ = StartupScreen::Name;
-        timer_ = kDelay800ms;
-        state_ = State::NameDelay;
+        enter_name();
         break;
     case State::NameDelay:
-        show(title_);
-        if (--timer_ <= 0) {
-            init_zoom_boxes(2);
-            state_ = State::NameZoom;
-        }
+        zoom_after_delay(title_, 2, State::NameZoom);
         break;
     case State::NameZoom:
     case State::NameEntry:
@@ -491,65 +461,124 @@ void Startup::tick(const UiMouse &mouse, std::span<const StartupKey> keys)
         state_ = State::MenuEnter;
         break;
     case State::MenuEnter:
-        // MMS_ENTER, MMS_UNLOAD_GAME and MMS_SHOW_MENU: the menu's picture,
-        // then its opening movie.
-        show(main_menu_);
-        screen_ = StartupScreen::MainMenu;
-        menu_state_ = kHoverContinue;
-        play_movie(kMovieMainMenu1, State::Menu);
+        enter_menu();
         break;
     case State::Menu:
         screen_ = StartupScreen::MainMenu;
         main_menu(mouse, keys);
         break;
     case State::PrefsEnter:
-        // draw_nickname state 3.
-        show(prefs_);
-        screen_ = StartupScreen::Preferences;
-        calculate_grey(prefs_);
-        balance_ = 0;
-        for (size_t i = 0; i < balance_files_.size(); i++) {
-            if (ieq(balance_files_[i], kDefaultBalanceId))
-                balance_ = i;
-        }
-        balance_name_ = std::string(text_->at(TextSection::Nickname, 0x15));
-        if (!balance_files_.empty()) {
-            if (auto d = balance_description(dir_, balance_files_[balance_], language_))
-                balance_name_ = *d;
-        }
-        timer_ = kDelay800ms;
-        state_ = State::PrefsDelay;
+        enter_preferences();
         break;
     case State::PrefsDelay:
-        show(prefs_);
-        if (--timer_ <= 0) {
-            init_zoom_boxes(1);
-            state_ = State::PrefsZoom;
-        }
+        zoom_after_delay(prefs_, 1, State::PrefsZoom);
         break;
     case State::PrefsZoom:
     case State::PrefsEntry:
         preferences(mouse, keys);
         break;
     case State::AreaEnter:
-        // draw_area_select state 0: a new game's level_number is 0, whose
-        // movie is area01v.
-        sound(level_ >= 12 ? kSfxDiceLate : kSfxDice);
-        idle_ = 600;
-        play_movie(kMovieArea + level_, State::Briefing);
+        enter_area();
         break;
     case State::Briefing:
         screen_ = StartupScreen::Briefing;
         briefing(mouse, keys);
         break;
     case State::Quit:
-        screen_ = StartupScreen::Done;
-        result_ = {};
-        result_.kind = StartupResult::Kind::Quit;
-        state_ = State::Done;
+        finish_quit();
         break;
     case State::Done:
         break;
+    }
+}
+
+void Startup::enter_title()
+{
+    show(title_);
+    screen_ = StartupScreen::Title;
+    timer_ = kAttractFrames;
+    state_ = State::Title;
+}
+
+void Startup::attract(const UiMouse &mouse, std::span<const StartupKey> keys)
+{
+    // MMS_ATTRACT: any click or key goes on to the name screen; after 1000
+    // frames the attract and intro movies take turns.
+    if (mouse.left_pressed || mouse.right_pressed || !keys.empty()) {
+        state_ = State::NameEnter;
+        return;
+    }
+    show(title_);
+    if (resolve_ci(dir_, movie_info(kMovieAttract).file) && --timer_ == 0) {
+        attract_count_++;
+        play_movie(attract_count_ % 2 == 1 ? kMovieAttract : kMovieIntroSm4, State::TitleEnter);
+    }
+}
+
+void Startup::enter_name()
+{
+    // draw_nickname state 0.
+    name_.clear();
+    show(title_);
+    calculate_grey(title_);
+    screen_ = StartupScreen::Name;
+    timer_ = kDelay800ms;
+    state_ = State::NameDelay;
+}
+
+void Startup::enter_menu()
+{
+    // MMS_ENTER, MMS_UNLOAD_GAME and MMS_SHOW_MENU: the menu's picture, then
+    // its opening movie.
+    show(main_menu_);
+    screen_ = StartupScreen::MainMenu;
+    menu_state_ = kHoverContinue;
+    play_movie(kMovieMainMenu1, State::Menu);
+}
+
+void Startup::enter_area()
+{
+    // draw_area_select state 0: a new game's level_number is 0, whose movie
+    // is area01v.
+    sound(level_ >= 12 ? kSfxDiceLate : kSfxDice);
+    idle_ = 600;
+    play_movie(kMovieArea + level_, State::Briefing);
+}
+
+void Startup::finish_quit()
+{
+    screen_ = StartupScreen::Done;
+    result_ = {};
+    result_.kind = StartupResult::Kind::Quit;
+    state_ = State::Done;
+}
+
+void Startup::enter_preferences()
+{
+    // draw_nickname state 3.
+    show(prefs_);
+    screen_ = StartupScreen::Preferences;
+    calculate_grey(prefs_);
+    balance_ = 0;
+    for (size_t i = 0; i < balance_files_.size(); i++) {
+        if (ieq(balance_files_[i], kDefaultBalanceId))
+            balance_ = i;
+    }
+    balance_name_ = std::string(text_->at(TextSection::Nickname, 0x15));
+    if (!balance_files_.empty()) {
+        if (auto d = balance_description(dir_, balance_files_[balance_], language_))
+            balance_name_ = *d;
+    }
+    timer_ = kDelay800ms;
+    state_ = State::PrefsDelay;
+}
+
+void Startup::zoom_after_delay(const Picture &picture, int mask, State next)
+{
+    show(picture);
+    if (--timer_ <= 0) {
+        init_zoom_boxes(mask);
+        state_ = next;
     }
 }
 
@@ -571,7 +600,7 @@ void Startup::name_screen(std::span<const StartupKey> keys)
     int ch = font.glyph('A').height;
     int y = ((0x2c - ch) >> 1) + 0x1a6;
     int x = ((0x1cb - text_width(font, prompt) - 0x70) >> 1) + 0x5a;
-    draw_text(surface_, font, {0, 0, surface_.width()}, x, y, line, 0, {0, 0, surface_.width(), surface_.height()});
+    draw_text(surface_, font, x, y, line, {{0, 0, surface_.width()}, {0, 0, surface_.width(), surface_.height()}});
 
     // process_keys_nickname state 2.
     for (const StartupKey &k : keys) {
@@ -602,6 +631,83 @@ void Startup::name_screen(std::span<const StartupKey> keys)
     }
 }
 
+namespace
+{
+
+// The main menu's entries, as display_main_menu and tri_test number them.
+enum MenuEntry : int { kEntryNewGame, kEntryLoad, kEntryContinue, kEntryNetwork, kEntryQuit };
+
+// tri_test's test of entry `entry`'s triangles.
+bool over_menu_entry(int entry, int mx, int my)
+{
+    switch (entry) {
+    case kEntryNewGame:
+        return check_tri({0x2c, 0x13}, {0x55, 0x3a}, {0x7f, 0x13}, mx, my);
+    case kEntryLoad:
+        return check_tri({0x55, 0x3a}, {0x7f, 0x68}, {0x7f, 0x13}, mx, my);
+    case kEntryContinue:
+        return check_tri({0x2c, 0x13}, {0x2c, 0x68}, {0x55, 0x3a}, mx, my);
+    case kEntryNetwork:
+        return check_tri({0x2c, 0x68}, {0x7f, 0x68}, {0x55, 0x3a}, mx, my);
+    default:
+        return check_tri({0x30, 0x77}, {0x30, 0x96}, {0x74, 0x79}, mx, my) ||
+               check_tri({0x74, 0x79}, {0x30, 0x96}, {0x74, 0x96}, mx, my);
+    }
+}
+
+// The menu state for hovering `target` from `state`: a turning state when
+// another entry was hovered (`from`: hovered state, turning state).
+int turn_menu(int state, int target, std::initializer_list<std::pair<int, int>> from)
+{
+    if (state == target)
+        return state;
+    for (auto [s, to] : from) {
+        if (state == s)
+            return to;
+    }
+    return target;
+}
+
+// display_main_menu and tri_test: the entry under the mouse becomes the
+// hovered one, through a turning state when another was.
+int hover_main_menu(int state, int mx, int my)
+{
+    if (over_menu_entry(kEntryNewGame, mx, my))
+        return turn_menu(state, kHoverNewGame,
+                         {{kHoverContinue, 0x11}, {kHoverLoad, 0x13}, {kHoverNetwork, 0x12}, {kHoverQuit, 0x12}});
+    if (over_menu_entry(kEntryLoad, mx, my))
+        return turn_menu(state, kHoverLoad,
+                         {{kHoverNewGame, 0x13}, {kHoverContinue, 0x12}, {kHoverNetwork, 0x14}, {kHoverQuit, 0x14}});
+    if (over_menu_entry(kEntryContinue, mx, my))
+        return turn_menu(state, kHoverContinue,
+                         {{kHoverNewGame, 0x11}, {kHoverLoad, 0x12}, {kHoverNetwork, 0x16}, {kHoverQuit, 0x16}});
+    if (over_menu_entry(kEntryNetwork, mx, my))
+        return turn_menu(state, kHoverNetwork,
+                         {{kHoverNewGame, 0x12}, {kHoverLoad, 0x14}, {kHoverContinue, 0x16}, {kHoverQuit, 0x15}});
+    if (over_menu_entry(kEntryQuit, mx, my))
+        return turn_menu(state, kHoverQuit,
+                         {{kHoverNewGame, 0x12}, {kHoverLoad, 0x14}, {kHoverContinue, 0x16}, {kHoverNetwork, 0x15}});
+    if (state >= 0x11 && state <= 0x16)
+        return kHoverContinue;
+    return state;
+}
+
+// process_mouse_main_menu: a release over an entry chooses it, the last
+// one tested winning.
+int release_main_menu(int state, int mx, int my)
+{
+    constexpr std::pair<int, int> kChoices[] = {
+        {kEntryNewGame, kNewGame}, {kEntryLoad, kLoadGame}, {kEntryContinue, kContinue},
+        {kEntryNetwork, kNetwork}, {kEntryQuit, kQuit},
+    };
+    for (auto [entry, chosen] : kChoices)
+        if (over_menu_entry(entry, mx, my))
+            state = chosen;
+    return state;
+}
+
+} // namespace
+
 void Startup::main_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
 {
     // draw_main_menu.
@@ -624,35 +730,8 @@ void Startup::main_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
         break;
     }
 
-    // display_main_menu and tri_test: the entry under the mouse becomes the
-    // hovered one, through a turning state when another was.
     show(main_menu_);
-    int mx = mouse.x, my = mouse.y;
-    auto turn = [&](int target, std::initializer_list<std::pair<int, int>> from) {
-        if (menu_state_ == target)
-            return;
-        for (auto [s, to] : from) {
-            if (menu_state_ == s) {
-                menu_state_ = to;
-                return;
-            }
-        }
-        menu_state_ = target;
-    };
-    if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, mx, my)) {
-        turn(kHoverNewGame, {{kHoverContinue, 0x11}, {kHoverLoad, 0x13}, {kHoverNetwork, 0x12}, {kHoverQuit, 0x12}});
-    } else if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, mx, my)) {
-        turn(kHoverLoad, {{kHoverNewGame, 0x13}, {kHoverContinue, 0x12}, {kHoverNetwork, 0x14}, {kHoverQuit, 0x14}});
-    } else if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, mx, my)) {
-        turn(kHoverContinue, {{kHoverNewGame, 0x11}, {kHoverLoad, 0x12}, {kHoverNetwork, 0x16}, {kHoverQuit, 0x16}});
-    } else if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, mx, my)) {
-        turn(kHoverNetwork, {{kHoverNewGame, 0x12}, {kHoverLoad, 0x14}, {kHoverContinue, 0x16}, {kHoverQuit, 0x15}});
-    } else if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, mx, my) ||
-               check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, mx, my)) {
-        turn(kHoverQuit, {{kHoverNewGame, 0x12}, {kHoverLoad, 0x14}, {kHoverContinue, 0x16}, {kHoverNetwork, 0x15}});
-    } else if (menu_state_ >= 0x11 && menu_state_ <= 0x16) {
-        menu_state_ = kHoverContinue;
-    }
+    menu_state_ = hover_main_menu(menu_state_, mouse.x, mouse.y);
     for (const MenuSprite &s : kMenuSprites) {
         if (s.state == shown)
             draw_sprite(surface_, s.x, s.y, main_sprites_.at(size_t(s.sprite)));
@@ -667,20 +746,8 @@ void Startup::main_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
             return;
         }
     }
-    // process_mouse_main_menu: a release over an entry chooses it.
-    if (mouse.left_released) {
-        if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, mx, my))
-            menu_state_ = kNewGame;
-        if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, mx, my))
-            menu_state_ = kLoadGame;
-        if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, mx, my))
-            menu_state_ = kContinue;
-        if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, mx, my))
-            menu_state_ = kNetwork;
-        if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, mx, my) ||
-            check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, mx, my))
-            menu_state_ = kQuit;
-    }
+    if (mouse.left_released)
+        menu_state_ = release_main_menu(menu_state_, mouse.x, mouse.y);
 }
 
 void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys)
@@ -693,31 +760,8 @@ void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys
             state_ = State::PrefsEntry;
         draw_zoom_boxes();
     } else {
-        // State 5: draw_new_prefs_screen.
-        draw_zoom_boxes();
-        if (several) {
-            draw_glass_text(mouse, kPrevBalance, "{", false);
-            draw_glass_text(mouse, kNextBalance, "|", false);
-        }
-        auto nick = [&](int i) { return text_->at(TextSection::Nickname, i); };
-        draw_glass_text(mouse, kAccept, nick(0x12), false);
-        draw_glass_text(mouse, kTutorialOn, nick(0x10), tutorial_);
-        draw_glass_text(mouse, kTutorialOff, nick(0x11), !tutorial_);
-        const Font &font = fonts_[kFontGlass];
-        TextWindow window{0, 0, surface_.width()};
-        Rect clip{0, 0, surface_.width(), surface_.height()};
-        int ch = font.glyph('A').height;
-        int y = 0x12f;
-        y += (0x150 - y - ch) >> 1;
-        draw_text(surface_, font, window, 0xaf, y, nick(6), 0, clip);
-        int bh = font.glyph('B').height;
-        std::string_view title = text_->misc(0x1e);
-        int ty = kBalanceBox.y + (kBalanceBox.h - bh * 2) / 2;
-        draw_text(surface_, font, window, kBalanceBox.x + (kBalanceBox.w - text_width(font, title)) / 2, ty, title, 0,
-                  clip);
-        draw_text(surface_, font, window, kBalanceBox.x + (kBalanceBox.w - text_width(font, balance_name_)) / 2,
-                  ty + bh, balance_name_, 0, clip);
-
+        // State 5.
+        draw_new_prefs_screen(mouse, several);
         // process_keys_nickname state 5.
         for (const StartupKey &k : keys) {
             if (k.code == StartupKey::Escape) {
@@ -737,49 +781,84 @@ void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys
     for (int i = 0; i < int(kPrefsButtons.size()); i++) {
         if (!several && (i == kPrevBalance || i == kNextBalance))
             continue;
-        const ScreenButton &b = kPrefsButtons[size_t(i)];
-        int w = b.x1 - b.x + 1, h = b.y1 - b.y + 1;
-        auto press = [&] {
-            if (b.sprite)
-                draw_sprite(surface_, b.x, b.y, prefs_sprites_.at(1));
-            else
-                draw_button_edges(b.x, b.y, b.x1 - b.x, b.y1 - b.y, true);
-        };
-        if (mouse.left_released && over(mouse.x, mouse.y, b.x, b.y, w, h)) {
-            press();
-            // process_nickname_button.
-            switch (i) {
-            case kPrevBalance:
-            case kNextBalance:
-                sound(kSfxSelect);
-                balance_ = (balance_ + (i == kNextBalance ? 1 : balance_files_.size() - 1)) % balance_files_.size();
-                balance_name_ = std::string(text_->at(TextSection::Nickname, 0x15));
-                if (auto d = balance_description(dir_, balance_files_[balance_], language_))
-                    balance_name_ = *d;
-                break;
-            case kTutorialOn:
-            case kTutorialOff:
-                tutorial_ = i == kTutorialOn;
-                sound(kSfxSelect);
-                break;
-            case kAccept:
-                sound(kSfxYes);
-                next = State::AreaEnter;
-                break;
-            case kCancel:
-                sound(kSfxNo);
-                next = State::MenuEnter;
-                break;
-            }
-            continue;
-        }
-        if (mouse.left_held && over(mouse.x, mouse.y, b.x, b.y, w, h))
-            press();
-        bool chosen = (i == kTutorialOn && tutorial_) || (i == kTutorialOff && !tutorial_);
-        if (chosen)
-            draw_button_edges(b.x, b.y, b.x1 - b.x, b.y1 - b.y, true);
+        prefs_button(mouse, i, next);
     }
     state_ = next;
+}
+
+void Startup::draw_new_prefs_screen(const UiMouse &mouse, bool several)
+{
+    draw_zoom_boxes();
+    if (several) {
+        draw_glass_text(mouse, kPrevBalance, "{", false);
+        draw_glass_text(mouse, kNextBalance, "|", false);
+    }
+    auto nick = [&](int i) { return text_->at(TextSection::Nickname, i); };
+    draw_glass_text(mouse, kAccept, nick(0x12), false);
+    draw_glass_text(mouse, kTutorialOn, nick(0x10), tutorial_);
+    draw_glass_text(mouse, kTutorialOff, nick(0x11), !tutorial_);
+    const Font &font = fonts_[kFontGlass];
+    TextWindow window{0, 0, surface_.width()};
+    Rect clip{0, 0, surface_.width(), surface_.height()};
+    int ch = font.glyph('A').height;
+    int y = 0x12f;
+    y += (0x150 - y - ch) >> 1;
+    draw_text(surface_, font, 0xaf, y, nick(6), {window, clip});
+    int bh = font.glyph('B').height;
+    std::string_view title = text_->misc(0x1e);
+    int ty = kBalanceBox.y + (kBalanceBox.h - bh * 2) / 2;
+    draw_text(surface_, font, kBalanceBox.x + (kBalanceBox.w - text_width(font, title)) / 2, ty, title, {window, clip});
+    draw_text(surface_, font, kBalanceBox.x + (kBalanceBox.w - text_width(font, balance_name_)) / 2, ty + bh,
+              balance_name_, {window, clip});
+}
+
+void Startup::prefs_button(const UiMouse &mouse, int i, State &next)
+{
+    const ScreenButton &b = kPrefsButtons[size_t(i)];
+    int w = b.x1 - b.x + 1, h = b.y1 - b.y + 1;
+    auto press = [&] {
+        if (b.sprite)
+            draw_sprite(surface_, b.x, b.y, prefs_sprites_.at(1));
+        else
+            draw_button_edges(b.x, b.y, b.x1 - b.x, b.y1 - b.y, true);
+    };
+    if (mouse.left_released && over(mouse.x, mouse.y, b.x, b.y, w, h)) {
+        press();
+        process_nickname_button(i, next);
+        return;
+    }
+    if (mouse.left_held && over(mouse.x, mouse.y, b.x, b.y, w, h))
+        press();
+    bool chosen = (i == kTutorialOn && tutorial_) || (i == kTutorialOff && !tutorial_);
+    if (chosen)
+        draw_button_edges(b.x, b.y, b.x1 - b.x, b.y1 - b.y, true);
+}
+
+void Startup::process_nickname_button(int i, State &next)
+{
+    switch (i) {
+    case kPrevBalance:
+    case kNextBalance:
+        sound(kSfxSelect);
+        balance_ = (balance_ + (i == kNextBalance ? 1 : balance_files_.size() - 1)) % balance_files_.size();
+        balance_name_ = std::string(text_->at(TextSection::Nickname, 0x15));
+        if (auto d = balance_description(dir_, balance_files_[balance_], language_))
+            balance_name_ = *d;
+        break;
+    case kTutorialOn:
+    case kTutorialOff:
+        tutorial_ = i == kTutorialOn;
+        sound(kSfxSelect);
+        break;
+    case kAccept:
+        sound(kSfxYes);
+        next = State::AreaEnter;
+        break;
+    case kCancel:
+        sound(kSfxNo);
+        next = State::MenuEnter;
+        break;
+    }
 }
 
 void Startup::briefing(const UiMouse &mouse, std::span<const StartupKey> keys)
@@ -853,10 +932,11 @@ void Startup::init_zoom_boxes(int mask)
     }
 }
 
-bool Startup::draw_zoom_boxes()
+void Startup::zoom_levels(int &lo, int &hi, bool &incomplete) const
 {
-    int lo = -128, hi = -128;
-    bool result = false, incomplete = false, found = false;
+    lo = -128, hi = -128;
+    incomplete = false;
+    bool found = false;
     for (const ZoomBox &z : zoom_) {
         if (!z.active)
             continue;
@@ -877,46 +957,66 @@ bool Startup::draw_zoom_boxes()
         hi = lo;
     else if (hi > lo)
         lo = hi;
-    for (size_t i = 0; i < zoom_.size(); i++) {
-        ZoomBox &z = zoom_[i];
+}
+
+bool Startup::open_zoom_box(ZoomBox &z, int hi, bool incomplete)
+{
+    if (z.id & current_display_) {
+        draw_box(z);
+        return false;
+    }
+    if (incomplete || z.type > hi)
+        return false;
+    bool opening = false;
+    if (z.type == hi) {
+        if (z.open_delay) {
+            z.open_delay--;
+        } else if (++z.step < z.steps - 1) {
+            opening = true;
+        } else {
+            bool all = std::none_of(zoom_.begin(), zoom_.end(), [&](const ZoomBox &o) {
+                return o.active && &o != &z && o.id == z.id && o.step != o.steps - 1;
+            });
+            if (all)
+                current_display_ |= z.id;
+            if (z.step > z.steps - 1)
+                z.step--;
+        }
+    }
+    draw_box(z);
+    return opening;
+}
+
+bool Startup::close_zoom_box(ZoomBox &z, int hi)
+{
+    bool closing = false;
+    if (z.type == hi) {
+        if (!z.close_delay) {
+            current_display_ &= ~z.id;
+            closing = true;
+            if (--z.step <= 0)
+                z.active = false;
+        } else {
+            z.close_delay--;
+        }
+    }
+    draw_box(z);
+    return closing;
+}
+
+bool Startup::draw_zoom_boxes()
+{
+    int lo = 0, hi = 0;
+    bool incomplete = false;
+    zoom_levels(lo, hi, incomplete);
+    bool result = false;
+    for (ZoomBox &z : zoom_) {
         if (!z.active || z.type > lo)
             continue;
-        if (z.id & desired_display_) {
-            if (z.id & current_display_) {
-                draw_box(z);
-            } else if (!incomplete && z.type <= hi) {
-                if (z.type == hi) {
-                    if (!z.open_delay) {
-                        if (++z.step >= z.steps - 1) {
-                            bool all = std::none_of(zoom_.begin(), zoom_.end(), [&](const ZoomBox &o) {
-                                return o.active && &o != &z && o.id == z.id && o.step != o.steps - 1;
-                            });
-                            if (all)
-                                current_display_ |= z.id;
-                            if (z.step > z.steps - 1)
-                                z.step--;
-                        } else {
-                            result = true;
-                        }
-                    } else {
-                        z.open_delay--;
-                    }
-                }
-                draw_box(z);
-            }
-        } else if (z.type == hi) {
-            if (!z.close_delay) {
-                current_display_ &= ~z.id;
-                result = true;
-                if (--z.step <= 0)
-                    z.active = false;
-            } else {
-                z.close_delay--;
-            }
-            draw_box(z);
-        } else {
-            draw_box(z);
-        }
+        if (z.id & desired_display_)
+            result |= open_zoom_box(z, hi, incomplete);
+        else
+            result |= close_zoom_box(z, hi);
     }
     return result;
 }
@@ -933,25 +1033,10 @@ void Startup::draw_box(const ZoomBox &z)
     int w = int16_t(((total - s) * z.from[2] + z.to[2] * s) / total);
     int h = int16_t(((total - s) * z.from[3] + z.to[3] * s) / total);
 
-    // LbDrawBox: filled (see-through through the ghost table, the colour as
-    // the row, as sprites are), or outlined.
     auto fill = [&](int bx, int by, int bw, int bh, uint8_t colour, bool ghost) {
-        for (int yy = std::max(by, 0); yy < std::min(by + bh, surface_.height()); yy++) {
-            uint8_t *row = surface_.row(yy);
-            for (int xx = std::max(bx, 0); xx < std::min(bx + bw, surface_.width()); xx++)
-                row[xx] = ghost ? prefs_ghost_[size_t(colour) * 256 + row[xx]] : colour;
-        }
+        fill_box({bx, by, bw, bh}, colour, ghost);
     };
-    auto outline = [&](int bx, int by, int bw, int bh, uint8_t colour) {
-        if (bw < 1 || bh < 1)
-            return;
-        fill(bx, by, bw, 1, colour, false);
-        fill(bx, by + bh - 1, bw, 1, colour, false);
-        if (bh > 2) {
-            fill(bx, by + 1, 1, bh - 2, colour, false);
-            fill(bx + bw - 1, by + 1, 1, bh - 2, colour, false);
-        }
-    };
+    auto outline = [&](int bx, int by, int bw, int bh, uint8_t colour) { outline_box({bx, by, bw, bh}, colour); };
     const BoxColours &c = colours_;
     // A single difficulty hides the arrows (and every button but type 2's).
     if (z.button) {
@@ -984,6 +1069,31 @@ void Startup::draw_box(const ZoomBox &z)
     }
 }
 
+void Startup::fill_box(Rect box, uint8_t colour, bool ghost)
+{
+    // LbDrawBox filled: see-through through the ghost table (the colour as
+    // the row, as sprites are) or solid.
+    for (int yy = std::max(box.y, 0); yy < std::min(box.y + box.h, surface_.height()); yy++) {
+        uint8_t *row = surface_.row(yy);
+        for (int xx = std::max(box.x, 0); xx < std::min(box.x + box.w, surface_.width()); xx++)
+            row[xx] = ghost ? prefs_ghost_[size_t(colour) * 256 + row[xx]] : colour;
+    }
+}
+
+void Startup::outline_box(Rect box, uint8_t colour)
+{
+    // LbDrawBox outlined.
+    const int bx = box.x, by = box.y, bw = box.w, bh = box.h;
+    if (bw < 1 || bh < 1)
+        return;
+    fill_box({bx, by, bw, 1}, colour, false);
+    fill_box({bx, by + bh - 1, bw, 1}, colour, false);
+    if (bh > 2) {
+        fill_box({bx, by + 1, 1, bh - 2}, colour, false);
+        fill_box({bx + bw - 1, by + 1, 1, bh - 2}, colour, false);
+    }
+}
+
 void Startup::draw_glass_text(const UiMouse &mouse, int button, std::string_view text, bool highlight)
 {
     // draw_glass_text and draw_glass_text_hilight: centred on the button,
@@ -999,7 +1109,7 @@ void Startup::draw_glass_text(const UiMouse &mouse, int button, std::string_view
         x++;
         y++;
     }
-    draw_text(surface_, font, {b.x, 0, w}, x, y, text, 0, {0, 0, surface_.width(), surface_.height()});
+    draw_text(surface_, font, x, y, text, {{b.x, 0, w}, {0, 0, surface_.width(), surface_.height()}});
 }
 
 void Startup::draw_button_edges(int x, int y, int w, int h, bool sunken)

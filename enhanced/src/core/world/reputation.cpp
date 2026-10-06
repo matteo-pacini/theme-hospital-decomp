@@ -18,6 +18,37 @@ int32_t evaluated(int32_t points, int32_t events)
     return rep > 1000 ? 1000 : rep;
 }
 
+// reputation_affected's change for the events that move the hospital's
+// reputation points by a percentage of its event count (0 for the others).
+int32_t reputation_affected_percent(RepEvent event, int32_t amount)
+{
+    switch (event) {
+    case kRepDiagnosisFailed:
+        return -5;
+    case kRepMachineExploded:
+    case kRepEpidemicCoverUpFound:
+        return -10;
+    case kRepEmergencySuccess:
+    case kRepVipFair:
+        return 2;
+    case kRepEmergencyFailed:
+        return -(amount * 4);
+    case kRepEpidemicDeclared:
+        return -2;
+    case kRepVipGood:
+        return 4;
+    case kRepVipBad:
+        return -4;
+    case kRepAutopsy:
+        return -20;
+    case kRepTrophy:
+    case kRepAward:
+        return amount;
+    default:
+        return 0;
+    }
+}
+
 } // namespace
 
 void reputation_affected(World &world, uint8_t treatment, RepEvent event, int32_t amount)
@@ -40,40 +71,11 @@ void reputation_affected(World &world, uint8_t treatment, RepEvent event, int32_
     case kRepCase:
         count = 1;
         break;
-    case kRepDiagnosisFailed:
-        delta = -(hosp.hospital_rep_events * 5) / 100;
-        break;
     case kRepResearched:
         delta = (treatment ? hosp.rep_events[treatment] : hosp.hospital_rep_events) * 5 / 100;
         break;
-    case kRepMachineExploded:
-    case kRepEpidemicCoverUpFound:
-        delta = -(hosp.hospital_rep_events * 10) / 100;
-        break;
-    case kRepEmergencySuccess:
-    case kRepVipFair:
-        delta = hosp.hospital_rep_events * 2 / 100;
-        break;
-    case kRepEmergencyFailed:
-        delta = -(hosp.hospital_rep_events * (amount * 4)) / 100;
-        break;
-    case kRepEpidemicDeclared:
-        delta = -(hosp.hospital_rep_events * 2) / 100;
-        break;
-    case kRepVipGood:
-        delta = hosp.hospital_rep_events * 4 / 100;
-        break;
-    case kRepVipBad:
-        delta = -(hosp.hospital_rep_events * 4) / 100;
-        break;
-    case kRepAutopsy:
-        delta = -(hosp.hospital_rep_events * 20) / 100;
-        break;
-    case kRepTrophy:
-    case kRepAward:
-        delta = amount * hosp.hospital_rep_events / 100;
-        break;
     default:
+        delta = hosp.hospital_rep_events * reputation_affected_percent(event, amount) / 100;
         break;
     }
     if (treatment) {

@@ -165,7 +165,7 @@ void draw_pmenu_box(UiLayer &layer, const SpriteSheet &s, int x, int y, int w, i
 
 void draw_label(UiLayer &layer, const Font &font, int x, int y, const std::string &text)
 {
-    layer.draw_text(font, {0, 0, layer.width()}, x, y, text, 0, {0, 0, layer.width(), layer.height()});
+    layer.draw_text(font, x, y, text, {{0, 0, layer.width()}, {0, 0, layer.width(), layer.height()}});
 }
 
 // draw_pulldown: pulldown `p`'s box at (x, y), its items and check marks,
@@ -185,6 +185,94 @@ void draw_pulldown(UiLayer &layer, const MenuBar &bar, int x, int y, int p)
                          bar.line_height))
             draw_label(layer, bar.font_hi, x, ty, label);
     }
+}
+
+} // namespace
+
+namespace
+{
+
+const std::string *pulldown_text(const MenuBar &bar, size_t i)
+{
+    return i < bar.text.size() ? &bar.text[i] : nullptr;
+}
+
+// The titles, from string 1 up to "."; sets count and `i` to the "."'s
+// index.
+bool load_pulldown_titles(MenuBar &bar, size_t &i, std::string *error)
+{
+    for (i = 1;; i++) {
+        const std::string *s = pulldown_text(bar, i);
+        if (!s || i >= bar.pulldowns.size())
+            return fail(error, "no end to the titles");
+        bar.pulldowns[i].title_length = int(s->size());
+        if (*s == ".")
+            break;
+    }
+    bar.count = int(i);
+    return true;
+}
+
+// Each menu's items from string `i` on, up to ".", the submenus' last
+// ending with "..": their count and widest.
+bool load_pulldown_items(MenuBar &bar, size_t i, std::string *error)
+{
+    bool done = false;
+    for (int j = 1; !done; j++) {
+        if (j >= int(bar.pulldowns.size()))
+            return fail(error, "too many menus");
+        MenuBar::Pulldown &pd = bar.pulldowns[size_t(j)];
+        for (int sub = 0;; sub++, i++) {
+            const std::string *s = pulldown_text(bar, i);
+            if (!s)
+                return fail(error, "no end to the menus");
+            if (*s == "." || (j >= bar.count && *s == "..")) {
+                done = *s == "..";
+                pd.count = sub;
+                i++;
+                break;
+            }
+            pd.width = std::max(pd.width, int(s->size()));
+        }
+    }
+    return true;
+}
+
+// pmenu's initial data for each pulldown, its items' count capped to the
+// strings found.
+bool apply_pulldown_defs(MenuBar &bar, std::string *error)
+{
+    for (int p = 1; p < kPulldownEnd; p++) {
+        const PulldownDef &def = kPulldownDefs[p - 1];
+        MenuBar::Pulldown &pd = bar.pulldowns[size_t(p)];
+        pd.active = def.active;
+        pd.text = def.text;
+        pd.first = def.first;
+        pd.count = std::min(pd.count, int(def.count));
+        for (int k = 0; k < pd.count; k++)
+            if (bar.text.size() <= kMenuItems[def.first + k].text)
+                return fail(error, "too few strings");
+    }
+    return true;
+}
+
+// The submenus, after the bar's menus in the order of the items opening
+// them: their parent and y, and subcount.
+bool link_submenus(MenuBar &bar, std::string *error)
+{
+    int sub = bar.count;
+    for (int p = 1; p < bar.count; p++)
+        for (int j = 0; j < bar.pulldowns[size_t(p)].count; j++) {
+            if (!kMenuItems[bar.pulldowns[size_t(p)].first + j].submenu)
+                continue;
+            if (sub >= kPulldownEnd)
+                return fail(error, "unexpected submenus");
+            bar.pulldowns[size_t(sub)].parent = p;
+            bar.pulldowns[size_t(sub)].y = bar.line_height + j * bar.line_height;
+            bar.pulldowns[size_t(p)].submenu[size_t(j)] = sub++;
+        }
+    bar.subcount = sub;
+    return true;
 }
 
 } // namespace
@@ -209,71 +297,86 @@ bool MenuBar::load(const std::filesystem::path &dir, const LanguageText &lang, s
 
     for (size_t i = 0; i < lang.size(TextSection::Pulldown); i++)
         text.emplace_back(lang.at(TextSection::Pulldown, int(i)));
-    auto at = [&](size_t i) -> const std::string * { return i < text.size() ? &text[i] : nullptr; };
 
     text_dy = kTextDy;
     line_height = font.glyph('A').height + text_dy;
     char_width = font.glyph('A').width;
 
-    // Titles up to ".", then each menu's items up to ".", the submenus' last
-    // ending with "..".
-    size_t i = 1;
-    for (;; i++) {
-        const std::string *s = at(i);
-        if (!s || i >= pulldowns.size())
-            return fail(error, "no end to the titles");
-        pulldowns[i].title_length = int(s->size());
-        if (*s == ".")
-            break;
-    }
-    count = int(i);
-    i++;
-    bool done = false;
-    for (int j = 1; !done; j++) {
-        if (j >= int(pulldowns.size()))
-            return fail(error, "too many menus");
-        Pulldown &pd = pulldowns[size_t(j)];
-        for (int sub = 0;; sub++, i++) {
-            const std::string *s = at(i);
-            if (!s)
-                return fail(error, "no end to the menus");
-            if (*s == "." || (j >= count && *s == "..")) {
-                done = *s == "..";
-                pd.count = sub;
-                i++;
-                break;
-            }
-            pd.width = std::max(pd.width, int(s->size()));
-        }
-    }
+    size_t i = 0;
+    if (!load_pulldown_titles(*this, i, error) || !load_pulldown_items(*this, i + 1, error))
+        return false;
     if (count != kBarCount)
         return fail(error, "unexpected menus");
-    for (int p = 1; p < kPulldownEnd; p++) {
-        const PulldownDef &def = kPulldownDefs[p - 1];
-        Pulldown &pd = pulldowns[size_t(p)];
-        pd.active = def.active;
-        pd.text = def.text;
-        pd.first = def.first;
-        pd.count = std::min(pd.count, int(def.count));
-        for (int k = 0; k < pd.count; k++)
-            if (text.size() <= kMenuItems[def.first + k].text)
-                return fail(error, "too few strings");
-    }
-
-    int sub = count;
-    for (int p = 1; p < count; p++)
-        for (int j = 0; j < pulldowns[size_t(p)].count; j++) {
-            if (!kMenuItems[pulldowns[size_t(p)].first + j].submenu)
-                continue;
-            if (sub >= kPulldownEnd)
-                return fail(error, "unexpected submenus");
-            pulldowns[size_t(sub)].parent = p;
-            pulldowns[size_t(sub)].y = line_height + j * line_height;
-            pulldowns[size_t(p)].submenu[size_t(j)] = sub++;
-        }
-    subcount = sub;
-    return true;
+    return apply_pulldown_defs(*this, error) && link_submenus(*this, error);
 }
+
+namespace
+{
+
+// process_menus' release: the item of the open pulldown under the mouse is
+// chosen, or refused while paused or on a rat level.
+void release_menu_item(const MenuBar &bar, const UiMouse &mouse, const MenuContext &context, MenuEvent &ev)
+{
+    const MenuBar::Pulldown &pd = bar.pulldowns[size_t(bar.open)];
+    Origin o = pulldown_origin(bar, bar.open);
+    for (int j = 0; j < pd.count; j++) {
+        if (!over_hotspot(mouse.x, mouse.y, o.x, o.y + bar.line_height * j, pd.width * bar.char_width, bar.line_height))
+            continue;
+        const MenuItemDef &item = kMenuItems[pd.first + j];
+        if ((!item.usable_paused && context.paused) || (context.rat_level && !item.usable_rat_level)) {
+            ev.sound = MenuSound::Wrong;
+        } else {
+            ev.action = item.action;
+            ev.value = item_value(item, j);
+            ev.sound = MenuSound::Select;
+        }
+        break;
+    }
+}
+
+// Over the bar: the title under the mouse opens.
+void open_bar_title(MenuBar &bar, const UiMouse &mouse, MenuEvent &ev)
+{
+    int x2 = 0;
+    int w = bar.char_width * bar.pulldowns[1].title_length;
+    for (int i = 1; i < bar.count; i++) {
+        if (!bar.pulldowns[size_t(i)].active)
+            continue;
+        if (over_hotspot(mouse.x, mouse.y, x2, 0, w, bar.line_height)) {
+            if (bar.open != i)
+                ev.sound = MenuSound::Highlight;
+            bar.open = i;
+            break;
+        }
+        x2 += w;
+        w = bar.pulldowns[size_t(i) + 1].title_length * bar.char_width;
+    }
+}
+
+// Back over a submenu's parent, then onto an item that opens a submenu.
+void open_submenus(MenuBar &bar, const UiMouse &mouse)
+{
+    if (bar.open >= bar.count) {
+        int parent = bar.pulldowns[size_t(bar.open)].parent;
+        const MenuBar::Pulldown &pd = bar.pulldowns[size_t(parent)];
+        if (over_hotspot(mouse.x, mouse.y, title_x(bar, parent), bar.line_height, pd.width * bar.char_width,
+                         pd.count * bar.line_height))
+            bar.open = parent;
+    }
+    if (!bar.open || !bar.pulldowns[size_t(bar.open)].active)
+        return;
+    const MenuBar::Pulldown &pd = bar.pulldowns[size_t(bar.open)];
+    int x = title_x(bar, pd.parent ? pd.parent : bar.open);
+    for (int j = 0; j < pd.count; j++) {
+        if (pd.submenu[size_t(j)] && over_hotspot(mouse.x, mouse.y, x, bar.line_height + bar.line_height * j,
+                                                  pd.width * bar.char_width, bar.line_height)) {
+            bar.open = pd.submenu[size_t(j)];
+            break;
+        }
+    }
+}
+
+} // namespace
 
 MenuEvent menu_frame(MenuBar &bar, const UiMouse &mouse, const MenuContext &context)
 {
@@ -300,65 +403,17 @@ MenuEvent menu_frame(MenuBar &bar, const UiMouse &mouse, const MenuContext &cont
     }
 
     // process_menus. Only the open pulldown can hold the released item.
-    if (mouse.left_released && !context.disabled && bar.open && bar.pulldowns[size_t(bar.open)].active) {
-        const MenuBar::Pulldown &pd = bar.pulldowns[size_t(bar.open)];
-        Origin o = pulldown_origin(bar, bar.open);
-        for (int j = 0; j < pd.count; j++) {
-            if (!over_hotspot(mouse.x, mouse.y, o.x, o.y + bar.line_height * j, pd.width * bar.char_width,
-                              bar.line_height))
-                continue;
-            const MenuItemDef &item = kMenuItems[pd.first + j];
-            if ((!item.usable_paused && context.paused) || (context.rat_level && !item.usable_rat_level)) {
-                ev.sound = MenuSound::Wrong;
-            } else {
-                ev.action = item.action;
-                ev.value = item_value(item, j);
-                ev.sound = MenuSound::Select;
-            }
-            break;
-        }
-    }
+    if (mouse.left_released && !context.disabled && bar.open && bar.pulldowns[size_t(bar.open)].active)
+        release_menu_item(bar, mouse, context, ev);
     if (!mouse.left_held || context.disabled) {
         bar.open = 0;
         return ev;
     }
     if (mouse.y < h1 + h2) {
-        // Over the bar: the title under the mouse opens.
-        int x2 = 0;
-        int w = bar.char_width * bar.pulldowns[1].title_length;
-        for (int i = 1; i < bar.count; i++) {
-            if (!bar.pulldowns[size_t(i)].active)
-                continue;
-            if (over_hotspot(mouse.x, mouse.y, x2, 0, w, bar.line_height)) {
-                if (bar.open != i)
-                    ev.sound = MenuSound::Highlight;
-                bar.open = i;
-                break;
-            }
-            x2 += w;
-            w = bar.pulldowns[size_t(i) + 1].title_length * bar.char_width;
-        }
+        open_bar_title(bar, mouse, ev);
         return ev;
     }
-    // Back over a submenu's parent, then onto an item that opens a submenu.
-    if (bar.open >= bar.count) {
-        int parent = bar.pulldowns[size_t(bar.open)].parent;
-        const MenuBar::Pulldown &pd = bar.pulldowns[size_t(parent)];
-        if (over_hotspot(mouse.x, mouse.y, title_x(bar, parent), bar.line_height, pd.width * bar.char_width,
-                         pd.count * bar.line_height))
-            bar.open = parent;
-    }
-    if (bar.open && bar.pulldowns[size_t(bar.open)].active) {
-        const MenuBar::Pulldown &pd = bar.pulldowns[size_t(bar.open)];
-        int x = title_x(bar, pd.parent ? pd.parent : bar.open);
-        for (int j = 0; j < pd.count; j++) {
-            if (pd.submenu[size_t(j)] && over_hotspot(mouse.x, mouse.y, x, bar.line_height + bar.line_height * j,
-                                                      pd.width * bar.char_width, bar.line_height)) {
-                bar.open = pd.submenu[size_t(j)];
-                break;
-            }
-        }
-    }
+    open_submenus(bar, mouse);
     return ev;
 }
 

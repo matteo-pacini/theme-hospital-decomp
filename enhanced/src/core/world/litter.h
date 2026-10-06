@@ -64,13 +64,13 @@ void staff_check_around(const World &world, Thing &s);
 // gbv.modify_freq turns on, and indoors: warmth from the radiators at
 // `heating_level` (check_warmth), plants (check_feelgood), litter around
 // (check_around), spreading contagion (spread_epidemic), then impatience,
-// thirst, the toilet, heat, happiness and 1 health (change_health). Draws
-// from world.seed as the game does.
+// thirst, the toilet, heat, happiness and 1 health (change_health, which
+// may kill). Draws from world.seed as the game does.
 // Not ported, as what they need does not exist yet: emergencies, the
 // contagious and vaccinated flags (never set), status icons, a room's
-// radiators (its warmth is 0), effect_illness on a spreading carrier, and
-// dying at 0 health (health stops at 0).
-void modify_person(World &world, const Balance &settings, int heating_level, uint16_t id, uint32_t game_turn);
+// radiators (its warmth is 0) and effect_illness on a spreading carrier.
+void modify_person(World &world, const AnimData &anims, const Balance &settings, int heating_level, uint16_t id,
+                   uint32_t game_turn);
 
 // do_reaction (0x71960) for patient `id`: in the corridor indoors, may
 // vomit (from gbv.vomit_limit nausea) or wet themself (from
@@ -81,7 +81,7 @@ void modify_person(World &world, const Balance &settings, int heating_level, uin
 // do not exist, never happen. Returns whether a reaction started, in which
 // case the patient does not step this turn. Draws from world.seed as the
 // game does.
-bool do_reaction(World &world, const AnimData &anims, const Balance &settings, uint16_t id);
+bool do_reaction(World &world, const AnimData &anims, const Balance &settings, uint16_t id, uint32_t game_turn);
 
 // modify_person then do_reaction, as a walking patient does when it decides
 // its next step (person_goto_destination, 0x763d0). Returns do_reaction's

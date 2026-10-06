@@ -188,14 +188,14 @@ extern "C" int trace_skip(const char *name)
 }
 
 // The scripted commands (SCRIPT.TXT: lines "turn type value arg", decimal;
-// other lines ignored), each carried out between turn - 1 and turn, as the
-// replay tool does.
-static u32 script[64][4];
+// other lines ignored; at most 256 commands in 16 KB), each carried out
+// between turn - 1 and turn, as the replay tool does.
+static u32 script[256][4];
 static int script_count, script_next;
 
 static void script_load(void)
 {
-    static char text[4096];
+    static char text[16384];
     int handle, len, i, field;
     u32 v[4];
     char *p;
@@ -208,7 +208,7 @@ static void script_load(void)
     if (len < 0)
         return;
     text[len] = 0;
-    for (p = text; *p && script_count < 64;) {
+    for (p = text; *p && script_count < 256;) {
         field = 0;
         while (*p == ' ' || *p == '\t')
             p++;
@@ -358,6 +358,23 @@ EVENTS = {
          f'trace_event("done_treatment %u staff=%u", {ID.format("patient")}, {ID.format("staff")});'),
         ("entry", "person_go_for_treatment",
          f'trace_event("go_for_treatment %u treatment=%u", {ID.format("patient")}, (unsigned)patient->treatment);'),
+        ("entry", "person_dies", f'trace_event("dies %u", {ID.format("patient")});'),
+        ("entry", "person_dead",
+         f'trace_event("dead %u substate=%u", {ID.format("patient")}, (unsigned)patient->substate);'),
+        ("entry", "administer_drugs",
+         f'trace_event("drugs %u staff=%u", {ID.format("patient")}, {ID.format("staff")});'),
+    ],
+    "examine.cpp": [
+        ("entry", "effect_illness",
+         f'if (cured == 1) trace_event("cure %u illness=%u", {ID.format("patient")}, (unsigned)patient->illness);'),
+    ],
+    "reaper.cpp": [
+        ("entry", "summon_the_reaper", f'trace_event("summon_reaper %u", {ID.format("victim")});'),
+    ],
+    "doctor.cpp": [
+        (("before", "patient->resume_state = 0;"), "doctor_waits_for_patient_to_arrive",
+         f'trace_event("treat %u patient=%u room=%u", {ID.format("doctor")}, {ID.format("patient")}, '
+         '(unsigned)(doctor->room - room_info));'),
     ],
     "peepmake.cpp": [
         ("exit", "make_a_peep",
@@ -381,10 +398,42 @@ EVENTS = {
          '(unsigned)subject, (unsigned)owner);'),
         ("entry", "get_playercall",
          'trace_event("get_playercall %u type=%u owner=%u", (unsigned)id, (unsigned)type, (unsigned)owner);'),
+        ("entry", "force_peep_to_be_cured", f'trace_event("force_cure %u", {ID.format("person")});'),
+        (("before", "leave_queue(person);"), "person_entertains_themself",
+         f'trace_event("to_toilets %u room=%u bladder=%d", {ID.format("person")}, (unsigned)(room - room_info), '
+         '(int)person->bladder);'),
+        ("entry", "person_in_bogs",
+         f'trace_event("in_bogs %u substate=%u", {ID.format("person")}, (unsigned)person->substate);'),
+        ("entry", "leave_toilets", f'trace_event("leave_toilets %u", {ID.format("person")});'),
+        ("entry", "move_person_in_room_list",
+         f'trace_event("room_move %u from=%u to=%u", {ID.format("person")}, '
+         'person->room ? (unsigned)(person->room - room_info) : 0u, '
+         'which_room(tile) ? (unsigned)(which_room(tile) - room_info) : 0u);'),
+    ],
+    "environ.cpp": [
+        (("before", "reset_icon_value(peep, ICON_TOILET);"), "do_reaction",
+         f'trace_event("wets %u bladder=%d", {ID.format("peep")}, (int)peep->bladder);'),
+    ],
+    "io.cpp": [
+        (("before", "allhosps[i].rest_threshold = player_events[i].arg;"), "process_turn",
+         'trace_event("policy_rest %u", (unsigned)player_events[i].arg);'),
+    ],
+    "req4.cpp": [
+        (("before", "handyman->litter_count = 0;"), "adjust_handyman_values",
+         'trace_event("handyman_values %u litter=%u plants=%u repair=%u", (unsigned)id, '
+         '(unsigned)handyman->prio_litter, (unsigned)handyman->prio_plants, (unsigned)handyman->prio_repair);'),
     ],
     "complex.cpp": [
         ("entry", "set_complex",
          f'trace_event("set_complex %u action=%u arg=%u", {ID.format("w")}, (unsigned)action, (unsigned)arg);'),
+        (("before", "obj->user = employee - thing;"), "process_staff_complex",
+         f'trace_event("use_object %u obj=%u kind=%u", {ID.format("employee")}, (unsigned)employee->object, '
+         '(unsigned)obj->subtype);'),
+        (("before", "obj->user = person - thing;"), "process_person_complex",
+         f'trace_event("use_object %u obj=%u kind=%u", {ID.format("person")}, (unsigned)person->object, '
+         '(unsigned)obj->subtype);'),
+        (("before", "reset_icon_value(w, ICON_TOILET);"), "complex_success",
+         f'trace_event("relieved %u bladder=%d", {ID.format("w")}, (int)w->bladder);'),
     ],
     "recept.cpp": [
         ("entry", "recept_admits_patient",
@@ -410,6 +459,20 @@ EVENTS = {
     ],
     "staff.cpp": [
         ("entry", "place_staff_on_map", 'trace_event("place_staff %u tile=%u", (unsigned)id, (unsigned)tile);'),
+        (("before", "if (staff->subtype == STAFF_RECEPTIONIST) {"), "take_a_break",
+         f'trace_event("take_a_break %u room=%u tired=%d", {ID.format("staff")}, (unsigned)(room - room_info), '
+         '(int)staff->tiredness);'),
+        ("entry", "rest_staff",
+         f'trace_event("rest_staff %u amount=%d tired=%d", {ID.format("staff")}, (int)amount, (int)staff->tiredness);'),
+        (("before", "set_complex(staff, 0x2ee, 0);"), "staff_in_staff_room",
+         f'trace_event("staff_room %u pastime=pool", {ID.format("staff")});'),
+        (("before", "set_complex(staff, 0x2f8, 0);"), "staff_in_staff_room",
+         f'trace_event("staff_room %u pastime=video", {ID.format("staff")});'),
+        (("before", "set_complex(staff, 0x2da, 0);"), "staff_in_staff_room",
+         f'trace_event("staff_room %u pastime=sofa", {ID.format("staff")});'),
+        (("before", "staff->discontent = (s16)staff->discontent / 2;"), "staff_in_staff_room",
+         f'trace_event("rested %u discontent=%u crazy=%u", {ID.format("staff")}, (unsigned)staff->discontent, '
+         '(unsigned)staff->crazy);'),
         ("entry", "staff_picked_up", f'trace_event("staff_picked_up %u", {ID.format("staff")});'),
         ("entry", "sack_staff", f'trace_event("sack_staff %u mode=%u", {ID.format("staff")}, (unsigned)mode);'),
     ],

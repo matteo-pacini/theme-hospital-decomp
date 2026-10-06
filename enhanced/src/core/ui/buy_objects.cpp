@@ -146,12 +146,12 @@ uint8_t find_colour(const Palette &palette, int r, int g, int b)
 }
 
 // Calls put(x, y, colour) for each pixel of composite frame `frame_id` with
-// its origin at (x, y), mirrored if `flip`, its elements placed and sized
+// its origin at `at`, mirrored if `flip`, its elements placed and sized
 // by `scale` (16.16) as draw_a_frame_scaled places them; 0x10000 places them
 // as draw_a_frame and draw_from_frame. Pixels are taken from the nearest
 // sprite pixel. Ghost flags are not applied.
 template <typename Put>
-void walk_frame(const GameData &data, uint32_t frame_id, int x, int y, bool flip, int scale, Put &&put)
+void walk_frame(const GameData &data, uint32_t frame_id, Point at, bool flip, int scale, Put &&put)
 {
     const AnimData &anims = data.anims();
     if (frame_id >= anims.frames.size())
@@ -168,8 +168,8 @@ void walk_frame(const GameData &data, uint32_t frame_id, int x, int y, bool flip
         unsigned flags = e.flags & (kDrawFlipX | kDrawFlipY);
         if (flip)
             flags ^= kDrawFlipX;
-        int left = flip ? x - ((ex + s.width) * scale >> 16) : x + (ex * scale >> 16);
-        int top = y + (ey * scale >> 16);
+        int left = flip ? at.x - ((ex + s.width) * scale >> 16) : at.x + (ex * scale >> 16);
+        int top = at.y + (ey * scale >> 16);
         int w = s.width * scale >> 16, h = s.height * scale >> 16;
         Surface pixels, mask;
         pixels.resize(s.width, s.height);
@@ -236,7 +236,7 @@ void draw_buy_objects(UiLayer &layer, const Window &win, const ObjectUi &oui, co
     const Balance &settings = game.settings();
     const Rect screen = {0, 0, kUiWidth, kUiHeight};
     auto put = [&](const Font &font, int x, int y, std::string_view s) {
-        layer.draw_text(font, {0, 0, kUiWidth}, win.x + x, win.y + y, s, 0, screen);
+        layer.draw_text(font, win.x + x, win.y + y, s, {{0, 0, kUiWidth}, screen});
     };
     auto cost = [&](int kind) { return settings.objects[size_t(kind)].start_cost; };
     int total = 0;
@@ -262,7 +262,7 @@ void draw_buy_objects(UiLayer &layer, const Window &win, const ObjectUi &oui, co
             if (scale_y < 0x10000 && scale_x < 0x10000)
                 scale = std::min(scale_x, scale_y);
         }
-        draw_layer_frame(layer, data, start.frame, x, y, start.flip != 0, scale);
+        draw_layer_frame(layer, data, start.frame, {x, y}, start.flip != 0, scale);
     }
 
     for (int i = 0; i < kEntries && p.offered[size_t(i)]; i++) {
@@ -287,11 +287,10 @@ void draw_edit_room(UiLayer &layer, const Window &win, const ObjectUi &oui, cons
             layer.draw_sprite(ox + win.buttons[j - 1].x, oy + win.buttons[j - 1].y,
                               sheet.at(size_t(kEditDisabledSprite[size_t(k)])));
     }
-    layer.draw_text(art.font(), {ox + kRoomNameBox.x, oy + kRoomNameBox.y, kRoomNameBox.width}, 0, 0,
-                    text.at(TextSection::RoomNames, kRoomTypeInfo[p.room_type % kRoomTypes].name), kTextCentre,
-                    kViewClip);
-    layer.draw_text(art.font(), {ox + kHintBox.x, oy + kHintBox.y, kHintBox.width}, 0, 0, text.misc(p.hint), kTextWrap,
-                    kViewClip);
+    layer.draw_text(art.font(), 0, 0, text.at(TextSection::RoomNames, kRoomTypeInfo[p.room_type % kRoomTypes].name),
+                    {{ox + kRoomNameBox.x, oy + kRoomNameBox.y, kRoomNameBox.width}, kViewClip, kTextCentre});
+    layer.draw_text(art.font(), 0, 0, text.misc(p.hint),
+                    {{ox + kHintBox.x, oy + kHintBox.y, kHintBox.width}, kViewClip, kTextWrap});
     if (p.requester_mode < 6)
         return;
 
@@ -314,19 +313,19 @@ void draw_edit_room(UiLayer &layer, const Window &win, const ObjectUi &oui, cons
         }
         const Font &font = obj == oui.highlighted ? art.highlight_font() : art.font();
         Rect clip = {ox + kRowBox.x, by + kRowBox.y, kRowClipWidth, kRowBox.h};
-        layer.draw_text(font, {ox + kRowName.x, by + kRowName.y, kRowName.width}, 0, 0,
-                        text.at(TextSection::ObjectNames, obj), kTextCentre, clip);
-        layer.draw_text(font, {ox + kRowCount.x, by + kRowCount.y, kRowCount.width}, 0, 0,
-                        std::to_string(p.buy_count[size_t(obj)]), kTextCentre, clip);
+        layer.draw_text(font, 0, 0, text.at(TextSection::ObjectNames, obj),
+                        {{ox + kRowName.x, by + kRowName.y, kRowName.width}, clip, kTextCentre});
+        layer.draw_text(font, 0, 0, std::to_string(p.buy_count[size_t(obj)]),
+                        {{ox + kRowCount.x, by + kRowCount.y, kRowCount.width}, clip, kTextCentre});
     });
 }
 
 } // namespace
 
-void draw_layer_frame(UiLayer &layer, const GameData &data, uint32_t frame, int x, int y, bool flip, int scale)
+void draw_layer_frame(UiLayer &layer, const GameData &data, uint32_t frame, Point at, bool flip, int scale)
 {
     Surface &pixels = layer.pixels();
-    walk_frame(data, frame, x, y, flip, scale, [&](int px, int py, uint8_t c) {
+    walk_frame(data, frame, at, flip, scale, [&](int px, int py, uint8_t c) {
         if (px >= 0 && px < layer.width() && py >= 0 && py < layer.height()) {
             pixels.row(py)[px] = c;
             layer.mark({px, py, 1, 1});
@@ -368,67 +367,86 @@ void sync_object_requesters(Interface &ui, const Game &game)
     }
 }
 
+namespace
+{
+
+// The buy requester's entry under the pointer becomes the item it offers.
+void object_requesters_buy_hover(const Interface &ui, ObjectUi &oui, ObjectPlacing &p, const UiMouse &mouse)
+{
+    const Window &win = ui.window(kBuyWindow);
+    for (int i = 0; i < kEntries && p.offered[size_t(i)]; i++) {
+        if (over(mouse.x, mouse.y, win.x + kEntryBox.x, win.y + kEntryBox.y + kEntryStep * i, kEntryBox.w,
+                 kEntryBox.h)) {
+            oui.hovered_entry = i;
+            p.item = p.offered[size_t(i)];
+        }
+    }
+}
+
+// The edit room requester's object list: the row under the pointer, picking
+// one up, and the window's height.
+void object_requesters_edit_list(Interface &ui, ObjectUi &oui, ObjectPlacing &p, const UiMouse &mouse)
+{
+    const Window &win = ui.window(kEditWindow);
+    int top = win.y + kListOrigin.y, rows = 0;
+    if (p.requester_mode >= 6) {
+        int selected = -1;
+        rows = for_each_list_row(p, [&](int obj, int row) {
+            int by = top + row * kListStep;
+            if (mouse.x >= win.x + kRowBox.x && mouse.x < win.x + kRowBox.x + kRowBox.w && mouse.y >= by + kRowName.y &&
+                mouse.y < by + kRowBox.y + kRowBox.h) {
+                oui.highlighted = obj;
+                if (mouse.left_held || mouse.left_pressed)
+                    selected = obj;
+            }
+        });
+        if (selected >= 0)
+            select_object_to_place(p, selected);
+        p.buy_kind_count = uint8_t(rows);
+    }
+    // The game sets the height to the list's end on the screen, not
+    // relative to the window.
+    ui.set_window_height(kEditWindow, top + rows * kListStep);
+}
+
+void object_requesters_buy_button(Game &game, int i, bool old_left, UiModifiers keys)
+{
+    ObjectPlacing &p = game.world.placing;
+    if (i >= kBuyEntry && i < kBuyEntry + kEntries) {
+        clicked_buy_objects(game, i - kBuyEntry, old_left, keys.shift, keys.ctrl);
+    } else if (i >= kBuyPlus && i < kBuyPlus + kEntries) {
+        clicked_buy_objects(game, i - kBuyPlus, true, keys.shift, keys.ctrl);
+    } else if (i >= kBuyMinus && i < kBuyMinus + kEntries) {
+        clicked_buy_objects(game, i - kBuyMinus, false, keys.shift, keys.ctrl);
+    } else if (i == kBuyAccept) {
+        // Furnishing a room (arg3), back to placing with what was bought.
+        if (p.arg == 1)
+            game.event = {EV_PLACE_NEXT_OBJECT, 0, 0, 0};
+        else if (p.arg3)
+            game.event = {EV_BACK_TO_PLACE_OBJECT, 0, 0, 0};
+    } else if (i == kBuyCancel && p.arg3) {
+        game.event = {EV_BACK_TO_PLACE_OBJECT, 1, 0, 0};
+    } else if (i == kBuyCancel) {
+        for (int k = 0; k < kObjectKinds - 1; k++)
+            p.buy_count[size_t(k)] = 0;
+        game.event = {EV_CANCEL_BUY_OBJECTS, 0, 0, 0};
+    }
+}
+
+} // namespace
+
 void object_requesters_input(Interface &ui, ObjectUi &oui, Game &game, const InterfaceEvents &events,
-                             const UiMouse &mouse, bool shift, bool ctrl)
+                             const UiMouse &mouse, UiModifiers keys)
 {
     ObjectPlacing &p = game.world.placing;
     oui.hovered_entry = -1;
     oui.highlighted = -1;
-    if (window_open(ui, kBuyWindow)) {
-        const Window &win = ui.window(kBuyWindow);
-        for (int i = 0; i < kEntries && p.offered[size_t(i)]; i++) {
-            if (over(mouse.x, mouse.y, win.x + kEntryBox.x, win.y + kEntryBox.y + kEntryStep * i, kEntryBox.w,
-                     kEntryBox.h)) {
-                oui.hovered_entry = i;
-                p.item = p.offered[size_t(i)];
-            }
-        }
-    }
-    if (window_open(ui, kEditWindow)) {
-        const Window &win = ui.window(kEditWindow);
-        int top = win.y + kListOrigin.y, rows = 0;
-        if (p.requester_mode >= 6) {
-            int selected = -1;
-            rows = for_each_list_row(p, [&](int obj, int row) {
-                int by = top + row * kListStep;
-                if (mouse.x >= win.x + kRowBox.x && mouse.x < win.x + kRowBox.x + kRowBox.w &&
-                    mouse.y >= by + kRowName.y && mouse.y < by + kRowBox.y + kRowBox.h) {
-                    oui.highlighted = obj;
-                    if (mouse.left_held || mouse.left_pressed)
-                        selected = obj;
-                }
-            });
-            if (selected >= 0)
-                select_object_to_place(p, selected);
-            p.buy_kind_count = uint8_t(rows);
-        }
-        // The game sets the height to the list's end on the screen, not
-        // relative to the window.
-        ui.set_window_height(kEditWindow, top + rows * kListStep);
-    }
-
-    if (events.triggered_window == kBuyWindow) {
-        int i = events.triggered_button;
-        if (i >= kBuyEntry && i < kBuyEntry + kEntries) {
-            clicked_buy_objects(game, i - kBuyEntry, events.old_left, shift, ctrl);
-        } else if (i >= kBuyPlus && i < kBuyPlus + kEntries) {
-            clicked_buy_objects(game, i - kBuyPlus, true, shift, ctrl);
-        } else if (i >= kBuyMinus && i < kBuyMinus + kEntries) {
-            clicked_buy_objects(game, i - kBuyMinus, false, shift, ctrl);
-        } else if (i == kBuyAccept) {
-            // Furnishing a room (arg3), back to placing with what was bought.
-            if (p.arg == 1)
-                game.event = {EV_PLACE_NEXT_OBJECT, 0, 0, 0};
-            else if (p.arg3)
-                game.event = {EV_BACK_TO_PLACE_OBJECT, 0, 0, 0};
-        } else if (i == kBuyCancel && p.arg3) {
-            game.event = {EV_BACK_TO_PLACE_OBJECT, 1, 0, 0};
-        } else if (i == kBuyCancel) {
-            for (int k = 0; k < kObjectKinds - 1; k++)
-                p.buy_count[size_t(k)] = 0;
-            game.event = {EV_CANCEL_BUY_OBJECTS, 0, 0, 0};
-        }
-    }
+    if (window_open(ui, kBuyWindow))
+        object_requesters_buy_hover(ui, oui, p, mouse);
+    if (window_open(ui, kEditWindow))
+        object_requesters_edit_list(ui, oui, p, mouse);
+    if (events.triggered_window == kBuyWindow)
+        object_requesters_buy_button(game, events.triggered_button, events.old_left, keys);
     // Buy more, pick up and confirm are disabled in the corridor.
     if (events.triggered_window == kEditWindow && events.triggered_button == kEditRoomCancel &&
         !(p.arg & (1u << kEditRoomCancel)))
@@ -512,11 +530,11 @@ void draw_placement(Surface &dst, Rect view, Point camera, const ObjectPlacing &
         int x = (col - row) * kTileWidth / 2 - camera.x + view.x;
         int y = (col + row) * kTileHeight / 2 + kTileHeight / 2 - camera.y + view.y;
         if (p.ok) {
-            draw_frame(dst, x, y, start.frame, start.flip != 0, 0, data);
+            draw_frame(dst, {x, y}, start.frame, start.flip != 0, data);
             return;
         }
         // draw_from_frame with bw_remap (LbSpriteDrawRemap).
-        walk_frame(data, start.frame, x, y, start.flip != 0, 0x10000, [&](int px, int py, uint8_t c) {
+        walk_frame(data, start.frame, {x, y}, start.flip != 0, 0x10000, [&](int px, int py, uint8_t c) {
             if (px >= view.x && px < view.x + view.w && py >= view.y && py < view.y + view.h)
                 dst.row(py)[px] = oui.grey[c];
         });

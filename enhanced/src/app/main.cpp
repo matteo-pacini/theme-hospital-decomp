@@ -19,6 +19,7 @@
 #include "core/ui/buy_objects.h"
 #include "core/ui/charts.h"
 #include "core/ui/hire_staff.h"
+#include "core/ui/info_windows.h"
 #include "core/ui/jukebox.h"
 #include "core/ui/layer.h"
 #include "core/ui/menubar.h"
@@ -36,6 +37,7 @@
 #include <imgui_impl_sdlrenderer3.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
@@ -57,8 +59,10 @@ namespace
 constexpr int kMinViewHeight = 480;
 constexpr int kEdgeScrollMargin = 8;   // pixels from the window edge
 constexpr float kScrollSpeed = 900.0f; // view pixels per second
-// The in-game pointer (PTR_DEFAULT), hotspot at its top-left corner.
-constexpr size_t kPointerDefault = 1;
+// The in-game pointers drawn: the default one and those hovering on the map
+// shows (core/ui/info_windows.h), all with their hotspot at the top-left
+// corner.
+constexpr uint8_t kPointersDrawn[] = {kPointerDefault, kPointerStaff, kPointerMachine, kPointerPatient, kPointerQueue};
 
 // The folder chosen in the native dialog, handed over from its callback,
 // which SDL may call on another thread.
@@ -102,7 +106,7 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
 
 // Draws the hospital view into `surface`.
 void draw_view(Surface &surface, const GameData &data, LevelView *level, Point camera, bool shadows,
-               std::vector<FrameSound> *sounds = nullptr, PointedThing *pointed = nullptr)
+               const DrawnThings &drawn = {})
 {
     surface.fill(0);
     if (level) {
@@ -110,8 +114,8 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
             level->scratch.resize(surface.width(), surface.height());
             level->scratch.fill(kMaskColour);
         }
-        draw_world(surface, {0, 0, surface.width(), surface.height()}, camera, level->game.world, data,
-                   shadows ? level->shadows.get() : nullptr, level->scratch, sounds, pointed);
+        draw_world({surface, {0, 0, surface.width(), surface.height()}, camera}, level->game.world, data,
+                   shadows ? level->shadows.get() : nullptr, level->scratch, drawn);
     }
 }
 
@@ -148,6 +152,41 @@ SDL_Texture *argb_texture(SDL_Renderer *renderer, const std::vector<uint32_t> &p
     return t;
 }
 
+// The row `y` of `img`'s 32-bit pixels.
+uint32_t *surface_row(SDL_Surface *img, int y)
+{
+    return reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(img->pixels) + y * img->pitch);
+}
+
+// screenshot's view: `surface` in the game's palette over the whole of `img`.
+void screenshot_view(SDL_Surface *img, const Surface &surface, const GameData &data)
+{
+    const uint8_t *src = surface.data();
+    for (int y = 0; y < img->h; y++) {
+        uint32_t *row = surface_row(img, y);
+        for (int x = 0; x < img->w; x++)
+            row[x] = data.palette()[*src++];
+    }
+}
+
+// screenshot's panel: at native size with the level's starting figures, at
+// the bottom centre of `img`, as the window draws it.
+void screenshot_panel(SDL_Surface *img, const GameData &data, const Game &g)
+{
+    int width = img->w, height = img->h;
+    PanelFigures figures{g.balance, g.date.day, g.date.month, g.reputation(), g.opening_countdown, g.open_countdown};
+    int pw = 0, ph = 0;
+    std::vector<uint32_t> panel = panel_to_argb(data, &figures, pw, ph);
+    for (int y = 0; y < ph && height - ph + y >= 0; y++) {
+        uint32_t *row = surface_row(img, height - ph + y);
+        for (int x = 0; x < pw; x++) {
+            int dx = (width - pw) / 2 + x;
+            if (dx >= 0 && dx < width && panel[size_t(y * pw + x)])
+                row[dx] = panel[size_t(y * pw + x)];
+        }
+    }
+}
+
 // --screenshot: renders level `level_number` at `width` x `height` with the view
 // centred on the player's start, without opening a window, and saves it as
 // a BMP. Returns the process exit code.
@@ -181,31 +220,42 @@ int screenshot(const std::filesystem::path &data_dir, int level_number, int widt
         std::fprintf(stderr, "SDL_CreateSurface: %s\n", SDL_GetError());
         return 1;
     }
-    const uint8_t *src = surface.data();
-    for (int y = 0; y < height; y++) {
-        auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(img->pixels) + y * img->pitch);
-        for (int x = 0; x < width; x++)
-            row[x] = data.palette()[*src++];
-    }
-    // The panel at native size with the level's starting figures, as the
-    // window draws it.
-    const Game &g = map->game;
-    PanelFigures figures{g.balance, g.date.day, g.date.month, g.reputation(), g.opening_countdown, g.open_countdown};
-    int pw = 0, ph = 0;
-    std::vector<uint32_t> panel = panel_to_argb(data, &figures, pw, ph);
-    for (int y = 0; y < ph && height - ph + y >= 0; y++) {
-        auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(img->pixels) + (height - ph + y) * img->pitch);
-        for (int x = 0; x < pw; x++) {
-            int dx = (width - pw) / 2 + x;
-            if (dx >= 0 && dx < width && panel[size_t(y * pw + x)])
-                row[dx] = panel[size_t(y * pw + x)];
-        }
-    }
+    screenshot_view(img, surface, data);
+    screenshot_panel(img, data, map->game);
     bool ok = SDL_SaveBMP(img, out.c_str());
     if (!ok)
         std::fprintf(stderr, "SDL_SaveBMP: %s\n", SDL_GetError());
     SDL_DestroySurface(img);
     return ok ? 0 : 1;
+}
+
+// The game speed a Speed menu item's value picks.
+Speed menu_speed(int value)
+{
+    return value <= 10   ? Speed::Slowest
+           : value <= 20 ? Speed::Slower
+           : value <= 30 ? Speed::Normal
+           : value <= 40 ? Speed::Max
+                         : Speed::AndThenSome;
+}
+
+// A key pressed in the start-up screens, which read keys as lbInkey.
+StartupKey startup_key(SDL_Keycode key)
+{
+    StartupKey k;
+    if (key >= SDLK_A && key <= SDLK_Z) {
+        k.code = StartupKey::Letter;
+        k.letter = char('A' + (key - SDLK_A));
+    } else if (key == SDLK_ESCAPE) {
+        k.code = StartupKey::Escape;
+    } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+        k.code = StartupKey::Return;
+    } else if (key == SDLK_BACKSPACE || key == SDLK_KP_PERIOD) {
+        k.code = StartupKey::Backspace;
+    } else if (key == SDLK_SPACE) {
+        k.code = StartupKey::Space;
+    }
+    return k;
 }
 
 class App
@@ -219,19 +269,45 @@ class App
     bool try_load_data(const std::filesystem::path &dir);
     void load_level(int number);
     void handle_event(const SDL_Event &e);
+    void key_down(const SDL_KeyboardEvent &key);
+    void game_key(const SDL_KeyboardEvent &key);
+    void open_chart_key(int chart);
+    void mouse_down(const SDL_MouseButtonEvent &button);
+    void mouse_up(const SDL_MouseButtonEvent &button);
     void nav_click(uint8_t button, float x, float y);
     // The mouse in a layer drawn at (ox, oy) at `scale`.
     UiMouse ui_mouse(int ox, int oy, int scale) const;
     void menu_step(int out_w, int scale);
     void perform(const MenuEvent &event);
+    void play_menu_sound(MenuSound sound);
+    void open_menu_screen(int chart);
     void update(float dt);
+    void run_turns(float dt);
+    void key_scroll(float dt);
+    void edge_scroll(float dt);
+    void apply_scroll();
     void render();
+    void hospital_step(int out_w, int out_h);
+    void resize_view(int vw, int vh);
+    void view_sounds(int vw, int vh);
+    void draw_view_overlays(int vw, int vh);
+    void present_view(int vw, int vh, int z);
     int zoom() const;
     int ui_scale() const;
     void make_ui_textures();
     void interface_step(int out_w, int out_h, int scale);
+    bool interface_escape(Game *game);
+    InfoWindowResult interface_requesters(Game &game, const InterfaceEvents &events, const UiMouse &mouse);
+    void interface_yes_no(Game *game, const InterfaceEvents &events);
+    void interface_panel_action(Game &game, PanelAction action, bool placing);
+    void interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, bool placing);
+    void interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing);
+    void interface_advisor(Game &game, const UiMouse &mouse, bool input, bool paused);
+    void interface_command(Game &game, const InfoWindowResult &info);
+    void interface_draw(Game *game, int ox, int oy, int scale);
+    void draw_info_view(Game &game);
     void ask_quit();
-    void draw_pointer(int scale);
+    void draw_pointer(int scale, uint8_t sprite = kPointerDefault);
     void startup_step(int out_w, int out_h);
     // The debug report tool's save: the window as drawn so far, the state
     // (debug_state) and the note, in a new folder under debug-reports/.
@@ -276,39 +352,36 @@ class App
     // The town map: while open it takes the window from the view, the
     // interface and the menu bar; the game keeps running behind it.
     TownMap town_;
-    bool open_town_ = false; // the T key asked for it this frame
     SDL_Texture *town_tex_ = nullptr;
     // The full-screen charts (F1-F8, the Charts menu, the panel), shown in
     // place of everything else while open, the game running behind them.
     Charts charts_;
-    bool chart_space_ = false; // Space pressed for the charts this frame
     SDL_Texture *charts_tex_ = nullptr;
-    // The map cell under the pointer this frame (column + row * 128), -1
-    // when off the map.
-    int map_cell_ = -1;
     // The thing under the pointer as the view was drawn this frame.
     PointedThing pointed_;
     // The start-up screens (intro, menus, the level's area movie), shown
     // until they start a level; skipped with --level.
     Startup startup_;
-    bool in_startup_ = false;
-    bool level_from_cli_ = false;
     std::vector<StartupKey> startup_keys_; // keys pressed since the last frame
     SDL_Texture *startup_tex_ = nullptr;
     SDL_AudioStream *movie_stream_ = nullptr;
-    int movie_playing_ = -1; // the movie movie_stream_ plays
     std::string balance_id_{kDefaultBalanceId};
-    bool tutorial_ = false;    // the advisor's tutorial, chosen in the start-up screens
-    Event last_event_;         // the command carried out the frame before (the tutorial reads it)
-    float frame_seconds_ = 0;  // the last frame's length
-    bool escape_ = false;      // Escape pressed this frame
-    bool asking_quit_ = false; // the yes/no requester asks whether to quit
+    Event last_event_; // the command carried out the frame before (the tutorial reads it)
     // The commands the yes/no requester sends for yes and for no when it
     // asks before one (othervar.yes_type and no_type); EV_NONE otherwise.
     Event yes_event_;
     Event no_event_;
-    SDL_Texture *pointer_ = nullptr;
-    int pointer_w_ = 0, pointer_h_ = 0;
+    // The pointers of kPointersDrawn, by number.
+    struct PointerTexture {
+        SDL_Texture *texture = nullptr;
+        int w = 0, h = 0;
+    };
+    std::array<PointerTexture, kPointerQueue + 1> pointers_{};
+    // The patient, staff and handyman windows, and the view of their person
+    // drawn into them (its surface and draw_world's scratch).
+    InfoWindows info_;
+    Surface info_view_;
+    Surface info_scratch_;
 
     Settings settings_;
     DataSearch search_;
@@ -316,7 +389,6 @@ class App
     FolderPick pick_;
     std::unique_ptr<GameData> data_;
 
-    int level_ = 1;
     std::optional<int> language_; // --language: LANG-n.DAT instead of HOSPITAL.CFG's
     std::unique_ptr<LevelView> map_;
 
@@ -324,17 +396,33 @@ class App
     Point camera_;                                         // map pixel position of the view's top-left
     uint16_t scroll_min_ = 0, scroll_max_ = kMapCells - 1; // the level's scroll area, as cells
     float scroll_x_ = 0, scroll_y_ = 0;                    // sub-pixel scroll carried between frames
-    bool dragging_ = false;
-    int zoom_ = 0;        // the view's scale: 0 automatic, else the integer scale
-    bool shadows_ = true; // the game's shadows option
-    Speed speed_ = Speed::Normal;
-    double turn_clock_ = 0; // turns due but not yet run
+    double turn_clock_ = 0;                                // turns due but not yet run
     ToolsState tools_;
     // The game's menu bar, drawn into its own layer across the top of the
     // window at the UI scale.
     MenuBar menu_;
     UiLayer menu_layer_;
     SDL_Texture *menu_tex_ = nullptr;
+
+    int level_ = 1;
+    // The map cell under the pointer this frame (column + row * 128), -1
+    // when off the map.
+    int map_cell_ = -1;
+    int movie_playing_ = -1;  // the movie movie_stream_ plays
+    float frame_seconds_ = 0; // the last frame's length
+    int zoom_ = 0;            // the view's scale: 0 automatic, else the integer scale
+    Speed speed_ = Speed::Normal;
+    // The pointer shown over the hospital (othervar.pointer_sprite).
+    uint8_t pointer_sprite_ = kPointerDefault;
+    bool open_town_ = false;   // the T key asked for the town map this frame
+    bool chart_space_ = false; // Space pressed for the charts this frame
+    bool in_startup_ = false;  // the start-up screens are shown
+    bool level_from_cli_ = false;
+    bool tutorial_ = false;    // the advisor's tutorial, chosen in the start-up screens
+    bool escape_ = false;      // Escape pressed this frame
+    bool asking_quit_ = false; // the yes/no requester asks whether to quit
+    bool dragging_ = false;
+    bool shadows_ = true; // the game's shadows option
     // The mouse buttons as the game's interface sees them; the pressed and
     // released flags last one frame.
     struct {
@@ -449,6 +537,8 @@ void App::load_level(int number)
     }
     level_ = number;
     map_ = std::move(map);
+    close_irequesters(interface_);
+    info_ = {};
     start_advisor(map_->game.advisor, tutorial_);
     start_hospital_settings(map_->game.hospital, map_->game.settings());
     setup_insurances(map_->game.world, uint32_t(SDL_GetTicks()));
@@ -486,137 +576,236 @@ void App::interface_step(int out_w, int out_h, int scale)
     int ox = (out_w - kUiWidth * scale) / 2, oy = out_h - kUiHeight * scale;
     UiMouse mouse = ui_mouse(ox, oy, scale);
     Game *game = map_ ? &map_->game : nullptr;
+    InfoWindowResult info;
 
-    // Escape: with a modal requester up, the requester's; else it drops
-    // what is being hired, bought or placed (setup_abort_all_requesters).
-    bool escape = escape_;
-    escape_ = false;
-    if (escape && game && !interface_.modal()) {
-        if (hire_.placing() || interface_.requester() == Requester::HireStaff ||
-            interface_.requester() == Requester::Jukebox) {
-            game->event = hire_staff_cancel(hire_);
-            escape = false;
-        } else if (object_escape(*game)) {
-            escape = false;
-        }
-    }
+    bool escape = interface_escape(game);
     if (game) {
         sync_object_requesters(interface_, *game);
         sync_build_requester(interface_, *game);
     }
     InterfaceEvents events = interface_.frame(mouse, escape);
-    if (game && interface_.requester() == Requester::Jukebox) {
-        JukeboxResult jr = jukebox_frame(jukebox_, interface_, events, requester_art_, music_, mouse, game->paused);
-        for (uint8_t sfx : jr.sounds)
-            sounds_.play_sound(kSourceGeneral, sfx);
-        if (jr.close)
-            game->event = hire_staff_cancel(hire_);
-    }
-    if (game) {
-        const bool *keys = SDL_GetKeyboardState(nullptr);
-        bool shift = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
-        bool ctrl = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
-        object_requesters_input(interface_, object_ui_, *game, events, mouse, shift, ctrl);
-        build_requesters_input(interface_, build_ui_, *game, events, mouse);
-        if (Event e = hire_staff_click(hire_, events, *game); e.type)
-            game->event = e;
-    }
-    if (events.yes_no != YesNoAnswer::None)
-        sounds_.play_sound(kSourceGeneral, events.yes_no == YesNoAnswer::Yes ? kSfxYesX : kSfxNo4);
-    if (events.yes_no == YesNoAnswer::Yes && asking_quit_)
-        running_ = false;
-    if (game && events.yes_no != YesNoAnswer::None) {
-        Event e = events.yes_no == YesNoAnswer::Yes ? yes_event_ : no_event_;
-        if (e.type)
-            game->event = e;
-    }
-    if (events.yes_no != YesNoAnswer::None) {
-        asking_quit_ = false;
-        yes_event_ = no_event_ = {};
-    }
+    if (game)
+        info = interface_requesters(*game, events, mouse);
+    interface_yes_no(game, events);
     bool paused = game && game->paused;
     bool input = !events.mouse_on_window && !interface_.modal() && !menu_.active;
     PanelAction action = panel_frame(panel_state_, mouse, *data_, paused, input);
     if (game) {
         bool placing = game->world.placing.placing || hire_.placing();
-        // The other panel buttons lead to requesters and screens not ported yet.
-        bool refused = action == PanelAction::Refused;
-        if (action == PanelAction::FurnishCorridor) {
-            refused = hire_.placing() || build_tool_busy(*game);
-            if (!refused)
-                furnish_corridor(*game);
-        } else if (action == PanelAction::HireStaff) {
-            refused = placing || build_tool_busy(*game);
-            if (!refused)
-                game->event = {EV_OPEN_HIRE_STAFF};
-        } else if (action == PanelAction::BuildRoom) {
-            refused = hire_.placing() || build_tool_busy(*game);
-            if (!refused)
-                open_build_room(*game);
-        } else if (action == PanelAction::TownMap) {
-            open_town_map();
-        } else if (int chart = chart_for_panel_action(action); chart >= 0) {
-            Event e = open_chart_command(chart, *game, &refused);
-            if (!refused)
-                game->event = e;
-        }
-        if (action != PanelAction::None)
-            sounds_.play_sound(kSourceGeneral, refused ? kSfxWrong2 : kSfxSelectX);
-
+        interface_panel_action(*game, action, placing);
         // The map: what is being placed follows the pointer.
         bool on_map = input && !paused && mouse.y < panel_top(*data_);
-        int cell = on_map ? map_cell_ : -1;
-        placement_mouse(object_ui_, *game, cell, mouse, on_map);
-        build_mouse(build_ui_, *game, cell, mouse, on_map);
-        if (hire_.placing() && on_map && cell >= 0) {
-            update_staff_cursor(hire_, game->world, cell);
-            if (mouse.left_pressed) {
-                if (Event e = place_staff_click(hire_, game->world, cell); e.type)
-                    game->event = e;
-            } else if (mouse.right_pressed) {
-                game->event = hire_staff_cancel(hire_);
-            }
-        } else if (mouse.right_pressed && on_map && !placing && !build_tool_busy(*game) &&
-                   interface_.window_count() == 0 && game->world.building.build.room == 0 &&
-                   !advisor_hit(game->advisor, mouse.x, mouse.y)) {
-            // process_right_button in the normal mouse mode, no requester
-            // open and no room being edited: picks up the player's member of
-            // staff under the pointer.
-            if (Event e = pick_up_staff_click(game->world, pointed_.thing); e.type) {
-                game->event = e;
-                sounds_.play_sound(kSourceGeneral, kSfxPickup);
-            }
-        }
-
-        // The advisor: a right click on him or his bubble dismisses him; then
-        // his frame, which reads the command about to be carried out.
-        if (mouse.right_pressed && input && mouse.y < panel_top(*data_) && advisor_hit(game->advisor, mouse.x, mouse.y))
-            game->advisor.dismiss = true;
-        AdvisorInputs in;
-        in.game_turn = game->turn_count;
-        in.paused = paused;
-        in.requester_open = interface_.requester() != Requester::None && interface_.requester() != Requester::EditRoom;
-        in.level = game->level_number();
-        in.month = game->date.month;
-        in.open = game->open;
-        in.balance = game->balance;
-        in.reputation = game->reputation();
-        in.finance = &game->finance;
-        in.settings = &game->settings();
-        in.world = &game->world;
-        in.text = &data_->text();
-        in.pending = game->event;
-        in.last = last_event_;
-        in.staff_place_ok = hire_.place_ok;
-        if (game->world.placing.placing)
-            in.object_place_ok = game->world.placing.ok;
-        advisor_frame(game->advisor, in, game->anims(), sounds_.safeseed);
-        last_event_ = game->event;
-
-        // The command, as process_turn: the interface's part, then the game's.
-        run_command(*game);
+        interface_map_mouse(*game, mouse, on_map, placing);
+        interface_map_hover(*game, mouse, on_map, placing);
+        interface_advisor(*game, mouse, input, paused);
+        interface_command(*game, info);
     }
+    interface_draw(game, ox, oy, scale);
+}
 
+// Escape: with a modal requester up, the requester's; else it drops what is
+// being hired, bought or placed (setup_abort_all_requesters). Returns
+// whether the requesters still get it.
+bool App::interface_escape(Game *game)
+{
+    bool escape = std::exchange(escape_, false);
+    if (!escape || !game || interface_.modal())
+        return escape;
+    if (hire_.placing() || interface_.requester() == Requester::HireStaff ||
+        interface_.requester() == Requester::Jukebox) {
+        game->event = hire_staff_cancel(hire_);
+        return false;
+    }
+    if (object_escape(*game))
+        return false;
+    if (interface_.window_count() > 0 && interface_.requester() == Requester::None) {
+        // The patient, staff or handyman window: EV_CANCEL_BUILD closes it.
+        game->event = hire_staff_cancel(hire_);
+        return false;
+    }
+    return true;
+}
+
+// The requesters' input for the frame: the jukebox, buying objects,
+// building, hiring and the patient, staff and handyman windows, whose
+// result it returns.
+InfoWindowResult App::interface_requesters(Game &game, const InterfaceEvents &events, const UiMouse &mouse)
+{
+    if (interface_.requester() == Requester::Jukebox) {
+        JukeboxResult jr = jukebox_frame(jukebox_, interface_, {events, mouse}, requester_art_, music_, game.paused);
+        for (uint8_t sfx : jr.sounds)
+            sounds_.play_sound(kSourceGeneral, sfx);
+        if (jr.close)
+            game.event = hire_staff_cancel(hire_);
+    }
+    const bool *keys = SDL_GetKeyboardState(nullptr);
+    bool shift = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+    bool ctrl = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
+    object_requesters_input(interface_, object_ui_, game, events, mouse, {shift, ctrl});
+    build_requesters_input(interface_, build_ui_, game, events, mouse);
+    if (Event e = hire_staff_click(hire_, events, game); e.type)
+        game.event = e;
+    InfoWindowResult info = info_window_frame(info_, interface_, events, mouse, game.world, {scroll_min_, scroll_max_});
+    for (uint8_t sfx : info.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    if (info.event.type)
+        game.event = info.event;
+    if (info.slist_staff)
+        charts_.slist_staff = info.slist_staff;
+    if (info.centre_on) {
+        // process_tracking_windows' othervar.center_on_slot.
+        Point p = info_centre(game.world, info.centre_on);
+        if (!beyond_scroll_limit(p, scroll_min_, scroll_max_))
+            camera_ = {p.x - surface_.width() / 2, p.y - surface_.height() / 2};
+    }
+    return info;
+}
+
+// The yes/no requester's answer: its sound, then what it was asked for.
+void App::interface_yes_no(Game *game, const InterfaceEvents &events)
+{
+    if (events.yes_no == YesNoAnswer::None)
+        return;
+    sounds_.play_sound(kSourceGeneral, events.yes_no == YesNoAnswer::Yes ? kSfxYesX : kSfxNo4);
+    if (events.yes_no == YesNoAnswer::Yes && asking_quit_)
+        running_ = false;
+    if (game) {
+        Event e = events.yes_no == YesNoAnswer::Yes ? yes_event_ : no_event_;
+        if (e.type)
+            game->event = e;
+    }
+    asking_quit_ = false;
+    yes_event_ = no_event_ = {};
+}
+
+// Carries out the panel button pressed this frame, with its sound; `placing`
+// says whether an object or a member of staff is being placed.
+void App::interface_panel_action(Game &game, PanelAction action, bool placing)
+{
+    // The other panel buttons lead to requesters and screens not ported yet.
+    bool refused = action == PanelAction::Refused;
+    if (action == PanelAction::FurnishCorridor) {
+        refused = hire_.placing() || build_tool_busy(game);
+        if (!refused)
+            furnish_corridor(game);
+    } else if (action == PanelAction::HireStaff) {
+        refused = placing || build_tool_busy(game);
+        if (!refused)
+            game.event = {EV_OPEN_HIRE_STAFF};
+    } else if (action == PanelAction::BuildRoom) {
+        refused = hire_.placing() || build_tool_busy(game);
+        if (!refused)
+            open_build_room(game);
+    } else if (action == PanelAction::TownMap) {
+        open_town_map();
+    } else if (int chart = chart_for_panel_action(action); chart >= 0) {
+        Event e = open_chart_command(chart, game, &refused);
+        if (!refused)
+            game.event = e;
+    }
+    if (action != PanelAction::None)
+        sounds_.play_sound(kSourceGeneral, refused ? kSfxWrong2 : kSfxSelectX);
+}
+
+// The mouse on the map (`on_map`): what is being placed follows the
+// pointer, and the right button drops what is held or picks up staff.
+void App::interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, bool placing)
+{
+    int cell = on_map ? map_cell_ : -1;
+    placement_mouse(object_ui_, game, cell, mouse, on_map);
+    build_mouse(build_ui_, game, cell, mouse, on_map);
+    if (hire_.placing() && on_map && cell >= 0) {
+        update_staff_cursor(hire_, game.world, cell);
+        if (mouse.left_pressed) {
+            if (Event e = place_staff_click(hire_, game.world, cell); e.type)
+                game.event = e;
+        } else if (mouse.right_pressed) {
+            game.event = hire_staff_cancel(hire_);
+        }
+    } else if (mouse.right_pressed && on_map && !placing && !build_tool_busy(game) && interface_.window_count() == 0 &&
+               game.world.building.build.room == 0 && !advisor_hit(game.advisor, mouse.x, mouse.y)) {
+        // process_right_button in the normal mouse mode, no requester
+        // open and no room being edited: picks up the player's member of
+        // staff under the pointer.
+        if (Event e = pick_up_staff_click(game.world, pointed_.thing); e.type) {
+            game.event = e;
+            sounds_.play_sound(kSourceGeneral, kSfxPickup);
+        }
+    } else if (mouse.right_pressed && on_map && !placing && !build_tool_busy(game) &&
+               interface_.requester() == Requester::None && interface_.window_count() > 0 &&
+               !advisor_hit(game.advisor, mouse.x, mouse.y)) {
+        // process_right_button with a query window open: as Escape,
+        // EV_CANCEL_BUILD.
+        game.event = hire_staff_cancel(hire_);
+    }
+}
+
+// process_mouse's MM_NORMAL: what the pointer is over, and a left click
+// there (process_left_button) opens its window.
+void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing)
+{
+    if (!on_map || placing || build_tool_busy(game) || interface_.requester() != Requester::None ||
+        advisor_hit(game.advisor, mouse.x, mouse.y)) {
+        pointer_sprite_ = kPointerDefault;
+        return;
+    }
+    MapHover hover = map_hover(game.world, pointed_.thing);
+    if (hover.pointer != kPointerKeep)
+        pointer_sprite_ = hover.pointer;
+    if (mouse.left_pressed)
+        if (Event e = map_left_click(game.world, hover, interface_); e.type)
+            game.event = e;
+}
+
+// The advisor: a right click on him or his bubble dismisses him; then his
+// frame, which reads the command about to be carried out.
+void App::interface_advisor(Game &game, const UiMouse &mouse, bool input, bool paused)
+{
+    if (mouse.right_pressed && input && mouse.y < panel_top(*data_) && advisor_hit(game.advisor, mouse.x, mouse.y))
+        game.advisor.dismiss = true;
+    AdvisorInputs in;
+    in.game_turn = game.turn_count;
+    in.paused = paused;
+    in.requester_open = interface_.requester() != Requester::None && interface_.requester() != Requester::EditRoom;
+    in.level = game.level_number();
+    in.month = game.date.month;
+    in.open = game.open;
+    in.balance = game.balance;
+    in.reputation = game.reputation();
+    in.finance = &game.finance;
+    in.settings = &game.settings();
+    in.world = &game.world;
+    in.text = &data_->text();
+    in.pending = game.event;
+    in.last = last_event_;
+    in.staff_place_ok = hire_.place_ok;
+    if (game.world.placing.placing)
+        in.object_place_ok = game.world.placing.ok;
+    advisor_frame(game.advisor, in, game.anims(), sounds_.safeseed);
+    last_event_ = game.event;
+}
+
+// The command, as process_turn: the interface's part, then the game's; then
+// what the windows asked for besides (`info`).
+void App::interface_command(Game &game, const InfoWindowResult &info)
+{
+    run_command(game);
+    if (info.event.type == EV_OPEN_YES_NO) {
+        interface_.open_yes_no(data_->text().at(TextSection::YesNo, info.question));
+        yes_event_ = info.yes;
+        no_event_ = info.no;
+    }
+    if (info.casebook) {
+        // req3 opens the casebook itself, with no command.
+        charts_.selected_illness = info.casebook;
+        chart_command(charts_, {EV_OPEN_SCREEN, uint16_t(kChartCasebook)});
+    }
+}
+
+// Draws the panel, the advisor and the requesters into the interface's
+// canvas, and the canvas at (ox, oy) of the window at `scale`.
+void App::interface_draw(Game *game, int ox, int oy, int scale)
+{
     ui_.clear();
     PanelFigures figures;
     if (map_) {
@@ -630,19 +819,47 @@ void App::interface_step(int out_w, int out_h, int scale)
     if (game) {
         draw_advisor(ui_, game->advisor, *data_, data_->font(0x1d));
         advance_balance_roll(panel_state_, game->balance);
+        draw_info_view(*game);
     }
     draw_interface(ui_, interface_, requester_art_);
+    if (game)
+        draw_info_windows(ui_, info_, interface_, {requester_art_, hire_art_, data_->text()}, game->world,
+                          object_ui_.red);
     if (interface_.requester() == Requester::Jukebox)
         draw_jukebox(ui_, interface_, requester_art_, music_);
     if (game) {
         draw_object_requesters(ui_, interface_, object_ui_, *game, requester_art_, *data_);
         draw_build_requester(ui_, interface_, build_ui_, *game, requester_art_, *data_);
-        draw_hire_staff(ui_, hire_, interface_, requester_art_, hire_art_, game->world, data_->text());
+        draw_hire_staff(ui_, hire_, interface_, {requester_art_, hire_art_, data_->text()}, game->world);
     }
     std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
     SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
     SDL_FRect dst = {float(ox), float(oy), float(kUiWidth * scale), float(kUiHeight * scale)};
     SDL_RenderTexture(renderer_, ui_tex_, nullptr, &dst);
+}
+
+// The view window over the query window showing a person, under its art.
+void App::draw_info_view(Game &game)
+{
+    Rect view_box;
+    Point view_camera;
+    if (!info_view(info_, interface_, game.world, view_box, view_camera))
+        return;
+    if (info_view_.width() != view_box.w || info_view_.height() != view_box.h) {
+        info_view_.resize(view_box.w, view_box.h);
+        info_scratch_.resize(view_box.w, view_box.h);
+        info_scratch_.fill(kMaskColour);
+    }
+    info_view_.fill(0);
+    draw_world({info_view_, {0, 0, view_box.w, view_box.h}, view_camera}, game.world, *data_,
+               shadows_ ? map_->shadows.get() : nullptr, info_scratch_);
+    Surface &px = ui_.pixels();
+    for (int y = 0; y < view_box.h; y++)
+        for (int x = 0; x < view_box.w; x++)
+            if (view_box.x + x >= 0 && view_box.x + x < px.width() && view_box.y + y >= 0 &&
+                view_box.y + y < px.height())
+                px.row(view_box.y + y)[view_box.x + x] = info_view_.row(y)[x];
+    ui_.mark(view_box);
 }
 
 // Asks "really quit?" with the yes/no requester, as the game does.
@@ -654,17 +871,19 @@ void App::ask_quit()
     asking_quit_ = true;
 }
 
-// The game's own pointer, in place of the system one over the game; its
-// hotspot is its top-left corner.
-void App::draw_pointer(int scale)
+// The game's own pointer `sprite`, in place of the system one over the
+// game; its hotspot is its top-left corner.
+void App::draw_pointer(int scale, uint8_t sprite)
 {
     float mx, my;
     SDL_GetMouseState(&mx, &my);
     float density = SDL_GetWindowPixelDensity(window_);
-    if (pointer_ && SDL_GetMouseFocus() == window_ && !ImGui::GetIO().WantCaptureMouse) {
+    const PointerTexture &pt =
+        pointers_[sprite < pointers_.size() && pointers_[sprite].texture ? sprite : kPointerDefault];
+    if (pt.texture && SDL_GetMouseFocus() == window_ && !ImGui::GetIO().WantCaptureMouse) {
         SDL_HideCursor();
-        SDL_FRect p = {mx * density, my * density, float(pointer_w_ * scale), float(pointer_h_ * scale)};
-        SDL_RenderTexture(renderer_, pointer_, nullptr, &p);
+        SDL_FRect p = {mx * density, my * density, float(pt.w * scale), float(pt.h * scale)};
+        SDL_RenderTexture(renderer_, pt.texture, nullptr, &p);
     } else {
         SDL_ShowCursor();
     }
@@ -738,7 +957,7 @@ void App::town_step(int out_w, int out_h)
         camera_ = {centre.x - surface_.width() / 2, centre.y - surface_.height() / 2};
         return true;
     };
-    TownMapResult r = town_.frame(mouse, escape, game, game.land, panel_state_, startup_.player_name(), go_to);
+    TownMapResult r = town_.frame({mouse, escape}, game, game.land, panel_state_, startup_.player_name(), go_to);
     for (uint8_t sfx : r.sounds)
         sounds_.play_sound(kSourceGeneral, sfx);
     if (r.event.type)
@@ -760,6 +979,7 @@ void App::run_command(Game &game)
         interface_.close_yes_no(true);
     if (game.event.type == EV_SACK_STAFF)
         sounds_.play_sound(kSourceGeneral, kSfxSack);
+    info_window_event(info_, interface_, game.world, game.event);
     game.process_turn();
     hire_staff_after_turn(hire_, game.world);
     for (uint8_t sfx : game.world.building.sounds)
@@ -912,6 +1132,13 @@ std::string App::debug_state() const
         s += std::format(" (column {}, row {})", map_cell_ % kMapSize, map_cell_ / kMapSize);
     s += std::format("\ninterface: requester {}, modal {}, menu open {}\n", int(interface_.requester()),
                      interface_.modal(), menu_.active);
+    // The query windows (Requester::Patient, Staff, Handyman) and what they show.
+    s += std::format("query window: patient {} (thing {}, {}, toggle delay {}), staff {} (thing {}), handyman {}; "
+                     "pointer {}, staff list on {}\n",
+                     interface_.is_open(int(Requester::Patient)), info_.patient,
+                     info_.show_graph ? "health graph" : "treatments", info_.toggle_delay,
+                     interface_.is_open(int(Requester::Staff)), info_.staff,
+                     interface_.is_open(int(Requester::Handyman)), pointer_sprite_, charts_.slist_staff);
     if (!map_ || in_startup_)
         return s;
     const Game &g = map_->game;
@@ -933,8 +1160,9 @@ std::string App::debug_state() const
 
 void App::make_ui_textures()
 {
-    if (pointer_)
-        SDL_DestroyTexture(pointer_);
+    for (PointerTexture &pt : pointers_)
+        if (pt.texture)
+            SDL_DestroyTexture(std::exchange(pt.texture, nullptr));
     if (!ui_tex_) {
         ui_.resize(kUiWidth, kUiHeight);
         ui_tex_ =
@@ -942,12 +1170,15 @@ void App::make_ui_textures()
         SDL_SetTextureScaleMode(ui_tex_, SDL_SCALEMODE_NEAREST);
         SDL_SetTextureBlendMode(ui_tex_, SDL_BLENDMODE_BLEND);
     }
-    Sprite s = data_->pointers().at(kPointerDefault);
-    pointer_w_ = s.width;
-    pointer_h_ = s.height;
-    std::vector<uint32_t> pointer(size_t(pointer_w_) * size_t(pointer_h_));
-    sprite_to_argb(s, data_->palette(), pointer.data(), pointer_w_ * 4);
-    pointer_ = argb_texture(renderer_, pointer, pointer_w_, pointer_h_);
+    for (uint8_t id : kPointersDrawn) {
+        Sprite s = data_->pointers().at(id);
+        PointerTexture &pt = pointers_[id];
+        pt.w = s.width;
+        pt.h = s.height;
+        std::vector<uint32_t> pixels(size_t(pt.w) * size_t(pt.h));
+        sprite_to_argb(s, data_->palette(), pixels.data(), pt.w * 4);
+        pt.texture = argb_texture(renderer_, pixels, pt.w, pt.h);
+    }
 }
 
 int App::zoom() const
@@ -1026,26 +1257,10 @@ void App::menu_step(int out_w, int scale)
 // ignored.
 void App::perform(const MenuEvent &event)
 {
-    switch (event.sound) {
-    case MenuSound::Highlight:
-        sounds_.play_sound(kSourceGeneral, kSfxHighlight5);
-        break;
-    case MenuSound::Select:
-        sounds_.play_sound(kSourceGeneral, kSfxSelectX);
-        break;
-    case MenuSound::Wrong:
-        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
-        break;
-    case MenuSound::None:
-        break;
-    }
+    play_menu_sound(event.sound);
     switch (event.action) {
     case MenuAction::Speed:
-        speed_ = event.value <= 10   ? Speed::Slowest
-                 : event.value <= 20 ? Speed::Slower
-                 : event.value <= 30 ? Speed::Normal
-                 : event.value <= 40 ? Speed::Max
-                                     : Speed::AndThenSome;
+        speed_ = menu_speed(event.value);
         break;
     case MenuAction::ToggleShadows:
         shadows_ = !shadows_;
@@ -1072,14 +1287,7 @@ void App::perform(const MenuEvent &event)
         ask_quit();
         break;
     case MenuAction::Screen:
-        if (map_) {
-            bool refused = false;
-            Event e = open_chart_command(event.value, map_->game, &refused);
-            if (refused)
-                sounds_.play_sound(kSourceGeneral, kSfxWrong2);
-            else
-                map_->game.event = e;
-        }
+        open_menu_screen(event.value);
         break;
     case MenuAction::Jukebox:
         if (map_)
@@ -1088,6 +1296,36 @@ void App::perform(const MenuEvent &event)
     default:
         break;
     }
+}
+
+void App::play_menu_sound(MenuSound sound)
+{
+    switch (sound) {
+    case MenuSound::Highlight:
+        sounds_.play_sound(kSourceGeneral, kSfxHighlight5);
+        break;
+    case MenuSound::Select:
+        sounds_.play_sound(kSourceGeneral, kSfxSelectX);
+        break;
+    case MenuSound::Wrong:
+        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+        break;
+    case MenuSound::None:
+        break;
+    }
+}
+
+// The Charts menu's screen `chart`, refused with a sound when it cannot open.
+void App::open_menu_screen(int chart)
+{
+    if (!map_)
+        return;
+    bool refused = false;
+    Event e = open_chart_command(chart, map_->game, &refused);
+    if (refused)
+        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+    else
+        map_->game.event = e;
 }
 
 void App::nav_click(uint8_t button, float x, float y)
@@ -1125,96 +1363,15 @@ void App::handle_event(const SDL_Event &e)
         running_ = false;
         break;
     case SDL_EVENT_KEY_DOWN:
-        if (io.WantCaptureKeyboard)
-            break;
-        if (e.key.key == SDLK_F12 && data_ && in_startup_) {
-            tools_.open = !tools_.open;
-            break;
-        }
-        if (in_startup_) {
-            // The start-up screens read keys as lbInkey.
-            StartupKey k;
-            SDL_Keycode key = e.key.key;
-            if (key >= SDLK_A && key <= SDLK_Z) {
-                k.code = StartupKey::Letter;
-                k.letter = char('A' + (key - SDLK_A));
-            } else if (key == SDLK_ESCAPE) {
-                k.code = StartupKey::Escape;
-            } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
-                k.code = StartupKey::Return;
-            } else if (key == SDLK_BACKSPACE || key == SDLK_KP_PERIOD) {
-                k.code = StartupKey::Backspace;
-            } else if (key == SDLK_SPACE) {
-                k.code = StartupKey::Space;
-            }
-            startup_keys_.push_back(k);
-            break;
-        }
-        if (e.key.key == SDLK_F12) {
-            tools_.open = !tools_.open;
-        } else if (!data_) {
-            if (e.key.key == SDLK_ESCAPE)
-                running_ = false;
-        } else if (e.key.key == SDLK_ESCAPE && !(e.key.mod & SDL_KMOD_SHIFT)) {
-            // Closes the front requester (the game's Escape).
-            escape_ = true;
-        } else if (interface_.modal() || town_.is_open()) {
-            // A modal requester takes the keys; the town map only Escape.
-        } else if (e.key.key >= SDLK_F1 && e.key.key <= SDLK_F8 && map_) {
-            // The charts, from the game or another chart; not while paused.
-            if (!map_->game.paused) {
-                bool refused = false;
-                Event ev = open_chart_command(int(e.key.key - SDLK_F1), map_->game, &refused);
-                if (refused)
-                    sounds_.play_sound(kSourceGeneral, kSfxWrong2);
-                else
-                    map_->game.event = ev;
-            }
-        } else if (charts_.open) {
-            // The charts take Escape, Space and the arrows only.
-            chart_space_ = chart_space_ || e.key.key == SDLK_SPACE;
-        } else if ((e.key.key == SDLK_ESCAPE && (e.key.mod & SDL_KMOD_SHIFT)) ||
-                   ((e.key.key == SDLK_Q || e.key.key == SDLK_X) &&
-                    (e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_SHIFT)))) {
-            // The game's quit keys ask first.
-            ask_quit();
-        } else if (e.key.key == SDLK_P && map_) {
-            map_->game.paused = !map_->game.paused;
-        } else if (e.key.key == SDLK_T && map_) {
-            open_town_ = true;
-        } else if (e.key.key == SDLK_J && !(e.key.mod & SDL_KMOD_SHIFT) && map_ && !map_->game.paused) {
-            map_->game.event = {EV_OPEN_JUKEBOX};
-        }
+        if (!io.WantCaptureKeyboard)
+            key_down(e.key);
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        if (io.WantCaptureMouse)
-            break;
-        if (e.button.button == SDL_BUTTON_LEFT)
-            buttons_.left = buttons_.left_pressed = true;
-        if (e.button.button == SDL_BUTTON_RIGHT)
-            buttons_.right = buttons_.right_pressed = true;
-        // An open menu, a modal requester or the town map takes the clicks.
-        if (menu_.active || interface_.modal() || town_.is_open() || charts_.open)
-            break;
-        // While something is being placed, its clicks are the interface's.
-        if (map_ && (map_->game.world.placing.placing || hire_.placing()))
-            break;
-        if (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT)
-            dragging_ = true;
-        if (tools_.open && map_)
-            nav_click(e.button.button, e.button.x, e.button.y);
+        if (!io.WantCaptureMouse)
+            mouse_down(e.button);
         break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
-        if (e.button.button == SDL_BUTTON_LEFT && buttons_.left) {
-            buttons_.left = false;
-            buttons_.left_released = true;
-        }
-        if (e.button.button == SDL_BUTTON_RIGHT && buttons_.right) {
-            buttons_.right = false;
-            buttons_.right_released = true;
-        }
-        if (e.button.button == SDL_BUTTON_MIDDLE || e.button.button == SDL_BUTTON_RIGHT)
-            dragging_ = false;
+        mouse_up(e.button);
         break;
     case SDL_EVENT_MOUSE_MOTION:
         if (dragging_ && data_) {
@@ -1234,46 +1391,160 @@ void App::handle_event(const SDL_Event &e)
     }
 }
 
+// A key pressed, outside the developer tools.
+void App::key_down(const SDL_KeyboardEvent &key)
+{
+    if (key.key == SDLK_F12 && data_ && in_startup_) {
+        tools_.open = !tools_.open;
+        return;
+    }
+    if (in_startup_) {
+        startup_keys_.push_back(startup_key(key.key));
+        return;
+    }
+    if (key.key == SDLK_F12) {
+        tools_.open = !tools_.open;
+    } else if (!data_) {
+        if (key.key == SDLK_ESCAPE)
+            running_ = false;
+    } else if (key.key == SDLK_ESCAPE && !(key.mod & SDL_KMOD_SHIFT)) {
+        // Closes the front requester (the game's Escape).
+        escape_ = true;
+    } else if (interface_.modal() || town_.is_open()) {
+        // A modal requester takes the keys; the town map only Escape.
+    } else {
+        game_key(key);
+    }
+}
+
+// A key pressed over the hospital or a chart, with no modal requester up.
+void App::game_key(const SDL_KeyboardEvent &key)
+{
+    if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
+        // The charts, from the game or another chart; not while paused.
+        if (!map_->game.paused)
+            open_chart_key(int(key.key - SDLK_F1));
+    } else if (charts_.open) {
+        // The charts take Escape, Space and the arrows only.
+        chart_space_ = chart_space_ || key.key == SDLK_SPACE;
+    } else if ((key.key == SDLK_ESCAPE && (key.mod & SDL_KMOD_SHIFT)) ||
+               ((key.key == SDLK_Q || key.key == SDLK_X) &&
+                (key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_SHIFT)))) {
+        // The game's quit keys ask first.
+        ask_quit();
+    } else if (key.key == SDLK_P && map_) {
+        map_->game.paused = !map_->game.paused;
+    } else if (key.key == SDLK_T && map_) {
+        open_town_ = true;
+    } else if (key.key == SDLK_J && !(key.mod & SDL_KMOD_SHIFT) && map_ && !map_->game.paused) {
+        map_->game.event = {EV_OPEN_JUKEBOX};
+    }
+}
+
+// F1-F8: the chart `chart`, refused with a sound when it cannot open.
+void App::open_chart_key(int chart)
+{
+    bool refused = false;
+    Event ev = open_chart_command(chart, map_->game, &refused);
+    if (refused)
+        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+    else
+        map_->game.event = ev;
+}
+
+void App::mouse_down(const SDL_MouseButtonEvent &button)
+{
+    if (button.button == SDL_BUTTON_LEFT)
+        buttons_.left = buttons_.left_pressed = true;
+    if (button.button == SDL_BUTTON_RIGHT)
+        buttons_.right = buttons_.right_pressed = true;
+    // An open menu, a modal requester or the town map takes the clicks.
+    if (menu_.active || interface_.modal() || town_.is_open() || charts_.open)
+        return;
+    // While something is being placed, its clicks are the interface's.
+    if (map_ && (map_->game.world.placing.placing || hire_.placing()))
+        return;
+    if (button.button == SDL_BUTTON_MIDDLE || button.button == SDL_BUTTON_RIGHT)
+        dragging_ = true;
+    if (tools_.open && map_)
+        nav_click(button.button, button.x, button.y);
+}
+
+void App::mouse_up(const SDL_MouseButtonEvent &button)
+{
+    if (button.button == SDL_BUTTON_LEFT && buttons_.left) {
+        buttons_.left = false;
+        buttons_.left_released = true;
+    }
+    if (button.button == SDL_BUTTON_RIGHT && buttons_.right) {
+        buttons_.right = false;
+        buttons_.right_released = true;
+    }
+    if (button.button == SDL_BUTTON_MIDDLE || button.button == SDL_BUTTON_RIGHT)
+        dragging_ = false;
+}
+
 void App::update(float dt)
 {
     if (!data_ || in_startup_)
         return;
-    if (map_ && !map_->game.paused) {
-        // At most a few frames' worth of turns after a stall.
-        turn_clock_ = std::min(turn_clock_ + dt * double(int(speed_)), 8.0);
-        for (; turn_clock_ >= 1; turn_clock_ -= 1)
-            map_->game.turn();
-    }
+    if (map_ && !map_->game.paused)
+        run_turns(dt);
     if (town_.is_open() || charts_.open)
         return;
     const ImGuiIO &io = ImGui::GetIO();
-    if (!io.WantCaptureKeyboard) {
-        const bool *keys = SDL_GetKeyboardState(nullptr);
-        float step = kScrollSpeed * dt / float(zoom());
-        if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A])
-            scroll_x_ -= step;
-        if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D])
-            scroll_x_ += step;
-        if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W])
-            scroll_y_ -= step;
-        if (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S])
-            scroll_y_ += step;
-    }
-    if (!io.WantCaptureMouse && !dragging_ && SDL_GetMouseFocus() == window_) {
-        float mx, my;
-        SDL_GetMouseState(&mx, &my);
-        int w, h;
-        SDL_GetWindowSize(window_, &w, &h);
-        float step = kScrollSpeed * dt / float(zoom());
-        if (mx < kEdgeScrollMargin)
-            scroll_x_ -= step;
-        else if (mx >= w - kEdgeScrollMargin)
-            scroll_x_ += step;
-        if (my < kEdgeScrollMargin)
-            scroll_y_ -= step;
-        else if (my >= h - kEdgeScrollMargin)
-            scroll_y_ += step;
-    }
+    if (!io.WantCaptureKeyboard)
+        key_scroll(dt);
+    if (!io.WantCaptureMouse && !dragging_ && SDL_GetMouseFocus() == window_)
+        edge_scroll(dt);
+    apply_scroll();
+}
+
+// The turns due after `dt` seconds at the game's speed.
+void App::run_turns(float dt)
+{
+    // At most a few frames' worth of turns after a stall.
+    turn_clock_ = std::min(turn_clock_ + dt * double(int(speed_)), 8.0);
+    for (; turn_clock_ >= 1; turn_clock_ -= 1)
+        map_->game.turn();
+}
+
+// The arrow keys and WASD scroll the view.
+void App::key_scroll(float dt)
+{
+    const bool *keys = SDL_GetKeyboardState(nullptr);
+    float step = kScrollSpeed * dt / float(zoom());
+    if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A])
+        scroll_x_ -= step;
+    if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D])
+        scroll_x_ += step;
+    if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W])
+        scroll_y_ -= step;
+    if (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S])
+        scroll_y_ += step;
+}
+
+// The pointer at the window's edges scrolls the view.
+void App::edge_scroll(float dt)
+{
+    float mx, my;
+    SDL_GetMouseState(&mx, &my);
+    int w, h;
+    SDL_GetWindowSize(window_, &w, &h);
+    float step = kScrollSpeed * dt / float(zoom());
+    if (mx < kEdgeScrollMargin)
+        scroll_x_ -= step;
+    else if (mx >= w - kEdgeScrollMargin)
+        scroll_x_ += step;
+    if (my < kEdgeScrollMargin)
+        scroll_y_ -= step;
+    else if (my >= h - kEdgeScrollMargin)
+        scroll_y_ += step;
+}
+
+// Moves the camera by the whole pixels of the scroll so far.
+void App::apply_scroll()
+{
     int dx = int(scroll_x_), dy = int(scroll_y_);
     scroll_x_ -= float(dx);
     scroll_y_ -= float(dy);
@@ -1320,82 +1591,7 @@ void App::render()
         mixer_.update(sounds_, &music_);
         draw_pointer(ui_scale());
     } else {
-        int z = zoom();
-        int vw = std::max(out_w / z, 1), vh = std::max(out_h / z, 1);
-        if (vw != surface_.width() || vh != surface_.height()) {
-            // Keep the same map point at the view's centre across resizes.
-            Point centre = {camera_.x + surface_.width() / 2, camera_.y + surface_.height() / 2};
-            surface_.resize(vw, vh);
-            camera_ = {centre.x - vw / 2, centre.y - vh / 2};
-        }
-        if (!screen_ || screen_w_ != vw || screen_h_ != vh) {
-            if (screen_)
-                SDL_DestroyTexture(screen_);
-            screen_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, vw, vh);
-            SDL_SetTextureScaleMode(screen_, SDL_SCALEMODE_NEAREST);
-            screen_w_ = vw;
-            screen_h_ = vh;
-        }
-
-        float cmx, cmy;
-        SDL_GetMouseState(&cmx, &cmy);
-        float cdensity = SDL_GetWindowPixelDensity(window_);
-        pointed_.at = {int(cmx * cdensity) / z, int(cmy * cdensity) / z};
-        frame_sounds_.clear();
-        draw_view(surface_, *data_, map_.get(), camera_, shadows_, &frame_sounds_, &pointed_);
-        if (map_) {
-            // The sounds of what was drawn, positioned on the view.
-            sounds_.frames_drawn(frame_sounds_, vw);
-            sounds_.manage_sound(map_->game.world, camera_, vw, vh);
-            sounds_.manage_background_sounds(map_->game.paused);
-            // The music moves on to the next song, and the announcer speaks, as
-            // the game does each frame; only the announcer while a modal
-            // requester is up.
-            if (!interface_.modal())
-                music_.play_next(map_->game.paused);
-            sounds_.do_ambients(map_->game.paused, false, has_receptionist(map_->game.world));
-        }
-        mixer_.update(sounds_, &music_);
-
-        // What is being placed, drawn over the view as the game does.
-        Point under = world_to_cell({camera_.x + pointed_.at.x, camera_.y + pointed_.at.y});
-        bool inside = under.x >= 0 && under.x < kMapSize && under.y >= 0 && under.y < kMapSize;
-        map_cell_ = inside ? under.x + under.y * kMapSize : -1;
-        if (map_) {
-            Rect view{0, 0, vw, vh};
-            draw_placement(surface_, view, camera_, map_->game.world.placing, object_ui_, *data_);
-            draw_build_overlay(surface_, view, camera_, map_->game, build_ui_, object_ui_, *data_);
-            if (hire_.placing() && map_cell_ >= 0)
-                draw_held_staff(surface_, view, camera_, hire_, map_->game.world, map_cell_, *data_, map_->scratch);
-        }
-
-        void *pixels;
-        int pitch;
-        if (screen_ && SDL_LockTexture(screen_, nullptr, &pixels, &pitch)) {
-            const Palette &pal = data_->palette();
-            const uint8_t *src = surface_.data();
-            for (int y = 0; y < vh; y++) {
-                auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(pixels) + y * pitch);
-                for (int x = 0; x < vw; x++)
-                    row[x] = pal[src[x]];
-                src += vw;
-            }
-            SDL_UnlockTexture(screen_);
-            SDL_FRect dst = {0, 0, float(vw * z), float(vh * z)};
-            SDL_RenderTexture(renderer_, screen_, nullptr, &dst);
-        }
-
-        // The interface and the pointer keep their size whatever the view's
-        // zoom.
-        int s = ui_scale();
-        interface_step(out_w, out_h, s);
-        menu_step(out_w, s);
-
-        draw_pointer(s);
-
-        if (tools_.open && map_)
-            draw_nav_overlay(tools_.nav, map_->game.world, camera_,
-                             float(z) / ImGui::GetIO().DisplayFramebufferScale.x);
+        hospital_step(out_w, out_h);
     }
 
     if (data_)
@@ -1411,6 +1607,109 @@ void App::render()
     SDL_RenderPresent(renderer_);
     buttons_.left_pressed = buttons_.right_pressed = false;
     buttons_.left_released = buttons_.right_released = false;
+}
+
+// One frame of the hospital: the view at its zoom with what is being placed
+// over it, its sounds, then the interface, the menu bar and the pointer at
+// the UI scale.
+void App::hospital_step(int out_w, int out_h)
+{
+    int z = zoom();
+    int vw = std::max(out_w / z, 1), vh = std::max(out_h / z, 1);
+    resize_view(vw, vh);
+
+    float cmx, cmy;
+    SDL_GetMouseState(&cmx, &cmy);
+    float cdensity = SDL_GetWindowPixelDensity(window_);
+    pointed_.at = {int(cmx * cdensity) / z, int(cmy * cdensity) / z};
+    frame_sounds_.clear();
+    draw_view(surface_, *data_, map_.get(), camera_, shadows_, {&frame_sounds_, &pointed_});
+    if (map_)
+        view_sounds(vw, vh);
+    mixer_.update(sounds_, &music_);
+
+    // What is being placed, drawn over the view as the game does.
+    Point under = world_to_cell({camera_.x + pointed_.at.x, camera_.y + pointed_.at.y});
+    bool inside = under.x >= 0 && under.x < kMapSize && under.y >= 0 && under.y < kMapSize;
+    map_cell_ = inside ? under.x + under.y * kMapSize : -1;
+    if (map_)
+        draw_view_overlays(vw, vh);
+    present_view(vw, vh, z);
+
+    // The interface and the pointer keep their size whatever the view's
+    // zoom.
+    int s = ui_scale();
+    interface_step(out_w, out_h, s);
+    menu_step(out_w, s);
+
+    draw_pointer(s, menu_.active || interface_.modal() ? kPointerDefault : pointer_sprite_);
+
+    if (tools_.open && map_)
+        draw_nav_overlay(tools_.nav, map_->game.world, camera_, float(z) / ImGui::GetIO().DisplayFramebufferScale.x);
+}
+
+// Makes the view's surface and texture `vw` x `vh`.
+void App::resize_view(int vw, int vh)
+{
+    if (vw != surface_.width() || vh != surface_.height()) {
+        // Keep the same map point at the view's centre across resizes.
+        Point centre = {camera_.x + surface_.width() / 2, camera_.y + surface_.height() / 2};
+        surface_.resize(vw, vh);
+        camera_ = {centre.x - vw / 2, centre.y - vh / 2};
+    }
+    if (!screen_ || screen_w_ != vw || screen_h_ != vh) {
+        if (screen_)
+            SDL_DestroyTexture(screen_);
+        screen_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, vw, vh);
+        SDL_SetTextureScaleMode(screen_, SDL_SCALEMODE_NEAREST);
+        screen_w_ = vw;
+        screen_h_ = vh;
+    }
+}
+
+// The sounds of what was drawn, positioned on the `vw` x `vh` view.
+void App::view_sounds(int vw, int vh)
+{
+    sounds_.frames_drawn(frame_sounds_, vw);
+    sounds_.manage_sound(map_->game.world, camera_, vw, vh);
+    sounds_.manage_background_sounds(map_->game.paused);
+    // The music moves on to the next song, and the announcer speaks, as
+    // the game does each frame; only the announcer while a modal
+    // requester is up.
+    if (!interface_.modal())
+        music_.play_next(map_->game.paused);
+    sounds_.do_ambients(map_->game.paused, false, has_receptionist(map_->game.world));
+}
+
+// What is being placed (an object, a room's blueprint, a member of staff),
+// over the `vw` x `vh` view.
+void App::draw_view_overlays(int vw, int vh)
+{
+    Rect view{0, 0, vw, vh};
+    draw_placement(surface_, view, camera_, map_->game.world.placing, object_ui_, *data_);
+    draw_build_overlay({surface_, view, camera_}, map_->game, build_ui_, object_ui_, *data_);
+    if (hire_.placing() && map_cell_ >= 0)
+        draw_held_staff({surface_, view, camera_}, hire_, map_->game.world, map_cell_, *data_, map_->scratch);
+}
+
+// The `vw` x `vh` view in the window at zoom `z`.
+void App::present_view(int vw, int vh, int z)
+{
+    void *pixels;
+    int pitch;
+    if (!screen_ || !SDL_LockTexture(screen_, nullptr, &pixels, &pitch))
+        return;
+    const Palette &pal = data_->palette();
+    const uint8_t *src = surface_.data();
+    for (int y = 0; y < vh; y++) {
+        auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(pixels) + y * pitch);
+        for (int x = 0; x < vw; x++)
+            row[x] = pal[src[x]];
+        src += vw;
+    }
+    SDL_UnlockTexture(screen_);
+    SDL_FRect dst = {0, 0, float(vw * z), float(vh * z)};
+    SDL_RenderTexture(renderer_, screen_, nullptr, &dst);
 }
 
 void App::run()
@@ -1458,8 +1757,9 @@ void App::shutdown()
         SDL_DestroyTexture(charts_tex_);
     if (ui_tex_)
         SDL_DestroyTexture(ui_tex_);
-    if (pointer_)
-        SDL_DestroyTexture(pointer_);
+    for (PointerTexture &pt : pointers_)
+        if (pt.texture)
+            SDL_DestroyTexture(pt.texture);
     if (screen_)
         SDL_DestroyTexture(screen_);
     if (imgui_ready_) {

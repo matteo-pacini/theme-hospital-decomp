@@ -79,6 +79,38 @@ void test_wall_in_way()
     CHECK(th::line_of_sight(*w, {1, 1}, {4, 9}) && !th::line_of_sight(*w, {5, 9}, {5, 1}));
 }
 
+namespace
+{
+
+// A wall down column 64 from the top to row 125, open below: found while
+// the wall is plain, but not when every cell along it has a spur: each
+// wall follower runs out of its 252 corners before getting round
+// (docs/BUGS.md).
+void check_wallhug_comb(th::WallhugPath &path)
+{
+    auto comb = std::make_unique<th::World>();
+    for (int y = 0; y <= 125; y++)
+        comb->map[size_t(64 + y * 128)].wall_w = 1;
+    path.start = {50, 70};
+    path.end = {80, 70};
+    CHECK(th::wallhug_trivial(*comb, path) != th::kWallhugFailed && route_walkable(*comb, path));
+    for (int y = 1; y <= 125; y++) {
+        comb->map[size_t(63 + y * 128)].wall_n = 1;
+        comb->map[size_t(64 + y * 128)].wall_n = 1;
+    }
+    CHECK(reachable(*comb, 50, 70, 80, 70));
+    CHECK(th::wallhug_trivial(*comb, path) == th::kWallhugFailed);
+
+    // A*, the default planner, gets round the comb, ending at the goal.
+    CHECK(th::astar_route(*comb, path) != th::kWallhugFailed && route_walkable(*comb, path));
+    CHECK(path.count > 0 && path.route[path.count - 1].x == 80 && path.route[path.count - 1].y == 70);
+    // ... and fails only where nothing gets through: a goal walled in.
+    comb->map[size_t(80 + 70 * 128)].flags = 1; // an impassable footprint
+    CHECK(th::astar_route(*comb, path) == th::kWallhugFailed && path.count == 0);
+}
+
+} // namespace
+
 // The wall-hugging path finder round a wall, into a closed box, and past
 // its corner limit.
 void test_wallhug()
@@ -124,29 +156,7 @@ void test_wallhug()
     th::orthonav_init(*w, nav, 40, 40, 10, 40);
     CHECK(nav.count == 0 && nav.x1 == 20);
 
-    // A wall down column 64 from the top to row 125, open below: found while
-    // the wall is plain, but not when every cell along it has a spur: each
-    // wall follower runs out of its 252 corners before getting round
-    // (docs/BUGS.md).
-    auto comb = std::make_unique<th::World>();
-    for (int y = 0; y <= 125; y++)
-        comb->map[size_t(64 + y * 128)].wall_w = 1;
-    path.start = {50, 70};
-    path.end = {80, 70};
-    CHECK(th::wallhug_trivial(*comb, path) != th::kWallhugFailed && route_walkable(*comb, path));
-    for (int y = 1; y <= 125; y++) {
-        comb->map[size_t(63 + y * 128)].wall_n = 1;
-        comb->map[size_t(64 + y * 128)].wall_n = 1;
-    }
-    CHECK(reachable(*comb, 50, 70, 80, 70));
-    CHECK(th::wallhug_trivial(*comb, path) == th::kWallhugFailed);
-
-    // A*, the default planner, gets round the comb, ending at the goal.
-    CHECK(th::astar_route(*comb, path) != th::kWallhugFailed && route_walkable(*comb, path));
-    CHECK(path.count > 0 && path.route[path.count - 1].x == 80 && path.route[path.count - 1].y == 70);
-    // ... and fails only where nothing gets through: a goal walled in.
-    comb->map[size_t(80 + 70 * 128)].flags = 1; // an impassable footprint
-    CHECK(th::astar_route(*comb, path) == th::kWallhugFailed && path.count == 0);
+    check_wallhug_comb(path);
 }
 
 // orthonav_whatnext steering a person round a wall one cell at a time, and
@@ -188,6 +198,59 @@ void test_orthonav_whatnext()
     CHECK(th::person_head_for(*w, 1) == th::kNavNoPath);
 }
 
+namespace
+{
+
+// One run of test_walk_level1's walks, with A* or with the game's planner.
+void walk_level1_run(th::World &w, const th::GameData &gd, const th::Level &level, bool astar)
+{
+    th::start_level(w, level, gd.anims());
+    w.path_finder = astar ? th::PathFinder::AStar : th::PathFinder::Original;
+    uint16_t id = 3; // after the two parts of the entrance door
+    CHECK(w.things[id].type == th::kThingFree);
+    th::Thing &p = w.things[id];
+    p.type = th::kThingPatient;
+    p.speed = 0x20;
+    p.anim_speed = 1;
+    int entrance = level.entrances[0][0];
+    p.x = {0x80, uint8_t(entrance % th::kMapSize)};
+    p.y = {0x80, uint8_t(entrance / th::kMapSize)};
+    th::insert_node(w, id, p.x, p.y);
+    th::play_frame(p, gd.anims(), th::kPatientAnims[0].walk);
+
+    struct Leg {
+        int x, y;
+        th::WalkResult result;
+        int turns;
+    };
+    const Leg legs[] = {
+        {63, 78, th::WalkResult::Arrived, 305},
+        {40, 60, th::WalkResult::NoPath, 1},
+        {entrance % th::kMapSize, entrance / th::kMapSize, th::WalkResult::Arrived, 305},
+    };
+    uint32_t turn = 1;
+    for (const Leg &leg : legs) {
+        th::set_destination_coords(w, id, leg.x + leg.y * th::kMapSize);
+        int turns = 0;
+        bool consistent = true;
+        th::WalkResult r;
+        do {
+            r = th::walk_turn(w, gd.anims(), id, ++turn);
+            consistent &= cell_lists_consistent(w);
+            turns++;
+        } while (r == th::WalkResult::Walking && turns < 5000);
+        CHECK(consistent);
+        CHECK(r == leg.result && (astar ? turns <= leg.turns : turns == leg.turns));
+        if (r == th::WalkResult::Arrived)
+            CHECK(p.x.tile == leg.x && p.y.tile == leg.y && p.x.frac == 0x80 && p.y.frac == 0x80);
+        std::printf("walk to %d,%d%s: result %d in %d turns\n", leg.x, leg.y, astar ? " (A*)" : "", int(r), turns);
+    }
+    if (!astar)
+        CHECK(w.seed == 0x2b6c015b);
+}
+
+} // namespace
+
 // With the game data: a patient walks on level 1 from where patients arrive
 // (the level's entrance cell) in through the entrance door, and back out,
 // in a fixed number of turns from the level's starting seed, keeping the
@@ -205,50 +268,6 @@ void test_walk_level1(const char *dir)
     auto w = std::make_unique<th::World>();
     // Twice with the game's planner (exact turns and draws), then with A*,
     // whose walks must arrive and fail alike and take no longer.
-    for (int run = 0; run < 3; run++) {
-        bool astar = run == 2;
-        th::start_level(*w, *level, gd.anims());
-        w->path_finder = astar ? th::PathFinder::AStar : th::PathFinder::Original;
-        uint16_t id = 3; // after the two parts of the entrance door
-        CHECK(w->things[id].type == th::kThingFree);
-        th::Thing &p = w->things[id];
-        p.type = th::kThingPatient;
-        p.speed = 0x20;
-        p.anim_speed = 1;
-        int entrance = level->entrances[0][0];
-        p.x = {0x80, uint8_t(entrance % th::kMapSize)};
-        p.y = {0x80, uint8_t(entrance / th::kMapSize)};
-        th::insert_node(*w, id, p.x, p.y);
-        th::play_frame(p, gd.anims(), th::kPatientAnims[0].walk);
-
-        struct Leg {
-            int x, y;
-            th::WalkResult result;
-            int turns;
-        };
-        const Leg legs[] = {
-            {63, 78, th::WalkResult::Arrived, 305},
-            {40, 60, th::WalkResult::NoPath, 1},
-            {entrance % th::kMapSize, entrance / th::kMapSize, th::WalkResult::Arrived, 305},
-        };
-        uint32_t turn = 1;
-        for (const Leg &leg : legs) {
-            th::set_destination_coords(*w, id, leg.x + leg.y * th::kMapSize);
-            int turns = 0;
-            bool consistent = true;
-            th::WalkResult r;
-            do {
-                r = th::walk_turn(*w, gd.anims(), id, ++turn);
-                consistent &= cell_lists_consistent(*w);
-                turns++;
-            } while (r == th::WalkResult::Walking && turns < 5000);
-            CHECK(consistent);
-            CHECK(r == leg.result && (astar ? turns <= leg.turns : turns == leg.turns));
-            if (r == th::WalkResult::Arrived)
-                CHECK(p.x.tile == leg.x && p.y.tile == leg.y && p.x.frac == 0x80 && p.y.frac == 0x80);
-            std::printf("walk to %d,%d%s: result %d in %d turns\n", leg.x, leg.y, astar ? " (A*)" : "", int(r), turns);
-        }
-        if (!astar)
-            CHECK(w->seed == 0x2b6c015b);
-    }
+    for (int run = 0; run < 3; run++)
+        walk_level1_run(*w, gd, *level, run == 2);
 }

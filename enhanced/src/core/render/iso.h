@@ -25,9 +25,17 @@ inline Point cell_to_world(int col, int row)
 // The cell under map pixel position p (unclamped), as find_cell_at_point.
 Point world_to_cell(Point p);
 
+// A level's scroll area: the cells from `min_cell` to `max_cell` (column +
+// row * 128).
+struct ScrollArea {
+    uint16_t min_cell = 0;
+    uint16_t max_cell = 0;
+};
+
 // True if map pixel position `p` (the view's centre) lies outside a level's
 // scroll area, the cells from `min_cell` to `max_cell` (column + row * 128),
-// as check_if_point_beyond_scroll_limit without its margin.
-bool beyond_scroll_limit(Point p, uint16_t min_cell, uint16_t max_cell);
+// widened by `margin` cells on every side, as
+// check_if_point_beyond_scroll_limit (its margin is 10 cells or none).
+bool beyond_scroll_limit(Point p, uint16_t min_cell, uint16_t max_cell, int margin = 0);
 
 } // namespace th

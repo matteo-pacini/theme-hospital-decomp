@@ -6,13 +6,17 @@
 #include "core/render/iso.h"
 #include "core/render/surface.h"
 #include "core/render/view.h"
+#include "core/ui/charts.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
+#include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/object_tables.h"
+#include "core/world/reaper.h"
 #include "core/world/reputation.h"
+#include "core/world/rooms.h"
 #include "core/world/world.h"
 
 #include <algorithm>
@@ -155,27 +159,83 @@ void test_set_complex()
 namespace
 {
 
-// Runs patient `id` and the level's objects for up to `limit` turns from
-// turn `turn` until the patient is gone. Returns the turns run; `opened`
-// tells whether an entrance door started opening.
-int run_patient(th::World &w, const th::AnimData &anims, const th::PersonComplexes &cx, uint16_t id, uint32_t &turn,
-                int limit, bool &consistent, bool &opened)
-{
+// What run_patient saw: the turns run, whether the map's cell lists stayed
+// consistent, and whether an entrance door started opening.
+struct PatientRun {
     int turns = 0;
+    bool consistent = true;
+    bool opened = false;
+};
+
+// Runs patient `id` and the level's objects for up to `limit` turns from
+// turn `turn` until the patient is gone.
+PatientRun run_patient(th::World &w, const th::AnimData &anims, const th::PersonComplexes &cx, uint16_t id,
+                       uint32_t &turn, int limit)
+{
+    PatientRun run;
     bool exists = true;
-    while (exists && turns < limit) {
+    while (exists && run.turns < limit) {
         turn++;
-        turns++;
+        run.turns++;
         for (uint16_t i = 1; i < w.things.size(); i++) {
             if (i == id)
                 exists = th::person_turn(w, anims, cx, i, turn);
             else if (w.things[i].type == th::kThingObject)
                 th::sliding_door_turn(w, anims, i, turn);
-            opened |= w.things[i].type == th::kThingObject && w.things[i].state == 0x16;
+            run.opened |= w.things[i].type == th::kThingObject && w.things[i].state == 0x16;
         }
-        consistent &= cell_lists_consistent(w);
+        run.consistent &= cell_lists_consistent(w);
     }
-    return turns;
+    return run;
+}
+
+// Where a patient starts on level 1, and how its walk off the map goes.
+struct LeaveStart {
+    int x, y;
+    int turns;
+    bool opens;
+};
+
+// Puts a patient at `s` and sends it off the map through `entrance`,
+// checking its walk.
+void check_patient_leaves(th::World &w, const th::AnimData &anims, const th::PersonComplexes &cx, const LeaveStart &s,
+                          int entrance, uint32_t &turn)
+{
+    uint16_t id = 3; // after the two parts of the entrance door
+    CHECK(w.things[id].type == th::kThingFree);
+    th::Thing &p = w.things[id];
+    p.type = th::kThingPatient;
+    p.speed = 0x20;
+    p.anim_speed = 1;
+    p.x = {0x80, uint8_t(s.x)};
+    p.y = {0x80, uint8_t(s.y)};
+    th::insert_node(w, id, p.x, p.y);
+    th::play_frame(p, anims, th::kPatientAnims[0].walk);
+    th::start_person_going(w, anims, cx, id, turn);
+    CHECK(p.state == th::kPsGotoDestination && p.complex_pc == 21);
+    CHECK(p.dest_x + p.dest_y * th::kMapSize == entrance);
+    const PatientRun run = run_patient(w, anims, cx, id, turn, 5000);
+    CHECK(run.consistent);
+    CHECK(w.things[id].type == th::kThingFree);
+    CHECK(w.map[size_t(entrance)].first == 0);
+    CHECK(run.opened == s.opens);
+    std::printf("patient from %d,%d left in %d turns, doors %s\n", s.x, s.y, run.turns,
+                run.opened ? "opened" : "closed");
+    CHECK(run.turns == s.turns);
+}
+
+// The doors close again 50 turns after the patient has passed.
+void check_doors_close(th::World &w, const th::AnimData &anims, uint32_t &turn)
+{
+    for (int i = 0; i < 100; i++) {
+        turn++;
+        th::sliding_door_turn(w, anims, 1, turn);
+        th::sliding_door_turn(w, anims, 2, turn);
+    }
+    for (uint16_t door : {1, 2}) {
+        const th::Thing &d = w.things[door];
+        CHECK(d.state == 0x14 && d.sprite == anims.starts[th::kObjects[d.subtype].anim_start + d.facing].frame);
+    }
 }
 
 } // namespace
@@ -204,53 +264,16 @@ void test_patient_leaves_level1(const char *dir)
         th::start_level(*w, *level, anims);
         th::start_entrance_rooms(*w, *level);
         int entrance = level->entrances[0][0];
-        struct Start {
-            int x, y;
-            int turns;
-            bool opens;
-        };
         // The second walk crosses indoor cells, where the patient's needs and
         // reactions draw from the generator: a regression value.
-        const Start starts[] = {
+        const LeaveStart starts[] = {
             {entrance % th::kMapSize, entrance / th::kMapSize, 2, false},
             {64, 76, 314, true},
         };
         uint32_t turn = 1;
-        for (const Start &s : starts) {
-            uint16_t id = 3; // after the two parts of the entrance door
-            CHECK(w->things[id].type == th::kThingFree);
-            th::Thing &p = w->things[id];
-            p.type = th::kThingPatient;
-            p.speed = 0x20;
-            p.anim_speed = 1;
-            p.x = {0x80, uint8_t(s.x)};
-            p.y = {0x80, uint8_t(s.y)};
-            th::insert_node(*w, id, p.x, p.y);
-            th::play_frame(p, anims, th::kPatientAnims[0].walk);
-            th::start_person_going(*w, anims, cx, id, turn);
-            CHECK(p.state == th::kPsGotoDestination && p.complex_pc == 21);
-            CHECK(p.dest_x + p.dest_y * th::kMapSize == entrance);
-            bool consistent = true;
-            bool opened = false;
-            int turns = run_patient(*w, anims, cx, id, turn, 5000, consistent, opened);
-            CHECK(consistent);
-            CHECK(w->things[id].type == th::kThingFree);
-            CHECK(w->map[size_t(entrance)].first == 0);
-            CHECK(opened == s.opens);
-            std::printf("patient from %d,%d left in %d turns, doors %s\n", s.x, s.y, turns,
-                        opened ? "opened" : "closed");
-            CHECK(turns == s.turns);
-        }
-        // The doors close again 50 turns after the patient has passed.
-        for (int i = 0; i < 100; i++) {
-            turn++;
-            th::sliding_door_turn(*w, anims, 1, turn);
-            th::sliding_door_turn(*w, anims, 2, turn);
-        }
-        for (uint16_t door : {1, 2}) {
-            const th::Thing &d = w->things[door];
-            CHECK(d.state == 0x14 && d.sprite == anims.starts[th::kObjects[d.subtype].anim_start + d.facing].frame);
-        }
+        for (const LeaveStart &s : starts)
+            check_patient_leaves(*w, anims, cx, s, entrance, turn);
+        check_doors_close(*w, anims, turn);
         std::printf("seed %#x\n", unsigned(w->seed));
         CHECK(w->seed == 0xd8255b23);
     }
@@ -277,6 +300,92 @@ std::vector<int> indoor_cells(const th::World &w, const th::Level &level, size_t
     return cells;
 }
 
+// The view centred on a cell, and how a world draws in it.
+struct CellView {
+    const th::GameData &gd;
+    th::Point camera;
+    th::Rect view{0, 0, 640, 480};
+    th::Surface clean, drawn, scratch;
+
+    // Draws `world` as it is for the comparison.
+    CellView(const th::GameData &data, const th::World &world, int cell) : gd(data)
+    {
+        th::Point p = th::cell_to_world(cell % th::kMapSize, cell / th::kMapSize);
+        camera = {p.x - 320, p.y - 240};
+        clean.resize(640, 480);
+        drawn.resize(640, 480);
+        scratch.resize(640, 480);
+        scratch.fill(th::kMaskColour);
+        th::draw_world({clean, view, camera}, world, gd, nullptr, scratch);
+    }
+
+    // Whether `w` draws otherwise than the world it was made with, leaving
+    // the scratch surface clean.
+    bool differs(const th::World &w)
+    {
+        th::draw_world({drawn, view, camera}, w, gd, nullptr, scratch);
+        bool scratch_clean =
+            std::all_of(scratch.data(), scratch.data() + 640 * 480, [](uint8_t c) { return c == th::kMaskColour; });
+        return scratch_clean && !std::equal(drawn.data(), drawn.data() + 640 * 480, clean.data());
+    }
+};
+
+// Every kind of litter on `cell` draws, also behind a wall; place_litter and
+// remove_litter keep a rat hole and replace the rest by priority.
+void check_litter_drawn(CellView &v, const th::World &world, int cell)
+{
+    auto litter = std::make_unique<th::World>(world);
+    for (int kind : {1, 2, 3, int(th::kLitterVomit), int(th::kLitterPuddle), 7}) {
+        litter->map[size_t(cell)].litter_shadow = uint8_t(kind);
+        CHECK(v.differs(*litter));
+        litter->map[size_t(cell)].flags |= 0x10;
+        CHECK(v.differs(*litter));
+        litter->map[size_t(cell)].flags &= uint8_t(~0x10);
+    }
+    th::place_litter(*litter, uint16_t(cell), 0, 1);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 7);
+    th::remove_litter(*litter, uint16_t(cell), 0);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 7);
+    litter->map[size_t(cell)].litter_shadow = 0;
+    CHECK(!v.differs(*litter));
+    th::place_litter(*litter, uint16_t(cell), 0, 2);
+    th::place_litter(*litter, uint16_t(cell), 0, 3);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 2);
+    th::place_litter(*litter, uint16_t(cell), 0, th::kLitterVomit);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == th::kLitterVomit);
+    th::place_litter(*litter, uint16_t(cell), 1, 1); // not player 1's land
+    th::remove_litter(*litter, uint16_t(cell), 0);
+    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 0);
+}
+
+// Runs `patients`' needs for 5000 turns, moving each to the next of `cells`
+// every 50 turns and giving each a drink's litter urge every 400. Returns
+// the reactions.
+int run_patient_needs(HireFixture &f, const std::vector<uint16_t> &patients, const std::vector<int> &cells)
+{
+    th::World &w = f.game->world;
+    const th::AnimData &anims = f.gd.anims();
+    int reactions = 0;
+    for (int turn = 1; turn <= 5000; turn++) {
+        f.game->turn_count++;
+        for (size_t i = 0; i < patients.size(); i++) {
+            uint16_t id = patients[i];
+            th::Thing &p = w.things[id];
+            if (turn % 400 == 0)
+                th::add_litter_urge(p, 10);
+            if (turn % 50 == 0 && p.state != th::kPsShowanim) {
+                int cell = cells[(i * 32 + size_t(turn / 50)) % cells.size()];
+                th::move_node(w, id, {0x80, uint8_t(cell % th::kMapSize)}, {0x80, uint8_t(cell / th::kMapSize)});
+            }
+            if (p.state == th::kPsShowanim)
+                th::person_showanim_turn(w, anims, id, f.game->turn_count);
+            else if (th::person_needs_turn(w, anims, f.settings, th::kStartHeatingLevel, id, f.game->turn_count))
+                reactions++;
+        }
+    }
+    return reactions;
+}
+
 } // namespace
 
 // With the game data: litter, vomit and the cell overlays are drawn on an
@@ -297,51 +406,15 @@ void test_litter_drawn(const char *dir)
     CHECK(cells.size() == 1);
     if (cells.empty())
         return;
-    int cell = cells[0];
-    th::Point p = th::cell_to_world(cell % th::kMapSize, cell / th::kMapSize);
-    th::Point camera{p.x - 320, p.y - 240};
-    th::Rect view{0, 0, 640, 480};
-    th::Surface clean, drawn, scratch;
-    clean.resize(640, 480);
-    drawn.resize(640, 480);
-    scratch.resize(640, 480);
-    scratch.fill(th::kMaskColour);
-    th::draw_world(clean, view, camera, *world, gd, nullptr, scratch);
-    auto differs = [&](const th::World &w) {
-        th::draw_world(drawn, view, camera, w, gd, nullptr, scratch);
-        bool scratch_clean =
-            std::all_of(scratch.data(), scratch.data() + 640 * 480, [](uint8_t c) { return c == th::kMaskColour; });
-        return scratch_clean && !std::equal(drawn.data(), drawn.data() + 640 * 480, clean.data());
-    };
-    auto litter = std::make_unique<th::World>(*world);
-    for (int kind : {1, 2, 3, int(th::kLitterVomit), int(th::kLitterPuddle), 7}) {
-        litter->map[size_t(cell)].litter_shadow = uint8_t(kind);
-        CHECK(differs(*litter));
-        litter->map[size_t(cell)].flags |= 0x10;
-        CHECK(differs(*litter));
-        litter->map[size_t(cell)].flags &= uint8_t(~0x10);
-    }
-    th::place_litter(*litter, uint16_t(cell), 0, 1);
-    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 7);
-    th::remove_litter(*litter, uint16_t(cell), 0);
-    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 7);
-    litter->map[size_t(cell)].litter_shadow = 0;
-    CHECK(!differs(*litter));
-    th::place_litter(*litter, uint16_t(cell), 0, 2);
-    th::place_litter(*litter, uint16_t(cell), 0, 3);
-    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 2);
-    th::place_litter(*litter, uint16_t(cell), 0, th::kLitterVomit);
-    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == th::kLitterVomit);
-    th::place_litter(*litter, uint16_t(cell), 1, 1); // not player 1's land
-    th::remove_litter(*litter, uint16_t(cell), 0);
-    CHECK((litter->map[size_t(cell)].litter_shadow & 0xf) == 0);
-
+    const int cell = cells[0];
+    CellView v(gd, *world, cell);
+    check_litter_drawn(v, *world, cell);
     auto overlay = std::make_unique<th::World>(*world);
     for (int bits : {0x40, 0x80, 0xc0}) {
         overlay->map[size_t(cell)].flags = uint8_t(bits);
-        CHECK(differs(*overlay));
+        CHECK(v.differs(*overlay));
         overlay->map[size_t(cell)].flags = uint8_t(bits | 0x10);
-        CHECK(differs(*overlay));
+        CHECK(v.differs(*overlay));
     }
 }
 
@@ -358,7 +431,6 @@ void test_litter_dropping_level1(const char *dir)
     if (!f.level)
         return;
     th::World &w = f.game->world;
-    const th::AnimData &anims = f.gd.anims();
     std::vector<int> cells = indoor_cells(w, *f.level, 256);
     CHECK(cells.size() == 256);
     std::vector<uint16_t> patients;
@@ -373,24 +445,7 @@ void test_litter_dropping_level1(const char *dir)
     uint16_t urge = first.litter_urge;
     th::add_litter_urge(first, 10);
     CHECK(first.litter_urge == urge + 10);
-    int reactions = 0;
-    for (int turn = 1; turn <= 5000; turn++) {
-        f.game->turn_count++;
-        for (size_t i = 0; i < patients.size(); i++) {
-            uint16_t id = patients[i];
-            th::Thing &p = w.things[id];
-            if (turn % 400 == 0)
-                th::add_litter_urge(p, 10);
-            if (turn % 50 == 0 && p.state != th::kPsShowanim) {
-                int cell = cells[(i * 32 + size_t(turn / 50)) % cells.size()];
-                th::move_node(w, id, {0x80, uint8_t(cell % th::kMapSize)}, {0x80, uint8_t(cell / th::kMapSize)});
-            }
-            if (p.state == th::kPsShowanim)
-                th::person_showanim_turn(w, anims, id, f.game->turn_count);
-            else if (th::person_needs_turn(w, anims, f.settings, th::kStartHeatingLevel, id, f.game->turn_count))
-                reactions++;
-        }
-    }
+    const int reactions = run_patient_needs(f, patients, cells);
     int litter = 0, vomit = 0, puddles = 0;
     for (const th::MapCell &c : w.map) {
         uint8_t kind = c.litter_shadow & 0xf;
@@ -437,4 +492,97 @@ void test_reputation_go_home(const char *dir)
     th::person_go_home(w, f.gd.anims(), f.gd.person_complexes(), second, f.game->turn_count);
     CHECK(hosp.rep_events[illness] == 22 && hosp.reputation[illness] == 454 && hosp.hospital_reputation == 454);
     CHECK(hosp.reputation[illness + 1] == 500);
+}
+
+namespace
+{
+
+// What happened to a dying patient: whether it fell dead, was taken (by
+// floating away or through the gates of hell), and was removed with any
+// reaper and gates.
+struct DeathRun {
+    bool dead = false;
+    bool taken = false;
+    bool gone = false;
+};
+
+// Runs the patients, any reaper and any gates of hell until dying patient
+// `id` is removed with them, at most 5000 turns.
+DeathRun run_until_removed(th::World &w, const th::AnimData &anims, const th::PersonComplexes &cx, uint16_t id)
+{
+    DeathRun run;
+    for (uint32_t turn = 2; turn < 5000 && !run.gone; turn++) {
+        for (uint16_t i = 1; i < w.things.size(); i++) {
+            th::Thing &t = w.things[i];
+            if (t.type == th::kThingPatient) {
+                run.dead |= t.state == th::kPsDead;
+                run.taken |= t.state == th::kPsFlys || t.state == th::kPsAtHellGate;
+                th::person_turn(w, anims, cx, i, turn);
+            } else if (t.type == th::kThingReaper) {
+                th::reaper_turn(w, anims, i, turn);
+            } else if (t.type == th::kThingObject && t.state == th::kObjectHell) {
+                th::object_hell(w, anims, i, turn);
+            }
+        }
+        run.gone =
+            w.things[id].type == th::kThingFree &&
+            std::none_of(w.things.begin(), w.things.end(), [](const th::Thing &t) {
+                return t.type == th::kThingReaper || (t.type == th::kThingObject && t.subtype == th::kObjGatesOfHell);
+            });
+    }
+    return run;
+}
+
+} // namespace
+
+// With the game data, a patient in the lobby whose health runs out
+// (change_health) dies (person_dies): counted as a death of its illness and
+// of the hospital, it walks to a free cell and falls (PS_DEAD), then floats
+// away (PS_FLYS) or the grim reaper takes it into the gates of hell, and is
+// removed; any gates are removed too.
+void test_patient_dies_level1(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    th::PersonComplexes cx;
+    CHECK(th::load_person_complexes(dir, cx, &error));
+    auto level = gd.load_level(1, &error);
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    const th::AnimData &anims = gd.anims();
+    auto w = std::make_unique<th::World>();
+    th::start_level(*w, *level, anims);
+    th::start_entrance_rooms(*w, *level);
+    th::HospitalSettings hospital;
+    th::Finance finance;
+    w->hospital = &hospital;
+    w->ledger = &finance;
+    w->person_complexes = &cx;
+    w->path_finder = th::PathFinder::Original;
+    const uint16_t id = 3;
+    th::Thing &p = w->things[id];
+    p.type = th::kThingPatient;
+    p.illness = 16;
+    p.health = 5;
+    p.speed = 0x20;
+    p.anim_speed = 1;
+    p.x = {0x80, 64};
+    p.y = {0x80, 72};
+    th::insert_node(*w, id, p.x, p.y);
+    th::play_frame(p, anims, th::kPatientAnims[0].stand);
+    th::change_health(*w, anims, id, -2, 1);
+    CHECK(p.health == 3 && finance.deaths == 0);
+    th::change_health(*w, anims, id, -10, 1);
+    CHECK(p.health == 0 && (p.person_flags & th::kPfDying) && p.complex_action == 0x6e);
+    CHECK(finance.deaths == 1 && finance.deaths_this_month == 1 && hospital.illnesses[16].deaths == 1);
+    const DeathRun run = run_until_removed(*w, anims, cx, id);
+    CHECK(run.dead && run.taken && run.gone);
+    // The dead do not change.
+    th::Thing corpse;
+    corpse.type = th::kThingPatient;
+    w->things[id] = corpse;
+    th::change_health(*w, anims, id, 100, 1);
+    CHECK(w->things[id].health == 0);
 }

@@ -1,6 +1,7 @@
 #include "core/render/text.h"
 
 #include "core/render/blit.h"
+#include "core/render/iso.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -12,10 +13,12 @@ namespace th
 namespace
 {
 
-// The drawing state LbTextDraw keeps in lbDisplay, which control bytes change.
+// The drawing state LbTextDraw keeps in lbDisplay: the flags and colour, which
+// control bytes change, and the ghost table.
 struct TextState {
     unsigned flags;
     uint8_t colour;
+    const uint8_t *ghost;
 };
 
 constexpr unsigned kSpriteFlags = kDrawFlipX | kDrawFlipY | kDrawGhost | kDrawGhostUnder;
@@ -51,11 +54,45 @@ void hline(Surface &dst, int x1, int x2, int y, uint8_t colour)
         dst.row(y)[x] = colour;
 }
 
-// put_down_sprites: draws `line` with its top-left at (x, y), spaces
-// `space_len` wide.
-void put_down_sprites(Surface &dst, const Font &font, std::string_view line, int x, int y, int space_len,
-                      TextState &state, const uint8_t *ghost)
+// put_down_sprites' control bytes: toggles a drawing flag, or for 14 takes
+// the next byte as the colour (advancing `i` past it).
+void put_down_control(uint8_t c, std::string_view line, size_t &i, TextState &state)
 {
+    switch (c) {
+    case 1:
+        state.flags ^= 0x04;
+        break;
+    case 2:
+        state.flags ^= 0x08;
+        break;
+    case 3:
+        state.flags ^= 0x10;
+        break;
+    case 4:
+        state.flags ^= 0x01;
+        break;
+    case 5:
+        state.flags ^= 0x02;
+        break;
+    case 11:
+        state.flags ^= kTextUnderline;
+        break;
+    case 12:
+        state.flags ^= kTextOneColour;
+        break;
+    case 14:
+        if (i + 1 < line.size())
+            state.colour = uint8_t(line[++i]);
+        break;
+    }
+}
+
+// put_down_sprites: draws `line` with its top-left at `at`, spaces
+// `space_len` wide.
+void put_down_sprites(Surface &dst, const Font &font, std::string_view line, Point at, int space_len, TextState &state)
+{
+    int x = at.x;
+    const int y = at.y;
     int underline_y = y + font.line_height();
     for (size_t i = 0; i < line.size(); i++) {
         uint8_t c = uint8_t(line[i]);
@@ -64,7 +101,7 @@ void put_down_sprites(Surface &dst, const Font &font, std::string_view line, int
             if (state.flags & kTextOneColour)
                 draw_sprite_one_colour(dst, x, y, glyph, state.colour);
             else
-                draw_sprite(dst, x, y, glyph, state.flags & kSpriteFlags, ghost);
+                draw_sprite(dst, x, y, glyph, state.flags & kSpriteFlags, state.ghost);
             if (state.flags & kTextUnderline)
                 hline(dst, x, x + glyph.width, underline_y, state.colour);
             x += glyph.width;
@@ -74,33 +111,7 @@ void put_down_sprites(Surface &dst, const Font &font, std::string_view line, int
                 hline(dst, x, x + advance, underline_y, state.colour);
             x += advance;
         } else {
-            switch (c) {
-            case 1:
-                state.flags ^= 0x04;
-                break;
-            case 2:
-                state.flags ^= 0x08;
-                break;
-            case 3:
-                state.flags ^= 0x10;
-                break;
-            case 4:
-                state.flags ^= 0x01;
-                break;
-            case 5:
-                state.flags ^= 0x02;
-                break;
-            case 11:
-                state.flags ^= kTextUnderline;
-                break;
-            case 12:
-                state.flags ^= kTextOneColour;
-                break;
-            case 14:
-                if (i + 1 < line.size())
-                    state.colour = uint8_t(line[++i]);
-                break;
-            }
+            put_down_control(c, line, i, state);
         }
     }
 }
@@ -121,97 +132,146 @@ Rect text_clip(Rect clip, int width, int height)
     return {x1, y1, x2 - x1, y2 - y1};
 }
 
+// LbTextDraw's layout pass: walks the text, measuring and breaking lines,
+// and hands each finished line to put_down_sprites.
+class TextLayout
+{
+  public:
+    // `at` is relative to settings.window; `cw` is the clip window drawn in.
+    TextLayout(Surface &dst, const Font &font, std::string_view text, const TextSettings &settings, Rect cw, Point at)
+        : dst_(dst), font_(font), text_(text), window_(settings.window), cw_(cw),
+          state_{settings.flags, settings.colour, settings.ghost}, space_(font.space_width()),
+          line_height_(font.line_height()), dx_(window_.x - cw.x), x_(at.x + dx_), y_(at.y + (window_.y - cw.y)),
+          start_x_(x_)
+    {
+    }
+
+    void run()
+    {
+        size_t i = 0;
+        for (; i < text_.size() && text_[i]; i++) {
+            uint8_t c = uint8_t(text_[i]);
+            if (c > 32)
+                x_ += font_.glyph(c).width;
+            else if (c == ' ' || c == '\t')
+                space(i, c);
+            else if (c == '\n')
+                newline(i);
+            else if (c >= 6 && c <= 9)
+                toggle(i, c);
+            else if (c == 14 && i + 1 < text_.size())
+                i++;
+        }
+        put(i, aligned_x(), space_);
+    }
+
+  private:
+    void put(size_t end, int at_x, int space_len)
+    {
+        put_down_sprites(dst_, font_, text_.substr(begin_, end - begin_), {cw_.x + at_x, cw_.y + y_}, space_len,
+                         state_);
+    }
+
+    // Where a line ending at x starts, for a hard break or the end of text.
+    int aligned_x() const
+    {
+        if (state_.flags & kTextWrap)
+            return start_x_;
+        if (state_.flags & kTextRight)
+            return start_x_ + (window_.width - (x_ - dx_));
+        if (state_.flags & kTextCentre)
+            return start_x_ + (window_.width - (x_ - dx_)) / 2;
+        return start_x_;
+    }
+
+    // A space or tab at `i`: the line breaks there when the next word would
+    // not fit and a wrapping or aligning mode is on.
+    void space(size_t i, uint8_t c)
+    {
+        int advance = c == ' ' ? space_ : space_ * kSpacesPerTab;
+        x_ += advance;
+        if ((x_ - dx_) + word_width(font_, text_, i + 1) <= window_.width) {
+            count_ = int16_t(count_ + (c == ' ' ? 1 : kSpacesPerTab));
+            return;
+        }
+        if (state_.flags & (kTextWrap | kTextRight | kTextCentre | kTextJustify))
+            break_line(i, advance);
+        count_ = 0;
+    }
+
+    void break_line(size_t i, int advance)
+    {
+        int space_width = space_;
+        int line_x = start_x_;
+        if (!(state_.flags & kTextWrap)) {
+            if (state_.flags & kTextRight) {
+                line_x = start_x_ + (window_.width - (x_ - advance - dx_));
+            } else if (state_.flags & kTextCentre) {
+                line_x = start_x_ + (window_.width - (x_ - advance - dx_)) / 2;
+            } else if (count_ > 0) {
+                // A tab's line is measured less one space, not one tab, and
+                // the division is unsigned, as in the game.
+                space_width += int(uint32_t(window_.width - (x_ - space_ - dx_)) / uint32_t(count_));
+            }
+        }
+        put(i, line_x, space_width);
+        begin_ = i + 1;
+        x_ = start_x_;
+        y_ += line_height_;
+    }
+
+    void newline(size_t i)
+    {
+        put(i, aligned_x(), space_);
+        begin_ = i;
+        x_ = start_x_;
+        y_ += line_height_;
+        count_ = 0;
+    }
+
+    // Control bytes 6-9 toggle wrap, right, centre and justify, first
+    // breaking the line if it has overrun the window.
+    void toggle(size_t i, uint8_t c)
+    {
+        if (x_ - dx_ > window_.width) {
+            x_ = start_x_;
+            put(i, x_, space_);
+            begin_ = i;
+            y_ += line_height_;
+            count_ = 0;
+        }
+        static constexpr unsigned kToggles[] = {kTextWrap, kTextRight, kTextCentre, kTextJustify};
+        state_.flags ^= kToggles[c - 6];
+    }
+
+    Surface &dst_;
+    const Font &font_;
+    std::string_view text_;
+    const TextWindow &window_;
+    Rect cw_;
+    TextState state_;
+    int space_;
+    int line_height_;
+    int dx_;
+    int x_;
+    int y_;
+    int start_x_;
+    size_t begin_ = 0;
+    int16_t count_ = 0;
+};
+
 } // namespace
 
-void draw_text(Surface &dst, const Font &font, TextWindow window, int x, int y, std::string_view text, unsigned flags,
-               Rect clip, uint8_t colour, const uint8_t *ghost)
+void draw_text(Surface &dst, const Font &font, int x, int y, std::string_view text, const TextSettings &settings)
 {
     if (font.empty())
         return;
     const Rect saved_clip = dst.clip();
     // Coordinates below are relative to the clip window, the graphics window
     // LbTextDraw draws in, as the original's are.
-    const Rect cw = text_clip(clip, dst.width(), dst.height());
+    const Rect cw = text_clip(settings.clip, dst.width(), dst.height());
     dst.set_clip(cw);
-
-    TextState state{flags, colour};
-    const int space = font.space_width();
-    const int line_height = font.line_height();
-    const int dx = window.x - cw.x;
-    const int dy = window.y - cw.y;
-    x += dx;
-    y += dy;
-    const int start_x = x;
-    size_t begin = 0;
-    int16_t count = 0;
-
-    auto put = [&](size_t end, int at_x, int space_len) {
-        put_down_sprites(dst, font, text.substr(begin, end - begin), cw.x + at_x, cw.y + y, space_len, state, ghost);
-    };
-    // Where a line ending at x starts, for a hard break or the end of text.
-    auto aligned_x = [&] {
-        if (state.flags & kTextWrap)
-            return start_x;
-        if (state.flags & kTextRight)
-            return start_x + (window.width - (x - dx));
-        if (state.flags & kTextCentre)
-            return start_x + (window.width - (x - dx)) / 2;
-        return start_x;
-    };
-
-    size_t i = 0;
-    for (; i < text.size() && text[i]; i++) {
-        uint8_t c = uint8_t(text[i]);
-        if (c > 32) {
-            x += font.glyph(c).width;
-        } else if (c == ' ' || c == '\t') {
-            int advance = c == ' ' ? space : space * kSpacesPerTab;
-            x += advance;
-            if ((x - dx) + word_width(font, text, i + 1) <= window.width) {
-                count = int16_t(count + (c == ' ' ? 1 : kSpacesPerTab));
-                continue;
-            }
-            int space_width = space;
-            if (state.flags & (kTextWrap | kTextRight | kTextCentre | kTextJustify)) {
-                int line_x = start_x;
-                if (!(state.flags & kTextWrap)) {
-                    if (state.flags & kTextRight) {
-                        line_x = start_x + (window.width - (x - advance - dx));
-                    } else if (state.flags & kTextCentre) {
-                        line_x = start_x + (window.width - (x - advance - dx)) / 2;
-                    } else if (count > 0) {
-                        // A tab's line is measured less one space, not one
-                        // tab, and the division is unsigned, as in the game.
-                        space_width += int(uint32_t(window.width - (x - space - dx)) / uint32_t(count));
-                    }
-                }
-                put(i, line_x, space_width);
-                begin = i + 1;
-                x = start_x;
-                y += line_height;
-            }
-            count = 0;
-        } else if (c == '\n') {
-            put(i, aligned_x(), space);
-            begin = i;
-            x = start_x;
-            y += line_height;
-            count = 0;
-        } else if (c >= 6 && c <= 9) {
-            if (x - dx > window.width) {
-                x = start_x;
-                put(i, x, space);
-                begin = i;
-                y += line_height;
-                count = 0;
-            }
-            static constexpr unsigned kToggles[] = {kTextWrap, kTextRight, kTextCentre, kTextJustify};
-            state.flags ^= kToggles[c - 6];
-        } else if (c == 14 && i + 1 < text.size()) {
-            i++;
-        }
-    }
-    put(i, aligned_x(), space);
+    TextLayout(dst, font, text, settings, cw, {x, y}).run();
     dst.set_clip(saved_clip);
 }
 

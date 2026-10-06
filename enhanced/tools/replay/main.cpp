@@ -179,7 +179,7 @@ bool render(const th::Game &game, const th::GameData &data, const std::string &p
     view.fill(0);
     scratch.resize(width, height);
     scratch.fill(th::kMaskColour);
-    th::draw_world(view, {0, 0, width, height}, camera, game.world, data, &shadows, scratch);
+    th::draw_world({view, {0, 0, width, height}, camera}, game.world, data, &shadows, scratch);
     std::vector<uint8_t> rgb;
     rgb.reserve(size_t(width) * size_t(height) * 3);
     for (size_t i = 0; i < size_t(width) * size_t(height); i++) {
@@ -197,10 +197,8 @@ bool render(const th::Game &game, const th::GameData &data, const std::string &p
     return bool(out);
 }
 
-} // namespace
-
-int main(int argc, char **argv)
-{
+// The command line's options.
+struct Options {
 #ifdef TH_DEV_DATA_DIR
     std::string data_dir = TH_DEV_DATA_DIR;
 #else
@@ -220,104 +218,196 @@ int main(int argc, char **argv)
     bool camera_given = false;
     th::Point camera{};
     int width = 1280, height = 720;
+};
+
+// Takes `value` for `flag` when it is one of the options whose value is a
+// path or kept as text; false for any other flag.
+bool take_text_option(Options &o, const char *flag, const char *value)
+{
+    if (!std::strcmp(flag, "--data"))
+        o.data_dir = value;
+    else if (!std::strcmp(flag, "--turns"))
+        o.turns_arg = value;
+    else if (!std::strcmp(flag, "--script"))
+        o.script_path = value;
+    else if (!std::strcmp(flag, "--out"))
+        o.out_path = value;
+    else if (!std::strcmp(flag, "--load"))
+        o.load_path = value;
+    else if (!std::strcmp(flag, "--dump"))
+        o.dump_path = value;
+    else if (!std::strcmp(flag, "--render"))
+        o.render_path = value;
+    else
+        return false;
+    return true;
+}
+
+// Reads the command line into `o`; false when it is not a valid one.
+bool parse_args(int argc, char **argv, Options &o)
+{
     for (int i = 1; i < argc; i++) {
         bool has_value = i + 1 < argc;
-        if (!std::strcmp(argv[i], "--data") && has_value) {
-            data_dir = argv[++i];
+        if (has_value && take_text_option(o, argv[i], argv[i + 1])) {
+            i++;
         } else if (!std::strcmp(argv[i], "--level") && has_value) {
-            level_number = std::atoi(argv[++i]);
-            level_given = true;
-        } else if (!std::strcmp(argv[i], "--turns") && has_value) {
-            turns_arg = argv[++i];
-        } else if (!std::strcmp(argv[i], "--script") && has_value) {
-            script_path = argv[++i];
-        } else if (!std::strcmp(argv[i], "--out") && has_value) {
-            out_path = argv[++i];
-        } else if (!std::strcmp(argv[i], "--load") && has_value) {
-            load_path = argv[++i];
-        } else if (!std::strcmp(argv[i], "--dump") && has_value) {
-            dump_path = argv[++i];
+            o.level_number = std::atoi(argv[++i]);
+            o.level_given = true;
         } else if (!std::strcmp(argv[i], "--focus") && has_value) {
-            focus = std::atoi(argv[++i]);
-        } else if (!std::strcmp(argv[i], "--render") && has_value) {
-            render_path = argv[++i];
+            o.focus = std::atoi(argv[++i]);
         } else if (!std::strcmp(argv[i], "--camera") && has_value) {
-            if (std::sscanf(argv[++i], "%d,%d", &camera.x, &camera.y) != 2)
-                return usage();
-            camera_given = true;
+            if (std::sscanf(argv[++i], "%d,%d", &o.camera.x, &o.camera.y) != 2)
+                return false;
+            o.camera_given = true;
         } else if (!std::strcmp(argv[i], "--size") && has_value) {
-            if (std::sscanf(argv[++i], "%dx%d", &width, &height) != 2 || width <= 0 || height <= 0)
-                return usage();
+            if (std::sscanf(argv[++i], "%dx%d", &o.width, &o.height) != 2 || o.width <= 0 || o.height <= 0)
+                return false;
         } else if (!std::strcmp(argv[i], "--astar")) {
-            astar = true;
+            o.astar = true;
         } else if (!std::strcmp(argv[i], "--rand")) {
-            rand = true;
+            o.rand = true;
         } else {
-            return usage();
+            return false;
         }
     }
+    return true;
+}
+
+// Loads the game from the snapshot --load, moving the script's turns to
+// count from it. Reports what went wrong on standard error.
+bool load_from_snapshot(th::Game &game, Options &o, const th::GameData &data, std::vector<ScriptLine> &script)
+{
+    std::string error;
+    std::ifstream in(o.load_path, std::ios::binary);
+    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    if (!in && !in.eof()) {
+        std::perror(o.load_path);
+        return false;
+    }
+    if (!th::load_snapshot(game, bytes, data, &error)) {
+        std::fprintf(stderr, "%s: %s\n", o.load_path, error.c_str());
+        return false;
+    }
+    if (o.level_given && o.level_number != game.level_number()) {
+        std::fprintf(stderr, "%s is of level %d, not %d\n", o.load_path, game.level_number(), o.level_number);
+        return false;
+    }
+    o.level_number = game.level_number();
+    for (ScriptLine &line : script)
+        line.turn += game.turn_count;
+    return true;
+}
+
+// Starts the game at level --level's start. Reports what went wrong on
+// standard error.
+bool start_level(th::Game &game, const Options &o, const th::GameData &data)
+{
+    std::string error;
+    auto level = data.load_level(o.level_number, &error);
+    th::Balance settings;
+    if (!level || !th::load_balance(data.dir(), o.level_number, th::kDefaultBalanceId, settings, &error)) {
+        std::fprintf(stderr, "%s\n", error.c_str());
+        return false;
+    }
+    // As the app's begin_level and load_level: the game's start with no
+    // tutorial and the wall shadows; the insurers' clock draw does not
+    // touch the seed.
+    game.staff_market.ref_counts = th::reference_counts(data.text());
+    game.start(*level, o.level_number, settings, data.anims(), data.person_complexes(), data.staff_complexes());
+    th::add_static_shadows(game.world.map);
+    th::start_advisor(game.advisor, false);
+    th::start_hospital_settings(game.hospital, game.settings());
+    th::setup_insurances(game.world, 0);
+    game.world.path_finder = o.astar ? th::PathFinder::AStar : th::PathFinder::Original;
+    return true;
+}
+
+// Runs turns up to `last_turn`, carrying out the script's commands between
+// them and tracing each to `out` (when not null). False, reported on
+// standard error, when a command cannot be carried out.
+bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &script, uint32_t last_turn,
+               std::FILE *out)
+{
+    std::string error;
+    size_t next = 0;
+    while (game.turn_count < last_turn) {
+        for (; next < script.size() && script[next].turn <= game.turn_count + 1; next++) {
+            if (script[next].turn == game.turn_count + 1 && !game.replay_input(script[next].input, &error)) {
+                std::fprintf(stderr, "%s: %s\n", o.script_path, error.c_str());
+                return false;
+            }
+        }
+        if (game.paused) {
+            std::fprintf(stderr, "the script leaves the game paused before turn %u\n", game.turn_count + 1);
+            break;
+        }
+        game.turn();
+        if (out)
+            std::fputs(th::trace_turn(game, &game.events).c_str(), out);
+        game.events.events.clear();
+    }
+    return true;
+}
+
+// Writes --dump and --render at the end of the run. Returns the process
+// exit code.
+int write_results(const th::Game &game, Options &o, const th::GameData &data)
+{
+    if (o.dump_path && !(std::ofstream(o.dump_path) << th::dump_game(game, o.focus))) {
+        std::perror(o.dump_path);
+        return 1;
+    }
+    if (!o.render_path)
+        return 0;
+    if (!o.camera_given) {
+        std::string error;
+        auto level = data.load_level(o.level_number, &error);
+        int start = level ? level->camera_start[0] : 0;
+        th::Point centre = th::cell_to_world(start % th::kMapSize, start / th::kMapSize);
+        o.camera = {centre.x - o.width / 2, centre.y - o.height / 2};
+    }
+    if (!render(game, data, o.render_path, o.camera, o.width, o.height)) {
+        std::perror(o.render_path);
+        return 1;
+    }
+    return 0;
+}
+
+} // namespace
+
+int main(int argc, char **argv)
+{
+    Options o;
+    if (!parse_args(argc, argv, o))
+        return usage();
 
     std::string error;
     std::vector<ScriptLine> script;
-    if (script_path && !read_script(script_path, script, error)) {
+    if (o.script_path && !read_script(o.script_path, script, error)) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 1;
     }
 
     th::GameData data;
-    if (!data.load(data_dir, &error)) {
+    if (!data.load(o.data_dir, &error)) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 1;
     }
 
     auto game = std::make_unique<th::Game>();
-    if (load_path) {
-        std::ifstream in(load_path, std::ios::binary);
-        std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-        if (!in && !in.eof()) {
-            std::perror(load_path);
-            return 1;
-        }
-        if (!th::load_snapshot(*game, bytes, data, &error)) {
-            std::fprintf(stderr, "%s: %s\n", load_path, error.c_str());
-            return 1;
-        }
-        if (level_given && level_number != game->level_number()) {
-            std::fprintf(stderr, "%s is of level %d, not %d\n", load_path, game->level_number(), level_number);
-            return 1;
-        }
-        level_number = game->level_number();
-        for (ScriptLine &line : script)
-            line.turn += game->turn_count;
-    } else {
-        auto level = data.load_level(level_number, &error);
-        th::Balance settings;
-        if (!level || !th::load_balance(data.dir(), level_number, th::kDefaultBalanceId, settings, &error)) {
-            std::fprintf(stderr, "%s\n", error.c_str());
-            return 1;
-        }
-        // As the app's begin_level and load_level: the game's start with no
-        // tutorial and the wall shadows; the insurers' clock draw does not
-        // touch the seed.
-        game->staff_market.ref_counts = th::reference_counts(data.text());
-        game->start(*level, level_number, settings, data.anims(), data.person_complexes(), data.staff_complexes());
-        th::add_static_shadows(game->world.map);
-        th::start_advisor(game->advisor, false);
-        th::start_hospital_settings(game->hospital, game->settings());
-        th::setup_insurances(game->world, 0);
-        game->world.path_finder = astar ? th::PathFinder::AStar : th::PathFinder::Original;
-    }
+    if (o.load_path ? !load_from_snapshot(*game, o, data, script) : !start_level(*game, o, data))
+        return 1;
     game->events.limit = 0;
-    game->events.rand = rand;
+    game->events.rand = o.rand;
     game->events.events.clear();
 
-    uint32_t last_turn = uint32_t(std::atol(turns_arg.c_str() + (turns_arg[0] == '+')));
-    if (turns_arg[0] == '+')
+    uint32_t last_turn = uint32_t(std::atol(o.turns_arg.c_str() + (o.turns_arg[0] == '+')));
+    if (o.turns_arg[0] == '+')
         last_turn += game->turn_count;
 
-    std::FILE *out = out_path ? std::fopen(out_path, "w") : dump_path || render_path ? nullptr : stdout;
-    if (out_path && !out) {
-        std::perror(out_path);
+    std::FILE *out = o.out_path ? std::fopen(o.out_path, "w") : o.dump_path || o.render_path ? nullptr : stdout;
+    if (o.out_path && !out) {
+        std::perror(o.out_path);
         return 1;
     }
     // The original's trace starts with the state as the level starts, then
@@ -325,41 +415,10 @@ int main(int argc, char **argv)
     // with no frame limit.
     if (out)
         std::fputs(th::trace_turn(*game).c_str(), out);
-    size_t next = 0;
-    while (game->turn_count < last_turn) {
-        for (; next < script.size() && script[next].turn <= game->turn_count + 1; next++) {
-            if (script[next].turn == game->turn_count + 1 && !game->replay_input(script[next].input, &error)) {
-                std::fprintf(stderr, "%s: %s\n", script_path, error.c_str());
-                return 1;
-            }
-        }
-        if (game->paused) {
-            std::fprintf(stderr, "the script leaves the game paused before turn %u\n", game->turn_count + 1);
-            break;
-        }
-        game->turn();
-        if (out)
-            std::fputs(th::trace_turn(*game, &game->events).c_str(), out);
-        game->events.events.clear();
-    }
-    if (out && out != stdout)
+    bool ran = run_turns(*game, o, script, last_turn, out);
+    if (o.out_path)
         std::fclose(out);
-
-    if (dump_path && !(std::ofstream(dump_path) << th::dump_game(*game, focus))) {
-        std::perror(dump_path);
+    if (!ran)
         return 1;
-    }
-    if (render_path) {
-        if (!camera_given) {
-            auto level = data.load_level(level_number, &error);
-            int start = level ? level->camera_start[0] : 0;
-            th::Point centre = th::cell_to_world(start % th::kMapSize, start / th::kMapSize);
-            camera = {centre.x - width / 2, centre.y - height / 2};
-        }
-        if (!render(*game, data, render_path, camera, width, height)) {
-            std::perror(render_path);
-            return 1;
-        }
-    }
-    return 0;
+    return write_results(*game, o, data);
 }

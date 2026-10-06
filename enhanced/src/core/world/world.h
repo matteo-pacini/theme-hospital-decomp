@@ -29,6 +29,7 @@ constexpr uint8_t kThingFree = 0;
 constexpr uint8_t kThingPatient = 2;
 constexpr uint8_t kThingStaff = 4;
 constexpr uint8_t kThingObject = 6;
+constexpr uint8_t kThingReaper = 0xa;
 constexpr uint8_t kThingNumfx = 0x12;
 
 // A map cell by column and row (the game's PathStep and wallhug_waypoint).
@@ -87,6 +88,8 @@ struct Thing {
     // 1 +x, 2 +y, 3 -x; 4 while stuck.
     uint8_t facing = 0;
     // People: turns until the next decision of where to step (person_head_for).
+    // A dead patient floating away (PS_FLYS): its height above the floor
+    // (the game's fly_height, which shares the field).
     int16_t countdown = 0;
     // People: distance walked per turn, in 1/256 cell.
     uint8_t speed = 0;
@@ -333,6 +336,28 @@ struct Thing {
     int32_t times_used = 0;
     int32_t strength = 0;
     std::array<uint8_t, 3> smoke{};
+
+    // Treatment rooms
+    // Machines: a second frame drawn with their user (draw_split_frame) and
+    // its mirroring, the height at which the user's frame is split, and the
+    // drawing effect's flags (0xff: the user not drawn) and parameter (the
+    // game's aux_param). The gates of hell: the frame to go on to once
+    // their animation ends (object_hell), and remove_after_anim, removed
+    // then instead.
+    uint16_t aux_sprite = 0;
+    uint8_t aux_flip = 0;
+    uint8_t split_height = 0;
+    uint8_t aux_draw_flags = 0;
+    uint8_t aux_param = 0;
+    uint8_t remove_after_anim = 0;
+
+    // The grim reaper (kThingReaper; reaper.cpp)
+    // The gates of hell it leads its victim (slave) to; the frame, mirroring
+    // and state to go on to once its animation ends (reaper_play_anim).
+    uint16_t gate = 0;
+    uint16_t next_sprite = 0;
+    uint8_t next_flip = 0;
+    uint8_t reaper_next_state = 0;
 };
 
 // Staff at work (staff_complex.cpp)
@@ -567,6 +592,17 @@ void start_entrance_rooms(World &world, const Level &level);
 // fields are all 0) if there is none.
 uint16_t get_room_info(const World &world, uint8_t kind, uint8_t mode, uint8_t owner);
 
+// get_room_info_rand (0x19ef8 in src/utils.cpp): one of hospital `owner`'s
+// rooms of type `kind` (in state 0 unless `mode` is 0x65; among the first 30
+// found) drawn from world.seed; 0 if there is none, without a draw.
+uint16_t get_room_info_rand(World &world, uint8_t kind, uint8_t mode, uint8_t owner);
+
+// get_nearest_room_info (0x1a0a0 in src/utils.cpp): the room of type `kind`
+// of `person`'s hospital in use (state 0 or 1) whose door cell is nearest
+// (by the squares of the cells across and down, in 16 bits) to the
+// person's cell, if nearer than 9999; 0 if none.
+uint16_t get_nearest_room_info(const World &world, const Thing &person, uint8_t kind);
+
 // can_place_object (src/objects.cpp): whether an object of `kind` facing
 // `dir` (kObjects index, 0-3) fits for player `owner` with its corner on
 // `tile`: no wall its shape forbids and nothing on its cells or its use
@@ -578,18 +614,20 @@ bool can_place_object(World &world, int tile, int kind, int dir, int owner);
 // an object covers and is used from (MapCell.flags 1 and 2, 4) and put up
 // the invisible walls round it, or take them down. Path checks mark an
 // object that is not placed yet; remove clears the bits whatever else set
-// them.
-void mark_object_shape(World &world, int tile, int kind, int dir);
+// them. With `cleanse` (as place_existing_object), the litter on the cells
+// it covers goes (cleanse_area: remove_litter, for the hospital whose land
+// each is; rat holes are not ported).
+void mark_object_shape(World &world, int tile, int kind, int dir, bool cleanse = false);
 void remove_object_shape(World &world, int tile, int kind, int dir);
 
 // place_object (src/objects.cpp) without its checks of the hospital's
 // access, of people in the way and of picked-up objects, and without
-// charging: a new object of `kind` for `owner` on `tile` facing `dir`, and
-// its second part where that fits, linked into the map and
-// World::first_of_kind (player 0's). Unless `force`, refuses with 0 when it
-// does not fit (can_place_object). Returns its thing id, 0 if refused or the
-// things table is full. Draws two random numbers per object made.
-uint16_t place_object(World &world, const AnimData &anims, int tile, int kind, int dir, int owner, bool force);
+// charging: a new `object` for `owner`, and its second part where that
+// fits, linked into the map and World::first_of_kind (player 0's). Unless
+// `force`, refuses with 0 when it does not fit (can_place_object). Returns
+// its thing id, 0 if refused or the things table is full. Draws two random
+// numbers per object made.
+uint16_t place_object(World &world, const AnimData &anims, ObjectAt object, int owner, bool force);
 
 // The game's NUMFX_MONEY and the hospital palette's colours setup_colors
 // finds for color.black and color.red (LbPaletteFindColour).

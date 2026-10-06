@@ -31,9 +31,9 @@ const Balance::Town &town(const Balance &settings, int level)
 }
 
 // adjust_monthly_figures (src/finance.cpp): shifts each history row one
-// month and stores this month's figures in the newest. Deaths and cures are
-// not counted yet. The visitors row is shifted but its newest month kept,
-// as in the game.
+// month and stores this month's figures in the newest, the deaths and cures
+// as the totals so far. The visitors row is shifted but its newest month
+// kept, as in the game.
 void adjust_monthly_figures(Finance &f, int32_t balance, int reputation)
 {
     for (auto &row : f.history)
@@ -42,12 +42,14 @@ void adjust_monthly_figures(Finance &f, int32_t balance, int reputation)
     f.history[kHistoryIncome][11] = f.income_this_month;
     f.history[kHistoryExpenditure][11] = f.expenditure_this_month;
     f.history[kHistoryWages][11] = f.wages_this_month;
-    f.history[kHistoryDeaths][11] = 0;
-    f.history[kHistoryCures][11] = 0;
+    f.history[kHistoryDeaths][11] = f.deaths;
+    f.history[kHistoryCures][11] = f.cures;
     f.history[kHistoryReputation][11] = reputation;
     f.income_this_month = 0;
     f.expenditure_this_month = 0;
     f.wages_this_month = 0;
+    f.deaths_this_month = 0;
+    f.cures_this_month = 0;
 }
 
 } // namespace
@@ -60,12 +62,13 @@ void start_finance(Finance &finance, int32_t balance, const Balance &settings, i
     finance.statement_balance = balance;
 }
 
-void change_balance(Finance &f, int32_t &balance, int day, int month, uint8_t type, int32_t amount, uint16_t arg,
-                    uint16_t company)
+void change_balance(Finance &f, int32_t &balance, int day, int month, const BalanceChange &change)
 {
+    const uint8_t type = change.type;
+    const int32_t amount = change.amount;
     bool keeps_arg = type == kTxInsurance || type == kTxTreat || type == kTxFinalTreat || type == kTxCureTreatment ||
                      type == kTxAdvance;
-    trace_event("balance %u amount=%d arg=%u", unsigned(type), int(amount), keeps_arg ? unsigned(arg) : 0u);
+    trace_event("balance %u amount=%d arg=%u", unsigned(type), int(amount), keeps_arg ? unsigned(change.arg) : 0u);
 
     int count = f.entry_count;
     BankEntry *last = count ? &f.entries[size_t(count - 1)] : nullptr;
@@ -79,13 +82,13 @@ void change_balance(Finance &f, int32_t &balance, int day, int month, uint8_t ty
         e.amount = amount;
         switch (type) {
         case kTxInsurance:
-            e.extra = uint8_t(company);
+            e.extra = uint8_t(change.company);
             break;
         case kTxTreat:
         case kTxFinalTreat:
         case kTxCureTreatment:
         case kTxAdvance:
-            e.extra = uint8_t(arg);
+            e.extra = uint8_t(change.arg);
             break;
         }
         if (count < 0x31) {
@@ -127,9 +130,10 @@ int count_radiators(const World &world, uint8_t owner)
     return n;
 }
 
-void month_end(Finance &f, int32_t &balance, World &world, const Balance &settings, int level, int day, int month,
-               int radiators, int reputation)
+void month_end(Finance &f, int32_t &balance, World &world, const Balance &settings, int level,
+               const MonthEndFigures &figures)
 {
+    const int day = figures.day, month = figures.month;
     int32_t wages = 0;
     for (size_t i = 1; i < world.things.size(); i++) {
         Thing &t = world.things[i];
@@ -140,9 +144,9 @@ void month_end(Finance &f, int32_t &balance, World &world, const Balance &settin
         }
     }
     if (wages != 0)
-        change_balance(f, balance, day, month, kTxWages, -wages);
+        change_balance(f, balance, day, month, {kTxWages, -wages});
     if (world.drinks_income != 0) {
-        change_balance(f, balance, day, month, kTxIncomeDrinks, world.drinks_income);
+        change_balance(f, balance, day, month, {kTxIncomeDrinks, world.drinks_income});
         world.drinks_income = 0;
     }
     if (world.hospital) {
@@ -151,19 +155,19 @@ void month_end(Finance &f, int32_t &balance, World &world, const Balance &settin
             if (claims != 0) {
                 int32_t amount = claims;
                 claims = 0;
-                change_balance(f, balance, day, month, kTxInsurance, amount, j, world.ins_control[j]);
+                change_balance(f, balance, day, month, {kTxInsurance, amount, j, world.ins_control[j]});
             }
         }
     }
-    int32_t heating = radiators * f.heating_level * f.heating_price / 100;
+    int32_t heating = figures.radiators * f.heating_level * f.heating_price / 100;
     if (heating != 0)
-        change_balance(f, balance, day, month, kTxHeating, -heating);
+        change_balance(f, balance, day, month, {kTxHeating, -heating});
     const Balance::Town &t = town(settings, level);
     if (f.loan != 0)
-        change_balance(f, balance, day, month, kTxLoanInterest, -(t.interest_rate * f.loan / 10000 / 12));
+        change_balance(f, balance, day, month, {kTxLoanInterest, -(t.interest_rate * f.loan / 10000 / 12)});
     if (balance < 0)
-        change_balance(f, balance, day, month, kTxOverdraftInterest, t.interest_rate * balance * 2 / 10000 / 12);
-    adjust_monthly_figures(f, balance, reputation);
+        change_balance(f, balance, day, month, {kTxOverdraftInterest, t.interest_rate * balance * 2 / 10000 / 12});
+    adjust_monthly_figures(f, balance, figures.reputation);
 }
 
 void year_end(Finance &f, int32_t balance, const World &world, const Balance &settings, int reputation)

@@ -1,0 +1,64 @@
+# Level 1: gp_office.txt without its doctor, so that patients wait at the
+# reception, then toilets with two toilets and a sink, and a warm corridor
+# with a drinks machine: patients with a full bladder leave the queue for the
+# toilets, use a toilet and (illnesses from 16 on) the sink, and go back. A
+# patient using a toilet is sent home (EV_PERSON_GO_HOME). Compare up to turn
+# 18000: the year's end awards (from turn 18250) are not ported.
+# gp_office.txt's commands up to the GP's office opened (turn 113).
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# Toilets (64,52)-(67,55), their door below them (nearest to cell 7233).
+130 55 0 0
+131 53 29 29
+132 2 6720 0
+133 2 7107 0
+134 8 7107 0
+135 18 0 0
+136 26 7233 0
+137 3 0 0
+138 4 29 0
+# Buy a second toilet; toilets at cells 6720 and 6721, the sink at 6723, all
+# facing 0; the room opened.
+139 37 51 1
+140 43 0 0
+142 7 6720 51
+143 7 6723 32
+144 7 6721 51
+145 1 0 0
+# Furnish the corridor: a drinks machine (cell 9658) and three radiators
+# (9276, 9410, 10047) round the reception desk; the heating at its highest
+# (EV_SET_HEATING 10), so that waiting patients are thirsty and drink.
+160 98 0 0
+161 37 7 1
+162 37 44 3
+163 43 0 0
+164 7 9658 7
+165 7 9276 44
+166 7 9410 44
+167 7 10047 44
+170 79 10 0
+# Patient 19, on a toilet, sent home.
+8100 116 19 0

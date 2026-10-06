@@ -56,6 +56,12 @@ extern const std::array<std::array<uint16_t, 0x8c>, 5> kStaffAnimStarts;
 uint8_t process_staff_complex(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                               const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
 
+// rest_staff (0x2be14): member of staff `s` (of `world`) rests: tiredness
+// down by `amount` (by amount * gbv.recovery_factor / tiredness when more
+// tired than half gbv.recovery_factor, but at least gbv.recovery_minimum;
+// it may go below 0), happiness up by 1 (0-100).
+void rest_staff(World &world, Thing &s, int16_t amount);
+
 // fail_staff_complex (0x41c0c): ends member of staff `id`'s failed complex:
 // back to resume_state standing, the complex and its queue cleared; with no
 // resume_state, SS_COMPLEX_RETRY to retry the step. A handyman going back
@@ -66,8 +72,7 @@ void fail_staff_complex(World &world, const AnimData &anims, uint16_t id);
 // the first of the game's interaction table) between `id` and its slave,
 // putting `id` in PS_TWO_PEEPS_INTERACT or SS_TWO_PEEPS_INTERACT and playing
 // the first step's animations. At the sequence's end `id`'s complex goes on.
-void start_new_interaction(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
-                           const StaffComplexes &staff_complexes, uint16_t id, uint8_t seq, uint32_t game_turn);
+void start_new_interaction(const PersonRun &run, const StaffComplexes &staff_complexes, uint16_t id, uint8_t seq);
 
 // One game turn of member of staff `id` in a state of the complexes, as
 // process_things: SS_PLAY_COMPLEX_ANIM (play_complex_staff_anim, 0x4029c),

@@ -35,7 +35,7 @@ struct JukeboxResult {
 void jukebox_event(Jukebox &jukebox, Interface &ui, const Event &event);
 
 // One frame of the open jukebox, after the interface's frame: req6
-// (0x8dee0) for a button clicked (`events`): play or pause, previous and
+// (0x8dee0) for a button clicked (`input.events`): play or pause, previous and
 // next (both ignored while looping), stop, loop and close; then the track
 // list of req6_overdraw (0x8e184): once the left button is up after a press,
 // a click on a title plays that track, a click on its light takes it out of
@@ -44,8 +44,8 @@ void jukebox_event(Jukebox &jukebox, Interface &ui, const Event &event);
 // MusicPlayer::play_next to move on, which does nothing while `paused`.
 // The list lies below the window (Interface::window's height), as in the
 // game, so the interface does not count the mouse as on it there.
-JukeboxResult jukebox_frame(Jukebox &jukebox, const Interface &ui, const InterfaceEvents &events,
-                            const RequesterArt &art, MusicPlayer &music, const UiMouse &mouse, bool paused);
+JukeboxResult jukebox_frame(Jukebox &jukebox, const Interface &ui, const RequesterInput &input, const RequesterArt &art,
+                            MusicPlayer &music, bool paused);
 
 // req6_overdraw's drawing, after draw_interface while the jukebox is open:
 // the playing track's title, the loop and play lights, the track list with

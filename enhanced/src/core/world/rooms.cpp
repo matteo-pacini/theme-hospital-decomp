@@ -8,7 +8,9 @@
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/nav.h"
+#include "core/world/patient_tables.h"
 #include "core/world/queue.h"
+#include "core/world/reaper.h"
 #include "core/world/reception.h"
 #include "core/world/reputation.h"
 #include "core/world/staff.h"
@@ -39,8 +41,6 @@ constexpr uint8_t kFirstDiagnosis = 0x24;
 
 // Thing.person_flags bits (the game's PF_*) besides core/world/queue.h's.
 constexpr uint32_t kPfWrongGuess = 0x800;
-constexpr uint32_t kPfGuessed = 0x1000;
-constexpr uint32_t kPfCured = 0x2000;
 constexpr uint32_t kPfDiagnosed = 0x20000;
 constexpr uint32_t kPfContagious = 0x20;
 
@@ -214,21 +214,24 @@ void remove_expertise_ward(World &world)
             world.cure_available[i] = 0;
 }
 
-// change_health (0x3cb5c), without its status icons, the health history and
-// dying.
-void change_health(Thing &p, int16_t amount)
+// add_health_to_history (0x3d188).
+void add_health_to_history(Thing &p)
 {
-    int health = p.health;
-    if (health <= 0)
-        return;
-    if (p.room != 0) {
-        p.health_delta = int16_t(p.health_delta + amount);
-        return;
+    int last = 0;
+    size_t i = 0;
+    for (; i < p.health_history.size(); i++) {
+        if (p.health_history[i] == 0)
+            break;
+        last = p.health_history[i] * 10;
     }
-    amount = int16_t(amount + p.health_delta);
-    p.health_delta = 0;
-    health += amount;
-    p.health = int16_t(health < 0 ? 0 : health > 1000 ? 1000 : health);
+    if (std::abs(last - p.health) >= 50) {
+        if (i >= p.health_history.size()) {
+            // As the game: entry 0 stays, entries 2-9 move down one.
+            for (i = 1; i < 9; i++)
+                p.health_history[i] = p.health_history[i + 1];
+        }
+        p.health_history[i] = int8_t(p.health / 10);
+    }
 }
 
 // calc_ability (0x3d658): the member of staff's diagnosis this time: their
@@ -321,6 +324,64 @@ void announce_new_illness(World &world, uint8_t illness, uint8_t owner)
     discovered = 1;
 }
 
+// diagnose_patient's search for a diagnosis room: picks one
+// (find_possible_diagnosis) or marks that the patient needs one. True when one
+// was picked.
+bool diagnose_patient_find_room(World &world, uint16_t id)
+{
+    Thing &p = world.things[id];
+    find_possible_diagnosis(world, id);
+    if (p.treatment != 0)
+        return true;
+    p.person_flags |= kPfNeedsDiagnosisRoom;
+    reputation_affected(world, p.illness, kRepNoTreatmentFound);
+    return false;
+}
+
+// diagnose_patient's complete diagnosis: the illness is known; its treatment
+// becomes the patient's unless the policy wants more diagnosis and a room is
+// left for it.
+void diagnose_patient_complete(World &world, Thing &staff, uint16_t id, int16_t diag)
+{
+    Thing &p = world.things[id];
+    uint8_t illness = p.illness;
+    if (p.known_illness != illness) {
+        staff.happiness = uint16_t(staff.happiness + 5);
+        announce_new_illness(world, illness, p.owner);
+        reputation_affected(world, illness, kRepIllnessFound);
+        record_person_as_patient(world, id);
+        p.known_illness = illness;
+    }
+    p.person_flags |= kPfDiagnosed;
+    if (diag < hospital_of(world).diag_threshold && diagnose_patient_find_room(world, id))
+        return;
+    if (world.cure_available[illness] == 0) {
+        p.person_flags |= kPfAwaitingDecision | kPfWaitingForRoom;
+        p.treatment = p.illness;
+    } else {
+        reputation_affected(world, p.illness, kRepDiagnosed);
+        p.treatment = p.illness;
+    }
+}
+
+// diagnose_patient's hopeless diagnosis: a draw from world.seed sends the
+// patient for an autopsy (when the hospital can do one) or near death.
+void diagnose_patient_hopeless(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn,
+                               std::source_location caller)
+{
+    Thing &p = world.things[id];
+    uint32_t coin = old_newrand(world.seed, caller) & 1;
+    if (coin == 0) {
+        if (world.cure_available[kIllAutopsy] == 1)
+            p.treatment = kIllAutopsy;
+        else
+            coin = 1;
+    }
+    if (coin == 1)
+        change_health(world, anims, id, int16_t(-(p.health - 3)), game_turn);
+    reputation_affected(world, p.illness, kRepDiagnosisFailed);
+}
+
 // diagnose_patient (0x3d28c): a complete diagnosis makes the illness known
 // and its treatment the patient's (awaiting a decision if the hospital
 // cannot give it), unless the policy's diag_threshold wants more diagnosis
@@ -330,61 +391,17 @@ void announce_new_illness(World &world, uint8_t illness, uint8_t owner)
 // illnesses go by the ward. A newly found illness is announced
 // (announce_new_illness). The status icons, epidemics and the diagnosed and
 // mishap counts are not ported.
-void diagnose_patient(World &world, Thing &staff, Thing &p, uint16_t id)
+void diagnose_patient(World &world, const AnimData &anims, Thing &staff, uint16_t id, uint32_t game_turn)
 {
+    Thing &p = world.things[id];
     trace_event("diagnose %u staff=%u", unsigned(id), unsigned(&staff - world.things.data()));
-    bool guess = true;
     int16_t diag = p.diagnosis;
-    if (diag >= kDiagnosisComplete) {
-        guess = false;
-        uint8_t illness = p.illness;
-        if (p.known_illness != illness) {
-            staff.happiness = uint16_t(staff.happiness + 5);
-            announce_new_illness(world, illness, p.owner);
-            reputation_affected(world, illness, kRepIllnessFound);
-            record_person_as_patient(world, id);
-            p.known_illness = illness;
-        }
-        p.person_flags |= kPfDiagnosed;
-        bool ok = true;
-        if (diag < hospital_of(world).diag_threshold) {
-            find_possible_diagnosis(world, id);
-            if (p.treatment == 0) {
-                p.person_flags |= kPfNeedsDiagnosisRoom;
-                reputation_affected(world, p.illness, kRepNoTreatmentFound);
-            } else {
-                ok = false;
-            }
-        }
-        if (ok) {
-            if (world.cure_available[illness] == 0) {
-                p.person_flags |= kPfAwaitingDecision | kPfWaitingForRoom;
-                p.treatment = p.illness;
-            } else {
-                reputation_affected(world, p.illness, kRepDiagnosed);
-                p.treatment = p.illness;
-            }
-        }
-    } else if (diag <= kDiagnosisHopeless) {
-        uint32_t coin = old_newrand(world.seed) & 1;
-        if (coin == 0) {
-            if (world.cure_available[kIllAutopsy] == 1)
-                p.treatment = kIllAutopsy;
-            else
-                coin = 1;
-        }
-        if (coin == 1)
-            change_health(p, int16_t(-(p.health - 3)));
-        reputation_affected(world, p.illness, kRepDiagnosisFailed);
-        guess = false;
-    }
-    if (guess) {
-        find_possible_diagnosis(world, id);
-        if (p.treatment == 0) {
-            p.person_flags |= kPfNeedsDiagnosisRoom;
-            reputation_affected(world, p.illness, kRepNoTreatmentFound);
-        }
-    }
+    if (diag >= kDiagnosisComplete)
+        diagnose_patient_complete(world, staff, id, diag);
+    else if (diag <= kDiagnosisHopeless)
+        diagnose_patient_hopeless(world, anims, id, game_turn, std::source_location::current());
+    else
+        diagnose_patient_find_room(world, id);
     p.next_treatment = 0;
     if (kExpertiseData[p.treatment].needs_ward & 1) {
         p.next_treatment = p.treatment;
@@ -392,15 +409,11 @@ void diagnose_patient(World &world, Thing &staff, Thing &p, uint16_t id)
     }
 }
 
-// effect_illness (0x54444) with cured 1: the patient's looks back to
-// health, its cure counted (hospital 0's illnesses[].cured), the
-// reputation for it, its illness gone, contagion cleared
-// (clean_contagious_peep, without the vaccination queue), no longer an
-// emergency patient, and recorded (record_person_as_patient). The
-// hospital's total cures, the month's, the emergency's and the advisor's
-// word are not kept.
+} // namespace
+
 void cure_illness(World &world, uint16_t id)
 {
+    trace_event("cure %u illness=%u", unsigned(id), unsigned(world.things[id].illness));
     Thing &p = world.things[id];
     switch (p.illness) {
     case kIllBloatyHead:
@@ -438,6 +451,8 @@ void cure_illness(World &world, uint16_t id)
     default:
         break;
     }
+    if (p.owner == 0 && world.ledger)
+        world.ledger->cures++;
     if (world.hospital && p.owner == 0)
         world.hospital->illnesses[p.illness % kIllnessCount].cured++;
     reputation_affected(world, p.illness, kRepCured);
@@ -446,21 +461,24 @@ void cure_illness(World &world, uint16_t id)
         p.person_flags &= ~kPfContagious;
         p.contagion = 0;
     }
+    if (p.owner == 0 && world.ledger)
+        world.ledger->cures_this_month++;
     if (p.person_flags & kPfEmergency)
         p.person_flags &= ~kPfEmergency;
     record_person_as_patient(world, id);
 }
 
-} // namespace
-
-void setup_next_treatment(World &world, const AnimData &anims, uint16_t staff_id, uint16_t id, uint32_t game_turn)
+namespace
 {
-    trace_event("next_treatment %u staff=%u", unsigned(id), unsigned(staff_id));
+
+// setup_next_treatment's charge for the treatment just given and its outcome
+// (kExpertiseData[].outcome): the next treatment, a cure or a diagnosis.
+// False when the patient will not pay for what comes next.
+bool setup_next_treatment_outcome(World &world, const AnimData &anims, uint16_t staff_id, uint16_t id,
+                                  uint32_t game_turn)
+{
     Thing &p = world.things[id];
     bool pay = true;
-    p.impatience = 0;
-    p.waiting_time = 0;
-    reputation_affected(world, p.treatment, kRepNextTreatment);
     switch (kExpertiseData[p.treatment].outcome) {
     case 0:
         pay_for_treatment(world, id, 2);
@@ -481,15 +499,15 @@ void setup_next_treatment(World &world, const AnimData &anims, uint16_t staff_id
             world.things[staff_id].happiness = uint16_t(world.things[staff_id].happiness + 5);
         p.person_flags &= ~kPfAwaitingDecision;
         if (p.person_flags & kPfWrongGuess) {
-            change_health(p, -1000);
+            change_health(world, anims, id, -1000, game_turn);
         } else {
-            change_health(p, 1000);
+            change_health(world, anims, id, 1000, game_turn);
             p.person_flags |= kPfCured;
         }
         break;
     case 4:
         pay_for_treatment(world, id, 2);
-        diagnose_patient(world, world.things[staff_id], p, id);
+        diagnose_patient(world, anims, world.things[staff_id], id, game_turn);
         pay = shall_peep_pay(world, id);
         if (pay)
             pay_for_treatment(world, id, 3);
@@ -509,24 +527,43 @@ void setup_next_treatment(World &world, const AnimData &anims, uint16_t staff_id
     default:
         break;
     }
-    if (!pay) {
+    return pay;
+}
+
+// setup_next_treatment for a patient who needs a diagnosis room: by the
+// policy, a well enough diagnosed one gets the best guess at a treatment and
+// a poorly diagnosed one is sent home.
+void setup_next_treatment_guess_or_send_home(World &world, Thing &p)
+{
+    const HospitalSettings &hs = hospital_of(world);
+    // Unsigned, as in the game.
+    auto pct = uint32_t(p.diagnosis * 100 / kDiagnosisComplete);
+    if (uint32_t(hs.guess_cure_threshold) <= pct && hs.illnesses[p.illness % kIllnessCount].discovered == 1 &&
+        pct > 0) {
+        best_guess_treatment(world, p);
+    } else if (uint32_t(hs.send_home_threshold) >= pct) {
+        p.person_flags = 0;
+        p.treatment = 0;
+        turned_away(world, p);
+        p.person_flags |= kPfNoDiagnosis;
+    }
+}
+
+} // namespace
+
+void setup_next_treatment(World &world, const AnimData &anims, uint16_t staff_id, uint16_t id, uint32_t game_turn)
+{
+    trace_event("next_treatment %u staff=%u", unsigned(id), unsigned(staff_id));
+    Thing &p = world.things[id];
+    p.impatience = 0;
+    p.waiting_time = 0;
+    reputation_affected(world, p.treatment, kRepNextTreatment);
+    if (!setup_next_treatment_outcome(world, anims, staff_id, id, game_turn)) {
         p.treatment = 0;
         pay_for_treatment(world, id, 2);
     }
-    if (p.person_flags & kPfNeedsDiagnosisRoom) {
-        const HospitalSettings &hs = hospital_of(world);
-        // Unsigned, as in the game.
-        auto pct = uint32_t(p.diagnosis * 100 / kDiagnosisComplete);
-        if (uint32_t(hs.guess_cure_threshold) <= pct && hs.illnesses[p.illness % kIllnessCount].discovered == 1 &&
-            pct > 0) {
-            best_guess_treatment(world, p);
-        } else if (uint32_t(hs.send_home_threshold) >= pct) {
-            p.person_flags = 0;
-            p.treatment = 0;
-            turned_away(world, p);
-            p.person_flags |= kPfNoDiagnosis;
-        }
-    }
+    if (p.person_flags & kPfNeedsDiagnosisRoom)
+        setup_next_treatment_guess_or_send_home(world, p);
     next_treatment_now_setup(world, anims, id, true, game_turn);
 }
 
@@ -573,18 +610,18 @@ void modify_machine(World &world, Thing &machine)
 
 } // namespace
 
-void start_rooms_in_use(World &world, HospitalSettings &hospital, Finance &ledger, int &balance, const Date &date,
-                        const PersonComplexes &person_complexes, const StaffComplexes &staff_complexes)
+void start_rooms_in_use(Game &game, const PersonComplexes &person_complexes, const StaffComplexes &staff_complexes)
 {
+    World &world = game.world;
     world.pagers = {};
     world.room_of_type = {};
     world.calls = {};
     world.next_call_id = 1;
     world.repair_pager = {};
-    world.hospital = &hospital;
-    world.ledger = &ledger;
-    world.balance = &balance;
-    world.date = &date;
+    world.hospital = &game.hospital;
+    world.ledger = &game.finance;
+    world.balance = &game.balance;
+    world.date = &game.date;
     world.person_complexes = &person_complexes;
     world.staff_complexes = &staff_complexes;
 }
@@ -596,6 +633,24 @@ int staff_with_skill(const World &world, uint8_t owner, int skill)
         n += t.type == kThingStaff && t.owner == owner && (t.skills & (1 << skill));
     return n;
 }
+
+namespace
+{
+
+// set_expertise_room: whether hospital `owner` employs staff with every skill
+// in `mask` (two surgeons for surgery).
+bool set_expertise_room_has_staff(const World &world, uint8_t owner, uint16_t mask)
+{
+    for (int j = 0; j < 9; j++) {
+        if (((1 << j) & mask) == kSkillSurgeon && surgeon_count(world, owner) < 2)
+            return false;
+        if ((mask & (1 << j)) && staff_with_skill(world, owner, j) == 0)
+            return false;
+    }
+    return true;
+}
+
+} // namespace
 
 void set_expertise_room(World &world, uint16_t room_id)
 {
@@ -618,14 +673,7 @@ void set_expertise_room(World &world, uint16_t room_id)
                 world.cure_available[i] = 1;
             continue;
         }
-        int j = 0;
-        for (; j < 9; j++) {
-            if (((1 << j) & mask) == kSkillSurgeon && surgeon_count(world, room.owner) < 2)
-                break;
-            if ((mask & (1 << j)) && staff_with_skill(world, room.owner, j) == 0)
-                break;
-        }
-        if (j >= 9)
+        if (set_expertise_room_has_staff(world, room.owner, mask))
             world.cure_available[i] = 1;
     }
     if (!ward && world.cure_available[kIllDiagWard] == 1)
@@ -708,6 +756,24 @@ void room_deleted_update_listhead(World &world, uint16_t room_id)
         world.room_of_type[room.type % world.room_of_type.size()] = id;
 }
 
+namespace
+{
+
+// page_member_of_staff: counts the staff with a skill in `skill_mask` already
+// in the room off `wanted`. True when no more are wanted.
+bool page_member_of_staff_count_present(const World &world, uint16_t skill_mask, uint16_t room_id, int8_t &wanted)
+{
+    for (const Thing &t : world.things) {
+        if (t.type == kThingStaff && t.room == room_id && (t.skills & skill_mask)) {
+            if (--wanted <= 0)
+                return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
 bool page_member_of_staff(World &world, uint16_t skill_mask, uint16_t room_id, bool count_present, int8_t wanted,
                           uint8_t owner)
 {
@@ -726,14 +792,8 @@ bool page_member_of_staff(World &world, uint16_t skill_mask, uint16_t room_id, b
         page_member_of_staff(world, uint16_t(~bit & skill_mask), room_id, count_present, wanted, owner);
         skill_mask = bit;
     }
-    if (count_present) {
-        for (const Thing &t : world.things) {
-            if (t.type == kThingStaff && t.room == room_id && (t.skills & skill_mask)) {
-                if (--wanted <= 0)
-                    return true;
-            }
-        }
-    }
+    if (count_present && page_member_of_staff_count_present(world, skill_mask, room_id, wanted))
+        return true;
     World::Pager *free_pager = nullptr;
     for (World::Pager &pager : world.pagers) {
         if ((pager.mask & skill_mask) && pager.room == room_id) {
@@ -892,38 +952,68 @@ uint16_t check_playercall(const World &world, uint16_t type, uint16_t subject, u
     return count;
 }
 
+namespace
+{
+
+// find_object's candidates so far.
+struct FoundObjects {
+    std::array<uint16_t, 30> ids{};
+    uint8_t count = 0;
+};
+
+// find_object in a room: the room's objects of `kind`. Returns the one to
+// take at once (0 to pick among `found`).
+uint16_t find_object_in_room(const World &world, uint16_t room, uint8_t kind, bool random, bool free_only,
+                             FoundObjects &found)
+{
+    for (uint16_t o = world.rooms[room].first_object; o; o = world.things[o].room_obj_next) {
+        const Thing &obj = world.things[o];
+        if (obj.subtype != kind || (free_only && obj.in_use != 0))
+            continue;
+        if (!random || found.count >= found.ids.size())
+            return o;
+        found.ids[found.count++] = o;
+    }
+    return 0;
+}
+
+// find_object in a corridor: the corridor objects of `kind` within 7 tiles of
+// `tile` that can be walked to. Returns the one to take at once (0 to pick
+// among `found`).
+uint16_t find_object_nearby(World &world, uint16_t tile, uint8_t kind, bool random, bool free_only, FoundObjects &found)
+{
+    int x = tile % kMapSize;
+    int y = tile / kMapSize;
+    for (uint16_t o = world.first_of_kind[kind]; o; o = world.things[o].type_obj_next) {
+        const Thing &obj = world.things[o];
+        if (free_only && obj.in_use != 0)
+            continue;
+        if (std::abs(x - obj.x.tile) > 7 || std::abs(y - obj.y.tile) > 7)
+            continue;
+        OrthonavPath path;
+        orthonav_init(world, path, obj.use_pos[1] % kMapSize, obj.use_pos[1] / kMapSize, x, y);
+        if (path.count == 0 || obj.room_id)
+            continue;
+        if (!random || found.count >= found.ids.size())
+            return o;
+        found.ids[found.count++] = o;
+    }
+    return 0;
+}
+
+} // namespace
+
 uint16_t find_object(World &world, uint16_t tile, uint8_t kind, bool random, bool free_only, uint8_t owner)
 {
-    std::array<uint16_t, 30> found{};
-    uint8_t count = 0;
-    if (uint16_t room = room_at(world, tile)) {
-        for (uint16_t o = world.rooms[room].first_object; o; o = world.things[o].room_obj_next) {
-            const Thing &obj = world.things[o];
-            if (obj.subtype != kind || (free_only && obj.in_use != 0))
-                continue;
-            if (!random || count >= found.size())
-                return o;
-            found[count++] = o;
-        }
-    } else if (owner == 0) {
-        int x = tile % kMapSize;
-        int y = tile / kMapSize;
-        for (uint16_t o = world.first_of_kind[kind]; o; o = world.things[o].type_obj_next) {
-            const Thing &obj = world.things[o];
-            if (free_only && obj.in_use != 0)
-                continue;
-            if (std::abs(x - obj.x.tile) > 7 || std::abs(y - obj.y.tile) > 7)
-                continue;
-            OrthonavPath path;
-            orthonav_init(world, path, obj.use_pos[1] % kMapSize, obj.use_pos[1] / kMapSize, x, y);
-            if (path.count == 0 || obj.room_id)
-                continue;
-            if (!random || count >= found.size())
-                return o;
-            found[count++] = o;
-        }
-    }
-    return count ? found[old_newrand(world.seed) % count] : 0;
+    FoundObjects found;
+    uint16_t at_once = 0;
+    if (uint16_t room = room_at(world, tile))
+        at_once = find_object_in_room(world, room, kind, random, free_only, found);
+    else if (owner == 0)
+        at_once = find_object_nearby(world, tile, kind, random, free_only, found);
+    if (at_once)
+        return at_once;
+    return found.count ? found.ids[old_newrand(world.seed) % found.count] : 0;
 }
 
 uint16_t is_this_a_door(const World &world, uint16_t tile)
@@ -969,6 +1059,31 @@ int32_t calc_room_value(const World &world, uint16_t room_id)
     return score < 0 ? 0 : score;
 }
 
+namespace
+{
+
+// pay_for_treatment by insurance: `fee` is claimed from the first of the
+// patient's insurers, to be paid after its delay.
+void pay_for_treatment_claim_insurance(World &world, const Thing &p, int32_t fee)
+{
+    for (size_t i = 0; i < 3; i++) {
+        if (!(p.insurance & (1 << i)))
+            continue;
+        if (world.hospital && world.date && p.owner == 0) {
+            int month = world.date->month + kPaymentDelay[world.ins_control[i] % kPaymentDelay.size()];
+            if (month >= 12)
+                month -= 12;
+            if (month >= 12)
+                month = 0;
+            world.hospital->insurance_claims[i][size_t(month)] += fee;
+        }
+        create_numfx(world, kNumfxMoney, uint16_t(p.x.tile + (p.y.tile << 7)), kColourRed, 0x40);
+        break;
+    }
+}
+
+} // namespace
+
 bool pay_for_treatment(World &world, uint16_t id, int kind)
 {
     Thing &p = world.things[id];
@@ -990,29 +1105,15 @@ bool pay_for_treatment(World &world, uint16_t id, int kind)
     }
     if (fee <= 0)
         return true;
-    uint8_t ins = p.insurance;
-    if (ins & kInsuranceAccepted) {
-        for (size_t i = 0; i < 3; i++) {
-            if (!(ins & (1 << i)))
-                continue;
-            if (world.hospital && world.date && p.owner == 0) {
-                int month = world.date->month + kPaymentDelay[world.ins_control[i] % kPaymentDelay.size()];
-                if (month >= 12)
-                    month -= 12;
-                if (month >= 12)
-                    month = 0;
-                world.hospital->insurance_claims[i][size_t(month)] += fee;
-            }
-            create_numfx(world, kNumfxMoney, uint16_t(p.x.tile + (p.y.tile << 7)), kColourRed, 0x40);
-            break;
-        }
+    if (p.insurance & kInsuranceAccepted) {
+        pay_for_treatment_claim_insurance(world, p, fee);
         return true;
     }
     if (fee > p.cash)
         return false;
     p.cash -= fee;
     if (world.ledger && world.balance && world.date && p.owner == 0)
-        change_balance(*world.ledger, *world.balance, world.date->day, world.date->month, kTxTreat, fee, p.treatment);
+        change_balance(*world.ledger, *world.balance, world.date->day, world.date->month, {kTxTreat, fee, p.treatment});
     create_numfx(world, kNumfxMoney, uint16_t(p.x.tile + (p.y.tile << 7)), kColourBlack, 0x40);
     return true;
 }
@@ -1024,7 +1125,7 @@ void done_treatment(World &world, const AnimData &anims, uint16_t staff, uint16_
     Thing &p = world.things[patient];
     if (p.room != 0 && world.rooms[p.room].type == kRoomDestroyed)
         return;
-    affect_diagnosis(world, world.things[staff], p);
+    affect_diagnosis(world, anims, staff, patient, game_turn);
     add_treatment_to_history(p);
     setup_next_treatment(world, anims, staff, patient, game_turn);
 }
@@ -1070,8 +1171,10 @@ void next_treatment_now_setup(World &world, const AnimData &anims, uint16_t id, 
     }
 }
 
-void affect_diagnosis(World &world, Thing &staff, Thing &patient)
+void affect_diagnosis(World &world, const AnimData &anims, uint16_t staff_id, uint16_t patient_id, uint32_t game_turn)
 {
+    Thing &staff = world.things[staff_id];
+    Thing &patient = world.things[patient_id];
     if (patient.treatment >= kFirstDiagnosis || patient.treatment == kIllGeneralPractice) {
         int32_t total = patient.diagnosis - patient.diagnosis_handicap;
         total += calc_ability(world, staff);
@@ -1082,7 +1185,7 @@ void affect_diagnosis(World &world, Thing &staff, Thing &patient)
         if (patient.diagnosis < total)
             patient.diagnosis = int16_t(total);
         if (bonus < 0)
-            change_health(patient, -5);
+            change_health(world, anims, patient_id, -5, game_turn);
     }
     staff.ability = uint16_t(std::clamp(int(staff.ability) + 1, 30, 1000));
 }
@@ -1240,6 +1343,99 @@ uint16_t find_possible_diagnosis(World &world, uint16_t id)
     }
     p.treatment = uint8_t(result);
     return result;
+}
+
+void change_health(World &world, const AnimData &anims, uint16_t id, int16_t amount, uint32_t game_turn)
+{
+    Thing &p = world.things[id];
+    int health = p.health;
+    if (health <= 0)
+        return;
+    if (p.room != 0) {
+        p.health_delta = int16_t(p.health_delta + amount);
+        return;
+    }
+    amount = int16_t(amount + p.health_delta);
+    p.health_delta = 0;
+    health += amount;
+    p.health = int16_t(health < 0 ? 0 : health > 1000 ? 1000 : health);
+    add_health_to_history(p);
+    if (p.health <= 0)
+        person_dies(world, anims, id, game_turn);
+}
+
+bool pre_administer_drugs(const World &world, uint16_t id)
+{
+    const Thing &p = world.things[id];
+    return p.owner == 0 && hospital_of(world).illnesses[p.illness % kIllnessCount].drug_effectiveness != 0;
+}
+
+void administer_drugs(World &world, const AnimData &anims, uint16_t staff_id, uint16_t id, uint32_t game_turn)
+{
+    trace_event("drugs %u staff=%u", unsigned(id), unsigned(staff_id));
+    Thing &p = world.things[id];
+    Thing &staff = world.things[staff_id];
+    p.impatience = 0;
+    p.waiting_time = 0;
+    add_treatment_to_history(p);
+    const IllnessFigures &drug = hospital_of(world).illnesses[p.illness % kIllnessCount];
+    int32_t effect = p.owner == 0 ? drug.drug_effectiveness : 0;
+    if (p.person_flags & kPfWrongGuess)
+        effect = 0;
+    if (int32_t(old_normal_rand(world.seed, 0, 99)) < effect) {
+        pay_for_treatment(world, id, 2);
+        p.treatment = 0;
+        cure_illness(world, id);
+        staff.happiness = uint16_t(staff.happiness + 5);
+        p.person_flags &= ~kPfAwaitingDecision;
+        p.person_flags |= kPfCured;
+        change_health(world, anims, id, 1000, game_turn);
+    } else {
+        pay_for_treatment(world, id, 2);
+        if ((p.person_flags & kPfEmergency) || kNotContagious[p.illness % kNotContagious.size()])
+            change_health(world, anims, id, -1000, game_turn);
+        else
+            change_health(world, anims, id, int16_t(-(1000 - effect * 10)), game_turn);
+        p.treatment = kIllGeneralPractice;
+        pay_for_treatment(world, id, 3);
+    }
+    p.next_state = kPsGoForTreatment;
+    if (set_complex(world, id, kComplexLeaveRoom, world.rooms[staff.room].door_inside_tile))
+        process_person_complex(world, anims, person_complexes_of(world), id, game_turn);
+    int32_t cost = p.owner == 0 ? drug.drug_cost : 0;
+    if (staff.owner == 0 && world.ledger && world.balance && world.date)
+        change_balance(*world.ledger, *world.balance, world.date->day, world.date->month, {kTxDrugCost, -cost});
+}
+
+void force_peep_to_be_cured(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn)
+{
+    trace_event("force_cure %u", unsigned(id));
+    Thing &p = world.things[id];
+    p.next_state = 0;
+    p.person_flags = 0;
+    leave_queue(world, id);
+    interrupt_person(world, anims, person_complexes_of(world), id, game_turn);
+    best_guess_treatment(world, p);
+    next_treatment_now_setup(world, anims, id, false, game_turn);
+}
+
+bool apply_patient_event(Game &game, const Event &event)
+{
+    World &world = game.world;
+    if (event.type != EV_PERSON_GO_HOME && event.type != EV_FORCE_CURE)
+        return false;
+    if (event.value >= world.things.size())
+        return true;
+    if (event.type == EV_FORCE_CURE) {
+        force_peep_to_be_cured(world, game.anims(), event.value, game.turn_count);
+        return true;
+    }
+    Thing &p = world.things[event.value];
+    p.treatment = 0;
+    turned_away(world, p);
+    person_go_home(world, game.anims(), person_complexes_of(world), event.value, game.turn_count);
+    p.person_flags |= kPfSentHome;
+    return true;
 }
 
 } // namespace th

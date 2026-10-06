@@ -58,6 +58,48 @@ th::InterfaceEvents click_hire_button(th::Interface &ui, int button)
 
 } // namespace
 
+namespace
+{
+
+// Whether applicant `t`'s wage is ability / divisor + the kind's minimum +
+// the skills' additions, between the game's bounds for the kind.
+bool wage_ok(const th::Thing &t, const th::Balance &settings)
+{
+    const th::Balance::Gbv &gbv = settings.gbv;
+    int min_wage = settings.staff[t.subtype].min_salary;
+    int max_wage = min_wage + 1000 / gbv.salary_ability_divisor;
+    min_wage += 30 / gbv.salary_ability_divisor;
+    for (size_t i = 3; i < 9; i++) {
+        min_wage += std::min<int>(gbv.salary_add[i], 0);
+        max_wage += std::max<int>(gbv.salary_add[i], 0);
+    }
+    return t.salary == t.wage_demand && t.salary >= min_wage && t.salary <= max_wage;
+}
+
+// Whether applicant `t` is one create_job_market makes for level 1.
+bool applicant_ok(const th::Thing &t, const HireFixture &f)
+{
+    const th::Balance::Gbv &gbv = f.settings.gbv;
+    bool valid = t.state == th::kStaffApplicant && t.owner == th::kNoOwner && t.cell_next == 0 && t.cell_prev == 0;
+    valid &= t.hire_expiry >= 1 + 2500 && t.hire_expiry < 1 + 5000;
+    valid &= t.initial >= 'A' && t.initial <= 'Z' && t.surname_a < 33 && t.surname_b < 26;
+    valid &= t.ref_general < f.market.ref_counts[0] && t.ref_good < f.market.ref_counts[1] &&
+             t.ref_bad < f.market.ref_counts[2];
+    valid &= t.face_head < 18 && t.face_body < 18 && t.face_legs < 18;
+    valid &= t.work_delay >= 1 && t.work_delay <= 10 && t.happiness <= 100;
+    valid &= wage_ok(t, f.settings);
+    if (t.subtype != th::kStaffDoctor)
+        return valid && t.ability >= 30 && t.ability <= 1000;
+    valid &= (t.skills & th::kSkillDoctor) != 0;
+    bool junior = t.skills & th::kSkillJunior;
+    valid &= junior ? t.ability >= 30 && t.ability <= gbv.doctor_threshold
+                    : t.ability >= gbv.doctor_threshold && t.ability <= gbv.consultant_threshold;
+    // FULL01.SAM: no surgeons, researchers or consultants yet.
+    return valid && !(t.skills & (th::kSkillSurgeon | th::kSkillResearcher | th::kSkillConsultant));
+}
+
+} // namespace
+
 void test_applicants_level1(const char *dir)
 {
     HireFixture f;
@@ -65,7 +107,6 @@ void test_applicants_level1(const char *dir)
     if (!f.level)
         return;
     const th::World &w = f.game->world;
-    const th::Balance::Gbv &gbv = f.settings.gbv;
     CHECK(f.market.ref_counts[0] > 0 && f.market.ref_counts[1] > 0 && f.market.ref_counts[2] > 0);
     // FULL01.SAM staff_levels[0]: 8 nurses, 8 doctors, 3 handymen, 8
     // receptionists.
@@ -77,34 +118,10 @@ void test_applicants_level1(const char *dir)
     for (const th::Thing &t : w.things) {
         if (t.type != th::kThingStaff)
             continue;
-        valid &= t.state == th::kStaffApplicant && t.owner == th::kNoOwner && t.cell_next == 0 && t.cell_prev == 0;
-        valid &= t.hire_expiry >= 1 + 2500 && t.hire_expiry < 1 + 5000;
-        valid &= t.initial >= 'A' && t.initial <= 'Z' && t.surname_a < 33 && t.surname_b < 26;
-        valid &= t.ref_general < f.market.ref_counts[0] && t.ref_good < f.market.ref_counts[1] &&
-                 t.ref_bad < f.market.ref_counts[2];
-        valid &= t.face_head < 18 && t.face_body < 18 && t.face_legs < 18;
-        valid &= t.work_delay >= 1 && t.work_delay <= 10 && t.happiness <= 100;
-        // The wage: ability / divisor + the kind's minimum + the skills'
-        // additions, between the game's bounds for the kind.
-        int min_wage = f.settings.staff[t.subtype].min_salary;
-        int max_wage = min_wage + 1000 / gbv.salary_ability_divisor;
-        min_wage += 30 / gbv.salary_ability_divisor;
-        for (size_t i = 3; i < 9; i++) {
-            min_wage += std::min<int>(gbv.salary_add[i], 0);
-            max_wage += std::max<int>(gbv.salary_add[i], 0);
-        }
-        valid &= t.salary == t.wage_demand && t.salary >= min_wage && t.salary <= max_wage;
+        valid &= applicant_ok(t, f);
         if (t.subtype == th::kStaffDoctor) {
-            valid &= (t.skills & th::kSkillDoctor) != 0;
-            bool junior = t.skills & th::kSkillJunior;
-            valid &= junior ? t.ability >= 30 && t.ability <= gbv.doctor_threshold
-                            : t.ability >= gbv.doctor_threshold && t.ability <= gbv.consultant_threshold;
             psychiatrists += (t.skills & th::kSkillPsychiatrist) != 0;
-            juniors += junior;
-            // FULL01.SAM: no surgeons, researchers or consultants yet.
-            valid &= !(t.skills & (th::kSkillSurgeon | th::kSkillResearcher | th::kSkillConsultant));
-        } else {
-            valid &= t.ability >= 30 && t.ability <= 1000;
+            juniors += (t.skills & th::kSkillJunior) != 0;
         }
         wages += t.salary;
     }
@@ -121,16 +138,14 @@ void test_applicants_level1(const char *dir)
     CHECK(again.seed == f.market.seed && th::count_applicants(w, th::kStaffNurse) == 8);
 }
 
-void test_hire_receptionist(const char *dir)
+namespace
 {
-    HireFixture f;
-    CHECK(f.start(dir));
-    if (!f.level)
-        return;
-    th::World &w = f.game->world;
-    th::Interface ui;
-    th::HireStaff hire;
 
+// Opens the hire staff requester and takes the second receptionist through
+// it to place. Returns them.
+uint16_t take_receptionist(HireFixture &f, th::HireStaff &hire, th::Interface &ui)
+{
+    th::World &w = f.game->world;
     hire_command(f, hire, ui, {th::EV_OPEN_HIRE_STAFF});
     CHECK(ui.requester() == th::Requester::HireStaff && hire.mode == 1);
     // Hire is refused before a kind is chosen.
@@ -155,29 +170,27 @@ void test_hire_receptionist(const char *dir)
     CHECK(ui.window_count() == 0 && ui.requester() == th::Requester::None);
     CHECK(hire.placing() && hire.held == second && w.things[second].state == th::kStaffHeld);
     CHECK(th::count_applicants(w, th::kStaffReceptionist) == 8);
+    return second;
+}
 
+// Puts held receptionist `id` down on the hospital's land and runs her
+// first turn. Returns whether there was a cell for her.
+bool place_receptionist(HireFixture &f, th::HireStaff &hire, th::Interface &ui, uint16_t id)
+{
+    th::World &w = f.game->world;
     // Off the hospital's land the click does nothing.
     int outside = f.level->entrances[0][0];
     CHECK(th::place_staff_click(hire, w, outside).type == th::EV_NONE && !hire.place_ok);
-    int cell = -1;
-    int start = f.level->camera_start[0];
-    for (int r = 0; r < 20 && cell < 0; r++)
-        for (int dy = -r; dy <= r && cell < 0; dy++)
-            for (int dx = -r; dx <= r && cell < 0; dx++) {
-                int c = start + dx + dy * th::kMapSize;
-                if (c >= 0 && c < th::kMapCells && w.map[size_t(c)].first == 0 &&
-                    th::staff_place_ok(w, c, th::kStaffReceptionist))
-                    cell = c;
-            }
+    const int cell = free_staff_cell(w, *f.level);
     CHECK(cell >= 0);
     if (cell < 0)
-        return;
+        return false;
     int balance = f.game->balance;
-    int32_t salary = w.things[second].salary;
-    e = th::place_staff_click(hire, w, cell);
-    CHECK(e.type == th::EV_PLACE_STAFF && e.value == cell && e.arg == second && hire.place_ok);
+    int32_t salary = w.things[id].salary;
+    th::Event e = th::place_staff_click(hire, w, cell);
+    CHECK(e.type == th::EV_PLACE_STAFF && e.value == cell && e.arg == id && hire.place_ok);
     hire_command(f, hire, ui, e);
-    const th::Thing &s = w.things[second];
+    const th::Thing &s = w.things[id];
     CHECK(!hire.placing());
     CHECK(s.type == th::kThingStaff && s.owner == 0 && s.state == th::kStaffReceptionistFindsReception);
     CHECK(s.x.tile + s.y.tile * th::kMapSize == cell && s.x.frac == 0x80 && s.y.frac == 0x80);
@@ -185,14 +198,31 @@ void test_hire_receptionist(const char *dir)
     CHECK(f.game->balance == balance - salary * 12 / 10);
     CHECK(th::count_applicants(w, th::kStaffReceptionist) == 7);
     bool listed = false;
-    for (int id = w.map[size_t(cell)].first; id > 0; id = w.things[size_t(id)].cell_next)
-        listed |= id == second;
+    for (int t = w.map[size_t(cell)].first; t > 0; t = w.things[size_t(t)].cell_next)
+        listed |= t == id;
     CHECK(listed && cell_lists_consistent(w));
     // With no reception desk, she goes to wander (and, not ported further,
     // stands).
-    th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), f.gd.staff_complexes(), second, f.game->turn_count);
+    th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), f.gd.staff_complexes(), id, f.game->turn_count);
     CHECK(s.state == th::kStaffWanders && s.substate == 6);
     CHECK(s.sprite == f.gd.anims().starts[th::kStaffAnims[th::kStaffReceptionist].stand + s.facing].frame);
+    return true;
+}
+
+} // namespace
+
+void test_hire_receptionist(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::World &w = f.game->world;
+    th::Interface ui;
+    th::HireStaff hire;
+    const uint16_t receptionist = take_receptionist(f, hire, ui);
+    if (!place_receptionist(f, hire, ui, receptionist))
+        return;
 
     // A nurse taken to place, then dropped: back on the list.
     hire_command(f, hire, ui, {th::EV_OPEN_HIRE_STAFF});
@@ -226,6 +256,81 @@ void write_ppm(const char *path, const std::vector<uint32_t> &argb, int width, i
     }
 }
 
+// The hire staff requester drawn over a clear interface, as an ARGB image.
+struct HireImage {
+    HireFixture &f;
+    th::Interface &ui;
+    th::HireStaff &hire;
+    const th::RequesterArt &art;
+    const th::HireStaffArt &hire_art;
+
+    // Draws the interface; it covers most of the requester's window and
+    // nothing outside it. Saved as `name` under TH_TEST_SCRATCH if set.
+    std::vector<uint32_t> render(const char *name) const
+    {
+        const th::Window &win = ui.window(int(th::Requester::HireStaff));
+        th::UiLayer layer;
+        layer.resize(th::kUiWidth, th::kUiHeight);
+        layer.clear();
+        th::draw_interface(layer, ui, art);
+        th::draw_hire_staff(layer, hire, ui, {art, hire_art, f.gd.text()}, f.game->world);
+        std::vector<uint32_t> argb = layer.to_argb(f.gd.palette());
+        int inside = 0, outside = 0;
+        for (int y = 0; y < th::kUiHeight; y++)
+            for (int x = 0; x < th::kUiWidth; x++)
+                if (argb[size_t(y * th::kUiWidth + x)])
+                    (x >= win.x && x < win.x + win.width && y >= win.y && y < win.y + win.height ? inside : outside)++;
+        CHECK(inside > win.width * win.height * 9 / 10 && outside == 0);
+        if (const char *scratch = std::getenv("TH_TEST_SCRATCH"))
+            write_ppm((std::string(scratch) + "/" + name).c_str(), argb, th::kUiWidth, th::kUiHeight);
+        return argb;
+    }
+};
+
+// Whether every pixel of 320 x 240 `s` is the mask colour.
+bool all_mask_colour(const th::Surface &s)
+{
+    return std::all_of(s.data(), s.data() + 320 * 240, [](uint8_t c) { return c == th::kMaskColour; });
+}
+
+// The held applicant under the pointer at the level's view start, coloured
+// where they may be put down and greyed where not.
+void check_held_staff_drawn(HireFixture &f, th::HireStaff &hire)
+{
+    th::Surface view, scratch, base;
+    view.resize(320, 240);
+    scratch.resize(320, 240);
+    scratch.fill(th::kMaskColour);
+    int start = f.level->camera_start[0];
+    th::Point centre = th::cell_to_world(start % th::kMapSize, start / th::kMapSize);
+    th::Point camera = {centre.x - 160, centre.y - 120};
+    th::draw_world({view, {0, 0, 320, 240}, camera}, f.game->world, f.gd, nullptr, scratch);
+    base = view;
+    th::update_staff_cursor(hire, f.game->world, start);
+    th::draw_held_staff({view, {0, 0, 320, 240}, camera}, hire, f.game->world, start, f.gd, scratch);
+    int changed = 0;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            changed += view.row(y)[x] != base.row(y)[x];
+    CHECK(changed > 100);
+    th::Surface coloured = view;
+    view = base;
+    hire.place_ok = false;
+    th::draw_held_staff({view, {0, 0, 320, 240}, camera}, hire, f.game->world, start, f.gd, scratch);
+    std::array<uint8_t, 256> grey = th::grey_remap(f.gd.palette());
+    // All but the see-through pixels (shadows) are the coloured ones greyed.
+    int greyed = 0, drawn = 0, differs = 0;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            if (coloured.row(y)[x] != base.row(y)[x]) {
+                greyed += view.row(y)[x] == grey[coloured.row(y)[x]];
+                drawn++;
+                differs += view.row(y)[x] != coloured.row(y)[x];
+            }
+    CHECK(drawn > 100 && greyed > drawn * 8 / 10 && differs > 0);
+    CHECK(all_mask_colour(scratch));
+}
+
 } // namespace
 
 void test_hire_requester_image(const char *dir)
@@ -243,27 +348,11 @@ void test_hire_requester_image(const char *dir)
     th::HireStaff hire;
     hire_command(f, hire, ui, {th::EV_OPEN_HIRE_STAFF});
     const th::Window &win = ui.window(int(th::Requester::HireStaff));
+    const HireImage image{f, ui, hire, art, hire_art};
 
-    auto render = [&](const char *name) {
-        th::UiLayer layer;
-        layer.resize(th::kUiWidth, th::kUiHeight);
-        layer.clear();
-        th::draw_interface(layer, ui, art);
-        th::draw_hire_staff(layer, hire, ui, art, hire_art, f.game->world, f.gd.text());
-        std::vector<uint32_t> argb = layer.to_argb(f.gd.palette());
-        int inside = 0, outside = 0;
-        for (int y = 0; y < th::kUiHeight; y++)
-            for (int x = 0; x < th::kUiWidth; x++)
-                if (argb[size_t(y * th::kUiWidth + x)])
-                    (x >= win.x && x < win.x + win.width && y >= win.y && y < win.y + win.height ? inside : outside)++;
-        CHECK(inside > win.width * win.height * 9 / 10 && outside == 0);
-        if (const char *scratch = std::getenv("TH_TEST_SCRATCH"))
-            write_ppm((std::string(scratch) + "/" + name).c_str(), argb, th::kUiWidth, th::kUiHeight);
-        return argb;
-    };
-    std::vector<uint32_t> blank = render("hire_blank.ppm");
+    std::vector<uint32_t> blank = image.render("hire_blank.ppm");
     hire_command(f, hire, ui, {th::EV_HIRE_SELECT_KIND, th::kStaffDoctor});
-    std::vector<uint32_t> doctor = render("hire_doctor.ppm");
+    std::vector<uint32_t> doctor = image.render("hire_doctor.ppm");
     CHECK(doctor != blank);
     // The face is the faces file's pixels, inside its border.
     const th::Thing &d = f.game->world.things[hire.shown];
@@ -271,48 +360,11 @@ void test_hire_requester_image(const char *dir)
     uint32_t want = f.gd.palette()[hire_art.faces()[head + 65 * 10 + 30]];
     CHECK(doctor[size_t((win.y + 128 - 75 - 3 + 10) * th::kUiWidth + win.x + 157 + 3 + 30)] == want);
     hire_command(f, hire, ui, {th::EV_HIRE_SELECT_KIND, th::kStaffHandyman});
-    CHECK(render("hire_handyman.ppm") != doctor);
+    CHECK(image.render("hire_handyman.ppm") != doctor);
 
-    // The held applicant under the pointer, coloured where they may be put
-    // down and greyed where not.
     hire_command(f, hire, ui, th::hire_staff_click(hire, click_hire_button(ui, 0x2b), *f.game));
     CHECK(hire.placing());
-    th::Surface view, scratch, base;
-    view.resize(320, 240);
-    scratch.resize(320, 240);
-    scratch.fill(th::kMaskColour);
-    int start = f.level->camera_start[0];
-    th::Point centre = th::cell_to_world(start % th::kMapSize, start / th::kMapSize);
-    th::Point camera = {centre.x - 160, centre.y - 120};
-    th::draw_world(view, {0, 0, 320, 240}, camera, f.game->world, f.gd, nullptr, scratch);
-    base = view;
-    th::update_staff_cursor(hire, f.game->world, start);
-    th::draw_held_staff(view, {0, 0, 320, 240}, camera, hire, f.game->world, start, f.gd, scratch);
-    int changed = 0;
-    for (int y = 0; y < 240; y++)
-        for (int x = 0; x < 320; x++)
-            changed += view.row(y)[x] != base.row(y)[x];
-    CHECK(changed > 100);
-    th::Surface coloured = view;
-    view = base;
-    hire.place_ok = false;
-    th::draw_held_staff(view, {0, 0, 320, 240}, camera, hire, f.game->world, start, f.gd, scratch);
-    std::array<uint8_t, 256> grey = th::grey_remap(f.gd.palette());
-    // All but the see-through pixels (shadows) are the coloured ones greyed.
-    int greyed = 0, drawn = 0, differs = 0;
-    for (int y = 0; y < 240; y++)
-        for (int x = 0; x < 320; x++)
-            if (coloured.row(y)[x] != base.row(y)[x]) {
-                greyed += view.row(y)[x] == grey[coloured.row(y)[x]];
-                drawn++;
-                differs += view.row(y)[x] != coloured.row(y)[x];
-            }
-    CHECK(drawn > 100 && greyed > drawn * 8 / 10 && differs > 0);
-    bool clean = true;
-    for (int y = 0; y < 240; y++)
-        for (int x = 0; x < 320; x++)
-            clean &= scratch.row(y)[x] == th::kMaskColour;
-    CHECK(clean);
+    check_held_staff_drawn(f, hire);
 }
 
 namespace
@@ -336,7 +388,7 @@ uint16_t hire_and_place(HireFixture &f, uint8_t kind)
                 int c = start + dx + dy * th::kMapSize;
                 if (c < 0 || c >= th::kMapCells || w.map[size_t(c)].first != 0 || !th::staff_place_ok(w, c, kind))
                     continue;
-                bool placed = th::place_staff_on_map(w, f.gd.anims(), f.settings, c, id, false, f.game->turn_count);
+                bool placed = th::place_staff_on_map(w, {f.gd.anims(), f.settings, f.game->turn_count}, c, id, false);
                 return placed ? id : 0;
             }
     return 0;
@@ -350,6 +402,114 @@ void staff_work_turn(HireFixture &f, const th::StaffComplexes &sc)
     for (uint16_t i = 1; i < w.things.size(); i++)
         if (w.things[i].type == th::kThingStaff)
             th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), sc, i, f.game->turn_count);
+}
+
+// A receptionist with no desk wanders off; given a desk facing 0 a few cells
+// off she finds it, walks to it and mans it, then keeps it with no one
+// queueing. Returns whether she could be hired and the desk placed;
+// `consistent` is cleared if the cell lists ever were not.
+bool check_receptionist_mans_desk(HireFixture &f, const th::StaffComplexes &sc, bool &consistent)
+{
+    th::World &w = f.game->world;
+    uint16_t recep = hire_and_place(f, th::kStaffReceptionist);
+    CHECK(recep != 0);
+    if (!recep)
+        return false;
+    const th::Thing &r = w.things[recep];
+    CHECK(r.state == th::kStaffReceptionistFindsReception);
+    staff_work_turn(f, sc);
+    CHECK(r.state == th::kStaffWanders && r.substate == 6);
+
+    uint16_t desk = 0;
+    int start = r.x.tile + r.y.tile * th::kMapSize;
+    for (int d = 3; d < 10 && !desk; d++)
+        desk = th::place_object(w, f.gd.anims(), {start + d, 11, 0}, 0, false);
+    CHECK(desk != 0);
+    if (!desk)
+        return false;
+    const th::Thing &dk = w.things[desk];
+    int turns = 0;
+    bool walked = false;
+    while (turns < 2000 && !(dk.user == recep && r.state == th::kStaffReceptionistWorks)) {
+        staff_work_turn(f, sc);
+        turns++;
+        walked |= r.state == th::kStaffGotoObject;
+        consistent &= cell_lists_consistent(w);
+    }
+    CHECK(walked && consistent);
+    CHECK(dk.in_use == 1 && dk.user == recep && dk.state == 4 && r.object == desk);
+    CHECK(r.x.tile == dk.use_x.tile && r.y.tile == dk.use_y.tile && r.facing == dk.facing);
+    CHECK(r.room != 0 && w.rooms[r.room].type == th::kRoomReception && w.rooms[r.room].owner == 0);
+    std::printf("receptionist manned the desk in %d turns, seed %#x\n", turns, unsigned(w.seed));
+    // Regression values, not checked against the game.
+    CHECK(turns == 45 && w.seed == 0x7616f6f8);
+
+    // At the desk with no one queueing she keeps it, drawing for her
+    // idle tasks.
+    uint32_t seed = w.seed;
+    for (int i = 0; i < 500; i++) {
+        staff_work_turn(f, sc);
+        consistent &= cell_lists_consistent(w);
+    }
+    CHECK(consistent && w.seed != seed);
+    CHECK(dk.user == recep && r.state == th::kStaffReceptionistWorks);
+    return true;
+}
+
+// Runs the staff for 1000 turns. Returns the turns `id` was away from the
+// cell it started on; `consistent` is cleared if the cell lists ever were
+// not.
+int turns_away(HireFixture &f, const th::StaffComplexes &sc, uint16_t id, bool &consistent)
+{
+    const th::World &w = f.game->world;
+    const th::Thing &t = w.things[id];
+    int from = t.x.tile + t.y.tile * th::kMapSize;
+    int moved = 0;
+    for (int i = 0; i < 1000; i++) {
+        staff_work_turn(f, sc);
+        moved += t.x.tile + t.y.tile * th::kMapSize != from;
+        consistent &= cell_lists_consistent(w);
+    }
+    return moved;
+}
+
+// One run of test_staff_at_work_level1 from the level's start. Returns
+// whether it got to the end.
+bool staff_at_work_run(const char *dir, const th::StaffComplexes &sc)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return false;
+    th::World &w = f.game->world;
+    bool consistent = true;
+    if (!check_receptionist_mans_desk(f, sc, consistent))
+        return false;
+
+    // A doctor wanders, drawing from the generator every turn.
+    uint16_t doctor = hire_and_place(f, th::kStaffDoctor);
+    CHECK(doctor != 0);
+    if (!doctor)
+        return false;
+    const th::Thing &d = w.things[doctor];
+    int moved = turns_away(f, sc, doctor, consistent);
+    CHECK(consistent && moved > 0 && d.state == th::kStaffWanders);
+    std::printf("doctor at %d,%d after 1000 turns, away %d turns, seed %#x\n", d.x.tile, d.y.tile, moved,
+                unsigned(w.seed));
+    CHECK(d.x.tile == 59 && d.y.tile == 76 && moved == 994 && w.seed == 0xa5fc3943);
+
+    // A handyman, with nothing to sweep, water or repair, strolls.
+    uint16_t handyman = hire_and_place(f, th::kStaffHandyman);
+    CHECK(handyman != 0);
+    if (!handyman)
+        return false;
+    const th::Thing &h = w.things[handyman];
+    moved = turns_away(f, sc, handyman, consistent);
+    CHECK(consistent && moved > 0);
+    std::printf("handyman at %d,%d after 1000 turns, away %d turns, seed %#x\n", h.x.tile, h.y.tile, moved,
+                unsigned(w.seed));
+    CHECK(h.x.tile == 65 && h.y.tile == 62 && moved == 987 && w.seed == 0xefe8e4f0);
+    return true;
 }
 
 } // namespace
@@ -366,96 +526,9 @@ void test_staff_at_work_level1(const char *dir)
     std::string error;
     CHECK(th::load_staff_complexes(dir, sc, &error));
     CHECK(sc.group.size() == 2000 && sc.at(80) == 14 && sc.at(81) == 6 && sc.at(82) == 126 && sc.at(83) == 0);
-    for (int run = 0; run < 2; run++) {
-        HireFixture f;
-        CHECK(f.start(dir));
-        if (!f.level)
+    for (int run = 0; run < 2; run++)
+        if (!staff_at_work_run(dir, sc))
             return;
-        th::World &w = f.game->world;
-        const th::AnimData &anims = f.gd.anims();
-
-        // A receptionist with no desk wanders off.
-        uint16_t recep = hire_and_place(f, th::kStaffReceptionist);
-        CHECK(recep != 0);
-        if (!recep)
-            return;
-        const th::Thing &r = w.things[recep];
-        CHECK(r.state == th::kStaffReceptionistFindsReception);
-        staff_work_turn(f, sc);
-        CHECK(r.state == th::kStaffWanders && r.substate == 6);
-
-        // A desk facing 0 a few cells off: she finds it and walks to it.
-        uint16_t desk = 0;
-        int start = r.x.tile + r.y.tile * th::kMapSize;
-        for (int d = 3; d < 10 && !desk; d++)
-            desk = th::place_object(w, anims, start + d, 11, 0, 0, false);
-        CHECK(desk != 0);
-        if (!desk)
-            return;
-        const th::Thing &dk = w.things[desk];
-        int turns = 0;
-        bool consistent = true;
-        bool walked = false;
-        while (turns < 2000 && !(dk.user == recep && r.state == th::kStaffReceptionistWorks)) {
-            staff_work_turn(f, sc);
-            turns++;
-            walked |= r.state == th::kStaffGotoObject;
-            consistent &= cell_lists_consistent(w);
-        }
-        CHECK(walked && consistent);
-        CHECK(dk.in_use == 1 && dk.user == recep && dk.state == 4 && r.object == desk);
-        CHECK(r.x.tile == dk.use_x.tile && r.y.tile == dk.use_y.tile && r.facing == dk.facing);
-        CHECK(r.room != 0 && w.rooms[r.room].type == th::kRoomReception && w.rooms[r.room].owner == 0);
-        std::printf("receptionist manned the desk in %d turns, seed %#x\n", turns, unsigned(w.seed));
-        // Regression values, not checked against the game.
-        CHECK(turns == 45 && w.seed == 0x7616f6f8);
-
-        // At the desk with no one queueing she keeps it, drawing for her
-        // idle tasks.
-        uint32_t seed = w.seed;
-        for (int i = 0; i < 500; i++) {
-            staff_work_turn(f, sc);
-            consistent &= cell_lists_consistent(w);
-        }
-        CHECK(consistent && w.seed != seed);
-        CHECK(dk.user == recep && r.state == th::kStaffReceptionistWorks);
-
-        // A doctor wanders, drawing from the generator every turn.
-        uint16_t doctor = hire_and_place(f, th::kStaffDoctor);
-        CHECK(doctor != 0);
-        if (!doctor)
-            return;
-        const th::Thing &d = w.things[doctor];
-        int from = d.x.tile + d.y.tile * th::kMapSize;
-        int moved = 0;
-        for (int i = 0; i < 1000; i++) {
-            staff_work_turn(f, sc);
-            moved += d.x.tile + d.y.tile * th::kMapSize != from;
-            consistent &= cell_lists_consistent(w);
-        }
-        CHECK(consistent && moved > 0 && d.state == th::kStaffWanders);
-        std::printf("doctor at %d,%d after 1000 turns, away %d turns, seed %#x\n", d.x.tile, d.y.tile, moved,
-                    unsigned(w.seed));
-        CHECK(d.x.tile == 59 && d.y.tile == 76 && moved == 994 && w.seed == 0xa5fc3943);
-
-        // A handyman, with nothing to sweep, water or repair, strolls.
-        uint16_t handyman = hire_and_place(f, th::kStaffHandyman);
-        CHECK(handyman != 0);
-        if (!handyman)
-            return;
-        const th::Thing &h = w.things[handyman];
-        from = h.x.tile + h.y.tile * th::kMapSize;
-        moved = 0;
-        for (int i = 0; i < 1000; i++) {
-            staff_work_turn(f, sc);
-            moved += h.x.tile + h.y.tile * th::kMapSize != from;
-            consistent &= cell_lists_consistent(w);
-        }
-        CHECK(consistent && moved > 0);
-        std::printf("handyman at %d,%d after 1000 turns, away %d turns, seed %#x\n", h.x.tile, h.y.tile, moved,
-                    unsigned(w.seed));
-        CHECK(h.x.tile == 65 && h.y.tile == 62 && moved == 987 && w.seed == 0xefe8e4f0);
-    }
 }
 
 // With the game data: a handyman on level 1 sweeps litter put beside him,
@@ -497,6 +570,61 @@ void test_handyman_sweeps(const char *dir)
     CHECK(turns == 44 && w.seed == 0xe7957f81);
 }
 
+namespace
+{
+
+// The first `count` free cells of the hospital nearest the camera's start
+// where a receptionist may be put down.
+std::vector<int> free_staff_cells(const th::World &w, const th::Level &level, size_t count)
+{
+    std::vector<int> cells;
+    int start = level.camera_start[0];
+    for (int r = 0; r < 20 && cells.size() < count; r++)
+        for (int dy = -r; dy <= r && cells.size() < count; dy++)
+            for (int dx = -r; dx <= r && cells.size() < count; dx++) {
+                int c = start + dx + dy * th::kMapSize;
+                if (c >= 0 && c < th::kMapCells && w.map[size_t(c)].first == 0 &&
+                    th::staff_place_ok(w, c, th::kStaffReceptionist) &&
+                    std::find(cells.begin(), cells.end(), c) == cells.end())
+                    cells.push_back(c);
+            }
+    return cells;
+}
+
+// Hired staff member `id`, picked up, is off the map and held, and placed
+// again on `cell` costs nothing and keeps their hire turn `hired` and
+// discontent. Returns the balance before they were placed again.
+int check_picked_up_and_placed(HireFixture &f, th::HireStaff &hire, th::Interface &ui, uint16_t id, int cell,
+                               int16_t hired)
+{
+    th::World &w = f.game->world;
+    const th::Thing &s = w.things[id];
+    // Picked up: off the map, held, and placed by the interface.
+    int taken = s.x.tile + s.y.tile * th::kMapSize;
+    th::Event e = th::pick_up_staff_click(w, id);
+    CHECK(e.type == th::EV_PICK_UP_STAFF && e.value == id);
+    hire_command(f, hire, ui, e);
+    CHECK(s.state == th::kStaffHeld && w.held_staff == id && w.held_staff_tile == taken && s.room == 0);
+    CHECK(hire.placing() && hire.held == id && hire.held_kind == th::kStaffNurse);
+    bool listed = false;
+    for (int t = w.map[size_t(taken)].first; t > 0; t = w.things[size_t(t)].cell_next)
+        listed |= t == id;
+    CHECK(!listed && cell_lists_consistent(w));
+
+    // Placed again: no fee, the hire turn and discontent kept.
+    w.things[id].discontent = 7;
+    int balance = f.game->balance;
+    e = th::place_staff_click(hire, w, cell);
+    CHECK(e.type == th::EV_PLACE_STAFF && e.arg == id);
+    hire_command(f, hire, ui, e);
+    CHECK(!hire.placing() && w.held_staff == 0 && w.held_staff_tile == 0);
+    CHECK(s.x.tile + s.y.tile * th::kMapSize == cell && s.state != th::kStaffHeld);
+    CHECK(f.game->balance == balance && s.hire_time == hired && s.discontent == 7);
+    return balance;
+}
+
+} // namespace
+
 // Picking up hired staff (EV_PICK_UP_STAFF, src/io.cpp): hiring charges the
 // fee once; a member of staff picked up and placed again costs nothing and
 // keeps their hire turn and discontent; cancelling while held puts them back
@@ -511,18 +639,7 @@ void test_pick_up_staff(const char *dir)
     th::Interface ui;
     th::HireStaff hire;
 
-    // Free cells of the hospital near the camera's start.
-    std::vector<int> cells;
-    int start = f.level->camera_start[0];
-    for (int r = 0; r < 20 && cells.size() < 2; r++)
-        for (int dy = -r; dy <= r && cells.size() < 2; dy++)
-            for (int dx = -r; dx <= r && cells.size() < 2; dx++) {
-                int c = start + dx + dy * th::kMapSize;
-                if (c >= 0 && c < th::kMapCells && w.map[size_t(c)].first == 0 &&
-                    th::staff_place_ok(w, c, th::kStaffReceptionist) &&
-                    std::find(cells.begin(), cells.end(), c) == cells.end())
-                    cells.push_back(c);
-            }
+    std::vector<int> cells = free_staff_cells(w, *f.level, 2);
     CHECK(cells.size() == 2);
     if (cells.size() != 2)
         return;
@@ -544,34 +661,13 @@ void test_pick_up_staff(const char *dir)
         f.game->turn();
     int16_t hired = s.hire_time;
     CHECK(hired != int16_t(f.game->turn_count));
-
-    // Picked up: off the map, held, and placed by the interface.
-    int taken = s.x.tile + s.y.tile * th::kMapSize;
-    th::Event e = th::pick_up_staff_click(w, id);
-    CHECK(e.type == th::EV_PICK_UP_STAFF && e.value == id);
-    hire_command(f, hire, ui, e);
-    CHECK(s.state == th::kStaffHeld && w.held_staff == id && w.held_staff_tile == taken && s.room == 0);
-    CHECK(hire.placing() && hire.held == id && hire.held_kind == th::kStaffNurse);
-    bool listed = false;
-    for (int t = w.map[size_t(taken)].first; t > 0; t = w.things[size_t(t)].cell_next)
-        listed |= t == id;
-    CHECK(!listed && cell_lists_consistent(w));
-
-    // Placed again: no fee, the hire turn and discontent kept.
-    w.things[id].discontent = 7;
-    balance = f.game->balance;
-    e = th::place_staff_click(hire, w, cells[1]);
-    CHECK(e.type == th::EV_PLACE_STAFF && e.arg == id);
-    hire_command(f, hire, ui, e);
-    CHECK(!hire.placing() && w.held_staff == 0 && w.held_staff_tile == 0);
-    CHECK(s.x.tile + s.y.tile * th::kMapSize == cells[1] && s.state != th::kStaffHeld);
-    CHECK(f.game->balance == balance && s.hire_time == hired && s.discontent == 7);
+    balance = check_picked_up_and_placed(f, hire, ui, id, cells[1], hired);
     CHECK(th::count_applicants(w, th::kStaffNurse) == applicants && cell_lists_consistent(w));
 
     // Picked up and dropped: back on the cell they were taken from.
     for (int i = 0; i < 10; i++)
         f.game->turn();
-    taken = s.x.tile + s.y.tile * th::kMapSize;
+    int taken = s.x.tile + s.y.tile * th::kMapSize;
     hire_command(f, hire, ui, th::pick_up_staff_click(w, id));
     CHECK(hire.held == id && s.state == th::kStaffHeld);
     hire_command(f, hire, ui, th::hire_staff_cancel(hire));
@@ -600,6 +696,38 @@ bool on_map(const th::World &w, uint16_t id)
         if (i == id)
             return true;
     return false;
+}
+
+// Sacked doctor `doctor` walks out of the office, then to the entrance's door,
+// where he goes off the map back to the applicants, withdrawn the turn
+// after.
+void check_sacked_doctor_leaves(QueueFixture &f, uint16_t doctor)
+{
+    const th::Game &g = *f.game;
+    const th::World &w = g.world;
+    const th::Thing &d = w.things[doctor];
+    const uint16_t entrance = w.rooms[th::get_room_info(w, th::kRoomEntrance, 0x65, 0)].door_tile;
+    bool left_office = false;
+    int turns = 0;
+    for (; turns < 3000 && d.state != th::kStaffApplicant; turns++) {
+        f.turn();
+        left_office |= d.room == 0;
+    }
+    std::printf("sacked doctor: back to the applicants after %d turns, seed %#x\n", turns, unsigned(w.seed));
+    CHECK(left_office && d.state == th::kStaffApplicant && d.x.tile + d.y.tile * th::kMapSize == entrance);
+    CHECK(!on_map(w, doctor) && cell_lists_consistent(w) && d.hire_time == int16_t(g.turn_count));
+    CHECK(d.owner == th::kNoOwner && d.hire_expiry == 0);
+    f.turn();
+    CHECK(d.type == th::kThingFree);
+}
+
+// Whether a severance payment is among `fin`'s lines from `from` on.
+bool paid_severance(const th::Finance &fin, size_t from)
+{
+    bool severance = false;
+    for (size_t i = from; i < fin.entry_count; i++)
+        severance |= fin.entries[i].type == th::kTxSeverancePay;
+    return severance;
 }
 
 } // namespace
@@ -647,20 +775,7 @@ void test_sack_doctor(const char *dir)
     CHECK(logged(g, "set_complex " + std::to_string(doctor) +
                         " action=310 arg=" + std::to_string(w.rooms[gp].door_inside_tile)));
 
-    // Out of the office, then to the entrance's door.
-    const uint16_t entrance = w.rooms[th::get_room_info(w, th::kRoomEntrance, 0x65, 0)].door_tile;
-    bool left_office = false;
-    int turns = 0;
-    for (; turns < 3000 && d.state != th::kStaffApplicant; turns++) {
-        f.turn();
-        left_office |= d.room == 0;
-    }
-    std::printf("sacked doctor: back to the applicants after %d turns, seed %#x\n", turns, unsigned(w.seed));
-    CHECK(left_office && d.state == th::kStaffApplicant && d.x.tile + d.y.tile * th::kMapSize == entrance);
-    CHECK(!on_map(w, doctor) && cell_lists_consistent(w) && d.hire_time == int16_t(g.turn_count));
-    CHECK(d.owner == th::kNoOwner && d.hire_expiry == 0);
-    f.turn();
-    CHECK(d.type == th::kThingFree);
+    check_sacked_doctor_leaves(f, doctor);
 }
 
 // A discontented doctor hired long enough ago hands in his notice (1500
@@ -701,10 +816,7 @@ void test_staff_notice_runs_out(const char *dir)
     CHECK(logged(g, "get_playercall " + std::to_string(call) + " type=1 owner=0"));
     CHECK(d.owner == th::kNoOwner && d.orders == 0 && d.resign_count == 0 && d.resign_time == 0 && d.playercall == 0);
     CHECK(th::check_playercall(w, 1, doctor, 0) == 0 && th::staff_with_skill(w, 0, 4) == 0);
-    bool severance = false;
-    for (size_t i = entries; i < g.finance.entry_count; i++)
-        severance |= g.finance.entries[i].type == th::kTxSeverancePay;
-    CHECK(!severance);
+    CHECK(!paid_severance(g.finance, entries));
     int turns = 0;
     for (; turns < 3000 && d.state != th::kStaffApplicant; turns++)
         f.turn();
@@ -712,4 +824,34 @@ void test_staff_notice_runs_out(const char *dir)
                 unsigned(notice_end), turns, unsigned(w.seed));
     CHECK(d.state == th::kStaffApplicant && !on_map(w, doctor) &&
           d.x.tile + d.y.tile * th::kMapSize == w.rooms[th::get_room_info(w, th::kRoomEntrance, 0x65, 0)].door_tile);
+}
+
+// adjust_handyman_values (src/req4.cpp): a priority up by 6, taken from the
+// larger of the other two; from 94 it takes everything; any button starts
+// the job counts again.
+void test_adjust_handyman_values()
+{
+    auto w = std::make_unique<th::World>();
+    th::Thing &h = w->things[3];
+    h.type = th::kThingStaff;
+    h.subtype = th::kStaffHandyman;
+    h.prio_litter = 33;
+    h.prio_plants = 33;
+    h.prio_repair = 34;
+    h.litter_count = 5;
+    h.plant_count = 6;
+    h.repair_count = 7;
+    th::adjust_handyman_values(*w, 3, th::kHandymanLitterButton);
+    CHECK(h.prio_litter == 39 && h.prio_plants == 31 && h.prio_repair == 30);
+    CHECK(h.litter_count == 0 && h.plant_count == 0 && h.repair_count == 0);
+    th::adjust_handyman_values(*w, 3, th::kHandymanPlantsButton);
+    CHECK(h.prio_litter == 33 && h.prio_plants == 37 && h.prio_repair == 30);
+    for (int i = 0; i < 20; i++)
+        th::adjust_handyman_values(*w, 3, th::kHandymanRepairButton);
+    CHECK(h.prio_litter == 0 && h.prio_plants == 0 && h.prio_repair == 100);
+    th::adjust_handyman_values(*w, 3, th::kHandymanLitterButton);
+    CHECK(h.prio_litter == 6 && h.prio_plants == 0 && h.prio_repair == 94);
+    h.repair_count = 9;
+    th::adjust_handyman_values(*w, 3, 15);
+    CHECK(h.prio_litter == 6 && h.prio_plants == 0 && h.prio_repair == 94 && h.repair_count == 0);
 }

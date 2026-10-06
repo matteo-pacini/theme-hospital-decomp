@@ -19,13 +19,10 @@
 
 extern int failures;
 
-#define CHECK(cond)                                                                                                    \
-    do {                                                                                                               \
-        if (!(cond)) {                                                                                                 \
-            std::fprintf(stderr, "%s:%d: CHECK(%s) failed\n", __FILE__, __LINE__, #cond);                              \
-            failures++;                                                                                                \
-        }                                                                                                              \
-    } while (0)
+// Counts a failure and reports `text` at `file`:`line` when `ok` is false.
+void check(bool ok, const char *file, int line, const char *text);
+
+#define CHECK(cond) check(static_cast<bool>(cond), __FILE__, __LINE__, #cond)
 
 // Every cell's list is well linked and holds the things on that cell.
 bool cell_lists_consistent(const th::World &w);
@@ -99,7 +96,7 @@ struct QueueFixture {
     uint16_t place_near(int from, int kind)
     {
         for (int d = 0; d < 6 * th::kMapSize; d++)
-            if (uint16_t id = th::place_object(game->world, gd.anims(), from + d, kind, 0, 0, false))
+            if (uint16_t id = th::place_object(game->world, gd.anims(), {from + d, kind, 0}, 0, false))
                 return id;
         return 0;
     }

@@ -76,9 +76,103 @@ void jukebox_event(Jukebox &jukebox, Interface &ui, const Event &event)
     ui.open_requester(Requester::Jukebox);
 }
 
-JukeboxResult jukebox_frame(Jukebox &jukebox, const Interface &ui, const InterfaceEvents &events,
-                            const RequesterArt &art, MusicPlayer &music, const UiMouse &mouse, bool paused)
+namespace
 {
+
+// The jukebox button `n` (counted from 1), held or pressed.
+void jukebox_button(int n, MusicPlayer &music, bool paused, JukeboxResult &result)
+{
+    switch (n) {
+    case kPreviousButton:
+        if (!music.loop() && music.playing()) {
+            music.end_song();
+            music.play_previous(paused);
+        }
+        result.sounds.push_back(kSfxSelectX);
+        break;
+    case kStopButton:
+        if (music.playing())
+            music.stop();
+        result.sounds.push_back(kSfxSelectX);
+        break;
+    case kPlayButton:
+        if (music.playing()) {
+            music.pause_song();
+            music.set_playing(false);
+        } else {
+            music.resume_song();
+            music.set_playing(true);
+            if (music.song_over(paused))
+                music.play(music.track());
+        }
+        result.sounds.push_back(kSfxSelectX);
+        break;
+    case kNextButton:
+        if (!music.loop() && music.playing())
+            music.end_song();
+        result.sounds.push_back(kSfxSelectX);
+        break;
+    case kCloseButton:
+        result.close = true;
+        result.sounds.push_back(kSfxNo4);
+        break;
+    case kLoopButton:
+        music.set_loop(!music.loop());
+        result.sounds.push_back(kSfxSelectX);
+        break;
+    default:
+        break;
+    }
+}
+
+// What req6_overdraw's list clicks test: the window, the row sprites, the
+// pointer and whether the left button is down.
+struct JukeboxList {
+    const Window &win;
+    Sprite left_end, tile, light;
+    const UiMouse &mouse;
+    bool left;
+};
+
+// req6_overdraw's clicks on track row `i`: its title plays it, its light
+// turns it on or off.
+void jukebox_row_click(Jukebox &jukebox, const JukeboxList &list, int i, MusicPlayer &music, bool paused,
+                       JukeboxResult &result)
+{
+    const Window &win = list.win;
+    const Sprite &tile = list.tile;
+    int y = win.y + kListY + i * tile.height;
+    int x = kListX;
+    for (; tile.width > 0 && x < tile.width * 7; x += tile.width) {
+        if (!list.left && jukebox.armed &&
+            over(list.mouse, win.x + x + list.left_end.width, y, tile.width, tile.height)) {
+            if (i != music.track()) {
+                music.set_loop(false);
+                music.set_playing(true);
+                music.play(i);
+            }
+            jukebox.armed = false;
+        }
+    }
+    if (!list.left && jukebox.armed &&
+        over(list.mouse, win.x + x + list.left_end.width, y, list.light.width, list.light.height)) {
+        music.set_track_enabled(i, !music.track_enabled(i));
+        result.sounds.push_back(kSfxSelectX);
+        if (i == music.track()) {
+            music.end_song();
+            music.play_next(paused);
+        }
+        jukebox.armed = false;
+    }
+}
+
+} // namespace
+
+JukeboxResult jukebox_frame(Jukebox &jukebox, const Interface &ui, const RequesterInput &input, const RequesterArt &art,
+                            MusicPlayer &music, bool paused)
+{
+    const InterfaceEvents &events = input.events;
+    const UiMouse &mouse = input.mouse;
     JukeboxResult result;
     if (ui.requester() != Requester::Jukebox)
         return result;
@@ -87,49 +181,8 @@ JukeboxResult jukebox_frame(Jukebox &jukebox, const Interface &ui, const Interfa
     if (events.triggered_window == int(Requester::Jukebox)) {
         int n = 1;
         for (const WindowButton &b : win.buttons) {
-            if (b.flags & (kButtonHeld | kButtonPressed)) {
-                switch (n) {
-                case kPreviousButton:
-                    if (!music.loop() && music.playing()) {
-                        music.end_song();
-                        music.play_previous(paused);
-                    }
-                    result.sounds.push_back(kSfxSelectX);
-                    break;
-                case kStopButton:
-                    if (music.playing())
-                        music.stop();
-                    result.sounds.push_back(kSfxSelectX);
-                    break;
-                case kPlayButton:
-                    if (music.playing()) {
-                        music.pause_song();
-                        music.set_playing(false);
-                    } else {
-                        music.resume_song();
-                        music.set_playing(true);
-                        if (music.song_over(paused))
-                            music.play(music.track());
-                    }
-                    result.sounds.push_back(kSfxSelectX);
-                    break;
-                case kNextButton:
-                    if (!music.loop() && music.playing())
-                        music.end_song();
-                    result.sounds.push_back(kSfxSelectX);
-                    break;
-                case kCloseButton:
-                    result.close = true;
-                    result.sounds.push_back(kSfxNo4);
-                    break;
-                case kLoopButton:
-                    music.set_loop(!music.loop());
-                    result.sounds.push_back(kSfxSelectX);
-                    break;
-                default:
-                    break;
-                }
-            }
+            if (b.flags & (kButtonHeld | kButtonPressed))
+                jukebox_button(n, music, paused, result);
             n++;
         }
     }
@@ -137,33 +190,12 @@ JukeboxResult jukebox_frame(Jukebox &jukebox, const Interface &ui, const Interfa
     // req6_overdraw's clicks: lbDisplay.mleft_button arms them, and they
     // act once it is up.
     const SpriteSheet &sheet = art.sheet(int(Requester::Jukebox));
-    const Sprite left_end = sheet.at(kRowLeft), tile = sheet.at(kRowTile), light = sheet.at(kTrackOn);
     bool left = mouse.left_held || mouse.left_pressed;
+    const JukeboxList list = {win, sheet.at(kRowLeft), sheet.at(kRowTile), sheet.at(kTrackOn), mouse, left};
     if (left)
         jukebox.armed = true;
-    for (int i = 0; i < music.count(); i++) {
-        int y = win.y + kListY + i * tile.height;
-        int x = kListX;
-        for (; tile.width > 0 && x < tile.width * 7; x += tile.width) {
-            if (!left && jukebox.armed && over(mouse, win.x + x + left_end.width, y, tile.width, tile.height)) {
-                if (i != music.track()) {
-                    music.set_loop(false);
-                    music.set_playing(true);
-                    music.play(i);
-                }
-                jukebox.armed = false;
-            }
-        }
-        if (!left && jukebox.armed && over(mouse, win.x + x + left_end.width, y, light.width, light.height)) {
-            music.set_track_enabled(i, !music.track_enabled(i));
-            result.sounds.push_back(kSfxSelectX);
-            if (i == music.track()) {
-                music.end_song();
-                music.play_next(paused);
-            }
-            jukebox.armed = false;
-        }
-    }
+    for (int i = 0; i < music.count(); i++)
+        jukebox_row_click(jukebox, list, i, music, paused, result);
     return result;
 }
 
@@ -180,7 +212,7 @@ void draw_jukebox(UiLayer &layer, const Interface &ui, const RequesterArt &art, 
     auto title = [&](int track) { return track < music.count() ? std::string_view(music.title(track)) : ""; };
 
     if (music.midi_playing())
-        layer.draw_text(art.highlight_font(), text_window, ox + kTitleX, oy + kTitleY, title(music.track()), 0, screen);
+        layer.draw_text(art.highlight_font(), ox + kTitleX, oy + kTitleY, title(music.track()), {text_window, screen});
     if (music.loop())
         layer.draw_sprite(ox + kLoopX, oy + kLoopY, sheet.at(kLoopLight));
     if (music.playing())
@@ -196,7 +228,7 @@ void draw_jukebox(UiLayer &layer, const Interface &ui, const RequesterArt &art, 
         bool on = music.loop() ? i == music.track() : music.track_enabled(i);
         layer.draw_sprite(x + ox + left_end.width, y + oy, sheet.at(on ? kTrackOn : kTrackOff));
         const Font &font = music.midi_playing() && i == music.track() ? art.highlight_font() : art.font();
-        layer.draw_text(font, text_window, ox + kRowTitleX, y - tile.height + oy + kRowTitleY, title(i), 0, screen);
+        layer.draw_text(font, ox + kRowTitleX, y - tile.height + oy + kRowTitleY, title(i), {text_window, screen});
     }
 
     const Sprite bottom_left = sheet.at(kBottomLeft), bottom_tile = sheet.at(kBottomTile);

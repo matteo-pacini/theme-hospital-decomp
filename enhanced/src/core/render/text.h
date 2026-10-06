@@ -38,22 +38,32 @@ struct TextWindow {
     int width = 0;
 };
 
-// Draws `text` as LbTextDraw does: at (x, y) relative to `window`, in
-// `font`, laid out by `flags` (TextFlags | DrawFlags), clipped to `clip`
-// (LbTextSetClipWindow: a negative width or height extends left or up, and
-// it is limited to the surface; the surface's own clip rectangle is ignored
-// and left as it was). The alignment offsets subtract x from the window's
-// width, so x = 0 centres within the window. Lines advance by the font's
-// line height.
+// How draw_text lays out and draws, as the game sets lbDisplay before
+// LbTextDraw: the justify window, the clip window (LbTextSetClipWindow: a
+// negative width or height extends left or up, and it is limited to the
+// surface), the layout flags (TextFlags | DrawFlags), the text colour, and
+// the ghost table that ghost flags need (GameData::ghost()).
+struct TextSettings {
+    TextWindow window;
+    Rect clip;
+    unsigned flags = 0;
+    uint8_t colour = 0;
+    const uint8_t *ghost = nullptr;
+};
+
+// Draws `text` as LbTextDraw does: at (x, y) relative to `settings.window`,
+// in `font`, clipped to `settings.clip` (the surface's own clip rectangle is
+// ignored and left as it was). The alignment offsets subtract x from the
+// window's width, so x = 0 centres within the window. Lines advance by the
+// font's line height.
 //
 // Control bytes in `text`: '\n' breaks the line; 6, 7, 8 and 9 toggle
 // kTextWrap, kTextRight, kTextCentre and kTextJustify; 1-5 toggle the sprite
 // flags 0x04, 0x08, 0x10 (no effect here), 0x01 and 0x02; 11 toggles kTextUnderline; 12
-// toggles kTextOneColour; 14 sets the text colour (initially `colour`) to
-// the next byte. Their effect lasts to the end of this call only.
-// Ghost flags need `ghost` (GameData::ghost()).
-void draw_text(Surface &dst, const Font &font, TextWindow window, int x, int y, std::string_view text, unsigned flags,
-               Rect clip, uint8_t colour = 0, const uint8_t *ghost = nullptr);
+// toggles kTextOneColour; 14 sets the text colour (initially
+// `settings.colour`) to the next byte. Their effect lasts to the end of this
+// call only.
+void draw_text(Surface &dst, const Font &font, int x, int y, std::string_view text, const TextSettings &settings);
 
 // Width in pixels of the widest line of `text` (LbTextStringWidth), tabs
 // counted as kSpacesPerTab spaces. Control bytes count 0, but the byte after

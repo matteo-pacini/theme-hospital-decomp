@@ -597,6 +597,14 @@ inline constexpr std::array<uint8_t, kObjectKinds> kObjectFlags = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 0, 0, 1, 0, 0, 6, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
 };
 
+// objects[].is_machine (src/tables.cpp): machines, which wear, are repaired
+// and break down. objects[].debris, which the mouse tests, is nonzero for
+// the same kinds.
+inline constexpr std::array<uint8_t, kObjectKinds> kObjectIsMachine = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
 // The game's wall_hug[] (src/tables.cpp): an object placed against a room's
 // wall. `kind` 4 may go against any of the four walls, 2 only the north and
 // west ones; `angle` is the facing it takes against the north, east, south

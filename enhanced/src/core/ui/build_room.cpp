@@ -105,9 +105,8 @@ Sprite block(const GameData &data, uint8_t id)
 }
 
 // draw_a_one_colour_frame: the elements of composite frame `frame_id` with
-// its origin at (x, y) in `colour` alone.
-void draw_frame_one_colour(Surface &dst, int x, int y, uint32_t frame_id, bool flip, uint8_t colour,
-                           const GameData &data)
+// its origin at `at` in `colour` alone.
+void draw_frame_one_colour(Surface &dst, Point at, uint32_t frame_id, bool flip, uint8_t colour, const GameData &data)
 {
     const AnimData &anims = data.anims();
     if (frame_id >= anims.frames.size())
@@ -124,13 +123,15 @@ void draw_frame_one_colour(Surface &dst, int x, int y, uint32_t frame_id, bool f
             f ^= kDrawFlipX;
             ex = -ex - s.width;
         }
-        draw_sprite_one_colour(dst, x + ex, y + ey, s, colour, f);
+        draw_sprite_one_colour(dst, at.x + ex, at.y + ey, s, colour, f);
     }
 }
 
 // LbDrawLine, clipped to `dst`'s clip rectangle.
-void draw_line(Surface &dst, int x0, int y0, int x1, int y1, uint8_t colour, Rect clip)
+void draw_line(Surface &dst, Point from, Point to, uint8_t colour, Rect clip)
 {
+    int x0 = from.x, y0 = from.y;
+    const int x1 = to.x, y1 = to.y;
     int dx = std::abs(x1 - x0), dy = -std::abs(y1 - y0);
     int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     int err = dx + dy;
@@ -182,71 +183,91 @@ void sync_build_requester(Interface &ui, const Game &game)
     }
 }
 
-void build_requesters_input(Interface &ui, BuildUi &bui, Game &game, const InterfaceEvents &events,
+namespace
+{
+
+// The room entry under the pointer becomes the room type the requester
+// offers.
+void build_requesters_hover(const Interface &ui, BuildUi &bui, ObjectPlacing &p, std::vector<uint8_t> &sounds,
                             const UiMouse &mouse)
+{
+    if (!window_open(ui, kBuildWindow) || p.requester_mode != 4)
+        return;
+    const Window &win = ui.window(kBuildWindow);
+    for (int i = 0; i < kEntries; i++) {
+        if (!over(mouse.x, mouse.y, win.x + kRoomBox.x, win.y + kRoomBox.y + kEntryStep * i, kRoomBox.w, kRoomBox.h))
+            continue;
+        if (p.room_type != p.offered[size_t(i)])
+            sounds.push_back(kSfxHighlight5);
+        p.room_type = p.offered[size_t(i)];
+        bui.hovered_entry = i;
+    }
+}
+
+void build_requesters_build_button(Game &game, int i)
 {
     ObjectPlacing &p = game.world.placing;
     std::vector<uint8_t> &sounds = game.world.building.sounds;
+    if (i >= kDeptButton && i < kDeptButton + kDeptButtons) {
+        game.event = {EV_REQ1_RESET_ROOMS, uint16_t(kFirstDepartment + i - kDeptButton), 0, 0};
+        sounds.push_back(kSfxSelectX);
+    } else if (i == kCloseButton) {
+        game.event = {EV_CLOSE_REQUESTERS, 0, 0, 0};
+        sounds.push_back(kSfxNo4);
+    } else if (p.requester_mode == 4 && i >= kRoomButton && i < kRoomButton + kEntries) {
+        if (int kind = p.room_type) {
+            if (room_price(game, kind) < game.balance) {
+                game.event = {EV_INIT_BLUEPRINT, uint16_t(kind), 0, uint16_t(kind)};
+                sounds.push_back(kSfxYesX);
+            } else {
+                sounds.push_back(kSfxWrong2);
+            }
+        }
+        sounds.push_back(kSfxYesX);
+    }
+}
+
+void build_requesters_edit_button(Game &game, int i)
+{
+    ObjectPlacing &p = game.world.placing;
+    std::vector<uint8_t> &sounds = game.world.building.sounds;
+    if (i == kEditRoomFurnish && !(p.arg & (1u << kEditRoomFurnish))) {
+        game.event = {EV_FURNISH_EDITED_ROOM, 0, 0, 0};
+        sounds.push_back(kSfxSelectX);
+        return;
+    }
+    if (i != kEditRoomConfirm || (p.arg & (1u << kEditRoomConfirm)))
+        return;
+    switch (p.requester_mode) {
+    case 0:
+        game.event = {EV_COMMIT_BLUEPRINT, 0, 0, 0};
+        game.world.building.mouse = BuildMouse::None;
+        break;
+    case 4:
+        game.event = {EV_COMMIT_DOORS, p.room_type, 0, 0};
+        sounds.push_back(kSfxYesX);
+        break;
+    case 6:
+    case 8:
+        game.event = {EV_OPEN_ROOM, 0, 0, 0};
+        sounds.push_back(kSfxYesX);
+        break;
+    default:
+        break;
+    }
+}
+
+} // namespace
+
+void build_requesters_input(Interface &ui, BuildUi &bui, Game &game, const InterfaceEvents &events,
+                            const UiMouse &mouse)
+{
     bui.hovered_entry = -1;
-    if (window_open(ui, kBuildWindow) && p.requester_mode == 4) {
-        const Window &win = ui.window(kBuildWindow);
-        for (int i = 0; i < kEntries; i++) {
-            if (over(mouse.x, mouse.y, win.x + kRoomBox.x, win.y + kRoomBox.y + kEntryStep * i, kRoomBox.w,
-                     kRoomBox.h)) {
-                if (p.room_type != p.offered[size_t(i)])
-                    sounds.push_back(kSfxHighlight5);
-                p.room_type = p.offered[size_t(i)];
-                bui.hovered_entry = i;
-            }
-        }
-    }
-
-    if (events.triggered_window == kBuildWindow) {
-        int i = events.triggered_button;
-        if (i >= kDeptButton && i < kDeptButton + kDeptButtons) {
-            game.event = {EV_REQ1_RESET_ROOMS, uint16_t(kFirstDepartment + i - kDeptButton), 0, 0};
-            sounds.push_back(kSfxSelectX);
-        } else if (i == kCloseButton) {
-            game.event = {EV_CLOSE_REQUESTERS, 0, 0, 0};
-            sounds.push_back(kSfxNo4);
-        } else if (p.requester_mode == 4 && i >= kRoomButton && i < kRoomButton + kEntries) {
-            if (int kind = p.room_type) {
-                if (room_price(game, kind) < game.balance) {
-                    game.event = {EV_INIT_BLUEPRINT, uint16_t(kind), 0, uint16_t(kind)};
-                    sounds.push_back(kSfxYesX);
-                } else {
-                    sounds.push_back(kSfxWrong2);
-                }
-            }
-            sounds.push_back(kSfxYesX);
-        }
-    }
-
-    if (events.triggered_window == kEditWindow) {
-        int i = events.triggered_button;
-        if (i == kEditRoomFurnish && !(p.arg & (1u << kEditRoomFurnish))) {
-            game.event = {EV_FURNISH_EDITED_ROOM, 0, 0, 0};
-            sounds.push_back(kSfxSelectX);
-        } else if (i == kEditRoomConfirm && !(p.arg & (1u << kEditRoomConfirm))) {
-            switch (p.requester_mode) {
-            case 0:
-                game.event = {EV_COMMIT_BLUEPRINT, 0, 0, 0};
-                game.world.building.mouse = BuildMouse::None;
-                break;
-            case 4:
-                game.event = {EV_COMMIT_DOORS, p.room_type, 0, 0};
-                sounds.push_back(kSfxYesX);
-                break;
-            case 6:
-            case 8:
-                game.event = {EV_OPEN_ROOM, 0, 0, 0};
-                sounds.push_back(kSfxYesX);
-                break;
-            default:
-                break;
-            }
-        }
-    }
+    build_requesters_hover(ui, bui, game.world.placing, game.world.building.sounds, mouse);
+    if (events.triggered_window == kBuildWindow)
+        build_requesters_build_button(game, events.triggered_button);
+    if (events.triggered_window == kEditWindow)
+        build_requesters_edit_button(game, events.triggered_button);
 }
 
 void build_mouse(BuildUi &bui, Game &game, int cell, const UiMouse &mouse, bool on_map)
@@ -277,6 +298,56 @@ void build_mouse(BuildUi &bui, Game &game, int cell, const UiMouse &mouse, bool 
     bui.prev_cell = cell;
 }
 
+namespace
+{
+
+void put_text(UiLayer &layer, const Window &win, const Font &font, Point at, std::string_view s)
+{
+    const Rect screen = {0, 0, kUiWidth, kUiHeight};
+    layer.draw_text(font, win.x + at.x, win.y + at.y, s, {{0, 0, kUiWidth}, screen});
+}
+
+// The picture of room type `croom`'s main object, fitted to 121 pixels when
+// either side is larger.
+void draw_build_requester_preview(UiLayer &layer, const Window &win, int croom, const GameData &data)
+{
+    AnimStart start = anim_start(data, kPreviewAnims[kRoomTypeInfo[size_t(croom)].main_object]);
+    const AnimData &anims = data.anims();
+    if (start.frame >= anims.frames.size())
+        return;
+    const AnimFrame &frame = anims.frames[start.frame];
+    int scale_x = frame.width ? 0x790000 / frame.width : INT_MAX;
+    int scale_y = frame.height ? 0x790000 / frame.height : INT_MAX;
+    int scale = 0x10000;
+    if (!(scale_y >= 0x10000 && scale_x >= 0x10000))
+        scale = (std::min(scale_x, scale_y) >> 8) << 8;
+    draw_layer_frame(layer, data, start.frame, {win.x + kPreview.x, win.y + kPreview.y}, start.flip != 0, scale);
+}
+
+// The room choice: the instructions, the preview, the offered rooms and the
+// price.
+void draw_build_requester_rooms(UiLayer &layer, const Window &win, const BuildUi &bui, const Game &game,
+                                const RequesterArt &art, const GameData &data)
+{
+    const ObjectPlacing &p = game.world.placing;
+    const LanguageText &text = data.text();
+    put_text(layer, win, art.font(), kHelpText, text.at(TextSection::Req1Help, kChooseRoomText));
+    int croom = p.room_type % kRoomTypes;
+    if (croom)
+        draw_build_requester_preview(layer, win, croom, data);
+    for (int i = 0; i < kEntries; i++) {
+        int room = p.offered[size_t(i)];
+        const Font &font = bui.hovered_entry == i ? art.highlight_font() : art.font();
+        if (room)
+            put_text(layer, win, font, {kRoomText.x, kRoomText.y + kEntryStep * i},
+                     text.at(TextSection::RoomNames, kRoomTypeInfo[size_t(room) % kRoomTypes].name));
+    }
+    put_text(layer, win, art.font(), kCostText,
+             std::string(text.at(TextSection::Req1Help, kCostPrefixText)) + std::to_string(room_price(game, croom)));
+}
+
+} // namespace
+
 void draw_build_requester(UiLayer &layer, const Interface &ui, const BuildUi &bui, const Game &game,
                           const RequesterArt &art, const GameData &data)
 {
@@ -285,133 +356,144 @@ void draw_build_requester(UiLayer &layer, const Interface &ui, const BuildUi &bu
     const Window &win = ui.window(kBuildWindow);
     const ObjectPlacing &p = game.world.placing;
     const LanguageText &text = data.text();
-    const Rect screen = {0, 0, kUiWidth, kUiHeight};
-    auto put = [&](const Font &font, Point at, std::string_view s) {
-        layer.draw_text(font, {0, 0, kUiWidth}, win.x + at.x, win.y + at.y, s, 0, screen);
-    };
-    if (p.requester_mode == 1) {
-        put(art.font(), kHelpText, text.at(TextSection::Req1Help, kChooseDeptText));
-    } else if (p.requester_mode == 4) {
-        put(art.font(), kHelpText, text.at(TextSection::Req1Help, kChooseRoomText));
-        int croom = p.room_type % kRoomTypes;
-        if (croom) {
-            // The picture is fitted to 121 pixels when either side is larger.
-            AnimStart start = anim_start(data, kPreviewAnims[kRoomTypeInfo[size_t(croom)].main_object]);
-            const AnimData &anims = data.anims();
-            if (start.frame < anims.frames.size()) {
-                const AnimFrame &frame = anims.frames[start.frame];
-                int scale_x = frame.width ? 0x790000 / frame.width : INT_MAX;
-                int scale_y = frame.height ? 0x790000 / frame.height : INT_MAX;
-                int scale = 0x10000;
-                if (!(scale_y >= 0x10000 && scale_x >= 0x10000))
-                    scale = (std::min(scale_x, scale_y) >> 8) << 8;
-                draw_layer_frame(layer, data, start.frame, win.x + kPreview.x, win.y + kPreview.y, start.flip != 0,
-                                 scale);
-            }
-        }
-        for (int i = 0; i < kEntries; i++) {
-            int room = p.offered[size_t(i)];
-            const Font &font = bui.hovered_entry == i ? art.highlight_font() : art.font();
-            if (room)
-                put(font, {kRoomText.x, kRoomText.y + kEntryStep * i},
-                    text.at(TextSection::RoomNames, kRoomTypeInfo[size_t(room) % kRoomTypes].name));
-        }
-        put(art.font(), kCostText,
-            std::string(text.at(TextSection::Req1Help, kCostPrefixText)) + std::to_string(room_price(game, croom)));
-    }
+    if (p.requester_mode == 1)
+        put_text(layer, win, art.font(), kHelpText, text.at(TextSection::Req1Help, kChooseDeptText));
+    else if (p.requester_mode == 4)
+        draw_build_requester_rooms(layer, win, bui, game, art, data);
     int row = 0;
     for (size_t i = 0; i < kDepartments.size(); i++) {
         if (!kDepartments[i].listed)
             continue;
         const Font &font = p.arg == i ? art.highlight_font() : art.font();
-        put(font, {kDeptText.x, kDeptText.y + kDeptStep * row}, text.at(TextSection::DepartmentNames, int(i)));
+        put_text(layer, win, font, {kDeptText.x, kDeptText.y + kDeptStep * row},
+                 text.at(TextSection::DepartmentNames, int(i)));
         row++;
     }
 }
 
-void draw_build_overlay(Surface &dst, Rect view, Point camera, const Game &game, const BuildUi &bui,
-                        const ObjectUi &oui, const GameData &data)
+namespace
 {
-    const World &world = game.world;
-    const Building &bd = world.building;
-    const BuildState &b = bd.build;
+
+// What draw_build_overlay's pieces draw into and with.
+struct OverlayPainter {
+    Surface &dst;
+    Rect view;
+    Point camera;
+    const ObjectUi &oui;
+    const GameData &data;
+
     // give_screen_xy_of_cell_at_column_row: the left corner's x and the
     // bottom corner's y of a cell's diamond.
-    auto cell_x = [&](int col, int row) { return (col - row - 1) * kTileWidth / 2 - camera.x + view.x; };
-    auto cell_y = [&](int col, int row) { return (col + row + 2) * kTileHeight / 2 - camera.y + view.y; };
-    auto draw_block = [&](int col, int row, uint8_t id) {
+    int cell_x(int col, int row) const { return (col - row - 1) * kTileWidth / 2 - camera.x + view.x; }
+    int cell_y(int col, int row) const { return (col + row + 2) * kTileHeight / 2 - camera.y + view.y; }
+
+    void draw_block(int col, int row, uint8_t id) const
+    {
         Sprite s = block(data, id);
         draw_sprite(dst, cell_x(col, row), cell_y(col, row) - s.height, s);
-    };
-    auto draw_anim = [&](int col, int row, uint32_t anim, bool red) {
+    }
+
+    void draw_anim(int col, int row, uint32_t anim, bool red) const
+    {
         AnimStart start = anim_start(data, anim);
         int x = cell_x(col, row), y = cell_y(col, row);
         if (red)
-            draw_frame_one_colour(dst, x, y, start.frame, start.flip != 0, oui.red, data);
+            draw_frame_one_colour(dst, {x, y}, start.frame, start.flip != 0, oui.red, data);
         else
-            draw_frame(dst, x, y, start.frame, start.flip != 0, 0, data);
-    };
-    dst.set_clip(view);
-
-    // draw_overdrawn_blueprints: the blueprint while it is laid out.
-    if (b.draw_mode == 1) {
-        int width = b.x1 - b.x0 + 1, height = b.y1 - b.y0 + 1;
-        for (int y = b.y0; y <= b.y1; y++) {
-            for (int x = b.x0; x <= b.x1; x++) {
-                uint8_t id = kBlueprintFloor;
-                if (blueprint_floor_invalid(world, x, y)) {
-                    id = kInvalidFloor;
-                } else if (height % 2 == 0 && width % 2 == 0 && width > 3 && height > 3) {
-                    if (y == (height - 1) / 2 + b.y0 && x == (width - 1) / 2 + b.x0)
-                        id = 38;
-                    else if (y == (height - 1) / 2 + b.y0 && x == (width + 1) / 2 + b.x0)
-                        id = 37;
-                    else if (y == (height + 1) / 2 + b.y0 && x == (width - 1) / 2 + b.x0)
-                        id = 36;
-                    else if (y == (height + 1) / 2 + b.y0 && x == (width + 1) / 2 + b.x0)
-                        id = 39;
-                }
-                draw_block(x, y, id);
-            }
-        }
-        for (int y = b.y0; y <= b.y1 + 1; y++) {
-            for (int x = b.x0; x <= b.x1 + 1; x++) {
-                int piece = y == b.y0                    ? (x == b.x0       ? 3
-                                                            : x == b.x1 + 1 ? 2
-                                                                            : 1)
-                            : y == b.y1 + 1              ? (x == b.x1 + 1 ? 0 : 1)
-                            : x == b.x0 || x == b.x1 + 1 ? 2
-                                                         : 0;
-                if (piece)
-                    draw_anim(x, y - 1, kBlueprints[size_t(piece)].anim, blueprint_outline_invalid(world, x, y));
-            }
-        }
+            draw_frame(dst, {x, y}, start.frame, start.flip != 0, data);
     }
+};
 
-    // draw_cell_no: the cell under the pointer while the blueprint is laid
-    // out.
-    if (bd.mouse == BuildMouse::Blueprint && bui.cell >= 0) {
-        int col = bui.cell % kMapSize, row = bui.cell / kMapSize;
-        int top_x = cell_x(col, row) + kTileWidth / 2, top_y = cell_y(col, row) - kTileHeight;
-        const int hw = (kTileWidth - 1) / 2, hh = (kTileHeight - 1) / 2;
-        draw_line(dst, top_x, top_y, top_x + hw - 1, top_y + hh, oui.red, view);
-        draw_line(dst, top_x + hw, top_y + hh, top_x, top_y + kTileHeight - 1, oui.red, view);
-        draw_line(dst, top_x, top_y + kTileHeight - 1, top_x - hw, top_y + hh, oui.red, view);
-        draw_line(dst, top_x - hw, top_y + hh, top_x, top_y, oui.red, view);
+// The floor block of blueprint cell (x, y).
+uint8_t blueprint_floor_block(const World &world, const BuildState &b, int x, int y)
+{
+    int width = b.x1 - b.x0 + 1, height = b.y1 - b.y0 + 1;
+    if (blueprint_floor_invalid(world, x, y))
+        return kInvalidFloor;
+    if (height % 2 == 0 && width % 2 == 0 && width > 3 && height > 3) {
+        if (y == (height - 1) / 2 + b.y0 && x == (width - 1) / 2 + b.x0)
+            return 38;
+        if (y == (height - 1) / 2 + b.y0 && x == (width + 1) / 2 + b.x0)
+            return 37;
+        if (y == (height + 1) / 2 + b.y0 && x == (width - 1) / 2 + b.x0)
+            return 36;
+        if (y == (height + 1) / 2 + b.y0 && x == (width + 1) / 2 + b.x0)
+            return 39;
     }
+    return kBlueprintFloor;
+}
 
-    // temp_place_door's drawing: the door or window where it would go.
-    if (bd.mouse == BuildMouse::PlaceDoor && bd.door_shown) {
-        const DoorType &door = kDoorTypes[b.door_type % kDoorTypes.size()];
-        for (int j = 0; j < door.count; j++) {
-            int floor = b.door_tile + door.tiles[size_t(j)] - door.offset;
-            draw_block(uint16_t(floor) % kMapSize, uint16_t(floor) / kMapSize, door.floor_blocks[size_t(j)]);
-            int piece = b.door_tile + door.tiles[size_t(j)];
-            draw_anim(uint16_t(piece) % kMapSize, uint16_t(piece) / kMapSize - 1, door.cursor_anim,
-                      bd.door_piece_invalid[size_t(j)]);
+// The kBlueprints outline piece drawn at corner (x, y), 0 for none.
+int blueprint_outline_piece(const BuildState &b, int x, int y)
+{
+    if (y == b.y0)
+        return x == b.x0 ? 3 : x == b.x1 + 1 ? 2 : 1;
+    if (y == b.y1 + 1)
+        return x == b.x1 + 1 ? 0 : 1;
+    return x == b.x0 || x == b.x1 + 1 ? 2 : 0;
+}
+
+// draw_overdrawn_blueprints: the blueprint while it is laid out.
+void draw_overdrawn_blueprints(const OverlayPainter &paint, const World &world, const BuildState &b)
+{
+    for (int y = b.y0; y <= b.y1; y++)
+        for (int x = b.x0; x <= b.x1; x++)
+            paint.draw_block(x, y, blueprint_floor_block(world, b, x, y));
+    for (int y = b.y0; y <= b.y1 + 1; y++) {
+        for (int x = b.x0; x <= b.x1 + 1; x++) {
+            int piece = blueprint_outline_piece(b, x, y);
+            if (piece)
+                paint.draw_anim(x, y - 1, kBlueprints[size_t(piece)].anim, blueprint_outline_invalid(world, x, y));
         }
     }
-    dst.reset_clip();
+}
+
+// draw_cell_no: the outline of cell `cell`.
+void draw_cell_no(const OverlayPainter &paint, int cell)
+{
+    Surface &dst = paint.dst;
+    const Rect view = paint.view;
+    const uint8_t red = paint.oui.red;
+    int col = cell % kMapSize, row = cell / kMapSize;
+    int top_x = paint.cell_x(col, row) + kTileWidth / 2, top_y = paint.cell_y(col, row) - kTileHeight;
+    const int hw = (kTileWidth - 1) / 2, hh = (kTileHeight - 1) / 2;
+    draw_line(dst, {top_x, top_y}, {top_x + hw - 1, top_y + hh}, red, view);
+    draw_line(dst, {top_x + hw, top_y + hh}, {top_x, top_y + kTileHeight - 1}, red, view);
+    draw_line(dst, {top_x, top_y + kTileHeight - 1}, {top_x - hw, top_y + hh}, red, view);
+    draw_line(dst, {top_x - hw, top_y + hh}, {top_x, top_y}, red, view);
+}
+
+// temp_place_door's drawing: the door or window where it would go.
+void draw_temp_door(const OverlayPainter &paint, const Building &bd)
+{
+    const BuildState &b = bd.build;
+    const DoorType &door = kDoorTypes[b.door_type % kDoorTypes.size()];
+    for (int j = 0; j < door.count; j++) {
+        int floor = b.door_tile + door.tiles[size_t(j)] - door.offset;
+        paint.draw_block(uint16_t(floor) % kMapSize, uint16_t(floor) / kMapSize, door.floor_blocks[size_t(j)]);
+        int piece = b.door_tile + door.tiles[size_t(j)];
+        paint.draw_anim(uint16_t(piece) % kMapSize, uint16_t(piece) / kMapSize - 1, door.cursor_anim,
+                        bd.door_piece_invalid[size_t(j)]);
+    }
+}
+
+} // namespace
+
+void draw_build_overlay(const ViewTarget &target, const Game &game, const BuildUi &bui, const ObjectUi &oui,
+                        const GameData &data)
+{
+    const OverlayPainter paint{target.dst, target.view, target.camera, oui, data};
+    const World &world = game.world;
+    const Building &bd = world.building;
+    target.dst.set_clip(target.view);
+    if (bd.build.draw_mode == 1)
+        draw_overdrawn_blueprints(paint, world, bd.build);
+    // The cell under the pointer while the blueprint is laid out.
+    if (bd.mouse == BuildMouse::Blueprint && bui.cell >= 0)
+        draw_cell_no(paint, bui.cell);
+    if (bd.mouse == BuildMouse::PlaceDoor && bd.door_shown)
+        draw_temp_door(paint, bd);
+    target.dst.reset_clip();
 }
 
 } // namespace th

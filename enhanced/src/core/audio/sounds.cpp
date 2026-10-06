@@ -365,7 +365,7 @@ void SoundPlayer::do_ambients(bool paused, bool rat_level, bool receptionist)
         if (!playing(kSourceAmbient, 0))
             ambient_playing_ = 0;
     } else if (ambient_queue_[0].sound) {
-        if (play_sample(kSourceAmbient, kAnnouncerBase + ambient_queue_[0].sound, ambient_volume_, 0x40, 100, 0, 2))
+        if (play_sample(kSourceAmbient, kAnnouncerBase + ambient_queue_[0].sound, {ambient_volume_, 0x40, 100, 0}, 2))
             ambient_playing_ = ambient_queue_[0].sound;
         std::move(ambient_queue_.begin() + 1, ambient_queue_.end(), ambient_queue_.begin());
         ambient_queue_.back() = {};
@@ -418,56 +418,53 @@ void SoundPlayer::play_sound(uint32_t source, int sfx, int x, int y, int screen_
     int volume = sfx_volume_, pan = 0x40;
     if (x != -1 && y != -1)
         place(x, screen_width, sfx_volume_, volume, pan);
-    play_sample(source, sample, volume, pan, pitch, d.loop, d.play_type);
+    play_sample(source, sample, {volume, pan, pitch, d.loop}, d.play_type);
 }
 
-bool SoundPlayer::play_sample(uint32_t source, int number, int volume, int pan, int pitch, int loop, int type)
+SoundPlayer::Voice *SoundPlayer::free_voice()
+{
+    for (Voice &v : voices_)
+        if (!v.sample)
+            return &v;
+    return nullptr;
+}
+
+SoundPlayer::Voice *SoundPlayer::voice_for(uint32_t source, int number, const Sample &sample, int type)
+{
+    switch (type) {
+    case 1:
+        return free_voice();
+    case 2:
+        if (playing(source, number))
+            return nullptr;
+        return free_voice();
+    case 3:
+        for (Voice &v : voices_)
+            if (v.source == source && v.number == number)
+                return &v;
+        if (sample.priority) {
+            for (Voice &v : voices_)
+                if (v.source == source && v.priority == sample.priority)
+                    return &v;
+        }
+        return free_voice();
+    default:
+        return nullptr;
+    }
+}
+
+bool SoundPlayer::play_sample(uint32_t source, int number, const SamplePlayback &playback, int type)
 {
     if (!bank_ || number <= 0 || number >= bank_->count())
         return false;
     const Sample *sample = bank_->sample(number);
     if (!sample)
         return false;
-    auto free_voice = [&]() -> Voice * {
-        for (Voice &v : voices_)
-            if (!v.sample)
-                return &v;
-        return nullptr;
-    };
-    Voice *voice = nullptr;
-    switch (type) {
-    case 1:
-        voice = free_voice();
-        break;
-    case 2:
-        if (playing(source, number))
-            return false;
-        voice = free_voice();
-        break;
-    case 3:
-        for (Voice &v : voices_) {
-            if (v.source == source && v.number == number) {
-                voice = &v;
-                break;
-            }
-        }
-        if (!voice && sample->priority) {
-            for (Voice &v : voices_) {
-                if (v.source == source && v.priority == sample->priority) {
-                    voice = &v;
-                    break;
-                }
-            }
-        }
-        if (!voice)
-            voice = free_voice();
-        break;
-    default:
-        break;
-    }
+    Voice *voice = voice_for(source, number, *sample, type);
     if (!voice)
         return false;
-    *voice = Voice{sample, source, number, volume, pan, pitch, sample->priority, loop + 1, 0};
+    *voice = Voice{
+        sample, source, number, playback.volume, playback.pan, playback.pitch, sample->priority, playback.loop + 1, 0};
     return true;
 }
 
@@ -556,13 +553,13 @@ void SoundPlayer::manage_background_sounds(bool paused, std::optional<int> emerg
     if (!sfx_on() || paused)
         return;
     int volume = std::clamp(visible_people_ * sfx_volume_ / 20, 0, sfx_volume_);
-    play_sample(kSourceCrowd, 200, volume, 0x40, 100, -1, 2);
+    play_sample(kSourceCrowd, 200, {volume, 0x40, 100, -1}, 2);
     if (crowd_volume_ != volume) {
         set_sample_volume(kSourceCrowd, 200, volume);
         crowd_volume_ = volume;
     }
     if (++ambient_noise_timer_ > 400) {
-        play_sample(kSourceGeneral, saferand() % 30 + 0x10e, volume, 0x40, 100, 0, 2);
+        play_sample(kSourceGeneral, saferand() % 30 + 0x10e, {volume, 0x40, 100, 0}, 2);
         ambient_noise_timer_ = 0;
     }
     if (emergency_seconds) {
@@ -570,14 +567,46 @@ void SoundPlayer::manage_background_sounds(bool paused, std::optional<int> emerg
         if (*emergency_seconds < 0x21)
             volume += (0x21 - *emergency_seconds) * sfx_volume_ / 0x42;
         volume = std::clamp(volume, 0, sfx_volume_);
-        play_sample(kSourceClock, 0xa9, volume, 0x40, 100, -1, 2);
+        play_sample(kSourceClock, 0xa9, {volume, 0x40, 100, -1}, 2);
         if (clock_volume_ != volume) {
             set_sample_volume(kSourceClock, 0xa9, volume);
             clock_volume_ = volume;
         }
     }
     if (quake)
-        play_sample(kSourceCrowd, 0x48, sfx_volume_, 0x40, 100, -1, 2);
+        play_sample(kSourceCrowd, 0x48, {sfx_volume_, 0x40, 100, -1}, 2);
+}
+
+void SoundPlayer::mix_voice(Voice &v, float *out, int frames, int rate)
+{
+    const Sample &s = *v.sample;
+    const size_t length = s.frames();
+    if (length == 0) {
+        v.sample = nullptr;
+        return;
+    }
+    const uint64_t end = uint64_t(length) << 32;
+    const uint64_t step = (uint64_t(s.rate) * uint64_t(v.pitch) << 32) / 100 / uint64_t(rate);
+    // Assumed pan law: the centre keeps both sides at full volume, a side
+    // lowers the other linearly.
+    const float gain = float(v.volume) / kMaxVolume;
+    const float left = gain * std::min(1.0f, float(0x7f - v.pan) / 63.0f);
+    const float right = gain * std::min(1.0f, float(v.pan) / 64.0f);
+    for (int i = 0; i < frames && v.sample; i++) {
+        size_t at = size_t(v.pos >> 32);
+        float frac = float(v.pos & 0xffffffffu) / 4294967296.0f;
+        size_t next = at + 1 < length ? at + 1 : (v.loops != 1 ? 0 : at);
+        float l = sample_value(s, at, 0), r = s.channels > 1 ? sample_value(s, at, 1) : l;
+        float nl = sample_value(s, next, 0), nr = s.channels > 1 ? sample_value(s, next, 1) : nl;
+        out[2 * i] += (l + (nl - l) * frac) * left;
+        out[2 * i + 1] += (r + (nr - r) * frac) * right;
+        v.pos += step;
+        if (v.pos < end)
+            continue;
+        v.pos -= end;
+        if (v.loops != 0 && --v.loops == 0)
+            v.sample = nullptr;
+    }
 }
 
 void SoundPlayer::mix(float *out, int frames, int rate)
@@ -585,40 +614,9 @@ void SoundPlayer::mix(float *out, int frames, int rate)
     std::fill(out, out + size_t(frames) * 2, 0.0f);
     if (rate <= 0)
         return;
-    for (Voice &v : voices_) {
-        if (!v.sample)
-            continue;
-        const Sample &s = *v.sample;
-        const size_t length = s.frames();
-        if (length == 0) {
-            v.sample = nullptr;
-            continue;
-        }
-        const uint64_t end = uint64_t(length) << 32;
-        const uint64_t step = (uint64_t(s.rate) * uint64_t(v.pitch) << 32) / 100 / uint64_t(rate);
-        // Assumed pan law: the centre keeps both sides at full volume, a
-        // side lowers the other linearly.
-        const float gain = float(v.volume) / kMaxVolume;
-        const float left = gain * std::min(1.0f, float(0x7f - v.pan) / 63.0f);
-        const float right = gain * std::min(1.0f, float(v.pan) / 64.0f);
-        for (int i = 0; i < frames && v.sample; i++) {
-            size_t at = size_t(v.pos >> 32);
-            float frac = float(v.pos & 0xffffffffu) / 4294967296.0f;
-            size_t next = at + 1 < length ? at + 1 : (v.loops != 1 ? 0 : at);
-            float l = sample_value(s, at, 0), r = s.channels > 1 ? sample_value(s, at, 1) : l;
-            float nl = sample_value(s, next, 0), nr = s.channels > 1 ? sample_value(s, next, 1) : nl;
-            out[2 * i] += (l + (nl - l) * frac) * left;
-            out[2 * i + 1] += (r + (nr - r) * frac) * right;
-            v.pos += step;
-            if (v.pos >= end) {
-                v.pos -= end;
-                if (v.loops == 0)
-                    continue;
-                if (--v.loops == 0)
-                    v.sample = nullptr;
-            }
-        }
-    }
+    for (Voice &v : voices_)
+        if (v.sample)
+            mix_voice(v, out, frames, rate);
     for (int i = 0; i < frames * 2; i++)
         out[i] = std::clamp(out[i], -1.0f, 1.0f);
 }

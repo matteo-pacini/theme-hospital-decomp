@@ -1,0 +1,95 @@
+# Level 1: ward.txt, then a staff room with a sofa, a pool table and a video
+# game, a handyman and a second receptionist, and the policy sending staff
+# for a rest from tiredness 100: the doctor, the nurse and the handyman take
+# breaks and use the staff room's objects. The handyman is picked up while
+# playing pool and put down in the corridor; the nurse is ordered out of the
+# staff room while resting; the doctor is picked up at work and put down in
+# the staff room; the policy moves to 300 halfway; and the second
+# receptionist, never tired, is ordered to rest (EV_ORDER_REST) near the end.
+# Compare up to turn 18000: the year's end awards (from turn 18250) are not
+# ported.
+# gp_office.txt's: a GP's office (62,65)-(66,69) with its door, desk, cabinet
+# and chair, opened, and a doctor (applicant 11) placed.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# A ward (50,59)-(55,64), its double door below it, a bed (cell 7731
+# facing 1) and a desk (cell 7990 facing 0); opened.
+130 55 0 0
+131 53 9 9
+132 2 7602 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8371 0
+137 3 0 0
+138 4 9 0
+139 7 7731 264
+140 7 7990 1
+141 1 0 0
+# A nurse: hire applicant 3, place at cell 10044.
+142 48 0 3
+143 5 10044 3
+# A staff room (58,52)-(62,56), its door below it (nearest to cell 7356).
+160 55 0 0
+161 53 25 25
+162 2 6714 0
+163 2 7230 0
+164 8 7230 0
+165 18 0 0
+166 26 7356 0
+167 3 0 0
+168 4 25 0
+# Buy a pool table and a video game; the sofa (cell 6973), the pool table
+# (6716) and the video game (7098), all facing 0; the room opened.
+169 37 10 1
+170 37 57 1
+171 43 0 0
+172 7 6973 19
+173 7 6716 10
+174 7 7098 57
+175 1 0 0
+# A handyman (applicant 19) and a second receptionist (23), at cell 10044.
+180 48 2 19
+181 5 10044 19
+182 48 3 23
+183 5 10044 23
+# Policy: staff rest at tiredness 100.
+220 113 4 100
+# The handyman, playing pool, picked up and put down at cell 10044.
+2100 104 19 0
+2101 5 10044 19
+# The nurse, resting, ordered out of the room (EV_ORDER_LEAVE_ROOM).
+8100 97 3 0
+# Policy: staff rest at 300.
+9000 113 4 300
+# The doctor, at work, picked up and put down in the staff room (cell 6971).
+10000 104 11 0
+10001 5 6971 11
+# The second receptionist, wandering without a free desk, ordered to rest.
+17000 94 23 0

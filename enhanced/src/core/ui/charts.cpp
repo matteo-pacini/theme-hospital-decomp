@@ -8,6 +8,7 @@
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/staff.h"
+#include "core/world/trace.h"
 
 #include <algorithm>
 #include <cmath>
@@ -368,8 +369,9 @@ void draw_line(Surface &dst, int x1, int y1, int x2, int y2, uint8_t colour)
 // LbDrawTriangleFilled (src/asm/tri_f.s): the pixels whose centres are
 // inside or on the triangle, drawn only if its corners run clockwise on
 // screen; the pie relies on that to leave out its slices' far sides.
-void draw_triangle(Surface &dst, int x1, int y1, int x2, int y2, int x3, int y3, uint8_t colour)
+void draw_triangle(Surface &dst, Point p1, Point p2, Point p3, uint8_t colour)
 {
+    const int x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y, x3 = p3.x, y3 = p3.y;
     if ((x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1) <= 0)
         return;
     int top = std::max(std::min({y1, y2, y3}), 0), bottom = std::min(std::max({y1, y2, y3}), dst.height() - 1);
@@ -528,6 +530,25 @@ std::array<Criterion, 10> check_criteria_values(const std::array<Balance::WinLos
     return out;
 }
 
+// evaluate_criteria (src/sim.cpp), one criterion's share of its group's
+// score: 100 when met, else how near it is, 0 to 100.
+int criterion_score(const Criterion &c)
+{
+    if (c.met)
+        return 100;
+    int pct = 0;
+    if (c.op == 1) {
+        if (c.value != 0) {
+            pct = std::abs(c.current * 100 / c.value);
+            if (c.criterion == 2 && c.current < 0)
+                pct = 0;
+        }
+    } else if (c.current != 0) {
+        pct = std::abs(c.value * 100 / c.current);
+    }
+    return std::clamp(pct, 0, 100);
+}
+
 // evaluate_criteria (src/sim.cpp), its best group: the group of win
 // criteria nearest to being met, 0 for none (the level not won).
 int best_win_group(const std::array<Criterion, 10> &win, int groups)
@@ -539,21 +560,7 @@ int best_win_group(const std::array<Criterion, 10> &win, int groups)
             if (c.group != group)
                 continue;
             count++;
-            if (c.met) {
-                sum += 100;
-                continue;
-            }
-            int pct = 0;
-            if (c.op == 1) {
-                if (c.value != 0) {
-                    pct = std::abs(c.current * 100 / c.value);
-                    if (c.criterion == 2 && c.current < 0)
-                        pct = 0;
-                }
-            } else if (c.current != 0) {
-                pct = std::abs(c.value * 100 / c.current);
-            }
-            sum += std::clamp(pct, 0, 100);
+            sum += criterion_score(c);
         }
         if (count && sum / count > best) {
             best = sum / count;
@@ -634,15 +641,15 @@ class Frame
     void reqspr(int x, int y, int index) { draw_sprite(dst_, x, y, sprite(index)); }
     const Font &font(int slot) const { return c_.fonts[size_t(slot)]; }
     static int line_height(const Font &f) { return f.glyph(65).height; }
-    // LbTextSetWindow then LbTextDraw: `s` at (x, y) in `window`, clipped
-    // to it.
-    void text(int slot, Rect window, int x, int y, std::string_view s, unsigned flags = 0, uint8_t colour = 0)
+    // LbTextSetWindow then LbTextDraw: `s` at `at` in `window`, clipped to
+    // it.
+    void text(int slot, Rect window, Point at, std::string_view s, unsigned flags = 0, uint8_t colour = 0)
     {
-        draw_text(dst_, font(slot), {window.x, window.y, window.w}, x, y, s, flags, window, colour);
+        draw_text(dst_, font(slot), at.x, at.y, s, {{window.x, window.y, window.w}, window, flags, colour});
     }
     void text(int slot, int x, int y, std::string_view s, unsigned flags = 0, uint8_t colour = 0)
     {
-        text(slot, {0, 0, kUiWidth, kUiHeight}, x, y, s, flags, colour);
+        text(slot, {0, 0, kUiWidth, kUiHeight}, {x, y}, s, flags, colour);
     }
     std::string_view str(TextSection section, int index) const { return text_.at(section, index); }
     void sound(uint8_t sfx) { r_.sounds.push_back(sfx); }
@@ -685,11 +692,18 @@ class Frame
         }
         const int f = 0x1c;
         for (int i = 0; i < 6; i++)
-            text(f, kBoxes[i + 4], kCoords[71].x, kCoords[71].y * 2, str(TextSection::Stat, i), kTextCentre);
+            text(f, kBoxes[i + 4], {kCoords[71].x, kCoords[71].y * 2}, str(TextSection::Stat, i), kTextCentre);
+        bank_text(f);
+        if (exit_quick_requester())
+            c_.state = 2;
+    }
+
+    // banktext (src/finance.cpp): the name, the lines from y 40 to 405, the
+    // closing balance, in font `f`.
+    void bank_text(int f)
+    {
         const Finance &fin = game_.finance;
         int line_h = line_height(font(f));
-        // banktext (src/finance.cpp): the name, the lines from y 40 to 405,
-        // the closing balance.
         constexpr int kName = 32, kNameY = 8, kLinesY = 40, kEndY = 405;
         const std::string &name = c_.hospital_names[0];
         text(f, kName, kNameY, name.size() > 9 ? std::string_view(name).substr(9) : std::string_view{});
@@ -704,26 +718,29 @@ class Frame
             if (row + kCoords[72].y > kCoords[72].y + line_h * 0x1b)
                 break;
             const BankEntry &e = fin.entries[size_t(first)];
-            text(f, kCoords[72].x, row + kCoords[72].y,
-                 format("%d %s", e.day, std::string(text_.month(e.month)).c_str()));
-            std::string what(str(TextSection::Finance, e.type));
-            if (e.type == kTxInsurance)
-                what += " " + std::string(str(TextSection::InsuranceNames, e.extra));
-            else if (e.type == kTxTreat || e.type == kTxFinalTreat || e.type == kTxCureTreatment ||
-                     e.type == kTxAdvance)
-                what += " " + std::string(str(TextSection::Illness, e.extra));
-            text(f, kCoords[73].x, row + kCoords[73].y, what);
-            if (e.amount < 0)
-                text(f, kCoords[74].x, row + kCoords[74].y, format("$ %7d", -e.amount));
-            else if (e.amount != 0)
-                text(f, kCoords[75].x, row + kCoords[75].y, format("$ %7d", e.amount));
             balance += e.amount;
-            text(f, kCoords[76].x, row + kCoords[76].y, format("$ %7d", balance));
+            bank_text_line(f, row, e, balance);
             row += line_h;
         }
         text(f, kCoords[77].x, kCoords[77].y, format("$ %7d", balance));
-        if (exit_quick_requester())
-            c_.state = 2;
+    }
+
+    // banktext, one statement line at `row`: date, what, amount and the
+    // balance after it.
+    void bank_text_line(int f, int row, const BankEntry &e, int32_t balance)
+    {
+        text(f, kCoords[72].x, row + kCoords[72].y, format("%d %s", e.day, std::string(text_.month(e.month)).c_str()));
+        std::string what(str(TextSection::Finance, e.type));
+        if (e.type == kTxInsurance)
+            what += " " + std::string(str(TextSection::InsuranceNames, e.extra));
+        else if (e.type == kTxTreat || e.type == kTxFinalTreat || e.type == kTxCureTreatment || e.type == kTxAdvance)
+            what += " " + std::string(str(TextSection::Illness, e.extra));
+        text(f, kCoords[73].x, row + kCoords[73].y, what);
+        if (e.amount < 0)
+            text(f, kCoords[74].x, row + kCoords[74].y, format("$ %7d", -e.amount));
+        else if (e.amount != 0)
+            text(f, kCoords[75].x, row + kCoords[75].y, format("$ %7d", e.amount));
+        text(f, kCoords[76].x, row + kCoords[76].y, format("$ %7d", balance));
     }
 
     void process_stat_panel()
@@ -800,7 +817,7 @@ class Frame
     {
         const int f = 0x1b;
         const Point at = kCoords[71];
-        auto boxed = [&](int box, std::string_view s) { text(f, kBoxes[box], at.x, at.y, s, kTextCentre); };
+        auto boxed = [&](int box, std::string_view s) { text(f, kBoxes[box], at, s, kTextCentre); };
         for (int i = 0; i < 5; i++)
             boxed(11 + i, str(TextSection::Bank, i));
         boxed(19, str(TextSection::Bank, 5));
@@ -825,34 +842,40 @@ class Frame
             c_.insurance_button_sprites = {0, 0, 2};
             size_t company = size_t(c_.value - 1);
             boxed(16, str(TextSection::InsuranceNames, game_.world.ins_control[company]));
-            const auto &claims = hs_.insurance_claims[company];
-            int32_t max = 1;
-            for (int32_t v : claims)
-                max = std::max(max, v);
-            uint8_t black = colours().black;
-            if (max > 1)
-                text(3, kCoords[169].x, kCoords[169].y, format("%d", max), kTextOneColour, black);
-            const Rect &g = kBoxes[30];
-            int month = game_.date.month;
-            int x = g.x, y = g.y - claims[size_t(month)] * g.h / max;
-            int i = month, end = 12;
-            for (int pass = 0; pass < 2; pass++) {
-                for (; i < end; i++) {
-                    int px = x, py = y;
-                    x += g.w / 12;
-                    y = g.y - claims[size_t(i)] * g.h / max;
-                    draw_line(dst_, px + 1, py + 1, x + 1, y + 1, c_.line_shadow_colour);
-                    draw_line(dst_, px, py, x, y, c_.line_colour);
-                }
-                end = month;
-                i = 0;
-            }
-            text(3, kCoords[170].x, kCoords[170].y, text_.month(month), kTextOneColour, black);
+            display_manager_claims(hs_.insurance_claims[company]);
         } else {
             c_.insurance_button_sprites = {3, 3, 3};
             for (int i = 0; i < 3; i++)
                 boxed(16 + i, str(TextSection::InsuranceNames, game_.world.ins_control[size_t(i)]));
         }
+    }
+
+    // display_manager_text, the chosen company's graph: a year of its
+    // claims from this month on, scaled to the largest.
+    void display_manager_claims(const std::array<int32_t, 12> &claims)
+    {
+        int32_t max = 1;
+        for (int32_t v : claims)
+            max = std::max(max, v);
+        uint8_t black = colours().black;
+        if (max > 1)
+            text(3, kCoords[169].x, kCoords[169].y, format("%d", max), kTextOneColour, black);
+        const Rect &g = kBoxes[30];
+        int month = game_.date.month;
+        int x = g.x, y = g.y - claims[size_t(month)] * g.h / max;
+        int i = month, end = 12;
+        for (int pass = 0; pass < 2; pass++) {
+            for (; i < end; i++) {
+                int px = x, py = y;
+                x += g.w / 12;
+                y = g.y - claims[size_t(i)] * g.h / max;
+                draw_line(dst_, px + 1, py + 1, x + 1, y + 1, c_.line_shadow_colour);
+                draw_line(dst_, px, py, x, y, c_.line_colour);
+            }
+            end = month;
+            i = 0;
+        }
+        text(3, kCoords[170].x, kCoords[170].y, text_.month(month), kTextOneColour, black);
     }
 
     void display_manager_face()
@@ -990,8 +1013,20 @@ class Frame
 
     void process_policy_sliders()
     {
+        draw_policy_sliders();
+        if (!mleft_) {
+            c_.value = 0;
+            return;
+        }
+        drag_policy_slider();
+    }
+
+    // process_policy_sliders, its drawing: the names, the four sliders at
+    // the settings, the staff-leave-rooms switch.
+    void draw_policy_sliders()
+    {
         for (int i = 0; i < 5; i++)
-            text(7, kBoxes[0x20 + i], 0, 0, str(TextSection::PolicyNames, i), i == 0 ? kTextCentre : kTextWrap);
+            text(7, kBoxes[0x20 + i], {0, 0}, str(TextSection::PolicyNames, i), i == 0 ? kTextCentre : kTextWrap);
         struct Slider {
             int box, sprite, x;
         };
@@ -1007,16 +1042,18 @@ class Frame
             Sprite spr = sprite(s.sprite);
             reqspr(b.x + s.x, b.y, s.sprite);
             Rect window = {b.x + s.x + kCoords[0x54].x, b.y + kCoords[0x54].y, spr.width, spr.height};
-            text(8, window, 0, 0, str(TextSection::PolicyNames, 5 + i), kTextCentre);
+            text(8, window, {0, 0}, str(TextSection::PolicyNames, 5 + i), kTextCentre);
         }
         if (hs_.staff_leave_rooms)
             reqspr(kCoords[0x52].x, kCoords[0x52].y, 4);
         else
             reqspr(kCoords[0x53].x, kCoords[0x53].y, 5);
-        if (!mleft_) {
-            c_.value = 0;
-            return;
-        }
+    }
+
+    // process_policy_sliders while the left button is held: the slider
+    // grabbed, and its setting following the mouse.
+    void drag_policy_slider()
+    {
         // Which slider is dragged (pol.value): 2 guess a cure, 1 send home,
         // 3 diagnosis, 4 rest; 0x63 none.
         if (c_.value == 0) {
@@ -1199,61 +1236,98 @@ class Frame
             return_from_screen();
             break;
         }
-        const int f = 0xb;
-        int font_height = line_height(font(f));
         Colours col = colours();
-        const uint8_t colour[8] = {col.red,  col.light_red, col.orange, col.green,
-                                   col.blue, col.dark_blue, col.purple, col.salmon};
+        const std::array<uint8_t, 8> colour = {col.red,  col.light_red, col.orange, col.green,
+                                               col.blue, col.dark_blue, col.purple, col.salmon};
+        draw_graphs_keys(colour);
+        std::vector<GraphLabel> labels;
+        for (int i = 0; i < 8; i++)
+            if (c_.graph_visible[size_t(i)] == 1)
+                draw_graphs_line(i, {x, y, h, step}, colour[size_t(i)], labels);
+        spread_graph_labels(labels);
+        for (const GraphLabel &l : labels) {
+            std::string s = format("%s:%d", std::string(str(TextSection::Report, l.graph + 3)).c_str(), l.data);
+            text(kGraphFont, x + 4, l.y, s, kTextOneColour, colour[size_t(l.graph)]);
+        }
+        draw_graphs_dates(x, y, step, col.black);
+    }
+
+    static constexpr int kGraphFont = 0xb;
+    // The graphs' origin (now, at the bottom right), height and step.
+    struct GraphArea {
+        int x, y, h, step;
+    };
+    // A graph's value at its right end, kept in screen order.
+    struct GraphLabel {
+        int graph, y;
+        int32_t data;
+    };
+
+    // draw_graphs: whether the nth step back from now is drawn, the game
+    // being old enough for it at the period shown.
+    bool graph_shown(int n) const
+    {
+        const int scale = c_.graph_period == 0 ? 1 : c_.graph_period == 1 ? 12 : 48;
+        return uint32_t(n * 1500 * scale) < game_.turn_count;
+    }
+
+    // draw_graphs, the keys: the hidden graphs' buttons up, the names in
+    // their colours.
+    void draw_graphs_keys(const std::array<uint8_t, 8> &colour)
+    {
+        int font_height = line_height(font(kGraphFont));
         for (int i = 0; i < 8; i++) {
             const ScreenButton &b = kButtons[i + kGraphButtons];
             if (!c_.graph_visible[size_t(i)])
                 reqspr(b.sprite_x, b.sprite_y, b.sprite);
             const Rect &box = kBoxes[i + 47];
-            text(f, box, 0, (box.h - font_height) >> 1, str(TextSection::Report, i + 3), kTextCentre | kTextOneColour,
-                 colour[i]);
+            text(kGraphFont, box, {0, (box.h - font_height) >> 1}, str(TextSection::Report, i + 3),
+                 kTextCentre | kTextOneColour, colour[size_t(i)]);
         }
-        const int scale = c_.graph_period == 0 ? 1 : c_.graph_period == 1 ? 12 : 48;
-        const uint32_t turn = game_.turn_count;
-        auto shown = [&](int n) { return uint32_t(n * 1500 * scale) < turn; };
-        struct Label {
-            int graph, y;
-            int32_t data;
-        };
-        std::vector<Label> labels;
-        for (int i = 0; i < 8; i++) {
-            if (c_.graph_visible[size_t(i)] != 1)
-                continue;
-            // The game keeps a history per scale, all the same.
-            const auto &values = game_.finance.history[size_t(kGraphRows[size_t(i)])];
-            int32_t max = -100000000, min = 100000000;
-            for (int k = 11; k >= 0 && shown(12 - k - 1); k--) {
-                max = std::max(max, values[size_t(k)]);
-                min = std::min(min, values[size_t(k)]);
-            }
-            if (max == min) {
-                max <<= 1;
-                min = 0;
-            }
-            int64_t range = int64_t(max) - min;
-            if (range == 0)
-                range = 1;
-            int px = x;
-            int py = uint16_t(y - int((values[11] - min) * int64_t(h) / range));
-            int at = uint16_t(py - font_height / 2);
-            auto pos = std::find_if(labels.begin(), labels.end(), [&](const Label &l) { return l.y > at; });
-            labels.insert(pos, {i, at, values[11]});
-            for (int k = 11; k > 0 && shown(12 - k); k--) {
-                int nx = x - (12 - k) * step;
-                int ny = uint16_t(y - int((values[size_t(k - 1)] - min) * int64_t(h) / range));
-                ny = std::clamp(ny, y - h, y);
-                draw_line(dst_, px, py, nx, ny, colour[i]);
-                draw_line(dst_, px - 1, py, nx - 1, ny, colour[i]);
-                px = nx;
-                py = ny;
-            }
+    }
+
+    // draw_graphs, one graph: its line, from now at (x, y) leftwards by
+    // `step` a point, over height `h`, scaled to its own range; its label
+    // goes into `labels`.
+    void draw_graphs_line(int graph, GraphArea area, uint8_t colour, std::vector<GraphLabel> &labels)
+    {
+        const int x = area.x, y = area.y, h = area.h, step = area.step;
+        int font_height = line_height(font(kGraphFont));
+        // The game keeps a history per scale, all the same.
+        const auto &values = game_.finance.history[size_t(kGraphRows[size_t(graph)])];
+        int32_t max = -100000000, min = 100000000;
+        for (int k = 11; k >= 0 && graph_shown(12 - k - 1); k--) {
+            max = std::max(max, values[size_t(k)]);
+            min = std::min(min, values[size_t(k)]);
         }
-        // spread_graph_labels: nudged apart a pixel at a time, within the
-        // graph.
+        if (max == min) {
+            max <<= 1;
+            min = 0;
+        }
+        int64_t range = int64_t(max) - min;
+        if (range == 0)
+            range = 1;
+        int px = x;
+        int py = uint16_t(y - int((values[11] - min) * int64_t(h) / range));
+        int at = uint16_t(py - font_height / 2);
+        auto pos = std::find_if(labels.begin(), labels.end(), [&](const GraphLabel &l) { return l.y > at; });
+        labels.insert(pos, {graph, at, values[11]});
+        for (int k = 11; k > 0 && graph_shown(12 - k); k--) {
+            int nx = x - (12 - k) * step;
+            int ny = uint16_t(y - int((values[size_t(k - 1)] - min) * int64_t(h) / range));
+            ny = std::clamp(ny, y - h, y);
+            draw_line(dst_, px, py, nx, ny, colour);
+            draw_line(dst_, px - 1, py, nx - 1, ny, colour);
+            px = nx;
+            py = ny;
+        }
+    }
+
+    // spread_graph_labels: nudged apart a pixel at a time, within the
+    // graph.
+    void spread_graph_labels(std::vector<GraphLabel> &labels) const
+    {
+        int font_height = line_height(font(kGraphFont));
         for (bool moved = true; moved;) {
             moved = false;
             for (size_t i = 0; i < labels.size(); i++) {
@@ -1271,14 +1345,17 @@ class Frame
                 }
             }
         }
-        for (const Label &l : labels) {
-            std::string s = format("%s:%d", std::string(str(TextSection::Report, l.graph + 3)).c_str(), l.data);
-            text(f, x + 4, l.y, s, kTextOneColour, colour[l.graph]);
-        }
+    }
+
+    // draw_graphs, the time axis: a tick and a month or year per step back
+    // from (x, y).
+    void draw_graphs_dates(int x, int y, int step, uint8_t black)
+    {
+        const int f = kGraphFont;
         int month = game_.date.month;
-        int year = int(turn / 0x4650);
+        int year = int(game_.turn_count / 0x4650);
         int span_year = year - (year & 3);
-        for (int i = 0; i < 12 && shown(i); i++) {
+        for (int i = 0; i < 12 && graph_shown(i); i++) {
             int px = x - i * step;
             std::string s;
             if (c_.graph_period == 0) {
@@ -1292,8 +1369,8 @@ class Frame
             }
             // LbTextWordWidth: the first word's width.
             int width = text_width(font(f), std::string_view(s).substr(0, s.find(' ')));
-            text(f, px + 2 - width / 2, y + 10, s, kTextOneColour, col.black);
-            draw_line(dst_, px, y + 2, px, y + 6, col.black);
+            text(f, px + 2 - width / 2, y + 10, s, kTextOneColour, black);
+            draw_line(dst_, px, y + 2, px, y + 6, black);
         }
     }
 
@@ -1385,58 +1462,75 @@ class Frame
             copy_screen();
             break;
         }
-        int line_h = line_height(font(0xe));
-        const Rect window = kBoxes[0];
-        int illness = c_.selected_illness;
+        // The figures and the cure shown are the illness selected before
+        // this frame's click in the list.
+        const int illness = c_.selected_illness;
+        display_drugs_figures(illness);
+        display_drugs_list();
+        text(0xe, {kCoords[0x1e].x, kCoords[0x1e].y, 0x36, 0x1a}, {0, (0x1a - line_height(font(0xe))) / 2},
+             str(TextSection::Cabinet, 7), kTextCentre);
+        display_drugs_cure(illness);
+        if (kExpertise[size_t(illness)].research_type != 0) {
+            int f = illness == hs_.research_illness ? 0xf : 0xe;
+            text(f, kCoords[0x1d].x, kCoords[0x1d].y, conv_string(str(TextSection::Cabinet, 6), 1));
+        }
+        process_drug_panel();
+        process_drug_keys();
+        if (exit_quick_requester())
+            c_.state = 1;
+    }
+
+    // display_drugs, the cabinet's headings and the illness's figures.
+    void display_drugs_figures(int illness)
+    {
+        for (int i = 0; i < 12; i++)
+            text(0xe, kBoxes[0], kCoords[i + 0x11], display_drugs_figure(i, illness), kTextCentre);
+    }
+
+    // display_drugs, the cabinet's ith entry: a heading, or from 6 on a
+    // figure of `illness`.
+    std::string display_drugs_figure(int i, int illness)
+    {
         const IllnessFigures &fig = hs_.illnesses[size_t(illness)];
         const HospitalMarket &hosp = game_.arrivals.hospitals[0];
-        const ExpertiseRow &def = kExpertise[size_t(illness)];
-        for (int i = 0; i < 12; i++) {
-            std::string s;
-            switch (i) {
-            case 6:
-                s = format("%d", illness >= kFirstDiagnosis || illness == kIllGeneralPractice
-                                     ? game_.reputation()
-                                     : int(hosp.reputation[size_t(illness)]));
-                break;
-            case 7:
-                if (c_.drug_pct_display_time) {
-                    c_.drug_pct_display_time--;
-                    s = format("%d%%", hosp.price_scale[size_t(illness)] / 100);
-                } else {
-                    s = format("$%d", hosp.price[size_t(illness)]);
-                }
-                break;
-            case 8:
-                s = format("$%d", fig.income);
-                break;
-            case 9:
-                s = format("%d", fig.cured);
-                break;
-            case 10:
-                s = format("%d", fig.deaths);
-                break;
-            case 11:
-                s = format("%d", fig.turned_away);
-                break;
-            default:
-                s = conv_string(str(TextSection::Cabinet, i), 1);
-                break;
+        switch (i) {
+        case 6:
+            return format("%d", illness >= kFirstDiagnosis || illness == kIllGeneralPractice
+                                    ? game_.reputation()
+                                    : int(hosp.reputation[size_t(illness)]));
+        case 7:
+            if (c_.drug_pct_display_time) {
+                c_.drug_pct_display_time--;
+                return format("%d%%", hosp.price_scale[size_t(illness)] / 100);
             }
-            text(0xe, window, kCoords[i + 0x11].x, kCoords[i + 0x11].y, s, kTextCentre);
+            return format("$%d", hosp.price[size_t(illness)]);
+        case 8:
+            return format("$%d", fig.income);
+        case 9:
+            return format("%d", fig.cured);
+        case 10:
+            return format("%d", fig.deaths);
+        case 11:
+            return format("%d", fig.turned_away);
+        default:
+            return conv_string(str(TextSection::Cabinet, i), 1);
         }
-        // The listed illnesses: the selected one in the middle, up to seven
-        // after it and seven before.
+    }
+
+    // display_drugs, the listed illnesses: the selected one in the middle,
+    // up to seven after it and seven before.
+    std::array<int, 18> display_drugs_entries() const
+    {
         std::array<int, 18> list{};
         list[8] = c_.selected_illness;
         int count = 0;
         for (int i = c_.selected_illness + 1; i < 0x2e; i++) {
-            if (casebook_lists(i)) {
-                if (count >= 7)
-                    break;
-                list[size_t(count + 9)] = i;
-                count++;
-            }
+            if (!casebook_lists(i))
+                continue;
+            if (count >= 7)
+                break;
+            list[size_t(count + 9)] = i;
+            count++;
         }
         count = 7;
         for (int i = c_.selected_illness - 1; i > 0; i--) {
@@ -1450,6 +1544,14 @@ class Frame
                 count--;
             }
         }
+        return list;
+    }
+
+    // display_drugs, the list drawn, a click on an entry selecting it.
+    void display_drugs_list()
+    {
+        int line_h = line_height(font(0xe));
+        const std::array<int, 18> list = display_drugs_entries();
         for (int i = 0; i < 0x11; i++) {
             if (!list[size_t(i)])
                 continue;
@@ -1464,84 +1566,94 @@ class Frame
             }
             text(f, kCoords[i].x, kCoords[i].y, s);
         }
-        const Font &small = font(0xe);
-        text(0xe, {kCoords[0x1e].x, kCoords[0x1e].y, 0x36, 0x1a}, 0, (0x1a - line_height(small)) / 2,
-             str(TextSection::Cabinet, 7), kTextCentre);
-        const Balance &bal = game_.settings();
-        auto drug_effect = [&](std::string_view s) {
-            text(0x2e, {0x134, kCoords[0x21].y, 0x1c, 0x32}, 0, 0, s, kTextCentre);
-        };
-        auto cure_sprite = [&](int index) { reqspr(kCoords[0x1f].x, kCoords[0x1f].y, index); };
-        if (!(illness >= kFirstDiagnosis || illness == kIllGeneralPractice)) {
-            bool plain = def.outcome != 1 && def.outcome != 5 && def.outcome != 4;
-            if (game_.world.cure_available[size_t(illness)] == 1) {
-                if (def.kind == kObjPharmacyCabinet) {
-                    cure_sprite(7);
-                    drug_effect(format("%d", fig.drug_effectiveness));
-                } else if (def.category == kRoomTheatre) {
-                    cure_sprite(8);
-                } else if (plain) {
-                    cure_sprite(6);
-                }
-                reqspr(kCoords[0x20].x, kCoords[0x20].y, 11);
-            } else {
-                reqspr(kCoords[0x20].x, kCoords[0x20].y, 12);
-                if (plain) {
-                    // The equipment is buyable (equipment[].available, at
-                    // the start objects[].StartAvail) for the level.
-                    const Balance::Object &obj = bal.objects[def.kind];
-                    if (def.kind == kObjPharmacyCabinet) {
-                        cure_sprite(7);
-                        drug_effect("?");
-                    } else if (obj.start_avail == 1 && obj.available_for_level == 1) {
-                        cure_sprite(6);
-                        if (def.staff_mask == 0x40)
-                            cure_sprite(10);
-                        if (def.category == kRoomTheatre)
-                            cure_sprite(8);
-                    } else {
-                        cure_sprite(9);
-                    }
-                }
-            }
-        } else if (illness >= kFirstDiagnosis) {
+    }
+
+    void drug_effect(std::string_view s) { text(0x2e, {0x134, kCoords[0x21].y, 0x1c, 0x32}, {0, 0}, s, kTextCentre); }
+    void cure_sprite(int index) { reqspr(kCoords[0x1f].x, kCoords[0x1f].y, index); }
+
+    // display_drugs, the cure: whether it is available, and the drug,
+    // operation or machine it takes.
+    void display_drugs_cure(int illness)
+    {
+        if (illness >= kFirstDiagnosis) {
             reqspr(kCoords[0x20].x, kCoords[0x20].y, game_.world.cure_available[size_t(illness)] == 1 ? 11 : 12);
+            return;
         }
-        if (def.research_type != 0) {
-            int f = illness == hs_.research_illness ? 0xf : 0xe;
-            text(f, kCoords[0x1d].x, kCoords[0x1d].y, conv_string(str(TextSection::Cabinet, 6), 1));
+        if (illness == kIllGeneralPractice)
+            return;
+        const ExpertiseRow &def = kExpertise[size_t(illness)];
+        bool plain = def.outcome != 1 && def.outcome != 5 && def.outcome != 4;
+        if (game_.world.cure_available[size_t(illness)] == 1) {
+            if (def.kind == kObjPharmacyCabinet) {
+                cure_sprite(7);
+                drug_effect(format("%d", hs_.illnesses[size_t(illness)].drug_effectiveness));
+            } else if (def.category == kRoomTheatre) {
+                cure_sprite(8);
+            } else if (plain) {
+                cure_sprite(6);
+            }
+            reqspr(kCoords[0x20].x, kCoords[0x20].y, 11);
+            return;
         }
-        process_drug_panel();
-        process_drug_keys();
-        if (exit_quick_requester())
-            c_.state = 1;
+        reqspr(kCoords[0x20].x, kCoords[0x20].y, 12);
+        if (plain)
+            display_drugs_missing_cure(def);
+    }
+
+    // display_drugs, the cure not yet available: what it will take, if the
+    // level offers it.
+    void display_drugs_missing_cure(const ExpertiseRow &def)
+    {
+        // The equipment is buyable (equipment[].available, at the start
+        // objects[].StartAvail) for the level.
+        const Balance::Object &obj = game_.settings().objects[def.kind];
+        if (def.kind == kObjPharmacyCabinet) {
+            cure_sprite(7);
+            drug_effect("?");
+        } else if (obj.start_avail == 1 && obj.available_for_level == 1) {
+            cure_sprite(6);
+            if (def.staff_mask == 0x40)
+                cure_sprite(10);
+            if (def.category == kRoomTheatre)
+                cure_sprite(8);
+        } else {
+            cure_sprite(9);
+        }
+    }
+
+    // The first of the buttons from `first` (to the list's end) under the
+    // mouse, -1 for none.
+    int button_under_mouse(int first) const
+    {
+        for (int i = first; kButtons[i].w && kButtons[i].h; i++) {
+            const ScreenButton &b = kButtons[i];
+            if (over(mx_, my_, b.x, b.y, b.w, b.h))
+                return i;
+        }
+        return -1;
     }
 
     void process_drug_panel()
     {
         if (left_) {
             c_.value = 0;
-            for (int i = kDrugButtons; kButtons[i].w && kButtons[i].h; i++) {
+            int i = button_under_mouse(kDrugButtons);
+            if (i >= 0) {
                 const ScreenButton &b = kButtons[i];
-                if (over(mx_, my_, b.x, b.y, b.w, b.h)) {
-                    process_drug_button(i - kDrugButtons);
-                    if (b.sprite)
-                        reqspr(b.sprite_x, b.sprite_y, b.sprite);
-                    break;
-                }
+                process_drug_button(i - kDrugButtons);
+                if (b.sprite)
+                    reqspr(b.sprite_x, b.sprite_y, b.sprite);
             }
             reset_repeat();
         }
         if (mleft_) {
-            for (int i = kDrugButtons; kButtons[i].w && kButtons[i].h; i++) {
+            int i = button_under_mouse(kDrugButtons);
+            if (i >= 0) {
                 const ScreenButton &b = kButtons[i];
-                if (over(mx_, my_, b.x, b.y, b.w, b.h)) {
-                    if (i - kDrugButtons <= 1)
-                        process_drug_button(i - kDrugButtons);
-                    if (b.sprite)
-                        reqspr(b.sprite_x, b.sprite_y, b.sprite);
-                    break;
-                }
+                if (i - kDrugButtons <= 1)
+                    process_drug_button(i - kDrugButtons);
+                if (b.sprite)
+                    reqspr(b.sprite_x, b.sprite_y, b.sprite);
             }
         }
         left_ = false;
@@ -1625,6 +1737,8 @@ class Frame
             c_.value = 0;
             c_.slist_filter = 1;
             c_.slist_page = 0;
+            if (c_.slist_staff && c_.slist_staff < game_.world.things.size())
+                open_slist_on(c_.slist_staff);
             draw_slist();
             break;
         case 1:
@@ -1645,6 +1759,42 @@ class Frame
         rleft_ = left_ = false;
         if (exit_quick_requester())
             c_.state = 3;
+    }
+
+    // The staff list opened on member of staff `id`: their kind's filter
+    // and the page they are on.
+    void open_slist_on(uint16_t id)
+    {
+        switch (thing(id).subtype) {
+        case kStaffNurse:
+            c_.slist_filter = 2;
+            break;
+        case kStaffDoctor:
+        case kStaffSurgeon:
+            c_.slist_filter = 1;
+            break;
+        case kStaffHandyman:
+            c_.slist_filter = 4;
+            break;
+        case kStaffReceptionist:
+            c_.slist_filter = 8;
+            break;
+        default:
+            break;
+        }
+        for (;;) {
+            int prev = c_.value;
+            c_.value = get_slist_staff(0);
+            if (prev == c_.value) {
+                c_.value = 0;
+                break;
+            }
+            if (c_.value == id)
+                break;
+            if (c_.slist_cursor / 11 > 0 && c_.slist_cursor % 11 == 0 && c_.slist_page < 150 &&
+                staff_on_page(c_.slist_page + 1))
+                c_.slist_page++;
+        }
     }
 
     void draw_slist()
@@ -1672,30 +1822,43 @@ class Frame
             if (c_.slist_filter != 1)
                 slist_filter(c_.slist_filter >> 1);
         }
-        if (keys_.down) {
-            int prev = c_.value;
-            c_.value = get_slist_staff(0);
-            if (prev != c_.value) {
-                sound(kSfxSelectX);
-                if (c_.slist_cursor / 11 > 0 && c_.slist_cursor % 11 == 0) {
-                    if (c_.slist_page < 150 && staff_on_page(c_.slist_page + 1))
-                        c_.slist_page++;
-                    sound(kSfxSelectX);
-                }
-            }
-        } else if (keys_.up) {
-            int prev = c_.value;
-            c_.value = get_slist_staff(1);
-            if (prev != c_.value) {
-                sound(kSfxSelectX);
-                if (c_.slist_cursor / 10 > 0 && c_.slist_cursor % 10 == 0) {
-                    sound(kSfxSelectX);
-                    if (c_.slist_page > 0) {
-                        c_.slist_page--;
-                        for (int i = 0; i < 10; i++)
-                            c_.value = get_slist_staff(1);
-                    }
-                }
+        if (keys_.down)
+            slist_key_down();
+        else if (keys_.up)
+            slist_key_up();
+    }
+
+    // slist_keys, Down: the next member of staff, onto the next page past
+    // the last line.
+    void slist_key_down()
+    {
+        int prev = c_.value;
+        c_.value = get_slist_staff(0);
+        if (prev == c_.value)
+            return;
+        sound(kSfxSelectX);
+        if (c_.slist_cursor / 11 > 0 && c_.slist_cursor % 11 == 0) {
+            if (c_.slist_page < 150 && staff_on_page(c_.slist_page + 1))
+                c_.slist_page++;
+            sound(kSfxSelectX);
+        }
+    }
+
+    // slist_keys, Up: the member of staff before, back a page past the
+    // first line.
+    void slist_key_up()
+    {
+        int prev = c_.value;
+        c_.value = get_slist_staff(1);
+        if (prev == c_.value)
+            return;
+        sound(kSfxSelectX);
+        if (c_.slist_cursor / 10 > 0 && c_.slist_cursor % 10 == 0) {
+            sound(kSfxSelectX);
+            if (c_.slist_page > 0) {
+                c_.slist_page--;
+                for (int i = 0; i < 10; i++)
+                    c_.value = get_slist_staff(1);
             }
         }
     }
@@ -1750,47 +1913,17 @@ class Frame
         int height = line_height(font(1));
         for (int row = 0; row < 3; row++) {
             const Rect &b = kBoxes[row + 61];
-            text(1, b, 0, (b.h - height) / 2, str(TextSection::Slist, row + 2), kTextCentre);
+            text(1, b, {0, (b.h - height) / 2}, str(TextSection::Slist, row + 2), kTextCentre);
         }
         int row = 0, listed = 0;
         const auto &things = game_.world.things;
-        Colours col = colours();
+        uint8_t red = colours().red;
         for (size_t id = 1; id < things.size() && row < 10; id++) {
             const Thing &s = things[id];
             if (!slist_shows(s, c_.slist_filter))
                 continue;
             if (listed >= c_.slist_page * 10 && listed < (c_.slist_page + 1) * 10) {
-                const Rect &line = kBoxes[row + 104];
-                int f = 1;
-                if (over(mx_, my_, line.x, line.y, line.w, line.h)) {
-                    if (c_.slist_cursor != row + c_.slist_page * 10 + 1)
-                        sound(kSfxHighlight5);
-                    f = 2;
-                    c_.slist_cursor = c_.slist_page * 10 + row + 1;
-                }
-                if (selected == int(id)) {
-                    f = 2;
-                    int fx = line.x, fy = line.y - 1;
-                    draw_line(dst_, fx, fy, fx + line.w, fy, col.red);
-                    draw_line(dst_, fx, fy, fx, fy + line.h, col.red);
-                    draw_line(dst_, fx + line.w, fy, fx + line.w, fy + line.h, col.red);
-                    draw_line(dst_, fx, fy + line.h, fx + line.w, fy + line.h, col.red);
-                    draw_slist_button_overlays(s);
-                }
-                text(f, kCoords[row + 114].x, kCoords[row + 114].y, format("%d", listed + 1));
-                std::string name =
-                    format("%c. %s%s", s.initial, std::string(str(TextSection::StaffNames1, s.surname_a)).c_str(),
-                           std::string(str(TextSection::StaffNames2, s.surname_b)).c_str());
-                text(f, kCoords[row + 124].x, kCoords[row + 124].y, name);
-                text(f, kCoords[row + 134].x, kCoords[row + 134].y, format("$%d", s.salary));
-                draw_gauge(s.happiness, kBoxes[row + 71], 100, 0, 100, true);
-                draw_gauge(s.tiredness, kBoxes[row + 81], 1000, 0, 1000, false);
-                draw_gauge(s.ability, kBoxes[row + 91], 1000, 30, 970, true);
-                if (mleft_ && over(mx_, my_, line.x, line.y, line.w, line.h)) {
-                    if (int(id) != c_.value)
-                        sound(kSfxSelectX);
-                    c_.value = int(id);
-                }
+                draw_slist_staff_line(row, listed, int(id), selected == int(id), red);
                 row++;
             }
             listed++;
@@ -1806,6 +1939,45 @@ class Frame
             const Rect &b = kBoxes[114];
             uint8_t pos = uint8_t(b.h / (pages - 1) * c_.slist_page);
             reqspr(b.x, pos + b.y, b.w);
+        }
+    }
+
+    // draw_slist_staff, the page's `row`th line: member of staff `id`, the
+    // `listed`th in the list, framed in colour `frame` if selected; the mouse
+    // highlights and picks it.
+    void draw_slist_staff_line(int row, int listed, int id, bool selected, uint8_t frame)
+    {
+        const Thing &s = thing(id);
+        const Rect &line = kBoxes[row + 104];
+        int f = 1;
+        if (over(mx_, my_, line.x, line.y, line.w, line.h)) {
+            if (c_.slist_cursor != row + c_.slist_page * 10 + 1)
+                sound(kSfxHighlight5);
+            f = 2;
+            c_.slist_cursor = c_.slist_page * 10 + row + 1;
+        }
+        if (selected) {
+            f = 2;
+            int fx = line.x, fy = line.y - 1;
+            draw_line(dst_, fx, fy, fx + line.w, fy, frame);
+            draw_line(dst_, fx, fy, fx, fy + line.h, frame);
+            draw_line(dst_, fx + line.w, fy, fx + line.w, fy + line.h, frame);
+            draw_line(dst_, fx, fy + line.h, fx + line.w, fy + line.h, frame);
+            draw_slist_button_overlays(s);
+        }
+        text(f, kCoords[row + 114].x, kCoords[row + 114].y, format("%d", listed + 1));
+        std::string name =
+            format("%c. %s%s", s.initial, std::string(str(TextSection::StaffNames1, s.surname_a)).c_str(),
+                   std::string(str(TextSection::StaffNames2, s.surname_b)).c_str());
+        text(f, kCoords[row + 124].x, kCoords[row + 124].y, name);
+        text(f, kCoords[row + 134].x, kCoords[row + 134].y, format("$%d", s.salary));
+        draw_gauge(s.happiness, kBoxes[row + 71], 100, 0, 100, true);
+        draw_gauge(s.tiredness, kBoxes[row + 81], 1000, 0, 1000, false);
+        draw_gauge(s.ability, kBoxes[row + 91], 1000, 30, 970, true);
+        if (mleft_ && over(mx_, my_, line.x, line.y, line.w, line.h)) {
+            if (id != c_.value)
+                sound(kSfxSelectX);
+            c_.value = id;
         }
     }
 
@@ -2015,6 +2187,8 @@ class Frame
             h.balance = game_.balance;
             h.loan = fin.loan;
             h.value = fin.hospital_value;
+            h.cures = fin.cures;
+            h.deaths = fin.deaths;
         } else {
             // The rivals are not simulated: as init_player leaves them.
             h.balance = int32_t(bal.towns[size_t(game_.level_number()) % bal.towns.size()].start_cash);
@@ -2034,33 +2208,7 @@ class Frame
             break;
         case 1:
             copy_screen();
-            if (mleft_) {
-                for (int slot = 0; slot < 4; slot++) {
-                    const Rect &b = kBoxes[0x37 + slot];
-                    if (over(mx_, my_, b.x, b.y, b.w, b.h))
-                        reqspr(b.x + 0x13, b.y, 9);
-                }
-                const Rect &b = kBoxes[0x3c];
-                if (over(mx_, my_, b.x, b.y, b.w, b.h))
-                    reqspr(b.x, b.y, 8);
-            }
-            if (rleft_) {
-                for (int slot = 0; slot < 4; slot++) {
-                    const Rect &b = kBoxes[0x37 + slot];
-                    if (over(mx_, my_, b.x, b.y, b.w, b.h)) {
-                        c_.value = slot;
-                        sound(kSfxSelectX);
-                        reqspr(b.x + 0x13, b.y, 9);
-                    }
-                }
-                const Rect &b = kBoxes[0x3c];
-                if (over(mx_, my_, b.x, b.y, b.w, b.h)) {
-                    c_.state = 2;
-                    sound(kSfxNo4);
-                    reqspr(b.x, b.y, 8);
-                }
-                rleft_ = false;
-            }
+            process_overview_panel();
             draw_overview_screen();
             draw_piechart();
             break;
@@ -2072,12 +2220,57 @@ class Frame
             c_.state = 2;
     }
 
+    // display_peep_overview, the buttons: the four hospitals' and the
+    // exit, pressed while held and acted on when released.
+    void process_overview_panel()
+    {
+        if (mleft_) {
+            for (int slot = 0; slot < 4; slot++) {
+                const Rect &b = kBoxes[0x37 + slot];
+                if (over(mx_, my_, b.x, b.y, b.w, b.h))
+                    reqspr(b.x + 0x13, b.y, 9);
+            }
+            const Rect &b = kBoxes[0x3c];
+            if (over(mx_, my_, b.x, b.y, b.w, b.h))
+                reqspr(b.x, b.y, 8);
+        }
+        if (!rleft_)
+            return;
+        for (int slot = 0; slot < 4; slot++) {
+            const Rect &b = kBoxes[0x37 + slot];
+            if (over(mx_, my_, b.x, b.y, b.w, b.h)) {
+                c_.value = slot;
+                sound(kSfxSelectX);
+                reqspr(b.x + 0x13, b.y, 9);
+            }
+        }
+        const Rect &b = kBoxes[0x3c];
+        if (over(mx_, my_, b.x, b.y, b.w, b.h)) {
+            c_.state = 2;
+            sound(kSfxNo4);
+            reqspr(b.x, b.y, 8);
+        }
+        rleft_ = false;
+    }
+
     void draw_overview_screen()
     {
         text(0x24, kCoords[0x6f].x, kCoords[0x6f].y,
              format("%s %4.4d", std::string(str(TextSection::Overview, 0)).c_str(), game_.date.year + 2000));
         for (int i = 0; i < 4; i++)
             text(c_.value == i ? 0x25 : 0x24, kCoords[0x68 + i].x, kCoords[0x68 + i].y, c_.hospital_names[size_t(i)]);
+        draw_overview_patients();
+        // Single player: each hospital's market share is 25%.
+        std::string share = format("%s (%d%%)", std::string(str(TextSection::Overview, 6)).c_str(), 25);
+        text(0x26, kCoords[0x70].x, kCoords[0x70].y, conv_string(share, 0));
+        text(0x26, kCoords[0x71].x, kCoords[0x71].y, str(TextSection::Overview, 7));
+        display_overview_bars();
+    }
+
+    // draw_overview_screen, the patients' average happiness, refreshment
+    // and warmth on their scales, with the warnings they call for.
+    void draw_overview_patients()
+    {
         // The patients' figures (adcounts, counted from 1 by the game's
         // statistics pass over the patients indoors).
         int patients = 1, happiness = 0, refreshment = 0, warmth = 0;
@@ -2091,33 +2284,28 @@ class Frame
             refreshment += t.refreshment;
             warmth += t.warmth;
         }
-        if (patients > 1) {
-            const Balance::Gbv &gbv = game_.settings().gbv;
-            std::string warn;
-            int pct = std::min(happiness / patients, 100);
-            if (gbv.very_unhappy > pct)
-                warn += str(TextSection::Overview, 1);
-            else if (gbv.unhappy > pct)
-                warn += str(TextSection::Overview, 2);
-            reqspr(kCoords[0x6c].x + pct, kCoords[0x6c].y, 5);
-            pct = std::min(refreshment / patients, 100);
-            if (pct < 30)
-                warn += str(TextSection::Overview, 3);
-            reqspr(kCoords[0x6d].x + pct, kCoords[0x6d].y, 5);
-            pct = std::min(warmth / patients, 100);
-            if (pct > 80)
-                warn += str(TextSection::Overview, 4);
-            else if (pct < 20)
-                warn += str(TextSection::Overview, 5);
-            reqspr(kCoords[0x6e].x + pct, kCoords[0x6e].y, 5);
-            reqspr(0xf5, 0x12c, 7);
-            text(0x24, kBoxes[0x3b], 0, 0, warn, kTextWrap);
-        }
-        // Single player: each hospital's market share is 25%.
-        std::string share = format("%s (%d%%)", std::string(str(TextSection::Overview, 6)).c_str(), 25);
-        text(0x26, kCoords[0x70].x, kCoords[0x70].y, conv_string(share, 0));
-        text(0x26, kCoords[0x71].x, kCoords[0x71].y, str(TextSection::Overview, 7));
-        display_overview_bars();
+        if (patients <= 1)
+            return;
+        const Balance::Gbv &gbv = game_.settings().gbv;
+        std::string warn;
+        int pct = std::min(happiness / patients, 100);
+        if (gbv.very_unhappy > pct)
+            warn += str(TextSection::Overview, 1);
+        else if (gbv.unhappy > pct)
+            warn += str(TextSection::Overview, 2);
+        reqspr(kCoords[0x6c].x + pct, kCoords[0x6c].y, 5);
+        pct = std::min(refreshment / patients, 100);
+        if (pct < 30)
+            warn += str(TextSection::Overview, 3);
+        reqspr(kCoords[0x6d].x + pct, kCoords[0x6d].y, 5);
+        pct = std::min(warmth / patients, 100);
+        if (pct > 80)
+            warn += str(TextSection::Overview, 4);
+        else if (pct < 20)
+            warn += str(TextSection::Overview, 5);
+        reqspr(kCoords[0x6e].x + pct, kCoords[0x6e].y, 5);
+        reqspr(0xf5, 0x12c, 7);
+        text(0x24, kBoxes[0x3b], {0, 0}, warn, kTextWrap);
     }
 
     // display_overview_bars: up to five criteria bars, a lose criterion with
@@ -2157,16 +2345,42 @@ class Frame
         }
     }
 
+    // A pie slice (sector, src/pie.cpp): its angles in 2048ths of a turn,
+    // how far it is pulled out, and where its label goes.
+    struct PieSector {
+        int32_t start, end, pull_out;
+        SliceColours colours;
+        int text_x, text_y;
+    };
+    static constexpr int kPieX = 0x1fa, kPieY = 0x78, kPieRx = 0x40, kPieRy = 0x1e, kPieH = 0x14;
+    static int pie_sin(int a) { return sin_table(a & 0x7ff); }
+    static int pie_cos(int a) { return sin_table((a & 0x7ff) + 0x200); }
+
     // calculate_piechart and pie_render (src/pie.cpp): four equal slices
     // (single player), the shown hospital's pulled out.
     void draw_piechart()
     {
-        struct Sector {
-            int32_t start, end, pull_out;
-            SliceColours colours;
-            int text_x, text_y;
-        };
-        std::array<Sector, 4> sectors{};
+        std::array<PieSector, 4> sectors = calculate_piechart();
+        // No slice spans more than half the pie with equal shares, so none
+        // is split as pie_render splits such a slice.
+        std::array<bool, 4> done{};
+        for (int j = 0; j < 4; j++) {
+            int best = -1;
+            for (int k = 0; k < 4; k++)
+                if (!done[size_t(k)] && (best == -1 || pie_behind(sectors[size_t(k)], sectors[size_t(best)])))
+                    best = k;
+            done[size_t(best)] = true;
+            sector_render(kPieX, kPieY, sectors[size_t(best)]);
+        }
+        for (size_t i = 0; i < 4; i++)
+            text(0x26, sectors[i].text_x, sectors[i].text_y, c_.hospital_names[i]);
+    }
+
+    // calculate_piechart: the slices' angles, and their pull, eased towards
+    // the shown hospital's.
+    std::array<PieSector, 4> calculate_piechart()
+    {
+        std::array<PieSector, 4> sectors{};
         int prev = 0;
         for (size_t i = 0; i < 4; i++) {
             sectors[i].start = prev;
@@ -2185,85 +2399,88 @@ class Frame
             c_.pie_pull[size_t(c_.value)] += 2;
         for (size_t i = 0; i < 4; i++)
             sectors[i].pull_out = c_.pie_pull[i];
+        return sectors;
+    }
 
-        const int cx = 0x1fa, cy = 0x78, rx = 0x40, ry = 0x1e, h = 0x14;
-        auto sn = [](int a) { return sin_table(a & 0x7ff); };
-        auto cs = [](int a) { return sin_table((a & 0x7ff) + 0x200); };
-        auto sector_render = [&](int ccx, int ccy, Sector &sec) {
-            int start = sec.start, end = sec.end;
-            if (end < start)
-                end += 0x800;
-            int mid = (start + end) >> 1;
-            int ox = ccx + (fixmul(cs(mid), rx * sec.pull_out) >> 8);
-            int oy = ccy - (fixmul(sn(mid), ry * sec.pull_out) >> 8);
-            int sx = ox + fixmul(cs(start), rx), sy = oy - fixmul(sn(start), ry);
-            int ex = ox + fixmul(cs(end), rx), ey = oy - fixmul(sn(end), ry);
-            int text_radius = kSliceTextOffset + sec.pull_out;
-            sec.text_x = ccx + (fixmul(cs(mid), rx * text_radius) >> 8);
-            sec.text_y = ccy - (fixmul(sn(mid), ry * text_radius) >> 8);
-            const SliceColours &c = sec.colours;
-            draw_triangle(dst_, ox, oy, sx, sy, sx, sy + h, c.side1);
-            draw_triangle(dst_, sx, sy + h, ox, oy + h, ox, oy, c.side1);
-            draw_triangle(dst_, ox, oy, ox, oy + h, ex, ey, c.side2);
-            draw_triangle(dst_, ex, ey, ox, oy + h, ex, ey + h, c.side2);
-            int segments = std::max((end - start) / 50, 1);
-            int ang = start, step = (end - start) / segments;
-            int x2 = ox + fixmul(cs(ang), rx), y2 = oy - fixmul(sn(ang), ry);
-            while (--segments >= 0) {
-                int x1 = x2, y1 = y2;
-                ang += step;
-                if (segments == 0)
-                    ang = end;
-                x2 = ox + fixmul(cs(ang), rx);
-                y2 = oy - fixmul(sn(ang), ry);
-                draw_triangle(dst_, x1, y1 + h, x1, y1, x2, y2, c.rim);
-                draw_triangle(dst_, x1, y1 + h, x2, y2, x2, y2 + h, c.rim);
-                draw_triangle(dst_, ox, oy, x2, y2, x1, y1, c.top);
-                draw_line(dst_, x1 - 1, y1, x2 - 1, y2, c.edge);
-                if (!(sn(ang) > 0 || sn(ang - step) > 0))
-                    draw_line(dst_, x1 - 1, y1 + h, x2 - 1, y2 + h, c.edge);
-            }
-            draw_line(dst_, ox - 1, oy, sx - 1, sy, c.edge);
-            if (cs(start) >= 0) {
-                draw_line(dst_, ox - 1, oy + h, sx - 1, sy + h, c.edge);
-                draw_line(dst_, ox - 1, oy, ox - 1, oy + h, c.edge);
-                draw_line(dst_, sx - 1, sy, sx - 1, sy + h, c.edge);
-            }
-            draw_line(dst_, ox - 1, oy, ex - 1, ey, c.edge);
-            if (cs(end) <= 0) {
-                draw_line(dst_, ox - 1, oy + h, ex - 1, ey + h, c.edge);
-                draw_line(dst_, ox - 1, oy, ox - 1, oy + h, c.edge);
-                draw_line(dst_, ex - 1, ey, ex - 1, ey + h, c.edge);
-            }
-        };
-        auto behind = [&](int a, int b) {
-            int as = cs(sectors[size_t(a)].start), ae = cs(sectors[size_t(a)].end);
-            int bs = cs(sectors[size_t(b)].start), be = cs(sectors[size_t(b)].end);
-            if (!(as > 0 || ae < 0))
-                return false;
-            if (!(ae > 0 || as < 0))
-                return true;
-            if (!(bs > 0 || be < 0))
-                return true;
-            if (!(be > 0 || bs < 0))
-                return false;
-            if ((as < 0 && bs > 0) || (as > 0 && bs < 0))
-                return false;
-            return -sn(sectors[size_t(a)].start) < -sn(sectors[size_t(b)].start);
-        };
-        // No slice spans more than half the pie with equal shares, so none
-        // is split as pie_render splits such a slice.
-        std::array<bool, 4> done{};
-        for (int j = 0; j < 4; j++) {
-            int best = -1;
-            for (int k = 0; k < 4; k++)
-                if (!done[size_t(k)] && (best == -1 || behind(k, best)))
-                    best = k;
-            done[size_t(best)] = true;
-            sector_render(cx, cy, sectors[size_t(best)]);
+    // pie_render's drawing order: whether slice `a` is drawn before `b`.
+    static bool pie_behind(const PieSector &a, const PieSector &b)
+    {
+        int as = pie_cos(a.start), ae = pie_cos(a.end);
+        int bs = pie_cos(b.start), be = pie_cos(b.end);
+        if (!(as > 0 || ae < 0))
+            return false;
+        if (!(ae > 0 || as < 0))
+            return true;
+        if (!(bs > 0 || be < 0))
+            return true;
+        if (!(be > 0 || bs < 0))
+            return false;
+        if ((as < 0 && bs > 0) || (as > 0 && bs < 0))
+            return false;
+        return -pie_sin(a.start) < -pie_sin(b.start);
+    }
+
+    // sector_render (src/pie.cpp): slice `sec` of the pie centred on
+    // (ccx, ccy), its label's place kept in it.
+    void sector_render(int ccx, int ccy, PieSector &sec)
+    {
+        const int rx = kPieRx, ry = kPieRy, h = kPieH;
+        int start = sec.start, end = sec.end;
+        if (end < start)
+            end += 0x800;
+        int mid = (start + end) >> 1;
+        Point o = {ccx + (fixmul(pie_cos(mid), rx * sec.pull_out) >> 8),
+                   ccy - (fixmul(pie_sin(mid), ry * sec.pull_out) >> 8)};
+        Point s = {o.x + fixmul(pie_cos(start), rx), o.y - fixmul(pie_sin(start), ry)};
+        Point e = {o.x + fixmul(pie_cos(end), rx), o.y - fixmul(pie_sin(end), ry)};
+        int text_radius = kSliceTextOffset + sec.pull_out;
+        sec.text_x = ccx + (fixmul(pie_cos(mid), rx * text_radius) >> 8);
+        sec.text_y = ccy - (fixmul(pie_sin(mid), ry * text_radius) >> 8);
+        const SliceColours &c = sec.colours;
+        draw_triangle(dst_, o, s, {s.x, s.y + h}, c.side1);
+        draw_triangle(dst_, {s.x, s.y + h}, {o.x, o.y + h}, o, c.side1);
+        draw_triangle(dst_, o, {o.x, o.y + h}, e, c.side2);
+        draw_triangle(dst_, e, {o.x, o.y + h}, {e.x, e.y + h}, c.side2);
+        sector_render_top(o, start, end, c);
+        sector_render_edges(o, s, pie_cos(start) >= 0, c.edge);
+        sector_render_edges(o, e, pie_cos(end) <= 0, c.edge);
+    }
+
+    // sector_render, the top and rim: in steps of about 50 from `start` to
+    // `end` about `o`.
+    void sector_render_top(Point o, int start, int end, const SliceColours &c)
+    {
+        const int rx = kPieRx, ry = kPieRy, h = kPieH;
+        int segments = std::max((end - start) / 50, 1);
+        int ang = start, step = (end - start) / segments;
+        int x2 = o.x + fixmul(pie_cos(ang), rx), y2 = o.y - fixmul(pie_sin(ang), ry);
+        while (--segments >= 0) {
+            int x1 = x2, y1 = y2;
+            ang += step;
+            if (segments == 0)
+                ang = end;
+            x2 = o.x + fixmul(pie_cos(ang), rx);
+            y2 = o.y - fixmul(pie_sin(ang), ry);
+            draw_triangle(dst_, {x1, y1 + h}, {x1, y1}, {x2, y2}, c.rim);
+            draw_triangle(dst_, {x1, y1 + h}, {x2, y2}, {x2, y2 + h}, c.rim);
+            draw_triangle(dst_, o, {x2, y2}, {x1, y1}, c.top);
+            draw_line(dst_, x1 - 1, y1, x2 - 1, y2, c.edge);
+            if (!(pie_sin(ang) > 0 || pie_sin(ang - step) > 0))
+                draw_line(dst_, x1 - 1, y1 + h, x2 - 1, y2 + h, c.edge);
         }
-        for (size_t i = 0; i < 4; i++)
-            text(0x26, sectors[i].text_x, sectors[i].text_y, c_.hospital_names[i]);
+    }
+
+    // sector_render, a straight side's outline from `o` to `p`, and its
+    // lower and upright edges too when it `faces` the viewer.
+    void sector_render_edges(Point o, Point p, bool faces, uint8_t edge)
+    {
+        const int h = kPieH;
+        draw_line(dst_, o.x - 1, o.y, p.x - 1, p.y, edge);
+        if (!faces)
+            return;
+        draw_line(dst_, o.x - 1, o.y + h, p.x - 1, p.y + h, edge);
+        draw_line(dst_, o.x - 1, o.y, o.x - 1, o.y + h, edge);
+        draw_line(dst_, p.x - 1, p.y, p.x - 1, p.y + h, edge);
     }
 
     Charts &c_;
@@ -2287,8 +2504,10 @@ void start_hospital_settings(HospitalSettings &settings, const Balance &balance)
     for (int i = 0; i < kIllnessCount; i++) {
         IllnessFigures &f = settings.illnesses[size_t(i)];
         f.discovered = balance.expertise[size_t(i)].known;
-        if (kExpertise[size_t(i)].kind == kObjPharmacyCabinet)
+        if (kExpertise[size_t(i)].kind == kObjPharmacyCabinet) {
             f.drug_effectiveness = balance.gbv.start_rating;
+            f.drug_cost = balance.gbv.start_cost;
+        }
     }
 }
 
@@ -2302,16 +2521,122 @@ void setup_insurances(World &world, uint32_t clock)
     }
 }
 
+namespace
+{
+
+// apply_chart_event: a bank statement entry and its change to the balance.
+void chart_pay(Game &game, uint8_t type, int32_t amount, uint16_t arg = 0)
+{
+    change_balance(game.finance, game.balance, game.date.day, game.date.month, {type, amount, arg});
+}
+
+// apply_chart_event: a member of staff made 50 happier, up to 100.
+void make_happier(Thing &t)
+{
+    t.happiness = uint16_t(std::clamp(int16_t(t.happiness + 50), int16_t(0), int16_t(100)));
+}
+
+// EV_SET_POLICY: policy setting `event.value` (1 send home, 2 guess a cure,
+// 3 diagnosis, 4 rest, 5 staff leave rooms) set to `event.arg`.
+void set_policy(HospitalSettings &settings, const Event &event)
+{
+    switch (event.value) {
+    case 1:
+        settings.send_home_threshold = std::min<int>(event.arg, settings.guess_cure_threshold);
+        break;
+    case 2:
+        settings.guess_cure_threshold = std::max<int>(event.arg, settings.send_home_threshold);
+        break;
+    case 3:
+        settings.diag_threshold = event.arg;
+        break;
+    case 4:
+        trace_event("policy_rest %u", unsigned(event.arg));
+        settings.rest_threshold = event.arg;
+        break;
+    case 5:
+        settings.staff_leave_rooms = event.arg != 0;
+        break;
+    }
+}
+
+// alter_research (src/rschscrn.cpp): kept if the total would pass 100. The
+// game reads the old value unsigned, so a closed category is opened too;
+// the total is a byte.
+void alter_research(HospitalSettings &settings, const Event &event)
+{
+    if (event.value >= 5)
+        return;
+    int8_t &alloc = settings.research_alloc[event.value];
+    int8_t old = alloc;
+    alloc = int8_t(uint8_t(event.arg));
+    uint8_t total = 0;
+    for (int8_t a : settings.research_alloc)
+        if (a > 0)
+            total = uint8_t(total + a);
+    if (total > 100)
+        alloc = old;
+}
+
+// EV_PRICE_UP and EV_PRICE_DOWN: illness `event.arg`'s price scale moved
+// by `event.value` percent within 50% and 200%, and its price with it.
+void change_price(Game &game, const Event &event)
+{
+    if (event.arg >= kIllnessCount)
+        return;
+    HospitalMarket &hosp = game.arrivals.hospitals[0];
+    int32_t &scale = hosp.price_scale[event.arg];
+    bool up = event.type == EV_PRICE_UP;
+    if (up ? scale < 20000 : scale > 5000) {
+        scale = std::clamp(scale + (up ? 1 : -1) * event.value * 100, 5000, 20000);
+        hosp.price[event.arg] = scale * max_price_for_treatment(hosp, game.settings(), event.arg) / 10000;
+    }
+}
+
+// increase_staff_salaries (src/staff.cpp), by an amount: for one, up to
+// 90000; for all the player's staff the game caps no one.
+void increase_staff_salaries(Game &game, const Event &event)
+{
+    for (size_t i = 1; i < game.world.things.size(); i++) {
+        Thing &t = game.world.things[i];
+        bool chosen = event.arg ? i == event.arg : t.type == kThingStaff && t.owner == 0;
+        if (!chosen)
+            continue;
+        t.salary += event.value;
+        if (event.arg && t.salary > 90000)
+            t.salary = 90000;
+        make_happier(t);
+    }
+}
+
+// pay_staff_bonus (src/staff.cpp), by an amount.
+void pay_staff_bonus(Game &game, const Event &event)
+{
+    if (event.arg) {
+        if (game.balance >= event.value && game.balance > 0 && event.arg < game.world.things.size()) {
+            make_happier(game.world.things[event.arg]);
+            chart_pay(game, kTxPersonalBonus, -int32_t(event.value), event.arg);
+        }
+        return;
+    }
+    int32_t total = 0;
+    for (const Thing &t : game.world.things)
+        if (t.type == kThingStaff && t.owner == 0)
+            total += event.value;
+    if (game.balance >= total && game.balance > 0) {
+        for (Thing &t : game.world.things)
+            if (t.type == kThingStaff && t.owner == 0)
+                make_happier(t);
+        chart_pay(game, kTxGeneralBonus, -total);
+    }
+}
+
+} // namespace
+
 bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &event)
 {
     Finance &fin = game.finance;
     const Balance &bal = game.settings();
-    auto pay = [&](uint8_t type, int32_t amount, uint16_t arg = 0) {
-        change_balance(fin, game.balance, game.date.day, game.date.month, type, amount, arg);
-    };
-    auto happier = [](Thing &t) {
-        t.happiness = uint16_t(std::clamp(int16_t(t.happiness + 50), int16_t(0), int16_t(100)));
-    };
     switch (event.type) {
     case EV_OPEN_SCREEN:
         put_back_held_staff(game);
@@ -2320,102 +2645,34 @@ bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &even
             calculate_value(fin, game.world, bal, game.reputation());
         return true;
     case EV_TAKE_LOAN:
-        pay(kTxBankLoan, 5000);
+        chart_pay(game, kTxBankLoan, 5000);
         fin.loan += 5000;
         return true;
     case EV_REPAY_LOAN:
         if (game.balance >= 5000 && game.balance > 0) {
-            pay(kTxLoanRepayment, -5000);
+            chart_pay(game, kTxLoanRepayment, -5000);
             fin.loan -= 5000;
         }
         return true;
     case EV_SET_POLICY:
-        switch (event.value) {
-        case 1:
-            settings.send_home_threshold = std::min<int>(event.arg, settings.guess_cure_threshold);
-            break;
-        case 2:
-            settings.guess_cure_threshold = std::max<int>(event.arg, settings.send_home_threshold);
-            break;
-        case 3:
-            settings.diag_threshold = event.arg;
-            break;
-        case 4:
-            settings.rest_threshold = event.arg;
-            break;
-        case 5:
-            settings.staff_leave_rooms = event.arg != 0;
-            break;
-        }
+        set_policy(settings, event);
         return true;
-    case EV_ALTER_RESEARCH: {
-        // alter_research (src/rschscrn.cpp): kept if the total would pass
-        // 100. The game reads the old value unsigned, so a closed category
-        // is opened too; the total is a byte.
-        if (event.value >= 5)
-            return true;
-        int8_t &alloc = settings.research_alloc[event.value];
-        int8_t old = alloc;
-        alloc = int8_t(uint8_t(event.arg));
-        uint8_t total = 0;
-        for (int8_t a : settings.research_alloc)
-            if (a > 0)
-                total = uint8_t(total + a);
-        if (total > 100)
-            alloc = old;
+    case EV_ALTER_RESEARCH:
+        alter_research(settings, event);
         return true;
-    }
     case EV_CONCENTRATE_RESEARCH:
         settings.research_illness = event.value == settings.research_illness ? 0 : uint8_t(event.value);
         return true;
     case EV_PRICE_UP:
-    case EV_PRICE_DOWN: {
-        if (event.arg >= kIllnessCount)
-            return true;
-        HospitalMarket &hosp = game.arrivals.hospitals[0];
-        int32_t &scale = hosp.price_scale[event.arg];
-        bool up = event.type == EV_PRICE_UP;
-        if (up ? scale < 20000 : scale > 5000) {
-            scale = std::clamp(scale + (up ? 1 : -1) * event.value * 100, 5000, 20000);
-            hosp.price[event.arg] = scale * max_price_for_treatment(hosp, bal, event.arg) / 10000;
-        }
+    case EV_PRICE_DOWN:
+        change_price(game, event);
         return true;
-    }
     case EV_INCREASE_STAFF_SALARIES:
-        // increase_staff_salaries (src/staff.cpp), by an amount: for one,
-        // up to 90000; for all the player's staff the game caps no one.
-        for (size_t i = 1; i < game.world.things.size(); i++) {
-            Thing &t = game.world.things[i];
-            bool chosen = event.arg ? i == event.arg : t.type == kThingStaff && t.owner == 0;
-            if (!chosen)
-                continue;
-            t.salary += event.value;
-            if (event.arg && t.salary > 90000)
-                t.salary = 90000;
-            happier(t);
-        }
+        increase_staff_salaries(game, event);
         return true;
-    case EV_PAY_STAFF_BONUS: {
-        // pay_staff_bonus (src/staff.cpp), by an amount.
-        if (event.arg) {
-            if (game.balance >= event.value && game.balance > 0 && event.arg < game.world.things.size()) {
-                happier(game.world.things[event.arg]);
-                pay(kTxPersonalBonus, -int32_t(event.value), event.arg);
-            }
-            return true;
-        }
-        int32_t total = 0;
-        for (const Thing &t : game.world.things)
-            if (t.type == kThingStaff && t.owner == 0)
-                total += event.value;
-        if (game.balance >= total && game.balance > 0) {
-            for (Thing &t : game.world.things)
-                if (t.type == kThingStaff && t.owner == 0)
-                    happier(t);
-            pay(kTxGeneralBonus, -total);
-        }
+    case EV_PAY_STAFF_BONUS:
+        pay_staff_bonus(game, event);
         return true;
-    }
     default:
         return false;
     }

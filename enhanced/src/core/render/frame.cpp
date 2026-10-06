@@ -9,9 +9,9 @@
 namespace th
 {
 
-Rect draw_frame(Surface &dst, int x, int y, uint32_t frame_id, bool flip, unsigned flags, const GameData &data,
-                const uint8_t *layers, Rect *extent)
+Rect draw_frame(Surface &dst, Point at, uint32_t frame_id, bool flip, const GameData &data, const FrameOptions &options)
 {
+    const int x = at.x, y = at.y;
     const AnimData &anims = data.anims();
     if (frame_id >= anims.frames.size())
         return {};
@@ -24,10 +24,10 @@ Rect draw_frame(Surface &dst, int x, int y, uint32_t frame_id, bool flip, unsign
         const AnimElement &e = anims.elements[id];
         // The game tests the layer bits with 0xffb0, so an element tagged only
         // 0x40 (layer 4, id 0) is always drawn.
-        if (layers && (e.flags & 0xffb0)) {
+        if (options.layers && (e.flags & 0xffb0)) {
             int layer = (e.flags >> 4) & 0x1f;
             int choice = e.flags >> 9;
-            if (layer >= kLayerCount || layers[layer] != choice)
+            if (layer >= kLayerCount || options.layers[layer] != choice)
                 continue;
         }
         // Element sprites are byte offsets into the 6-byte TbSprite table;
@@ -37,7 +37,7 @@ Rect draw_frame(Surface &dst, int x, int y, uint32_t frame_id, bool flip, unsign
         Sprite s = data.sprites().at(e.sprite / 6);
         int ex = e.x - kElementBiasX;
         int ey = e.y - kElementBiasY;
-        unsigned f = (e.flags & 0xf) | flags;
+        unsigned f = (e.flags & 0xf) | options.flags;
         if (flip) {
             f ^= kDrawFlipX;
             ex = -ex - s.width;
@@ -48,8 +48,8 @@ Rect draw_frame(Surface &dst, int x, int y, uint32_t frame_id, bool flip, unsign
         right = std::max(right, ex + s.width);
         bottom = std::max(bottom, ey + s.height);
     }
-    if (extent)
-        *extent = left == INT_MAX ? Rect{} : Rect{x + left, y + top, right - left, bottom - top};
+    if (options.extent)
+        *options.extent = left == INT_MAX ? Rect{} : Rect{x + left, y + top, right - left, bottom - top};
     if (left == INT_MAX)
         return {};
     return {x + left, y + top, frame.width, frame.height};

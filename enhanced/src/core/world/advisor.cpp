@@ -150,130 +150,205 @@ void forced_advice(Advisor &a, const LanguageText &text)
     a.forced_advice_id = 0;
 }
 
-// find_advice (src/advisor.cpp) for the situations ported (see
-// advisor_frame).
-bool find_advice(Advisor &a, int id, const AdvisorInputs &in)
+// saferand (src/advisor.cpp), drawing on `safeseed`.
+uint16_t saferand(uint32_t &safeseed)
 {
-    const LanguageText &text = *in.text;
+    safeseed = std::rotr(safeseed * 0x24a1u + 0x24dfu, 13);
+    return uint16_t(safeseed);
+}
+
+std::string_view advisor_text(const AdvisorInputs &in, int i)
+{
+    return in.text->at(TextSection::Advisor, i);
+}
+
+std::string_view extra_advice(const AdvisorInputs &in, int i)
+{
+    return in.text->at(TextSection::ExtraAdvice, i);
+}
+
+// find_advice's low balance advice (0x48).
+bool find_advice_low_balance(Advisor &a, const AdvisorInputs &in)
+{
     const Balance &settings = *in.settings;
     const Finance &f = *in.finance;
-    auto advisor_text = [&](int i) { return text.at(TextSection::Advisor, i); };
-    auto extra_advice = [&](int i) { return text.at(TextSection::ExtraAdvice, i); };
     int32_t balance = in.balance;
-    bool found = false;
+    int crit = relevant_criterion(kCriterionBalance, settings.lose_criteria);
+    if (crit && in.open) {
+        int win = relevant_criterion(kCriterionBalance, settings.win_criteria);
+        int32_t lose = settings.lose_criteria[size_t(crit)].value;
+        if (!win || balance - f.loan >= settings.win_criteria[size_t(win)].value)
+            return false;
+        // The fourth step's line (0x1f) is about damaged machinery, as in
+        // the game.
+        for (int i = 0; i < 4; i++) {
+            if (balance < lose + (i + 1) * std::abs(lose) / 10 && balance > lose) {
+                say(a, extra_advice(in, 0x1c + i), balance - lose);
+                return true;
+            }
+        }
+        return false;
+    }
+    if (f.start_cash / 10 >= uint32_t(balance) && f.loan == 0) {
+        // Unsigned, as in the game: not when overdrawn.
+        say(a, advisor_text(in, 0x48));
+        return true;
+    }
+    if (f.start_cash / 10 >= uint32_t(balance) && f.loan != 0 && f.loan < f.max_loan) {
+        say(a, extra_advice(in, 0xf));
+        return true;
+    }
+    return false;
+}
+
+// find_advice's reputation target advice (0x42).
+bool find_advice_reputation(Advisor &a, const AdvisorInputs &in)
+{
+    const Balance &settings = *in.settings;
+    int crit = relevant_criterion(kCriterionReputation, settings.win_criteria);
+    if (!crit || !in.open || in.month <= 5)
+        return false;
+    int32_t value = settings.win_criteria[size_t(crit)].value;
+    if (in.reputation > value)
+        say(a, extra_advice(in, 0x3b), value);
+    else if ((value - in.reputation) * 100 / value < 10)
+        say(a, extra_advice(in, 0x3c), value);
+    else
+        say(a, advisor_text(in, 0x42), in.reputation - value);
+    return true;
+}
+
+// find_advice's hospital value target advice (0x43).
+bool find_advice_hospital_value(Advisor &a, const AdvisorInputs &in)
+{
+    const Balance &settings = *in.settings;
+    const Finance &f = *in.finance;
+    int crit = relevant_criterion(kCriterionValue, settings.win_criteria);
+    if (!crit || !in.open || in.month <= 6)
+        return false;
+    int32_t value = settings.win_criteria[size_t(crit)].value;
+    if (f.hospital_value > value) {
+        say(a, extra_advice(in, 0x3d), value);
+        return true;
+    }
+    if ((value - f.hospital_value) * 100 / value < 10) {
+        say(a, extra_advice(in, 0x3e), value - f.hospital_value);
+        return true;
+    }
+    if (f.hospital_value < value) {
+        say(a, advisor_text(in, 0x43), value);
+        return true;
+    }
+    return false;
+}
+
+// find_advice's loan and bank balance target advice (0x14).
+bool find_advice_bank_balance(Advisor &a, const AdvisorInputs &in)
+{
+    const Balance &settings = *in.settings;
+    const Finance &f = *in.finance;
+    int32_t balance = in.balance;
+    if (f.loan && balance > f.loan * 3) {
+        say(a, extra_advice(in, 0x38));
+        return true;
+    }
+    int crit = relevant_criterion(kCriterionBalance, settings.win_criteria);
+    if (!crit || !in.open)
+        return false;
+    int32_t value = settings.win_criteria[size_t(crit)].value;
+    if (balance - f.loan > value && f.low_balance) {
+        say(a, extra_advice(in, 0x37), value);
+        return true;
+    }
+    if (balance - f.loan > value - std::abs(value) / 10 && balance - f.loan < value && f.low_balance) {
+        say(a, advisor_text(in, 0x14), value - (balance - f.loan));
+        return true;
+    }
+    return false;
+}
+
+// find_advice's death count advice (0x4c).
+bool find_advice_deaths(Advisor &a, const AdvisorInputs &in, uint32_t &safeseed)
+{
+    const Finance &f = *in.finance;
+    if (f.deaths <= 4 || !(a.event_flags & kAdvisorEventDeath) || saferand(safeseed) % 4 != 0)
+        return false;
+    if (saferand(safeseed) % 2 == 0)
+        say(a, advisor_text(in, 0x4c), int(f.deaths));
+    else
+        say(a, extra_advice(in, 0x25), int(f.deaths));
+    a.event_flags &= ~kAdvisorEventDeath;
+    return true;
+}
+
+// find_advice's cure count advice (0x51).
+bool find_advice_cures(Advisor &a, const AdvisorInputs &in, uint32_t &safeseed)
+{
+    const Finance &f = *in.finance;
+    if (f.cures <= 4 || !(a.event_flags & kAdvisorEventCure) || saferand(safeseed) % 4 != 0)
+        return false;
+    if (saferand(safeseed) % 2 == 0)
+        say(a, advisor_text(in, 0x51), int(f.cures));
+    else
+        say(a, extra_advice(in, 0x24), int(f.cures));
+    a.event_flags &= ~kAdvisorEventCure;
+    return true;
+}
+
+// find_advice's test of the situation advice `id` is about.
+bool find_advice_situation(Advisor &a, int id, const AdvisorInputs &in, uint32_t &safeseed)
+{
     switch (a.advice[size_t(id)].id) {
-    case 0x48: {
-        int crit = relevant_criterion(kCriterionBalance, settings.lose_criteria);
-        if (crit && in.open) {
-            int win = relevant_criterion(kCriterionBalance, settings.win_criteria);
-            int32_t lose = settings.lose_criteria[size_t(crit)].value;
-            if (win && balance - f.loan < settings.win_criteria[size_t(win)].value) {
-                // The fourth step's line (0x1f) is about damaged machinery,
-                // as in the game.
-                for (int i = 0; i < 4; i++) {
-                    if (balance < lose + (i + 1) * std::abs(lose) / 10 && balance > lose) {
-                        say(a, extra_advice(0x1c + i), balance - lose);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-        } else if (f.start_cash / 10 >= uint32_t(balance) && f.loan == 0) {
-            // Unsigned, as in the game: not when overdrawn.
-            say(a, advisor_text(0x48));
-            found = true;
-        } else if (f.start_cash / 10 >= uint32_t(balance) && f.loan != 0 && f.loan < f.max_loan) {
-            say(a, extra_advice(0xf));
-            found = true;
-        }
-        break;
-    }
-    case 0x42: {
-        int crit = relevant_criterion(kCriterionReputation, settings.win_criteria);
-        if (crit && in.open && in.month > 5) {
-            int32_t value = settings.win_criteria[size_t(crit)].value;
-            if (in.reputation > value)
-                say(a, extra_advice(0x3b), value);
-            else if ((value - in.reputation) * 100 / value < 10)
-                say(a, extra_advice(0x3c), value);
-            else
-                say(a, advisor_text(0x42), in.reputation - value);
-            found = true;
-        }
-        break;
-    }
-    case 0x43: {
-        int crit = relevant_criterion(kCriterionValue, settings.win_criteria);
-        if (crit && in.open && in.month > 6) {
-            int32_t value = settings.win_criteria[size_t(crit)].value;
-            if (f.hospital_value > value) {
-                say(a, extra_advice(0x3d), value);
-                found = true;
-            } else if ((value - f.hospital_value) * 100 / value < 10) {
-                say(a, extra_advice(0x3e), value - f.hospital_value);
-                found = true;
-            } else if (f.hospital_value < value) {
-                say(a, advisor_text(0x43), value);
-                found = true;
-            }
-        }
-        break;
-    }
+    case 0x48:
+        return find_advice_low_balance(a, in);
+    case 0x42:
+        return find_advice_reputation(a, in);
+    case 0x43:
+        return find_advice_hospital_value(a, in);
     case 0x14:
-        if (f.loan && balance > f.loan * 3) {
-            say(a, extra_advice(0x38));
-            found = true;
-        } else {
-            int crit = relevant_criterion(kCriterionBalance, settings.win_criteria);
-            if (crit && in.open) {
-                int32_t value = settings.win_criteria[size_t(crit)].value;
-                if (balance - f.loan > value && f.low_balance) {
-                    say(a, extra_advice(0x37), value);
-                    found = true;
-                } else if (balance - f.loan > value - std::abs(value) / 10 && balance - f.loan < value &&
-                           f.low_balance) {
-                    say(a, advisor_text(0x14), value - (balance - f.loan));
-                    found = true;
-                }
-            }
-        }
-        break;
+        return find_advice_bank_balance(a, in);
     case 4:
-        if (a.forced_advice_id) {
-            forced_advice(a, text);
-            found = true;
-        }
-        break;
+        if (!a.forced_advice_id)
+            return false;
+        forced_advice(a, *in.text);
+        return true;
     case 5:
-        if (a.mouse_advice_id) {
-            a.text = text.at(TextSection::MouseAdvice, a.mouse_advice_id);
-            found = true;
-        }
-        break;
+        if (!a.mouse_advice_id)
+            return false;
+        a.text = in.text->at(TextSection::MouseAdvice, a.mouse_advice_id);
+        return true;
     case 0x49:
         // No staff room can be built yet.
-        if (count_staff(*in.world).total > in.level + 5) {
-            say(a, advisor_text(0x49));
-            found = true;
-        }
-        break;
+        if (count_staff(*in.world).total <= in.level + 5)
+            return false;
+        say(a, advisor_text(in, 0x49));
+        return true;
     case 0x69:
-        if (has_reception(*in.world) && count_staff(*in.world).by_kind[kStaffReceptionist] == 0 && in.level == 1) {
-            say(a, advisor_text(0x69));
-            found = true;
-        }
-        break;
+        if (!has_reception(*in.world) || count_staff(*in.world).by_kind[kStaffReceptionist] != 0 || in.level != 1)
+            return false;
+        say(a, advisor_text(in, 0x69));
+        return true;
+    case 0x4c:
+        return find_advice_deaths(a, in, safeseed);
+    case 0x51:
+        return find_advice_cures(a, in, safeseed);
     case 0x1c:
-        if (!a.given[10] && (a.event_flags & kAdvisorEventResign)) {
-            say(a, advisor_text(0x1c));
-            a.given[10] = 1;
-            a.event_flags &= ~kAdvisorEventResign;
-            found = true;
-        }
-        break;
+        if (a.given[10] || !(a.event_flags & kAdvisorEventResign))
+            return false;
+        say(a, advisor_text(in, 0x1c));
+        a.given[10] = 1;
+        a.event_flags &= ~kAdvisorEventResign;
+        return true;
     default:
-        break;
+        return false;
     }
+}
+
+// find_advice (src/advisor.cpp) for the situations ported (see
+// advisor_frame), drawing on `safeseed` (saferand).
+bool find_advice(Advisor &a, int id, const AdvisorInputs &in, uint32_t &safeseed)
+{
+    bool found = find_advice_situation(a, id, in, safeseed);
     if (found && a.advice[size_t(id)].id && !a.text.empty()) {
         Advice &advice = a.advice[size_t(id)];
         a.mouse_advice_id = 0;
@@ -287,288 +362,368 @@ bool find_advice(Advisor &a, int id, const AdvisorInputs &in)
     return found;
 }
 
+// What tutorial's steps work on: the advisor, the turn's inputs and the
+// events the steps test.
+struct Tutorial {
+    Advisor &a;
+    const AdvisorInputs &in;
+    const World &world;
+    std::array<uint8_t, 0x26> &shown;
+    const Event &last;
+    const Event &pending;
+    // The player cancelled or hired someone other than a receptionist.
+    bool hiring_other;
+
+    void message(int i)
+    {
+        a.text = in.text->at(TextSection::Advisor, i);
+        a.rewrap = true;
+        a.line_count = 0;
+        a.extra_segments = 0;
+    }
+
+    // A hint given as help text: no message, him hidden.
+    void hint(uint16_t highlight, int flag)
+    {
+        a.line_count = 0;
+        a.extra_segments = 0;
+        a.tutorial_highlight = highlight;
+        shown[size_t(flag)] = 1;
+        a.text.clear();
+    }
+
+    void go(uint8_t step)
+    {
+        a.tutorial_step = step;
+        a.tutorial_highlight = 0;
+    }
+};
+
+// Each of tutorial's steps returns what tutorial returns.
+
+// tutorial step 0x1d: open the corridor furnishing.
+int tutorial_open_furnish_corridor(Tutorial &t)
+{
+    if (t.shown[0] == 2)
+        return -1;
+    if (t.last.type == EV_OPEN_FURNISH_CORRIDOR) {
+        t.shown[0] = 2;
+        t.go(0x28);
+    } else if (t.shown[0] == 0) {
+        t.message(29);
+        t.a.tutorial_highlight = 0x13;
+        t.shown[0] = 1;
+        return 1;
+    }
+    return -1;
+}
+
+// tutorial step 0x28: buy a reception desk.
+int tutorial_buy_reception_desk(Tutorial &t)
+{
+    if (t.shown[11] == 2)
+        return -1;
+    if (t.pending.type == EV_CANCEL_BUY_OBJECTS || t.last.type == EV_PLACE_NEXT_OBJECT) {
+        t.shown[0] = 0;
+        t.shown[11] = 0;
+        t.go(0x1d);
+    } else if (t.last.type != EV_BUY_OBJECT || t.last.value != kObjectReceptionDesk) {
+        if (t.shown[11] == 0) {
+            t.hint(0xa, 11);
+            return 0;
+        }
+    } else {
+        t.shown[11] = 2;
+        t.go(0x2a);
+    }
+    return -1;
+}
+
+// tutorial step 0x2a: confirm the purchase, to place the desk.
+int tutorial_confirm_purchase(Tutorial &t)
+{
+    if (t.shown[13] == 2)
+        return -1;
+    if (t.pending.type == EV_CANCEL_BUY_OBJECTS) {
+        t.shown[0] = 0;
+        t.shown[11] = 0;
+        t.shown[13] = 0;
+        t.go(0x1d);
+    } else if (t.last.type == EV_SELL_OBJECT && t.last.value == kObjectReceptionDesk &&
+               t.world.placing.buy_count[kObjectReceptionDesk] == 0) {
+        t.shown[13] = 0;
+        t.shown[11] = 0;
+        t.go(0x28);
+    } else if (t.last.type != EV_PLACE_NEXT_OBJECT) {
+        if (t.shown[13] == 0) {
+            t.hint(9, 13);
+            return 0;
+        }
+    } else {
+        t.shown[13] = 2;
+        t.go(0x29);
+    }
+    return -1;
+}
+
+// tutorial step 0x29: place the reception desk.
+int tutorial_place_reception_desk(Tutorial &t)
+{
+    if (t.shown[12] == 2)
+        return -1;
+    if (t.pending.type == EV_CANCEL_BUILD) {
+        t.shown[12] = 0;
+        t.shown[13] = 0;
+        t.shown[11] = 0;
+        t.shown[0] = 0;
+        t.go(0x1d);
+    } else if (t.a.flags & kAdvisorBadPlacement) {
+        t.message(46);
+        t.shown[12] = 0;
+        return 1;
+    } else if (!has_reception(t.world)) {
+        if (t.shown[12] == 0) {
+            t.message(41);
+            t.shown[12] = 1;
+            return 1;
+        }
+    } else {
+        t.shown[12] = 2;
+        t.go(0x1e);
+    }
+    return -1;
+}
+
+// tutorial step 0x1e: open the staff hiring.
+int tutorial_open_hire_staff(Tutorial &t)
+{
+    if (t.shown[1] == 2 || count_staff(t.world).receptionists != 0) {
+        t.shown[1] = 2;
+        t.go(0x20);
+        return -1;
+    }
+    if (t.last.type == EV_OPEN_HIRE_STAFF) {
+        t.shown[1] = 2;
+        t.go(0x21);
+    } else if (t.shown[1] == 0) {
+        t.message(30);
+        t.a.tutorial_highlight = 0x15;
+        t.shown[1] = 1;
+        return 1;
+    }
+    return -1;
+}
+
+// tutorial step 0x21: choose receptionists.
+int tutorial_select_receptionists(Tutorial &t)
+{
+    if (t.shown[4] == 2) {
+        t.go(0x25);
+        return -1;
+    }
+    if (t.hiring_other) {
+        t.shown[1] = 0;
+        t.shown[4] = 0;
+        t.go(0x1e);
+    } else if (t.last.type == EV_HIRE_SELECT_KIND && t.last.value != kStaffReceptionist) {
+        // The message stays as it was.
+        t.a.line_count = 0;
+        t.a.extra_segments = 0;
+        t.a.tutorial_highlight = 3;
+        return 1;
+    } else if (t.last.type != EV_HIRE_SELECT_KIND || t.last.value != kStaffReceptionist) {
+        if (t.shown[4] == 0) {
+            t.hint(3, 4);
+            return 0;
+        }
+    } else {
+        t.shown[4] = 2;
+        t.go(0x25);
+    }
+    return -1;
+}
+
+// tutorial step 0x25: look at the next applicant.
+int tutorial_next_applicant(Tutorial &t)
+{
+    if (t.shown[8] == 2) {
+        t.go(0x26);
+        return -1;
+    }
+    if (t.hiring_other) {
+        t.shown[8] = 2;
+        t.shown[9] = 2;
+        t.shown[1] = 0;
+        t.shown[4] = 0;
+        t.go(0x1e);
+    } else if (t.last.type == EV_MARK_EMPLOYING && t.last.value == kStaffReceptionist) {
+        t.shown[8] = 2;
+        t.shown[9] = 2;
+        t.go(0x24);
+    } else if (t.last.type == EV_HIRE_SELECT_KIND && t.last.value != kStaffReceptionist) {
+        t.shown[8] = 2;
+        t.shown[9] = 2;
+        t.shown[4] = 0;
+        t.go(0x21);
+    } else if (t.last.type != EV_HIRE_NEXT_APPLICANT || t.last.value != 1) {
+        if (t.shown[8] == 0) {
+            t.hint(7, 8);
+            return 0;
+        }
+    } else {
+        t.shown[8] = 2;
+        t.go(0x26);
+    }
+    return -1;
+}
+
+// tutorial step 0x26: look at the previous applicant.
+int tutorial_previous_applicant(Tutorial &t)
+{
+    if (t.shown[9] == 2) {
+        t.go(0x22);
+        return -1;
+    }
+    if (t.hiring_other) {
+        t.shown[9] = 2;
+        t.shown[1] = 0;
+        t.shown[4] = 0;
+        t.go(0x1e);
+    } else if (t.last.type == EV_MARK_EMPLOYING && t.last.value == kStaffReceptionist) {
+        t.shown[9] = 2;
+        t.go(0x24);
+    } else if (t.last.type == EV_HIRE_SELECT_KIND && t.last.value != kStaffReceptionist) {
+        t.shown[9] = 2;
+        t.shown[4] = 0;
+        t.go(0x21);
+    } else if (t.last.type != EV_HIRE_NEXT_APPLICANT || t.last.value != 0) {
+        if (t.shown[9] == 0) {
+            t.hint(6, 9);
+            return 0;
+        }
+    } else {
+        t.shown[9] = 2;
+        t.go(0x22);
+    }
+    return -1;
+}
+
+// tutorial step 0x22: hire the applicant.
+int tutorial_hire_applicant(Tutorial &t)
+{
+    if (t.shown[5] == 2) {
+        t.go(0x24);
+        return -1;
+    }
+    if (t.last.type == EV_CANCEL_BUILD) {
+        t.shown[5] = 0;
+        t.shown[1] = 0;
+        t.shown[4] = 0;
+        t.go(0x1e);
+    } else if (t.last.type == EV_HIRE_SELECT_KIND && t.last.value != kStaffReceptionist) {
+        t.shown[4] = 0;
+        t.go(0x21);
+    } else if (t.last.type != EV_MARK_EMPLOYING) {
+        if (t.shown[5] == 0) {
+            t.hint(5, 5);
+            return 0;
+        }
+    } else {
+        t.shown[5] = 2;
+        t.go(0x24);
+    }
+    return -1;
+}
+
+// tutorial step 0x24: place the receptionist.
+int tutorial_place_receptionist(Tutorial &t)
+{
+    if (t.shown[7] == 2) {
+        t.go(0x20);
+        return -1;
+    }
+    if (t.last.type == EV_CANCEL_BUILD) {
+        t.shown[7] = 2;
+        t.shown[1] = 0;
+        t.shown[4] = 0;
+        t.go(0x1e);
+    } else if (!t.in.staff_place_ok) {
+        t.message(60);
+        t.shown[7] = 0;
+        return 1;
+    } else if (count_staff(t.world).receptionists == 0) {
+        if (t.shown[7] == 0) {
+            t.message(36);
+            t.shown[7] = 1;
+            t.a.tutorial_highlight = 0;
+            return 1;
+        }
+    } else {
+        t.shown[7] = 2;
+        t.go(0x20);
+    }
+    return -1;
+}
+
+// tutorial step 0x20: open the room building. No GP's office can be built
+// yet. Steps 0x2b on (building it) and 0x1f on (hiring a doctor) are not
+// ported.
+int tutorial_open_build_room(Tutorial &t)
+{
+    if (t.shown[3] == 2)
+        return -1;
+    if (t.last.type == EV_OPEN_BUILD_ROOM) {
+        t.shown[3] = 2;
+        t.go(0x2b);
+    } else if (t.shown[3] == 0) {
+        t.message(32);
+        t.a.tutorial_highlight = 0x12;
+        t.shown[3] = 1;
+        return 1;
+    }
+    return -1;
+}
+
 // tutorial (src/tutorial.cpp) to step 0x20, in high resolution, where the
 // hints about controls are help text (set_force_help, not ported) and the
 // advisor is hidden. Returns 1 when a message was just given, 0 when he is
 // to be hidden, -1 otherwise.
 int tutorial(Advisor &a, const AdvisorInputs &in)
 {
-    const LanguageText &text = *in.text;
-    const World &world = *in.world;
-    std::array<uint8_t, 0x26> &shown = a.tutorial_shown;
-    auto message = [&](int i) {
-        a.text = text.at(TextSection::Advisor, i);
-        a.rewrap = true;
-        a.line_count = 0;
-        a.extra_segments = 0;
-    };
-    // A hint given as help text: no message, him hidden.
-    auto hint = [&](uint16_t highlight, int flag) {
-        a.line_count = 0;
-        a.extra_segments = 0;
-        a.tutorial_highlight = highlight;
-        shown[size_t(flag)] = 1;
-        a.text.clear();
-    };
-    auto go = [&](uint8_t step) {
-        a.tutorial_step = step;
-        a.tutorial_highlight = 0;
-    };
     const Event &last = in.last;
-    const Event &pending = in.pending;
-    bool hiring_other =
-        last.type == EV_CANCEL_BUILD || (last.type == EV_MARK_EMPLOYING && last.value != kStaffReceptionist);
-
+    Tutorial t{a,
+               in,
+               *in.world,
+               a.tutorial_shown,
+               last,
+               in.pending,
+               last.type == EV_CANCEL_BUILD || (last.type == EV_MARK_EMPLOYING && last.value != kStaffReceptionist)};
     switch (a.tutorial_step) {
     case 0x1d:
-        if (shown[0] != 2) {
-            if (last.type != EV_OPEN_FURNISH_CORRIDOR) {
-                if (shown[0] == 0) {
-                    message(29);
-                    a.tutorial_highlight = 0x13;
-                    shown[0] = 1;
-                    return 1;
-                }
-            } else {
-                shown[0] = 2;
-                go(0x28);
-            }
-        }
-        break;
+        return tutorial_open_furnish_corridor(t);
     case 0x28:
-        if (shown[11] != 2) {
-            if (pending.type == EV_CANCEL_BUY_OBJECTS || last.type == EV_PLACE_NEXT_OBJECT) {
-                shown[0] = 0;
-                shown[11] = 0;
-                go(0x1d);
-            } else if (last.type != EV_BUY_OBJECT || last.value != kObjectReceptionDesk) {
-                if (shown[11] == 0) {
-                    hint(0xa, 11);
-                    return 0;
-                }
-            } else {
-                shown[11] = 2;
-                go(0x2a);
-            }
-        }
-        break;
+        return tutorial_buy_reception_desk(t);
     case 0x2a:
-        if (shown[13] != 2) {
-            if (pending.type == EV_CANCEL_BUY_OBJECTS) {
-                shown[0] = 0;
-                shown[11] = 0;
-                shown[13] = 0;
-                go(0x1d);
-            } else if (last.type == EV_SELL_OBJECT && last.value == kObjectReceptionDesk &&
-                       world.placing.buy_count[kObjectReceptionDesk] == 0) {
-                shown[13] = 0;
-                shown[11] = 0;
-                go(0x28);
-            } else if (last.type != EV_PLACE_NEXT_OBJECT) {
-                if (shown[13] == 0) {
-                    hint(9, 13);
-                    return 0;
-                }
-            } else {
-                shown[13] = 2;
-                go(0x29);
-            }
-        }
-        break;
+        return tutorial_confirm_purchase(t);
     case 0x29:
-        if (shown[12] != 2) {
-            if (pending.type == EV_CANCEL_BUILD) {
-                shown[12] = 0;
-                shown[13] = 0;
-                shown[11] = 0;
-                shown[0] = 0;
-                go(0x1d);
-            } else if (a.flags & kAdvisorBadPlacement) {
-                message(46);
-                shown[12] = 0;
-                return 1;
-            } else if (!has_reception(world)) {
-                if (shown[12] == 0) {
-                    message(41);
-                    shown[12] = 1;
-                    return 1;
-                }
-            } else {
-                shown[12] = 2;
-                go(0x1e);
-            }
-        }
-        break;
+        return tutorial_place_reception_desk(t);
     case 0x1e:
-        if (shown[1] != 2 && count_staff(world).receptionists == 0) {
-            if (last.type != EV_OPEN_HIRE_STAFF) {
-                if (shown[1] == 0) {
-                    message(30);
-                    a.tutorial_highlight = 0x15;
-                    shown[1] = 1;
-                    return 1;
-                }
-            } else {
-                shown[1] = 2;
-                go(0x21);
-            }
-        } else {
-            shown[1] = 2;
-            go(0x20);
-        }
-        break;
+        return tutorial_open_hire_staff(t);
     case 0x21:
-        if (shown[4] != 2) {
-            if (hiring_other) {
-                shown[1] = 0;
-                shown[4] = 0;
-                go(0x1e);
-            } else if (last.type == EV_HIRE_SELECT_KIND && last.value != kStaffReceptionist) {
-                // The message stays as it was.
-                a.line_count = 0;
-                a.extra_segments = 0;
-                a.tutorial_highlight = 3;
-                return 1;
-            } else if (last.type != EV_HIRE_SELECT_KIND || last.value != kStaffReceptionist) {
-                if (shown[4] == 0) {
-                    hint(3, 4);
-                    return 0;
-                }
-            } else {
-                shown[4] = 2;
-                go(0x25);
-            }
-        } else {
-            go(0x25);
-        }
-        break;
+        return tutorial_select_receptionists(t);
     case 0x25:
-        if (shown[8] != 2) {
-            if (hiring_other) {
-                shown[8] = 2;
-                shown[9] = 2;
-                shown[1] = 0;
-                shown[4] = 0;
-                go(0x1e);
-            } else if (last.type == EV_MARK_EMPLOYING && last.value == kStaffReceptionist) {
-                shown[8] = 2;
-                shown[9] = 2;
-                go(0x24);
-            } else if (last.type == EV_HIRE_SELECT_KIND && last.value != kStaffReceptionist) {
-                shown[8] = 2;
-                shown[9] = 2;
-                shown[4] = 0;
-                go(0x21);
-            } else if (last.type != EV_HIRE_NEXT_APPLICANT || last.value != 1) {
-                if (shown[8] == 0) {
-                    hint(7, 8);
-                    return 0;
-                }
-            } else {
-                shown[8] = 2;
-                go(0x26);
-            }
-        } else {
-            go(0x26);
-        }
-        break;
+        return tutorial_next_applicant(t);
     case 0x26:
-        if (shown[9] != 2) {
-            if (hiring_other) {
-                shown[9] = 2;
-                shown[1] = 0;
-                shown[4] = 0;
-                go(0x1e);
-            } else if (last.type == EV_MARK_EMPLOYING && last.value == kStaffReceptionist) {
-                shown[9] = 2;
-                go(0x24);
-            } else if (last.type == EV_HIRE_SELECT_KIND && last.value != kStaffReceptionist) {
-                shown[9] = 2;
-                shown[4] = 0;
-                go(0x21);
-            } else if (last.type != EV_HIRE_NEXT_APPLICANT || last.value != 0) {
-                if (shown[9] == 0) {
-                    hint(6, 9);
-                    return 0;
-                }
-            } else {
-                shown[9] = 2;
-                go(0x22);
-            }
-        } else {
-            go(0x22);
-        }
-        break;
+        return tutorial_previous_applicant(t);
     case 0x22:
-        if (shown[5] != 2) {
-            if (last.type == EV_CANCEL_BUILD) {
-                shown[5] = 0;
-                shown[1] = 0;
-                shown[4] = 0;
-                go(0x1e);
-            } else if (last.type == EV_HIRE_SELECT_KIND && last.value != kStaffReceptionist) {
-                shown[4] = 0;
-                go(0x21);
-            } else if (last.type != EV_MARK_EMPLOYING) {
-                if (shown[5] == 0) {
-                    hint(5, 5);
-                    return 0;
-                }
-            } else {
-                shown[5] = 2;
-                go(0x24);
-            }
-        } else {
-            go(0x24);
-        }
-        break;
+        return tutorial_hire_applicant(t);
     case 0x24:
-        if (shown[7] != 2) {
-            if (last.type == EV_CANCEL_BUILD) {
-                shown[7] = 2;
-                shown[1] = 0;
-                shown[4] = 0;
-                go(0x1e);
-            } else if (!in.staff_place_ok) {
-                message(60);
-                shown[7] = 0;
-                return 1;
-            } else if (count_staff(world).receptionists == 0) {
-                if (shown[7] == 0) {
-                    message(36);
-                    shown[7] = 1;
-                    a.tutorial_highlight = 0;
-                    return 1;
-                }
-            } else {
-                shown[7] = 2;
-                go(0x20);
-            }
-        } else {
-            go(0x20);
-        }
-        break;
+        return tutorial_place_receptionist(t);
     case 0x20:
-        // No GP's office can be built yet. Steps 0x2b on (building it) and
-        // 0x1f on (hiring a doctor) are not ported.
-        if (shown[3] != 2) {
-            if (last.type != EV_OPEN_BUILD_ROOM) {
-                if (shown[3] == 0) {
-                    message(32);
-                    a.tutorial_highlight = 0x12;
-                    shown[3] = 1;
-                    return 1;
-                }
-            } else {
-                shown[3] = 2;
-                go(0x2b);
-            }
-        }
-        break;
+        return tutorial_open_build_room(t);
     default:
-        break;
+        return -1;
     }
-    return -1;
 }
 
 // advisor_character (src/advtext.cpp) without its drawing.
@@ -662,6 +817,59 @@ void format_advisor_text(Advisor &a, const Font &font, int segments)
     }
 }
 
+// advisor_frame's ageing of the advice given: whether it is old enough to
+// give way to other advice, and ending it when its time is up.
+bool advisor_frame_advice_stale(Advisor &a, const AdvisorInputs &in)
+{
+    if (!a.advice_id)
+        return false;
+    Advice &shown = a.advice[size_t(a.advice_id)];
+    if (in.requester_open) {
+        shown.time = in.game_turn - shown.duration / 4;
+        return false;
+    }
+    bool stale = false;
+    // 16 bits, as the game keeps it.
+    uint16_t elapsed = uint16_t(in.game_turn - shown.time);
+    if (elapsed > 100 || a.dismiss)
+        stale = true;
+    if (elapsed >= shown.duration || a.dismiss)
+        a.advice_id = 0;
+    return stale;
+}
+
+// advisor_frame's search for the first advice due and fitting the
+// situation.
+void advisor_frame_find_advice(Advisor &a, const AdvisorInputs &in, uint32_t &safeseed)
+{
+    for (int i = 1; a.advice[size_t(i)].id; i++) {
+        const Advice &advice = a.advice[size_t(i)];
+        if (in.game_turn > advice.time &&
+            uint32_t(advice.times_given * advice.repeat_weight << 10) / (in.game_turn - advice.time) < 10 &&
+            find_advice(a, i, in, safeseed)) {
+            a.rewrap = true;
+            return;
+        }
+    }
+}
+
+// advisor_frame's bubble, or his going down, while he is up.
+void advisor_frame_bubble(Advisor &a, const AnimData &anims)
+{
+    if (a.advice_id && !a.dismiss) {
+        a.bubble = true;
+    } else if (--a.time_left <= 0 || a.dismiss) {
+        a.dismiss = false;
+        a.time_left = -1;
+        enter_state(a, anims, kNextAdvisorState[a.anim_state]);
+        a.state_advanced = false;
+    } else if (!a.state_advanced) {
+        enter_state(a, anims, kNextAdvisorState[a.anim_state]);
+        a.state_advanced = true;
+        a.dismiss = false;
+    }
+}
+
 } // namespace
 
 void start_advisor(Advisor &a, bool tutorial)
@@ -712,46 +920,12 @@ void advisor_frame(Advisor &a, const AdvisorInputs &in, const AnimData &anims, u
         return;
     }
 
-    bool stale = false;
-    if (a.advice_id) {
-        Advice &shown = a.advice[size_t(a.advice_id)];
-        if (!in.requester_open) {
-            // 16 bits, as the game keeps it.
-            uint16_t elapsed = uint16_t(in.game_turn - shown.time);
-            if (elapsed > 100 || a.dismiss)
-                stale = true;
-            if (elapsed >= shown.duration || a.dismiss)
-                a.advice_id = 0;
-        } else {
-            shown.time = in.game_turn - shown.duration / 4;
-        }
-    }
-    if (a.advice_id == 0 || stale) {
-        for (int i = 1; a.advice[size_t(i)].id; i++) {
-            const Advice &advice = a.advice[size_t(i)];
-            if (in.game_turn > advice.time &&
-                uint32_t(advice.times_given * advice.repeat_weight << 10) / (in.game_turn - advice.time) < 10 &&
-                find_advice(a, i, in)) {
-                a.rewrap = true;
-                break;
-            }
-        }
-    }
+    if (advisor_frame_advice_stale(a, in) || a.advice_id == 0)
+        advisor_frame_find_advice(a, in, safeseed);
     advisor_character(a, in, anims, safeseed);
     if (!kAdvisorUpStates[a.anim_state])
         return;
-    if (a.advice_id && !a.dismiss) {
-        a.bubble = true;
-    } else if (--a.time_left <= 0 || a.dismiss) {
-        a.dismiss = false;
-        a.time_left = -1;
-        enter_state(a, anims, kNextAdvisorState[a.anim_state]);
-        a.state_advanced = false;
-    } else if (!a.state_advanced) {
-        enter_state(a, anims, kNextAdvisorState[a.anim_state]);
-        a.state_advanced = true;
-        a.dismiss = false;
-    }
+    advisor_frame_bubble(a, anims);
 }
 
 void monthly_update_of_advisor_counts(Advisor &a)
@@ -818,8 +992,8 @@ void draw_advisor(UiLayer &layer, Advisor &a, const GameData &data, const Font &
         layer.draw_sprite(kRightPieceX - (pieces - i) * middle.width, kBubbleY, middle);
     // As the game has it: one more middle piece and the right end's width.
     a.box_left = int16_t(kRightPieceX - middle.width * (pieces + 1) - right.width);
-    layer.draw_text(font, {0, 0, kUiWidth}, kRightPieceX - pieces * middle.width + kTextLeftMargin - left.width, y,
-                    a.text, 0, {0, 0, kUiWidth, kViewHeight});
+    layer.draw_text(font, kRightPieceX - pieces * middle.width + kTextLeftMargin - left.width, y, a.text,
+                    {{0, 0, kUiWidth}, {0, 0, kUiWidth, kViewHeight}});
 }
 
 } // namespace th

@@ -8,10 +8,12 @@
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
 #include "core/world/queue.h"
+#include "core/world/reaper.h"
 #include "core/world/reception.h"
 #include "core/world/reputation.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
+#include "core/world/staff_complex.h"
 #include "core/world/trace.h"
 
 #include <cstdlib>
@@ -48,6 +50,9 @@ constexpr uint8_t kObjBench = 4;
 constexpr uint8_t kObjDrinksMachine = 7;
 constexpr uint8_t kObjReceptionDesk = 11;
 
+// The patient kind of an alien (PK_ALIEN).
+constexpr uint8_t kPatientAlien = 0xe;
+
 // RoomInfo.type of the toilets (the game's ROOM_TOILETS).
 constexpr uint8_t kRoomToilets = 29;
 // A ward, and its beds.
@@ -56,6 +61,14 @@ constexpr uint8_t kObjBed = 8;
 // The complex that ends what a patient does where it stands (getting out
 // of bed).
 constexpr uint16_t kComplexStandStill = 240;
+
+// The complexes of the toilets: to their door and in, to a toilet and to a
+// sink.
+constexpr uint16_t kComplexToToilets = 360;
+constexpr uint16_t kComplexToilet = 330;
+constexpr uint16_t kComplexSink = 350;
+constexpr uint8_t kObjToilet = 51;
+constexpr uint8_t kObjSink = 32;
 
 // The complexes that get a patient off its object (interrupt_complex) and
 // back to its queue (return_to_queue_area).
@@ -328,6 +341,7 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
         create_numfx(world, kNumfxMoney, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
         break;
     case 6:
+        trace_event("relieved %u bladder=%d", unsigned(id), int(w.bladder));
         w.happiness = uint16_t(w.happiness + gbv.toilet_happy);
         w.bladder = w.illness == kIllTheSquits ? int16_t(gbv.bowel_full / 2) : int16_t(0);
         w.impatience = 0;
@@ -411,11 +425,270 @@ void leave_door(const Run &r, uint16_t id)
     }
 }
 
+// What a step of a complex returns when it carried on; any other value is
+// what process returns at once.
+constexpr uint8_t kStepDone = 1;
+
+// Action 6: onto the object, from its use cell use_pos[1].
+uint8_t process_use_object(const Run &r, uint16_t id, uint16_t tile)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    Thing &obj = world.things[p.object];
+    if (obj.in_use == 1 || obj.state == kOsRemoved || obj.type != kThingObject || obj.use_pos[1] != tile) {
+        fail(r, id);
+        return 3;
+    }
+    trace_event("use_object %u obj=%u kind=%u", unsigned(id), unsigned(p.object), unsigned(obj.subtype));
+    obj.in_use = 1;
+    obj.user = id;
+    p.facing = obj.facing;
+    if (obj.use_style == 1 || obj.use_style == 2 || obj.use_style == 3) {
+        p.exit_tile = obj.use_pos[4];
+        move_node(world, id, obj.use_x, obj.use_y);
+        obj.state = kOsInUse;
+        p.depth = obj.depth;
+        if (kObjectUse[obj.subtype].overlay_anim) {
+            obj.saved_depth = obj.depth;
+            obj.depth = 8;
+        }
+        world.map[cell_of(p)].flags |= kCellBig;
+    }
+    for (size_t i = 10; i < 13; i++)
+        p.layers[i] = obj.layers[i];
+    for (size_t i = 0; i < 5; i++)
+        obj.layers[i] = p.layers[i];
+    return kStepDone;
+}
+
+// Action 8: off the object, back onto its use cell use_pos[1].
+void process_leave_object(const Run &r, uint16_t id, uint16_t tile)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    Thing &obj = world.things[p.object];
+    obj.user = 0;
+    p.object = 0;
+    obj.in_use = 0;
+    if (obj.use_style == 1 || obj.use_style == 3) {
+        adjust_big_cell_flag(world, tile);
+        move_node(world, id, {0x80, uint8_t(obj.use_pos[1] % kMapSize)}, {0x80, uint8_t(obj.use_pos[1] / kMapSize)});
+        p.depth = 0;
+        if (kObjectUse[obj.subtype].overlay_anim) {
+            obj.depth = obj.saved_depth;
+            obj.saved_depth = 0;
+        }
+        obj.state = kOsStatic;
+    }
+    stand(r, p);
+    p.layers[10] = p.layers[11] = p.layers[12] = 0;
+}
+
+// Action 18: faces the way its object's kind faces its user.
+void process_face_object(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    if (!p.object)
+        return;
+    const Thing &obj = world.things[p.object];
+    int face = kObjectUse[obj.subtype].face_dirn;
+    // Kinds whose face_dirn is -2 or -99 make the game read before
+    // face_dirns; here they leave the facing.
+    if (face < 0 || size_t(face) >= kFaceDirns.size())
+        return;
+    int8_t d = kFaceDirns[size_t(face)][size_t(obj.facing) + 4];
+    if (d != -1) {
+        p.facing = uint8_t(d);
+        stand(r, p);
+    }
+}
+
+// Action 20: onto the door of the cell it faces, unless the room beyond is
+// being edited; a double door's other half swings open.
+uint8_t process_enter_door(const Run &r, uint16_t id, uint16_t tile)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    uint16_t door_id = find_door(world, id);
+    if (!door_id) {
+        fail(r, id);
+        return 0;
+    }
+    Thing &door = world.things[door_id];
+    bool double_door = door.subtype != kObjDoor;
+    if (door.in_use == 1) {
+        p.state = kPsComplexRetry;
+        return 3;
+    }
+    const RoomInfo &room = world.rooms[door.room_id];
+    if (p.room == 0 && (room.being_edited || room.state == kRoomEdited)) {
+        fail(r, id);
+        return 3;
+    }
+    door.in_use = 1;
+    p.facing = p.room ? door.facing : kOppositeAngle[door.facing & 3];
+    p.exit_tile = tile == door.use_pos[0] ? door.use_pos[3] : door.use_pos[0];
+    play_patient_anim(r.anims, p, double_door ? kAnimDoubleDoor : kAnimSingleDoor);
+    p.object = door_id;
+    door.user = id;
+    move_node(world, id, door.x, door.y);
+    door.state = kOsInUse;
+    MapCell &cell = world.map[cell_of(door)];
+    door.door_cell_flag = cell.flags & kCellDoorInUse ? 1 : 0;
+    cell.flags |= kCellDoorInUse;
+    if (double_door)
+        swing_partner(r, door, p);
+    return kStepDone;
+}
+
+// Action 32, transform_peep_who (0x16b30).
+void process_transform(const Run &r, Thing &p, const ComplexStep &entry)
+{
+    int8_t kind = kChangePersonWho[entry.anim][p.subtype];
+    p.orig_subtype = p.subtype;
+    if (kind != -1) {
+        p.subtype = uint8_t(kind);
+        play_patient_anim(r.anims, p, kAnimWalk);
+    }
+}
+
+// Action 16: a random animation of the step's group.
+void process_group_anim(const Run &r, Thing &p, const ComplexStep &entry)
+{
+    const GroupAnim &group = kGroupAnims[entry.anim];
+    uint32_t choice = old_newrand(r.world.seed, "process_person_complex") % uint32_t(group.count);
+    play_patient_anim(r.anims, p, group.anims[choice]);
+}
+
+// The step's actions that sequence the complex, animate or change the
+// patient alone.
+void process_sequence_action(const Run &r, uint16_t id, const ComplexStep &entry)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    switch (entry.action) {
+    case 4:
+        play_patient_anim(r.anims, p, entry.anim);
+        break;
+    case 16:
+        process_group_anim(r, p, entry);
+        break;
+    case 14:
+        if (uint16_t door = find_door(world, id))
+            p.facing = kOppositeAngle[world.things[door].facing & 3];
+        break;
+    case 24:
+        p.complex_pc++;
+        p.complex_resume = uint16_t(r.complexes.at(p.complex_pc) * 10);
+        break;
+    case 32:
+        process_transform(r, p, entry);
+        break;
+    case 34:
+        p.subtype = p.orig_subtype;
+        break;
+    case 46:
+        head_off(r, id);
+        break;
+    case 52:
+        complex_success(world, id, entry.anim);
+        break;
+    default:
+        // 0, 12 and 26 do nothing, nor does 50 here (see process).
+        break;
+    }
+}
+
+// Runs the action of step `entry`: kStepDone, or the value process returns.
+uint8_t process_action(const Run &r, uint16_t id, const ComplexStep &entry, uint16_t obj_id, uint16_t tile)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    switch (entry.action) {
+    case 2:
+        p.object = obj_id;
+        [[fallthrough]];
+    case 44:
+        set_destination_coords(world, id, world.things[p.object].use_pos[1]);
+        head_off(r, id);
+        p.countdown = 0;
+        return kStepDone;
+    case 6:
+        return process_use_object(r, id, tile);
+    case 8:
+        process_leave_object(r, id, tile);
+        return kStepDone;
+    case 10:
+        if (p.object)
+            play_frame(world.things[p.object], r.anims, entry.anim);
+        return kStepDone;
+    case 18:
+        process_face_object(r, id);
+        return kStepDone;
+    case 20:
+        return process_enter_door(r, id, tile);
+    case 22:
+        leave_door(r, id);
+        return kStepDone;
+    default:
+        process_sequence_action(r, id, entry);
+        return kStepDone;
+    }
+}
+
+// Moves the complex on past step `entry`: at once, or after it has repeated
+// entry.repeat times (a random 1 to -entry.repeat when negative).
+void process_advance(World &world, Thing &p, const ComplexStep &entry)
+{
+    if (!entry.repeat) {
+        p.complex_pc++;
+        return;
+    }
+    if (p.complex_repeat) {
+        p.complex_repeat--;
+        if (p.complex_repeat == 0)
+            p.complex_pc++;
+    } else if (entry.repeat < 0) {
+        p.complex_repeat = uint8_t(old_newrand(world.seed, "process_person_complex") % uint32_t(-entry.repeat) + 1);
+    } else {
+        p.complex_repeat = uint8_t(entry.repeat);
+    }
+}
+
+// At the end of the complex, starts the one queued behind it (running its
+// first step) or moves on to next_state; otherwise runs a chained step.
+void process_finish(const Run &r, uint16_t id, const ComplexStep &entry)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    if (r.complexes.at(p.complex_pc) != 0) {
+        if (entry.chain)
+            process(r, id);
+        return;
+    }
+    p.complex_pc = 0;
+    uint16_t action = p.complex_queued;
+    if (action) {
+        uint16_t arg = uint16_t(p.queued_arg_x + (p.queued_arg_y << 7));
+        p.complex_queued = p.complex_queued2;
+        p.complex_queued2 = 0;
+        p.queued_arg_x = p.queued2_arg_x;
+        p.queued2_arg_x = 0;
+        p.queued_arg_y = p.queued2_arg_y;
+        p.queued2_arg_y = 0;
+        if (set_complex(world, id, action, arg))
+            process(r, id);
+    } else if (p.next_state) {
+        p.state = p.next_state;
+        p.next_state = 0;
+    }
+}
+
 uint8_t process(const Run &r, uint16_t id)
 {
     World &world = r.world;
     Thing &p = world.things[id];
-    bool run_things = false;
     if (p.complex_pc == 0)
         return 2;
     uint8_t op = r.complexes.at(p.complex_pc);
@@ -437,193 +710,12 @@ uint8_t process(const Run &r, uint16_t id)
     }
     if (entry.state)
         p.state = entry.state;
-    switch (entry.action) {
-    case 2:
-        p.object = obj_id;
-        [[fallthrough]];
-    case 44:
-        set_destination_coords(world, id, world.things[p.object].use_pos[1]);
-        head_off(r, id);
-        p.countdown = 0;
-        break;
-    case 4:
-        play_patient_anim(r.anims, p, entry.anim);
-        break;
-    case 6: {
-        Thing &obj = world.things[p.object];
-        if (obj.in_use == 1 || obj.state == kOsRemoved || obj.type != kThingObject || obj.use_pos[1] != tile) {
-            fail(r, id);
-            return 3;
-        }
-        obj.in_use = 1;
-        obj.user = id;
-        p.facing = obj.facing;
-        if (obj.use_style == 1 || obj.use_style == 2 || obj.use_style == 3) {
-            p.exit_tile = obj.use_pos[4];
-            move_node(world, id, obj.use_x, obj.use_y);
-            obj.state = kOsInUse;
-            p.depth = obj.depth;
-            if (kObjectUse[obj.subtype].overlay_anim) {
-                obj.saved_depth = obj.depth;
-                obj.depth = 8;
-            }
-            world.map[cell_of(p)].flags |= kCellBig;
-        }
-        for (size_t i = 10; i < 13; i++)
-            p.layers[i] = obj.layers[i];
-        for (size_t i = 0; i < 5; i++)
-            obj.layers[i] = p.layers[i];
-        break;
-    }
-    case 8: {
-        Thing &obj = world.things[p.object];
-        obj.user = 0;
-        p.object = 0;
-        obj.in_use = 0;
-        if (obj.use_style == 1 || obj.use_style == 3) {
-            adjust_big_cell_flag(world, tile);
-            move_node(world, id, {0x80, uint8_t(obj.use_pos[1] % kMapSize)},
-                      {0x80, uint8_t(obj.use_pos[1] / kMapSize)});
-            p.depth = 0;
-            if (kObjectUse[obj.subtype].overlay_anim) {
-                obj.depth = obj.saved_depth;
-                obj.saved_depth = 0;
-            }
-            obj.state = kOsStatic;
-        }
-        stand(r, p);
-        p.layers[10] = p.layers[11] = p.layers[12] = 0;
-        break;
-    }
-    case 10:
-        if (p.object)
-            play_frame(world.things[p.object], r.anims, entry.anim);
-        break;
-    case 16: {
-        const GroupAnim &group = kGroupAnims[entry.anim];
-        uint32_t choice = old_newrand(world.seed, "process_person_complex") % uint32_t(group.count);
-        play_patient_anim(r.anims, p, group.anims[choice]);
-        break;
-    }
-    case 14:
-        if (uint16_t door = find_door(world, id))
-            p.facing = kOppositeAngle[world.things[door].facing & 3];
-        break;
-    case 20: {
-        uint16_t door_id = find_door(world, id);
-        if (!door_id) {
-            fail(r, id);
-            return 0;
-        }
-        Thing &door = world.things[door_id];
-        bool double_door = door.subtype != kObjDoor;
-        if (door.in_use == 1) {
-            p.state = kPsComplexRetry;
-            return 3;
-        }
-        const RoomInfo &room = world.rooms[door.room_id];
-        if (p.room == 0 && (room.being_edited || room.state == kRoomEdited)) {
-            fail(r, id);
-            return 3;
-        }
-        door.in_use = 1;
-        p.facing = p.room ? door.facing : kOppositeAngle[door.facing & 3];
-        p.exit_tile = tile == door.use_pos[0] ? door.use_pos[3] : door.use_pos[0];
-        play_patient_anim(r.anims, p, double_door ? kAnimDoubleDoor : kAnimSingleDoor);
-        p.object = door_id;
-        door.user = id;
-        move_node(world, id, door.x, door.y);
-        door.state = kOsInUse;
-        MapCell &cell = world.map[cell_of(door)];
-        door.door_cell_flag = cell.flags & kCellDoorInUse ? 1 : 0;
-        cell.flags |= kCellDoorInUse;
-        if (double_door)
-            swing_partner(r, door, p);
-        break;
-    }
-    case 22:
-        leave_door(r, id);
-        break;
-    case 24:
-        p.complex_pc++;
-        p.complex_resume = uint16_t(r.complexes.at(p.complex_pc) * 10);
-        break;
-    case 32: {
-        // transform_peep_who (0x16b30).
-        int8_t kind = kChangePersonWho[entry.anim][p.subtype];
-        p.orig_subtype = p.subtype;
-        if (kind != -1) {
-            p.subtype = uint8_t(kind);
-            play_patient_anim(r.anims, p, kAnimWalk);
-        }
-        break;
-    }
-    case 34:
-        p.subtype = p.orig_subtype;
-        break;
-    case 46:
-        head_off(r, id);
-        break;
-    case 18:
-        if (p.object) {
-            const Thing &obj = world.things[p.object];
-            int face = kObjectUse[obj.subtype].face_dirn;
-            // Kinds whose face_dirn is -2 or -99 make the game read before
-            // face_dirns; here they leave the facing.
-            if (face >= 0 && size_t(face) < kFaceDirns.size()) {
-                int8_t d = kFaceDirns[size_t(face)][size_t(obj.facing) + 4];
-                if (d != -1) {
-                    p.facing = uint8_t(d);
-                    stand(r, p);
-                }
-            }
-        }
-        break;
-    case 50:
-        run_things = true;
-        break;
-    case 52:
-        complex_success(world, id, entry.anim);
-        break;
-    default:
-        // 0, 12 and 26 do nothing.
-        break;
-    }
-    if (entry.repeat) {
-        if (p.complex_repeat) {
-            p.complex_repeat--;
-            if (p.complex_repeat == 0)
-                p.complex_pc++;
-        } else if (entry.repeat < 0) {
-            p.complex_repeat = uint8_t(old_newrand(world.seed, "process_person_complex") % uint32_t(-entry.repeat) + 1);
-        } else {
-            p.complex_repeat = uint8_t(entry.repeat);
-        }
-    } else {
-        p.complex_pc++;
-    }
-    if (r.complexes.at(p.complex_pc) == 0) {
-        p.complex_pc = 0;
-        uint16_t action = p.complex_queued;
-        if (action) {
-            uint16_t arg = uint16_t(p.queued_arg_x + (p.queued_arg_y << 7));
-            p.complex_queued = p.complex_queued2;
-            p.complex_queued2 = 0;
-            p.queued_arg_x = p.queued2_arg_x;
-            p.queued2_arg_x = 0;
-            p.queued_arg_y = p.queued2_arg_y;
-            p.queued2_arg_y = 0;
-            if (set_complex(world, id, action, arg))
-                process(r, id);
-        } else if (p.next_state) {
-            p.state = p.next_state;
-            p.next_state = 0;
-        }
-    } else if (entry.chain) {
-        process(r, id);
-    }
-    // The game runs process_things for the person alone.
-    if (run_things)
+    if (uint8_t result = process_action(r, id, entry, obj_id, tile); result != kStepDone)
+        return result;
+    process_advance(world, p, entry);
+    process_finish(r, id, entry);
+    // Action 50: the game runs process_things for the person alone.
+    if (entry.action == 50)
         turn(r, id);
     return 1;
 }
@@ -714,10 +806,10 @@ bool needs_stop_walk(const Run &r, uint16_t id)
 {
     World &world = r.world;
     const Balance &settings = settings_of(world);
-    modify_person(world, settings, heating_level_of(world), id, r.game_turn);
+    modify_person(world, r.anims, settings, heating_level_of(world), id, r.game_turn);
     if (world.things[id].health <= 0)
         return true;
-    return do_reaction(world, r.anims, settings, id);
+    return do_reaction(world, r.anims, settings, id, r.game_turn);
 }
 
 // person_goto_destination (0x763d0).
@@ -811,6 +903,42 @@ void goto_object(const Run &r, uint16_t id)
     step_on(world, id);
 }
 
+// person_goto_queue arriving within `near` cells of its destination, the
+// queue of room `room_id`.
+void goto_queue_arrive(const Run &r, uint16_t id, uint16_t room_id, int near)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    RoomInfo &room = world.rooms[room_id];
+    if (room.type != kRoomReception) {
+        if (room.type != kExpertiseCategory[p.treatment] || room.door_tile == 0) {
+            if (p.dest_room && room.door_tile != 0)
+                room.queue_incoming--;
+            p.dest_room = 0;
+            p.complex_pc = p.complex_queued = p.complex_queued2 = 0;
+            start_going(r, id);
+            return;
+        }
+        if (std::abs(p.x.tile - room.door_tile % kMapSize) > near ||
+            std::abs(p.y.tile - room.door_tile / kMapSize) > near) {
+            set_destination_coords(world, id, room.door_tile);
+            p.countdown = 0;
+            return;
+        }
+    }
+    p.dest_room = 0;
+    p.complex_pc = p.complex_queued = p.complex_queued2 = 0;
+    join_queue(world, id, room_id);
+    if (room.type != kRoomReception) {
+        page_staff_i_need(world, id, room_id);
+        p.state = kPsArrivesAtDoor;
+    } else {
+        p.state = kPsInQueue;
+        stand(r, p);
+    }
+    p.countdown = 0;
+}
+
 // person_goto_queue (0x76c44): walks to the queue of dest_room; within
 // World::queue_near_dist of the destination (of a reception, or of a room
 // with a queue already) it joins the queue: PS_IN_QUEUE at a reception,
@@ -837,33 +965,7 @@ void goto_queue(const Run &r, uint16_t id)
             dir = kNavArrived;
         switch (dir) {
         case kNavArrived:
-            if (room.type != kRoomReception) {
-                if (room.type != kExpertiseCategory[p.treatment] || room.door_tile == 0) {
-                    if (p.dest_room && room.door_tile != 0)
-                        room.queue_incoming--;
-                    p.dest_room = 0;
-                    p.complex_pc = p.complex_queued = p.complex_queued2 = 0;
-                    start_going(r, id);
-                    return;
-                }
-                if (std::abs(p.x.tile - room.door_tile % kMapSize) > near ||
-                    std::abs(p.y.tile - room.door_tile / kMapSize) > near) {
-                    set_destination_coords(world, id, room.door_tile);
-                    p.countdown = 0;
-                    return;
-                }
-            }
-            p.dest_room = 0;
-            p.complex_pc = p.complex_queued = p.complex_queued2 = 0;
-            join_queue(world, id, room_id);
-            if (room.type != kRoomReception) {
-                page_staff_i_need(world, id, room_id);
-                p.state = kPsArrivesAtDoor;
-            } else {
-                p.state = kPsInQueue;
-                stand(r, p);
-            }
-            p.countdown = 0;
+            goto_queue_arrive(r, id, room_id, near);
             return;
         case kNavBlockedByPeople:
             stand(r, p);
@@ -925,15 +1027,57 @@ void start_pastime(const Run &r, uint16_t id, uint16_t action)
     process(r, id);
 }
 
+// wait_in_queue sending the patient out of its queue to the nearest toilets
+// in use (then PS_IN_BOGS, back to PS_ENTERTAINS_THEMSELF). Returns whether
+// there were any.
+bool wait_in_queue_to_toilets(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    uint16_t room = get_nearest_room_info(world, p, kRoomToilets);
+    if (!room)
+        return false;
+    trace_event("to_toilets %u room=%u bladder=%d", unsigned(id), unsigned(room), int(p.bladder));
+    leave_queue(world, id);
+    p.resume_state = kPsEntertainsThemself;
+    p.next_state = kPsInBogs;
+    p.substate = 0;
+    set_complex(world, id, kComplexToToilets, world.rooms[room].door_tile);
+    process(r, id);
+    return true;
+}
+
+// wait_in_queue for a patient not on a bench: sits on a free bench near by
+// if it can (the bench shortage counted down 5, or up 1 with none), or
+// stands, moving off a crowded cell. Returns whether it was sent anywhere.
+bool wait_in_queue_sit_or_stand(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    if (kAbilities[p.subtype][1]) {
+        if (find_nearest_free_object(world, id, kObjBench)) {
+            if (p.owner == 0)
+                world.bench_shortage -= 5;
+            start_pastime(r, id, kComplexBench);
+            return true;
+        }
+        if (p.owner == 0)
+            world.bench_shortage++;
+    }
+    stand(r, p);
+    return find_standing_place(r, id);
+}
+
 // person_in_queue (0x15d48) and, with `entertaining`, person_entertains_themself
 // (0x160a8): at the end of each animation, once the countdown runs out, off
 // a blueprint it stands on, then the patient's needs (modify_person); then,
 // alive, it pages the staff its treatment needs to the room it queues for,
 // goes home fed up past gbv.leave_max impatience (entertaining only),
-// fetches a drink when thirsty, sits on a free bench near by (the bench
-// shortage counted down 5, or up 1 with none), or stands, moving off a
-// crowded cell. A patient in the queue moves on to PS_ENTERTAINS_THEMSELF.
-// The toilets are not looked for: their room's states are not ported.
+// fetches a drink when thirsty, goes to the nearest toilets in use with a
+// bladder past gbv.bowel_full (entertaining only; out of its queue, then
+// PS_IN_BOGS), sits on a free bench near by (the bench shortage counted
+// down 5, or up 1 with none), or stands, moving off a crowded cell. A
+// patient in the queue moves on to PS_ENTERTAINS_THEMSELF.
 void wait_in_queue(const Run &r, uint16_t id, bool entertaining)
 {
     World &world = r.world;
@@ -943,7 +1087,7 @@ void wait_in_queue(const Run &r, uint16_t id, bool entertaining)
     if (off_blueprint(world, id))
         return;
     const Balance &settings = settings_of(world);
-    modify_person(world, settings, heating_level_of(world), id, r.game_turn);
+    modify_person(world, r.anims, settings, heating_level_of(world), id, r.game_turn);
     if (p.health <= 0)
         return;
     if (uint16_t room = which_queue(world, id))
@@ -961,24 +1105,62 @@ void wait_in_queue(const Run &r, uint16_t id, bool entertaining)
         start_pastime(r, id, kComplexDrink);
         return;
     }
-    if (p.complex_action != kComplexBench) {
-        if (can[1]) {
-            if (find_nearest_free_object(world, id, kObjBench)) {
-                if (p.owner == 0)
-                    world.bench_shortage -= 5;
-                start_pastime(r, id, kComplexBench);
-                return;
-            }
-            if (p.owner == 0)
-                world.bench_shortage++;
-        }
-        stand(r, p);
-        if (find_standing_place(r, id))
-            return;
-    }
+    if (entertaining && can[2] && p.bladder > settings.gbv.bowel_full && p.complex_action != kComplexLeaveRoom &&
+        wait_in_queue_to_toilets(r, id))
+        return;
+    if (p.complex_action != kComplexBench && wait_in_queue_sit_or_stand(r, id))
+        return;
     p.countdown = int16_t(0x100 / p.speed);
     if (!entertaining)
         p.state = kPsEntertainsThemself;
+}
+
+// person_in_bogs (0x17854), PS_IN_BOGS: in the toilets, the patient goes
+// to a free toilet (substate 0, complex 330; PS_LEAVE_TOILETS if it fails),
+// then (substate 1, its impatience gone) with an illness from 16 on (the
+// non-visual ones) to a free sink (complex 350); without one free, or
+// after, PS_LEAVE_TOILETS.
+void person_in_bogs(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    trace_event("in_bogs %u substate=%u", unsigned(id), unsigned(p.substate));
+    if (p.substate == 0) {
+        if (find_object(world, cell_of(p), kObjToilet, true, true, p.owner)) {
+            p.next_state = kPsInBogs;
+            p.resume_state = kPsLeaveToilets;
+            p.substate = 1;
+            set_complex(world, id, kComplexToilet, 0);
+            process(r, id);
+        } else {
+            p.state = kPsLeaveToilets;
+        }
+    } else if (p.substate == 1) {
+        p.impatience = 0;
+        if (p.illness >= 0x10 && find_object(world, cell_of(p), kObjSink, true, true, p.owner)) {
+            p.next_state = kPsLeaveToilets;
+            p.resume_state = kPsLeaveToilets;
+            set_complex(world, id, kComplexSink, 0);
+            process(r, id);
+        } else {
+            p.state = kPsLeaveToilets;
+        }
+    } else {
+        p.state = kPsLeaveToilets;
+    }
+}
+
+// leave_toilets (0x179a8), PS_LEAVE_TOILETS: out of the toilets by their
+// door to go for treatment again.
+void leave_toilets(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    trace_event("leave_toilets %u", unsigned(id));
+    p.next_state = kPsGoForTreatment;
+    p.resume_state = kPsLeaveToilets;
+    set_complex(world, id, kComplexLeaveRoom, world.rooms[p.room].door_inside_tile);
+    process(r, id);
 }
 
 // return_to_queue_area (0x179f8): back to the queue it is in (to its
@@ -1154,6 +1336,63 @@ void count_turned_away(World &world, const Thing &p)
         world.hospital->illnesses[p.illness % kIllnessCount].turned_away++;
 }
 
+// person_waits_for_decision for a diagnosis room, `waited` turns on: goes
+// for one once the hospital has one, or home turned away after 1500 turns.
+// Returns whether it was decided.
+bool waits_for_decision_diagnosis(const Run &r, uint16_t id, uint16_t waited)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    bool done = uint8_t(find_possible_diagnosis(world, id)) != 0;
+    if (!done && waited < 1500)
+        return false;
+    p.person_flags &= ~kPfAwaitingDecision;
+    if (!(p.person_flags & kPfWaitingForRoom)) {
+        get_playercall(world, 8, p.playercall, p.owner);
+        p.playercall = 0;
+    }
+    if (done) {
+        p.state = kPsGoForTreatment;
+    } else {
+        go_home(r, id);
+        count_turned_away(world, p);
+        p.person_flags |= kPfNoDiagnosis;
+    }
+    p.person_flags &= ~(kPfNeedsDiagnosisRoom | kPfWaitingForRoom);
+    return true;
+}
+
+// person_waits_for_decision for a room for its treatment, `waited` turns
+// on: goes for it once the hospital can give it and has its room, or home
+// after 1500 turns. Returns whether it was decided.
+bool waits_for_decision_treatment(const Run &r, uint16_t id, uint16_t waited)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    uint8_t treatment = p.next_treatment ? p.next_treatment : p.treatment;
+    bool done = p.owner == 0 && world.cure_available[treatment] == 1 &&
+                first_room(world, p.owner, kExpertiseCategory[treatment]);
+    if (!done && waited < 1500)
+        return false;
+    p.person_flags &= ~kPfAwaitingDecision;
+    if (!(p.person_flags & kPfWaitingForRoom)) {
+        go_home(r, id);
+        p.person_flags |= kPfNoTreatment;
+        return true;
+    }
+    p.person_flags &= ~kPfWaitingForRoom;
+    if (!done) {
+        go_home(r, id);
+        count_turned_away(world, p);
+        p.person_flags |= kPfNoTreatment;
+    } else {
+        get_playercall(world, 4, p.playercall, p.owner);
+        p.state = kPsGoForTreatment;
+        p.playercall = 0;
+    }
+    return true;
+}
+
 // person_waits_for_decision (0x17e30): a patient waiting for a diagnosis
 // room goes once the hospital has one for it (find_possible_diagnosis,
 // which draws from world.seed), one waiting for a room for its treatment
@@ -1168,48 +1407,10 @@ void waits_for_decision(const Run &r, uint16_t id)
     if (!animate(r, p) || --p.countdown > 0)
         return;
     auto waited = uint16_t(uint16_t(r.game_turn) - uint16_t(p.timer));
-    if (p.person_flags & kPfNeedsDiagnosisRoom) {
-        bool done = uint8_t(find_possible_diagnosis(world, id)) != 0;
-        if (done || waited >= 1500) {
-            p.person_flags &= ~kPfAwaitingDecision;
-            if (!(p.person_flags & kPfWaitingForRoom)) {
-                get_playercall(world, 8, p.playercall, p.owner);
-                p.playercall = 0;
-            }
-            if (done) {
-                p.state = kPsGoForTreatment;
-            } else {
-                go_home(r, id);
-                count_turned_away(world, p);
-                p.person_flags |= kPfNoDiagnosis;
-            }
-            p.person_flags &= ~(kPfNeedsDiagnosisRoom | kPfWaitingForRoom);
-            return;
-        }
-    } else {
-        uint8_t treatment = p.next_treatment ? p.next_treatment : p.treatment;
-        bool done = p.owner == 0 && world.cure_available[treatment] == 1 &&
-                    first_room(world, p.owner, kExpertiseCategory[treatment]);
-        if (done || waited >= 1500) {
-            p.person_flags &= ~kPfAwaitingDecision;
-            if (p.person_flags & kPfWaitingForRoom) {
-                p.person_flags &= ~kPfWaitingForRoom;
-                if (!done) {
-                    go_home(r, id);
-                    count_turned_away(world, p);
-                    p.person_flags |= kPfNoTreatment;
-                } else {
-                    get_playercall(world, 4, p.playercall, p.owner);
-                    p.state = kPsGoForTreatment;
-                    p.playercall = 0;
-                }
-            } else {
-                go_home(r, id);
-                p.person_flags |= kPfNoTreatment;
-            }
-            return;
-        }
-    }
+    bool decided = p.person_flags & kPfNeedsDiagnosisRoom ? waits_for_decision_diagnosis(r, id, waited)
+                                                          : waits_for_decision_treatment(r, id, waited);
+    if (decided)
+        return;
     if (off_blueprint(world, id))
         return;
     stand(r, p);
@@ -1261,121 +1462,216 @@ void stuck(const Run &r, uint16_t id)
     step_on(world, id);
 }
 
-bool turn(const Run &r, uint16_t id)
+// person_fills (0x17620), PS_FILLS: the patient fills its machine (the
+// machine's aux_sprite drawn split at split_height, which grows a pixel a
+// turn, two for an alien), both animating every anim_speed turns; once past
+// the frame's height it is ready (PS_SLAVE_READY) in the machine's frame,
+// and an alien's doctor in the room takes his turn at once.
+void person_fills(const Run &r, uint16_t id)
 {
     World &world = r.world;
     Thing &p = world.things[id];
-    switch (p.state) {
-    case kPsWaitsForBusy:
-        // person_waits_for_busy (0x15c50).
-        if (r.game_turn % p.anim_speed == 0)
-            p.sprite = r.anims.frames[p.sprite].next;
-        if (p.timer-- <= 0)
-            go_home(r, id);
-        break;
-    case kPsGotoDestination:
-        goto_destination(r, id);
-        break;
-    case kPsReturnToQueueArea:
-        return_to_queue_area(r, id);
-        break;
-    case kPsGoHome:
+    if (!p.object)
+        return;
+    Thing &machine = world.things[p.object];
+    if (r.game_turn % p.anim_speed == 0) {
+        p.sprite = r.anims.frames[p.sprite].next;
+        machine.aux_sprite = r.anims.frames[machine.aux_sprite].next;
+    }
+    const AnimFrame *cur;
+    if (p.subtype == kPatientAlien) {
+        machine.split_height = uint8_t(machine.split_height + 2);
+        cur = &r.anims.frames[machine.aux_sprite];
+    } else {
+        machine.split_height++;
+        cur = &r.anims.frames[p.sprite];
+    }
+    if (machine.split_height <= cur->height)
+        return;
+    p.state = kPsSlaveReady;
+    p.sprite = machine.aux_sprite;
+    p.flip = machine.aux_flip;
+    if (p.subtype != kPatientAlien || !p.room || !world.staff_complexes)
+        return;
+    // find_person_in_room (0x1b150).
+    for (uint16_t o = world.rooms[p.room].first_person; o; o = world.things[o].room_next) {
+        if (world.things[o].type == kThingStaff && world.things[o].subtype == kStaffDoctor) {
+            staff_turn(world, r.anims, r.complexes, *world.staff_complexes, o, r.game_turn);
+            break;
+        }
+    }
+}
+
+// person_energises (0x17780), PS_ENERGISES: the patient's and its machine's
+// animations play to their last frame and hold there.
+void person_energises(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    if (!p.object || r.game_turn % p.anim_speed != 0)
+        return;
+    uint16_t next = r.anims.frames[p.sprite].next;
+    if (r.anims.frames[next].flags & 1)
+        return;
+    p.sprite = next;
+    Thing &machine = world.things[p.object];
+    machine.aux_sprite = r.anims.frames[machine.aux_sprite].next;
+}
+
+// person_waits_for_busy (0x15c50).
+void waits_for_busy(const Run &r, uint16_t id)
+{
+    Thing &p = r.world.things[id];
+    if (r.game_turn % p.anim_speed == 0)
+        p.sprite = r.anims.frames[p.sprite].next;
+    if (p.timer-- <= 0)
         go_home(r, id);
-        break;
+}
+
+// play_complex_person_anim (0x418dc).
+void play_complex_anim(const Run &r, uint16_t id)
+{
+    Thing &p = r.world.things[id];
+    if (r.game_turn % p.anim_speed != 0)
+        return;
+    uint16_t next = r.anims.frames[p.sprite].next;
+    if (r.anims.frames[next].flags & 1)
+        process(r, id);
+    else
+        p.sprite = next;
+}
+
+// person_arrives_at_door (0x15cc0): at the door of a room with a single
+// door it turns away from it to queue (complex 50), else it queues at once.
+void arrives_at_door(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    trace_event("at_door %u", unsigned(id));
+    uint16_t room = is_this_a_door(world, cell_of(p));
+
+    if (room && kRoomTypeInfo[world.rooms[room].type % kRoomTypes].door_kind != 0) {
+        set_complex(world, id, kComplexAtDoor, 0);
+        process(r, id);
+    } else {
+        p.state = kPsInQueue;
+    }
+}
+
+// person_complex_retry (0x41a54).
+void complex_retry(const Run &r, uint16_t id)
+{
+    Thing &p = r.world.things[id];
+    if (r.game_turn % p.anim_speed == 0) {
+        p.sprite = r.anims.frames[p.sprite].next;
+        if (r.anims.frames[p.sprite].flags & 1)
+            process(r, id);
+    }
+}
+
+// person_in_bed (0x17194): in bed until the timer runs out (its needs
+// looked at every 30 turns), then up and on to its next treatment.
+void in_bed(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    if (p.timer == 0)
+        return;
+    if (r.game_turn % 30 == 0)
+        modify_person(world, r.anims, settings_of(world), heating_level_of(world), id, r.game_turn);
+    if (--p.timer == 0) {
+        set_complex(world, id, kComplexStandStill, 0);
+        process(r, id);
+        setup_next_treatment(world, r.anims, 0, id, r.game_turn);
+    }
+}
+
+// person_arrived_from_call (0x18f88): in a room, it waits for the member of
+// staff who called it, and with none there leaves for its treatment; at a
+// reception desk the receptionist takes it from here. Returns whether it
+// waits.
+bool arrived_from_call(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    if (!p.room)
+        return false;
+    for (const Thing &t : world.things)
+        if (t.type == kThingStaff && t.room == p.room && t.slave == id)
+            return true;
+    set_complex(world, id, kComplexLeaveRoom, world.rooms[p.room].door_inside_tile);
+    p.next_state = kPsGoForTreatment;
+    process(r, id);
+    return false;
+}
+
+// The turn of a patient in state `state`, other than PS_ARRIVED_FROM_CALL.
+void turn_state(const Run &r, uint16_t id, uint8_t state)
+{
+    World &world = r.world;
+    switch (state) {
+    case kPsWaitsForBusy:
+        return waits_for_busy(r, id);
+    case kPsGotoDestination:
+        return goto_destination(r, id);
+    case kPsReturnToQueueArea:
+        return return_to_queue_area(r, id);
+    case kPsGoHome:
+        return go_home(r, id);
     case kPsGone:
         // person_gone (0x1673c).
-        remove(r, id);
-        break;
+        return remove(r, id);
     case kPsPlayComplexAnim:
-        // play_complex_person_anim (0x418dc).
-        if (r.game_turn % p.anim_speed == 0) {
-            uint16_t next = r.anims.frames[p.sprite].next;
-            if (r.anims.frames[next].flags & 1)
-                process(r, id);
-            else
-                p.sprite = next;
-        }
-        break;
-    case kPsArrivesAtDoor: {
-        // person_arrives_at_door (0x15cc0): at the door of a room with a
-        // single door it turns away from it to queue (complex 50), else it
-        // queues at once.
-        trace_event("at_door %u", unsigned(id));
-        uint16_t room = is_this_a_door(world, cell_of(p));
-
-        if (room && kRoomTypeInfo[world.rooms[room].type % kRoomTypes].door_kind != 0) {
-            set_complex(world, id, kComplexAtDoor, 0);
-            process(r, id);
-        } else {
-            p.state = kPsInQueue;
-        }
-        break;
-    }
+        return play_complex_anim(r, id);
+    case kPsArrivesAtDoor:
+        return arrives_at_door(r, id);
     case kPsInQueue:
-        wait_in_queue(r, id, false);
-        break;
+        return wait_in_queue(r, id, false);
     case kPsGotoObject:
-        goto_object(r, id);
-        break;
+        return goto_object(r, id);
     case kPsEntertainsThemself:
-        wait_in_queue(r, id, true);
-        break;
+        return wait_in_queue(r, id, true);
     case kPsGotoQueue:
-        goto_queue(r, id);
-        break;
+        return goto_queue(r, id);
     case kPsGoForTreatment:
-        go_for_treatment(r, id);
-        break;
+        return go_for_treatment(r, id);
     case kPsComplexRetry:
-        // person_complex_retry (0x41a54).
-        if (r.game_turn % p.anim_speed == 0) {
-            p.sprite = r.anims.frames[p.sprite].next;
-            if (r.anims.frames[p.sprite].flags & 1)
-                process(r, id);
-        }
-        break;
+        return complex_retry(r, id);
     case kPsShowanim:
-        person_showanim_turn(world, r.anims, id, r.game_turn);
-        break;
+        return person_showanim_turn(world, r.anims, id, r.game_turn);
     case kPsStuck:
-        stuck(r, id);
-        break;
+        return stuck(r, id);
     case kPsInBed:
-        // person_in_bed (0x17194): in bed until the timer runs out (its
-        // needs looked at every 30 turns), then up and on to its next
-        // treatment.
-        if (p.timer != 0) {
-            if (r.game_turn % 30 == 0)
-                modify_person(world, settings_of(world), heating_level_of(world), id, r.game_turn);
-            if (--p.timer == 0) {
-                set_complex(world, id, kComplexStandStill, 0);
-                process(r, id);
-                setup_next_treatment(world, r.anims, 0, id, r.game_turn);
-            }
-        }
-        break;
+        return in_bed(r, id);
     case kPsWaitsForDecision:
-        waits_for_decision(r, id);
-        break;
-    case kPsArrivedFromCall:
-        // person_arrived_from_call (0x18f88): in a room, it waits for the
-        // member of staff who called it, and with none there leaves for its
-        // treatment; at a reception desk the receptionist takes it from here.
-        if (p.room) {
-            for (const Thing &t : world.things)
-                if (t.type == kThingStaff && t.room == p.room && t.slave == id)
-                    return true;
-            set_complex(world, id, kComplexLeaveRoom, world.rooms[p.room].door_inside_tile);
-            p.next_state = kPsGoForTreatment;
-            process(r, id);
-        }
-        break;
+        return waits_for_decision(r, id);
     case kPsBpGoto:
-        peep_bp_goto_turn(world, r.anims, id, r.game_turn);
-        break;
+        return peep_bp_goto_turn(world, r.anims, id, r.game_turn);
+    case kPsInBogs:
+        return person_in_bogs(r, id);
+    case kPsLeaveToilets:
+        return leave_toilets(r, id);
+    case kPsFills:
+        return person_fills(r, id);
+    case kPsEnergises:
+        return person_energises(r, id);
+    case kPsDead:
+        return person_dead(world, r.anims, id, r.game_turn);
+    case kPsFlys:
+        return person_flys(world, r.anims, id, r.game_turn);
     default:
-        break;
+        return;
     }
+}
+
+bool turn(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    uint8_t state = world.things[id].state;
+    if (state != kPsArrivedFromCall)
+        turn_state(r, id, state);
+    else if (arrived_from_call(r, id))
+        return true;
     return world.things[id].type == kThingPatient;
 }
 
@@ -1589,10 +1885,62 @@ void remove_person(World &world, const AnimData &anims, const PersonComplexes &c
     remove({world, anims, complexes, game_turn}, id);
 }
 
+void person_nav_failure(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
+                        uint32_t game_turn)
+{
+    person_nav_failure({world, anims, complexes, game_turn}, id);
+}
+
 bool person_turn(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id, uint32_t game_turn)
 {
     return turn({world, anims, complexes, game_turn}, id);
 }
+
+namespace
+{
+
+// sliding_door_opens (0x39734).
+void sliding_door_opens(Thing &door, const AnimData &anims, uint32_t game_turn)
+{
+    if (game_turn % door.anim_speed != 0)
+        return;
+    uint16_t next = anims.frames[door.sprite].next;
+    if (anims.frames[next].flags & 1) {
+        door.countdown = 50;
+        door.state = kOsSlidingDoorOpen;
+    } else {
+        door.sprite = next;
+    }
+}
+
+// sliding_door_closes (0x39880).
+void sliding_door_closes(const World &world, Thing &door, const AnimData &anims, uint32_t game_turn)
+{
+    const SlidingDoorInfo &info = kSlidingDoors[door.subtype - kEntranceLeftDoor];
+    if (someone_at_door(world, door)) {
+        // As far into the opening animation as the closing one had left
+        // to go; uint8_t as in the game, so 0 left runs 255 frames.
+        uint8_t steps = 0;
+        while (!(anims.frames[door.sprite].flags & 1)) {
+            door.sprite = anims.frames[door.sprite].next;
+            steps++;
+        }
+        play_frame(door, anims, info.open_anim);
+        for (steps--; steps != 0; steps--)
+            door.sprite = anims.frames[door.sprite].next;
+        door.state = kOsSlidingDoorOpens;
+    } else if (game_turn % door.anim_speed == 0) {
+        uint16_t next = anims.frames[door.sprite].next;
+        if (anims.frames[next].flags & 1) {
+            play_frame(door, anims, info.open_anim);
+            door.state = kOsSlidingDoorClosed;
+        } else {
+            door.sprite = next;
+        }
+    }
+}
+
+} // namespace
 
 void sliding_door_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn)
 {
@@ -1609,16 +1957,7 @@ void sliding_door_turn(World &world, const AnimData &anims, uint16_t id, uint32_
             door.state = kOsSlidingDoorOpens;
         break;
     case kOsSlidingDoorOpens:
-        // sliding_door_opens (0x39734).
-        if (game_turn % door.anim_speed == 0) {
-            uint16_t next = anims.frames[door.sprite].next;
-            if (anims.frames[next].flags & 1) {
-                door.countdown = 50;
-                door.state = kOsSlidingDoorOpen;
-            } else {
-                door.sprite = next;
-            }
-        }
+        sliding_door_opens(door, anims, game_turn);
         break;
     case kOsSlidingDoorOpen:
         // sliding_door_open (0x397b4).
@@ -1629,32 +1968,9 @@ void sliding_door_turn(World &world, const AnimData &anims, uint16_t id, uint32_
             door.state = kOsSlidingDoorCloses;
         }
         break;
-    case kOsSlidingDoorCloses: {
-        // sliding_door_closes (0x39880).
-        const SlidingDoorInfo &info = kSlidingDoors[door.subtype - kEntranceLeftDoor];
-        if (someone_at_door(world, door)) {
-            // As far into the opening animation as the closing one had left
-            // to go; uint8_t as in the game, so 0 left runs 255 frames.
-            uint8_t steps = 0;
-            while (!(anims.frames[door.sprite].flags & 1)) {
-                door.sprite = anims.frames[door.sprite].next;
-                steps++;
-            }
-            play_frame(door, anims, info.open_anim);
-            for (steps--; steps != 0; steps--)
-                door.sprite = anims.frames[door.sprite].next;
-            door.state = kOsSlidingDoorOpens;
-        } else if (game_turn % door.anim_speed == 0) {
-            uint16_t next = anims.frames[door.sprite].next;
-            if (anims.frames[next].flags & 1) {
-                play_frame(door, anims, info.open_anim);
-                door.state = kOsSlidingDoorClosed;
-            } else {
-                door.sprite = next;
-            }
-        }
+    case kOsSlidingDoorCloses:
+        sliding_door_closes(world, door, anims, game_turn);
         break;
-    }
     default:
         break;
     }
@@ -1673,6 +1989,8 @@ void door_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_t
 
 void move_person_in_room_list(World &world, uint16_t id, uint16_t tile)
 {
+    trace_event("room_move %u from=%u to=%u", unsigned(id), unsigned(world.things[id].room),
+                unsigned(which_room(world, tile)));
     if (uint16_t room = which_room(world, tile))
         insert_person_in_room_list(world, room, id);
     else
@@ -1711,48 +2029,75 @@ void remove_person_from_room_list(World &world, uint16_t id)
     person.room_prev = 0;
 }
 
+namespace
+{
+
+// Whether map cell `cell` (which may be off the map) is a blueprint's floor.
+bool peep_bp_goto_on_blueprint(const World &world, int cell)
+{
+    return cell >= 0 && cell < kMapCells && block_flags(world.map[size_t(cell)].floor_block) == 0x20;
+}
+
+// The direction peep_bp_goto_turn steps from blueprint cell `cell` towards
+// the saved destination: along the axis it is already lined up on, else
+// along a random one, or the other if that leaves the blueprint.
+uint8_t peep_bp_goto_direction(World &world, const Thing &peep, int cell)
+{
+    bool vertical = false;
+    bool retry = false;
+    if (peep.x.tile == peep.saved_dest_x) {
+        vertical = true;
+    } else if (peep.y.tile != peep.saved_dest_y) {
+        vertical = old_newrand(world.seed, "peep_bp_goto") % 1000 < 500;
+        retry = true;
+    }
+    static constexpr std::array<int16_t, 4> around = {-128, 1, 128, -1};
+    uint8_t dir = 0;
+    for (;;) {
+        if (vertical)
+            dir = peep.y.tile < peep.saved_dest_y ? 2 : 0;
+        else
+            dir = peep.x.tile < peep.saved_dest_x ? 1 : 3;
+        if (!retry || peep_bp_goto_on_blueprint(world, cell + around[dir]))
+            break;
+        vertical = !vertical;
+        retry = false;
+    }
+    return dir;
+}
+
+// A step of peep_bp_goto_turn once the countdown runs out: off the
+// blueprint (or at the saved destination) back to saved_state, else on
+// towards the destination. Returns whether it is still walking.
+bool peep_bp_goto_step(World &world, const AnimData &anims, uint16_t id)
+{
+    Thing &peep = world.things[id];
+    int cell = peep.x.tile + (peep.y.tile << 7);
+    if (!peep_bp_goto_on_blueprint(world, cell) ||
+        (peep.x.tile == peep.saved_dest_x && peep.y.tile == peep.saved_dest_y)) {
+        peep.state = peep.saved_state;
+        return false;
+    }
+    uint8_t dir = peep_bp_goto_direction(world, peep, cell);
+    peep.countdown = int16_t(0x100 / peep.speed);
+    const PersonAnims &kind = peep.type == kThingStaff ? kStaffAnims[peep.subtype] : kPatientAnims[peep.subtype];
+    size_t stand = size_t(kind.stand) + peep.facing;
+    if (peep.facing != dir || (stand < anims.starts.size() && anims.starts[stand].frame == peep.sprite)) {
+        peep.facing = dir;
+        play_frame(peep, anims, kind.walk);
+    }
+    return true;
+}
+
+} // namespace
+
 void peep_bp_goto_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn)
 {
     Thing &peep = world.things[id];
     if (game_turn % peep.anim_speed == 0)
         peep.sprite = anims.frames[peep.sprite].next;
-    if (--peep.countdown <= 0) {
-        auto on_blueprint = [&](int cell) {
-            return cell >= 0 && cell < kMapCells && block_flags(world.map[size_t(cell)].floor_block) == 0x20;
-        };
-        int cell = peep.x.tile + (peep.y.tile << 7);
-        if (!on_blueprint(cell) || (peep.x.tile == peep.saved_dest_x && peep.y.tile == peep.saved_dest_y)) {
-            peep.state = peep.saved_state;
-            return;
-        }
-        bool vertical = false;
-        bool retry = false;
-        if (peep.x.tile == peep.saved_dest_x) {
-            vertical = true;
-        } else if (peep.y.tile != peep.saved_dest_y) {
-            vertical = old_newrand(world.seed, "peep_bp_goto") % 1000 < 500;
-            retry = true;
-        }
-        static constexpr std::array<int16_t, 4> around = {-128, 1, 128, -1};
-        uint8_t dir = 0;
-        for (;;) {
-            if (vertical)
-                dir = peep.y.tile < peep.saved_dest_y ? 2 : 0;
-            else
-                dir = peep.x.tile < peep.saved_dest_x ? 1 : 3;
-            if (!retry || on_blueprint(cell + around[dir]))
-                break;
-            vertical = !vertical;
-            retry = false;
-        }
-        peep.countdown = int16_t(0x100 / peep.speed);
-        const PersonAnims &kind = peep.type == kThingStaff ? kStaffAnims[peep.subtype] : kPatientAnims[peep.subtype];
-        size_t stand = size_t(kind.stand) + peep.facing;
-        if (peep.facing != dir || (stand < anims.starts.size() && anims.starts[stand].frame == peep.sprite)) {
-            peep.facing = dir;
-            play_frame(peep, anims, kind.walk);
-        }
-    }
+    if (--peep.countdown <= 0 && !peep_bp_goto_step(world, anims, id))
+        return;
     step_on(world, id);
 }
 

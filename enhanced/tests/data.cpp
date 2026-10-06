@@ -66,6 +66,61 @@ void test_game_data(const char *dir)
     }
 }
 
+namespace
+{
+
+// "15143" in `font` draws within its width at 10,5 and nowhere else.
+void check_balance_text(const th::Font &font)
+{
+    int glyphs = 0;
+    for (char c : std::string_view("15143"))
+        glyphs += font.glyph(uint8_t(c)).width;
+    int width = th::text_width(font, "15143");
+    CHECK(width == glyphs && width > 0);
+
+    th::Surface surf;
+    surf.resize(200, 40);
+    surf.fill(0);
+    th::draw_text(surf, font, 0, 0, "15143", {{10, 5, 0}, {0, 0, 200, 40}});
+    int drawn = 0, left = 200, right = -1;
+    for (int y = 0; y < 40; y++) {
+        for (int x = 0; x < 200; x++) {
+            if (surf.row(y)[x] == 0)
+                continue;
+            drawn++;
+            left = std::min(left, x);
+            right = std::max(right, x);
+            CHECK(y >= 5 && y < 5 + font.line_height());
+        }
+    }
+    CHECK(drawn > 0);
+    CHECK(left >= 10 && right < 10 + width);
+}
+
+// The panel's date: "%d %s" centred (0x100) in the date box.
+void check_date_text(const th::Font &font, const th::LanguageText &text)
+{
+    th::Surface surf;
+    surf.resize(200, 40);
+    std::string date = "1 " + std::string(text.month(0));
+    int date_width = th::text_width(font, date);
+    surf.fill(0);
+    th::draw_text(surf, font, 0, 0, date, {{0, 0, 200}, {0, 0, 200, 40}, th::kTextCentre});
+    int left = 200;
+    int right = -1;
+    for (int y = 0; y < 40; y++) {
+        for (int x = 0; x < 200; x++) {
+            if (surf.row(y)[x] != 0) {
+                left = std::min(left, x);
+                right = std::max(right, x);
+            }
+        }
+    }
+    CHECK(left >= (200 - date_width) / 2 && right < (200 - date_width) / 2 + date_width);
+}
+
+} // namespace
+
 void test_language_and_fonts(const char *dir)
 {
     th::LanguageText text;
@@ -84,55 +139,20 @@ void test_language_and_fonts(const char *dir)
     CHECK(th::load_font(dir, 5, balance_font, &error));
     CHECK(th::load_font(dir, 6, date_font, &error));
     CHECK(!balance_font.empty() && !date_font.empty());
-
-    int glyphs = 0;
-    for (char c : std::string_view("15143"))
-        glyphs += balance_font.glyph(uint8_t(c)).width;
-    int width = th::text_width(balance_font, "15143");
-    CHECK(width == glyphs && width > 0);
-
-    th::Surface surf;
-    surf.resize(200, 40);
-    surf.fill(0);
-    th::draw_text(surf, balance_font, {10, 5, 0}, 0, 0, "15143", 0, {0, 0, 200, 40});
-    int drawn = 0, left = 200, right = -1;
-    for (int y = 0; y < 40; y++) {
-        for (int x = 0; x < 200; x++) {
-            if (surf.row(y)[x] == 0)
-                continue;
-            drawn++;
-            left = std::min(left, x);
-            right = std::max(right, x);
-            CHECK(y >= 5 && y < 5 + balance_font.line_height());
-        }
-    }
-    CHECK(drawn > 0);
-    CHECK(left >= 10 && right < 10 + width);
-
-    // The panel's date: "%d %s" centred (0x100) in the date box.
-    std::string date = "1 " + std::string(text.month(0));
-    int date_width = th::text_width(date_font, date);
-    surf.fill(0);
-    th::draw_text(surf, date_font, {0, 0, 200}, 0, 0, date, th::kTextCentre, {0, 0, 200, 40});
-    left = 200;
-    right = -1;
-    for (int y = 0; y < 40; y++) {
-        for (int x = 0; x < 200; x++) {
-            if (surf.row(y)[x] != 0) {
-                left = std::min(left, x);
-                right = std::max(right, x);
-            }
-        }
-    }
-    CHECK(left >= (200 - date_width) / 2 && right < (200 - date_width) / 2 + date_width);
+    check_balance_text(balance_font);
+    check_date_text(date_font, text);
 }
 
-void test_balance(const char *dir)
+namespace
 {
-    auto text = [](std::string_view s) {
-        return std::span<const uint8_t>(reinterpret_cast<const uint8_t *>(s.data()), s.size());
-    };
 
+std::span<const uint8_t> text(std::string_view s)
+{
+    return std::span<const uint8_t>(reinterpret_cast<const uint8_t *>(s.data()), s.size());
+}
+
+void check_balance_files_read(const char *dir)
+{
     // Every shipped file reads to its end.
     for (const char *id : {"EASY", "FULL", "HARD"}) {
         for (int level = 0; level <= 12; level++) {
@@ -151,8 +171,11 @@ void test_balance(const char *dir)
         CHECK(th::load_balance(dir, level, "", b, &error));
         CHECK(error.empty());
     }
+}
 
-    // levels/FULL00.SAM, then FULL01.SAM over it.
+// levels/FULL00.SAM, then FULL01.SAM over it.
+void check_full_level1(const char *dir)
+{
     th::Balance b;
     CHECK(th::load_balance(dir, 1, th::kDefaultBalanceId, b));
     CHECK(b.staff[0].min_salary == 60 && b.staff[1].min_salary == 75);
@@ -177,7 +200,10 @@ void test_balance(const char *dir)
     CHECK(b.illness_kinds.size() == 22 && b.illness_kinds[0] == 2 && b.illness_kinds[1] == 5 &&
           b.illness_kinds[2] == 16);
     CHECK(b.objects[39].available_for_level == 1 && b.expertise[1].known == 1);
+}
 
+void check_other_balances(const char *dir)
+{
     th::Balance hard;
     CHECK(th::load_balance(dir, 1, "HARD", hard));
     CHECK(hard.towns[1].start_cash == 30000 && hard.towns[1].interest_rate == 500 && hard.staff[0].min_salary == 70);
@@ -189,7 +215,10 @@ void test_balance(const char *dir)
     CHECK(th::balance_description(dir, "FULL", 0) == " Doctor (Medium)");
     CHECK(th::balance_description(dir, "EASY", 2) == " AIPler (Einfach)");
     CHECK(!th::balance_description(dir, "NONE", 0));
+}
 
+void check_balance_parsing()
+{
     // A value out of bounds: the rest of its line is still read, the rest of
     // the file is not.
     th::Balance s;
@@ -212,6 +241,16 @@ void test_balance(const char *dir)
     CHECK(th::read_balance_file(text("note #staff[0].MinSalary 70\n#gbv.SalaryAdd[5] -45\r\n\n#staff[2].MinSalary 9\n"),
                                 lf));
     CHECK(lf.staff[0].min_salary == 7 && lf.gbv.salary_add[5] == -45 && lf.staff[2].min_salary == 95);
+}
+
+} // namespace
+
+void test_balance(const char *dir)
+{
+    check_balance_files_read(dir);
+    check_full_level1(dir);
+    check_other_balances(dir);
+    check_balance_parsing();
 }
 
 // The intro movie decodes whole: every frame, its palette and its audio

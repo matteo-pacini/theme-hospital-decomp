@@ -61,6 +61,74 @@ void test_game_clock(const char *dir)
     CHECK(game->turn_count == turns);
 }
 
+namespace
+{
+
+// Month ends after `salary` was first paid from `balance`.
+void check_month_end_lines(th::Finance &fin, int32_t &balance, th::World &w, const th::Balance &settings,
+                           int32_t salary)
+{
+    // Heating, loan interest and overdraft interest by the game's formulas.
+    int rate = settings.towns[1].interest_rate;
+    CHECK(rate > 0);
+    fin.loan = 20000;
+    balance = -3000 + salary; // overdrawn by 3000 once she is paid
+    th::month_end(fin, balance, w, settings, 1, {28, 1, 4, 500});
+    int32_t heating = 4 * 5 * 750 / 100;
+    int32_t interest = rate * 20000 / 10000 / 12;
+    int32_t after = -3000 - heating - interest;
+    int32_t overdraft = rate * after * 2 / 10000 / 12;
+    CHECK(fin.entry_count == 5);
+    CHECK(fin.entries[2].type == th::kTxHeating && fin.entries[2].amount == -heating);
+    CHECK(fin.entries[3].type == th::kTxLoanInterest && fin.entries[3].amount == -interest);
+    CHECK(fin.entries[4].type == th::kTxOverdraftInterest && fin.entries[4].amount == overdraft && overdraft < 0);
+    CHECK(balance == after + overdraft);
+
+    // An insurer's claims due this month: the line names its company
+    // (ins_control[slot]), not its slot.
+    w.ins_control = {4, 7, 2, 0, 0};
+    w.hospital->insurance_claims[1][2] = 300;
+    fin.loan = 0;
+    balance = 100000;
+    th::month_end(fin, balance, w, settings, 1, {31, 2, 0, 500});
+    const th::BankEntry &paid = fin.entries[size_t(fin.entry_count - 1)];
+    CHECK(paid.type == th::kTxInsurance && paid.amount == 300 && paid.extra == 7);
+    CHECK(w.hospital->insurance_claims[1][2] == 0);
+}
+
+void check_statement_merging(const th::Balance &settings)
+{
+    // Lines of the same type and day merge; a full statement drops its
+    // oldest ten into the opening balance.
+    th::Finance s;
+    int32_t b = 1000;
+    th::start_finance(s, b, settings, 1);
+    th::change_balance(s, b, 3, 2, {th::kTxBuyObject, -10});
+    th::change_balance(s, b, 3, 2, {th::kTxBuyObject, -15});
+    CHECK(s.entry_count == 1 && s.entries[0].amount == -25 && b == 975 && s.expenditure_this_month == 25);
+    for (int i = 0; i < 49; i++)
+        th::change_balance(s, b, 4 + i % 2, 2, {th::kTxCheatMoney, 1});
+    CHECK(s.entry_count == 40 && s.statement_balance == 1000 - 25 + 9);
+    CHECK(s.income_this_month == 0 && b == 975 + 49);
+    th::change_balance(s, b, 9, 2, {th::kTxCheatMoney, 99999999});
+    CHECK(b == 9999999);
+}
+
+void check_year_end(th::Finance &fin, int32_t balance, th::World &w, const th::Balance &settings)
+{
+    // The year's end values the hospital and opens a new statement.
+    th::year_end(fin, balance, w, settings, 500);
+    int area = 0;
+    for (const th::MapCell &c : w.map)
+        area += c.owner_flags & 1;
+    CHECK(area > 0 && fin.area == area);
+    CHECK(fin.hospital_value == area * settings.gbv.land_cost_per_tile + 10000 + 10000);
+    CHECK(fin.max_loan == std::min(fin.hospital_value / 3 + 10000, 100000));
+    CHECK(fin.entry_count == 0 && fin.statement_balance == balance && fin.year_start_balance == balance);
+}
+
+} // namespace
+
 void test_finance_level1(const char *dir)
 {
     HireFixture f;
@@ -81,68 +149,19 @@ void test_finance_level1(const char *dir)
     CHECK(id != 0 && cell >= 0);
     if (!id || cell < 0)
         return;
-    CHECK(th::place_staff_on_map(w, f.gd.anims(), settings, cell, id, false, f.game->turn_count));
+    CHECK(th::place_staff_on_map(w, {f.gd.anims(), settings, f.game->turn_count}, cell, id, false));
     int32_t salary = w.things[id].salary;
     CHECK(salary > 0);
-    th::month_end(fin, balance, w, settings, 1, 31, 0, 0, 500);
+    th::month_end(fin, balance, w, settings, 1, {31, 0, 0, 500});
     CHECK(balance == f.game->balance - salary);
     CHECK(fin.entry_count == 1 && fin.entries[0].type == th::kTxWages && fin.entries[0].amount == -salary);
     CHECK(fin.entries[0].day == 31 && fin.entries[0].month == 0);
     CHECK(fin.history[th::kHistoryWages][11] == salary && fin.history[th::kHistoryExpenditure][11] == salary);
     CHECK(fin.history[th::kHistoryBalance][11] == balance && fin.history[th::kHistoryReputation][11] == 500);
     CHECK(fin.wages_this_month == 0 && fin.expenditure_this_month == 0 && fin.income_this_month == 0);
-
-    // Heating, loan interest and overdraft interest by the game's formulas.
-    int rate = settings.towns[1].interest_rate;
-    CHECK(rate > 0);
-    fin.loan = 20000;
-    balance = -3000 + salary; // overdrawn by 3000 once she is paid
-    th::month_end(fin, balance, w, settings, 1, 28, 1, 4, 500);
-    int32_t heating = 4 * 5 * 750 / 100;
-    int32_t interest = rate * 20000 / 10000 / 12;
-    int32_t after = -3000 - heating - interest;
-    int32_t overdraft = rate * after * 2 / 10000 / 12;
-    CHECK(fin.entry_count == 5);
-    CHECK(fin.entries[2].type == th::kTxHeating && fin.entries[2].amount == -heating);
-    CHECK(fin.entries[3].type == th::kTxLoanInterest && fin.entries[3].amount == -interest);
-    CHECK(fin.entries[4].type == th::kTxOverdraftInterest && fin.entries[4].amount == overdraft && overdraft < 0);
-    CHECK(balance == after + overdraft);
-
-    // An insurer's claims due this month: the line names its company
-    // (ins_control[slot]), not its slot.
-    w.ins_control = {4, 7, 2, 0, 0};
-    w.hospital->insurance_claims[1][2] = 300;
-    fin.loan = 0;
-    balance = 100000;
-    th::month_end(fin, balance, w, settings, 1, 31, 2, 0, 500);
-    const th::BankEntry &paid = fin.entries[size_t(fin.entry_count - 1)];
-    CHECK(paid.type == th::kTxInsurance && paid.amount == 300 && paid.extra == 7);
-    CHECK(w.hospital->insurance_claims[1][2] == 0);
-
-    // Lines of the same type and day merge; a full statement drops its
-    // oldest ten into the opening balance.
-    th::Finance s;
-    int32_t b = 1000;
-    th::start_finance(s, b, settings, 1);
-    th::change_balance(s, b, 3, 2, th::kTxBuyObject, -10);
-    th::change_balance(s, b, 3, 2, th::kTxBuyObject, -15);
-    CHECK(s.entry_count == 1 && s.entries[0].amount == -25 && b == 975 && s.expenditure_this_month == 25);
-    for (int i = 0; i < 49; i++)
-        th::change_balance(s, b, 4 + i % 2, 2, th::kTxCheatMoney, 1);
-    CHECK(s.entry_count == 40 && s.statement_balance == 1000 - 25 + 9);
-    CHECK(s.income_this_month == 0 && b == 975 + 49);
-    th::change_balance(s, b, 9, 2, th::kTxCheatMoney, 99999999);
-    CHECK(b == 9999999);
-
-    // The year's end values the hospital and opens a new statement.
-    th::year_end(fin, balance, w, settings, 500);
-    int area = 0;
-    for (const th::MapCell &c : w.map)
-        area += c.owner_flags & 1;
-    CHECK(area > 0 && fin.area == area);
-    CHECK(fin.hospital_value == area * settings.gbv.land_cost_per_tile + 10000 + 10000);
-    CHECK(fin.max_loan == std::min(fin.hospital_value / 3 + 10000, 100000));
-    CHECK(fin.entry_count == 0 && fin.statement_balance == balance && fin.year_start_balance == balance);
+    check_month_end_lines(fin, balance, w, settings, salary);
+    check_statement_merging(settings);
+    check_year_end(fin, balance, w, settings);
 }
 
 void test_balance_roll(const char *dir)
@@ -241,25 +260,9 @@ struct AdvisorFixture {
     }
 };
 
-} // namespace
-
-void test_advisor_tutorial(const char *dir)
+// Drawn: the message wrapped into the narrowest bubble that holds it.
+void check_tutorial_bubble(AdvisorFixture &a)
 {
-    AdvisorFixture a;
-    CHECK(a.start(dir, true));
-    if (!a.f.level)
-        return;
-    CHECK(a.f.gd.anims().starts.size() > 2374);
-    const th::LanguageText &text = a.f.gd.text();
-    // The level starts with the tutorial's first message.
-    a.frame();
-    CHECK(a.advisor.text == text.advisor(29) && a.advisor.rewrap && a.advisor.tutorial_highlight == 0x13);
-    CHECK(a.advisor.advice_id == 1 && a.advisor.anim_state == 1 && a.advisor.drawn && !a.advisor.bubble);
-    CHECK(a.until_up());
-    a.frame();
-    CHECK(a.advisor.bubble && a.advisor.drawn);
-
-    // Drawn: the message wrapped into the narrowest bubble that holds it.
     th::UiLayer layer;
     layer.resize(th::kUiWidth, th::kUiHeight);
     layer.clear();
@@ -296,6 +299,26 @@ void test_advisor_tutorial(const char *dir)
     // the right end.
     int text_x = 515 - pieces * panel.at(38).width + 8 - panel.at(37).width;
     CHECK(text_x > left && text_x + widest < right);
+}
+
+} // namespace
+
+void test_advisor_tutorial(const char *dir)
+{
+    AdvisorFixture a;
+    CHECK(a.start(dir, true));
+    if (!a.f.level)
+        return;
+    CHECK(a.f.gd.anims().starts.size() > 2374);
+    const th::LanguageText &text = a.f.gd.text();
+    // The level starts with the tutorial's first message.
+    a.frame();
+    CHECK(a.advisor.text == text.advisor(29) && a.advisor.rewrap && a.advisor.tutorial_highlight == 0x13);
+    CHECK(a.advisor.advice_id == 1 && a.advisor.anim_state == 1 && a.advisor.drawn && !a.advisor.bubble);
+    CHECK(a.until_up());
+    a.frame();
+    CHECK(a.advisor.bubble && a.advisor.drawn);
+    check_tutorial_bubble(a);
 
     // Opening the furnish corridor requester moves on: its hints are help
     // text in high resolution, and he is hidden.
@@ -307,36 +330,13 @@ void test_advisor_tutorial(const char *dir)
     CHECK(a.advisor.tutorial_highlight == 0xa);
 }
 
-void test_advisor_advice(const char *dir)
+namespace
 {
-    AdvisorFixture a;
-    CHECK(a.start(dir, false));
-    if (!a.f.level)
-        return;
-    const th::LanguageText &text = a.f.gd.text();
-    // Without the tutorial nothing is said at the start.
-    for (int i = 0; i < 50; i++)
-        a.frame();
-    CHECK(a.advisor.anim_state == 0 && !a.advisor.drawn && a.advisor.advice_id == 0);
 
-    // A reception desk with no receptionist on level 1, and an event's
-    // message: the event's comes first, being earlier in the table.
-    th::World &w = a.f.game->world;
-    int cell = free_staff_cell(w, *a.f.level);
-    CHECK(cell >= 0 && th::place_object(w, a.f.gd.anims(), cell, 11, 0, 0, true) != 0);
-    a.advisor.forced_advice_id = 7;
-    a.frame();
-    CHECK(a.advisor.text == text.at(th::TextSection::ForcedAdvice, 7) && a.advisor.forced_advice_id == 0);
-    CHECK(a.advisor.advice_id == 17 && a.advisor.time_left == 0x82 / 2);
-    CHECK(a.until_up());
-    for (int i = 0; i < 0x82 && a.advisor.advice_id == 17; i++)
-        a.frame();
-    CHECK(a.advisor.advice_id == 80 && a.advisor.text == text.advisor(0x69) && a.advisor.rewrap);
-    a.frame();
-    CHECK(a.advisor.bubble);
-
-    // A right click on the bubble sends him away; the advice is not given
-    // again soon.
+// A right click on the bubble sends him away; the advice is not given
+// again soon.
+void check_advice_dismissed(AdvisorFixture &a)
+{
     th::UiLayer layer;
     layer.resize(th::kUiWidth, th::kUiHeight);
     th::draw_advisor(layer, a.advisor, a.f.gd, a.font);
@@ -355,5 +355,37 @@ void test_advisor_advice(const char *dir)
     for (int i = 0; i < 200 && a.advisor.anim_state; i++)
         a.frame();
     CHECK(a.advisor.anim_state == 0 && !th::advisor_hit(a.advisor, 560, 400));
+}
+
+} // namespace
+
+void test_advisor_advice(const char *dir)
+{
+    AdvisorFixture a;
+    CHECK(a.start(dir, false));
+    if (!a.f.level)
+        return;
+    const th::LanguageText &text = a.f.gd.text();
+    // Without the tutorial nothing is said at the start.
+    for (int i = 0; i < 50; i++)
+        a.frame();
+    CHECK(a.advisor.anim_state == 0 && !a.advisor.drawn && a.advisor.advice_id == 0);
+
+    // A reception desk with no receptionist on level 1, and an event's
+    // message: the event's comes first, being earlier in the table.
+    th::World &w = a.f.game->world;
+    int cell = free_staff_cell(w, *a.f.level);
+    CHECK(cell >= 0 && th::place_object(w, a.f.gd.anims(), {cell, 11, 0}, 0, true) != 0);
+    a.advisor.forced_advice_id = 7;
+    a.frame();
+    CHECK(a.advisor.text == text.at(th::TextSection::ForcedAdvice, 7) && a.advisor.forced_advice_id == 0);
+    CHECK(a.advisor.advice_id == 17 && a.advisor.time_left == 0x82 / 2);
+    CHECK(a.until_up());
+    for (int i = 0; i < 0x82 && a.advisor.advice_id == 17; i++)
+        a.frame();
+    CHECK(a.advisor.advice_id == 80 && a.advisor.text == text.advisor(0x69) && a.advisor.rewrap);
+    a.frame();
+    CHECK(a.advisor.bubble);
+    check_advice_dismissed(a);
     CHECK(a.advisor.advice[80].times_given == 1);
 }

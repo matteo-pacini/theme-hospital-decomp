@@ -2,8 +2,8 @@
 
 #include "core/data/palette.h"
 #include "core/data/text.h"
-#include "core/render/iso.h"
 #include "core/render/surface.h"
+#include "core/render/view.h"
 #include "core/ui/layer.h"
 #include "core/ui/windows.h"
 #include "core/world/events.h"
@@ -19,6 +19,7 @@ namespace th
 
 class Game;
 class GameData;
+struct Thing;
 struct World;
 
 // What the hire staff requester draws with besides its sheet (REQ11V): the
@@ -40,6 +41,14 @@ class HireStaffArt
   private:
     std::vector<uint8_t> faces_;
     Font count_font_;
+};
+
+// What the hire staff requester and the people's windows (core/ui/info_windows.h)
+// draw with: the requesters' art, the hire staff art and the language's text.
+struct WindowArt {
+    const RequesterArt &art;
+    const HireStaffArt &hire_art;
+    const LanguageText &text;
 };
 
 // The hire staff requester's state (the game's crequester while it is
@@ -126,15 +135,19 @@ Event place_staff_click(HireStaff &hire, const World &world, int cell);
 // qualifications (covered for other kinds), ability gauge and reference;
 // otherwise a blank panel. Moves on to the next applicant if the shown one
 // was taken. The advisor's flashing hints are not drawn.
-void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const RequesterArt &art,
-                     const HireStaffArt &hire_art, const World &world, const LanguageText &text);
+void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const WindowArt &window_art,
+                     const World &world);
 
 // draw_staff_cursor's drawing: the held applicant standing on `cell`, facing
-// +x, drawn into the hospital view as draw_world draws it (`view`,
-// `camera`), in greys where they may not be put down. `scratch` is
-// draw_world's: the size of `dst` and kept filled with kMaskColour.
-void draw_held_staff(Surface &dst, Rect view, Point camera, const HireStaff &hire, const World &world, int cell,
+// +x, drawn into the hospital view `target` as draw_world draws it, in
+// greys where they may not be put down. `scratch` is draw_world's: the size
+// of `target.dst` and kept filled with kMaskColour.
+void draw_held_staff(const ViewTarget &target, const HireStaff &hire, const World &world, int cell,
                      const GameData &data, Surface &scratch);
+
+// draw_face (0x6ae00): the face of member of staff `staff` from `faces`
+// (HireStaffArt::faces) in its border, its bottom left at (x, y).
+void draw_face(UiLayer &layer, const std::vector<uint8_t> &faces, const Thing &staff, int x, int y);
 
 // generate_bw_remap (0x1a5f4): for each of the first 255 colours of
 // `palette`, the nearest grey in it (LbPaletteFindColour); entry 255 is 0.

@@ -49,8 +49,10 @@ struct IllnessFigures {
     uint16_t cured = 0;
     uint16_t deaths = 0;
     uint16_t turned_away = 0;
-    // Drug cures: effectiveness in percent.
+    // Drug cures: effectiveness in percent, and the cost of a dose
+    // (administer_drugs).
     uint16_t drug_effectiveness = 0;
+    int32_t drug_cost = 0;
 };
 
 // The player's hospital settings the charts show and change through
@@ -82,7 +84,8 @@ struct HospitalSettings {
 
 // init_player's part (src/start.cpp) for the player: default policy (rest
 // at gbv.tired), research split evenly, each illness's knowledge (expertise
-// Known) and drug effectiveness (gbv.start_rating).
+// Known) and drug effectiveness and cost (setup_drug: gbv.start_rating and
+// start_cost).
 void start_hospital_settings(HospitalSettings &settings, const Balance &balance);
 
 // setup_insurances (0x90f70), single player: the level's three insurance
@@ -195,6 +198,9 @@ struct Charts {
     int slist_filter = 1;
     int slist_page = 0;
     int slist_cursor = 0;
+    // othervar.slist_staff: the member of staff the list opens on, as the
+    // staff window's face sets it (kept after, as in the game); 0 for none.
+    uint16_t slist_staff = 0;
     // Bank manager: its face animations' frames, the graph's line colours
     // and the sprites its insurance buttons are drawn pressed with.
     std::array<int, 3> face_frame{};

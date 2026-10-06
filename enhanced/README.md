@@ -92,10 +92,26 @@ Milestone 4 so far, the game's interface:
   research, not there yet, to be built in the game) and psychiatry (which
   also cures), the ward's nurse putting patients to bed, the fees, the
   machines' wear and the handymen's repairs; emergencies offered (not
-  taken on).
+  taken on);
+- the pharmacy (drugs, and the cabinet for invisibility and transparency)
+  and inflation: patients cured and going home cured, or not; patients
+  dying, floating away or taken by the grim reaper into the gates of hell.
+- staff rooms and toilets: tired staff (past the policy's "rest at", or
+  ordered to rest) going for a break to the nearest staff room and resting
+  there on its sofa, at pool or the video game until no longer tired, then
+  back to work; patients with a full bladder leaving their queue for the
+  toilets, a free toilet and sink, and wetting themselves with none;
+- clicking people on the map (their pointers as the mouse passes over
+  them): the patient window (health graph or treatments, happiness, thirst
+  and warmth, send home, guess a cure, the casebook) and the staff and
+  handyman windows (face, name, wage, qualifications, happiness, tiredness
+  and ability, the handyman's priorities, pick up, sack, the staff list),
+  each with a view of its person; a click on it centres the hospital on
+  them, a right click moves on to the next one.
 
-Not yet: the treatment rooms, research, staff rooms, earthquakes and
-editing rooms.
+Not yet: the other treatment rooms (all but the fracture clinic, which
+level 8 lets you build, need research), the operating theatre, research,
+the year's end awards and trophies, earthquakes and editing rooms.
 Route planning defaults to A*; the game's wall following stays selectable
 in the tools window.
 
@@ -184,7 +200,21 @@ sacked during a consultation; `general_diag.txt`, `psychiatry.txt` and
 `ward.txt`: the GP's office and a diagnosis room with its doctor or nurse;
 `cardiogram.txt`, on level 6, where the cardiogram can be built: its own
 GP's office, the cardiogram room, its doctor and a handyman to repair it;
-`th_replay --level 6` and orig_trace.sh's LEVEL 6 for that one), compared
+`th_replay --level 6` and orig_trace.sh's LEVEL 6 for that one;
+`treatment.txt`: general_diag.txt with a pharmacy and its nurse, an
+inflation room and its doctor, and a policy guessing cures early, so that
+patients are cured and die; `info_windows.txt`: treatment.txt with a
+handyman whose priorities are changed and patients sent home and made to
+guess a cure from their windows; `staff_room.txt`: ward.txt with a staff
+room, a handyman and a second receptionist, the policy's "rest at" low
+and then raised, staff picked up and ordered out of their break, and the
+receptionist ordered to rest; `staff_room_full.txt`: treatment.txt with a
+staff room holding a sofa alone and many tired staff at once;
+`staff_room_none.txt`: tired and ordered rests with no staff room;
+`toilets.txt`: patients waiting at the reception of a GP's office with no
+doctor, in a warm corridor with a drinks machine, using toilets and a sink,
+one sent home on the toilet; `toilets_busy.txt`: the same with one toilet;
+`toilets_none.txt`: no toilets, patients wetting themselves), compared
 with SKIP `computer_action,manage_rats,generate_disaster,generate_mayors`:
 
     enhanced/tools/replay/orig_trace.sh orig.txt 18000 \

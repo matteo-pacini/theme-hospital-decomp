@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <optional>
 #include <queue>
 #include <tuple>
 #include <utility>
@@ -118,6 +119,19 @@ struct Bresenham {
     }
 };
 
+// line_of_sight_cleanup's skip: moves j to the furthest of the next four
+// waypoints in sight of cur, if any is.
+bool line_of_sight_cleanup_skip(const World &w, const WallhugPath &path, Waypoint cur, uint32_t &j)
+{
+    for (uint32_t k = 4; k > 0; k--) {
+        if (j + k < path.count && line_of_sight(w, cur, path.route[j + k])) {
+            j += k;
+            return true;
+        }
+    }
+    return false;
+}
+
 // line_of_sight_cleanup (0x48b64).
 bool line_of_sight_cleanup(const World &w, WallhugPath &path, uint32_t first)
 {
@@ -129,15 +143,10 @@ bool line_of_sight_cleanup(const World &w, WallhugPath &path, uint32_t first)
         Waypoint cur = first == 0 ? path.start : path.route[first - 1];
         progress = false;
         while (path.count > j) {
-            bool skipped = false;
-            for (uint32_t k = 4; k > 0 && !skipped; k--) {
-                if (j + k < path.count && line_of_sight(w, cur, path.route[j + k])) {
-                    j += k;
-                    progress = changed = skipped = true;
-                }
-            }
-            if (skipped)
+            if (line_of_sight_cleanup_skip(w, path, cur, j)) {
+                progress = changed = true;
                 continue;
+            }
             cur = path.route[i] = path.route[j];
             i++;
             j++;
@@ -166,79 +175,91 @@ struct Hugger {
 constexpr uint32_t kHugBack = 0x32;
 constexpr uint32_t kHugFull = 0x33;
 
-// wallhug_hugstep (0x49400).
+// hugstep's corner: records the follower's position, false (heading
+// kHugFull) once route is full.
+bool hugstep_record_corner(Hugger &h)
+{
+    h.route[h.count++] = h.pos;
+    if (h.count > 0xfb) {
+        h.dir = kHugFull;
+        return false;
+    }
+    return true;
+}
+
+// hugstep's move: turns away from a wall ahead, else steps on and turns
+// towards the wall side when it opens up; false once route is full.
+bool hugstep_move(const World &w, Hugger &h)
+{
+    if (wall_in_way(w, h.pos.x, h.pos.y, h.dir)) {
+        h.dir = uint32_t(int32_t(h.dir) - h.turn) & 3;
+        return hugstep_record_corner(h);
+    }
+    h.pos = step(h.pos, h.dir);
+    uint32_t dir = uint32_t(int32_t(h.dir) + h.turn) & 3;
+    if (wall_in_way(w, h.pos.x, h.pos.y, dir))
+        return true;
+    h.dir = dir;
+    return hugstep_record_corner(h);
+}
+
+// hugstep's test that `end` lies beyond the wall side.
+bool hugstep_end_beyond_wall(const Hugger &h)
+{
+    switch (uint32_t(int32_t(h.dir) + h.turn) & 3) {
+    case 0:
+        return h.end.y < h.pos.y;
+    case 1:
+        return h.end.x > h.pos.x;
+    case 2:
+        return h.end.y > h.pos.y;
+    case 3:
+        return h.end.x < h.pos.x;
+    }
+    return false;
+}
+
+// hugstep's test that `end` lies behind the heading.
+bool hugstep_end_behind(const Hugger &h)
+{
+    switch (h.dir) {
+    case 0:
+        return h.end.y > h.pos.y;
+    case 1:
+        return h.end.x < h.pos.x;
+    case 2:
+        return h.end.y < h.pos.y;
+    case 3:
+        return h.end.x > h.pos.x;
+    }
+    return false;
+}
+
+// hugstep's test that the follower is within the box from the hit to `end`,
+// not at the hit.
+bool hugstep_within_box(const Hugger &h)
+{
+    if (h.hit.x <= h.end.x && (h.pos.x < h.hit.x || h.pos.x > h.end.x))
+        return false;
+    if (h.hit.x >= h.end.x && (h.pos.x > h.hit.x || h.pos.x < h.end.x))
+        return false;
+    if (h.hit.y <= h.end.y && (h.pos.y < h.hit.y || h.pos.y > h.end.y))
+        return false;
+    if (h.hit.y >= h.end.y && (h.pos.y > h.hit.y || h.pos.y < h.end.y))
+        return false;
+    return !same(h.hit, h.pos);
+}
+
+// wallhug_hugstep (0x49400). Back on course (kHugBack) once `end` does not
+// lie beyond the wall side nor behind the heading, and the follower is
+// within the box from the hit to `end`.
 void hugstep(const World &w, Hugger &h)
 {
     if (h.dir == kHugFull)
         return;
-    if (wall_in_way(w, h.pos.x, h.pos.y, h.dir)) {
-        h.dir = uint32_t(int32_t(h.dir) - h.turn) & 3;
-        h.route[h.count++] = h.pos;
-        if (h.count > 0xfb) {
-            h.dir = kHugFull;
-            return;
-        }
-    } else {
-        h.pos = step(h.pos, h.dir);
-        uint32_t dir = uint32_t(int32_t(h.dir) + h.turn) & 3;
-        if (!wall_in_way(w, h.pos.x, h.pos.y, dir)) {
-            h.dir = dir;
-            h.route[h.count++] = h.pos;
-            if (h.count > 0xfb) {
-                h.dir = kHugFull;
-                return;
-            }
-        }
-    }
-    // Back on course once `end` does not lie beyond the wall side...
-    switch (uint32_t(int32_t(h.dir) + h.turn) & 3) {
-    case 0:
-        if (h.end.y < h.pos.y)
-            return;
-        break;
-    case 1:
-        if (h.end.x > h.pos.x)
-            return;
-        break;
-    case 2:
-        if (h.end.y > h.pos.y)
-            return;
-        break;
-    case 3:
-        if (h.end.x < h.pos.x)
-            return;
-        break;
-    }
-    // ... nor behind the heading...
-    switch (h.dir) {
-    case 0:
-        if (h.end.y > h.pos.y)
-            return;
-        break;
-    case 1:
-        if (h.end.x < h.pos.x)
-            return;
-        break;
-    case 2:
-        if (h.end.y < h.pos.y)
-            return;
-        break;
-    case 3:
-        if (h.end.x > h.pos.x)
-            return;
-        break;
-    }
-    // ... and the follower is within the box from the hit to `end`, not at
-    // the hit.
-    if (h.hit.x <= h.end.x && (h.pos.x < h.hit.x || h.pos.x > h.end.x))
+    if (!hugstep_move(w, h))
         return;
-    if (h.hit.x >= h.end.x && (h.pos.x > h.hit.x || h.pos.x < h.end.x))
-        return;
-    if (h.hit.y <= h.end.y && (h.pos.y < h.hit.y || h.pos.y > h.end.y))
-        return;
-    if (h.hit.y >= h.end.y && (h.pos.y > h.hit.y || h.pos.y < h.end.y))
-        return;
-    if (same(h.hit, h.pos))
+    if (hugstep_end_beyond_wall(h) || hugstep_end_behind(h) || !hugstep_within_box(h))
         return;
     h.dir = kHugBack;
 }
@@ -263,14 +284,43 @@ bool add_huggers_path(WallhugPath &path, const Hugger &h)
     return true;
 }
 
+// continue_trivial's way round the wall hit at `cur` heading `dir`: a
+// follower each way along it until one is back on course, whose corners
+// are added to the path. False where the game gives up: the followers meet,
+// both fill up, the path would overflow or `limit` steps are used.
+bool continue_trivial_hug_round(const World &w, WallhugPath &path, Waypoint cur, uint32_t dir, uint32_t limit,
+                                uint32_t &steps)
+{
+    Hugger left;
+    Hugger right;
+    left.pos = right.pos = left.hit = right.hit = cur;
+    left.turn = -1;
+    right.turn = 1;
+    left.dir = (dir + 1) & 3;
+    right.dir = (dir - 1) & 3;
+    left.end = right.end = path.end;
+    for (; steps < limit; steps++) {
+        hugstep(w, left);
+        if (huggers_met_again(left, right))
+            return false;
+        hugstep(w, right);
+        if (huggers_met_again(left, right))
+            return false;
+        if (left.dir == kHugBack)
+            return add_huggers_path(path, left);
+        if (right.dir == kHugBack)
+            return add_huggers_path(path, right);
+        if (left.dir == kHugFull && right.dir == kHugFull)
+            return false;
+    }
+    return false;
+}
+
 // wallhug_continue_trivial (0x48ea4); `steps` is the game's
 // wallhug_current_count. Its bookkeeping for wallhug_looking_for_last is
 // left out: nothing in the game sets that flag.
 uint32_t continue_trivial(const World &w, WallhugPath &path, Waypoint cur, uint32_t limit, uint32_t &steps)
 {
-    std::array<Hugger, 2> huggers;
-    Hugger &left = huggers[0];
-    Hugger &right = huggers[1];
     Bresenham line(cur, path.end);
     for (; steps < limit && !same(cur, path.end); steps++) {
         uint32_t dir = line.next();
@@ -279,35 +329,7 @@ uint32_t continue_trivial(const World &w, WallhugPath &path, Waypoint cur, uint3
             continue;
         }
         path.route[path.count++] = cur;
-        left.pos = right.pos = left.hit = right.hit = cur;
-        left.turn = -1;
-        right.turn = 1;
-        left.dir = (dir + 1) & 3;
-        right.dir = (dir - 1) & 3;
-        left.end = right.end = path.end;
-        left.count = right.count = 0;
-        while (steps < limit) {
-            hugstep(w, left);
-            if (huggers_met_again(left, right))
-                goto fail;
-            hugstep(w, right);
-            if (huggers_met_again(left, right))
-                goto fail;
-            if (left.dir == kHugBack) {
-                if (!add_huggers_path(path, left))
-                    goto fail;
-                break;
-            }
-            if (right.dir == kHugBack) {
-                if (!add_huggers_path(path, right))
-                    goto fail;
-                break;
-            }
-            if (left.dir == kHugFull && right.dir == kHugFull)
-                goto fail;
-            steps++;
-        }
-        if (steps == limit)
+        if (!continue_trivial_hug_round(w, path, cur, dir, limit, steps))
             goto fail;
         line_of_sight_cleanup(w, path, 0);
         cur = path.route[size_t(path.count - 1)];
@@ -376,180 +398,250 @@ int32_t rand_ffff(World &w, std::source_location caller = std::source_location::
     return int32_t(old_newrand(w.seed, caller) % 0xffff);
 }
 
+// orthonav_wn's working state: the walker's cell and headings, the deltas
+// to the next waypoint and the cell `dir` leads to.
+struct OrthonavWn {
+    World &w;
+    OrthonavPath &path;
+    int32_t x;
+    int32_t y;
+    int32_t dir;
+    int32_t &other;
+    // Draws are traced as orthonav_wn's.
+    std::source_location caller;
+    // Deltas, in 1/256 cells, from (x0, y0) and from (x, y) to the waypoint.
+    int32_t ldx = 0;
+    int32_t ldy = 0;
+    int32_t dx = 0;
+    int32_t dy = 0;
+    // The x and y directions towards the waypoint.
+    int32_t xdir = 0;
+    int32_t ydir = 0;
+    int32_t nx = 0;
+    int32_t ny = 0;
+};
+
+// orthonav_wn's aim at the next waypoint: the deltas, xdir and ydir (dir
+// along an axis with no delta), and dir and other turned to them.
+void orthonav_wn_aim(OrthonavWn &s)
+{
+    const OrthonavPath &path = s.path;
+    s.ldx = (path.steps[0].x - path.x0) << 8;
+    s.ldy = (path.steps[0].y - path.y0) << 8;
+    s.dx = (path.steps[0].x - s.x) << 8;
+    s.dy = (path.steps[0].y - s.y) << 8;
+    if (s.dx != 0)
+        s.xdir = s.dx > 0 ? 1 : 3;
+    else
+        s.xdir = s.dir == 3 || s.dir == 1 ? s.dir : 1;
+    if (s.dy != 0)
+        s.ydir = s.dy > 0 ? 2 : 0;
+    else
+        s.ydir = s.dir == 2 || s.dir == 0 ? s.dir : 2;
+    if (s.dir != s.xdir && s.dir != s.ydir) {
+        if (s.dir == 1 || s.dir == 3) {
+            s.dir = s.ydir;
+            s.other = s.xdir;
+        } else {
+            s.dir = s.xdir;
+            s.other = s.ydir;
+        }
+    } else if (s.dir == s.xdir) {
+        s.other = s.ydir;
+    } else {
+        s.other = s.xdir;
+    }
+}
+
+// orthonav_wn's test, with a waypoint after the next, that the walker is in
+// line with the next and stepping on along it, with the one after not back
+// the way it is going: the next can be dropped.
+bool orthonav_wn_steps_past(const OrthonavWn &s)
+{
+    const OrthonavPath &path = s.path;
+    if (wall_in_way(s.w, s.x, s.y, uint32_t(s.dir)))
+        return false;
+    if (!((path.steps[0].x == s.x && s.dir == s.xdir) || (path.steps[0].y == s.y && s.dir == s.ydir)))
+        return false;
+    int32_t ex = path.steps[1].x - s.x;
+    int32_t ey = path.steps[1].y - s.y;
+    bool keep = (s.dir == 0 && ey > 0) || (s.dir == 2 && ey < 0) || (s.dir == 3 && ex > 0) || (s.dir == 1 && ex < 0);
+    return !keep;
+}
+
+// orthonav_wn's head: drops the waypoints reached or stepped past and aims
+// at the next; the direction when being in line with it settles it.
+std::optional<int> orthonav_wn_head(OrthonavWn &s)
+{
+    OrthonavPath &path = s.path;
+    bool deleted = false;
+    for (;;) {
+        if (path.steps[0].x == s.x && path.steps[0].y == s.y) {
+            if (path.count == 1)
+                return kNavArrived;
+            delete_first_path_entry(path);
+            deleted = true;
+        }
+        orthonav_wn_aim(s);
+        if (path.count <= 1)
+            break;
+        if (deleted || !orthonav_wn_steps_past(s)) {
+            if ((path.steps[0].x == s.x && s.dir == s.ydir) || (path.steps[0].y == s.y && s.dir == s.xdir))
+                return s.dir;
+            return std::nullopt;
+        }
+        delete_first_path_entry(path);
+        deleted = true;
+    }
+    if (path.steps[0].x == s.x)
+        return path.steps[0].y < s.y ? 0 : 2;
+    if (path.steps[0].y == s.y)
+        return path.steps[0].x < s.x ? 3 : 1;
+    return std::nullopt;
+}
+
+void orthonav_wn_next_cell(OrthonavWn &s)
+{
+    s.nx = s.x + kAroundXy[size_t(s.dir)][0];
+    s.ny = s.y + kAroundXy[size_t(s.dir)][1];
+}
+
+void orthonav_wn_swap_dirs(OrthonavWn &s)
+{
+    std::swap(s.dir, s.other);
+}
+
+// orthonav_wn's look ahead: the cell `dir` leads to, turning to `other`
+// for a wall one or (by chance) two cells on, at random.
+void orthonav_wn_look_ahead(OrthonavWn &s)
+{
+    orthonav_wn_next_cell(s);
+    if (rand_ffff(s.w, s.caller) >= 0xa000)
+        return;
+    if (wall_in_way(s.w, s.nx, s.ny, uint32_t(s.dir))) {
+        orthonav_wn_swap_dirs(s);
+        orthonav_wn_next_cell(s);
+    } else if (rand_ffff(s.w, s.caller) < 0x8000) {
+        int32_t nx2 = s.nx + kAroundXy[size_t(s.dir)][0];
+        int32_t ny2 = s.ny + kAroundXy[size_t(s.dir)][1];
+        if (wall_in_way(s.w, nx2, ny2, uint32_t(s.dir))) {
+            orthonav_wn_swap_dirs(s);
+            orthonav_wn_next_cell(s);
+        }
+    }
+}
+
+// orthonav_wn's test that the next cell is past both the start and the
+// waypoint.
+bool orthonav_wn_overshoots(const OrthonavWn &s)
+{
+    const OrthonavPath &path = s.path;
+    switch (s.dir) {
+    case 0:
+        return path.y0 > s.ny && path.steps[0].y > s.ny;
+    case 2:
+        return path.y0 < s.ny && path.steps[0].y < s.ny;
+    case 3:
+        return path.x0 > s.nx && path.steps[0].x > s.nx;
+    case 1:
+        return path.x0 < s.nx && path.steps[0].x < s.nx;
+    }
+    return false;
+}
+
+// orthonav_wn_back_to_line heading along y: the column from the next cell
+// to the line.
+bool orthonav_wn_back_to_line_column(const OrthonavWn &s)
+{
+    const OrthonavPath &path = s.path;
+    if ((path.x0 > s.nx && s.ldx >= 0) || (path.x0 < s.nx && s.ldx <= 0))
+        return false;
+    if (s.ldx == 0)
+        return true;
+    int32_t fy = (((s.nx - path.x0) << 8) * s.ldy + 0x80) / s.ldx + (path.y0 << 8) + 0x80;
+    if ((s.ny << 8 < fy && s.dir == 0) || (s.ny << 8 > fy && s.dir == 2))
+        return false;
+    int32_t fx = s.nx << 8;
+    return free_orthog_line(s.w, s.nx, s.ny, fx >> 8, fy >> 8);
+}
+
+// orthonav_wn_back_to_line heading along x: the row from the next cell to
+// the line.
+bool orthonav_wn_back_to_line_row(const OrthonavWn &s)
+{
+    const OrthonavPath &path = s.path;
+    if ((path.y0 > s.ny && s.ldy >= 0) || (path.y0 < s.ny && s.ldy <= 0))
+        return false;
+    if (s.ldy == 0)
+        return true;
+    int32_t fx = (((s.ny - path.y0) << 8) * s.ldx + 0x80) / s.ldy + (path.x0 << 8) + 0x80;
+    if ((s.nx << 8 < fx && s.dir == 3) || (s.nx << 8 > fx && s.dir == 1))
+        return false;
+    int32_t fy = s.ny << 8;
+    return free_orthog_line(s.w, s.nx, s.ny, fx >> 8, fy >> 8);
+}
+
+// orthonav_wn's test for a clear row or column from the next cell back to
+// the line, on the near side of it.
+bool orthonav_wn_back_to_line(const OrthonavWn &s)
+{
+    return s.dir == s.ydir ? orthonav_wn_back_to_line_column(s) : orthonav_wn_back_to_line_row(s);
+}
+
+// orthonav_wn's last resort: dir if a clear row or column leads from the
+// cell it leads to (nx, ny, not swapped with it) to the line, else other.
+int orthonav_wn_fall_back(const OrthonavWn &s)
+{
+    const OrthonavPath &path = s.path;
+    int32_t fx;
+    int32_t fy;
+    if (s.dir == s.xdir) {
+        if ((path.x0 > s.nx && s.ldx > 0) || (path.x0 < s.nx && s.ldx < 0))
+            return s.other;
+        if (s.ldx == 0)
+            fy = s.ny << 8;
+        else
+            fy = (path.y0 << 8) + (((s.nx - path.x0) << 8) * s.ldy + 0x80) / s.ldx + 0x80;
+        fx = s.nx << 8;
+    } else {
+        if ((path.y0 > s.ny && s.ldy > 0) || (path.y0 < s.ny && s.ldy < 0))
+            return s.other;
+        if (s.ldy == 0)
+            fx = s.nx << 8;
+        else
+            fx = (path.x0 << 8) + (((s.ny - path.y0) << 8) * s.ldx + 0x80) / s.ldy + 0x80;
+        fy = s.ny << 8;
+    }
+    if (free_orthog_line(s.w, s.nx, s.ny, fx >> 8, fy >> 8))
+        return s.dir;
+    return s.other;
+}
+
 // orthonav_wn (0x5562c): the direction to step from (x, y) towards the
 // path's next waypoint, keeping near the line from (x0, y0) to it, with some
 // randomness; kNavArrived on the last waypoint. `other` (the game's
 // other_wherefacing) gets the second-best direction.
 int orthonav_wn(World &w, OrthonavPath &path, int32_t x, int32_t y, int32_t dir, int32_t &other)
 {
-    int32_t ldx;
-    int32_t ldy;
-    int32_t dx;
-    int32_t dy;
-    int32_t xdir;
-    int32_t ydir;
-    int32_t nx = 0;
-    int32_t ny = 0;
-    int32_t fx;
-    int32_t fy;
-    bool deleted = false;
-
-    auto next_cell = [&] {
-        nx = x + kAroundXy[size_t(dir)][0];
-        ny = y + kAroundXy[size_t(dir)][1];
-    };
-    auto swap_dirs = [&] { std::swap(dir, other); };
-
-again:
-    if (path.steps[0].x == x && path.steps[0].y == y) {
-        if (path.count == 1)
-            return kNavArrived;
-        delete_first_path_entry(path);
-        deleted = true;
-    }
-    ldx = (path.steps[0].x - path.x0) << 8;
-    ldy = (path.steps[0].y - path.y0) << 8;
-    dx = (path.steps[0].x - x) << 8;
-    dy = (path.steps[0].y - y) << 8;
-    if (dx > 0)
-        xdir = 1;
-    else if (dx < 0)
-        xdir = 3;
-    else if (dir == 3 || dir == 1)
-        xdir = dir;
-    else
-        xdir = 1;
-    if (dy > 0)
-        ydir = 2;
-    else if (dy < 0)
-        ydir = 0;
-    else if (dir == 2 || dir == 0)
-        ydir = dir;
-    else
-        ydir = 2;
-    if (dir != xdir && dir != ydir) {
-        if (dir == 1 || dir == 3) {
-            dir = ydir;
-            other = xdir;
-        } else {
-            dir = xdir;
-            other = ydir;
-        }
-    } else if (dir == xdir) {
-        other = ydir;
-    } else {
-        other = xdir;
-    }
-    if (path.count > 1) {
-        if (!deleted && !wall_in_way(w, x, y, uint32_t(dir)) &&
-            ((path.steps[0].x == x && dir == xdir) || (path.steps[0].y == y && dir == ydir))) {
-            // In line with the waypoint and stepping on: drop it unless the
-            // one after lies back the way it is going.
-            int32_t ex = path.steps[1].x - x;
-            int32_t ey = path.steps[1].y - y;
-            bool keep = (dir == 0 && ey > 0) || (dir == 2 && ey < 0) || (dir == 3 && ex > 0) || (dir == 1 && ex < 0);
-            if (!keep) {
-                delete_first_path_entry(path);
-                deleted = true;
-                goto again;
-            }
-        }
-        if ((path.steps[0].x == x && dir == ydir) || (path.steps[0].y == y && dir == xdir))
-            return dir;
-    } else {
-        if (path.steps[0].x == x)
-            return path.steps[0].y < y ? 0 : 2;
-        if (path.steps[0].y == y)
-            return path.steps[0].x < x ? 3 : 1;
-    }
-    if (ldx == 0 && dx == 0)
-        return ydir;
-    if (ldy == 0 && dy == 0)
-        return xdir;
-    if (wall_in_way(w, x, y, uint32_t(dir)))
+    OrthonavWn s{w, path, x, y, dir, other, std::source_location::current()};
+    if (std::optional<int> settled = orthonav_wn_head(s))
+        return *settled;
+    if (s.ldx == 0 && s.dx == 0)
+        return s.ydir;
+    if (s.ldy == 0 && s.dy == 0)
+        return s.xdir;
+    if (wall_in_way(w, x, y, uint32_t(s.dir)))
         return other;
-retry:
-    next_cell();
-    if (rand_ffff(w) < 0xa000) {
-        if (wall_in_way(w, nx, ny, uint32_t(dir))) {
-            swap_dirs();
-            next_cell();
-        } else if (rand_ffff(w) < 0x8000) {
-            int32_t nx2 = nx + kAroundXy[size_t(dir)][0];
-            int32_t ny2 = ny + kAroundXy[size_t(dir)][1];
-            if (wall_in_way(w, nx2, ny2, uint32_t(dir))) {
-                swap_dirs();
-                next_cell();
-            }
-        }
+    for (;;) {
+        orthonav_wn_look_ahead(s);
+        if (orthonav_wn_overshoots(s))
+            return other;
+        if (orthonav_wn_back_to_line(s))
+            return s.dir;
+        if (rand_ffff(w, s.caller) <= 0xe000)
+            return orthonav_wn_fall_back(s);
+        orthonav_wn_swap_dirs(s);
     }
-    // Stepping past both the start and the waypoint.
-    switch (dir) {
-    case 0:
-        if (path.y0 > ny && path.steps[0].y > ny)
-            return other;
-        break;
-    case 2:
-        if (path.y0 < ny && path.steps[0].y < ny)
-            return other;
-        break;
-    case 3:
-        if (path.x0 > nx && path.steps[0].x > nx)
-            return other;
-        break;
-    case 1:
-        if (path.x0 < nx && path.steps[0].x < nx)
-            return other;
-        break;
-    }
-    // A clear row or column from the next cell back to the line?
-    if (dir == ydir) {
-        if ((path.x0 > nx && ldx >= 0) || (path.x0 < nx && ldx <= 0))
-            goto swap;
-        if (ldx == 0)
-            return dir;
-        fy = (((nx - path.x0) << 8) * ldy + 0x80) / ldx + (path.y0 << 8) + 0x80;
-        if ((ny << 8 < fy && dir == 0) || (ny << 8 > fy && dir == 2))
-            goto swap;
-        fx = nx << 8;
-    } else {
-        if ((path.y0 > ny && ldy >= 0) || (path.y0 < ny && ldy <= 0))
-            goto swap;
-        if (ldy == 0)
-            return dir;
-        fx = (((ny - path.y0) << 8) * ldx + 0x80) / ldy + (path.x0 << 8) + 0x80;
-        if ((nx << 8 < fx && dir == 3) || (nx << 8 > fx && dir == 1))
-            goto swap;
-        fy = ny << 8;
-    }
-    if (free_orthog_line(w, nx, ny, fx >> 8, fy >> 8))
-        return dir;
-swap:
-    if (rand_ffff(w) > 0xe000) {
-        swap_dirs();
-        goto retry;
-    }
-    // nx, ny are still the cell `dir` leads to, not swapped with it.
-    if (dir == xdir) {
-        if ((path.x0 > nx && ldx > 0) || (path.x0 < nx && ldx < 0))
-            return other;
-        if (ldx == 0)
-            fy = ny << 8;
-        else
-            fy = (path.y0 << 8) + (((nx - path.x0) << 8) * ldy + 0x80) / ldx + 0x80;
-        fx = nx << 8;
-    } else {
-        if ((path.y0 > ny && ldy > 0) || (path.y0 < ny && ldy < 0))
-            return other;
-        if (ldy == 0)
-            fx = nx << 8;
-        else
-            fx = (path.x0 << 8) + (((ny - path.y0) << 8) * ldx + 0x80) / ldy + 0x80;
-        fy = ny << 8;
-    }
-    if (free_orthog_line(w, nx, ny, fx >> 8, fy >> 8))
-        return dir;
-    return other;
 }
 
 // person_in_way (0x442a0): a patient or member of staff on the cell next to
@@ -585,6 +677,120 @@ int32_t person_overlap(const World &w, uint16_t walker)
         id = other.cell_next;
     }
     return 0;
+}
+
+constexpr int kAstarUnseen = std::numeric_limits<int>::max();
+
+// astar_route's search from `start` until `goal` is closed: g, each cell's
+// cost from start (kAstarUnseen where not reached), and from, the cell each
+// was reached from.
+void astar_route_search(const World &world, Waypoint end, int start, int goal, std::vector<int> &g,
+                        std::vector<int> &from)
+{
+    auto h = [&](int cell) { return std::abs(cell % kMapSize - end.x) + std::abs(cell / kMapSize - end.y); };
+    std::vector<bool> closed(kMapCells, false);
+    // Open cells by (f, h, insertion order): ties go to the cell nearer the
+    // goal, then to the earlier one, so routes are the same every time.
+    using Entry = std::tuple<int, int, uint32_t, int>;
+    std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> open;
+    uint32_t order = 0;
+    g[size_t(start)] = 0;
+    open.emplace(h(start), h(start), order++, start);
+    while (!open.empty()) {
+        int cell = std::get<3>(open.top());
+        open.pop();
+        if (closed[size_t(cell)])
+            continue;
+        closed[size_t(cell)] = true;
+        if (cell == goal)
+            break;
+        int x = cell % kMapSize, y = cell / kMapSize;
+        for (uint32_t dir = 0; dir < 4; dir++) {
+            if (wall_in_way(world, x, y, dir))
+                continue;
+            int next = (x + kAroundXy[dir][0]) + (y + kAroundXy[dir][1]) * kMapSize;
+            int cost = g[size_t(cell)] + 1;
+            if (closed[size_t(next)] || cost >= g[size_t(next)])
+                continue;
+            g[size_t(next)] = cost;
+            from[size_t(next)] = cell;
+            open.emplace(cost + h(next), h(next), order++, next);
+        }
+    }
+}
+
+// astar_route's route along `cells`, pulled taut: from each waypoint, the
+// furthest cell ahead still in line of sight (looking up to 64 cells on).
+// False if it needs more waypoints than a route holds.
+bool astar_route_pull_taut(const World &world, WallhugPath &path, const std::vector<Waypoint> &cells)
+{
+    size_t cur = 0;
+    while (cur + 1 < cells.size() && path.count < path.route.size()) {
+        size_t best = cur + 1;
+        for (size_t j = cur + 2; j < cells.size() && j <= cur + 64; j++)
+            if (line_of_sight(world, cells[cur], cells[j]))
+                best = j;
+        path.route[path.count++] = cells[best];
+        cur = best;
+    }
+    return cur + 1 >= cells.size();
+}
+
+// orthonav_whatnext's result with no path planned: kNavWalledIn if walled
+// in on all four sides, else kNavNoPath.
+int orthonav_whatnext_no_path(const World &world, int x, int y)
+{
+    auto blocked_at = [&](int32_t d) { return wall_in_way(world, x, y, uint32_t(d)); };
+    if (blocked_at(0) && blocked_at(2) && blocked_at(3) && blocked_at(1))
+        return kNavWalledIn;
+    return kNavNoPath;
+}
+
+// orthonav_whatnext's way out when walled off from the plan: an open
+// direction, from a random roll (drawn as `caller`) that each direction not
+// leading away from the next waypoint uses up; kNavWalledIn with none.
+int orthonav_whatnext_walled_off(World &world, const OrthonavPath &path, int x, int y, std::source_location caller)
+{
+    auto blocked_at = [&](int32_t d) { return wall_in_way(world, x, y, uint32_t(d)); };
+    int next_dir = kNavWalledIn;
+    int32_t roll = int32_t(old_newrand(world.seed, caller) % 0xffff) + 0xffff;
+    do {
+        if (!blocked_at(0))
+            next_dir = 0;
+        if (path.steps[0].y <= y)
+            roll -= 0x4000;
+        if (roll < 0)
+            break;
+        if (!blocked_at(2))
+            next_dir = 2;
+        if (path.steps[0].y >= y)
+            roll -= 0x4000;
+        if (roll < 0)
+            break;
+        if (!blocked_at(3))
+            next_dir = 3;
+        if (path.steps[0].x <= x)
+            roll -= 0x4000;
+        if (roll < 0)
+            break;
+        if (!blocked_at(1))
+            next_dir = 1;
+        if (path.steps[0].x >= x)
+            roll -= 0x4000;
+    } while (roll >= 0);
+    return next_dir;
+}
+
+// walk_turn's step on in `dir`: a turn, or a start from the standing frame,
+// restarts the walk animation.
+void walk_turn_step_on(Thing &t, const AnimData &anims, const PersonAnims &kind, int dir)
+{
+    // Unlike play_frame, without check_frame.
+    size_t stand = size_t(kind.stand) + t.facing;
+    if (t.facing != dir || (stand < anims.starts.size() && anims.starts[stand].frame == t.sprite)) {
+        t.facing = uint8_t(dir);
+        play_frame(t, anims, kind.walk);
+    }
 }
 
 } // namespace
@@ -659,59 +865,18 @@ uint32_t astar_route(const World &world, WallhugPath &path)
         path.count = 1;
         return 0;
     }
-    auto h = [&](int cell) { return std::abs(cell % kMapSize - path.end.x) + std::abs(cell / kMapSize - path.end.y); };
-    constexpr int kUnseen = std::numeric_limits<int>::max();
-    std::vector<int> g(kMapCells, kUnseen);
+    std::vector<int> g(kMapCells, kAstarUnseen);
     std::vector<int> from(kMapCells, -1);
-    std::vector<bool> closed(kMapCells, false);
-    // Open cells by (f, h, insertion order): ties go to the cell nearer the
-    // goal, then to the earlier one, so routes are the same every time.
-    using Entry = std::tuple<int, int, uint32_t, int>;
-    std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> open;
-    uint32_t order = 0;
-    g[size_t(start)] = 0;
-    open.emplace(h(start), h(start), order++, start);
-    while (!open.empty()) {
-        int cell = std::get<3>(open.top());
-        open.pop();
-        if (closed[size_t(cell)])
-            continue;
-        closed[size_t(cell)] = true;
-        if (cell == goal)
-            break;
-        int x = cell % kMapSize, y = cell / kMapSize;
-        for (uint32_t dir = 0; dir < 4; dir++) {
-            if (wall_in_way(world, x, y, dir))
-                continue;
-            int next = (x + kAroundXy[dir][0]) + (y + kAroundXy[dir][1]) * kMapSize;
-            int cost = g[size_t(cell)] + 1;
-            if (closed[size_t(next)] || cost >= g[size_t(next)])
-                continue;
-            g[size_t(next)] = cost;
-            from[size_t(next)] = cell;
-            open.emplace(cost + h(next), h(next), order++, next);
-        }
-    }
-    if (g[size_t(goal)] == kUnseen)
+    astar_route_search(world, path.end, start, goal, g, from);
+    if (g[size_t(goal)] == kAstarUnseen)
         return kWallhugFailed;
 
     std::vector<Waypoint> cells;
     for (int cell = goal; cell != -1; cell = from[size_t(cell)])
         cells.push_back({uint8_t(cell % kMapSize), uint8_t(cell / kMapSize)});
     std::reverse(cells.begin(), cells.end());
-    // Pull the path taut: from each waypoint, the furthest cell ahead still in
-    // line of sight (looking up to 64 cells on).
-    size_t cur = 0;
-    while (cur + 1 < cells.size() && path.count < path.route.size()) {
-        size_t best = cur + 1;
-        for (size_t j = cur + 2; j < cells.size() && j <= cur + 64; j++)
-            if (line_of_sight(world, cells[cur], cells[j]))
-                best = j;
-        path.route[path.count++] = cells[best];
-        cur = best;
-    }
-    if (cur + 1 < cells.size())
-        return kWallhugFailed; // more waypoints than a route holds
+    if (!astar_route_pull_taut(world, path, cells))
+        return kWallhugFailed;
     return uint32_t(g[size_t(goal)]);
 }
 
@@ -754,12 +919,9 @@ bool free_orthog_line(const World &world, int32_t x1, int32_t y1, int32_t x2, in
 
 int orthonav_whatnext(World &world, uint16_t walker, OrthonavPath &path, int x, int y, int dir)
 {
+    if (path.count == 0)
+        return orthonav_whatnext_no_path(world, x, y);
     auto blocked_at = [&](int32_t d) { return wall_in_way(world, x, y, uint32_t(d)); };
-    if (path.count == 0) {
-        if (blocked_at(0) && blocked_at(2) && blocked_at(3) && blocked_at(1))
-            return kNavWalledIn;
-        return kNavNoPath;
-    }
     int32_t other = 0;
     int next_dir = orthonav_wn(world, path, x, y, dir, other);
     if (next_dir == kNavArrived) {
@@ -774,35 +936,7 @@ int orthonav_whatnext(World &world, uint16_t walker, OrthonavPath &path, int x, 
         orthonav_init(world, path, x, y, int8_t(path.x1), int8_t(path.y1));
         next_dir = orthonav_wn(world, path, x, y, dir, other);
         if (blocked_at(next_dir)) {
-            // Walled off from the plan: an open direction, from a random
-            // roll that each direction not leading away from the next
-            // waypoint uses up.
-            next_dir = kNavWalledIn;
-            int32_t roll = int32_t(old_newrand(world.seed) % 0xffff) + 0xffff;
-            do {
-                if (!blocked_at(0))
-                    next_dir = 0;
-                if (path.steps[0].y <= y)
-                    roll -= 0x4000;
-                if (roll < 0)
-                    break;
-                if (!blocked_at(2))
-                    next_dir = 2;
-                if (path.steps[0].y >= y)
-                    roll -= 0x4000;
-                if (roll < 0)
-                    break;
-                if (!blocked_at(3))
-                    next_dir = 3;
-                if (path.steps[0].x <= x)
-                    roll -= 0x4000;
-                if (roll < 0)
-                    break;
-                if (!blocked_at(1))
-                    next_dir = 1;
-                if (path.steps[0].x >= x)
-                    roll -= 0x4000;
-            } while (roll >= 0);
+            next_dir = orthonav_whatnext_walled_off(world, path, x, y, std::source_location::current());
             path.x1 = 0xff;
             return next_dir;
         }
@@ -938,15 +1072,9 @@ WalkResult walk_turn(World &world, const AnimData &anims, uint16_t person, uint3
             return WalkResult::WalledIn;
         case kNavNoPath:
             return WalkResult::NoPath;
-        default: {
-            // Unlike play_frame, without check_frame.
-            size_t stand = size_t(kind.stand) + t.facing;
-            if (t.facing != dir || (stand < anims.starts.size() && anims.starts[stand].frame == t.sprite)) {
-                t.facing = uint8_t(dir);
-                play_frame(t, anims, kind.walk);
-            }
+        default:
+            walk_turn_step_on(t, anims, kind, dir);
             break;
-        }
         }
     }
     // The game indexes around_xy with a stuck person's facing 4 too, off the

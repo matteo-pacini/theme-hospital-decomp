@@ -16,18 +16,21 @@
 namespace
 {
 
-// A sound bank file holding one sample, `pcm` (16-bit mono at `rate`), as
-// sample 1 with priority tag `priority`.
-std::vector<uint8_t> make_sound_bank(const std::vector<int16_t> &pcm, int rate, uint8_t priority)
+void put32(std::vector<uint8_t> &v, uint32_t x)
 {
-    auto put32 = [](std::vector<uint8_t> &v, uint32_t x) {
-        for (int i = 0; i < 4; i++)
-            v.push_back(uint8_t(x >> (8 * i)));
-    };
-    auto put16 = [](std::vector<uint8_t> &v, uint16_t x) {
-        v.push_back(uint8_t(x));
-        v.push_back(uint8_t(x >> 8));
-    };
+    for (int i = 0; i < 4; i++)
+        v.push_back(uint8_t(x >> (8 * i)));
+}
+
+void put16(std::vector<uint8_t> &v, uint16_t x)
+{
+    v.push_back(uint8_t(x));
+    v.push_back(uint8_t(x >> 8));
+}
+
+// A WAV file of `pcm`, 16-bit mono at `rate`.
+std::vector<uint8_t> make_wav(const std::vector<int16_t> &pcm, int rate)
+{
     std::vector<uint8_t> wav;
     uint32_t data_size = uint32_t(pcm.size() * 2);
     wav.insert(wav.end(), {'R', 'I', 'F', 'F'});
@@ -44,7 +47,14 @@ std::vector<uint8_t> make_sound_bank(const std::vector<int16_t> &pcm, int rate, 
     put32(wav, data_size);
     for (int16_t s : pcm)
         put16(wav, uint16_t(s));
+    return wav;
+}
 
+// A sound bank file holding one sample, `pcm` (16-bit mono at `rate`), as
+// sample 1 with priority tag `priority`.
+std::vector<uint8_t> make_sound_bank(const std::vector<int16_t> &pcm, int rate, uint8_t priority)
+{
+    const std::vector<uint8_t> wav = make_wav(pcm, rate);
     std::vector<uint8_t> file = wav;
     uint32_t records = uint32_t(file.size());
     file.resize(file.size() + 64); // record 0 unused, record 1 the sample
@@ -66,49 +76,44 @@ std::vector<uint8_t> make_sound_bank(const std::vector<int16_t> &pcm, int rate, 
     return file;
 }
 
-} // namespace
-
-void test_sound_player()
+// Writes a bank holding one four-frame sample at 100 Hz to `path`. Returns
+// whether it could.
+bool write_test_bank(const std::filesystem::path &path)
 {
-    auto path = std::filesystem::temp_directory_path() / "th_enhanced_test_bank.dat";
-    {
-        std::vector<uint8_t> bytes = make_sound_bank({16384, 16384, 16384, 16384}, 100, 0);
-        std::FILE *f = std::fopen(path.string().c_str(), "wb");
-        CHECK(f != nullptr);
-        if (!f)
-            return;
-        std::fwrite(bytes.data(), 1, bytes.size(), f);
-        std::fclose(f);
-    }
-    th::SoundBank bank;
-    std::string error;
-    CHECK(bank.load_file(path, &error));
-    std::filesystem::remove(path);
-    CHECK(bank.count() == 2);
-    CHECK(!bank.sample(0));
-    const th::Sample *s = bank.sample(1);
-    CHECK(s && s->name == "TEST.WAV" && s->frames() == 4 && s->rate == 100 && s->bits == 16);
+    std::vector<uint8_t> bytes = make_sound_bank({16384, 16384, 16384, 16384}, 100, 0);
+    std::FILE *f = std::fopen(path.string().c_str(), "wb");
+    CHECK(f != nullptr);
+    if (!f)
+        return false;
+    std::fwrite(bytes.data(), 1, bytes.size(), f);
+    std::fclose(f);
+    return true;
+}
 
+// Mixing `bank`'s sample 1: volume and pan, the play types, the voice limit
+// and pitch.
+void check_player_mixing(const th::SoundBank &bank)
+{
     th::SoundPlayer player;
     player.set_bank(&bank);
     std::vector<float> out(16);
     // Centred at full volume: both sides, once, then the voice is free.
-    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, 0, 1));
+    CHECK(player.play_sample(th::kSourceGeneral, 1, {127, 64, 100, 0}, 1));
     CHECK(player.playing(th::kSourceGeneral, 1));
     player.mix(out.data(), 8, 100);
     CHECK(out[0] == 0.5f && out[1] == 0.5f && out[6] == 0.5f && out[7] == 0.5f);
     CHECK(out[8] == 0.0f && out[9] == 0.0f);
     CHECK(!player.playing(th::kSourceGeneral, 0));
     // Panned hard left at half volume.
-    CHECK(player.play_sample(th::kSourceGeneral, 1, 0x3f, 0, 100, 0, 1));
+    CHECK(player.play_sample(th::kSourceGeneral, 1, {0x3f, 0, 100, 0}, 1));
     player.mix(out.data(), 1, 100);
     CHECK(out[0] > 0.24f && out[0] < 0.25f && out[1] == 0.0f);
     player.stop_all();
     // Type 2 refuses a sample the source is playing; type 3 reuses its voice.
-    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, -1, 2));
-    CHECK(!player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, -1, 2));
-    CHECK(player.play_sample(th::kSourceClock, 1, 127, 64, 100, -1, 2));
-    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, -1, 3));
+    CHECK(player.play_sample(th::kSourceGeneral, 1, {127, 64, 100, -1}, 2));
+    CHECK(!player.play_sample(th::kSourceGeneral, 1, {127, 64, 100, -1}, 2));
+    CHECK(player.play_sample(th::kSourceClock, 1, {127, 64, 100, -1}, 2));
+    CHECK(player.play_sample(th::kSourceGeneral, 1, {127, 64, 100, -1}, 3));
     player.mix(out.data(), 8, 100); // two voices looping forever
     CHECK(out[14] == 1.0f && player.playing(th::kSourceClock, 1));
     player.stop_sample(th::kSourceClock, 1);
@@ -116,11 +121,11 @@ void test_sound_player()
     // Ten voices at most.
     player.stop_all();
     for (int i = 0; i < th::SoundPlayer::kVoices; i++)
-        CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, 0, 1));
-    CHECK(!player.play_sample(th::kSourceGeneral, 1, 127, 64, 100, 0, 1));
+        CHECK(player.play_sample(th::kSourceGeneral, 1, {127, 64, 100, 0}, 1));
+    CHECK(!player.play_sample(th::kSourceGeneral, 1, {127, 64, 100, 0}, 1));
     // Half the output rate at pitch 200 plays a frame per output frame.
     player.stop_all();
-    CHECK(player.play_sample(th::kSourceGeneral, 1, 127, 64, 200, 0, 1));
+    CHECK(player.play_sample(th::kSourceGeneral, 1, {127, 64, 200, 0}, 1));
     player.mix(out.data(), 8, 200);
     CHECK(out[6] == 0.5f && out[8] == 0.0f);
 
@@ -135,6 +140,24 @@ void test_sound_player()
     CHECK(player.sfx_volume() == 12 && player.volume_item() == 9);
     player.set_volume_item(0);
     CHECK(player.sfx_volume() == 127 && player.volume_item() == 0);
+}
+
+} // namespace
+
+void test_sound_player()
+{
+    auto path = std::filesystem::temp_directory_path() / "th_enhanced_test_bank.dat";
+    if (!write_test_bank(path))
+        return;
+    th::SoundBank bank;
+    std::string error;
+    CHECK(bank.load_file(path, &error));
+    std::filesystem::remove(path);
+    CHECK(bank.count() == 2);
+    CHECK(!bank.sample(0));
+    const th::Sample *s = bank.sample(1);
+    CHECK(s && s->name == "TEST.WAV" && s->frames() == 4 && s->rate == 100 && s->bits == 16);
+    check_player_mixing(bank);
 }
 
 void test_sound_bank(const char *dir)
@@ -224,24 +247,10 @@ uint64_t hash_pcm(const std::vector<int16_t> &pcm)
     return h;
 }
 
-} // namespace
-
-void test_music(const char *dir)
+// Every song parses and every timbre it lists is in `gtl`.
+void check_songs(const char *dir, const th::TimbreBank &gtl)
 {
-    th::TimbreBank gtl;
     std::string error;
-    auto opl = th::resolve_ci(dir, "sound/sample.opl");
-    CHECK(opl && gtl.load(*opl, &error));
-    CHECK(gtl.count() == 190);
-    CHECK(gtl.find(0, 0).size() == 14 && gtl.find(127, 36).size() == 14 && gtl.find(1, 0).empty());
-
-    th::MusicPlayer music;
-    CHECK(music.load(dir, &error));
-    if (!error.empty())
-        std::fprintf(stderr, "%s\n", error.c_str());
-    CHECK(music.music_ok() && music.music_on() && music.count() == 8);
-    CHECK(music.title(0) == "Atlantis" && music.title(7) == "Steady Pulse");
-    // Every song parses and every timbre it lists is in the library.
     const char *files[] = {"atlantis", "sixseven", "fortune", "candy", "mend", "doctor", "nightsh", "steady"};
     for (const char *name : files) {
         auto path = th::resolve_ci(dir, std::string("sound/midi/") + name + ".xmi");
@@ -252,8 +261,12 @@ void test_music(const char *dir)
         for (const auto &t : song.timbres)
             CHECK(!gtl.find(t[0], t[1]).empty());
     }
+}
 
-    // Nothing plays before a level starts; then the clock's track does.
+// Silence before a level starts, then three seconds of the level's track,
+// rendered alike by a second player.
+void check_rendering(const char *dir, th::MusicPlayer &music)
+{
     std::vector<int16_t> pcm(2 * 44100);
     music.render(pcm.data(), 4410, 44100);
     CHECK(std::all_of(pcm.begin(), pcm.begin() + 2 * 4410, [](int16_t v) { return v == 0; }));
@@ -278,6 +291,27 @@ void test_music(const char *dir)
     for (int i = 0; i < 3; i++)
         again.render(pcm2.data() + i * 2 * 44100, 44100, 44100);
     CHECK(pcm2 == pcm);
+}
+
+} // namespace
+
+void test_music(const char *dir)
+{
+    th::TimbreBank gtl;
+    std::string error;
+    auto opl = th::resolve_ci(dir, "sound/sample.opl");
+    CHECK(opl && gtl.load(*opl, &error));
+    CHECK(gtl.count() == 190);
+    CHECK(gtl.find(0, 0).size() == 14 && gtl.find(127, 36).size() == 14 && gtl.find(1, 0).empty());
+
+    th::MusicPlayer music;
+    CHECK(music.load(dir, &error));
+    if (!error.empty())
+        std::fprintf(stderr, "%s\n", error.c_str());
+    CHECK(music.music_ok() && music.music_on() && music.count() == 8);
+    CHECK(music.title(0) == "Atlantis" && music.title(7) == "Steady Pulse");
+    check_songs(dir, gtl);
+    check_rendering(dir, music);
 
     // The menu: off stops the song, on starts the track again; the volume
     // items as the sound effects'.

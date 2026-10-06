@@ -40,7 +40,7 @@ class RequesterArt
   public:
     // Loads every 640 x 480 requester sheet (hires_req_filenames,
     // src/files.cpp: QDATA/REQ00V to REQ13V but 07 and 08, reqspr coding)
-    // and the fonts of cache slots 1 and 2. On failure says why in `error`.
+    // and the fonts of cache slots 1, 2 and 3. On failure says why in `error`.
     bool load(const std::filesystem::path &dir, std::string *error = nullptr);
 
     // The sheet window `window` is drawn with (open_requester loads it into
@@ -50,11 +50,14 @@ class RequesterArt
     const Font &font() const { return font_; }
     // Font cache slot 2 (QDATA/FONT02V), the requesters' highlighted text.
     const Font &highlight_font() const { return highlight_font_; }
+    // Font cache slot 3 (QDATA/FONT74V), the patient window's treatments.
+    const Font &list_font() const { return list_font_; }
 
   private:
     std::array<SpriteSheet, kWindowListSize> sheets_;
     Font font_;
     Font highlight_font_;
+    Font list_font_;
 };
 
 // WindowButton.flags (include/hosp.h). The trigger bits say which mouse
@@ -131,6 +134,13 @@ struct InterfaceEvents {
     bool old_left = false;
 };
 
+// A requester's own input after Interface::frame: what the frame did and
+// the mouse, in the interface's coordinates.
+struct RequesterInput {
+    const InterfaceEvents &events;
+    const UiMouse &mouse;
+};
+
 // The game's window system (src/winproc.cpp, src/windraw.cpp) and requester
 // state (crequester), in 640 x 480 coordinates: at most two windows open,
 // the front one taking the mouse.
@@ -147,6 +157,7 @@ class Interface
     bool close_window(int window);
     // Open windows, front first.
     int window_count() const;
+    bool is_open(int window) const { return open_[0] == window || open_[1] == window; }
     int open_window_at(int i) const { return open_[size_t(i)]; }
     const Window &window(int window) const { return list_.at(size_t(window)); }
     // Sets window `window`'s height, as a requester's drawing may (req14_overdraw
@@ -186,6 +197,9 @@ class Interface
   private:
     void process_window(int window, const UiMouse &mouse, InterfaceEvents &events);
     void clear_buttons(int window);
+    // The first of the `count` open windows under the last press comes to
+    // the front.
+    void raise_pressed_window(int count);
     bool mouse_on(int window, int x, int y) const;
     void callback(int window, int button, InterfaceEvents &events);
 
@@ -199,6 +213,10 @@ class Interface
     bool old_left_ = false, old_right_ = false;
     int press_x_ = -1, press_y_ = -1;
 };
+
+// close_irequesters (0x87b4c): closes the patient, staff, handyman and
+// machine windows, whatever the current requester.
+void close_irequesters(Interface &ui);
 
 // DrawWindows: the open windows, back to front, each its frame (none for
 // any window of the list), its buttons from its requester's sheet, then its

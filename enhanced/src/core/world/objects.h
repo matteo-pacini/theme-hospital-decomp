@@ -136,4 +136,15 @@ void update_placement(World &world, ObjectPlacing &p, int mouse_cell);
 // it is placing, closes it and forgets what was bought.
 void cancel_buy_objects(ObjectPlacing &p);
 
+// check_no_peeps_in_way (src/objects.cpp): false if a person or the grim
+// reaper stands on a cell of an object of `kind` facing `dir` on `tile`,
+// or beside one facing it (patients idling in a queue or awaiting a
+// decision excepted).
+bool no_peeps_in_way(const World &world, int tile, int kind, int dir);
+
+// corridor_object_nav_check (src/build.cpp): whether an object of `kind`
+// facing `dir` on `pos` leaves its own use cell and those of the corridor
+// objects round it reachable from the player's first entrance.
+bool corridor_object_nav_check(World &world, int pos, int kind, int dir);
+
 } // namespace th

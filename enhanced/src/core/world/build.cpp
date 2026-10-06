@@ -14,6 +14,7 @@
 #include "core/world/world.h"
 
 #include <cstdlib>
+#include <optional>
 
 namespace th
 {
@@ -385,11 +386,29 @@ int outline_piece(int x, int y, int x0, int y0, int x1, int y1)
     return x == x0 || x == x1 + 1 ? 2 : 0;
 }
 
+// The blueprint floor block mark_blueprint_on_map puts on cell (x, y) of the
+// blueprint (x0, y0)-(x1, y1): the centre four cells of an even-sized one
+// carry a centre mark.
+uint8_t mark_blueprint_on_map_floor(int x, int y, int x0, int y0, int x1, int y1)
+{
+    int width = x1 - x0 + 1, height = y1 - y0 + 1;
+    if (height % 2 != 0 || width % 2 != 0)
+        return kBlueprintFloor;
+    if (y == (height - 1) / 2 + y0 && x == (width - 1) / 2 + x0)
+        return 0x26;
+    if (y == (height - 1) / 2 + y0 && x == (width + 1) / 2 + x0)
+        return 0x25;
+    if (y == (height + 1) / 2 + y0 && x == (width - 1) / 2 + x0)
+        return 0x24;
+    if (y == (height + 1) / 2 + y0 && x == (width + 1) / 2 + x0)
+        return 0x27;
+    return kBlueprintFloor;
+}
+
 // mark_blueprint_on_map (src/blueprnt.cpp): the outline's markers and, with
 // `overlay`, the blueprint floor (with a centre mark for even sizes).
 void mark_blueprint_on_map(World &w, int x0, int y0, int x1, int y1, bool overlay)
 {
-    int width = x1 - x0 + 1, height = y1 - y0 + 1;
     for (int y = y0; y <= y1 + 1; y++) {
         for (int x = x0; x <= x1 + 1; x++) {
             int piece = outline_piece(x, y, x0, y0, x1, y1);
@@ -397,20 +416,8 @@ void mark_blueprint_on_map(World &w, int x0, int y0, int x1, int y1, bool overla
             if (!in_map(i))
                 continue;
             MapCell &c = w.map[size_t(i)];
-            if (overlay && y != y1 + 1 && x != x1 + 1) {
-                uint8_t block = kBlueprintFloor;
-                if (height % 2 == 0 && width % 2 == 0) {
-                    if (y == (height - 1) / 2 + y0 && x == (width - 1) / 2 + x0)
-                        block = 0x26;
-                    else if (y == (height - 1) / 2 + y0 && x == (width + 1) / 2 + x0)
-                        block = 0x25;
-                    else if (y == (height + 1) / 2 + y0 && x == (width - 1) / 2 + x0)
-                        block = 0x24;
-                    else if (y == (height + 1) / 2 + y0 && x == (width + 1) / 2 + x0)
-                        block = 0x27;
-                }
-                c.floor_block = block;
-            }
+            if (overlay && y != y1 + 1 && x != x1 + 1)
+                c.floor_block = mark_blueprint_on_map_floor(x, y, x0, y0, x1, y1);
             if (piece) {
                 if (!((block_flags(c.wall_n) & 0x10) || (block_flags(c.wall_w) & 0x10)))
                     place_small_thing(w, i, 0, false);
@@ -490,6 +497,82 @@ void uncommit_blueprint(World &w)
     b.state = 0;
 }
 
+// Where `tile` lies on the blueprint, for modify_blueprint.
+struct BlueprintSpot {
+    uint8_t x, y;
+    bool on_x0, on_y0, on_x1, on_y1, inside;
+};
+
+// modify_blueprint with no drag going: the pointer for `at`, or the end of
+// a drag.
+void modify_blueprint_pointer(World &w, const BlueprintSpot &at)
+{
+    BuildState &b = w.building.build;
+    if (b.drag != kDragNone) {
+        if (b.drag <= kDragMove)
+            b.drag = kDragNone;
+        return;
+    }
+    if (!at.inside)
+        w.building.pointer = kPtrResizeRoom;
+    else if ((at.on_x0 && at.on_y0) || (at.on_x0 && at.on_y1) || (at.on_x1 && at.on_y0) || (at.on_x1 && at.on_y1))
+        w.building.pointer = kPtrResizeCorner;
+    else if (at.on_x0 || at.on_x1)
+        w.building.pointer = kPtrResizeXEdge;
+    else if (at.on_y0 || at.on_y1)
+        w.building.pointer = kPtrResizeYEdge;
+    else
+        w.building.pointer = kPtrMoveRoom;
+}
+
+// modify_blueprint's first dragging call: what the drag does, by where it
+// starts.
+void modify_blueprint_start_drag(BuildState &b, const BlueprintSpot &at)
+{
+    b.draw_mode = 1;
+    if (!at.inside) {
+        b.anchor_x = b.x0 = b.x1 = at.x;
+        b.anchor_y = b.y0 = b.y1 = at.y;
+        b.drag = kDragCorner;
+        return;
+    }
+    bool on_x = at.on_x0 || at.on_x1, on_y = at.on_y0 || at.on_y1;
+    if (!on_x && !on_y) {
+        b.anchor_x = at.x;
+        b.anchor_y = at.y;
+        b.drag = kDragMove;
+        return;
+    }
+    // The corner or edge across from the one picked stays put; an edge
+    // drag also keeps the far end of the picked edge (the pivot).
+    b.anchor_x = at.on_x0 ? b.x1 : b.x0;
+    b.anchor_y = at.on_y0 ? b.y1 : b.y0;
+    if (on_x && on_y) {
+        b.drag = kDragCorner;
+        return;
+    }
+    b.pivot_x = at.on_x1 ? b.x0 : b.x1;
+    b.pivot_y = at.on_y1 ? b.y0 : b.y1;
+    b.drag = kDragEdge;
+}
+
+// modify_blueprint dragging an edge to (x, y): the anchored edge stays and
+// the picked one follows.
+void modify_blueprint_drag_edge(BuildState &b, uint8_t x, uint8_t y)
+{
+    if (b.anchor_y == b.pivot_y) {
+        b.x0 = b.anchor_x;
+        b.y0 = y < b.anchor_y ? y : b.anchor_y;
+        b.x1 = b.pivot_x;
+        b.y1 = y > b.anchor_y ? y : b.anchor_y;
+    } else {
+        b.x0 = b.anchor_x < x ? b.anchor_x : x;
+        b.y0 = b.anchor_y;
+        b.x1 = b.anchor_x > x ? b.anchor_x : x;
+        b.y1 = b.pivot_y;
+    }
+}
+
 // modify_blueprint (src/blueprnt.cpp): while `dragging`, the first call
 // picks what the drag does by where it starts (outside: a new rectangle; a
 // corner or edge: resizing; inside: moving) and later ones do it; otherwise
@@ -498,77 +581,15 @@ void modify_blueprint(World &w, bool dragging, uint16_t tile)
 {
     BuildState &b = w.building.build;
     uint8_t x = uint8_t(tile % 128), y = uint8_t(tile / 128);
-    bool on_x0 = x == b.x0, on_y0 = y == b.y0, on_x1 = x == b.x1, on_y1 = y == b.y1;
-    bool inside = x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1;
+    BlueprintSpot at{
+        x, y, x == b.x0, y == b.y0, x == b.x1, y == b.y1, x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1};
     if (!dragging) {
-        if (b.drag == kDragNone) {
-            if (!inside)
-                w.building.pointer = kPtrResizeRoom;
-            else if ((on_x0 && on_y0) || (on_x0 && on_y1) || (on_x1 && on_y0) || (on_x1 && on_y1))
-                w.building.pointer = kPtrResizeCorner;
-            else if (on_x0 || on_x1)
-                w.building.pointer = kPtrResizeXEdge;
-            else if (on_y0 || on_y1)
-                w.building.pointer = kPtrResizeYEdge;
-            else
-                w.building.pointer = kPtrMoveRoom;
-        } else if (b.drag <= kDragMove) {
-            b.drag = kDragNone;
-        }
+        modify_blueprint_pointer(w, at);
         return;
     }
     switch (b.drag) {
     case kDragNone:
-        b.draw_mode = 1;
-        if (!inside) {
-            b.anchor_x = b.x0 = b.x1 = x;
-            b.anchor_y = b.y0 = b.y1 = y;
-            b.drag = kDragCorner;
-        } else if (on_x0 && on_y0) {
-            b.anchor_x = b.x1;
-            b.anchor_y = b.y1;
-            b.drag = kDragCorner;
-        } else if (on_x0 && on_y1) {
-            b.anchor_x = b.x1;
-            b.anchor_y = b.y0;
-            b.drag = kDragCorner;
-        } else if (on_x1 && on_y0) {
-            b.anchor_x = b.x0;
-            b.anchor_y = b.y1;
-            b.drag = kDragCorner;
-        } else if (on_x1 && on_y1) {
-            b.anchor_x = b.x0;
-            b.anchor_y = b.y0;
-            b.drag = kDragCorner;
-        } else if (on_x0) {
-            b.anchor_x = b.x1;
-            b.anchor_y = b.y0;
-            b.pivot_x = b.x1;
-            b.pivot_y = b.y1;
-            b.drag = kDragEdge;
-        } else if (on_y0) {
-            b.anchor_x = b.x0;
-            b.anchor_y = b.y1;
-            b.pivot_x = b.x1;
-            b.pivot_y = b.y1;
-            b.drag = kDragEdge;
-        } else if (on_x1) {
-            b.anchor_x = b.x0;
-            b.anchor_y = b.y0;
-            b.pivot_x = b.x0;
-            b.pivot_y = b.y1;
-            b.drag = kDragEdge;
-        } else if (on_y1) {
-            b.anchor_x = b.x0;
-            b.anchor_y = b.y0;
-            b.pivot_x = b.x1;
-            b.pivot_y = b.y0;
-            b.drag = kDragEdge;
-        } else {
-            b.anchor_x = x;
-            b.anchor_y = y;
-            b.drag = kDragMove;
-        }
+        modify_blueprint_start_drag(b, at);
         break;
     case kDragCorner:
         b.x0 = b.anchor_x < x ? b.anchor_x : x;
@@ -577,17 +598,7 @@ void modify_blueprint(World &w, bool dragging, uint16_t tile)
         b.y1 = b.anchor_y > y ? b.anchor_y : y;
         break;
     case kDragEdge:
-        if (b.anchor_y == b.pivot_y) {
-            b.x0 = b.anchor_x;
-            b.y0 = y < b.anchor_y ? y : b.anchor_y;
-            b.x1 = b.pivot_x;
-            b.y1 = y > b.anchor_y ? y : b.anchor_y;
-        } else {
-            b.x0 = b.anchor_x < x ? b.anchor_x : x;
-            b.y0 = b.anchor_y;
-            b.x1 = b.anchor_x > x ? b.anchor_x : x;
-            b.y1 = b.pivot_y;
-        }
+        modify_blueprint_drag_edge(b, x, y);
         break;
     case kDragMove: {
         // Byte arithmetic, as the game's: moving off the map's edge wraps.
@@ -618,88 +629,80 @@ bool can_place_door(const World &w, int tile, int kind, int dir)
     return true;
 }
 
-// temp_place_door (src/build.cpp): the wall cell of the blueprint nearest
-// `pos` where the door being placed (a window once the door is in) can go,
-// whether it may (Building::door_invalid) and the pieces to draw red.
-void temp_place_door(World &w, uint16_t pos)
+// temp_place_door's margins for a door of `door_kind`: the wall cells it
+// may take, from `start` to the wall's length less `end`, and whether a
+// piece is checked with is_valid_door.
+struct DoorMargins {
+    int start, end;
+    bool check_valid;
+};
+
+DoorMargins temp_place_door_margins(int door_kind)
+{
+    switch (door_kind) {
+    case 0:
+        return {1, 3, true};
+    case 4:
+        return {2, 2, false};
+    case 3:
+        return {1, 1, false};
+    default:
+        return {1, 2, true};
+    }
+}
+
+// The wall cell temp_place_door has found so far nearest the pointer, with
+// its door type's direction (0-3).
+struct DoorSpot {
+    int best = 9999, tile = 0, type = 0;
+};
+
+// temp_place_door on the west and east walls.
+void temp_place_door_scan_columns(const World &w, uint16_t pos, const DoorMargins &m, DoorSpot &spot)
+{
+    const BuildState &b = w.building.build;
+    const RoomInfo &room = w.rooms[b.room % kRoomCount];
+    for (int i = m.start; i <= room.height - m.end; i++) {
+        for (int j = 0; j <= room.width; j += room.width) {
+            int tile = room.pos + j + (i << 7);
+            // Double doors need the cell below to be a west edge piece
+            // too; the game reads its first thing as the marker.
+            if (b.door_kind || (in_map(tile + 128) && (-w.map[size_t(tile + 128)].first & 3) == 2)) {
+                int d = std::abs(int16_t(pos) % 128 - tile % 128) + std::abs(int16_t(pos) / 128 - tile / 128);
+                if (d < spot.best)
+                    spot = {d, tile, j == 0 ? 2 : 3};
+            }
+            if (room.width == 0)
+                break;
+        }
+    }
+}
+
+// temp_place_door on the north and south walls.
+void temp_place_door_scan_rows(const World &w, uint16_t pos, const DoorMargins &m, DoorSpot &spot)
+{
+    const BuildState &b = w.building.build;
+    const RoomInfo &room = w.rooms[b.room % kRoomCount];
+    for (int i = m.start; i <= room.width - m.end; i++) {
+        for (int j = 0; j <= room.height; j += room.height) {
+            int tile = room.pos + i + (j << 7);
+            if (b.door_kind || (in_map(tile - 1) && (-w.map[size_t(tile - 1)].first & 3) == 1)) {
+                int d = std::abs(int16_t(pos) % 128 - tile % 128) + std::abs(int16_t(pos) / 128 - tile / 128);
+                if (d < spot.best)
+                    spot = {d, tile, j == 0 ? 0 : 1};
+            }
+            if (room.height == 0)
+                break;
+        }
+    }
+}
+
+// temp_place_door's check of the door of `type` at `best_tile`: marks the
+// pieces that cannot go.
+void temp_place_door_check_pieces(World &w, int best_tile, int type, bool check_valid)
 {
     Building &bd = w.building;
-    BuildState &b = bd.build;
-    const RoomInfo &room = built_room(w);
-    bd.door_invalid = false;
-    int min_w = 3, min_h = 3, end_x, end_y, start_x, start_y;
-    bool check_valid;
-    switch (b.door_kind) {
-    case 0:
-        end_x = end_y = 3;
-        start_x = start_y = 1;
-        check_valid = true;
-        break;
-    case 4:
-        end_x = end_y = 2;
-        start_x = start_y = 2;
-        check_valid = false;
-        break;
-    case 3:
-        end_x = end_y = 1;
-        start_x = start_y = 1;
-        check_valid = false;
-        break;
-    default:
-        end_x = end_y = 2;
-        start_x = start_y = 1;
-        check_valid = true;
-        break;
-    }
-    // The game leaves `best` unset unless the room is taller than three;
-    // every room type is at least four high.
-    int best = 9999, best_tile = 0, type = 0;
-    auto distance = [&](int tile) {
-        return std::abs(int16_t(pos) % 128 - tile % 128) + std::abs(int16_t(pos) / 128 - tile / 128);
-    };
-    if (room.height > min_h) {
-        for (int i = start_y; i <= room.height - end_y; i++) {
-            for (int j = 0; j <= room.width; j += room.width) {
-                int tile = room.pos + j + (i << 7);
-                // Double doors need the cell below to be a west edge piece
-                // too; the game reads its first thing as the marker.
-                if (b.door_kind || (in_map(tile + 128) && (-w.map[size_t(tile + 128)].first & 3) == 2)) {
-                    int d = distance(tile);
-                    if (d < best) {
-                        best = d;
-                        best_tile = tile;
-                        type = j == 0 ? 2 : 3;
-                    }
-                }
-                if (room.width == 0)
-                    break;
-            }
-        }
-    }
-    if (room.width > min_w) {
-        for (int i = start_x; i <= room.width - end_x; i++) {
-            for (int j = 0; j <= room.height; j += room.height) {
-                int tile = room.pos + i + (j << 7);
-                if (b.door_kind || (in_map(tile - 1) && (-w.map[size_t(tile - 1)].first & 3) == 1)) {
-                    int d = distance(tile);
-                    if (d < best) {
-                        best = d;
-                        best_tile = tile;
-                        type = j == 0 ? 0 : 1;
-                    }
-                }
-                if (room.height == 0)
-                    break;
-            }
-        }
-    }
-    if (best_tile == room.pos && room.pos % 128 == pos % 128)
-        type = 2;
-    if (best == 9999) {
-        bd.door_shown = false;
-        return;
-    }
-    type += b.door_kind << 2;
+    const BuildState &b = bd.build;
     const DoorType &door = kDoorTypes[size_t(type) % kDoorTypes.size()];
     bd.door_piece_invalid = {};
     for (int j = 0; j < door.count; j++) {
@@ -717,9 +720,56 @@ void temp_place_door(World &w, uint16_t pos)
             bd.door_invalid = true;
         }
     }
+}
+
+// temp_place_door (src/build.cpp): the wall cell of the blueprint nearest
+// `pos` where the door being placed (a window once the door is in) can go,
+// whether it may (Building::door_invalid) and the pieces to draw red.
+void temp_place_door(World &w, uint16_t pos)
+{
+    Building &bd = w.building;
+    BuildState &b = bd.build;
+    const RoomInfo &room = built_room(w);
+    bd.door_invalid = false;
+    const int min_w = 3, min_h = 3;
+    DoorMargins m = temp_place_door_margins(b.door_kind);
+    // The game leaves `best` unset unless the room is taller than three;
+    // every room type is at least four high.
+    DoorSpot spot;
+    if (room.height > min_h)
+        temp_place_door_scan_columns(w, pos, m, spot);
+    if (room.width > min_w)
+        temp_place_door_scan_rows(w, pos, m, spot);
+    int best_tile = spot.tile, type = spot.type;
+    if (best_tile == room.pos && room.pos % 128 == pos % 128)
+        type = 2;
+    if (spot.best == 9999) {
+        bd.door_shown = false;
+        return;
+    }
+    type += b.door_kind << 2;
+    temp_place_door_check_pieces(w, best_tile, type, m.check_valid);
     bd.door_shown = true;
     b.door_tile = uint16_t(best_tile);
     b.door_type = uint8_t(type);
+}
+
+// place_bp_door's markers of `door` at the build state's door tile, and the
+// floor under them.
+void place_bp_door_pieces(World &w, const DoorType &door)
+{
+    const BuildState &b = w.building.build;
+    for (int i = 0; i < door.count; i++) {
+        int tile = b.door_tile + door.tiles[size_t(i)];
+        if (!in_map(tile))
+            continue;
+        int piece = door.pieces[size_t(i)];
+        if ((kBlueprints[find_small_thing(w, tile) % kBlueprints.size()].flags & 3) == 3)
+            piece += 6;
+        place_small_thing(w, tile, piece, false);
+        if (in_map(tile - door.offset))
+            w.map[size_t(tile - door.offset)].floor_block = door.floor_blocks[size_t(i)];
+    }
 }
 
 // place_bp_door (src/build.cpp): puts the door or window temp_place_door
@@ -756,18 +806,7 @@ void place_bp_door(Game &game, bool swap)
     } else {
         play(w, b.door_kind == 2 && on_window ? kSfxWrong2 : kSfxBuildClick);
     }
-    door = &kDoorTypes[size_t(type)];
-    for (int i = 0; i < door->count; i++) {
-        int tile = b.door_tile + door->tiles[size_t(i)];
-        if (!in_map(tile))
-            continue;
-        int piece = door->pieces[size_t(i)];
-        if ((kBlueprints[find_small_thing(w, tile) % kBlueprints.size()].flags & 3) == 3)
-            piece += 6;
-        place_small_thing(w, tile, piece, false);
-        if (in_map(tile - door->offset))
-            w.map[size_t(tile - door->offset)].floor_block = door->floor_blocks[size_t(i)];
-    }
+    place_bp_door_pieces(w, kDoorTypes[size_t(type)]);
     if (b.door_kind == 2)
         room.windows = uint8_t(room.windows + delta);
     if (b.door_kind == 1 || b.door_kind == 0) {
@@ -851,129 +890,172 @@ bool first_is_type3(const World &w, int index)
     return id > 0 && w.things[size_t(id)].type == 3;
 }
 
+// A blueprint marker build_all_rooms is building on cell `i`, whose north
+// and west walls were `fixed_n`/`fixed_w` (block flag 0x10) beforehand.
+struct BuildCell {
+    int i;
+    bool fixed_n, fixed_w;
+};
+
+// build_all_rooms on a wall marker: the wall in colour 7, kept off windows
+// and type 3 things.
+void build_all_rooms_wall(World &w, const BuildCell &at, const BlueprintPiece &piece)
+{
+    // The game looks for the colour of a wall next to the blueprint and then
+    // sets corner_wall_colour to 7 whatever it found, so new walls are always
+    // of colour 7.
+    const int col = 7 * 2;
+    int i = at.i;
+    MapCell &c = w.map[size_t(i)];
+    if (piece.flags < 3)
+        set_flags(w, i - 0x81, 0x10);
+    if ((piece.flags & 1) && !at.fixed_n) {
+        bool across = first_is_type3(w, i) && w.things[size_t(c.first)].facing % 2 == 0;
+        if (!across && !is_window_n(c.wall_n))
+            c.wall_n = uint8_t(piece.kind + col);
+    }
+    if ((piece.flags & 2) && !at.fixed_w) {
+        bool across = first_is_type3(w, i) && w.things[size_t(c.first)].facing % 2 == 1;
+        if (!across && !is_window_w(c.wall_w))
+            c.wall_w = uint8_t(piece.kind + col + 1);
+    }
+    if (c.wall_n && wall_at(w, i - 0x7f, 1))
+        set_flags(w, i - 0x80, 0x10);
+}
+
+// build_all_rooms on a door marker facing build_type - 1. Returns false when
+// the door cannot go: the marker is then the plain wall it stands in, to be
+// built again.
+bool build_all_rooms_door(Game &game, int i, const BlueprintPiece &piece)
+{
+    World &w = game.world;
+    int dir = piece.build_type - 1;
+    if (!place_door(w, game.anims(), i, piece.kind, dir)) {
+        place_small_thing(w, i, dir % 2 + 1, false);
+        return false;
+    }
+    insert_blank_wall(w, i, dir % 2);
+    set_flags(w, i - 0x81, 0x10);
+    return true;
+}
+
+// build_all_rooms on build type 10 markers.
+void build_all_rooms_type10(MapCell &c, const BlueprintPiece &piece)
+{
+    if (piece.flags >= 9)
+        return;
+    c.flags |= 1;
+    if (piece.flags == 7) {
+        c.wall_n = 0x97;
+        c.wall_w = 0x98;
+    } else {
+        (piece.wall_layer ? c.wall_w : c.wall_n) = uint8_t(piece.kind);
+    }
+}
+
+// build_all_rooms on level editor markers; no blueprint of a room has them.
+// The game's place_object would also charge for the object.
+void build_all_rooms_object(Game &game, int i, int bp, const BlueprintPiece &piece)
+{
+    World &w = game.world;
+    uint8_t dir = uint8_t(bp - 0x20);
+    if (dir >= 4)
+        return;
+    place_small_thing(w, i, 0, false);
+    place_small_thing(w, i + (dir % 2 ? 0x80 : 1), 0, false);
+    place_object(w, game.anims(), {i, piece.kind, dir}, kPlayer, false);
+}
+
+// build_all_rooms on marker `bp` at `at.i`. Returns true when `bp` is set to
+// a marker to build next on the same cell; `at.i` goes back one cell when
+// the cell is to be built again.
+bool build_all_rooms_piece(Game &game, BuildCell &at, int &bp)
+{
+    World &w = game.world;
+    int i = at.i;
+    MapCell &c = w.map[size_t(i)];
+    const BlueprintPiece &piece = kBlueprints[size_t(bp) % kBlueprints.size()];
+    switch (piece.build_type) {
+    case 0:
+        build_all_rooms_wall(w, at, piece);
+        break;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        if (!build_all_rooms_door(game, i, piece))
+            at.i--;
+        break;
+    case 5:
+        if ((piece.flags & 1) && !at.fixed_n)
+            c.wall_n = 0x7e;
+        if ((piece.flags & 2) && !at.fixed_w)
+            c.wall_w = 0x7f;
+        set_flags(w, i - 0x81, 0x10);
+        break;
+    case 10:
+        build_all_rooms_type10(c, piece);
+        break;
+    case 11:
+    case 13:
+        place_door(w, game.anims(), i, piece.kind, 0);
+        break;
+    case 12:
+    case 14:
+        place_door(w, game.anims(), i, piece.kind, 1);
+        break;
+    case 15:
+    case 16:
+    case 17:
+    case 18:
+        build_all_rooms_object(game, i, bp, piece);
+        break;
+    case 21:
+        c.wall_n = uint8_t(piece.kind);
+        break;
+    case 22:
+        c.wall_w = uint8_t(piece.kind);
+        break;
+    case 23:
+    case 25:
+        c.wall_n = 0x60;
+        bp = piece.kind;
+        return true;
+    case 24:
+    case 26:
+        c.wall_w = 0xc4;
+        bp = piece.kind;
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 // build_all_rooms (src/build.cpp) for the local player: the blueprint
 // markers on its land become walls, doors, windows and objects.
 void build_all_rooms(Game &game)
 {
     World &w = game.world;
     const uint8_t mask = 1 << kPlayer;
-    // The game looks for the colour of a wall next to the blueprint and then
-    // sets corner_wall_colour to 7 whatever it found, so new walls are always
-    // of colour 7.
-    const int col = 7 * 2;
     for (int i = 0; i < kMapCells; i++) {
         MapCell &c = w.map[size_t(i)];
-        if (c.owner_flags & mask) {
-            int id = find_bluep_who(w, i);
-            if (id >= 0)
-                continue;
-            int bp = -id;
-            place_small_thing(w, i, 0, false);
-            bool fixed_n = block_flags(c.wall_n) & 0x10, fixed_w = block_flags(c.wall_w) & 0x10;
-            if (uint16_t r = room_at(w, uint16_t(i)))
-                w.rooms[r].owner = kPlayer;
-            bool again;
-            do {
-                again = false;
-                const BlueprintPiece &piece = kBlueprints[size_t(bp) % kBlueprints.size()];
-                switch (piece.build_type) {
-                case 0:
-                    if (piece.flags < 3)
-                        set_flags(w, i - 0x81, 0x10);
-                    if ((piece.flags & 1) && !fixed_n) {
-                        bool across = first_is_type3(w, i) && w.things[size_t(c.first)].facing % 2 == 0;
-                        if (!across && !is_window_n(c.wall_n))
-                            c.wall_n = uint8_t(piece.kind + col);
-                    }
-                    if ((piece.flags & 2) && !fixed_w) {
-                        bool across = first_is_type3(w, i) && w.things[size_t(c.first)].facing % 2 == 1;
-                        if (!across && !is_window_w(c.wall_w))
-                            c.wall_w = uint8_t(piece.kind + col + 1);
-                    }
-                    if (c.wall_n && wall_at(w, i - 0x7f, 1))
-                        set_flags(w, i - 0x80, 0x10);
-                    break;
-                case 1:
-                case 2:
-                case 3:
-                case 4: {
-                    int dir = piece.build_type - 1;
-                    if (place_door(w, game.anims(), i, piece.kind, dir)) {
-                        insert_blank_wall(w, i, dir % 2);
-                    } else {
-                        // Built again as the plain wall it stands in.
-                        place_small_thing(w, i, dir % 2 + 1, false);
-                        i--;
-                        break;
-                    }
-                    set_flags(w, i - 0x81, 0x10);
-                    break;
-                }
-                case 5:
-                    if ((piece.flags & 1) && !fixed_n)
-                        c.wall_n = 0x7e;
-                    if ((piece.flags & 2) && !fixed_w)
-                        c.wall_w = 0x7f;
-                    set_flags(w, i - 0x81, 0x10);
-                    break;
-                case 10:
-                    if (piece.flags < 9) {
-                        c.flags |= 1;
-                        if (piece.flags == 7) {
-                            c.wall_n = 0x97;
-                            c.wall_w = 0x98;
-                        } else {
-                            (piece.wall_layer ? c.wall_w : c.wall_n) = uint8_t(piece.kind);
-                        }
-                    }
-                    break;
-                case 11:
-                case 13:
-                    place_door(w, game.anims(), i, piece.kind, 0);
-                    break;
-                case 12:
-                case 14:
-                    place_door(w, game.anims(), i, piece.kind, 1);
-                    break;
-                case 15:
-                case 16:
-                case 17:
-                case 18: {
-                    // Level editor pieces; no blueprint of a room has them. The
-                    // game's place_object would also charge for the object.
-                    uint8_t dir = uint8_t(bp - 0x20);
-                    if (dir < 4) {
-                        place_small_thing(w, i, 0, false);
-                        place_small_thing(w, i + (dir % 2 ? 0x80 : 1), 0, false);
-                        place_object(w, game.anims(), i, piece.kind, dir, kPlayer, false);
-                    }
-                    break;
-                }
-                case 21:
-                    c.wall_n = uint8_t(piece.kind);
-                    break;
-                case 22:
-                    c.wall_w = uint8_t(piece.kind);
-                    break;
-                case 23:
-                case 25:
-                    c.wall_n = 0x60;
-                    bp = piece.kind;
-                    again = true;
-                    break;
-                case 24:
-                case 26:
-                    c.wall_w = 0xc4;
-                    bp = piece.kind;
-                    again = true;
-                    break;
-                default:
-                    break;
-                }
-            } while (again);
-        } else if (c.owner_flags & (mask | kCellOutdoor)) {
-            place_small_thing(w, i, 0, false);
+        if (!(c.owner_flags & mask)) {
+            if (c.owner_flags & (mask | kCellOutdoor))
+                place_small_thing(w, i, 0, false);
+            continue;
         }
+        int id = find_bluep_who(w, i);
+        if (id >= 0)
+            continue;
+        place_small_thing(w, i, 0, false);
+        BuildCell at{i, (block_flags(c.wall_n) & 0x10) != 0, (block_flags(c.wall_w) & 0x10) != 0};
+        if (uint16_t r = room_at(w, uint16_t(i)))
+            w.rooms[r].owner = kPlayer;
+        int bp = -id;
+        while (build_all_rooms_piece(game, at, bp)) {
+        }
+        i = at.i;
     }
     for (MapCell &c : w.map)
         if ((c.owner_flags & mask) && block_flags(c.floor_block) == 0x20)
@@ -1276,19 +1358,10 @@ bool room_available(const Balance &settings, int room_type)
     return true;
 }
 
-// remove_object_from_map (src/objects.cpp) without the statistics, pagers
-// and interrupting its user, which are not ported: the object off the map
-// and its lists, kept in the things table (state OS_REMOVED).
-void remove_object_from_map(World &w, uint16_t id)
+// delete_object (src/objects.cpp), as remove_object_from_map calls it: `obj`
+// out of the object list of `room` (if any) and of its kind.
+void remove_object_from_map_delete_object(World &w, Thing &obj, uint16_t room)
 {
-    Thing &obj = w.things[id];
-    int tile = obj.x.tile + (obj.y.tile << 7);
-    remove_object_shape(w, tile, obj.subtype, obj.facing);
-    uint16_t room = room_at(w, uint16_t(tile));
-    if (kObjects[obj.subtype].category == 6 && room)
-        w.rooms[room].radiators--;
-    obj.state = kObjectRemoved;
-    // delete_object.
     if (room) {
         RoomInfo &r = w.rooms[room];
         if (r.first_object) {
@@ -1311,38 +1384,44 @@ void remove_object_from_map(World &w, uint16_t id)
             w.things[obj.type_obj_next].type_obj_prev = obj.type_obj_prev;
         obj.type_obj_prev = obj.type_obj_next = 0;
     }
+}
+
+// adjust_big_cell_flag's test: thing `t` is a person using an object or an
+// object of more than one cell.
+bool remove_object_from_map_is_big(const World &w, int t)
+{
+    const Thing &o = w.things[size_t(t)];
+    if (o.type == kThingPatient || o.type == kThingStaff)
+        return o.object && o.object < w.things.size() && w.things[o.object].user == t;
+    if (o.type == kThingObject)
+        return shape_of(o.subtype, o.facing).count > 1;
+    return false;
+}
+
+// remove_object_from_map (src/objects.cpp) without the statistics, pagers
+// and interrupting its user, which are not ported: the object off the map
+// and its lists, kept in the things table (state OS_REMOVED).
+void remove_object_from_map(World &w, uint16_t id)
+{
+    Thing &obj = w.things[id];
+    int tile = obj.x.tile + (obj.y.tile << 7);
+    remove_object_shape(w, tile, obj.subtype, obj.facing);
+    uint16_t room = room_at(w, uint16_t(tile));
+    if (kObjects[obj.subtype].category == 6 && room)
+        w.rooms[room].radiators--;
+    obj.state = kObjectRemoved;
+    remove_object_from_map_delete_object(w, obj, room);
     // adjust_big_cell_flag (src/engine.cpp), which still finds the object on
     // the cell.
     MapCell &c = w.map[size_t(tile)];
     c.flags &= ~0x20;
     for (int t = c.first; t > 0; t = w.things[size_t(t)].cell_next) {
-        const Thing &o = w.things[size_t(t)];
-        bool big = false;
-        if (o.type == kThingPatient || o.type == kThingStaff)
-            big = o.object && o.object < w.things.size() && w.things[o.object].user == t;
-        else if (o.type == kThingObject)
-            big = shape_of(o.subtype, o.facing).count > 1;
-        if (big) {
+        if (remove_object_from_map_is_big(w, t)) {
             c.flags |= 0x20;
             break;
         }
     }
     remove_node(w, id);
-}
-
-// remove_object (src/objects.cpp): takes the object off the map and frees
-// it if it stands on `owner`'s land (or is the gates of hell or a litter
-// bomb).
-bool remove_object(World &w, uint16_t id, int owner)
-{
-    trace_event("remove_object %u owner=%d", unsigned(id), owner);
-    const Thing &obj = w.things[id];
-    const MapCell &c = w.map[size_t(obj.x.tile + (obj.y.tile << 7))];
-    if (!(obj.subtype == kObjGatesOfHell || obj.subtype == kObjLitterBomb || c.owner_flags == 1 << owner))
-        return false;
-    remove_object_from_map(w, id);
-    w.things[id] = Thing{};
-    return true;
 }
 
 // The door facing the shadows see on a cell (search_mapwho for a door).
@@ -1377,6 +1456,28 @@ void delete_wall(World &w, int tile, uint16_t room, int side)
         wall = 0;
 }
 
+// delete_room on cell (x, y) of the room's outline: the walls of room `id`
+// and the doors in them.
+void delete_room_walls_and_doors(World &w, const RoomInfo &room, uint16_t id, int x, int y)
+{
+    int x0 = room.pos % 128, y0 = room.pos / 128;
+    int i = cell_index(x, y);
+    if (!in_map(i))
+        return;
+    if (x < x0 + room.width && w.map[size_t(i)].wall_n)
+        delete_wall(w, i, id, 0);
+    if (y < y0 + room.height && w.map[size_t(i)].wall_w)
+        delete_wall(w, i, id, 1);
+    for (int t = w.map[size_t(i)].first; t > 0; t = w.things[size_t(t)].cell_next) {
+        const Thing &obj = w.things[size_t(t)];
+        if (!(obj.type == kThingDoor ||
+              (obj.type == kThingObject && (obj.subtype == kObjSwingDoor || obj.subtype == kObjSwingDoor2))))
+            continue;
+        if (obj.facing % 2 == 0 ? x < x0 + room.width : y < y0 + room.height)
+            remove_object(w, uint16_t(t), kPlayer);
+    }
+}
+
 // delete_room (src/build.cpp) without the rat holes, not ported: the room's
 // objects, the walls it does not share and its doors off the map. Only the
 // first thing on each cell is looked at, as removing it ends the cell's
@@ -1395,26 +1496,25 @@ void delete_room(World &w, uint16_t r)
             }
         }
     }
-    for (int y = y0; y < y0 + room.height + 1; y++) {
-        for (int x = x0; x < x0 + room.width + 1; x++) {
-            int i = cell_index(x, y);
-            if (!in_map(i))
-                continue;
-            if (x < x0 + room.width && w.map[size_t(i)].wall_n)
-                delete_wall(w, i, id, 0);
-            if (y < y0 + room.height && w.map[size_t(i)].wall_w)
-                delete_wall(w, i, id, 1);
-            for (int t = w.map[size_t(i)].first; t > 0; t = w.things[size_t(t)].cell_next) {
-                const Thing &obj = w.things[size_t(t)];
-                if (!(obj.type == kThingDoor ||
-                      (obj.type == kThingObject && (obj.subtype == kObjSwingDoor || obj.subtype == kObjSwingDoor2))))
-                    continue;
-                if (obj.facing % 2 == 0 ? x < x0 + room.width : y < y0 + room.height)
-                    remove_object(w, uint16_t(t), kPlayer);
-            }
-        }
-    }
+    for (int y = y0; y < y0 + room.height + 1; y++)
+        for (int x = x0; x < x0 + room.width + 1; x++)
+            delete_room_walls_and_doors(w, room, id, x, y);
     add_shadows(w);
+}
+
+// check_invis_walls_around_object (src/build.cpp): the invisible walls of
+// object `obj` put back where missing; other things are left alone.
+void check_invis_walls_around_object(World &w, const Thing &obj)
+{
+    int8_t group = kObjects[obj.subtype].walls;
+    if (obj.type != kThingObject || group == -1)
+        return;
+    const ObjectWallsInfo &walls = kObjectWalls[size_t(group * 4 + obj.facing)];
+    for (int k = 0; k < walls.count; k++) {
+        int c = obj.x.tile + (obj.y.tile << 7) + walls.pos[size_t(k)];
+        if (wall_at(w, c, walls.side[size_t(k)]) == 0)
+            insert_blank_wall(w, c, walls.side[size_t(k)]);
+    }
 }
 
 // repair_invis_walls_around_room (src/build.cpp): the invisible walls of
@@ -1428,18 +1528,8 @@ void repair_invis_walls_around_room(World &w, const RoomInfo &room)
         for (int x = x0; x <= x1; x++) {
             if (!(x == x0 || x == x1 || y == y0 || y == y1) || !in_map(cell_index(x, y)))
                 continue;
-            for (int t = w.map[size_t(cell_index(x, y))].first; t > 0; t = w.things[size_t(t)].cell_next) {
-                const Thing &obj = w.things[size_t(t)];
-                int8_t group = kObjects[obj.subtype].walls;
-                if (obj.type != kThingObject || group == -1)
-                    continue;
-                const ObjectWallsInfo &walls = kObjectWalls[size_t(group * 4 + obj.facing)];
-                for (int k = 0; k < walls.count; k++) {
-                    int c = obj.x.tile + (obj.y.tile << 7) + walls.pos[size_t(k)];
-                    if (wall_at(w, c, walls.side[size_t(k)]) == 0)
-                        insert_blank_wall(w, c, walls.side[size_t(k)]);
-                }
-            }
+            for (int t = w.map[size_t(cell_index(x, y))].first; t > 0; t = w.things[size_t(t)].cell_next)
+                check_invis_walls_around_object(w, w.things[size_t(t)]);
         }
     }
 }
@@ -1454,7 +1544,7 @@ void clear_build_objects(Game &game)
         if (!id)
             continue;
         int cost = game.settings().objects[w.things[id].subtype].start_cost;
-        change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuyObject, cost);
+        change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxBuyObject, cost});
         w.things[id] = Thing{};
         id = 0;
     }
@@ -1473,7 +1563,7 @@ void delete_blueprint_room(Game &game)
     RoomInfo &room = built_room(w);
     if (room.paid_for) {
         int cost = game.settings().rooms[room.type % kRoomTypes].cost;
-        change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuildRoom, cost * 50 / 100);
+        change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxBuildRoom, cost * 50 / 100});
         room.paid_for = 0;
     }
     if (b.draw_mode == 0)
@@ -1685,7 +1775,7 @@ void open_room(Game &game)
     clear_build_objects(game);
     if (room.paid_for == 0) {
         int cost = game.settings().rooms[room.type % kRoomTypes].cost;
-        change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuildRoom, -cost);
+        change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxBuildRoom, -cost});
         room.paid_for = 1;
     }
     w.building.last_built_room = room.type;
@@ -1780,6 +1870,21 @@ bool try_move_peep_to_wall(World &w, Thing &peep, int side)
 }
 
 } // namespace
+
+// remove_object (src/objects.cpp): takes the object off the map and frees
+// it if it stands on `owner`'s land (or is the gates of hell or a litter
+// bomb).
+bool remove_object(World &w, uint16_t id, int owner)
+{
+    trace_event("remove_object %u owner=%d", unsigned(id), owner);
+    const Thing &obj = w.things[id];
+    const MapCell &c = w.map[size_t(obj.x.tile + (obj.y.tile << 7))];
+    if (!(obj.subtype == kObjGatesOfHell || obj.subtype == kObjLitterBomb || c.owner_flags == 1 << owner))
+        return false;
+    remove_object_from_map(w, id);
+    w.things[id] = Thing{};
+    return true;
+}
 
 uint16_t room_at(const World &world, uint16_t tile)
 {
@@ -1895,6 +2000,48 @@ Bounds object_bounds(int kind, int dir)
     return b;
 }
 
+// The cells of a room for place_object_wall_hug: (x0, y0) its first, (x1,
+// y1) one past its last.
+struct HugRect {
+    uint8_t x0, y0, x1, y1;
+};
+
+// place_object_wall_hug's choice of wall for the pointer at (x, y): the
+// side (0 north, 1 east, 2 south, 3 west; only north and west unless
+// `corner`) by which triangle of the room it is in, and the cell on it.
+struct HugSide {
+    int side;
+    uint8_t x, y;
+};
+
+HugSide place_object_wall_hug_side(const RoomInfo &room, const HugRect &r, uint8_t x, uint8_t y, bool corner)
+{
+    int8_t dx = int8_t(x - r.x0), dy = int8_t(y - r.y0);
+    bool below = room.width && dy < room.height * dx / room.width;
+    bool below2 = room.width && dy < room.height - dx * room.height / room.width;
+    if ((below && below2) || (!corner && below))
+        return {0, x, r.y0};
+    if ((below2 && !below) || (!corner && !below))
+        return {3, r.x0, y};
+    if (below && !below2)
+        return {1, r.x1, y};
+    return {2, x, r.y1};
+}
+
+// place_object_wall_hug's clamp of (sx, sy) so a footprint of bounds `b`,
+// moved by (ox, oy), stays inside `r`.
+void place_object_wall_hug_clamp(const Bounds &b, int8_t ox, int8_t oy, const HugRect &r, uint8_t &sx, uint8_t &sy)
+{
+    if (sx + b.min_x + ox < r.x0)
+        sx = uint8_t(r.x0 - b.min_x - ox);
+    if (sy + b.min_y + oy < r.y0)
+        sy = uint8_t(r.y0 - b.min_y - oy);
+    if (sx + b.max_x + ox >= r.x1)
+        sx = uint8_t(r.x1 - b.max_x - 1 - ox);
+    if (sy + b.max_y + oy >= r.y1)
+        sy = uint8_t(r.y1 - b.max_y - 1 - oy);
+}
+
 } // namespace
 
 int place_object_restrict_to_room(const World &world, const ObjectPlacing &p, int pos, int offset, int kind, int dir)
@@ -1922,57 +2069,20 @@ int place_object_wall_hug(World &world, ObjectPlacing &p, int pos, int kind)
     const WallHugInfo &hug = kWallHugs[size_t(kObjectWallHug[size_t(kind)]) % kWallHugs.size()];
     uint8_t x = uint8_t(uint16_t(pos) % 128), y = uint8_t(uint16_t(pos) / 128);
     uint8_t rx = uint8_t(room.pos % 128), ry = uint8_t(room.pos / 128);
-    bool corner = hug.kind == 4;
-    uint8_t rx2 = uint8_t(rx + room.width), ry2 = uint8_t(ry + room.height);
-    int8_t dx = int8_t(x - rx), dy = int8_t(y - ry);
-    bool below = room.width && dy < room.height * dx / room.width;
-    bool below2 = room.width && dy < room.height - dx * room.height / room.width;
-    int side;
-    uint8_t sx, sy;
-    if ((below && below2) || (!corner && below)) {
-        side = 0;
-        sx = x;
-        sy = ry;
-    } else if ((below2 && !below) || (!corner && !below)) {
-        side = 3;
-        sx = rx;
-        sy = y;
-    } else if (below && !below2) {
-        side = 1;
-        sx = rx2;
-        sy = y;
-    } else {
-        side = 2;
-        sx = x;
-        sy = ry2;
-    }
-    uint8_t angle = hug.angle[size_t(side)];
+    HugRect r{rx, ry, uint8_t(rx + room.width), uint8_t(ry + room.height)};
+    HugSide at = place_object_wall_hug_side(room, r, x, y, hug.kind == 4);
+    uint8_t sx = at.x, sy = at.y;
+    uint8_t angle = hug.angle[size_t(at.side)];
     if (angle != p.dir)
         play(world, kSfxSwoosh);
     p.dir = angle;
-    Bounds b = object_bounds(kind, angle % 4);
-    if (sx + b.min_x < rx)
-        sx = uint8_t(rx - b.min_x);
-    if (sy + b.min_y < ry)
-        sy = uint8_t(ry - b.min_y);
-    if (sx + b.max_x >= rx2)
-        sx = uint8_t(rx2 - b.max_x - 1);
-    if (sy + b.max_y >= ry2)
-        sy = uint8_t(ry2 - b.max_y - 1);
+    place_object_wall_hug_clamp(object_bounds(kind, angle % 4), 0, 0, r, sx, sy);
     int8_t part_index = kObjects[size_t(kind)].next_part;
     if (part_index != -1) {
         const NextPartInfo &part = kNextParts[size_t(part_index)];
-        b = object_bounds(part.kind, part.dir[angle % 4]);
         int8_t ox, oy;
         offset_to_xy(part.offset[angle % 4], ox, oy);
-        if (sx + b.min_x + ox < rx)
-            sx = uint8_t(rx - b.min_x - ox);
-        if (sy + b.min_y + oy < ry)
-            sy = uint8_t(ry - b.min_y - oy);
-        if (sx + b.max_x + ox >= rx2)
-            sx = uint8_t(rx2 - b.max_x - 1 - ox);
-        if (sy + b.max_y + oy >= ry2)
-            sy = uint8_t(ry2 - b.max_y - 1 - oy);
+        place_object_wall_hug_clamp(object_bounds(part.kind, part.dir[angle % 4]), ox, oy, r, sx, sy);
     }
     return int16_t(sx + (sy << 7));
 }
@@ -2013,31 +2123,176 @@ bool check_object_nav(const World &w, int kind, const ShapeInfo &shape, const Ro
     return true;
 }
 
+// apply_build_event on EV_OPEN_BUILD_ROOM:
+// cancel_top_level_requesters(REQ_BUILD_ROOM): the buy objects requester
+// closes unless placing; the hire staff one is the interface's.
+void apply_build_event_open_build_room(ObjectPlacing &p)
+{
+    cancel_buy_objects(p);
+    if (p.requester != ObjectRequester::None)
+        return;
+    p.requester = ObjectRequester::BuildRoom;
+    p.requester_mode = 1;
+    p.room_type = 0;
+    p.arg3 = 0;
+    p.offered = {};
+    p.menu_disabled = true;
+}
+
+// apply_build_event on EV_DELETE_ROOM: the room being built abandoned; it
+// goes on as EV_CANCEL_BUILD with value 0.
+void apply_build_event_delete_room(Game &game, const Event &event)
+{
+    clear_build_objects(game);
+    delete_blueprint_room(game);
+    Event cancel{EV_CANCEL_BUILD, 0, 0, event.arg};
+    apply_staff_event(game, cancel);
+    cancel_build(game);
+    apply_object_event(game, cancel);
+}
+
+// apply_build_event on EV_REQ1_RESET_ROOMS: req1_reset_rooms (src/req1.cpp).
+void apply_build_event_reset_rooms(Game &game, uint16_t dept_id)
+{
+    ObjectPlacing &p = game.world.placing;
+    p.arg = dept_id;
+    p.requester_mode = 4;
+    const DepartmentInfo &dept = kDepartments[dept_id % kDepartments.size()];
+    size_t count = 0;
+    for (int i = 0; i < dept.count; i++)
+        if (room_available(game.settings(), dept.rooms[size_t(i)]))
+            p.offered[count++] = dept.rooms[size_t(i)];
+    for (; count < p.offered.size(); count++)
+        p.offered[count] = 0;
+}
+
+// apply_build_event on EV_INIT_BLUEPRINT: a new blueprint of room `type`.
+void apply_build_event_init_blueprint(Game &game, int type)
+{
+    World &w = game.world;
+    ObjectPlacing &p = w.placing;
+    BuildState &b = w.building.build;
+    // init_blueprint.
+    b = BuildState{};
+    b.room_type = uint8_t(type);
+    p.room_type = uint16_t(type);
+    set_buyable_items(w, game.settings(), type);
+    // buy_compulsory_items (src/req1.cpp).
+    p.buy_count = {};
+    const RoomTypeInfo &info = kRoomTypeInfo[size_t(type)];
+    for (int i = 0; i < info.compulsory_count; i++)
+        p.buy_count[info.objects[size_t(i)]]++;
+    p.requester = ObjectRequester::None;
+    p.placing = false;
+    w.building.mouse = BuildMouse::Blueprint;
+    p.requester = ObjectRequester::EditRoom;
+    set_room_requester_mode(w, 0);
+    p.menu_disabled = false;
+    allocate_roominfo(game, type);
+}
+
+// apply_build_event on EV_FURNISH_EDITED_ROOM: the buy objects requester
+// for the room being edited.
+void apply_build_event_furnish_edited_room(Game &game)
+{
+    World &w = game.world;
+    ObjectPlacing &p = w.placing;
+    Building &bd = w.building;
+    const RoomInfo &room = built_room(w);
+    p.requester = ObjectRequester::None;
+    bd.saved_buy_count = p.buy_count;
+    // adjust_build_palette_for_shop (src/req1.cpp): the compulsory
+    // objects the room lacks off the list while buying more.
+    std::array<uint8_t, kObjectKinds> counts{};
+    for (uint16_t id = room.first_object; id; id = w.things[id].room_obj_next)
+        counts[w.things[id].subtype]++;
+    bd.shop_adjust = {};
+    const RoomTypeInfo &info = kRoomTypeInfo[room.type % kRoomTypes];
+    for (int i = info.compulsory_count - 1; i >= 0; i--) {
+        uint8_t obj = info.objects[size_t(i)];
+        if (counts[obj] == 0) {
+            p.buy_count[obj]--;
+            bd.shop_adjust[obj]++;
+        } else {
+            counts[obj]--;
+        }
+    }
+    set_buyable_items(w, game.settings(), room.type);
+    p.requester = ObjectRequester::BuyObjects;
+    p.room_type = bd.build.room_type;
+    p.arg3 = room.pos & 0xff;
+    p.requester_mode = 3;
+    p.item = p.offered[0];
+    p.menu_disabled = false;
+}
+
+// apply_build_event on EV_BACK_TO_PLACE_OBJECT:
+// go_back_to_place_object_requester (src/req14.cpp); with `restore` the
+// counts from before the shop.
+void apply_build_event_back_to_place_object(World &w, bool restore)
+{
+    ObjectPlacing &p = w.placing;
+    Building &bd = w.building;
+    p.requester = ObjectRequester::EditRoom;
+    if (restore) {
+        p.buy_count = bd.saved_buy_count;
+    } else {
+        // post_shop_readjust_build_palette.
+        for (int i = kObjectKinds - 2; i >= 0; i--)
+            p.buy_count[size_t(i)] = uint8_t(p.buy_count[size_t(i)] + bd.shop_adjust[size_t(i)]);
+    }
+    if (next_object_to_build(p)) {
+        place_next_in_room(w);
+    } else {
+        p.placing = false;
+        setup_place_object_requester(w);
+    }
+}
+
+// set_room_requester_mode in modes 6 and 8: what the room still needs.
+void set_room_requester_mode_furnishing(World &world)
+{
+    ObjectPlacing &p = world.placing;
+    uint16_t room = world.building.build.room;
+    if (p.room_type == kRoomCorridor || world.rooms[room % kRoomCount].first_object == 0)
+        p.arg |= 1u << kEditRoomPickUp;
+    if (p.room_type == kRoomCorridor)
+        return;
+    if (room_has_compulsory_objects(world, room)) {
+        p.arg = 0;
+        p.hint = 0xe;
+    } else {
+        p.arg = 1u << kEditRoomConfirm;
+        p.hint = 0xd;
+    }
+}
+
 } // namespace
 
-bool place_object_nav_check(World &world, uint16_t room_id, int pos, int kind, int dir, int pos2, int kind2, int dir2)
+bool place_object_nav_check(World &world, uint16_t room_id, ObjectAt object, ObjectAt part2)
 {
     const RoomInfo &room = world.rooms[room_id % kRoomCount];
-    mark_object_shape(world, pos, kind, dir);
-    if (pos2)
-        mark_object_shape(world, pos2, kind2, dir2);
-    bool ok = check_object_nav(world, kind, shape_of(kind, dir), room, pos, room.type) &&
-              (!pos2 || check_object_nav(world, kind2, shape_of(kind2, dir2), room, pos2, room.type));
+    mark_object_shape(world, object.pos, object.kind, object.dir);
+    if (part2.pos)
+        mark_object_shape(world, part2.pos, part2.kind, part2.dir);
+    bool ok = check_object_nav(world, object.kind, shape_of(object.kind, object.dir), room, object.pos, room.type) &&
+              (!part2.pos ||
+               check_object_nav(world, part2.kind, shape_of(part2.kind, part2.dir), room, part2.pos, room.type));
     for (uint16_t id = room.first_object; ok && id; id = world.things[id].room_obj_next) {
         const Thing &obj = world.things[id];
         if (obj.state != kObjectRemoved && !check_object_nav(world, obj.subtype, shape_of(obj.subtype, obj.facing),
                                                              room, (obj.y.tile << 7) + obj.x.tile, room.type))
             ok = false;
     }
-    remove_object_shape(world, pos, kind, dir);
-    if (pos2)
-        remove_object_shape(world, pos2, kind2, dir2);
+    remove_object_shape(world, object.pos, object.kind, object.dir);
+    if (part2.pos)
+        remove_object_shape(world, part2.pos, part2.kind, part2.dir);
     return ok;
 }
 
 bool corridor_object_room_nav_check(World &world, int pos, int kind, int dir, uint16_t room_id)
 {
-    if (!place_object_nav_check(world, room_id, pos, kind, dir, 0, 0, 0))
+    if (!place_object_nav_check(world, room_id, {pos, kind, dir}, {}))
         return false;
     const RoomInfo &room = world.rooms[room_id % kRoomCount];
     mark_object_shape(world, pos, kind, dir);
@@ -2092,21 +2347,9 @@ void set_room_requester_mode(World &world, int mode)
         p.hint = 0xc;
         break;
     case 6:
-    case 8: {
-        uint16_t room = world.building.build.room;
-        if (p.room_type == kRoomCorridor || world.rooms[room % kRoomCount].first_object == 0)
-            p.arg |= 1u << kEditRoomPickUp;
-        if (p.room_type != kRoomCorridor) {
-            if (room_has_compulsory_objects(world, room)) {
-                p.arg = 0;
-                p.hint = 0xe;
-            } else {
-                p.arg = 1u << kEditRoomConfirm;
-                p.hint = 0xd;
-            }
-        }
+    case 8:
+        set_room_requester_mode_furnishing(world);
         break;
-    }
     case 0xa:
         p.arg = 1u << kEditRoomConfirm | 1u << kEditRoomFurnish | 1u << kEditRoomPickUp;
         p.hint = 0x10;
@@ -2152,12 +2395,15 @@ void build_turn(Game &game)
         commit_doors(game);
 }
 
-bool apply_build_event(Game &game, const Event &event)
+namespace
+{
+
+// apply_build_event on the requester and object placing events: what
+// apply_build_event returns for them, or nothing for other events.
+std::optional<bool> apply_build_event_requesters(Game &game, const Event &event)
 {
     World &w = game.world;
     ObjectPlacing &p = w.placing;
-    Building &bd = w.building;
-    BuildState &b = bd.build;
     switch (event.type) {
     case EV_OPEN_HIRE_STAFF:
     case EV_OPEN_FURNISH_CORRIDOR:
@@ -2167,57 +2413,45 @@ bool apply_build_event(Game &game, const Event &event)
             p.requester = ObjectRequester::None;
         return false;
     case EV_OPEN_BUILD_ROOM:
-        // cancel_top_level_requesters(REQ_BUILD_ROOM): the buy objects
-        // requester closes unless placing; the hire staff one is the
-        // interface's.
-        cancel_buy_objects(p);
-        if (p.requester == ObjectRequester::None) {
-            p.requester = ObjectRequester::BuildRoom;
-            p.requester_mode = 1;
-            p.room_type = 0;
-            p.arg3 = 0;
-            p.offered = {};
-            p.menu_disabled = true;
-        }
+        apply_build_event_open_build_room(p);
         return true;
-    case EV_REQ1_RESET_ROOMS: {
-        // req1_reset_rooms (src/req1.cpp).
-        p.arg = event.value;
-        p.requester_mode = 4;
-        const DepartmentInfo &dept = kDepartments[event.value % kDepartments.size()];
-        size_t count = 0;
-        for (int i = 0; i < dept.count; i++)
-            if (room_available(game.settings(), dept.rooms[size_t(i)]))
-                p.offered[count++] = dept.rooms[size_t(i)];
-        for (; count < p.offered.size(); count++)
-            p.offered[count] = 0;
+    case EV_REQ1_RESET_ROOMS:
+        apply_build_event_reset_rooms(game, event.value);
         return true;
-    }
     case EV_CLOSE_REQUESTERS:
         p.requester = ObjectRequester::None;
         p.menu_disabled = false;
         return true;
-    case EV_INIT_BLUEPRINT: {
-        int type = event.value % kRoomTypes;
-        // init_blueprint.
-        b = BuildState{};
-        b.room_type = uint8_t(type);
-        p.room_type = uint16_t(type);
-        set_buyable_items(w, game.settings(), type);
-        // buy_compulsory_items (src/req1.cpp).
-        p.buy_count = {};
-        const RoomTypeInfo &info = kRoomTypeInfo[size_t(type)];
-        for (int i = 0; i < info.compulsory_count; i++)
-            p.buy_count[info.objects[size_t(i)]]++;
-        p.requester = ObjectRequester::None;
-        p.placing = false;
-        bd.mouse = BuildMouse::Blueprint;
-        p.requester = ObjectRequester::EditRoom;
-        set_room_requester_mode(w, 0);
-        p.menu_disabled = false;
-        allocate_roominfo(game, type);
+    case EV_INIT_BLUEPRINT:
+        apply_build_event_init_blueprint(game, event.value % kRoomTypes);
         return true;
+    case EV_FURNISH_EDITED_ROOM:
+        apply_build_event_furnish_edited_room(game);
+        return true;
+    case EV_BACK_TO_PLACE_OBJECT:
+        apply_build_event_back_to_place_object(w, event.value != 0);
+        return true;
+    case EV_PLACE_OBJECT:
+        if (!w.building.build.room || p.mode == 2)
+            return false;
+        apply_object_event(game, event);
+        if (p.requester == ObjectRequester::EditRoom && p.requester_mode >= 6)
+            set_room_requester_mode(w, p.requester_mode);
+        return true;
+    default:
+        return std::nullopt;
     }
+}
+
+} // namespace
+
+bool apply_build_event(Game &game, const Event &event)
+{
+    if (std::optional<bool> handled = apply_build_event_requesters(game, event))
+        return *handled;
+    World &w = game.world;
+    Building &bd = w.building;
+    switch (event.type) {
     case EV_MODIFY_BLUEPRINT:
         modify_blueprint(w, true, event.value);
         return true;
@@ -2247,72 +2481,12 @@ bool apply_build_event(Game &game, const Event &event)
     case EV_EDIT_BLUEPRINT:
         edit_blueprint(w);
         return true;
-    case EV_DELETE_ROOM: {
-        clear_build_objects(game);
-        delete_blueprint_room(game);
-        // It goes on as EV_CANCEL_BUILD with value 0.
-        Event cancel{EV_CANCEL_BUILD, 0, 0, event.arg};
-        apply_staff_event(game, cancel);
-        cancel_build(game);
-        apply_object_event(game, cancel);
+    case EV_DELETE_ROOM:
+        apply_build_event_delete_room(game, event);
         return true;
-    }
     case EV_CANCEL_BUILD:
         cancel_build(game);
         return false;
-    case EV_FURNISH_EDITED_ROOM: {
-        const RoomInfo &room = built_room(w);
-        p.requester = ObjectRequester::None;
-        bd.saved_buy_count = p.buy_count;
-        // adjust_build_palette_for_shop (src/req1.cpp): the compulsory
-        // objects the room lacks off the list while buying more.
-        std::array<uint8_t, kObjectKinds> counts{};
-        for (uint16_t id = room.first_object; id; id = w.things[id].room_obj_next)
-            counts[w.things[id].subtype]++;
-        bd.shop_adjust = {};
-        const RoomTypeInfo &info = kRoomTypeInfo[room.type % kRoomTypes];
-        for (int i = info.compulsory_count - 1; i >= 0; i--) {
-            uint8_t obj = info.objects[size_t(i)];
-            if (counts[obj] == 0) {
-                p.buy_count[obj]--;
-                bd.shop_adjust[obj]++;
-            } else {
-                counts[obj]--;
-            }
-        }
-        set_buyable_items(w, game.settings(), room.type);
-        p.requester = ObjectRequester::BuyObjects;
-        p.room_type = b.room_type;
-        p.arg3 = room.pos & 0xff;
-        p.requester_mode = 3;
-        p.item = p.offered[0];
-        p.menu_disabled = false;
-        return true;
-    }
-    case EV_BACK_TO_PLACE_OBJECT:
-        // go_back_to_place_object_requester (src/req14.cpp).
-        p.requester = ObjectRequester::EditRoom;
-        if (event.value) {
-            p.buy_count = bd.saved_buy_count;
-        } else {
-            // post_shop_readjust_build_palette.
-            for (int i = kObjectKinds - 2; i >= 0; i--)
-                p.buy_count[size_t(i)] = uint8_t(p.buy_count[size_t(i)] + bd.shop_adjust[size_t(i)]);
-        }
-        if (next_object_to_build(p)) {
-            place_next_in_room(w);
-        } else {
-            p.placing = false;
-            setup_place_object_requester(w);
-        }
-        return true;
-    case EV_PLACE_OBJECT:
-        if (!b.room || p.mode == 2)
-            return false;
-        apply_object_event(game, event);
-        if (p.requester == ObjectRequester::EditRoom && p.requester_mode >= 6)
-            set_room_requester_mode(w, p.requester_mode);
-        return true;
     default:
         return false;
     }

@@ -63,14 +63,14 @@ int entrance_tile(const World &w)
 // check_no_peeps_on_cell (src/objects.cpp) outside rooms: false if someone
 // stands on `tile` and, unless side is -1, faces `side`, except patients
 // in PS_ENTERTAINS_THEMSELF on any complex but 0x46, or awaiting a decision.
-// The mayor, the inspector and the reaper do not exist yet.
+// The mayor and the inspector do not exist yet.
 bool no_peeps_on_cell(const World &w, int tile, int side)
 {
     if (tile < 0 || tile >= kMapCells)
         return true;
     for (int id = w.map[size_t(tile)].first; id > 0; id = w.things[size_t(id)].cell_next) {
         const Thing &t = w.things[size_t(id)];
-        if (t.type != kThingPatient && t.type != kThingStaff)
+        if (t.type != kThingPatient && t.type != kThingStaff && t.type != kThingReaper)
             continue;
         if (side == -1)
             return false;
@@ -81,19 +81,6 @@ bool no_peeps_on_cell(const World &w, int tile, int side)
                 return true;
             return false;
         }
-    }
-    return true;
-}
-
-// check_no_peeps_in_way (src/objects.cpp).
-bool no_peeps_in_way(const World &w, int tile, int kind, int dir)
-{
-    const ShapeInfo &shape = shape_of(kind, dir);
-    for (int i = shape.count - 1; i >= 0; i--) {
-        int p = tile + shape.points[size_t(i)];
-        if (!(no_peeps_on_cell(w, p, -1) && no_peeps_on_cell(w, p - 0x80, 2) && no_peeps_on_cell(w, p + 1, 3) &&
-              no_peeps_on_cell(w, p + 0x80, 0) && no_peeps_on_cell(w, p - 1, 1)))
-            return false;
     }
     return true;
 }
@@ -135,45 +122,8 @@ uint16_t player_place_object(Game &game, int tile, int kind, int dir)
         return 0;
     int cost = game.settings().objects[size_t(kind)].start_cost;
     if (cost)
-        change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuyObject, -cost);
-    return place_object(w, game.anims(), tile, kind, dir, kPlayer, true);
-}
-
-// corridor_object_nav_check (src/build.cpp). Only the first thing on each
-// nearby cell outside rooms is looked at, as in the game.
-bool corridor_object_nav_check(World &w, int pos, int kind, int dir)
-{
-    const ShapeInfo &shape = shape_of(kind, dir);
-    int entrance = entrance_tile(w);
-    // The game picks use cell 0 for a reception desk only for the object
-    // placed: for the objects round it its side variable is always 1 by the
-    // time it is used.
-    int side = kind == kObjReceptionDesk ? 0 : 1;
-    bool ok = true;
-    mark_object_shape(w, pos, kind, dir);
-    if (!(kind == kObjPlant || kind == kObjLitterBomb ||
-          points_connected(w, entrance, pos + shape.use_offsets[size_t(side)]))) {
-        ok = false;
-    } else {
-        for (int16_t d : kAround24) {
-            int tile = pos + d;
-            if (tile < 0 || tile >= kMapCells || room_at(w, uint16_t(tile)))
-                continue;
-            int id = w.map[size_t(tile)].first;
-            if (id <= 0)
-                continue;
-            const Thing &obj = w.things[size_t(id)];
-            if (obj.type != kThingObject || obj.subtype == kObjPlant || obj.subtype == kObjLitterBomb)
-                continue;
-            const ShapeInfo &other = shape_of(obj.subtype, obj.facing);
-            if (!points_connected(w, entrance, tile + other.use_offsets[1])) {
-                ok = false;
-                break;
-            }
-        }
-    }
-    remove_object_shape(w, pos, kind, dir);
-    return ok;
+        change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxBuyObject, -cost});
+    return place_object(w, game.anims(), {tile, kind, dir}, kPlayer, true);
 }
 
 // set_edit_room_requester_mode (src/req14.cpp) for modes 6 and 0xa in the
@@ -250,6 +200,56 @@ void clear_build_objects(ObjectPlacing &p)
 }
 
 } // namespace
+
+// check_no_peeps_in_way (src/objects.cpp).
+bool no_peeps_in_way(const World &w, int tile, int kind, int dir)
+{
+    const ShapeInfo &shape = shape_of(kind, dir);
+    for (int i = shape.count - 1; i >= 0; i--) {
+        int p = tile + shape.points[size_t(i)];
+        if (!(no_peeps_on_cell(w, p, -1) && no_peeps_on_cell(w, p - 0x80, 2) && no_peeps_on_cell(w, p + 1, 3) &&
+              no_peeps_on_cell(w, p + 0x80, 0) && no_peeps_on_cell(w, p - 1, 1)))
+            return false;
+    }
+    return true;
+}
+
+// corridor_object_nav_check (src/build.cpp). Only the first thing on each
+// nearby cell outside rooms is looked at, as in the game.
+bool corridor_object_nav_check(World &w, int pos, int kind, int dir)
+{
+    const ShapeInfo &shape = shape_of(kind, dir);
+    int entrance = entrance_tile(w);
+    // The game picks use cell 0 for a reception desk only for the object
+    // placed: for the objects round it its side variable is always 1 by the
+    // time it is used.
+    int side = kind == kObjReceptionDesk ? 0 : 1;
+    bool ok = true;
+    mark_object_shape(w, pos, kind, dir);
+    if (!(kind == kObjPlant || kind == kObjLitterBomb ||
+          points_connected(w, entrance, pos + shape.use_offsets[size_t(side)]))) {
+        ok = false;
+    } else {
+        for (int16_t d : kAround24) {
+            int tile = pos + d;
+            if (tile < 0 || tile >= kMapCells || room_at(w, uint16_t(tile)))
+                continue;
+            int id = w.map[size_t(tile)].first;
+            if (id <= 0)
+                continue;
+            const Thing &obj = w.things[size_t(id)];
+            if (obj.type != kThingObject || obj.subtype == kObjPlant || obj.subtype == kObjLitterBomb)
+                continue;
+            const ShapeInfo &other = shape_of(obj.subtype, obj.facing);
+            if (!points_connected(w, entrance, tile + other.use_offsets[1])) {
+                ok = false;
+                break;
+            }
+        }
+    }
+    remove_object_shape(w, pos, kind, dir);
+    return ok;
+}
 
 int next_object_to_build(const ObjectPlacing &p)
 {
@@ -342,7 +342,7 @@ void update_placement(World &world, ObjectPlacing &p, int mouse_cell)
             return;
     }
     if (p.mode != 2) {
-        p.ok = place_object_nav_check(world, p.room, tile, kind, dir, tile2, kind2, dir2);
+        p.ok = place_object_nav_check(world, p.room, {tile, kind, dir}, {tile2, kind2, dir2});
     } else if (uint16_t room = room_at(world, uint16_t(tile))) {
         // Only objects movable into rooms may go into one.
         p.ok = (kObjectFlags[size_t(kind)] & 8) && world.rooms[room].type != kRoomDestroyed &&

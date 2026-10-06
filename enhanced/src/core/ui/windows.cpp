@@ -63,7 +63,8 @@ bool RequesterArt::load(const std::filesystem::path &dir, std::string *error)
             return false;
         }
     }
-    return load_font(dir, 1, font_, error) && load_font(dir, 2, highlight_font_, error);
+    return load_font(dir, 1, font_, error) && load_font(dir, 2, highlight_font_, error) &&
+           load_font(dir, 3, list_font_, error);
 }
 
 Interface::Interface()
@@ -178,6 +179,45 @@ void Interface::clear_buttons(int window)
     }
 }
 
+namespace
+{
+
+// The mouse as process_buttons_normal_state tests it.
+struct ButtonMouse {
+    bool left, right;                 // down, or pressed this frame
+    bool left_click, right_click;     // pressed this frame
+    bool left_release, right_release; // down last frame, not now
+};
+
+// Whether a button with `flags` shows held, `on` whether the mouse is over
+// it.
+bool button_held(uint32_t flags, bool on, const ButtonMouse &m)
+{
+    return on && ((flags & kButtonHoldOver) || ((flags & kButtonHoldLeft) && m.left) ||
+                  ((flags & kButtonHoldRight) && m.right));
+}
+
+// Whether a button with `flags` triggers, `on` whether the mouse is over
+// it.
+bool button_triggered(uint32_t flags, bool on, const ButtonMouse &m)
+{
+    return on &&
+           ((flags & kButtonTriggerOver) || ((flags & kButtonTriggerLeftHeld) && m.left) ||
+            ((flags & kButtonTriggerLeftClick) && m.left_click) ||
+            ((flags & kButtonTriggerLeftRelease) && m.left_release) || ((flags & kButtonTriggerRightHeld) && m.right) ||
+            ((flags & kButtonTriggerRightClick) && m.right_click) ||
+            ((flags & kButtonTriggerRightRelease) && m.right_release));
+}
+
+// A button's pressed state lasts only while it triggers, unless it toggles.
+void release_unless_toggle(WindowButton &b)
+{
+    if (!(b.flags & kButtonToggle))
+        b.flags &= ~uint32_t(kButtonPressed);
+}
+
+} // namespace
+
 // process_window with process_buttons_normal_state. The table has no
 // resize, drag, size-cycling, close or slider buttons, so their handling is
 // left out, as is the debug key D pressing the first enabled button.
@@ -188,6 +228,8 @@ void Interface::process_window(int window, const UiMouse &mouse, InterfaceEvents
     // that the release triggers on the next.
     bool left = mouse.left_held || mouse.left_pressed;
     bool right = mouse.right_held || mouse.right_pressed;
+    const ButtonMouse m = {
+        left, right, mouse.left_pressed, mouse.right_pressed, old_left_ && !left, old_right_ && !right};
     size_t i = 0;
     for (; i < win.buttons.size(); i++) {
         WindowButton &b = win.buttons[i];
@@ -195,18 +237,11 @@ void Interface::process_window(int window, const UiMouse &mouse, InterfaceEvents
             continue;
         bool on =
             over(mouse.x, mouse.y, b.x + win.x, b.y + win.y, b.x + win.x + b.width - 1, b.y + win.y + b.height - 1);
-        if (on && ((b.flags & kButtonHoldOver) || ((b.flags & kButtonHoldLeft) && left) ||
-                   ((b.flags & kButtonHoldRight) && right)))
+        if (button_held(b.flags, on, m))
             b.flags |= kButtonHeld;
         else
             b.flags &= ~uint32_t(kButtonHeld);
-        bool trigger = on && ((b.flags & kButtonTriggerOver) || ((b.flags & kButtonTriggerLeftHeld) && left) ||
-                              ((b.flags & kButtonTriggerLeftClick) && mouse.left_pressed) ||
-                              ((b.flags & kButtonTriggerLeftRelease) && old_left_ && !left) ||
-                              ((b.flags & kButtonTriggerRightHeld) && right) ||
-                              ((b.flags & kButtonTriggerRightClick) && mouse.right_pressed) ||
-                              ((b.flags & kButtonTriggerRightRelease) && old_right_ && !right));
-        if (trigger) {
+        if (button_triggered(b.flags, on, m)) {
             if (b.flags & kButtonToggle)
                 b.flags ^= kButtonPressed;
             else
@@ -216,13 +251,10 @@ void Interface::process_window(int window, const UiMouse &mouse, InterfaceEvents
             i++;
             break;
         }
-        if (!(b.flags & kButtonToggle))
-            b.flags &= ~uint32_t(kButtonPressed);
+        release_unless_toggle(b);
     }
-    for (; i < win.buttons.size(); i++) {
-        if (!(win.buttons[i].flags & kButtonToggle))
-            win.buttons[i].flags &= ~uint32_t(kButtonPressed);
-    }
+    for (; i < win.buttons.size(); i++)
+        release_unless_toggle(win.buttons[i]);
 
     old_left_ = left;
     old_right_ = right;
@@ -253,6 +285,20 @@ void Interface::callback(int window, int button, InterfaceEvents &events)
     }
 }
 
+void Interface::raise_pressed_window(int count)
+{
+    for (int i = 0; i < count; i++) {
+        int w = open_[size_t(i)];
+        if (!mouse_on(w, press_x_, press_y_))
+            continue;
+        // make_front_window
+        for (; i > 0; i--)
+            open_[size_t(i)] = open_[size_t(i - 1)];
+        open_[0] = w;
+        return;
+    }
+}
+
 InterfaceEvents Interface::frame(const UiMouse &mouse, bool escape)
 {
     InterfaceEvents events;
@@ -265,18 +311,8 @@ InterfaceEvents Interface::frame(const UiMouse &mouse, bool escape)
     if (open_[0] >= 0) {
         mouse_was_on_window_ = mouse_on(open_[0], mouse.x, mouse.y);
         int count = window_count();
-        if (!(list_[size_t(open_[0])].flags & kWindowModal) && (mouse.left_pressed || mouse.right_pressed)) {
-            for (int i = 0; i < count; i++) {
-                int w = open_[size_t(i)];
-                if (mouse_on(w, press_x_, press_y_)) {
-                    // make_front_window
-                    for (; i > 0; i--)
-                        open_[size_t(i)] = open_[size_t(i - 1)];
-                    open_[0] = w;
-                    break;
-                }
-            }
-        }
+        if (!(list_[size_t(open_[0])].flags & kWindowModal) && (mouse.left_pressed || mouse.right_pressed))
+            raise_pressed_window(count);
         for (int i = count - 1; i > 0; i--)
             clear_buttons(open_[size_t(i)]);
         process_window(open_[0], mouse, events);
@@ -289,6 +325,12 @@ InterfaceEvents Interface::frame(const UiMouse &mouse, bool escape)
     if (events.yes_no == YesNoAnswer::No)
         close_yes_no(true);
     return events;
+}
+
+void close_irequesters(Interface &ui)
+{
+    for (Requester r : {Requester::Patient, Requester::Staff, Requester::Handyman, Requester::Machine})
+        ui.close_window(int(r));
 }
 
 void draw_interface(UiLayer &layer, const Interface &ui, const RequesterArt &art)
@@ -313,7 +355,7 @@ void draw_interface(UiLayer &layer, const Interface &ui, const RequesterArt &art
         if (win.draw == 13) {
             // req13_overdraw.
             const Rect &box = kYesNoTextBox;
-            layer.draw_text(art.font(), {box.x, box.y, box.w}, 0, 0, ui.yes_no_question(), kTextWrap, box);
+            layer.draw_text(art.font(), 0, 0, ui.yes_no_question(), {{box.x, box.y, box.w}, box, kTextWrap});
         }
     }
 }

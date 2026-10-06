@@ -5,6 +5,7 @@
 #include "core/world/nav.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
+#include "core/world/trace.h"
 
 #include <algorithm>
 
@@ -400,6 +401,8 @@ constexpr std::array<uint8_t, 17> kInteractionStarts = [] {
 // The interaction sequences a step of action 36 picks from at random, -1
 // ending a list. Copied from the game's group_ia (src/cpxtable.cpp).
 constexpr std::array<std::array<int8_t, 5>, 1> kGroupInteractions = {{{9, 10, 11, -1, -1}}};
+static_assert(std::ranges::all_of(kGroupInteractions, [](const auto &list) { return list[0] != -1; }),
+              "every list starts with an interaction");
 
 // Object states (the game's OS_*, include/enums.h).
 constexpr uint8_t kOsStatic = 0x02;
@@ -562,21 +565,6 @@ void set_start(Thing &t, const AnimData &anims, size_t start)
     t.flip = uint8_t(anims.starts[start].flip);
 }
 
-// rest_staff (0x2be14): tiredness down by `amount` (less when very tired,
-// at least gbv.recovery_minimum), happiness up by 1.
-void rest_staff(World &world, Thing &s, int16_t amount)
-{
-    static const Balance statics;
-    const Balance::Gbv &gbv = world.settings ? world.settings->gbv : statics.gbv;
-    if (s.tiredness > gbv.recovery_factor / 2) {
-        amount = int16_t(amount * gbv.recovery_factor / s.tiredness);
-        if (amount < int16_t(gbv.recovery_minimum))
-            amount = int16_t(gbv.recovery_minimum);
-    }
-    s.tiredness = int16_t(s.tiredness - amount);
-    s.happiness = uint16_t(std::clamp(int(int16_t(s.happiness + 1)), 0, 100));
-}
-
 // complex_success (0x423c8) for a member of staff: a rest on a sofa, at
 // snooker or a video game (kinds 18, 20, 22) and a use of their object
 // (24, Thing.times_used). Research (8, 10, 14, 16) and an autopsy (12) are
@@ -718,11 +706,389 @@ void merge_slave(World &world, uint16_t id)
     slave.object = e.object;
 }
 
+// What a step of a complex returns when it carried on; any other value is
+// what process returns at once.
+constexpr uint8_t kStepDone = 1;
+
+// Action 56, staff_go_near_object (0x42748).
+uint8_t process_go_near_object(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    const Thing &obj = world.things[e.object];
+    uint16_t pos = can_i_go_near_point(world, e, cell_of(obj));
+    if (!pos) {
+        fail(r, id);
+        return 0;
+    }
+    set_destination_coords(world, id, pos);
+    head_off(r, id);
+    e.countdown = 0;
+    return kStepDone;
+}
+
+// Action 6: onto the object, from its use cell on the member of staff's side.
+uint8_t process_use_object(const Run &r, uint16_t id, uint16_t tile, size_t side)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    Thing &obj = world.things[e.object];
+    if (obj.in_use == 1 || obj.state == kOsRemoved || obj.type != kThingObject || obj.use_pos[side] != tile) {
+        fail(r, id);
+        return 3;
+    }
+    trace_event("use_object %u obj=%u kind=%u", unsigned(id), unsigned(e.object), unsigned(obj.subtype));
+    obj.in_use = 1;
+    obj.user = id;
+    e.facing = obj.facing;
+    if (obj.use_style == 1 || obj.use_style == 2) {
+        e.exit_tile = obj.use_pos[side + 3];
+        move_node(world, id, obj.use_x, obj.use_y);
+        obj.state = kOsInUse;
+        e.depth = obj.depth;
+        if (kObjectUse[obj.subtype].overlay_anim) {
+            obj.saved_depth = obj.depth;
+            obj.depth = 8;
+        }
+        world.map[cell_of(e)].flags |= kCellBig;
+    }
+    for (size_t i = 10; i < 13; i++)
+        e.layers[i] = obj.layers[i];
+    return kStepDone;
+}
+
+// Action 8: off the object, onto its leave cell on the member of staff's
+// side (a slave of a use style 2 object onto use_pos[4]).
+void process_leave_object(const Run &r, uint16_t id, uint16_t tile, size_t side)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    Thing &obj = world.things[e.object];
+    obj.user = 0;
+    e.object = 0;
+    obj.in_use = 0;
+    if (obj.use_style == 2 || obj.use_style == 1) {
+        adjust_big_cell_flag(world, tile);
+        uint16_t leave = obj.use_pos[side + 3];
+        move_node(world, id, {0x80, uint8_t(leave % kMapSize)}, {0x80, uint8_t(leave / kMapSize)});
+        e.depth = 0;
+        if (kObjectUse[obj.subtype].overlay_anim) {
+            obj.depth = obj.saved_depth;
+            obj.saved_depth = 0;
+        }
+        obj.state = kOsStatic;
+        if (obj.use_style == 2 && e.slave) {
+            move_node(world, e.slave, {0x80, uint8_t(obj.use_pos[4] % kMapSize)},
+                      {0x80, uint8_t(obj.use_pos[4] / kMapSize)});
+            world.things[e.slave].object = 0;
+        }
+    }
+    play_staff_anim(r.anims, e, kAnimStand);
+    e.layers[10] = e.layers[11] = e.layers[12] = 0;
+}
+
+// Action 18: faces the way its object's kind faces its user.
+void process_face_object(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    if (!e.object)
+        return;
+    const Thing &obj = world.things[e.object];
+    int face = kObjectUse[obj.subtype].face_dirn;
+    // Kinds whose face_dirn is -2 or -99 make the game read before
+    // face_dirns; here they leave the facing.
+    if (face < 0 || size_t(face) >= kFaceDirns.size())
+        return;
+    int8_t d = kFaceDirns[size_t(face)][obj.facing];
+    if (d != -1) {
+        e.facing = uint8_t(d);
+        play_staff_anim(r.anims, e, kAnimStand);
+    }
+}
+
+// Action 20: onto the door of the cell it faces, claiming the room it
+// enters; a double door's other half swings open.
+uint8_t process_enter_door(const Run &r, uint16_t id, const ComplexStep &entry, uint16_t tile)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    uint16_t door_id = find_door(world, id);
+    if (!door_id) {
+        fail(r, id);
+        return 4;
+    }
+    Thing &door = world.things[door_id];
+    bool double_door = door.subtype != kObjDoor;
+    if (door.in_use == 1) {
+        e.state = kStaffComplexRetry;
+        return 3;
+    }
+    e.facing = e.room ? door.facing : kOppositeAngle[door.facing & 3];
+    e.exit_tile = tile == door.use_pos[0] ? door.use_pos[3] : door.use_pos[0];
+    if (entry.anim == 1 && !check_room_mutex_on_entry(world, id)) {
+        fail(r, id);
+        return 4;
+    }
+    const RoomInfo &room = world.rooms[door.room_id];
+    if (e.room == 0 && (room.being_edited || room.state == kRoomEdited ||
+                        (door.owner == 0 && door.room_id == world.building.build.room))) {
+        fail(r, id);
+        return 4;
+    }
+    play_staff_anim(r.anims, e, double_door ? kAnimDoubleDoor : kAnimSingleDoor);
+    door.in_use = 1;
+    e.object = door_id;
+    door.user = id;
+    move_node(world, id, door.x, door.y);
+    door.state = kOsInUse;
+    MapCell &cell = world.map[cell_of(door)];
+    door.door_cell_flag = cell.flags & kCellDoorInUse ? 1 : 0;
+    cell.flags |= kCellDoorInUse;
+    if (double_door) {
+        Thing &other = world.things[door.door_partner];
+        other.state = kOsDoubleDoorSwings;
+        set_start(other, r.anims, kAnimSwingOpen + e.facing);
+        other.anim_speed = e.anim_speed;
+    }
+    return kStepDone;
+}
+
+// Action 22: off its door onto exit_tile, in that cell's room or none
+// (answering its pager there); a single door free again, a double door
+// swinging shut.
+void process_leave_door(const Run &r, uint16_t id)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    clear_my_mutex(world, id);
+    Thing &door = world.things[e.object];
+    door.user = 0;
+    e.object = 0;
+    MapPos x{0x80, uint8_t(e.exit_tile % kMapSize)};
+    MapPos y{0x80, uint8_t(e.exit_tile / kMapSize)};
+    e.dest_x = x.tile;
+    e.dest_y = y.tile;
+    move_node(world, id, x, y);
+    move_person_in_room_list(world, id, e.exit_tile);
+    if (e.room) {
+        world.rooms[e.room].staff_free = 0;
+        pager_arrival(world, id);
+    }
+    MapCell &cell = world.map[cell_of(door)];
+    if (!door.door_cell_flag)
+        cell.flags &= uint8_t(~kCellDoorInUse);
+    if (door.subtype == kObjDoor) {
+        door.in_use = 0;
+        door.state = kOsStatic;
+    } else {
+        door.state = kOsDoubleDoorSwings;
+        set_start(door, r.anims, kAnimSwingClose + e.facing);
+    }
+}
+
+// Action 48: the slave off its object, onto the object's use_pos[4].
+void process_move_slave_off(World &world, const Thing &e)
+{
+    if (e.slave && e.object) {
+        uint16_t leave = world.things[e.object].use_pos[4];
+        move_node(world, e.slave, {0x80, uint8_t(leave % kMapSize)}, {0x80, uint8_t(leave / kMapSize)});
+        world.things[e.slave].object = 0;
+    }
+}
+
+// Action 16: a random animation of the step's group.
+void process_group_anim(const Run &r, Thing &e, const ComplexStep &entry)
+{
+    const GroupAnim &group = kGroupAnims[entry.anim];
+    auto choice = int8_t(old_newrand(r.world.seed, "process_staff_complex") % uint32_t(group.count));
+    play_staff_anim(r.anims, e, size_t(group.anims[size_t(choice)]));
+}
+
+// Action 36: a random interaction sequence of the step's list. The game
+// counts the list from its first entry, dividing by zero for an empty one;
+// none is (see kGroupInteractions).
+void process_group_interaction(const Run &r, uint16_t id, const ComplexStep &entry)
+{
+    const std::array<int8_t, 5> &list = kGroupInteractions[entry.anim];
+    uint8_t n = 1;
+    while (n < 5 && list[n] != -1)
+        n++;
+    start_interaction(r, id, uint8_t(list[old_newrand(r.world.seed, "process_staff_complex") % n]));
+}
+
+// Actions 38 and 40: the slave starts the complex the next byte names (as
+// a step number), then PS_SLAVE_READY; with 38 it runs its first step now.
+uint8_t process_slave_complex(const Run &r, uint16_t id, const ComplexStep &entry)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    if (!e.slave) {
+        fail(r, id);
+        return 0;
+    }
+    e.complex_pc++;
+    Thing &patient = world.things[e.slave];
+    patient.next_state = kPsSlaveReady;
+    set_complex(world, e.slave, uint16_t(r.staff.at(e.complex_pc) * 10), 0);
+    if (entry.action == 38)
+        process_either(r, e.slave);
+    return kStepDone;
+}
+
+// The step's actions that sequence the complex, animate or change the
+// member of staff alone.
+uint8_t process_sequence_action(const Run &r, uint16_t id, const ComplexStep &entry)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    switch (entry.action) {
+    case 4:
+        play_staff_anim(r.anims, e, entry.anim);
+        break;
+    case 16:
+        process_group_anim(r, e, entry);
+        break;
+    case 14:
+        if (uint16_t door = find_door(world, id))
+            e.facing = kOppositeAngle[world.things[door].facing & 3];
+        break;
+    case 24:
+        e.complex_pc++;
+        e.complex_resume = uint16_t(r.staff.at(e.complex_pc) * 10);
+        break;
+    case 26:
+        e.complex_pc = uint16_t(e.complex_queued - 1);
+        e.complex_queued = 0;
+        break;
+    case 28:
+        e.complex_pc++;
+        start_interaction(r, id, uint8_t(r.staff.at(e.complex_pc) + 1));
+        break;
+    case 30:
+        merge_slave(world, id);
+        break;
+    case 36:
+        process_group_interaction(r, id, entry);
+        break;
+    case 38:
+    case 40:
+        return process_slave_complex(r, id, entry);
+    case 46:
+        head_off(r, id);
+        break;
+    case 52:
+        staff_success(world, e, entry.anim);
+        break;
+    case 58:
+        e.subtype = uint8_t(entry.anim);
+        break;
+    default:
+        // 0 and 12 do nothing, nor does 50 here (see process); 60 and 62
+        // are not ported, see process_staff_complex.
+        break;
+    }
+    return kStepDone;
+}
+
+// Runs the action of step `entry`: kStepDone, or the value process returns.
+uint8_t process_action(const Run &r, uint16_t id, const ComplexStep &entry, uint16_t obj_id, uint16_t tile)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    size_t side = use_side(e);
+    switch (entry.action) {
+    case 56:
+        return process_go_near_object(r, id);
+    case 2:
+        e.object = obj_id;
+        [[fallthrough]];
+    case 44:
+        set_destination_coords(world, id, world.things[e.object].use_pos[side]);
+        head_off(r, id);
+        e.countdown = 0;
+        return kStepDone;
+    case 54:
+        if (e.slave)
+            play_frame(e, r.anims, kPatientAnimStarts[world.things[e.slave].subtype][entry.anim]);
+        return kStepDone;
+    case 6:
+        return process_use_object(r, id, tile, side);
+    case 8:
+        process_leave_object(r, id, tile, side);
+        return kStepDone;
+    case 10:
+        if (e.object)
+            play_frame(world.things[e.object], r.anims, entry.anim);
+        return kStepDone;
+    case 18:
+        process_face_object(r, id);
+        return kStepDone;
+    case 20:
+        return process_enter_door(r, id, entry, tile);
+    case 22:
+        process_leave_door(r, id);
+        return kStepDone;
+    case 48:
+        process_move_slave_off(world, e);
+        return kStepDone;
+    default:
+        return process_sequence_action(r, id, entry);
+    }
+}
+
+// Moves the complex on past step `entry`: at once, or after it has repeated
+// entry.repeat times (a random 1 to -entry.repeat when negative).
+void process_advance(World &world, Thing &e, const ComplexStep &entry)
+{
+    if (!entry.repeat) {
+        e.complex_pc++;
+        return;
+    }
+    if (e.complex_repeat) {
+        e.complex_repeat--;
+        if (e.complex_repeat == 0)
+            e.complex_pc++;
+    } else if (entry.repeat < 0) {
+        e.complex_repeat = uint8_t(old_newrand(world.seed, "process_staff_complex") % uint32_t(-entry.repeat) + 1);
+    } else {
+        e.complex_repeat = uint8_t(entry.repeat);
+    }
+}
+
+// At the end of the complex, starts the one queued behind it (running its
+// first step) or moves on to next_state; otherwise runs a chained step.
+void process_finish(const Run &r, uint16_t id, const ComplexStep &entry)
+{
+    World &world = r.world;
+    Thing &e = world.things[id];
+    if (r.staff.at(e.complex_pc) != 0) {
+        if (entry.chain)
+            process(r, id);
+        return;
+    }
+    e.complex_pc = 0;
+    uint16_t action = e.complex_queued;
+    if (action) {
+        uint16_t arg = uint16_t(e.queued_arg_x + (e.queued_arg_y << 7));
+        e.complex_queued = e.complex_queued2;
+        e.complex_queued2 = 0;
+        e.queued_arg_x = e.queued2_arg_x;
+        e.queued2_arg_x = 0;
+        e.queued_arg_y = e.queued2_arg_y;
+        e.queued2_arg_y = 0;
+        if (set_complex(world, id, action, arg))
+            process(r, id);
+    } else if (e.next_state) {
+        e.state = e.next_state;
+        e.next_state = 0;
+    }
+}
+
 uint8_t process(const Run &r, uint16_t id)
 {
     World &world = r.world;
     Thing &e = world.things[id];
-    bool run_things = false;
     if (e.complex_pc == 0)
         return 2;
     uint8_t op = r.staff.at(e.complex_pc);
@@ -742,283 +1108,31 @@ uint8_t process(const Run &r, uint16_t id)
     }
     if (entry.state)
         e.state = entry.state;
-    size_t side = use_side(e);
-    switch (entry.action) {
-    case 56: {
-        // staff_go_near_object (0x42748).
-        const Thing &obj = world.things[e.object];
-        uint16_t pos = can_i_go_near_point(world, e, cell_of(obj));
-        if (!pos) {
-            fail(r, id);
-            return 0;
-        }
-        set_destination_coords(world, id, pos);
-        head_off(r, id);
-        e.countdown = 0;
-        break;
-    }
-    case 2:
-        e.object = obj_id;
-        [[fallthrough]];
-    case 44:
-        set_destination_coords(world, id, world.things[e.object].use_pos[side]);
-        head_off(r, id);
-        e.countdown = 0;
-        break;
-    case 4:
-        play_staff_anim(r.anims, e, entry.anim);
-        break;
-    case 54:
-        if (e.slave)
-            play_frame(e, r.anims, kPatientAnimStarts[world.things[e.slave].subtype][entry.anim]);
-        break;
-    case 6: {
-        Thing &obj = world.things[e.object];
-        if (obj.in_use == 1 || obj.state == kOsRemoved || obj.type != kThingObject || obj.use_pos[side] != tile) {
-            fail(r, id);
-            return 3;
-        }
-        obj.in_use = 1;
-        obj.user = id;
-        e.facing = obj.facing;
-        if (obj.use_style == 1 || obj.use_style == 2) {
-            e.exit_tile = obj.use_pos[side + 3];
-            move_node(world, id, obj.use_x, obj.use_y);
-            obj.state = kOsInUse;
-            e.depth = obj.depth;
-            if (kObjectUse[obj.subtype].overlay_anim) {
-                obj.saved_depth = obj.depth;
-                obj.depth = 8;
-            }
-            world.map[cell_of(e)].flags |= kCellBig;
-        }
-        for (size_t i = 10; i < 13; i++)
-            e.layers[i] = obj.layers[i];
-        break;
-    }
-    case 8: {
-        Thing &obj = world.things[e.object];
-        obj.user = 0;
-        e.object = 0;
-        obj.in_use = 0;
-        if (obj.use_style == 2 || obj.use_style == 1) {
-            adjust_big_cell_flag(world, tile);
-            uint16_t leave = obj.use_pos[side + 3];
-            move_node(world, id, {0x80, uint8_t(leave % kMapSize)}, {0x80, uint8_t(leave / kMapSize)});
-            e.depth = 0;
-            if (kObjectUse[obj.subtype].overlay_anim) {
-                obj.depth = obj.saved_depth;
-                obj.saved_depth = 0;
-            }
-            obj.state = kOsStatic;
-            if (obj.use_style == 2 && e.slave) {
-                move_node(world, e.slave, {0x80, uint8_t(obj.use_pos[4] % kMapSize)},
-                          {0x80, uint8_t(obj.use_pos[4] / kMapSize)});
-                world.things[e.slave].object = 0;
-            }
-        }
-        play_staff_anim(r.anims, e, kAnimStand);
-        e.layers[10] = e.layers[11] = e.layers[12] = 0;
-        break;
-    }
-    case 10:
-        if (e.object)
-            play_frame(world.things[e.object], r.anims, entry.anim);
-        break;
-    case 16: {
-        const GroupAnim &group = kGroupAnims[entry.anim];
-        auto choice = int8_t(old_newrand(world.seed, "process_staff_complex") % uint32_t(group.count));
-        play_staff_anim(r.anims, e, size_t(group.anims[size_t(choice)]));
-        break;
-    }
-    case 14:
-        if (uint16_t door = find_door(world, id))
-            e.facing = kOppositeAngle[world.things[door].facing & 3];
-        break;
-    case 20: {
-        uint16_t door_id = find_door(world, id);
-        if (!door_id) {
-            fail(r, id);
-            return 4;
-        }
-        Thing &door = world.things[door_id];
-        bool double_door = door.subtype != kObjDoor;
-        if (door.in_use == 1) {
-            e.state = kStaffComplexRetry;
-            return 3;
-        }
-        e.facing = e.room ? door.facing : kOppositeAngle[door.facing & 3];
-        e.exit_tile = tile == door.use_pos[0] ? door.use_pos[3] : door.use_pos[0];
-        if (entry.anim == 1 && !check_room_mutex_on_entry(world, id)) {
-            fail(r, id);
-            return 4;
-        }
-        const RoomInfo &room = world.rooms[door.room_id];
-        if (e.room == 0 && (room.being_edited || room.state == kRoomEdited ||
-                            (door.owner == 0 && door.room_id == world.building.build.room))) {
-            fail(r, id);
-            return 4;
-        }
-        play_staff_anim(r.anims, e, double_door ? kAnimDoubleDoor : kAnimSingleDoor);
-        door.in_use = 1;
-        e.object = door_id;
-        door.user = id;
-        move_node(world, id, door.x, door.y);
-        door.state = kOsInUse;
-        MapCell &cell = world.map[cell_of(door)];
-        door.door_cell_flag = cell.flags & kCellDoorInUse ? 1 : 0;
-        cell.flags |= kCellDoorInUse;
-        if (double_door) {
-            Thing &other = world.things[door.door_partner];
-            other.state = kOsDoubleDoorSwings;
-            set_start(other, r.anims, kAnimSwingOpen + e.facing);
-            other.anim_speed = e.anim_speed;
-        }
-        break;
-    }
-    case 22: {
-        clear_my_mutex(world, id);
-        Thing &door = world.things[e.object];
-        door.user = 0;
-        e.object = 0;
-        MapPos x{0x80, uint8_t(e.exit_tile % kMapSize)};
-        MapPos y{0x80, uint8_t(e.exit_tile / kMapSize)};
-        e.dest_x = x.tile;
-        e.dest_y = y.tile;
-        move_node(world, id, x, y);
-        move_person_in_room_list(world, id, e.exit_tile);
-        if (e.room) {
-            world.rooms[e.room].staff_free = 0;
-            pager_arrival(world, id);
-        }
-        MapCell &cell = world.map[cell_of(door)];
-        if (!door.door_cell_flag)
-            cell.flags &= uint8_t(~kCellDoorInUse);
-        if (door.subtype == kObjDoor) {
-            door.in_use = 0;
-            door.state = kOsStatic;
-        } else {
-            door.state = kOsDoubleDoorSwings;
-            set_start(door, r.anims, kAnimSwingClose + e.facing);
-        }
-        break;
-    }
-    case 24:
-        e.complex_pc++;
-        e.complex_resume = uint16_t(r.staff.at(e.complex_pc) * 10);
-        break;
-    case 26:
-        e.complex_pc = uint16_t(e.complex_queued - 1);
-        e.complex_queued = 0;
-        break;
-    case 28:
-        e.complex_pc++;
-        start_interaction(r, id, uint8_t(r.staff.at(e.complex_pc) + 1));
-        break;
-    case 30:
-        merge_slave(world, id);
-        break;
-    case 36: {
-        const std::array<int8_t, 5> &list = kGroupInteractions[entry.anim];
-        uint8_t n = 0;
-        while (n < 5 && list[n] != -1)
-            n++;
-        start_interaction(r, id, uint8_t(list[old_newrand(world.seed, "process_staff_complex") % n]));
-        break;
-    }
-    case 38:
-    case 40: {
-        if (!e.slave) {
-            fail(r, id);
-            return 0;
-        }
-        e.complex_pc++;
-        Thing &patient = world.things[e.slave];
-        patient.next_state = kPsSlaveReady;
-        set_complex(world, e.slave, uint16_t(r.staff.at(e.complex_pc) * 10), 0);
-        if (entry.action == 38)
-            process_either(r, e.slave);
-        break;
-    }
-    case 46:
-        head_off(r, id);
-        break;
-    case 48:
-        if (e.slave && e.object) {
-            uint16_t leave = world.things[e.object].use_pos[4];
-            move_node(world, e.slave, {0x80, uint8_t(leave % kMapSize)}, {0x80, uint8_t(leave / kMapSize)});
-            world.things[e.slave].object = 0;
-        }
-        break;
-    case 18:
-        if (e.object) {
-            const Thing &obj = world.things[e.object];
-            int face = kObjectUse[obj.subtype].face_dirn;
-            // Kinds whose face_dirn is -2 or -99 make the game read before
-            // face_dirns; here they leave the facing.
-            if (face >= 0 && size_t(face) < kFaceDirns.size()) {
-                int8_t d = kFaceDirns[size_t(face)][obj.facing];
-                if (d != -1) {
-                    e.facing = uint8_t(d);
-                    play_staff_anim(r.anims, e, kAnimStand);
-                }
-            }
-        }
-        break;
-    case 50:
-        run_things = true;
-        break;
-    case 58:
-        e.subtype = uint8_t(entry.anim);
-        break;
-    case 52:
-        staff_success(world, e, entry.anim);
-        break;
-    default:
-        // 0 and 12 do nothing; 60 and 62 are not ported, see
-        // process_staff_complex.
-        break;
-    }
-    if (entry.repeat) {
-        if (e.complex_repeat) {
-            e.complex_repeat--;
-            if (e.complex_repeat == 0)
-                e.complex_pc++;
-        } else if (entry.repeat < 0) {
-            e.complex_repeat = uint8_t(old_newrand(world.seed, "process_staff_complex") % uint32_t(-entry.repeat) + 1);
-        } else {
-            e.complex_repeat = uint8_t(entry.repeat);
-        }
-    } else {
-        e.complex_pc++;
-    }
-    if (r.staff.at(e.complex_pc) == 0) {
-        e.complex_pc = 0;
-        uint16_t action = e.complex_queued;
-        if (action) {
-            uint16_t arg = uint16_t(e.queued_arg_x + (e.queued_arg_y << 7));
-            e.complex_queued = e.complex_queued2;
-            e.complex_queued2 = 0;
-            e.queued_arg_x = e.queued2_arg_x;
-            e.queued2_arg_x = 0;
-            e.queued_arg_y = e.queued2_arg_y;
-            e.queued2_arg_y = 0;
-            if (set_complex(world, id, action, arg))
-                process(r, id);
-        } else if (e.next_state) {
-            e.state = e.next_state;
-            e.next_state = 0;
-        }
-    } else if (entry.chain) {
-        process(r, id);
-    }
-    // The game runs process_things for the member of staff alone.
-    if (run_things)
+    if (uint8_t result = process_action(r, id, entry, obj_id, tile); result != kStepDone)
+        return result;
+    process_advance(world, e, entry);
+    process_finish(r, id, entry);
+    // Action 50: the game runs process_things for the member of staff alone.
+    if (entry.action == 50)
         staff_turn(world, r.anims, r.person, r.staff, id, r.game_turn);
     return 1;
 }
 
 } // namespace
+
+void rest_staff(World &world, Thing &s, int16_t amount)
+{
+    static const Balance statics;
+    const Balance::Gbv &gbv = world.settings ? world.settings->gbv : statics.gbv;
+    trace_event("rest_staff %u amount=%d tired=%d", unsigned(&s - world.things.data()), int(amount), int(s.tiredness));
+    if (s.tiredness > gbv.recovery_factor / 2) {
+        amount = int16_t(amount * gbv.recovery_factor / s.tiredness);
+        if (amount < int16_t(gbv.recovery_minimum))
+            amount = int16_t(gbv.recovery_minimum);
+    }
+    s.tiredness = int16_t(s.tiredness - amount);
+    s.happiness = uint16_t(std::clamp(int(int16_t(s.happiness + 1)), 0, 100));
+}
 
 bool load_staff_complexes(const std::filesystem::path &dir, StaffComplexes &out, std::string *error)
 {
@@ -1049,10 +1163,9 @@ void fail_staff_complex(World &world, const AnimData &anims, uint16_t id)
     fail({world, anims, no_person, no_staff, 0}, id);
 }
 
-void start_new_interaction(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
-                           const StaffComplexes &staff_complexes, uint16_t id, uint8_t seq, uint32_t game_turn)
+void start_new_interaction(const PersonRun &run, const StaffComplexes &staff_complexes, uint16_t id, uint8_t seq)
 {
-    start_interaction({world, anims, person_complexes, staff_complexes, game_turn}, id, seq);
+    start_interaction({run.world, run.anims, run.complexes, staff_complexes, run.game_turn}, id, seq);
 }
 
 bool staff_complex_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,

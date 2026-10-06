@@ -23,6 +23,13 @@ constexpr uint8_t kStaffHandyman = 2;
 constexpr uint8_t kStaffReceptionist = 3;
 constexpr uint8_t kStaffSurgeon = 4;
 
+// The handyman window's priority buttons, counted from 1 in its list
+// (hires_requester_buttons[0x27] to [0x29], src/reqbut.cpp): litter, plants
+// and repairs. EV_ADJUST_HANDYMAN_VALUES carries one in `arg`.
+constexpr uint8_t kHandymanLitterButton = 29;
+constexpr uint8_t kHandymanPlantsButton = 30;
+constexpr uint8_t kHandymanRepairButton = 31;
+
 // Thing.skills bits (the game's SKILL_*).
 constexpr uint16_t kSkillReceptionist = 0x1;
 constexpr uint16_t kSkillHandyman = 0x2;
@@ -50,6 +57,7 @@ constexpr uint8_t kStaffWaitForComplexSlave = 0x26;
 constexpr uint8_t kStaffInCorridor = 0x28;
 constexpr uint8_t kStaffComplexRetry = 0x2c;
 constexpr uint8_t kStaffApplicant = 0x2e;
+constexpr uint8_t kStaffInStaffRoom = 0x30;
 constexpr uint8_t kStaffWanders = 0x34;
 constexpr uint8_t kStaffEvacuate = 0x36;
 constexpr uint8_t kStaffBackToApplicants = 0x38;
@@ -137,18 +145,25 @@ uint16_t staff_held_anim(uint8_t kind);
 // place_staff_on_map then refuses it.
 bool staff_place_ok(const World &world, int cell, uint8_t kind);
 
+// What placing staff reads besides the world: the animations, the level's
+// settings and the turn being played (the game's actual_game_turn).
+struct StaffSetup {
+    const AnimData &anims;
+    const Balance &settings;
+    uint32_t game_turn;
+};
+
 // place_staff_on_map (0x29c4c) for player 0: puts staff member `id` on
 // `cell` if the cell is player 0's (or `force`), standing in the middle
 // facing as it was (0 if stuck), in the state for its kind of the room it
 // is in (holding the room in place of whoever did, where it may work) or of
 // the corridor, walking at its ability's speed. It becomes player 0's;
 // unless a picked-up member of staff is held (World::held_staff, whoever
-// `id` is), it is a new hire: its hire turn `game_turn`, notice and
+// `id` is), it is a new hire: its hire turn `setup.game_turn`, notice and
 // discontent cleared, and the treatments its skills complete available
 // (set_expertise_staff). It answers the page to its room, if any. Once
 // placed, no one is held. Returns whether it was placed.
-bool place_staff_on_map(World &world, const AnimData &anims, const Balance &settings, int cell, uint16_t id, bool force,
-                        uint32_t game_turn);
+bool place_staff_on_map(World &world, const StaffSetup &setup, int cell, uint16_t id, bool force);
 
 // One game turn of staff member `id`, as process_things's staff states,
 // drawing from world.seed as the game does:
@@ -188,10 +203,16 @@ bool place_staff_on_map(World &world, const AnimData &anims, const Balance &sett
 // - handing in notice and leaving when it runs out (shall_i_resign,
 //   sack_staff), and going back to the applicants off the map at the
 //   entrance (SS_BACK_TO_APPLICANTS);
+// - breaks (take_a_break): ordered (EV_ORDER_REST) or, more tired than the
+//   policy's rest_threshold, when deciding what to do (wandering, a
+//   handyman, a doctor free at the desk or in a diagnosis room, a nurse in
+//   a ward), to the nearest staff room, resting there (staff_in_staff_room)
+//   on its sofa, pool table and video game until no longer tired, then
+//   back to work;
 // - first, modify_staff: tiredness, warmth, happiness, discontent and
 //   cracking up.
-// Not ported, as they need what does not exist yet: staff rooms,
-// research, training, the treatment rooms' work, the operating theatre,
+// Not ported, as they need what does not exist yet: research, training,
+// the treatment rooms' work, the operating theatre,
 // vaccinations, plants' pages, the per-turn counts, status icons and
 // poaching.
 void staff_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
@@ -204,6 +225,14 @@ void staff_turn(World &world, const AnimData &anims, const PersonComplexes &pers
 // start_rooms_in_use gave the world. A handyman drops his repair pages;
 // nurses' vaccinations are not ported.
 void interrupt_staff(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
+
+// adjust_handyman_values (0x87c44): raises handyman `id`'s priority for the
+// job of `button` (kHandymanLitterButton, kHandymanPlantsButton or
+// kHandymanRepairButton) by 6, taking from the larger of the other two
+// until the three sum to at most 100; from 94 it becomes 100 and the others
+// 0. Another button changes no priority. Either way his counts of jobs done
+// (litter_count, plant_count, repair_count) start again from 0.
+void adjust_handyman_values(World &world, uint16_t id, uint8_t button);
 
 // sack_staff (0x2a804): member of staff `id` leaves the hospital. Mode 0
 // (sacked) pays them a month's wage (kTxSeverancePay), mode 1 (notice run
@@ -238,6 +267,11 @@ bool put_back_held_staff(Game &game);
 // - EV_CANCEL_BUILD: the picked-up member of staff put back
 //   (put_back_held_staff), else a held applicant back on the list;
 // - EV_SACK_STAFF: `value` sacked with mode `arg` (sack_staff);
+// - EV_ADJUST_HANDYMAN_VALUES: handyman `value`'s priorities, by the button
+//   in `arg`'s low byte (adjust_handyman_values);
+// - EV_ORDER_REST, EV_ORDER_TRAIN, EV_ORDER_LEAVE_ROOM and command 0x60:
+//   the order (kOrderRest 1, 4, 8 and 2) replaces the low four bits of
+//   member of staff `value`'s Thing.orders;
 // - EV_ANSWER_PLAYERCALL with `value` 1: the staff's resignation call `arg`
 //   removed; the staff demand requester it opens is not ported;
 // - that requester's answers about member of staff `value`:

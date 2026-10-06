@@ -51,6 +51,7 @@ void test_patient_leaves_level1(const char *dir);
 void test_litter_drawn(const char *dir);
 void test_litter_dropping_level1(const char *dir);
 void test_reputation_go_home(const char *dir);
+void test_patient_dies_level1(const char *dir);
 
 // ui.cpp
 void test_menu_bar(const char *dir);
@@ -62,6 +63,7 @@ void test_startup_new_game(const char *dir);
 void test_town_map(const char *dir);
 void test_jukebox(const char *dir);
 void test_charts(const char *dir);
+void test_info_windows(const char *dir);
 
 // staff.cpp
 void test_applicants_level1(const char *dir);
@@ -72,6 +74,7 @@ void test_handyman_sweeps(const char *dir);
 void test_pick_up_staff(const char *dir);
 void test_sack_doctor(const char *dir);
 void test_staff_notice_runs_out(const char *dir);
+void test_adjust_handyman_values();
 
 // game.cpp
 void test_game_clock(const char *dir);
@@ -93,6 +96,12 @@ void test_general_diag_level1(const char *dir);
 void test_cardiogram_level6(const char *dir);
 void test_ward_level1(const char *dir);
 void test_psychiatry_level1(const char *dir);
+void test_treatment_level1(const char *dir);
+void test_info_windows_level1(const char *dir);
+void test_nearest_room_info();
+void test_staff_room_level1(const char *dir);
+void test_toilets_level1(const char *dir);
+void test_toilets_none_level1(const char *dir);
 
 // replay.cpp
 void test_snapshot_round_trip(const char *dir);
@@ -115,11 +124,23 @@ struct DataTest {
 #define TEST(fn) {#fn, fn}
 
 const Test kTests[] = {
-    TEST(test_blit_clips_and_skips), TEST(test_req_format),        TEST(test_iso_round_trip),
-    TEST(test_rnc_rejects_garbage),  TEST(test_missing_data),      TEST(test_static_shadows),
-    TEST(test_text_layout),          TEST(test_wall_in_way),       TEST(test_wallhug),
-    TEST(test_orthonav_whatnext),    TEST(test_create_an_illness), TEST(test_set_complex),
-    TEST(test_queue_lists),          TEST(test_sound_player),      TEST(test_xmi_parse),
+    TEST(test_blit_clips_and_skips),
+    TEST(test_req_format),
+    TEST(test_iso_round_trip),
+    TEST(test_rnc_rejects_garbage),
+    TEST(test_missing_data),
+    TEST(test_static_shadows),
+    TEST(test_text_layout),
+    TEST(test_wall_in_way),
+    TEST(test_wallhug),
+    TEST(test_orthonav_whatnext),
+    TEST(test_create_an_illness),
+    TEST(test_set_complex),
+    TEST(test_queue_lists),
+    TEST(test_sound_player),
+    TEST(test_xmi_parse),
+    TEST(test_adjust_handyman_values),
+    TEST(test_nearest_room_info),
 };
 
 const DataTest kDataTests[] = {
@@ -162,8 +183,10 @@ const DataTest kDataTests[] = {
     TEST(test_town_map),
     TEST(test_jukebox),
     TEST(test_charts),
+    TEST(test_info_windows),
     TEST(test_build_gp_office),
     TEST(test_reputation_go_home),
+    TEST(test_patient_dies_level1),
     TEST(test_gp_office_level1),
     TEST(test_blueprint_cleared_level1),
     TEST(test_snapshot_round_trip),
@@ -176,6 +199,11 @@ const DataTest kDataTests[] = {
     TEST(test_cardiogram_level6),
     TEST(test_ward_level1),
     TEST(test_psychiatry_level1),
+    TEST(test_treatment_level1),
+    TEST(test_info_windows_level1),
+    TEST(test_staff_room_level1),
+    TEST(test_toilets_level1),
+    TEST(test_toilets_none_level1),
 };
 
 } // namespace
