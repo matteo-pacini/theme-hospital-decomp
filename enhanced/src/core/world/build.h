@@ -257,8 +257,9 @@ struct Building {
 // EV_HOVER_BLUEPRINT, EV_COMMIT_BLUEPRINT, EV_UNCOMMIT_BLUEPRINT,
 // EV_TEMP_PLACE_DOOR, EV_PLACE_BP_DOOR, EV_COMMIT_DOORS, EV_OPEN_ROOM,
 // EV_EDIT_BLUEPRINT, EV_DELETE_ROOM (which goes on as EV_CANCEL_BUILD, run
-// here through apply_object_event), EV_FURNISH_EDITED_ROOM,
-// EV_BACK_TO_PLACE_OBJECT, and EV_PLACE_OBJECT while furnishing a room.
+// here through apply_staff_event and apply_object_event),
+// EV_FURNISH_EDITED_ROOM, EV_BACK_TO_PLACE_OBJECT, and EV_PLACE_OBJECT while
+// furnishing a room.
 // Returns false for other commands; for EV_CANCEL_BUILD, whose part for
 // the lifted objects and the mouse mode it carries out but which has parts
 // for staff and objects too; and for EV_OPEN_HIRE_STAFF and

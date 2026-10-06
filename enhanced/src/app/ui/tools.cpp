@@ -48,15 +48,42 @@ MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::
     return action;
 }
 
+namespace
+{
+
+void draw_debug_report(DebugReport &report)
+{
+    ImGui::TextDisabled("A screenshot, the game's state and this note.");
+    ImGui::InputTextMultiline("##note", report.note.data(), report.note.size(), ImVec2(420, 120));
+    if (ImGui::Button("Save report"))
+        report.save = true;
+    if (!report.last.empty())
+        ImGui::TextWrapped("%s", report.last.c_str());
+}
+
+} // namespace
+
 void draw_tools(ToolsState &state, World *world)
 {
     if (!state.open)
         return;
     if (ImGui::Begin("Tools (F12)", &state.open, ImGuiWindowFlags_AlwaysAutoResize)) {
-        const char *scales[] = {"Automatic", "1x", "2x", "3x", "4x"};
-        ImGui::Combo("UI scale", &state.ui_scale, scales, IM_ARRAYSIZE(scales));
-        if (world)
-            draw_nav_tool(state.nav, *world);
+        if (ImGui::BeginTabBar("tools")) {
+            if (world && ImGui::BeginTabItem("Path finding")) {
+                draw_nav_tool(state.nav, *world);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Display")) {
+                const char *scales[] = {"Automatic", "1x", "2x", "3x", "4x"};
+                ImGui::Combo("UI scale", &state.ui_scale, scales, IM_ARRAYSIZE(scales));
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Debug report")) {
+                draw_debug_report(state.report);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
     }
     ImGui::End();
 }

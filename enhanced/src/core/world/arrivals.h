@@ -2,11 +2,11 @@
 
 #include "core/data/anims.h"
 #include "core/data/balance.h"
-#include "core/data/level.h"
 #include "core/world/world.h"
 
 #include <array>
 #include <cstdint>
+#include <source_location>
 
 namespace th
 {
@@ -21,16 +21,26 @@ namespace th
 // gets a patient. Emergencies are not made.
 
 // What who_owns_peep weighs for one hospital, per illness (the game's
-// allhosps[].rooms[]), and whether it takes patients.
+// allhosps[].rooms[]), and whether it takes patients. Hospital 0's is the
+// player's: the casebook shows and sets its prices, reception and the
+// rooms charge them.
 struct HospitalMarket {
     // allhosps.hospital_open, for the rivals only: hospital 0's is
     // create_a_peep's argument. The game opens a rival when its computer
     // player's script says so (computer_decision); the caller sets it.
     bool open = false;
-    // rooms[].reputation, 0-1000.
+    // rooms[].reputation, 0-1000, and the totals it is evaluated from
+    // (rooms[].rep_points and rep_events; core/world/reputation.h).
     std::array<int32_t, 47> reputation{};
+    std::array<int32_t, 47> rep_points{};
+    std::array<int32_t, 47> rep_events{};
+    // allhosps.reputation, rep_points and rep_events: the hospital's as a
+    // whole, which prices general practice and diagnoses.
+    int32_t hospital_reputation = 500;
+    int32_t hospital_rep_points = 20;
+    int32_t hospital_rep_events = 20;
     // rooms[].price and rooms[].price_scale (hundredths of a percent of the
-    // most patients will pay).
+    // most patients will pay, 5000-20000).
     std::array<int32_t, 47> price{};
     std::array<int32_t, 47> price_scale{};
     // allhosps.visitors and month_visitors: patients won, in all and this month.
@@ -63,6 +73,21 @@ struct ArrivalState {
 // (gbv.open_countdown 0), then calc_visitors_this_month.
 void start_arrivals(ArrivalState &state, const Balance &settings);
 
+// max_price_for_treatment (0x58e34) in single player: the most patients
+// will pay hospital `hosp` for `treatment` (0-46): its start price scaled
+// by the reputation for it over 500 (the hospital's as a whole for general
+// practice and from treatment 0x24 on), never below the start price.
+int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &settings, int treatment);
+
+// update_single_cure_cost (0x143e0): moves hospital `hosp`'s price for
+// `treatment` (0-46) to its share (price_scale) of the most patients will
+// pay, if that moves it by 1% or more.
+void update_single_cure_cost(HospitalMarket &hosp, const Balance &settings, int treatment);
+
+// update_cure_costs (0x1438c): update_single_cure_cost for every hospital
+// and treatment.
+void update_cure_costs(ArrivalState &state, const Balance &settings);
+
 // calc_visitors_this_month (0x6ff30): takes the month's change from the
 // popn entry for state.game_month, if any (else keeps the last), adds it to
 // visitors_per_month and sets peep_interval to 1500 / visitors_per_month.
@@ -71,8 +96,10 @@ void start_arrivals(ArrivalState &state, const Balance &settings);
 void calc_visitors_this_month(ArrivalState &state, const Balance &settings);
 
 // old_normal_rand (0xb0144): a number from `low` to `high` (high - 1 when
-// high - low is odd), the sum of two draws from `seed`.
-uint32_t old_normal_rand(uint32_t &seed, uint32_t low, uint32_t high);
+// high - low is odd), the sum of two draws from `seed`, traced as the
+// caller's.
+uint32_t old_normal_rand(uint32_t &seed, uint32_t low, uint32_t high,
+                         std::source_location caller = std::source_location::current());
 
 // create_an_illness (0x702c4): a new patient's illness drawn from `seed` by
 // the balance's weights (Balance::visuals and non_visuals as balance_control
@@ -90,6 +117,11 @@ uint8_t create_an_illness(uint32_t &seed, const ArrivalState &state, const Balan
 // winner does not take patients (hospital 0 when `hospital_open` is false).
 int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness, bool hospital_open);
 
+// transform_peep_who (0x16b30) for a patient: their kind changed by
+// kChangePersonWho row `change` (the old one kept in orig_subtype), if the
+// row has one for them.
+void transform_peep_who(Thing &person, uint8_t change);
+
 // make_a_peep (0x70918): makes a patient of hospital `owner` with `illness`
 // on cell `pos` (column + row * 128): looks to suit the illness, its
 // effects on them (effect_illness), contagion, health, insurance and cash,
@@ -103,7 +135,7 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &set
 // create_a_peep (0x6ffec) without emergencies: in the first 25 turns of
 // every peep_interval turns (by `game_turn`, the game's actual_game_turn),
 // makes a patient with a random illness for the hospital that wins them.
-// Hospital 0's stands at one of its four entrances (level.entrances[0],
+// Hospital 0's stands at one of its four entrances (World::entrances[0],
 // picked at random) and is returned, to be set going; a rival's is made and
 // dropped (as remove_thing, which also clears the list of cell (0, 0), the
 // position it never was put at). Returns 0 when no patient reaches the map.
@@ -111,6 +143,6 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &set
 // The game calls it from twice_daily_admin, on turns that are multiples of
 // 25, after the turn's three draws and before daily_admin and month_end.
 uint16_t create_a_peep(World &world, ArrivalState &state, const Balance &settings, const AnimData &anims,
-                       const Level &level, int level_number, bool hospital_open, uint32_t game_turn);
+                       int level_number, bool hospital_open, uint32_t game_turn);
 
 } // namespace th

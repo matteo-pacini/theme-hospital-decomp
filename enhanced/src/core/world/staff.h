@@ -35,11 +35,15 @@ constexpr uint16_t kSkillConsultant = 0x80;
 constexpr uint16_t kSkillResearcher = 0x100;
 
 // Staff states handled so far (the game's SS_*, include/enums.h).
+constexpr uint8_t kStaffDoctorInOffice = 0x06;
+constexpr uint8_t kStaffDoctorWorksAtDesk = 0x08;
 constexpr uint8_t kStaffReceptionistWorks = 0x0a;
 constexpr uint8_t kStaffReceptionistFindsReception = 0x0c;
 constexpr uint8_t kStaffPlayComplexAnim = 0x0e;
 constexpr uint8_t kStaffGotoObject = 0x12;
+constexpr uint8_t kStaffDoctorWaitsForPatient = 0x14;
 constexpr uint8_t kStaffTwoPeepsInteract = 0x1a;
+constexpr uint8_t kStaffDoctorExamines = 0x1c;
 constexpr uint8_t kStaffReceptWaitsForPatient = 0x20;
 constexpr uint8_t kStaffReceptAdmitsPatient = 0x22;
 constexpr uint8_t kStaffWaitForComplexSlave = 0x26;
@@ -47,10 +51,14 @@ constexpr uint8_t kStaffInCorridor = 0x28;
 constexpr uint8_t kStaffComplexRetry = 0x2c;
 constexpr uint8_t kStaffApplicant = 0x2e;
 constexpr uint8_t kStaffWanders = 0x34;
+constexpr uint8_t kStaffEvacuate = 0x36;
+constexpr uint8_t kStaffBackToApplicants = 0x38;
 constexpr uint8_t kStaffHandymanWorks = 0x3c;
 constexpr uint8_t kStaffHeld = 0x44;
 constexpr uint8_t kStaffReceptionistSetup = 0x4a;
+constexpr uint8_t kStaffBpGoto = 0x4c;
 constexpr uint8_t kStaffStuck = 0x4e;
+constexpr uint8_t kStaffPlayAniseq = 0x50;
 
 // Thing.owner of applicants and of staff who left: no hospital's.
 constexpr uint8_t kNoOwner = 0x63;
@@ -120,17 +128,25 @@ void appraise_staff(Thing &staff, const Balance &settings);
 // kind shows when placed or held (staff_anim_starts[kind].anims[staff[kind].anim]).
 uint16_t staff_held_anim(uint8_t kind);
 
-// Whether staff may be put down on `cell` (column + row * 128) by player 0,
-// as draw_staff_cursor (0x2b690) decides it outside rooms (no
-// rooms exist yet): the cell is player 0's and has a path to the
-// hospital's first entrance.
-bool staff_place_ok(const World &world, int cell);
+// Whether staff of `kind` may be put down on `cell` (column + row * 128) by
+// player 0, as draw_staff_cursor (0x2b690) decides it: in a room, the kind
+// has a state there (staff_states), the cell a path to the room's inside
+// door cell, and the room is built (state 0 or 1; any state for a
+// handyman); elsewhere, a path to the hospital's first entrance. Unlike the
+// game's cursor, a cell not on player 0's land is refused too, as
+// place_staff_on_map then refuses it.
+bool staff_place_ok(const World &world, int cell, uint8_t kind);
 
 // place_staff_on_map (0x29c4c) for player 0: puts staff member `id` on
 // `cell` if the cell is player 0's (or `force`), standing in the middle
-// facing as it was (0 if stuck), in the corridor's state for its kind,
-// walking at its ability's speed. A new hire becomes player 0's, with its
-// hire turn `game_turn`. Returns whether it was placed.
+// facing as it was (0 if stuck), in the state for its kind of the room it
+// is in (holding the room in place of whoever did, where it may work) or of
+// the corridor, walking at its ability's speed. It becomes player 0's;
+// unless a picked-up member of staff is held (World::held_staff, whoever
+// `id` is), it is a new hire: its hire turn `game_turn`, notice and
+// discontent cleared, and the treatments its skills complete available
+// (set_expertise_staff). It answers the page to its room, if any. Once
+// placed, no one is held. Returns whether it was placed.
 bool place_staff_on_map(World &world, const AnimData &anims, const Balance &settings, int cell, uint16_t id, bool force,
                         uint32_t game_turn);
 
@@ -147,23 +163,92 @@ bool place_staff_on_map(World &world, const AnimData &anims, const Balance &sett
 //   desks within 10 cells) and works there (receptionist_works,
 //   recept_waits_for_patient, recept_admits_patient), calling and serving
 //   the patients queueing for her through core/world/reception.h;
-// - a handyman with no litter, plant or machine to see to strolls to a
-//   random cell near by (handyman_works), sweeping litter he spots;
+// - a handyman (handyman_works) repairs the machines paged for repair
+//   (core/world/rooms.h's thingpage_*): into the room, closed for it, the
+//   repair's animation sequence (SS_PLAY_ANISEQ), the machine's wear gone;
+//   with no plant or machine to see to he strolls to a random cell near by,
+//   sweeping litter he spots;
 // - walking to an object (staff_goto_object), the complexes' states
-//   (core/world/staff_complex.h) and being stuck (peep_stuck).
-// Not ported, as they need what does not exist yet: rooms (staff rooms,
-// pages, vaccinations, the doctors' and nurses' work), the per-turn
-// counts, status icons and modify_staff (tiredness, warmth, happiness and
-// discontent stay as they are, so no one resigns, tires or cracks up).
+//   (core/world/staff_complex.h), being stuck (peep_stuck) and walking off
+//   a blueprint (peep_bp_goto);
+// - answering pages (obey_pager, core/world/rooms.h) when deciding where to
+//   wander, and going out of a room (SS_EVACUATE);
+// - a doctor in a GP's office: to the desk (doctor_in_office), working there
+//   and calling the queue's patients (doctor_works_at_desk), waiting for
+//   the one called (doctor_waits_for_patient_to_arrive) and the
+//   consultation (doctor_carries_out_examination);
+// - a doctor in a diagnosis room (doctor_in_machine_room): calling the
+//   queue's patients, strolling in the room, waiting for the one called and
+//   the room's examination (general diagnosis, cardiogram, scanner,
+//   ultrascan, blood machine, X-ray, psychiatry), wearing its machine
+//   (treatment_machine_used);
+// - a nurse in a ward (nurse_in_ward): calling the queue's patients to a
+//   free bed, examining them as they get into it, visiting the desk and the
+//   patients in bed, strolling in the ward;
+// - handing in notice and leaving when it runs out (shall_i_resign,
+//   sack_staff), and going back to the applicants off the map at the
+//   entrance (SS_BACK_TO_APPLICANTS);
+// - first, modify_staff: tiredness, warmth, happiness, discontent and
+//   cracking up.
+// Not ported, as they need what does not exist yet: staff rooms,
+// research, training, the treatment rooms' work, the operating theatre,
+// vaccinations, plants' pages, the per-turn counts, status icons and
+// poaching.
 void staff_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                 const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
 
-// Carries out the simulation's part of the commands of hiring and placing
-// staff, as process_turn (src/io.cpp) for player 0: EV_MARK_EMPLOYING
-// (the applicant is held), EV_PLACE_STAFF (placed, the hiring fee of 12/10
-// of the wage paid) and EV_CANCEL_BUILD (a held applicant goes back to the
-// list). The interface's part is hire_staff_event (core/ui/hire_staff.h).
-// Returns true for the first two; false for others and for
+// interrupt_staff (0x2c3bc): member of staff `id` stops what it does (gets
+// off its door or object), frees the patient it deals with in a room
+// (interrupt_person) and goes to the state for where it is, its pages
+// dropped; a surgeon's partner too. Uses the action sequences
+// start_rooms_in_use gave the world. A handyman drops his repair pages;
+// nurses' vaccinations are not ported.
+void interrupt_staff(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
+
+// sack_staff (0x2a804): member of staff `id` leaves the hospital. Mode 0
+// (sacked) pays them a month's wage (kTxSeverancePay), mode 1 (notice run
+// out) clears their notice; both interrupt them (interrupt_staff) and walk
+// them out of their room and to the hospital's first entrance, where they
+// go off the map and back to the applicants (kStaffApplicant, with no
+// expiry left, so withdrawn the next turn). Mode 2 removes them at once.
+// Their skills no longer count (remove_expertise_staff), they become
+// kNoOwner and their notice, discontent and resignations are cleared.
+// Does nothing but release their room for staff already kNoOwner. Uses the
+// world's action sequences and accounts (start_rooms_in_use).
+void sack_staff(World &world, const AnimData &anims, uint16_t id, uint8_t mode, uint32_t game_turn);
+
+// If a picked-up member of staff is held (World::held_staff), puts them
+// back on the cell they were taken from, wherever that is
+// (place_staff_on_map forced), as the game does before a chart, at the
+// year's end and on EV_CANCEL_BUILD. Returns whether one was held.
+bool put_back_held_staff(Game &game);
+
+// Carries out the simulation's part of the commands of hiring, placing and
+// picking up staff, as process_turn (src/io.cpp) for player 0:
+// - EV_MARK_EMPLOYING: the applicant is held;
+// - EV_PLACE_STAFF: placed, and with no picked-up member of staff held the
+//   hiring fee of 12/10 of the wage paid;
+// - EV_PICK_UP_STAFF: `value` becomes World::held_staff and, unless they
+//   handed in notice or are a surgeon whose screen is in use, is
+//   interrupted (interrupt_staff) and picked up (staff_picked_up: out of
+//   their room and complex, off the map, state kStaffHeld, their cell kept
+//   in World::held_staff_tile); held_staff is set even when refused, as in
+//   the game;
+// - EV_STAFF_PICKED_UP: staff_picked_up alone;
+// - EV_CANCEL_BUILD: the picked-up member of staff put back
+//   (put_back_held_staff), else a held applicant back on the list;
+// - EV_SACK_STAFF: `value` sacked with mode `arg` (sack_staff);
+// - EV_ANSWER_PLAYERCALL with `value` 1: the staff's resignation call `arg`
+//   removed; the staff demand requester it opens is not ported;
+// - that requester's answers about member of staff `value`:
+//   EV_REFUSE_STAFF_DEMAND (a draw: they leave, sack_staff mode 1, unless it
+//   is a multiple of their resignations plus one, when they stay),
+//   EV_RAISE_STAFF_SALARY (by `arg`) and EV_GIVE_STAFF_BONUS (of `arg`,
+//   kTxPersonalBonus, happiness up 50); staying takes back their notice and
+//   discontent, and the advisor's resignation news.
+// The interface's part is hire_staff_event and hire_staff_after_turn
+// (core/ui/hire_staff.h) and the staff list's (core/ui/charts.h). Returns
+// false for other commands (other player calls too) and for
 // EV_CANCEL_BUILD, which the other steps also act on.
 bool apply_staff_event(Game &game, const Event &event);
 

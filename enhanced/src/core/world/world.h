@@ -9,6 +9,8 @@
 
 #include <array>
 #include <cstdint>
+#include <source_location>
+
 #include <vector>
 
 namespace th
@@ -27,6 +29,7 @@ constexpr uint8_t kThingFree = 0;
 constexpr uint8_t kThingPatient = 2;
 constexpr uint8_t kThingStaff = 4;
 constexpr uint8_t kThingObject = 6;
+constexpr uint8_t kThingNumfx = 0x12;
 
 // A map cell by column and row (the game's PathStep and wallhug_waypoint).
 struct Waypoint {
@@ -184,8 +187,12 @@ struct Thing {
     // they leave it to.
     uint16_t object = 0;
     uint16_t exit_tile = 0;
-    // People: the room they are in (a room_info index), 0 for none.
+    // People: the room they are in (a room_info index), 0 for none, and
+    // their neighbours in its list of people (RoomInfo.first_person), 0 for
+    // none.
     uint16_t room = 0;
+    uint16_t room_next = 0;
+    uint16_t room_prev = 0;
     // Objects and doors: 1 while someone uses it, and who.
     uint8_t in_use = 0;
     uint16_t user = 0;
@@ -204,6 +211,15 @@ struct Thing {
     int32_t wage_demand = 0;
     // Staff: 0-1000.
     int16_t tiredness = 0;
+    // Staff: grows while they are unhappy (modify_staff).
+    uint16_t discontent = 0;
+    // Doctors: 1 once they have cracked up (doctor_cracks_up).
+    uint8_t crazy = 0;
+    // Staff: kOrder* bits (the game's ORD_*), and the game turn their
+    // notice runs out; the notices handed in since hired.
+    uint8_t orders = 0;
+    uint32_t resign_time = 0;
+    uint8_t resign_count = 0;
     // Applicants: they withdraw once the game turn passes this; 0 once hired.
     uint32_t hire_expiry = 0;
     // Staff: the game turn they were hired, kept in 16 bits as the game does.
@@ -292,11 +308,37 @@ struct Thing {
     // object); on that half, the main one; 0 for none.
     uint16_t door_partner = 0;
     uint16_t door_main = 0;
+
+    // Floating numbers (kThingNumfx): how it is drawn (the game's NUMFX_*).
+    // Its colour is in subtype, its lifetime in speed and its height in
+    // anim_speed.
+    uint8_t numfx_type = 0;
+
+    // Rooms in use (gp)
+    // Patients: diagnosis progress, complete at the game's
+    // gbv.diagnosis_complete (1000); the treatments given (Thing.treatments),
+    // oldest first, 0 past the last; their player call (PlayerCall::id), 0
+    // for none.
+    int16_t diagnosis = 0;
+    std::array<uint8_t, 10> treatments{};
+    uint16_t playercall = 0;
+    // Doors in use: 1 if their cell had MapCell.flags 0x10 before (the
+    // game's aux_param).
+    uint8_t door_cell_flag = 0;
+
+    // Rooms in use (diagnosis)
+    // Machines: uses since the last repair, and the uses they stand (the
+    // level's StartStrength for their kind when placed); the three smoke
+    // puffs shown as they wear out, 1 each once shown.
+    int32_t times_used = 0;
+    int32_t strength = 0;
+    std::array<uint8_t, 3> smoke{};
 };
 
 // Staff at work (staff_complex.cpp)
 // RoomInfo.type values (the game's ROOM_*).
 constexpr uint8_t kRoomFree = 0;
+constexpr uint8_t kRoomEntrance = 1;
 constexpr uint8_t kRoomReception = 4;
 
 // Entries of the rooms table, including the unused entry 0 (the game's
@@ -304,9 +346,11 @@ constexpr uint8_t kRoomReception = 4;
 constexpr int kRoomCount = 100;
 
 // One entry of the rooms table, with the fields of the game's RoomInfo
-// (include/hosp.h) used so far: the rooms the player builds
-// (core/world/build.h) and the receptions, one per group of manned desks
-// (allocate_reception_roominfo), a 1x1 room at cell 0x3fff.
+// (include/hosp.h) used so far: the hospitals' entrances (kRoomEntrance,
+// made when the level starts: size 0, with pos, door_tile and
+// door_inside_tile all the entrance's cell; start_entrance_rooms), the rooms
+// the player builds (core/world/build.h) and the receptions, one per group of
+// manned desks (allocate_reception_roominfo), a 1x1 room at cell 0x3fff.
 struct RoomInfo {
     uint8_t type = kRoomFree;
     int8_t width = 0;
@@ -344,6 +388,18 @@ struct RoomInfo {
     uint8_t paid_for = 0;
     // 1 while it waits for the people in it to leave before it is edited.
     uint8_t being_edited = 0;
+
+    // Rooms in use (gp)
+    // The staff holding the room (check_room_mutex): two in an operating
+    // theatre, staff[0] alone elsewhere; 0 for none. staff_free is 1 while
+    // its member of staff is free for a patient.
+    std::array<uint16_t, 2> staff{};
+    uint8_t staff_free = 0;
+
+    // Rooms in use (diagnosis)
+    // The first of the people in it (Thing.room_next), the latest come; 0
+    // for none. Receptionists are not listed in their reception.
+    uint16_t first_person = 0;
 };
 
 // The map and the things on it.
@@ -368,9 +424,9 @@ struct World {
     PathFinder path_finder = PathFinder::AStar;
 
     // Action sequences (complex.cpp)
-    // Per hospital, the cells of its four entrances, where patients arrive
-    // and leave (the door_tile of its ROOM_ENTRANCE rooms): Level::entrances
-    // for the hospitals that play (load_level, src/io.cpp).
+    // Per hospital, its four entrances, where patients arrive and leave
+    // (allhosps[].entrances): their kRoomEntrance rooms, World::rooms
+    // indices. Every hospital has hospital 0's (start_entrance_rooms).
     std::array<std::array<uint16_t, 4>, 4> entrances{};
 
     // The player's objects bought and being placed, and the requesters for
@@ -385,10 +441,9 @@ struct World {
     // What the patients' states read from outside the world, set by
     // start_queues (core/world/queue.h) and outliving the turns run: the
     // level's settings, hospital 0's prices and reputations
-    // (ArrivalState::hospitals[0]), its reputation and its finances.
+    // (ArrivalState::hospitals[0]) and its finances.
     const Balance *settings = nullptr;
     HospitalMarket *market = nullptr;
-    const int *reputation = nullptr;
     const Finance *finance = nullptr;
     // The turn's random distances (othervar.queue_near_dist, 0-5, and
     // object_near_dist, 1-4; draw_turn_randoms): how near their queue's cell
@@ -398,9 +453,11 @@ struct World {
     // Hospital 0's treatments it can give (allhosps[0].rooms[].cure_available,
     // 1 if so), by illness; 0 (no treatment) always.
     std::array<uint8_t, 47> cure_available{};
-    // The insurance companies (insurance_co indices) the patients' insurance
-    // bits 1 and 2 pick (ins_control[1] and [2]); bit 4 reads ins_control[4],
-    // past the game's table, as 0.
+    // The game's ins_control: the level's three insurance companies
+    // (insurance_co indices 1-8, setup_insurances; the claims' payment
+    // delays and the bank manager go by them), then 0. shall_peep_pay indexes
+    // it by a patient's insurance bit instead: bits 1 and 2 read [1] and [2];
+    // bit 4 reads [4], past the game's table, as 0.
     std::array<uint16_t, 5> ins_control{1, 2, 3, 0, 0};
     // For the advisor: patients of hospital 0 who left fed up
     // (othervar.patients_left_count), the bench shortage
@@ -414,15 +471,77 @@ struct World {
     // Hospital 0's drinks sales this month (allhosps[0].drinks_income), which
     // month_end banks.
     int32_t drinks_income = 0;
+    // Hospital 0's member of staff picked up off the map to be placed again
+    // (allhosps[0].held_staff), 0 for none, and the cell they were taken
+    // from (held_staff_tile), where cancelling puts them back.
+    uint16_t held_staff = 0;
+    uint16_t held_staff_tile = 0;
 
     // Building (build.cpp)
     // The room the player builds and the build tool's state.
     Building building;
+
+    // Rooms in use (gp)
+    // A request for staff with given skills to come to a room (the game's
+    // SkillPager); a free one has mask 0.
+    struct Pager {
+        uint16_t mask = 0;
+        uint16_t room = 0;
+        // The game turn until which the responder holds it.
+        uint32_t claimed_until = 0;
+        uint16_t responder = 0;
+        uint8_t owner = 0;
+    };
+    std::array<Pager, 30> pagers{};
+    // Per room type, hospital 0's room of that type (listhead[0].rooms),
+    // set once a room's doors are committed; 0 for none.
+    std::array<uint16_t, 31> room_of_type{};
+    // The player calls waiting for an answer (the game's playercall[], entry
+    // 0 unused): their kind (0 for a free entry), subject, id and hospital,
+    // and the days left before they expire (0 never).
+    struct PlayerCall {
+        uint16_t type = 0;
+        uint16_t subject = 0;
+        uint16_t id = 0;
+        uint8_t owner = 0;
+        int16_t timer = 0;
+    };
+    std::array<PlayerCall, 50> calls{};
+    // Hospital 0's requests for a handyman to see to a thing (the game's
+    // ThingPager allhosps[0].repair_pager): the machines to repair, by
+    // priority; the first `count` of `pages` are used.
+    struct ThingPage {
+        uint16_t id = 0;
+        uint8_t priority = 0;
+        uint16_t responder = 0;
+        uint32_t claimed_until = 0;
+    };
+    struct ThingPager {
+        uint8_t count = 0;
+        std::array<ThingPage, 0x40> pages{};
+    };
+    ThingPager repair_pager;
+    // The id the next call gets (popup_id[0], from 1).
+    uint16_t next_call_id = 1;
+    // What rooms in use read and change outside the world, set by
+    // start_rooms_in_use (core/world/rooms.h): the player's policy, prices'
+    // statistics and insurance claims, the accounts, the balance, the date
+    // and the action sequences.
+    struct HospitalSettings *hospital = nullptr;
+    Finance *ledger = nullptr;
+    int *balance = nullptr;
+    const struct Date *date = nullptr;
+    const struct PersonComplexes *person_complexes = nullptr;
+    const struct StaffComplexes *staff_complexes = nullptr;
 };
 
 // Advances `seed` as the game's old_newrand (src/rand.cpp) and returns its
-// new value.
-uint32_t old_newrand(uint32_t &seed);
+// new value. `caller` names the drawing function in the event trace
+// (core/world/trace.h); a helper that draws for its caller passes its own.
+uint32_t old_newrand(uint32_t &seed, std::source_location caller = std::source_location::current());
+// As old_newrand, traced as drawn by the game's function `caller`, for a
+// port named otherwise.
+uint32_t old_newrand(uint32_t &seed, const char *caller);
 
 // Resets `world` and builds a level's starting map with its objects, as the
 // game's recreate_map (src/town.cpp) when a level starts: build_start_map,
@@ -432,6 +551,21 @@ uint32_t old_newrand(uint32_t &seed);
 // (flags, invisible walls, a second part on its list), as in the game.
 // Shadows are not computed. The random generator starts from `seed`.
 void start_level(World &world, const Level &level, const AnimData &anims, uint32_t seed = kLevelStartSeed);
+
+// Empties the rooms table (setup_new_level's clearing of room_info) and
+// makes hospital 0's entrances as load_level (src/io.cpp) does when a level
+// starts: a kRoomEntrance room of owner 0, state 0, for each of
+// Level::entrances[0] in order, in the first free entries (so rooms 1-4),
+// with pos, door_tile and door_inside_tile the entrance's cell; then sets
+// every hospital's World::entrances to those rooms. The other hospitals,
+// which no one plays, get no rooms of their own, as in a one-player game.
+void start_entrance_rooms(World &world, const Level &level);
+
+// get_room_info (0x19fe0 in src/utils.cpp): hospital `owner`'s first room of
+// type `kind` in state 0; failing that, with `mode` 0x65 the first of the
+// kind in any state, with 0x64 the last. Returns 0 (the unused room 0, whose
+// fields are all 0) if there is none.
+uint16_t get_room_info(const World &world, uint8_t kind, uint8_t mode, uint8_t owner);
 
 // can_place_object (src/objects.cpp): whether an object of `kind` facing
 // `dir` (kObjects index, 0-3) fits for player `owner` with its corner on
@@ -456,6 +590,23 @@ void remove_object_shape(World &world, int tile, int kind, int dir);
 // does not fit (can_place_object). Returns its thing id, 0 if refused or the
 // things table is full. Draws two random numbers per object made.
 uint16_t place_object(World &world, const AnimData &anims, int tile, int kind, int dir, int owner, bool force);
+
+// The game's NUMFX_MONEY and the hospital palette's colours setup_colors
+// finds for color.black and color.red (LbPaletteFindColour).
+constexpr uint8_t kNumfxMoney = 3;
+constexpr uint8_t kColourBlack = 0;
+constexpr uint8_t kColourRed = 12;
+
+// create_numfx (0x9d480): a floating number of `type` showing a value on
+// `tile` in palette colour `colour`, drawn `height` pixels up plus 0-15 at
+// random: a thing (kThingNumfx) linked on the cell, unless no thing but the
+// last 50 is free. Draws three random numbers when made. The value shown is
+// not kept, as nothing draws it yet.
+void create_numfx(World &world, uint8_t type, uint16_t tile, uint8_t colour, uint8_t height);
+
+// numfx_ages (0x9d560): one turn of floating number `id`; removed
+// (remove_thing) when its lifetime runs out, a money one's twice as fast.
+void numfx_ages(World &world, uint16_t id);
 
 // Map pixel position (as cell_to_world) of the point a thing's frame is
 // drawn from, as the game's do_mapwho at 64 x 32 cells: the cell's top corner

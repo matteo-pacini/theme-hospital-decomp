@@ -18,6 +18,7 @@ namespace th
 
 class Game;
 struct Balance;
+struct World;
 enum class PanelAction;
 
 // The full-screen charts, numbered as the game's chart_type (EV_OPEN_SCREEN's
@@ -37,18 +38,13 @@ inline constexpr int kChartCount = 8;
 // The illnesses and treatments (the game's ILL_*, expertise[] entries).
 inline constexpr int kIllnessCount = 47;
 
-// What the casebook shows and sets for one illness or treatment (the game's
-// allhosps[].rooms[] entry). Only the price is changed by anything yet.
+// The rest of what the casebook shows for one illness or treatment (the
+// game's allhosps[].rooms[] entry): its price, price_scale and reputation
+// are HospitalMarket's (core/world/arrivals.h), its cure_available
+// World::cure_available.
 struct IllnessFigures {
-    // Price charged, and its share of the most patients will pay (in
-    // hundredths of a percent, 5000-20000).
-    int32_t price = 0;
-    int32_t price_scale = 10000;
-    // The hospital knows it (expertise Known); it can treat or diagnose it.
+    // The hospital knows it (expertise Known).
     uint8_t discovered = 0;
-    uint8_t cure_available = 0;
-    // 0-1000, 500 at the start (evaluate_reputation with no events).
-    int16_t reputation = 500;
     int32_t income = 0;
     uint16_t cured = 0;
     uint16_t deaths = 0;
@@ -58,10 +54,10 @@ struct IllnessFigures {
 };
 
 // The player's hospital settings the charts show and change through
-// commands, which Game does not hold: the AllHosps and gamevar fields of
-// policy, research and pricing, and the level's insurance companies. Set it
-// up with start_hospital_settings when a level starts and change it with
-// apply_chart_event.
+// commands, which Game does not hold elsewhere: the AllHosps and gamevar
+// fields of policy, research and the casebook, and the insurers' claims.
+// Set it up with start_hospital_settings when a level starts and change it
+// with apply_chart_event.
 struct HospitalSettings {
     // Policy (EV_SET_POLICY): send patients home below this chance of a
     // cure, guess a cure above it (0-100, send_home <= guess_cure); diagnose
@@ -79,35 +75,31 @@ struct HospitalSettings {
     // none.
     uint8_t research_illness = 0;
     std::array<IllnessFigures, kIllnessCount> illnesses{};
-    // The level's three insurance companies (ins_control: 1-8, indexes of
-    // language section InsuranceNames) and their claims paid per month
-    // (nothing pays them yet).
-    std::array<uint8_t, 3> insurers{1, 2, 3};
+    // allhosps.insurance_claims: fees owed by each of the level's three
+    // insurance companies (World::ins_control[0-2]), by the month they pay.
     std::array<std::array<int32_t, 12>, 3> insurance_claims{};
 };
 
-// init_player's and setup_insurances' part (src/start.cpp) for the player:
-// default policy (rest at gbv.tired), research split evenly, each
-// illness's starting price, knowledge (expertise Known), reputation 500 and
-// drug effectiveness (gbv.start_rating); general practice available (its
-// treatment 0). The game draws the insurance companies from its timer:
-// `clock` stands for it.
-void start_hospital_settings(HospitalSettings &settings, const Balance &balance, uint32_t clock);
+// init_player's part (src/start.cpp) for the player: default policy (rest
+// at gbv.tired), research split evenly, each illness's knowledge (expertise
+// Known) and drug effectiveness (gbv.start_rating).
+void start_hospital_settings(HospitalSettings &settings, const Balance &balance);
 
-// max_price_for_treatment (src/sim.cpp), single player: the base price
-// scaled by the treatment's reputation (the hospital's `reputation` for
-// general practice and diagnoses), never below the base.
-int32_t max_price_for_treatment(const HospitalSettings &settings, const Balance &balance, int illness, int reputation);
+// setup_insurances (0x90f70), single player: the level's three insurance
+// companies (World::ins_control[0-2]), each drawn from the eight left by the
+// game's timer, for which `clock` stands.
+void setup_insurances(World &world, uint32_t clock);
 
 // The game's side of the charts' commands for the player, as process_turn
 // (src/io.cpp): EV_OPEN_SCREEN (the hospital valued for the bank manager and
-// the status screen, prices updated: update_cure_costs), EV_TAKE_LOAN and
-// EV_REPAY_LOAN ($5000 and a statement line; repaying needs $5000 in the
-// bank), EV_SET_POLICY, EV_ALTER_RESEARCH, EV_CONCENTRATE_RESEARCH,
-// EV_PRICE_UP and EV_PRICE_DOWN, EV_INCREASE_STAFF_SALARIES and
-// EV_PAY_STAFF_BONUS (paid only if the balance covers it). Not ported: a
-// held staff member put back on the map by EV_OPEN_SCREEN, and the
-// discontent a raise clears. Returns whether `event` was one of these.
+// the status screen, every hospital's prices updated: update_cure_costs),
+// EV_TAKE_LOAN and EV_REPAY_LOAN ($5000 and a statement line; repaying needs
+// $5000 in the bank), EV_SET_POLICY, EV_ALTER_RESEARCH,
+// EV_CONCENTRATE_RESEARCH, EV_PRICE_UP and EV_PRICE_DOWN (hospital 0's
+// price_scale and price, in Game::arrivals), EV_INCREASE_STAFF_SALARIES and
+// EV_PAY_STAFF_BONUS (paid only if the balance covers it). EV_OPEN_SCREEN
+// first puts a picked-up member of staff back (put_back_held_staff). Not
+// ported: the discontent a raise clears. Returns whether `event` was one of these.
 bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &event);
 
 // The keys the charts read: Escape and Space pressed since the last frame
@@ -132,6 +124,13 @@ struct ChartsResult {
     // The bank manager's town map hotspot was clicked (key T: display_mode
     // DM_TOWN_MAP).
     bool town_map = false;
+    // With event EV_OPEN_YES_NO (the staff list's sack button,
+    // open_yes_no_requester): the commands the yes/no requester is to send
+    // for yes and for no, and the question, a string of
+    // TextSection::YesNo.
+    Event yes;
+    Event no;
+    int question = 0;
 };
 
 // The charts' state and art: the game's display_mode DM_CHARTS with
@@ -215,8 +214,9 @@ bool load_charts(Charts &charts, const std::filesystem::path &dir, const Languag
 
 // The interface's side of a command, as process_turn for the local player:
 // EV_OPEN_SCREEN opens chart `value` (0-7) at its first state, from any
-// chart or the game; EV_RETURN_FROM_SCREEN, EV_CLOSE_SCREEN and
-// EV_RETURN_TO_THING_WINDOW close it. Run it before Game::process_turn,
+// chart or the game; EV_RETURN_FROM_SCREEN, EV_CLOSE_SCREEN,
+// EV_RETURN_TO_THING_WINDOW and EV_OPEN_YES_NO (whose requester the game
+// shows over the hospital) close it. Run it before Game::process_turn,
 // which clears the command.
 void chart_command(Charts &charts, const Event &event);
 

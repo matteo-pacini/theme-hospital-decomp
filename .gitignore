@@ -10,3 +10,4 @@ __pycache__/
 *.err
 /compile_commands.json
 /.cache/
+/debug-reports/

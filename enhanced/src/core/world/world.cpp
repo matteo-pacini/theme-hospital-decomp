@@ -1,5 +1,10 @@
 #include "core/world/world.h"
 
+#include "core/data/balance.h"
+#include "core/world/arrivals.h"
+#include "core/world/nav.h"
+#include "core/world/trace.h"
+
 #include <bit>
 
 namespace th
@@ -243,8 +248,10 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
 // objects exist, so check_no_peeps_in_way always passes and a new thing is
 // always taken; check_room_access is taken to pass. Prices and strengths
 // come from allhosps' object_stats, still zero then (init_player fills them
-// after the map is built), so nothing is charged. The player's placing does
-// those checks and the charge first (core/world/objects.cpp).
+// after the map is built), so nothing is charged; later the strength is the
+// level's StartStrength (World::settings; research does not raise it yet).
+// The player's placing does those checks and the charge first
+// (core/world/objects.cpp).
 uint16_t place_object(World &w, const AnimData &anims, int tile, int kind, int dir, int owner, bool force)
 {
     if (tile < 0 || tile >= kMapCells)
@@ -269,13 +276,52 @@ uint16_t place_object(World &w, const AnimData &anims, int tile, int kind, int d
     obj.anim_speed = 2;
     obj.use_style = kObjects[size_t(kind)].use_style;
     obj.owner = uint8_t(owner);
+    obj.strength = w.settings ? w.settings->objects[size_t(kind)].start_strength : 0;
+    obj.times_used = 0;
     obj.layers[10] = 0;
     obj.layers[11] = uint8_t(old_newrand(w.seed) & 3);
     obj.layers[12] = uint8_t(old_newrand(w.seed) & 3);
     if (kind == kObjPlant)
         obj.plant_health = kPlantHealthy;
+    trace_event("place_object %u kind=%d tile=%d dir=%d owner=%d", unsigned(id), kind, tile, dir, owner);
     place_existing_object(w, anims, id, tile, dir);
     return id;
+}
+
+void create_numfx(World &world, uint8_t type, uint16_t tile, uint8_t colour, uint8_t height)
+{
+    // allocate_thing(0x32).
+    uint16_t id = 0;
+    for (size_t i = 1; i < world.things.size() - 0x32; i++)
+        if (world.things[i].type == kThingFree) {
+            id = uint16_t(i);
+            break;
+        }
+    if (!id)
+        return;
+    Thing &fx = world.things[id];
+    fx.type = kThingNumfx;
+    fx.numfx_type = type;
+    fx.x = {0x80, uint8_t(tile % kMapSize)};
+    fx.y = {0x80, uint8_t(tile / kMapSize)};
+    fx.depth = 8;
+    insert_node(world, id, fx.x, fx.y);
+    fx.speed = uint8_t(old_normal_rand(world.seed, 0x16, 0x1e));
+    fx.anim_speed = uint8_t(height + (old_newrand(world.seed) & 0xf));
+    fx.subtype = colour;
+}
+
+void numfx_ages(World &world, uint16_t id)
+{
+    Thing &fx = world.things[id];
+    if (fx.numfx_type == kNumfxMoney)
+        fx.speed--;
+    fx.speed--;
+    if (int8_t(fx.speed) <= 0) {
+        trace_event("remove_thing %u type=%u", unsigned(id), unsigned(fx.type));
+        remove_node(world, id);
+        fx = Thing{};
+    }
 }
 
 namespace
@@ -301,9 +347,16 @@ void adjust_mapwho(World &w, const AnimData &anims, int tile)
 
 } // namespace
 
-uint32_t old_newrand(uint32_t &seed)
+uint32_t old_newrand(uint32_t &seed, std::source_location caller)
+{
+    return old_newrand(seed, caller.function_name());
+}
+
+uint32_t old_newrand(uint32_t &seed, const char *caller)
 {
     seed = std::rotr(seed * 0x24a1u + 0x24dfu, 13);
+    if (tracing_rand())
+        trace_rand(caller, seed);
     return seed;
 }
 
@@ -314,11 +367,48 @@ void start_level(World &world, const Level &level, const AnimData &anims, uint32
     world.first_of_kind = {};
     world.placing = {};
     world.building = {};
+    world.held_staff = 0;
+    world.held_staff_tile = 0;
     world.seed = seed;
     build_start_map(world.map, level, [&](int cell) {
         world.map[size_t(cell)].first = level.tiles[size_t(cell)].first;
         adjust_mapwho(world, anims, cell);
     });
+}
+
+void start_entrance_rooms(World &world, const Level &level)
+{
+    world.rooms = {};
+    std::array<uint16_t, 4> entrances{};
+    uint16_t r = 1;
+    for (size_t j = 0; j < entrances.size(); j++) {
+        for (; r < kRoomCount; r++) {
+            RoomInfo &room = world.rooms[r];
+            if (room.type != kRoomFree)
+                continue;
+            room.type = kRoomEntrance;
+            room.pos = room.door_tile = room.door_inside_tile = level.entrances[0][j];
+            room.owner = 0;
+            entrances[j] = r;
+            break;
+        }
+    }
+    world.entrances.fill(entrances);
+}
+
+uint16_t get_room_info(const World &world, uint8_t kind, uint8_t mode, uint8_t owner)
+{
+    uint16_t found = 0;
+    for (uint16_t r = 1; r < kRoomCount; r++) {
+        const RoomInfo &room = world.rooms[r];
+        if (room.state < 0 || room.owner != owner || room.type != kind)
+            continue;
+        if (room.state == 0 || mode == 0x65)
+            return r;
+        if (mode == 0x64)
+            found = r;
+    }
+    return found;
 }
 
 } // namespace th

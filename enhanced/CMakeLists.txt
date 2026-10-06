@@ -56,6 +56,8 @@ add_library(th_core STATIC
   src/core/world/arrivals.cpp
   src/core/world/build.cpp
   src/core/world/complex.cpp
+  src/core/world/debug_dump.cpp
+  src/core/world/emergency.cpp
   src/core/world/finance.cpp
   src/core/world/game.cpp
   src/core/world/litter.cpp
@@ -63,11 +65,44 @@ add_library(th_core STATIC
   src/core/world/objects.cpp
   src/core/world/queue.cpp
   src/core/world/reception.cpp
+  src/core/world/reputation.cpp
+  src/core/world/rooms.cpp
+  src/core/world/snapshot.cpp
   src/core/world/staff.cpp
   src/core/world/staff_complex.cpp
   src/core/world/trace.cpp
   src/core/world/world.cpp
 )
+# The snapshot build id (src/core/world/snapshot.h): a hash of the headers of
+# what a snapshot holds and of its code, regenerated when they change.
+set(TH_SNAPSHOT_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/data/balance.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/data/level.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/ui/charts.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/ui/town_map.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/advisor.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/arrivals.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/build.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/emergency.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/events.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/finance.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/game.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/object_tables.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/objects.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/snapshot.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/staff.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/trace.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/world.h
+)
+string(REPLACE ";" "|" TH_SNAPSHOT_SOURCE_LIST "${TH_SNAPSHOT_SOURCES}")
+set(TH_SNAPSHOT_ID ${CMAKE_CURRENT_BINARY_DIR}/generated/snapshot_id.h)
+add_custom_command(OUTPUT ${TH_SNAPSHOT_ID}
+  COMMAND ${CMAKE_COMMAND} -DOUT=${TH_SNAPSHOT_ID} "-DSOURCES=${TH_SNAPSHOT_SOURCE_LIST}"
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/snapshot_id.cmake
+  DEPENDS ${TH_SNAPSHOT_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/snapshot_id.cmake
+  VERBATIM)
+target_sources(th_core PRIVATE ${TH_SNAPSHOT_ID})
+target_include_directories(th_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(th_core PUBLIC src)
 target_compile_options(th_core PRIVATE ${TH_WARNINGS})
 target_link_libraries(th_core PRIVATE th_ymfm)
@@ -96,7 +131,20 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
-  add_executable(th_tests tests/tests.cpp)
+  add_executable(th_tests
+    tests/main.cpp
+    tests/common.cpp
+    tests/audio.cpp
+    tests/data.cpp
+    tests/game.cpp
+    tests/nav.cpp
+    tests/patients.cpp
+    tests/render.cpp
+    tests/replay.cpp
+    tests/rooms.cpp
+    tests/staff.cpp
+    tests/ui.cpp
+  )
   target_link_libraries(th_tests PRIVATE th_core)
   target_compile_options(th_tests PRIVATE ${TH_WARNINGS})
   # Tests that need the game data are skipped when TH_TEST_DATA_DIR is unset

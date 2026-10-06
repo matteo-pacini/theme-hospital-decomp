@@ -3,7 +3,10 @@
 #include "core/data/gamedata.h"
 #include "core/world/complex_tables.h"
 #include "core/world/nav.h"
+#include "core/world/rooms.h"
 #include "core/world/staff.h"
+
+#include <algorithm>
 
 namespace th
 {
@@ -401,12 +404,27 @@ constexpr std::array<std::array<int8_t, 5>, 1> kGroupInteractions = {{{9, 10, 11
 // Object states (the game's OS_*, include/enums.h).
 constexpr uint8_t kOsStatic = 0x02;
 constexpr uint8_t kOsInUse = 0x04;
+constexpr uint8_t kOsDoubleDoorSwings = 0x10;
 constexpr uint8_t kOsRemoved = 0x12;
 
-// Patient states (the game's PS_*) set by the staff's complexes.
-constexpr uint8_t kPsSlaveReady = 0x20;
+// Object kind of a single door (OBJ_DOOR), and the kStaffAnimStarts columns
+// of going through a single or double door.
+constexpr uint8_t kObjDoor = 3;
+constexpr size_t kAnimSingleDoor = 6;
+constexpr size_t kAnimDoubleDoor = 8;
+// The starts of the other half of a double door swinging open (by the
+// facing of who opens it) and of a door swinging shut.
+constexpr uint16_t kAnimSwingOpen = 0x3f8;
+constexpr uint16_t kAnimSwingClose = 0x400;
+// MapCell.flags a door in use sets on its cell.
+constexpr uint8_t kCellDoorInUse = 0x10;
+// RoomInfo.state of a room being furnished or edited (RS_EDITED), and the
+// room type of an operating theatre (ROOM_THEATRE).
+constexpr int8_t kRoomEdited = 4;
+constexpr uint8_t kRoomTheatre = 10;
+
+// Patient state (the game's PS_*) set by the staff's complexes.
 constexpr uint8_t kPsTwoPeepsInteract = 0x22;
-constexpr uint8_t kPsMerged = 0x28;
 
 // MapCell.flags: something on the cell covers more than one cell.
 constexpr uint8_t kCellBig = 0x20;
@@ -485,12 +503,106 @@ void fail(const Run &r, uint16_t id)
         s.complex_pc = s.complex_queued = s.complex_queued2 = 0;
         s.complex_action = s.complex_resume = 0;
         play_staff_anim(r.anims, s, kAnimStand);
+        if (s.subtype == kStaffHandyman)
+            thingpage_cancel_my_response(r.world.repair_pager, id);
     } else {
         s.state = kStaffComplexRetry;
     }
 }
 
 uint8_t process(const Run &r, uint16_t id);
+
+// check_room_mutex_on_entry (0x41e44): claims the room the member of staff
+// enters by its door (at exit_tile) for them: whether they hold it already
+// or take a free place (two in an operating theatre); true for the
+// corridor.
+bool check_room_mutex_on_entry(World &world, uint16_t id)
+{
+    uint16_t room_id = room_at(world, world.things[id].exit_tile);
+    if (!room_id)
+        return true;
+    RoomInfo &room = world.rooms[room_id];
+    if (id == room.staff[0] || id == room.staff[1])
+        return true;
+    if (room.type == kRoomTheatre) {
+        for (uint16_t &holder : room.staff) {
+            if (!holder) {
+                holder = id;
+                return true;
+            }
+        }
+        return false;
+    }
+    if (room.staff[0])
+        return false;
+    room.staff[0] = id;
+    return true;
+}
+
+// clear_my_mutex (0x2bb58): the member of staff no longer holds their room.
+void clear_my_mutex(World &world, uint16_t id)
+{
+    const Thing &s = world.things[id];
+    if (!s.room)
+        return;
+    RoomInfo &room = world.rooms[s.room];
+    if (room.staff[0] == id)
+        room.staff[0] = 0;
+    else if (room.staff[1] == id)
+        room.staff[1] = 0;
+}
+
+// The starting frame `start` (an AnimData::starts index), without
+// check_frame, as the game sets a door's.
+void set_start(Thing &t, const AnimData &anims, size_t start)
+{
+    if (start >= anims.starts.size())
+        return;
+    t.sprite = uint16_t(anims.starts[start].frame);
+    t.flip = uint8_t(anims.starts[start].flip);
+}
+
+// rest_staff (0x2be14): tiredness down by `amount` (less when very tired,
+// at least gbv.recovery_minimum), happiness up by 1.
+void rest_staff(World &world, Thing &s, int16_t amount)
+{
+    static const Balance statics;
+    const Balance::Gbv &gbv = world.settings ? world.settings->gbv : statics.gbv;
+    if (s.tiredness > gbv.recovery_factor / 2) {
+        amount = int16_t(amount * gbv.recovery_factor / s.tiredness);
+        if (amount < int16_t(gbv.recovery_minimum))
+            amount = int16_t(gbv.recovery_minimum);
+    }
+    s.tiredness = int16_t(s.tiredness - amount);
+    s.happiness = uint16_t(std::clamp(int(int16_t(s.happiness + 1)), 0, 100));
+}
+
+// complex_success (0x423c8) for a member of staff: a rest on a sofa, at
+// snooker or a video game (kinds 18, 20, 22) and a use of their object
+// (24, Thing.times_used). Research (8, 10, 14, 16) and an autopsy (12) are
+// not ported.
+void staff_success(World &world, Thing &s, uint16_t kind)
+{
+    static const Balance statics;
+    const Balance::Gbv &gbv = world.settings ? world.settings->gbv : statics.gbv;
+    switch (kind) {
+    case 18:
+        rest_staff(world, s, int16_t(gbv.rest_sofa));
+        break;
+    case 20:
+        rest_staff(world, s, int16_t(gbv.rest_snooker));
+        break;
+    case 22:
+        rest_staff(world, s, int16_t(gbv.rest_game));
+        break;
+    case 24:
+        world.things[s.object].times_used++;
+        break;
+    default:
+        break;
+    }
+    s.happiness = uint16_t(std::clamp(int(int16_t(s.happiness)), 0, 100));
+}
 
 // process_complex_either (0x3e6c0).
 uint8_t process_either(const Run &r, uint16_t id)
@@ -715,18 +827,82 @@ uint8_t process(const Run &r, uint16_t id)
         break;
     case 16: {
         const GroupAnim &group = kGroupAnims[entry.anim];
-        auto choice = int8_t(old_newrand(world.seed) % uint32_t(group.count));
+        auto choice = int8_t(old_newrand(world.seed, "process_staff_complex") % uint32_t(group.count));
         play_staff_anim(r.anims, e, size_t(group.anims[size_t(choice)]));
         break;
     }
     case 14:
-        // Faces away from the door find_door finds: doors belong to rooms,
-        // and there are none yet.
+        if (uint16_t door = find_door(world, id))
+            e.facing = kOppositeAngle[world.things[door].facing & 3];
         break;
-    case 20:
-        // Takes the door find_door finds; there is none (see 14).
-        fail(r, id);
-        return 4;
+    case 20: {
+        uint16_t door_id = find_door(world, id);
+        if (!door_id) {
+            fail(r, id);
+            return 4;
+        }
+        Thing &door = world.things[door_id];
+        bool double_door = door.subtype != kObjDoor;
+        if (door.in_use == 1) {
+            e.state = kStaffComplexRetry;
+            return 3;
+        }
+        e.facing = e.room ? door.facing : kOppositeAngle[door.facing & 3];
+        e.exit_tile = tile == door.use_pos[0] ? door.use_pos[3] : door.use_pos[0];
+        if (entry.anim == 1 && !check_room_mutex_on_entry(world, id)) {
+            fail(r, id);
+            return 4;
+        }
+        const RoomInfo &room = world.rooms[door.room_id];
+        if (e.room == 0 && (room.being_edited || room.state == kRoomEdited ||
+                            (door.owner == 0 && door.room_id == world.building.build.room))) {
+            fail(r, id);
+            return 4;
+        }
+        play_staff_anim(r.anims, e, double_door ? kAnimDoubleDoor : kAnimSingleDoor);
+        door.in_use = 1;
+        e.object = door_id;
+        door.user = id;
+        move_node(world, id, door.x, door.y);
+        door.state = kOsInUse;
+        MapCell &cell = world.map[cell_of(door)];
+        door.door_cell_flag = cell.flags & kCellDoorInUse ? 1 : 0;
+        cell.flags |= kCellDoorInUse;
+        if (double_door) {
+            Thing &other = world.things[door.door_partner];
+            other.state = kOsDoubleDoorSwings;
+            set_start(other, r.anims, kAnimSwingOpen + e.facing);
+            other.anim_speed = e.anim_speed;
+        }
+        break;
+    }
+    case 22: {
+        clear_my_mutex(world, id);
+        Thing &door = world.things[e.object];
+        door.user = 0;
+        e.object = 0;
+        MapPos x{0x80, uint8_t(e.exit_tile % kMapSize)};
+        MapPos y{0x80, uint8_t(e.exit_tile / kMapSize)};
+        e.dest_x = x.tile;
+        e.dest_y = y.tile;
+        move_node(world, id, x, y);
+        move_person_in_room_list(world, id, e.exit_tile);
+        if (e.room) {
+            world.rooms[e.room].staff_free = 0;
+            pager_arrival(world, id);
+        }
+        MapCell &cell = world.map[cell_of(door)];
+        if (!door.door_cell_flag)
+            cell.flags &= uint8_t(~kCellDoorInUse);
+        if (door.subtype == kObjDoor) {
+            door.in_use = 0;
+            door.state = kOsStatic;
+        } else {
+            door.state = kOsDoubleDoorSwings;
+            set_start(door, r.anims, kAnimSwingClose + e.facing);
+        }
+        break;
+    }
     case 24:
         e.complex_pc++;
         e.complex_resume = uint16_t(r.staff.at(e.complex_pc) * 10);
@@ -747,7 +923,7 @@ uint8_t process(const Run &r, uint16_t id)
         uint8_t n = 0;
         while (n < 5 && list[n] != -1)
             n++;
-        start_interaction(r, id, uint8_t(list[old_newrand(world.seed) % n]));
+        start_interaction(r, id, uint8_t(list[old_newrand(world.seed, "process_staff_complex") % n]));
         break;
     }
     case 38:
@@ -795,9 +971,12 @@ uint8_t process(const Run &r, uint16_t id)
     case 58:
         e.subtype = uint8_t(entry.anim);
         break;
+    case 52:
+        staff_success(world, e, entry.anim);
+        break;
     default:
-        // 0 and 12 do nothing; 22 (leaving a door), 52 (complex_success), 60
-        // and 62 are not ported, see process_staff_complex.
+        // 0 and 12 do nothing; 60 and 62 are not ported, see
+        // process_staff_complex.
         break;
     }
     if (entry.repeat) {
@@ -806,7 +985,7 @@ uint8_t process(const Run &r, uint16_t id)
             if (e.complex_repeat == 0)
                 e.complex_pc++;
         } else if (entry.repeat < 0) {
-            e.complex_repeat = uint8_t(old_newrand(world.seed) % uint32_t(-entry.repeat) + 1);
+            e.complex_repeat = uint8_t(old_newrand(world.seed, "process_staff_complex") % uint32_t(-entry.repeat) + 1);
         } else {
             e.complex_repeat = uint8_t(entry.repeat);
         }

@@ -1,6 +1,9 @@
 #include "core/world/finance.h"
 
+#include "core/ui/charts.h"
+
 #include "core/world/staff.h"
+#include "core/world/trace.h"
 #include "core/world/world.h"
 
 #include <algorithm>
@@ -57,8 +60,13 @@ void start_finance(Finance &finance, int32_t balance, const Balance &settings, i
     finance.statement_balance = balance;
 }
 
-void change_balance(Finance &f, int32_t &balance, int day, int month, uint8_t type, int32_t amount, uint16_t arg)
+void change_balance(Finance &f, int32_t &balance, int day, int month, uint8_t type, int32_t amount, uint16_t arg,
+                    uint16_t company)
 {
+    bool keeps_arg = type == kTxInsurance || type == kTxTreat || type == kTxFinalTreat || type == kTxCureTreatment ||
+                     type == kTxAdvance;
+    trace_event("balance %u amount=%d arg=%u", unsigned(type), int(amount), keeps_arg ? unsigned(arg) : 0u);
+
     int count = f.entry_count;
     BankEntry *last = count ? &f.entries[size_t(count - 1)] : nullptr;
     if (last && last->type == type && last->day == day && last->month == month) {
@@ -71,6 +79,8 @@ void change_balance(Finance &f, int32_t &balance, int day, int month, uint8_t ty
         e.amount = amount;
         switch (type) {
         case kTxInsurance:
+            e.extra = uint8_t(company);
+            break;
         case kTxTreat:
         case kTxFinalTreat:
         case kTxCureTreatment:
@@ -131,6 +141,20 @@ void month_end(Finance &f, int32_t &balance, World &world, const Balance &settin
     }
     if (wages != 0)
         change_balance(f, balance, day, month, kTxWages, -wages);
+    if (world.drinks_income != 0) {
+        change_balance(f, balance, day, month, kTxIncomeDrinks, world.drinks_income);
+        world.drinks_income = 0;
+    }
+    if (world.hospital) {
+        for (uint16_t j = 0; j < 3; j++) {
+            int32_t &claims = world.hospital->insurance_claims[j][size_t(month)];
+            if (claims != 0) {
+                int32_t amount = claims;
+                claims = 0;
+                change_balance(f, balance, day, month, kTxInsurance, amount, j, world.ins_control[j]);
+            }
+        }
+    }
     int32_t heating = radiators * f.heating_level * f.heating_price / 100;
     if (heating != 0)
         change_balance(f, balance, day, month, kTxHeating, -heating);

@@ -3,16 +3,16 @@
 #include "core/world/complex_tables.h"
 #include "core/world/nav.h"
 #include "core/world/reception.h"
+#include "core/world/rooms.h"
+#include "core/world/trace.h"
 
 namespace th
 {
 
-void start_queues(World &world, const Balance &settings, HospitalMarket &market, const int &reputation,
-                  const Finance &finance)
+void start_queues(World &world, const Balance &settings, HospitalMarket &market, const Finance &finance)
 {
     world.settings = &settings;
     world.market = &market;
-    world.reputation = &reputation;
     world.finance = &finance;
     world.queue_near_dist = 0;
     world.object_near_dist = 0;
@@ -28,13 +28,14 @@ void start_queues(World &world, const Balance &settings, HospitalMarket &market,
 
 void draw_turn_randoms(World &world)
 {
-    old_newrand(world.seed);
-    world.queue_near_dist = uint8_t(old_newrand(world.seed) % 6);
-    world.object_near_dist = uint8_t((old_newrand(world.seed) & 3) + 1);
+    old_newrand(world.seed, "start_turn");
+    world.queue_near_dist = uint8_t(old_newrand(world.seed, "start_turn") % 6);
+    world.object_near_dist = uint8_t((old_newrand(world.seed, "start_turn") & 3) + 1);
 }
 
 void join_queue(World &world, uint16_t id, uint16_t room_id)
 {
+    trace_event("join_queue %u room=%u", unsigned(id), unsigned(room_id));
     leave_queue(world, id);
     Thing &p = world.things[id];
     RoomInfo &room = world.rooms[room_id];
@@ -57,6 +58,8 @@ void join_queue(World &world, uint16_t id, uint16_t room_id)
 void leave_queue(World &world, uint16_t id)
 {
     Thing &p = world.things[id];
+    trace_event("leave_queue %u room=%u dest=%u", unsigned(id), unsigned(p.queue_room), unsigned(p.dest_room));
+
     if (p.queue_room > 0 && p.queue_room < kRoomCount) {
         RoomInfo &room = world.rooms[p.queue_room];
         if (p.queue_prev == 0) {
@@ -199,6 +202,7 @@ void queue_person_to_new_queue(World &world, const AnimData &anims, const Person
             set_destination_coords(world, id, world.things[desk].use_pos[1]);
     } else {
         room.queue_incoming++;
+        page_staff_i_need(world, id, room_id);
         set_destination_coords(world, id, room.door_tile);
     }
     Thing &p = world.things[id];

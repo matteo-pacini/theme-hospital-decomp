@@ -98,7 +98,7 @@ void add_static_shadows(std::array<MapCell, kMapCells> &map, const DoorFacing &d
     }
 }
 
-ShadowSprites::ShadowSprites(const SpriteSheet &blocks, std::span<const uint8_t> ghost, const MapCell *map, int player)
+ShadowSprites::ShadowSprites(const SpriteSheet &blocks, std::span<const uint8_t> ghost)
     : blocks_(&blocks), full_(kBlockCount), half_(kBlockCount), wall_(kBlockCount)
 {
     // The game precalculates the player's interior floor and wall and four
@@ -112,13 +112,6 @@ ShadowSprites::ShadowSprites(const SpriteSheet &blocks, std::span<const uint8_t>
         full_[size_t(id)] = {overlay(s, full, ghost), s.width, s.height};
         half_[size_t(id)] = {overlay(s, half, ghost), s.width, s.height};
         wall_[size_t(id)] = {overlay(s, wall, ghost), s.width, s.height};
-    }
-    for (int i = 0; i < kMapCells; i++) {
-        const MapCell &cell = map[i];
-        if (cell.wall_n && cell.wall_w && (cell.owner_flags & (1 << player))) {
-            interior_wall_ = cell.wall_n;
-            break;
-        }
     }
 }
 
@@ -156,11 +149,12 @@ ShadedSprite ShadowSprites::wall_n(const MapCell &cell) const
         Sprite s = base(cell.wall_n);
         return {s, s.height};
     }
+    // The game lifts a shaded wall by the shadow's height (block 150), not
+    // its own, but for its precalculated interior wall: walls of other
+    // heights (rooms' 83, outer walls' 89) are drawn a few pixels off. Each
+    // is lifted by its own height here.
     Sprite s = shaded(wall_, cell.wall_n);
-    if (cell.wall_n == interior_wall_)
-        return {s, s.height};
-    // The game lifts other shaded walls by the shadow's height, not theirs.
-    return {s, base(kWallShadowBlock).height};
+    return {s, s.height};
 }
 
 } // namespace th

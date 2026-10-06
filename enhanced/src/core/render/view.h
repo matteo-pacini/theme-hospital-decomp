@@ -13,6 +13,15 @@ class ShadowSprites;
 struct FrameSound;
 struct World;
 
+// The thing under the pointer (othervar.pointed_thing), as draw_world finds
+// it: of the patients, staff, and objects and doors in the states
+// mapwho_object tests, the last drawn whose frame's box holds `at` (in the
+// surface's pixels) strictly inside; 0 for none.
+struct PointedThing {
+    Point at;
+    uint16_t thing = 0;
+};
+
 // Draws the hospital view into `view` of `dst`, with `camera` the map pixel
 // position at the view's top-left, as the game's
 // draw_all_mk7_selective_sprites_wscreen (src/engine.cpp): every floor
@@ -26,8 +35,11 @@ struct World;
 // kMaskColour between calls.
 // With `sounds`, every thing's frame drawn is listed there with its sound
 // (0 for none), for SoundPlayer::frames_drawn.
+// With `pointed`, its `thing` becomes the thing under `at`
+// (PointedThing).
 void draw_world(Surface &dst, Rect view, Point camera, const World &world, const GameData &data,
-                const ShadowSprites *shadows, Surface &scratch, std::vector<FrameSound> *sounds = nullptr);
+                const ShadowSprites *shadows, Surface &scratch, std::vector<FrameSound> *sounds = nullptr,
+                PointedThing *pointed = nullptr);
 
 // The colour the masked drawing treats as empty (the game's 0xfe); sprite
 // pixels of this colour on masked cells are not drawn, as in the game.

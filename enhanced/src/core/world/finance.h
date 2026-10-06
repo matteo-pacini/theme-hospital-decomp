@@ -124,13 +124,14 @@ void start_finance(Finance &finance, int32_t balance, const Balance &settings, i
 // change_balance (src/finance.cpp) for the local player: adds `amount`
 // (negative to spend) to `balance` as a transaction of `type`, capped at
 // 9999999; records it in the statement dated `day` `month` (merged into the
-// last line if that has the same type and date; `arg` is the line's
-// insurance company or illness), and in the month's income or expenditure
-// (but kTxCheatMoney) and, for kTxWages and kTxHireStaff, wages. Sets
-// low_balance as the game warns the advisor. The game takes the insurance
-// company through ins_control, which is not ported: `arg` is stored as is.
+// last line if that has the same type and date), and in the month's income
+// or expenditure (but kTxCheatMoney) and, for kTxWages and kTxHireStaff,
+// wages. Sets low_balance as the game warns the advisor. `arg` is the
+// line's illness, or for kTxInsurance the company's slot (0-2), whose
+// company the caller passes in `company` (ins_control[arg], which the game
+// looks up itself): that is what the line keeps.
 void change_balance(Finance &finance, int32_t &balance, int day, int month, uint8_t type, int32_t amount,
-                    uint16_t arg = 0);
+                    uint16_t arg = 0, uint16_t company = 0);
 
 // The radiators player `owner` has (allhosps.radiator_count, which the game
 // counts as they are placed and sold).
@@ -139,14 +140,17 @@ int count_radiators(const World &world, uint8_t owner);
 // The money part of month_end (src/finance.cpp) for the local player (player
 // 0), on the month's last day `day` of `month`: appraises every hired staff
 // member (appraise_staff) and pays their salaries as one kTxWages line;
-// charges heating for `radiators`, the loan's monthly interest and, if
-// overdrawn, twice that rate on the overdraft (towns[level].interest_rate,
-// in hundredths of a percent a year); then moves the month's figures into
-// the history (adjust_monthly_figures, with the balance and `reputation`).
-// Drinks and jukebox income, insurance claims and prices are not ported
-// (nothing earns them yet). The game also adds up held applicants' wages,
-// under no hospital (owner 0x63, out of its table's bounds): they are
-// appraised but not paid here.
+// banks the month's drinks sales (World::drinks_income) and the insurers'
+// payments due this month (World::hospital's insurance_claims); charges
+// heating for `radiators`, the loan's monthly interest and, if overdrawn,
+// twice that rate on the overdraft (towns[level].interest_rate, in
+// hundredths of a percent a year); then moves the month's figures into the
+// history (adjust_monthly_figures, with the balance and `reputation`).
+// Jukebox takings, which complex_success does not keep, are not ported;
+// the prices month_end updates last (update_cure_costs) are the caller's,
+// which has the hospitals' markets. The game also adds up held
+// applicants' wages, under no hospital (owner 0x63, out of its table's
+// bounds): they are appraised but not paid here.
 void month_end(Finance &finance, int32_t &balance, World &world, const Balance &settings, int level, int day, int month,
                int radiators, int reputation);
 

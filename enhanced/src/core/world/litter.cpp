@@ -4,6 +4,7 @@
 #include "core/world/complex.h"
 #include "core/world/complex_tables.h"
 #include "core/world/patient_tables.h"
+#include "core/world/trace.h"
 
 #include <array>
 #include <cstdlib>
@@ -149,7 +150,8 @@ void change_health(Thing &p, int16_t amount)
     add_health_to_history(p);
 }
 
-// check_warmth (0x712a8).
+} // namespace
+
 void check_warmth(const World &world, Thing &p, int heating_level)
 {
     uint16_t warmth = 0;
@@ -178,6 +180,34 @@ void check_warmth(const World &world, Thing &p, int heating_level)
     else if (int16_t(p.warmth) > 100)
         p.warmth = 100;
 }
+
+void staff_check_around(const World &world, Thing &s)
+{
+    for (uint16_t id = first_of_kind(world, s.owner, kObjPlant); id; id = world.things[id].type_obj_next) {
+        const Thing &plant = world.things[id];
+        if (plant.room_id || std::abs(s.x.tile - plant.x.tile) > kFeelRange ||
+            std::abs(s.y.tile - plant.y.tile) > kFeelRange)
+            continue;
+        s.happiness = uint16_t(plant.plant_health < 0 ? s.happiness - 1 : s.happiness + 1);
+    }
+    uint16_t pos = cell_of(s);
+    if (which_room(world, pos))
+        return;
+    for (int offset : kAround) {
+        int cell = pos + offset;
+        // The game reads past the map's ends; there is no litter there.
+        if (cell < 0 || cell >= kMapCells)
+            continue;
+        uint8_t kind = world.map[size_t(cell)].litter_shadow & 0xf;
+        if (kind == kLitterVomit)
+            s.happiness--;
+        else if (!(kind == 0 || kind == 7 || kind == 8))
+            s.happiness = uint16_t(s.happiness - 2);
+    }
+}
+
+namespace
+{
 
 // check_feelgood (0x71558).
 void check_feelgood(const World &world, Thing &p)
@@ -229,6 +259,8 @@ void check_around(const World &world, Thing &p)
 // the carrier and the contagious flag, which nothing sets.
 void spread_epidemic(World &world, const Balance &settings, uint16_t carrier_id)
 {
+    trace_event("epidemic %u", unsigned(carrier_id));
+
     Thing &carrier = world.things[carrier_id];
     // The game keeps this draw in othervar.rand_pct.
     uint32_t pct = old_newrand(world.seed) % 100;
@@ -276,6 +308,7 @@ void setup_showanim(Thing &p, const AnimData &anims, uint16_t column)
 
 void place_litter(World &world, uint16_t tile, uint8_t owner, uint8_t kind)
 {
+    trace_event("litter %u type=%u owner=%u", unsigned(tile), unsigned(kind), unsigned(owner));
     if (tile >= kMapCells)
         return;
     MapCell &m = world.map[tile];
@@ -288,6 +321,7 @@ void place_litter(World &world, uint16_t tile, uint8_t owner, uint8_t kind)
 
 void remove_litter(World &world, uint16_t tile, uint8_t owner)
 {
+    trace_event("unlitter %u owner=%u", unsigned(tile), unsigned(owner));
     if (tile >= kMapCells)
         return;
     MapCell &m = world.map[tile];

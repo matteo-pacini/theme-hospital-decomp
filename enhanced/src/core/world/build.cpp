@@ -8,6 +8,9 @@
 #include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/objects.h"
+#include "core/world/queue.h"
+#include "core/world/rooms.h"
+#include "core/world/trace.h"
 #include "core/world/world.h"
 
 #include <cstdlib>
@@ -21,9 +24,6 @@ namespace
 // The local player; the engine has no other.
 constexpr int kPlayer = 0;
 
-// ROOM_ENTRANCE (include/enums.h).
-constexpr uint8_t kRoomEntrance = 1;
-
 constexpr uint8_t kObjDoor = 3;
 constexpr uint8_t kObjReceptionDesk = 11;
 constexpr uint8_t kObjLitterBomb = 17;
@@ -34,10 +34,6 @@ constexpr uint8_t kObjSwingDoor2 = 53;
 // OS_STATIC and OS_REMOVED (include/enums.h).
 constexpr uint8_t kObjectStatic = 2;
 constexpr uint8_t kObjectRemoved = 0x12;
-
-// PS_BP_GOTO and SS_BP_GOTO (include/enums.h).
-constexpr uint8_t kPsBpGoto = 0x40;
-constexpr uint8_t kSsBpGoto = 0x4c;
 
 // SFX_* (include/enums.h).
 constexpr uint8_t kSfxWrong2 = 0x08;
@@ -444,6 +440,7 @@ RoomInfo &built_room(World &w)
 // floor plan and doors are placed next.
 bool commit_blueprint(Game &game)
 {
+    trace_event("commit_blueprint");
     World &w = game.world;
     BuildState &b = w.building.build;
     if (!is_valid_room(w, b.x0, b.y0, b.x1, b.y1, kPlayer)) {
@@ -480,6 +477,7 @@ bool commit_blueprint(Game &game)
 // to dragging.
 void uncommit_blueprint(World &w)
 {
+    trace_event("uncommit_blueprint");
     BuildState &b = w.building.build;
     blank_wall_around_blueprint(w, false);
     for (int x = b.x0; x <= b.x1 + 1; x++)
@@ -1337,6 +1335,7 @@ void remove_object_from_map(World &w, uint16_t id)
 // bomb).
 bool remove_object(World &w, uint16_t id, int owner)
 {
+    trace_event("remove_object %u owner=%d", unsigned(id), owner);
     const Thing &obj = w.things[id];
     const MapCell &c = w.map[size_t(obj.x.tile + (obj.y.tile << 7))];
     if (!(obj.subtype == kObjGatesOfHell || obj.subtype == kObjLitterBomb || c.owner_flags == 1 << owner))
@@ -1384,6 +1383,7 @@ void delete_wall(World &w, int tile, uint16_t room, int side)
 // list walk in the game.
 void delete_room(World &w, uint16_t r)
 {
+    trace_event("delete_room %u", unsigned(r));
     const RoomInfo &room = w.rooms[r];
     int x0 = room.pos % 128, y0 = room.pos / 128;
     uint16_t id = room_at(w, uint16_t(((y0 + room.height / 2) << 7) + x0 + room.width / 2));
@@ -1461,11 +1461,13 @@ void clear_build_objects(Game &game)
     w.placing.buy_count = {};
 }
 
-// delete_blueprint_room (src/blueprnt.cpp) without the queue and the
-// treatments it offers, not ported: the room abandoned, half its price
-// back if it was paid for.
+// delete_blueprint_room (src/blueprnt.cpp): the room abandoned, half its
+// price back if it was paid for, the patients queueing for it sent on
+// (restart_all_queue_peeps) and its treatments gone if it was the last of
+// its type.
 void delete_blueprint_room(Game &game)
 {
+    trace_event("delete_blueprint_room");
     World &w = game.world;
     BuildState &b = w.building.build;
     RoomInfo &room = built_room(w);
@@ -1478,6 +1480,9 @@ void delete_blueprint_room(Game &game)
         uncommit_blueprint(w);
     b.draw_mode = 0;
     b.state = 0;
+    if (w.person_complexes)
+        restart_all_queue_peeps(w, game.anims(), *w.person_complexes, b.room, game.turn_count);
+    remove_expertise_room(w, b.room);
     room = RoomInfo{};
     b = BuildState{};
 }
@@ -1503,6 +1508,7 @@ void edit_blueprint(World &w)
     }
     if (room.door_tile && room.door_tile < 0x4000)
         b.saved_floor_block = w.map[room.door_tile].floor_block;
+    room_deleted_update_listhead(w, b.room);
     delete_room(w, b.room);
     uncommit_blueprint(w);
     repair_invis_walls_around_room(w, room);
@@ -1642,6 +1648,7 @@ void init_double_doors(World &w, uint16_t r)
 // (state 2).
 void commit_doors(Game &game)
 {
+    trace_event("commit_doors");
     World &w = game.world;
     BuildState &b = w.building.build;
     b.state = 2;
@@ -1653,21 +1660,25 @@ void commit_doors(Game &game)
     if (kRoomTypeInfo[b.room_type % kRoomTypes].door_kind == 0)
         init_double_doors(w, b.room);
     init_edit_room(w, b.room);
+    w.room_of_type[b.room_type % kRoomTypes] = b.room;
     place_next_in_room(w);
     w.building.mouse = BuildMouse::None;
 }
 
-// open_room (src/build.cpp): the room finished: its outline off the map,
-// lifted objects refunded, the room paid for, shadows recomputed. Its pagers
-// and help page are not ported.
+// open_room (src/build.cpp): the room finished: its pages unanswered
+// again, its outline off the map, lifted objects refunded, the room paid
+// for, shadows recomputed. Its help page is not ported.
 void open_room(Game &game)
 {
+    trace_event("open_room");
+
     World &w = game.world;
     BuildState &b = w.building.build;
     if (!b.room)
         return;
     RoomInfo &room = built_room(w);
     room.state = 0;
+    clear_pager_responses(w, b.room);
     for (int x = b.x0; x <= b.x1 + 1; x++)
         for (int y = b.y0; y <= b.y1 + 1; y++)
             place_small_thing(w, cell_index(x, y), 0, false);
@@ -1686,8 +1697,9 @@ void open_room(Game &game)
     b.room = 0;
 }
 
-// allocate_roominfo (src/blueprnt.cpp) without set_expertise_room (the
-// treatments a room offers are not ported): a free room for the blueprint.
+// allocate_roominfo (src/blueprnt.cpp): a free room for the blueprint, whose
+// treatments become available if the hospital has the staff
+// (set_expertise_room).
 void allocate_roominfo(Game &game, int type)
 {
     World &w = game.world;
@@ -1702,6 +1714,7 @@ void allocate_roominfo(Game &game, int type)
         room.state = kRoomStateBlueprint;
         room.created_turn = game.turn_count;
         room.queue_capacity = 6;
+        set_expertise_room(w, uint16_t(r));
         break;
     }
 }
@@ -1717,7 +1730,7 @@ void cancel_build(Game &game)
 // try_move_peep_cell (src/blueprnt.cpp).
 bool try_move_peep_cell(World &w, Thing &peep, int x, int y)
 {
-    int pos = w.entrances[peep.owner % 4][0];
+    int pos = w.rooms[w.entrances[peep.owner % 4][0]].door_tile;
     int tile = int16_t(uint8_t(x) + (uint8_t(y) << 7));
     if (!in_map(tile) || (w.map[size_t(tile)].owner_flags & kCellOutdoor) || room_at(w, uint16_t(tile)) ||
         !points_connected(w, tile, pos))
@@ -1725,7 +1738,7 @@ bool try_move_peep_cell(World &w, Thing &peep, int x, int y)
     peep.saved_state = peep.state;
     peep.saved_dest_x = uint8_t(x);
     peep.saved_dest_y = uint8_t(y);
-    peep.state = peep.type == kThingPatient ? kPsBpGoto : kSsBpGoto;
+    peep.state = peep.type == kThingPatient ? kPsBpGoto : kStaffBpGoto;
     peep.countdown = 0;
     return true;
 }
@@ -1785,7 +1798,7 @@ uint16_t room_at(const World &world, uint16_t tile)
 
 bool check_room_access(const World &world, int owner)
 {
-    int pos = world.entrances[size_t(owner) % 4][0];
+    int pos = world.rooms[world.entrances[size_t(owner) % 4][0]].door_tile;
     for (size_t r = 1; r < world.rooms.size(); r++) {
         const RoomInfo &room = world.rooms[r];
         if (room.type == kRoomFree || room.state == kRoomStateBlueprint || room.owner != owner ||
@@ -2237,8 +2250,9 @@ bool apply_build_event(Game &game, const Event &event)
     case EV_DELETE_ROOM: {
         clear_build_objects(game);
         delete_blueprint_room(game);
-        // It goes on as EV_CANCEL_BUILD with no held staff.
+        // It goes on as EV_CANCEL_BUILD with value 0.
         Event cancel{EV_CANCEL_BUILD, 0, 0, event.arg};
+        apply_staff_event(game, cancel);
         cancel_build(game);
         apply_object_event(game, cancel);
         return true;

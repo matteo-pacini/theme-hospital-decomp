@@ -48,6 +48,17 @@ void remove_litter(World &world, uint16_t tile, uint8_t owner);
 // machine does (+10, complex_success's case 2 in src/complex.cpp).
 void add_litter_urge(Thing &patient, uint16_t amount);
 
+// check_warmth (0x712a8): person `p`'s warmth one step towards that of
+// the radiators near by at `heating_level` (outside rooms; a room's
+// radiators are not ported, so its warmth is 0); a hot patient gets
+// thirstier.
+void check_warmth(const World &world, Thing &p, int heating_level);
+
+// staff_check_around (0x72110): member of staff `s` is happier by the
+// healthy plants near by and less happy by the wilting ones and, in the
+// corridor, by the litter round them.
+void staff_check_around(const World &world, Thing &s);
+
 // modify_person (0x70f80) for patient `id` at `game_turn`: due once
 // game_turn (in 16 bits) passes Thing.modify_time, which it then sets
 // gbv.modify_freq turns on, and indoors: warmth from the radiators at

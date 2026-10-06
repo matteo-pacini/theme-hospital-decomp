@@ -322,15 +322,32 @@ void hire_staff_after_turn(HireStaff &hire, const World &world)
         hire.held = 0;
         hire.held_kind = 0;
     }
+    // staff_picked_up's part on the player's machine.
+    uint16_t picked = world.held_staff;
+    if (!hire.held && picked && picked < world.things.size() && world.things[picked].state == kStaffHeld) {
+        hire.held = picked;
+        hire.held_kind = world.things[picked].subtype;
+        hire.cursor_cell = -1;
+    }
 }
 
 bool update_staff_cursor(HireStaff &hire, const World &world, int cell)
 {
     if (cell != hire.cursor_cell) {
-        hire.place_ok = staff_place_ok(world, cell);
+        hire.place_ok = staff_place_ok(world, cell, hire.held_kind);
         hire.cursor_cell = cell;
     }
     return hire.place_ok;
+}
+
+Event pick_up_staff_click(const World &world, uint16_t pointed)
+{
+    if (pointed == 0 || pointed >= world.things.size())
+        return {};
+    const Thing &t = world.things[pointed];
+    if (t.type != kThingStaff || t.owner != 0)
+        return {};
+    return {EV_PICK_UP_STAFF, pointed};
 }
 
 Event place_staff_click(HireStaff &hire, const World &world, int cell)

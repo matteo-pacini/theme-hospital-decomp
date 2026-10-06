@@ -24,6 +24,7 @@ namespace th
 // Patient states (Thing.state; the game's PS_*, include/enums.h).
 constexpr uint8_t kPsWaitsForBusy = 0x04;
 constexpr uint8_t kPsGotoDestination = 0x06;
+constexpr uint8_t kPsInBed = 0x2c;
 constexpr uint8_t kPsReturnToQueueArea = 0x08;
 constexpr uint8_t kPsGoHome = 0x0c;
 constexpr uint8_t kPsGone = 0x0e;
@@ -34,9 +35,12 @@ constexpr uint8_t kPsGotoObject = 0x16;
 constexpr uint8_t kPsEntertainsThemself = 0x18;
 constexpr uint8_t kPsGotoQueue = 0x24;
 constexpr uint8_t kPsGoForTreatment = 0x26;
+constexpr uint8_t kPsSlaveReady = 0x20;
+constexpr uint8_t kPsMerged = 0x28;
 constexpr uint8_t kPsComplexRetry = 0x2a;
 constexpr uint8_t kPsInBogs = 0x36;
 constexpr uint8_t kPsStuck = 0x3c;
+constexpr uint8_t kPsBpGoto = 0x40;
 constexpr uint8_t kPsWaitsForDecision = 0x44;
 
 // The complex that sends a patient to its destination cell and off the
@@ -81,21 +85,35 @@ bool set_complex(World &world, uint16_t id, uint16_t action, uint16_t arg);
 // (the game's actual_game_turn).
 //
 // complex_success (action 52) is ported for patients: a drink, a paid
-// amusement and the toilet (2, 4, 6); the use count of an object (24) is
-// not kept.
-// Not yet ported: the rooms, doors and staff the steps can involve (there
-// are none yet: find_door finds no door, so action 20 fails as in the game
-// and 14 does nothing) and action 22 (leaving a door, which only follows a
-// successful 20).
+// amusement, the toilet and a use of their object (2, 4, 6, 24). Doors
+// (actions 14, 20 and 22, find_door in core/world/rooms.h) take the patient
+// into or out of a room (move_person_in_room_list).
 uint8_t process_person_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                                uint32_t game_turn);
 
-// find_nearest_free_object (0x37d28), outside rooms (there are none yet):
-// the nearest free object of `kind` of the seeker's hospital within 7 cells
-// on each axis whose use cell a path reaches, as can_i_get_to with the
-// object as the mover (a path from its own use cell 1). The use cell is the
-// seeker's: 1 for patients, 0 for staff, 2 for handymen. 0 if none.
-uint16_t find_nearest_free_object(const World &world, uint16_t id, uint8_t kind);
+// find_nearest_free_object (0x37d28): in the seeker's room, a free object
+// of `kind` of the room drawn from world.seed among the first 30 (a 31st
+// found is taken at once); outside rooms, the nearest free object of `kind`
+// of the seeker's hospital within 7 cells on each axis whose use cell a path
+// reaches, as can_i_get_to with the object as the mover (a path from its own
+// use cell 1). The use cell is the seeker's: 1 for patients, 0 for staff, 2
+// for handymen. 0 if none.
+uint16_t find_nearest_free_object(World &world, uint16_t id, uint8_t kind);
+
+// move_person_in_room_list (0x167c4): person `id` goes into the list of
+// the room holding `tile` (insert_person_in_room_list), or out of their
+// room's (remove_person_from_room_list) for a cell in none.
+void move_person_in_room_list(World &world, uint16_t id, uint16_t tile);
+
+// insert_person_in_room_list (0x16808): person `id` at the head of room
+// `room`'s list of people (RoomInfo.first_person), in that room
+// (Thing.room); a patient counts in its patients_seen. They must be in no
+// list.
+void insert_person_in_room_list(World &world, uint16_t room, uint16_t id);
+
+// remove_person_from_room_list (0x168a0): person `id` out of their room's
+// list of people, and in no room.
+void remove_person_from_room_list(World &world, uint16_t id);
 
 // adjust_big_cell_flag (0xa8f78): sets MapCell.flags 0x20 on `cell` if a
 // person on it uses its object or an object on it covers more than one
@@ -114,22 +132,22 @@ void fail_person_complex(World &world, const AnimData &anims, uint16_t id);
 // (gbv.dist_points) less its free places. 0 if none.
 uint16_t find_nearest_manned_reception(const World &world, uint16_t id, uint8_t room, bool need_space);
 
-// start_person_going (0x173c0): sends patient `id` on its way: to the
-// nearest manned reception desk with room in its queue (complex
-// kComplexToReception to the desk's use cell 1, walking as PS_GOTO_QUEUE,
-// with the desk's reception as dest_room) or, there being none, to a
-// random one of its hospital's entrances (World::entrances) and off the
-// map (kComplexLeave), and runs the complex's first step. Draws from
-// world.seed when it leaves. Patients are never in a room yet, so the
-// game's first step out of one is not taken.
+// start_person_going (0x173c0): sends patient `id` on its way, out of its
+// room first (complex 90): to the nearest manned reception desk with room
+// in its queue (complex kComplexToReception to the desk's use cell 1,
+// walking as PS_GOTO_QUEUE, with the desk's reception as dest_room) or,
+// there being none, to a random one of its hospital's entrances
+// (World::entrances) and off the map (kComplexLeave), and runs the
+// complex's first step. Draws from world.seed when it leaves.
 void start_person_going(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                         uint32_t game_turn);
 
 // person_go_home (0x1665c): patient `id` stops what it is doing
 // (interrupt_person), leaves its queue and walks to its hospital's first
-// entrance (World::entrances[owner][0], the game's first ROOM_ENTRANCE room)
-// and off the map. Its player calls, statistics and status icon are not
-// ported.
+// entrance (get_room_info's first kRoomEntrance room of its owner; for a
+// rival, which has none, cell 0) and off the map, counted in the statistics
+// (record_person_as_patient).
+// Its player calls and status icon are not ported.
 void person_go_home(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                     uint32_t game_turn);
 
@@ -145,9 +163,10 @@ void interrupt_complex(World &world, const AnimData &anims, const PersonComplexe
                        uint32_t game_turn);
 
 // remove_person (0x16760): takes patient `id` off the map and frees its
-// entry: leaves its queue, abandons its complex (abandon_complex), then
-// unlinks it from its cell (remove_thing). Rooms, vaccinations and the
-// patient's window, which do not exist yet, are not handled.
+// entry: leaves its queue, abandons its complex (abandon_complex) and its
+// room (remove_person_from_room_list), then unlinks it from its cell
+// (remove_thing). Vaccinations and the patient's window, which do not
+// exist yet, are not handled.
 void remove_person(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                    uint32_t game_turn);
 
@@ -172,13 +191,20 @@ void remove_person(World &world, const AnimData &anims, const PersonComplexes &c
 //   patient pays or not (shall_peep_pay, core/world/reception.h) and goes
 //   home without a treatment the hospital can give; with no room for it,
 //   waits for a decision (PS_WAITS_FOR_DECISION) up to 1500 turns, then
-//   goes home; else walks to the queue of the room for it (get_expertise_dest);
+//   goes home; else walks to the queue of the room for it (get_expertise_dest),
+//   for a ward's diagnosis to a ward with a free bed (send_person_to_bed);
+// - rooms: at a room's door it enters if called, else queues
+//   (PS_ARRIVES_AT_DOOR); waiting in a room's queue it pages the staff its
+//   treatment needs (page_staff_i_need, core/world/rooms.h); called in, it
+//   waits for the member of staff who called it (PS_ARRIVED_FROM_CALL), or
+//   leaves if there is none;
+// - lying in a ward's bed (PS_IN_BED) for its diagnosis, then on to its
+//   next treatment (setup_next_treatment);
+// - stepping off a blueprint (PS_BP_GOTO) before walking or waiting on it;
 // - PS_WAITS_FOR_BUSY, PS_GO_HOME, PS_GONE, PS_PLAY_COMPLEX_ANIM,
-//   PS_COMPLEX_RETRY, PS_SHOWANIM and PS_ARRIVED_FROM_CALL.
-// Not ported, as what they need does not exist yet: blueprints, rooms (the
-// toilets, entering a room, wards, research), paging staff, player calls,
-// statistics (person_count, the reputation of turning a patient away),
-// status icons and diagnosis.
+//   PS_COMPLEX_RETRY, PS_SHOWANIM, PS_SLAVE_READY and PS_MERGED.
+// Not ported, as what they need does not exist yet: the toilets,
+// research, statistics (person_count) and status icons.
 bool person_turn(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                  uint32_t game_turn);
 
@@ -187,7 +213,19 @@ bool person_turn(World &world, const AnimData &anims, const PersonComplexes &com
 // opening when a patient or member of staff stands on either cell in front
 // of it; it plays its opening animation, stays open until 50 turns after the
 // last one has gone, then closes, reopening from where it is if someone
-// comes. Does nothing for other objects or states.
+// comes. The half of a double door swinging (OS_DOUBLE_DOOR_SWINGS) plays
+// its swing (double_door_swings). Does nothing for other objects or states.
 void sliding_door_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
+
+// One game turn of room door `id` (kThingDoor), as process_things: swinging
+// (OS_DOUBLE_DOOR_SWINGS), it plays the swing and closes, free again;
+// otherwise its animation advances every anim_speed turns.
+void door_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
+
+// peep_bp_goto (0x781f8), PS_BP_GOTO's and SS_BP_GOTO's turn: person `id`
+// walks off the blueprint, a row or column at a time (which first drawn
+// from world.seed when both are left), to the cell move_peep_from_blueprint
+// chose, then goes back to its saved state.
+void peep_bp_goto_turn(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
 
 } // namespace th

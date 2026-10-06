@@ -11,6 +11,10 @@ if [ ! -f enhanced/CMakeLists.txt ]; then
   echo "run from the repository root" >&2
   exit 1
 fi
+# A library path from outside the flake can hold libraries built against a
+# newer glibc than this toolchain's, which then fail to link (SDL3's
+# libasound) or to load.
+unset LD_LIBRARY_PATH
 cmake -S enhanced -B build/enhanced-run -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/enhanced-run
 exec build/enhanced-run/th_enhanced "$@"

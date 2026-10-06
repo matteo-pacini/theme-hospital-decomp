@@ -46,17 +46,13 @@ class ShadowSprites
   public:
     // `blocks` is the VBLK sheet and `ghost` the 256 x 256 blend table the
     // game draws the map with, qdata/ghost66.dat (66% blends of the game
-    // palette), only read here; `blocks` must outlive this object. `map` is the map
-    // as recreate_map leaves it and `player` the local player (0-3): the
-    // game draws one wall block of the player's interior (the first cell with
-    // north and west walls in the player's land) at a different height from
-    // the other shaded walls.
-    ShadowSprites(const SpriteSheet &blocks, std::span<const uint8_t> ghost, const MapCell *map, int player = 0);
+    // palette), only read here; `blocks` must outlive this object.
+    ShadowSprites(const SpriteSheet &blocks, std::span<const uint8_t> ghost);
 
     // The sprite for `cell`'s floor given its shadow bits.
     ShadedSprite floor(const MapCell &cell) const;
     // The sprite for `cell`'s north wall given its shadow bits; empty if it
-    // has none.
+    // has none. Shaded or not, it is drawn at its own height.
     ShadedSprite wall_n(const MapCell &cell) const;
 
   private:
@@ -75,7 +71,6 @@ class ShadowSprites
     std::vector<Shaded> full_;
     std::vector<Shaded> half_;
     std::vector<Shaded> wall_;
-    int interior_wall_ = -1;
 };
 
 } // namespace th

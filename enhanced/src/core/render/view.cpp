@@ -6,6 +6,7 @@
 #include "core/render/blit.h"
 #include "core/render/frame.h"
 #include "core/render/shadows.h"
+#include "core/world/staff.h"
 #include "core/world/world.h"
 
 #include <algorithm>
@@ -136,6 +137,29 @@ AnimStart anim_start(const GameData &data, uint32_t anim)
     return anim < starts.size() ? starts[anim] : AnimStart{};
 }
 
+// Whether the game's mapwho_* tests `t` for being under the pointer: people
+// always, objects and doors in the states mapwho_object draws whole.
+bool pointed_testable(const Thing &t)
+{
+    if (t.type == kThingPatient || t.type == kThingStaff)
+        return true;
+    switch (t.state) {
+    case 0x02: // OS_STATIC
+    case 0x06: // OS_HELL
+    case 0x0a: // OS_PLANT_AGES
+    case 0x0e: // OS_BEING_WATERED
+    case 0x10: // OS_DOUBLE_DOOR_SWINGS
+    case 0x14: // OS_SLIDING_DOOR_CLOSED
+    case 0x16: // OS_SLIDING_DOOR_OPENS
+    case 0x18: // OS_SLIDING_DOOR_OPEN
+    case 0x1a: // OS_SLIDING_DOOR_CLOSES
+    case 0x1c: // OS_BOMB_TICKS
+        return true;
+    default:
+        return false;
+    }
+}
+
 // do_mapwho for `cell` (map index `index`), whose diamond has its left edge
 // at x and its top corner at y: its overlay (flags bits 6-7), the blueprint
 // marker ending its list, its litter, then its things by ascending bucket
@@ -143,7 +167,7 @@ AnimStart anim_start(const GameData &data, uint32_t anim)
 // frames drawn (the game's frame_bounds); `extent`, if given, grows to
 // every pixel drawn.
 Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y, const World &world,
-                      const GameData &data, Rect *extent, std::vector<FrameSound> *sounds)
+                      const GameData &data, Rect *extent, std::vector<FrameSound> *sounds, PointedThing *pointed)
 {
     std::vector<std::pair<int, int16_t>> drawn; // (bucket, thing) in list order
     int16_t marker = cell.first;
@@ -189,10 +213,19 @@ Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y
             // icons are not drawn yet.
             if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff)
                 continue;
+            // mapwho_staff draws no applicant, nor staff going back to the
+            // applicants or in state 42.
+            if (t.type == kThingStaff &&
+                (t.state == 42 || t.state == kStaffApplicant || t.state == kStaffBackToApplicants))
+                continue;
             int tx = x + kTileWidth / 2 + ((int(t.x.frac) - int(t.y.frac)) >> 3);
             int ty = y + ((int(t.x.frac) + int(t.y.frac)) >> 4);
             Rect sprites;
-            grow(bounds, draw_frame(dst, tx, ty, t.sprite, t.flip != 0, 0, data, t.layers.data(), &sprites));
+            Rect box = draw_frame(dst, tx, ty, t.sprite, t.flip != 0, 0, data, t.layers.data(), &sprites);
+            grow(bounds, box);
+            if (pointed && pointed_testable(t) && box.x < pointed->at.x && box.x + box.w > pointed->at.x &&
+                box.y < pointed->at.y && box.y + box.h > pointed->at.y)
+                pointed->thing = uint16_t(it->second);
             if (sounds && t.sprite < data.anims().frames.size())
                 sounds->push_back({uint16_t(it->second), data.anims().frames[t.sprite].sound,
                                    t.type == kThingPatient || t.type == kThingStaff, tx, ty});
@@ -206,8 +239,10 @@ Rect draw_cell_things(Surface &dst, const MapCell &cell, int index, int x, int y
 } // namespace
 
 void draw_world(Surface &dst, Rect view, Point camera, const World &world, const GameData &data,
-                const ShadowSprites *shadows, Surface &scratch, std::vector<FrameSound> *sounds)
+                const ShadowSprites *shadows, Surface &scratch, std::vector<FrameSound> *sounds, PointedThing *pointed)
 {
+    if (pointed)
+        pointed->thing = 0;
     const SpriteSheet &blocks = data.blocks();
     const int tallest = tallest_block(blocks);
     const MapCell *map = world.map.data();
@@ -258,7 +293,7 @@ void draw_world(Surface &dst, Rect view, Point camera, const World &world, const
                 continue;
             int x = scan.x(col, row), top = base_y - kTileHeight;
             if (!(cell.flags & 0x10)) {
-                draw_cell_things(dst, cell, col + row * kMapSize, x, top, world, data, nullptr, sounds);
+                draw_cell_things(dst, cell, col + row * kMapSize, x, top, world, data, nullptr, sounds, pointed);
                 continue;
             }
             // Behind a wall: draw into the scratch surface, blank out the
@@ -267,7 +302,8 @@ void draw_world(Surface &dst, Rect view, Point camera, const World &world, const
             scratch.set_clip(view);
             Rect touched{};
             Rect bounds = intersect(
-                draw_cell_things(scratch, cell, col + row * kMapSize, x, top, world, data, &touched, sounds), view);
+                draw_cell_things(scratch, cell, col + row * kMapSize, x, top, world, data, &touched, sounds, pointed),
+                view);
             touched = intersect(touched, view);
             scratch.set_clip(bounds);
             scan.lines(bounds, tallest, [&](int mc0, int mc1, int mline) {

@@ -47,17 +47,19 @@ extern const std::array<std::array<uint16_t, 0x8c>, 5> kStaffAnimStarts;
 // game does. A step that drives the slave runs the patient's complex with
 // `person_complexes`; `game_turn` is the turn being played.
 //
-// Not yet ported: the rooms and doors steps can involve (find_door finds no
-// door: action 20 fails, as in the game, and 14 does nothing; 22 only
-// follows a successful 20), complex_success (action 52) and the operating
-// theatre's surgeon counts (60, 62), which only room complexes use.
+// Doors (actions 14, 20 and 22) take the member of staff into or out of a
+// room, claiming it on the way in (check_room_mutex_on_entry) and
+// answering its page (pager_arrival); complex_success (action 52) rests
+// staff and counts a use of their object. Not yet ported: research and
+// autopsies among complex_success's kinds, and the operating theatre's
+// surgeon counts (60, 62).
 uint8_t process_staff_complex(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                               const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
 
 // fail_staff_complex (0x41c0c): ends member of staff `id`'s failed complex:
 // back to resume_state standing, the complex and its queue cleared; with no
-// resume_state, SS_COMPLEX_RETRY to retry the step. (A handyman's pages
-// would be released too; there are none yet.)
+// resume_state, SS_COMPLEX_RETRY to retry the step. A handyman going back
+// holds no repair page any more.
 void fail_staff_complex(World &world, const AnimData &anims, uint16_t id);
 
 // start_new_interaction (0x54dd4): starts interaction sequence `seq` (1 for

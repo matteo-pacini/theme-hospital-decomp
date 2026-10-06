@@ -62,9 +62,8 @@ bool forget_about_my_slave(World &world, const AnimData &anims, const PersonComp
 // (interrupt_complex) and puts it back to walking back to its queue
 // (PS_RETURN_TO_QUEUE_AREA), on its way to a queue (PS_GOTO_QUEUE), to
 // waiting for a decision if it was, or else out of any queue to go for its
-// treatment (PS_GO_FOR_TREATMENT). Patients are never in a room yet, so the
-// game's walk out of one, freeing the staff dealing with them, is not
-// taken.
+// treatment (PS_GO_FOR_TREATMENT). In a room, the member of staff dealing
+// with it is freed (interrupt_staff) and it walks out first.
 void interrupt_person(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t person,
                       uint32_t game_turn);
 
@@ -74,6 +73,10 @@ void interrupt_person(World &world, const AnimData &anims, const PersonComplexes
 // complex 230 (interaction 6) rather than 240 (interaction 7).
 bool reception_cure_available(const World &world, uint16_t patient);
 
+// update_single_cure_cost (0x143e0, core/world/arrivals.h) for hospital 0
+// (World::market).
+void update_single_cure_cost(World &world, uint16_t treatment);
+
 // shall_peep_pay (0x58c54): whether patient `id` will pay hospital 0's price
 // for its treatment, and for its next one if any: its price
 // (update_single_cure_cost first moves it to its share of the most patients
@@ -81,8 +84,8 @@ bool reception_cure_available(const World &world, uint16_t patient);
 // insurance company's extra (World::ins_control) or 0 if uninsured and
 // short of cash, plus a draw from world.seed of up to half the price. One
 // who will not is marked kPfTooExpensive, and World::too_expensive and
-// unpaid_treatment are set for the advisor. Its status icon and statistics
-// are not ported.
+// unpaid_treatment are set for the advisor, and it is counted in the
+// statistics (record_person_as_patient). Its status icon is not ported.
 bool shall_peep_pay(World &world, uint16_t id);
 
 // The patient's part of recept_admits_patient (0x984a0), once `receptionist`

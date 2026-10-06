@@ -29,8 +29,6 @@ void draw_nav_tool(NavTool &tool, World &world)
     int people = 0;
     for (const Thing &t : world.things)
         people += is_person(t);
-    if (!ImGui::CollapsingHeader("Path finding", ImGuiTreeNodeFlags_DefaultOpen))
-        return;
     ImGui::Checkbox("Show planned paths", &tool.show_paths);
     int planner = world.path_finder == PathFinder::AStar ? 0 : 1;
     const char *planners[] = {"A*", "Original (wall following)"};

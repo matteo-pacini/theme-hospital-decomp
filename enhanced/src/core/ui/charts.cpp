@@ -824,7 +824,7 @@ class Frame
             reqspr(kCoords[78].x, kCoords[78].y, 1);
             c_.insurance_button_sprites = {0, 0, 2};
             size_t company = size_t(c_.value - 1);
-            boxed(16, str(TextSection::InsuranceNames, hs_.insurers[company]));
+            boxed(16, str(TextSection::InsuranceNames, game_.world.ins_control[company]));
             const auto &claims = hs_.insurance_claims[company];
             int32_t max = 1;
             for (int32_t v : claims)
@@ -851,7 +851,7 @@ class Frame
         } else {
             c_.insurance_button_sprites = {3, 3, 3};
             for (int i = 0; i < 3; i++)
-                boxed(16 + i, str(TextSection::InsuranceNames, hs_.insurers[size_t(i)]));
+                boxed(16 + i, str(TextSection::InsuranceNames, game_.world.ins_control[size_t(i)]));
         }
     }
 
@@ -1346,7 +1346,8 @@ class Frame
     {
         const IllnessFigures &f = hs_.illnesses[size_t(i)];
         const Balance &bal = game_.settings();
-        return (i < kFirstDiagnosis && f.discovered) || (i >= kFirstDiagnosis && f.cure_available == 1) ||
+        return (i < kFirstDiagnosis && f.discovered) ||
+               (i >= kFirstDiagnosis && game_.world.cure_available[size_t(i)] == 1) ||
                (i == kIllAutopsy && bal.objects[kObjAutoAutopsy].start_avail != 0 &&
                 bal.objects[kObjAutoAutopsy].available_for_level != 0 && has_room(game_.world, kRoomResearch));
     }
@@ -1388,20 +1389,22 @@ class Frame
         const Rect window = kBoxes[0];
         int illness = c_.selected_illness;
         const IllnessFigures &fig = hs_.illnesses[size_t(illness)];
+        const HospitalMarket &hosp = game_.arrivals.hospitals[0];
         const ExpertiseRow &def = kExpertise[size_t(illness)];
         for (int i = 0; i < 12; i++) {
             std::string s;
             switch (i) {
             case 6:
-                s = format("%d", illness >= kFirstDiagnosis || illness == kIllGeneralPractice ? game_.reputation
-                                                                                              : int(fig.reputation));
+                s = format("%d", illness >= kFirstDiagnosis || illness == kIllGeneralPractice
+                                     ? game_.reputation()
+                                     : int(hosp.reputation[size_t(illness)]));
                 break;
             case 7:
                 if (c_.drug_pct_display_time) {
                     c_.drug_pct_display_time--;
-                    s = format("%d%%", fig.price_scale / 100);
+                    s = format("%d%%", hosp.price_scale[size_t(illness)] / 100);
                 } else {
-                    s = format("$%d", fig.price);
+                    s = format("$%d", hosp.price[size_t(illness)]);
                 }
                 break;
             case 8:
@@ -1438,7 +1441,8 @@ class Frame
         count = 7;
         for (int i = c_.selected_illness - 1; i > 0; i--) {
             const IllnessFigures &f = hs_.illnesses[size_t(i)];
-            if (((i < kFirstDiagnosis && f.discovered) || (i >= kFirstDiagnosis && f.cure_available == 1)) &&
+            if (((i < kFirstDiagnosis && f.discovered) ||
+                 (i >= kFirstDiagnosis && game_.world.cure_available[size_t(i)] == 1)) &&
                 i < 0x2c) {
                 if (count == 0)
                     break;
@@ -1470,7 +1474,7 @@ class Frame
         auto cure_sprite = [&](int index) { reqspr(kCoords[0x1f].x, kCoords[0x1f].y, index); };
         if (!(illness >= kFirstDiagnosis || illness == kIllGeneralPractice)) {
             bool plain = def.outcome != 1 && def.outcome != 5 && def.outcome != 4;
-            if (fig.cure_available == 1) {
+            if (game_.world.cure_available[size_t(illness)] == 1) {
                 if (def.kind == kObjPharmacyCabinet) {
                     cure_sprite(7);
                     drug_effect(format("%d", fig.drug_effectiveness));
@@ -1501,7 +1505,7 @@ class Frame
                 }
             }
         } else if (illness >= kFirstDiagnosis) {
-            reqspr(kCoords[0x20].x, kCoords[0x20].y, fig.cure_available == 1 ? 11 : 12);
+            reqspr(kCoords[0x20].x, kCoords[0x20].y, game_.world.cure_available[size_t(illness)] == 1 ? 11 : 12);
         }
         if (def.research_type != 0) {
             int f = illness == hs_.research_illness ? 0xf : 0xe;
@@ -1552,7 +1556,7 @@ class Frame
         uint16_t value = uint16_t(c_.repeat_step >> 8);
         next_repeat_step();
         r_.event = {uint8_t(up ? EV_PRICE_UP : EV_PRICE_DOWN), value, 0, c_.selected_illness};
-        int scale = hs_.illnesses[c_.selected_illness].price_scale;
+        int scale = game_.arrivals.hospitals[0].price_scale[c_.selected_illness];
         if (up ? scale < 20000 : scale > 5000) {
             sound(kSfxSelectX);
         } else if (!c_.value) {
@@ -1928,10 +1932,15 @@ class Frame
             c_.slist_cursor = 0;
             break;
         case 4:
-            // Sacking asks first through the yes/no requester, which the
-            // charts do not show yet: refused.
-            if (c_.value)
-                sound(kSfxWrong2);
+            if (c_.value) {
+                sound(kSfxSelectX);
+                // open_yes_no_requester.
+                r_.event = {EV_OPEN_YES_NO, 0, 0, 0};
+                r_.yes = {EV_SACK_STAFF, uint16_t(c_.value), 0, 0};
+                r_.no = {EV_CANCEL_SACK, uint16_t(c_.value), 0, 0};
+                r_.question = 5;
+                c_.value = 0;
+            }
             break;
         case 5:
             if (c_.value) {
@@ -2001,8 +2010,8 @@ class Frame
         const Balance &bal = game_.settings();
         if (hospital == 0) {
             Finance fin = game_.finance;
-            calculate_value(fin, game_.world, bal, game_.reputation);
-            h.reputation = game_.reputation;
+            calculate_value(fin, game_.world, bal, game_.reputation());
+            h.reputation = game_.reputation();
             h.balance = game_.balance;
             h.loan = fin.loan;
             h.value = fin.hospital_value;
@@ -2271,36 +2280,26 @@ class Frame
 
 } // namespace
 
-void start_hospital_settings(HospitalSettings &settings, const Balance &balance, uint32_t clock)
+void start_hospital_settings(HospitalSettings &settings, const Balance &balance)
 {
     settings = {};
     settings.rest_threshold = balance.gbv.tired;
     for (int i = 0; i < kIllnessCount; i++) {
         IllnessFigures &f = settings.illnesses[size_t(i)];
-        f.price = balance.expertise[size_t(i)].start_price;
         f.discovered = balance.expertise[size_t(i)].known;
         if (kExpertise[size_t(i)].kind == kObjPharmacyCabinet)
             f.drug_effectiveness = balance.gbv.start_rating;
     }
-    settings.illnesses[0].cure_available = 1;
-    // setup_insurances: three of the eight companies, each drawn from those
-    // left.
-    std::vector<uint8_t> pool = {1, 2, 3, 4, 5, 6, 7, 8};
-    for (size_t i = 0; i < 3; i++) {
-        size_t pick = clock % pool.size();
-        settings.insurers[i] = pool[pick];
-        pool.erase(pool.begin() + std::ptrdiff_t(pick));
-    }
 }
 
-int32_t max_price_for_treatment(const HospitalSettings &settings, const Balance &balance, int illness, int reputation)
+void setup_insurances(World &world, uint32_t clock)
 {
-    int32_t base = balance.expertise[size_t(illness)].start_price;
-    int32_t rep = illness >= kFirstDiagnosis || illness == kIllGeneralPractice
-                      ? reputation
-                      : settings.illnesses[size_t(illness)].reputation;
-    int32_t price = base * rep / 500;
-    return base > price ? base : price;
+    std::vector<uint16_t> pool = {1, 2, 3, 4, 5, 6, 7, 8};
+    for (size_t i = 0; i < 3; i++) {
+        size_t pick = clock % pool.size();
+        world.ins_control[i] = pool[pick];
+        pool.erase(pool.begin() + std::ptrdiff_t(pick));
+    }
 }
 
 bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &event)
@@ -2315,16 +2314,10 @@ bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &even
     };
     switch (event.type) {
     case EV_OPEN_SCREEN:
-        // update_cure_costs: a price follows its share of the most patients
-        // will pay once it is 1% off.
-        for (int i = 0; i < kIllnessCount; i++) {
-            IllnessFigures &f = settings.illnesses[size_t(i)];
-            int32_t target = max_price_for_treatment(settings, bal, i, game.reputation) * f.price_scale / 10000;
-            if (target / 100 <= std::abs(target - f.price))
-                f.price = target;
-        }
+        put_back_held_staff(game);
+        update_cure_costs(game.arrivals, bal);
         if (event.value == kChartBank || event.value == kChartStatus)
-            calculate_value(fin, game.world, bal, game.reputation);
+            calculate_value(fin, game.world, bal, game.reputation());
         return true;
     case EV_TAKE_LOAN:
         pay(kTxBankLoan, 5000);
@@ -2379,11 +2372,12 @@ bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &even
     case EV_PRICE_DOWN: {
         if (event.arg >= kIllnessCount)
             return true;
-        IllnessFigures &f = settings.illnesses[event.arg];
+        HospitalMarket &hosp = game.arrivals.hospitals[0];
+        int32_t &scale = hosp.price_scale[event.arg];
         bool up = event.type == EV_PRICE_UP;
-        if (up ? f.price_scale < 20000 : f.price_scale > 5000) {
-            f.price_scale = std::clamp(f.price_scale + (up ? 1 : -1) * event.value * 100, 5000, 20000);
-            f.price = f.price_scale * max_price_for_treatment(settings, bal, event.arg, game.reputation) / 10000;
+        if (up ? scale < 20000 : scale > 5000) {
+            scale = std::clamp(scale + (up ? 1 : -1) * event.value * 100, 5000, 20000);
+            hosp.price[event.arg] = scale * max_price_for_treatment(hosp, bal, event.arg) / 10000;
         }
         return true;
     }
@@ -2464,6 +2458,7 @@ void chart_command(Charts &charts, const Event &event)
     case EV_RETURN_FROM_SCREEN:
     case EV_CLOSE_SCREEN:
     case EV_RETURN_TO_THING_WINDOW:
+    case EV_OPEN_YES_NO:
         charts.open = false;
         break;
     default:

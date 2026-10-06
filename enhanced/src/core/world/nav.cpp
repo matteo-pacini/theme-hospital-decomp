@@ -370,9 +370,10 @@ void delete_first_path_entry(OrthonavPath &path)
         path.steps[i] = path.steps[i + 1];
 }
 
-int32_t rand_ffff(World &w)
+// A draw traced as the caller's.
+int32_t rand_ffff(World &w, std::source_location caller = std::source_location::current())
 {
-    return int32_t(old_newrand(w.seed) % 0xffff);
+    return int32_t(old_newrand(w.seed, caller) % 0xffff);
 }
 
 // orthonav_wn (0x5562c): the direction to step from (x, y) towards the

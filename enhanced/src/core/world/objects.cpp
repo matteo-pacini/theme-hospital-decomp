@@ -6,6 +6,8 @@
 #include "core/world/nav.h"
 #include "core/world/world.h"
 
+#include <algorithm>
+
 namespace th
 {
 
@@ -55,7 +57,7 @@ bool points_connected(const World &w, int from, int to)
 // entrance (room_info[myhosp->entrances[0]].door_tile).
 int entrance_tile(const World &w)
 {
-    return w.entrances[kPlayer][0];
+    return w.rooms[w.entrances[kPlayer][0]].door_tile;
 }
 
 // check_no_peeps_on_cell (src/objects.cpp) outside rooms: false if someone
@@ -128,13 +130,13 @@ uint16_t player_place_object(Game &game, int tile, int kind, int dir)
             return id;
         }
     }
-    uint16_t id = place_object(w, game.anims(), tile, kind, dir, kPlayer, true);
-    if (id) {
-        int cost = game.settings().objects[size_t(kind)].start_cost;
-        if (cost)
-            change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuyObject, -cost);
-    }
-    return id;
+    // Charged once a thing is free for it, before it is made, as the game.
+    if (std::none_of(w.things.begin() + 1, w.things.end(), [](const Thing &t) { return t.type == kThingFree; }))
+        return 0;
+    int cost = game.settings().objects[size_t(kind)].start_cost;
+    if (cost)
+        change_balance(game.finance, game.balance, game.date.day, game.date.month, kTxBuyObject, -cost);
+    return place_object(w, game.anims(), tile, kind, dir, kPlayer, true);
 }
 
 // corridor_object_nav_check (src/build.cpp). Only the first thing on each

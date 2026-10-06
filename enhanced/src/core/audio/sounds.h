@@ -37,6 +37,8 @@ enum : uint8_t {
     kSfxNo4 = 0x42,         // SFX_NO4
     kSfxSelectX = 0x43,     // SFX_SELECTX: a click acted on
     kSfxHighlight5 = 0x44,  // SFX_HLIGHT5: a menu item under the mouse
+    kSfxPickup = 0x99,      // SFX_PICKUP: a member of staff picked up
+    kSfxSack = 0xaa,        // SFX_SACK: a member of staff sacked
 };
 // Entries of sfx_details; play_sound ignores higher numbers.
 constexpr int kSfxCount = 0xf2;

@@ -1,7 +1,10 @@
 #include "core/world/reception.h"
 
 #include "core/world/arrivals.h"
+#include "core/world/reputation.h"
+#include "core/world/rooms.h"
 #include "core/world/staff.h"
+#include "core/world/trace.h"
 
 #include <array>
 
@@ -19,42 +22,32 @@ constexpr std::array<uint8_t, 9> kInsuranceExtraPay = {0, 15, 10, 5, 8, 9, 40, 1
 // companies and nothing changes.
 constexpr uint8_t kInsuranceAccepted = 7;
 
+// The complexes interrupt_person gives a patient in a room (P_COMP.LEX):
+// those of patient kinds 4-5 and 9-10 that put their looks back (action
+// 34, orig_subtype), then out
+// by the room's door.
+constexpr uint16_t kComplexLooksBackKinds45 = 0xb4;
+constexpr uint16_t kComplexLooksBackKinds910 = 0x276;
+constexpr uint16_t kComplexLeaveRoom = 90;
+
 HospitalMarket &market_of(World &world)
 {
     static HospitalMarket none;
     return world.market ? *world.market : none;
 }
 
-// max_price_for_treatment (0x58e34) in single player: the treatment's start
-// price scaled by the hospital's reputation for it (its overall reputation
-// for general practice and from treatment 0x24 on) over 500, never below the
-// start price.
-int32_t max_price_for_treatment(World &world, uint16_t treatment)
+const Balance &balance_of(const World &world)
 {
     static const Balance statics;
-    const Balance &settings = world.settings ? *world.settings : statics;
-    int32_t base = settings.expertise[treatment].start_price;
-    int32_t rep = treatment >= 0x24 || treatment == kIllGeneralPractice ? (world.reputation ? *world.reputation : 500)
-                                                                        : market_of(world).reputation[treatment];
-    int32_t price = base * rep / 500;
-    return base > price ? base : price;
-}
-
-// update_single_cure_cost (0x143e0): moves the price of `treatment` to its
-// share (price_scale, in hundredths of a percent) of the most patients will
-// pay, if that moves it by 1% or more.
-void update_single_cure_cost(World &world, uint16_t treatment)
-{
-    HospitalMarket &hosp = market_of(world);
-    int32_t target = max_price_for_treatment(world, treatment) * hosp.price_scale[treatment] / 10000;
-    int32_t diff = target - hosp.price[treatment];
-    if (diff < 0)
-        diff = -diff;
-    if (target / 100 <= diff)
-        hosp.price[treatment] = target;
+    return world.settings ? *world.settings : statics;
 }
 
 } // namespace
+
+void update_single_cure_cost(World &world, uint16_t treatment)
+{
+    update_single_cure_cost(market_of(world), balance_of(world), treatment);
+}
 
 uint16_t reception_queue_head(const World &world, uint16_t room)
 {
@@ -74,7 +67,9 @@ bool reception_emergency(const World &world, uint16_t patient)
 uint16_t call_person_to_room(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t caller,
                              uint16_t id, uint16_t action, uint16_t arg, bool follow, uint32_t game_turn)
 {
+    trace_event("call %u id=%u action=%u arg=%u", unsigned(caller), unsigned(id), unsigned(action), unsigned(arg));
     for (;;) {
+
         Thing &callee = world.things[id];
         if (callee.health <= 0) {
             uint16_t next = callee.queue_next;
@@ -172,7 +167,34 @@ void interrupt_person(World &world, const AnimData &anims, const PersonComplexes
         state = kPsGoForTreatment;
     }
     interrupt_complex(world, anims, complexes, person, game_turn);
-    p.state = was_deciding ? kPsWaitsForDecision : state;
+    if (p.room) {
+        for (size_t i = 1; i < world.things.size(); i++) {
+            Thing &staff = world.things[i];
+            if (staff.type == kThingStaff && staff.room == p.room && staff.slave == person) {
+                staff.slave = 0;
+                interrupt_staff(world, anims, uint16_t(i), game_turn);
+                break;
+            }
+        }
+        switch (p.subtype) {
+        case 4:
+        case 5:
+            set_complex(world, person, kComplexLooksBackKinds45, 0);
+            break;
+        case 9:
+        case 10:
+            p.resume_state = 0;
+            set_complex(world, person, kComplexLooksBackKinds910, 0);
+            break;
+        default:
+            break;
+        }
+        set_complex(world, person, kComplexLeaveRoom, world.rooms[p.room].door_inside_tile);
+        process_person_complex(world, anims, complexes, person, game_turn);
+        p.next_state = state;
+    } else {
+        p.state = was_deciding ? kPsWaitsForDecision : state;
+    }
 }
 
 bool reception_cure_available(const World &world, uint16_t patient)
@@ -193,7 +215,7 @@ bool shall_peep_pay(World &world, uint16_t id)
         update_single_cure_cost(world, treatment);
         // The game reads the price into 16 bits.
         auto price = uint16_t(hosp.price[treatment]);
-        int32_t max = max_price_for_treatment(world, treatment);
+        int32_t max = max_price_for_treatment(hosp, balance_of(world), treatment);
         if (uint8_t ins = p.insurance & kInsuranceAccepted) {
             uint16_t company = world.ins_control[ins];
             max += (company < kInsuranceExtraPay.size() ? kInsuranceExtraPay[company] : 0) * max / 100;
@@ -209,20 +231,24 @@ bool shall_peep_pay(World &world, uint16_t id)
     }
     if (!pays) {
         p.person_flags |= kPfTooExpensive;
+        record_person_as_patient(world, id);
         if (p.owner == 0)
             world.too_expensive = true;
     }
+    trace_event("shall_pay %u pays=%d", unsigned(id), int(pays));
     return pays;
 }
 
-void reception_serves_patient(World &world, uint16_t, uint16_t patient)
+void reception_serves_patient(World &world, uint16_t receptionist, uint16_t patient)
 {
+    trace_event("checkin %u receptionist=%u", unsigned(patient), unsigned(receptionist));
     Thing &p = world.things[patient];
     p.impatience = 0;
     p.waiting_time = 0;
     if (shall_peep_pay(world, patient))
-        p.fee = market_of(world).price[p.treatment];
+        pay_for_treatment(world, patient, 3);
     else
+
         p.treatment = 0;
     p.state = kPsGoForTreatment;
 }

@@ -1,9 +1,10 @@
 #!/bin/sh
 # The original game's side of the replay check: links an instrumented
-# HOSPITAL.EXE from the decompilation's units (instrument.py on copies of
-# src/game.cpp and src/finance.cpp; the repository's sources are not
-# touched), runs `HOSPITAL.EXE -L<level> -Q` in DOSBox-X with no window or
-# sound, and copies the trace it writes to OUT.
+# HOSPITAL.EXE from the decompilation's units (instrument.py on a copy of
+# src/; the repository's sources are not touched), runs
+# `HOSPITAL.EXE -L<level> -Q` in DOSBox-X with no window or sound, and copies
+# the trace it writes, with its events, to OUT. TRACE_RAND=1 in the
+# environment also traces every draw from the random seed.
 #
 # Usage (from the repository root):
 #   enhanced/tools/replay/orig_trace.sh OUT TURNS [SCRIPT] [SKIP] [LEVEL]
@@ -33,11 +34,12 @@ mkdir -p "$tree/build"
 rm -rf "$tree/src" "$tree/include" "$tree/tools" "$tree/config" "$tree/build/base"
 cp -a src include tools config configure.py "$tree/"
 cp -a build/base "$tree/build/"
-python3 "$here/instrument.py" "$tree/src/game.cpp" "$tree/src/finance.cpp"
+units=$(python3 "$here/instrument.py" "$tree")
 (
   cd "$tree"
-  python3 tools/cc.py src/game.cpp build/base/game.o
-  python3 tools/cc.py src/finance.cpp build/base/finance.o
+  for unit in $units; do
+    python3 tools/cc.py "$unit" "build/base/$(basename "$unit" .cpp).o"
+  done
   python3 tools/link.py | grep -E "^(unresolved|duplicate)"
 )
 
@@ -69,6 +71,8 @@ mount c "$root/$run"
 c:
 set TRACE_TURNS=$turns
 set TRACE_SKIP=$skip
+set TRACE_RAND=${TRACE_RAND:-0}
+
 HOSPITAL.EXE -L$level -Q
 exit
 EOF

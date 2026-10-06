@@ -3,6 +3,7 @@
 #include "app/datadir.h"
 #include "app/ui/nav_tool.h"
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -16,11 +17,22 @@ enum class MissingDataAction { None, Choose, Quit };
 // problem with the last folder chosen, if any.
 MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::string &error);
 
+// The debug report tool: saves a screenshot of the game, its
+// state and a note, for agents to review.
+struct DebugReport {
+    std::array<char, 4096> note{};
+    // Save was pressed this frame; the caller saves and clears it.
+    bool save = false;
+    // Where the last report went, or why it failed.
+    std::string last;
+};
+
 // State of the tools window (F12).
 struct ToolsState {
     bool open = false;
     int ui_scale = 0; // panel and pointer scale: 0 automatic, else the integer scale
     NavTool nav;
+    DebugReport report;
 };
 
 // The tools window; with `world` (a level in play), also the path finding

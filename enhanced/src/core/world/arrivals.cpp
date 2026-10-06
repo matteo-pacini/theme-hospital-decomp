@@ -2,6 +2,7 @@
 
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
+#include "core/world/trace.h"
 
 namespace th
 {
@@ -34,15 +35,6 @@ constexpr size_t kPeopleReserve = 50;
 size_t town_index(int level_number)
 {
     return level_number > 14 ? 1 : size_t(level_number);
-}
-
-// transform_peep_who (0x16b30) for a patient.
-void transform_peep_who(Thing &person, uint8_t change)
-{
-    int8_t subtype = kChangePersonWho[change][person.subtype];
-    person.orig_subtype = person.subtype;
-    if (subtype != -1)
-        person.subtype = uint8_t(subtype);
 }
 
 // effect_illness (0x54444) with cured 0: gives the patient `illness` and
@@ -125,26 +117,6 @@ void add_contagiousness(uint32_t &seed, Thing &patient, const ArrivalState &stat
         patient.contagion = uint8_t(old_newrand(seed) % gbv.how_contagious + 1);
 }
 
-// max_price_for_treatment (0x58e34) for an illness below 36 other than
-// general practice, which go by the room's reputation, in single player.
-int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &settings, uint8_t illness)
-{
-    int32_t base = settings.expertise[illness].start_price;
-    int32_t price = base * hosp.reputation[illness] / 500;
-    return base > price ? base : price;
-}
-
-// update_single_cure_cost (0x143e0).
-void update_single_cure_cost(HospitalMarket &hosp, const Balance &settings, uint8_t illness)
-{
-    int32_t target = max_price_for_treatment(hosp, settings, illness) * hosp.price_scale[illness] / 10000;
-    int32_t diff = target - hosp.price[illness];
-    if (diff < 0)
-        diff = -diff;
-    if (target / 100 <= diff)
-        hosp.price[illness] = target;
-}
-
 // One bidder in who_owns_peep (the game's PeepBid). Its 27-bit score cannot
 // overflow: at most 1000 * 255 * 150% per hospital.
 struct PeepBid {
@@ -171,6 +143,40 @@ void sort_peep_bids(std::array<PeepBid, 4> &bids)
 
 } // namespace
 
+void transform_peep_who(Thing &person, uint8_t change)
+{
+    int8_t subtype = kChangePersonWho[change][person.subtype];
+    person.orig_subtype = person.subtype;
+    if (subtype != -1)
+        person.subtype = uint8_t(subtype);
+}
+
+int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &settings, int treatment)
+{
+    int32_t base = settings.expertise[size_t(treatment)].start_price;
+    int32_t rep = treatment >= 0x24 || treatment == kIllGeneralPractice ? hosp.hospital_reputation
+                                                                        : hosp.reputation[size_t(treatment)];
+    int32_t price = base * rep / 500;
+    return base > price ? base : price;
+}
+
+void update_single_cure_cost(HospitalMarket &hosp, const Balance &settings, int treatment)
+{
+    int32_t target = max_price_for_treatment(hosp, settings, treatment) * hosp.price_scale[size_t(treatment)] / 10000;
+    int32_t diff = target - hosp.price[size_t(treatment)];
+    if (diff < 0)
+        diff = -diff;
+    if (target / 100 <= diff)
+        hosp.price[size_t(treatment)] = target;
+}
+
+void update_cure_costs(ArrivalState &state, const Balance &settings)
+{
+    for (HospitalMarket &hosp : state.hospitals)
+        for (size_t i = 0; i < hosp.price.size(); i++)
+            update_single_cure_cost(hosp, settings, int(i));
+}
+
 void start_arrivals(ArrivalState &state, const Balance &settings)
 {
     state = {};
@@ -179,6 +185,8 @@ void start_arrivals(ArrivalState &state, const Balance &settings)
         for (size_t i = 0; i < hosp.price.size(); i++) {
             hosp.price[i] = settings.expertise[i].start_price;
             hosp.price_scale[i] = 10000;
+            hosp.rep_points[i] = 20;
+            hosp.rep_events[i] = 20;
             hosp.reputation[i] = 20 * 500 / 20; // evaluate_reputation
         }
     }
@@ -199,13 +207,14 @@ void calc_visitors_this_month(ArrivalState &state, const Balance &settings)
     state.peep_interval = state.visitors_per_month ? int16_t(1500 / state.visitors_per_month) : 0;
 }
 
-uint32_t old_normal_rand(uint32_t &seed, uint32_t low, uint32_t high)
+uint32_t old_normal_rand(uint32_t &seed, uint32_t low, uint32_t high, std::source_location caller)
 {
     int32_t range = int32_t((high - low) / 2 + 1);
     if (range <= 0)
         range = 1;
-    uint32_t sum = old_newrand(seed) % uint32_t(range);
-    sum += old_newrand(seed) % uint32_t(range);
+    uint32_t sum = old_newrand(seed, caller) % uint32_t(range);
+    sum += old_newrand(seed, caller) % uint32_t(range);
+
     return sum + low;
 }
 
@@ -376,11 +385,12 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const Balance &set
         nav_init(world, peep);
         insert_node(world, id, peep.x, peep.y);
     }
+    trace_event("peep %u illness=%u owner=%u pos=%u", unsigned(id), unsigned(illness), unsigned(owner), unsigned(pos));
     return id;
 }
 
 uint16_t create_a_peep(World &world, ArrivalState &state, const Balance &settings, const AnimData &anims,
-                       const Level &level, int level_number, bool hospital_open, uint32_t game_turn)
+                       int level_number, bool hospital_open, uint32_t game_turn)
 {
     if (kTownExtras[town_index(level_number)].special_kind == 1 || !state.peep_interval)
         return 0;
@@ -392,11 +402,13 @@ uint16_t create_a_peep(World &world, ArrivalState &state, const Balance &setting
         return 0;
     uint16_t id = 0;
     if (owner == 0) {
-        uint16_t door = level.entrances[0][old_newrand(world.seed) & 3];
+        uint16_t door = world.rooms[world.entrances[0][old_newrand(world.seed) & 3]].door_tile;
         id = make_a_peep(world, state, settings, anims, level_number, door, illness, 0);
     } else if (uint16_t rival = make_a_peep(world, state, settings, anims, level_number, 0, illness, uint8_t(owner))) {
         // process_computer_peep would treat them here.
+        trace_event("remove_thing %u type=%u", unsigned(rival), unsigned(world.things[rival].type));
         remove_node(world, rival);
+
         world.things[rival] = Thing{};
     }
     state.peeps_arrived++;

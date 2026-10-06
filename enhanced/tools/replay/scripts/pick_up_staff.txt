@@ -1,0 +1,41 @@
+# Level 1: reception.txt, then a GP's office (62,65)-(66,69) with its door,
+# desk, cabinet and chair, opened, and a doctor (applicant 11) placed.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# Pick up the receptionist at work and put her down again; later pick her
+# up and cancel.
+3000 104 22 0
+3001 5 9788 22
+5000 104 22 0
+5001 56 22 3
+# The same for the doctor.
+6000 104 11 0
+6001 5 10044 11
+8000 104 11 0
+8001 56 11 3

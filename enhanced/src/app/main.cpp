@@ -25,7 +25,9 @@
 #include "core/ui/startup.h"
 #include "core/ui/town_map.h"
 #include "core/ui/windows.h"
+#include "core/world/debug_dump.h"
 #include "core/world/game.h"
+#include "core/world/snapshot.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -35,6 +37,10 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <ctime>
+#include <filesystem>
+#include <format>
+#include <fstream>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -89,16 +95,14 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
     auto view = std::make_unique<LevelView>();
     view->game.staff_market.ref_counts = reference_counts(data.text());
     view->game.start(level, number, settings, data.anims(), data.person_complexes(), data.staff_complexes());
-    // The shadowed blocks are made from the map as recreate_map leaves it,
-    // before add_static_shadows.
-    view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost(), view->game.world.map.data());
+    view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost());
     add_static_shadows(view->game.world.map);
     return view;
 }
 
 // Draws the hospital view into `surface`.
 void draw_view(Surface &surface, const GameData &data, LevelView *level, Point camera, bool shadows,
-               std::vector<FrameSound> *sounds = nullptr)
+               std::vector<FrameSound> *sounds = nullptr, PointedThing *pointed = nullptr)
 {
     surface.fill(0);
     if (level) {
@@ -107,7 +111,7 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
             level->scratch.fill(kMaskColour);
         }
         draw_world(surface, {0, 0, surface.width(), surface.height()}, camera, level->game.world, data,
-                   shadows ? level->shadows.get() : nullptr, level->scratch, sounds);
+                   shadows ? level->shadows.get() : nullptr, level->scratch, sounds, pointed);
     }
 }
 
@@ -186,7 +190,7 @@ int screenshot(const std::filesystem::path &data_dir, int level_number, int widt
     // The panel at native size with the level's starting figures, as the
     // window draws it.
     const Game &g = map->game;
-    PanelFigures figures{g.balance, g.date.day, g.date.month, g.reputation, g.opening_countdown, g.open_countdown};
+    PanelFigures figures{g.balance, g.date.day, g.date.month, g.reputation(), g.opening_countdown, g.open_countdown};
     int pw = 0, ph = 0;
     std::vector<uint32_t> panel = panel_to_argb(data, &figures, pw, ph);
     for (int y = 0; y < ph && height - ph + y >= 0; y++) {
@@ -229,6 +233,10 @@ class App
     void ask_quit();
     void draw_pointer(int scale);
     void startup_step(int out_w, int out_h);
+    // The debug report tool's save: the window as drawn so far, the state
+    // (debug_state) and the note, in a new folder under debug-reports/.
+    void save_debug_report();
+    std::string debug_state() const;
     void open_town_map();
     void town_step(int out_w, int out_h);
     void charts_step(int out_w, int out_h);
@@ -278,6 +286,8 @@ class App
     // The map cell under the pointer this frame (column + row * 128), -1
     // when off the map.
     int map_cell_ = -1;
+    // The thing under the pointer as the view was drawn this frame.
+    PointedThing pointed_;
     // The start-up screens (intro, menus, the level's area movie), shown
     // until they start a level; skipped with --level.
     Startup startup_;
@@ -293,6 +303,10 @@ class App
     float frame_seconds_ = 0;  // the last frame's length
     bool escape_ = false;      // Escape pressed this frame
     bool asking_quit_ = false; // the yes/no requester asks whether to quit
+    // The commands the yes/no requester sends for yes and for no when it
+    // asks before one (othervar.yes_type and no_type); EV_NONE otherwise.
+    Event yes_event_;
+    Event no_event_;
     SDL_Texture *pointer_ = nullptr;
     int pointer_w_ = 0, pointer_h_ = 0;
 
@@ -436,7 +450,8 @@ void App::load_level(int number)
     level_ = number;
     map_ = std::move(map);
     start_advisor(map_->game.advisor, tutorial_);
-    start_hospital_settings(map_->game.hospital, map_->game.settings(), uint32_t(SDL_GetTicks()));
+    start_hospital_settings(map_->game.hospital, map_->game.settings());
+    setup_insurances(map_->game.world, uint32_t(SDL_GetTicks()));
     charts_.hospital_names[0] = startup_.player_name();
     charts_.open = false;
     town_.close();
@@ -510,8 +525,15 @@ void App::interface_step(int out_w, int out_h, int scale)
         sounds_.play_sound(kSourceGeneral, events.yes_no == YesNoAnswer::Yes ? kSfxYesX : kSfxNo4);
     if (events.yes_no == YesNoAnswer::Yes && asking_quit_)
         running_ = false;
-    if (events.yes_no != YesNoAnswer::None)
+    if (game && events.yes_no != YesNoAnswer::None) {
+        Event e = events.yes_no == YesNoAnswer::Yes ? yes_event_ : no_event_;
+        if (e.type)
+            game->event = e;
+    }
+    if (events.yes_no != YesNoAnswer::None) {
         asking_quit_ = false;
+        yes_event_ = no_event_ = {};
+    }
     bool paused = game && game->paused;
     bool input = !events.mouse_on_window && !interface_.modal() && !menu_.active;
     PanelAction action = panel_frame(panel_state_, mouse, *data_, paused, input);
@@ -554,6 +576,16 @@ void App::interface_step(int out_w, int out_h, int scale)
             } else if (mouse.right_pressed) {
                 game->event = hire_staff_cancel(hire_);
             }
+        } else if (mouse.right_pressed && on_map && !placing && !build_tool_busy(*game) &&
+                   interface_.window_count() == 0 && game->world.building.build.room == 0 &&
+                   !advisor_hit(game->advisor, mouse.x, mouse.y)) {
+            // process_right_button in the normal mouse mode, no requester
+            // open and no room being edited: picks up the player's member of
+            // staff under the pointer.
+            if (Event e = pick_up_staff_click(game->world, pointed_.thing); e.type) {
+                game->event = e;
+                sounds_.play_sound(kSourceGeneral, kSfxPickup);
+            }
         }
 
         // The advisor: a right click on him or his bubble dismisses him; then
@@ -568,7 +600,7 @@ void App::interface_step(int out_w, int out_h, int scale)
         in.month = game->date.month;
         in.open = game->open;
         in.balance = game->balance;
-        in.reputation = game->reputation;
+        in.reputation = game->reputation();
         in.finance = &game->finance;
         in.settings = &game->settings();
         in.world = &game->world;
@@ -589,7 +621,7 @@ void App::interface_step(int out_w, int out_h, int scale)
     PanelFigures figures;
     if (map_) {
         const Game &g = map_->game;
-        figures = {g.balance, g.date.day, g.date.month, g.reputation, g.opening_countdown, g.open_countdown};
+        figures = {g.balance, g.date.day, g.date.month, g.reputation(), g.opening_countdown, g.open_countdown};
         // The watch is not shown while the tutorial holds the countdown.
         if (g.advisor.flags & kAdvisorTutorial)
             figures.opening_countdown = 0;
@@ -723,6 +755,11 @@ void App::run_command(Game &game)
     hire_staff_event(hire_, interface_, game.world, game.event);
     jukebox_event(jukebox_, interface_, game.event);
     chart_command(charts_, game.event);
+    // EV_SACK_STAFF and EV_CANCEL_SACK close the yes/no requester that asked.
+    if (game.event.type == EV_SACK_STAFF || game.event.type == EV_CANCEL_SACK)
+        interface_.close_yes_no(true);
+    if (game.event.type == EV_SACK_STAFF)
+        sounds_.play_sound(kSourceGeneral, kSfxSack);
     game.process_turn();
     hire_staff_after_turn(hire_, game.world);
     for (uint8_t sfx : game.world.building.sounds)
@@ -752,6 +789,12 @@ void App::charts_step(int out_w, int out_h)
         game.event = r.event;
     last_event_ = game.event;
     run_command(game);
+    if (r.event.type == EV_OPEN_YES_NO) {
+        // EV_OPEN_YES_NO: the chart closed, the requester over the hospital.
+        interface_.open_yes_no(data_->text().at(TextSection::YesNo, r.question));
+        yes_event_ = r.yes;
+        no_event_ = r.no;
+    }
     draw_fitted(charts_.surface, charts_.palette, charts_tex_, at);
     if (r.town_map) {
         charts_.open = false;
@@ -804,6 +847,88 @@ void App::startup_step(int out_w, int out_h)
         tutorial_ = r.tutorial;
         load_level(r.level);
     }
+}
+
+void App::save_debug_report()
+{
+    namespace fs = std::filesystem;
+    char stamp[32];
+    std::time_t now = std::time(nullptr);
+    std::strftime(stamp, sizeof stamp, "%Y%m%d-%H%M%S", std::localtime(&now));
+    fs::path dir = fs::path("debug-reports") / stamp;
+    for (int n = 2; fs::exists(dir); n++)
+        dir = fs::path("debug-reports") / std::format("{}-{}", stamp, n);
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+    if (ec) {
+        tools_.report.last = std::format("Could not create {}: {}", dir.string(), ec.message());
+        return;
+    }
+    SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+    bool shot_ok = shot && SDL_SavePNG(shot, (dir / "screenshot.png").string().c_str());
+    std::string shot_error = shot_ok ? "" : SDL_GetError();
+    if (shot)
+        SDL_DestroySurface(shot);
+    std::ofstream(dir / "note.txt") << tools_.report.note.data() << '\n';
+    std::ofstream(dir / "state.txt") << debug_state();
+    std::string snapshot_error;
+    if (map_ && !in_startup_) {
+        std::vector<uint8_t> snapshot;
+        if (save_snapshot(map_->game, snapshot))
+            std::ofstream(dir / "snapshot.bin", std::ios::binary)
+                .write(reinterpret_cast<const char *>(snapshot.data()), std::streamsize(snapshot.size()));
+        else
+            snapshot_error = ", without the snapshot";
+        std::ofstream commands(dir / "commands.txt");
+        for (const std::string &line : map_->game.command_log)
+            commands << line << '\n';
+    }
+    tools_.report.last = std::format("Saved to {}", fs::absolute(dir).string());
+    tools_.report.last += snapshot_error;
+    if (!shot_ok)
+        tools_.report.last += ", without the screenshot: " + shot_error;
+    std::fprintf(stderr, "debug report: %s\n", tools_.report.last.c_str());
+}
+
+std::string App::debug_state() const
+{
+    int w = 0, h = 0;
+    SDL_GetWindowSizeInPixels(window_, &w, &h);
+    float mx, my;
+    SDL_GetMouseState(&mx, &my);
+    std::string s = "# Theme Hospital Enhanced debug report\n";
+    s += std::format("data: {}\n", data_ ? data_->dir().string() : "");
+    s += std::format("window: {}x{} px, zoom {}, UI scale {}\n", w, h, zoom(), ui_scale());
+    const char *screen = in_startup_       ? "start-up screens"
+                         : !map_           ? "no level"
+                         : charts_.open    ? "chart"
+                         : town_.is_open() ? "town map"
+                                           : "hospital";
+    s += std::format("screen: {}", screen);
+    if (charts_.open)
+        s += std::format(" {}", charts_.chart);
+    s += std::format("\nmouse: {},{} (window points), map cell {}", mx, my, map_cell_);
+    if (map_cell_ >= 0)
+        s += std::format(" (column {}, row {})", map_cell_ % kMapSize, map_cell_ / kMapSize);
+    s += std::format("\ninterface: requester {}, modal {}, menu open {}\n", int(interface_.requester()),
+                     interface_.modal(), menu_.active);
+    if (!map_ || in_startup_)
+        return s;
+    const Game &g = map_->game;
+    s += std::format("level: {} ({}), tutorial {}\n", level_, balance_id_, tutorial_);
+    s += std::format("camera: {},{}\n", camera_.x, camera_.y);
+    s += std::format("speed: {} turns/s, paused {}\n", int(speed_), g.paused);
+    s += std::format("route planner: {}\n", g.world.path_finder == PathFinder::AStar ? "A*" : "original");
+    s += std::format("placing: object {}, staff {}, build mouse {}\n", g.world.placing.placing, hire_.placing(),
+                     int(g.world.building.mouse));
+    s += std::format("date: year {} month {} day {}, turn {}\n", g.date.year, g.date.month, g.date.day, g.turn_count);
+    s += std::format("open: {}, opening countdown {}\n", g.open, g.opening_countdown);
+    s += std::format("balance: {}, reputation {}\n", g.balance, g.arrivals.hospitals[0].hospital_reputation);
+    s += std::format("last command: type={} value={} flags={} arg={}\n", last_event_.type, last_event_.value,
+                     last_event_.flags, last_event_.arg);
+    s += "\n";
+    s += dump_game(g, map_cell_);
+    return s;
 }
 
 void App::make_ui_textures()
@@ -1002,6 +1127,10 @@ void App::handle_event(const SDL_Event &e)
     case SDL_EVENT_KEY_DOWN:
         if (io.WantCaptureKeyboard)
             break;
+        if (e.key.key == SDLK_F12 && data_ && in_startup_) {
+            tools_.open = !tools_.open;
+            break;
+        }
         if (in_startup_) {
             // The start-up screens read keys as lbInkey.
             StartupKey k;
@@ -1208,8 +1337,12 @@ void App::render()
             screen_h_ = vh;
         }
 
+        float cmx, cmy;
+        SDL_GetMouseState(&cmx, &cmy);
+        float cdensity = SDL_GetWindowPixelDensity(window_);
+        pointed_.at = {int(cmx * cdensity) / z, int(cmy * cdensity) / z};
         frame_sounds_.clear();
-        draw_view(surface_, *data_, map_.get(), camera_, shadows_, &frame_sounds_);
+        draw_view(surface_, *data_, map_.get(), camera_, shadows_, &frame_sounds_, &pointed_);
         if (map_) {
             // The sounds of what was drawn, positioned on the view.
             sounds_.frames_drawn(frame_sounds_, vw);
@@ -1225,10 +1358,7 @@ void App::render()
         mixer_.update(sounds_, &music_);
 
         // What is being placed, drawn over the view as the game does.
-        float cmx, cmy;
-        SDL_GetMouseState(&cmx, &cmy);
-        float cdensity = SDL_GetWindowPixelDensity(window_);
-        Point under = world_to_cell({camera_.x + int(cmx * cdensity) / z, camera_.y + int(cmy * cdensity) / z});
+        Point under = world_to_cell({camera_.x + pointed_.at.x, camera_.y + pointed_.at.y});
         bool inside = under.x >= 0 && under.x < kMapSize && under.y >= 0 && under.y < kMapSize;
         map_cell_ = inside ? under.x + under.y * kMapSize : -1;
         if (map_) {
@@ -1263,11 +1393,16 @@ void App::render()
 
         draw_pointer(s);
 
-        draw_tools(tools_, map_ ? &map_->game.world : nullptr);
         if (tools_.open && map_)
             draw_nav_overlay(tools_.nav, map_->game.world, camera_,
                              float(z) / ImGui::GetIO().DisplayFramebufferScale.x);
     }
+
+    if (data_)
+        draw_tools(tools_, map_ && !in_startup_ ? &map_->game.world : nullptr);
+    // Read back before ImGui draws, so the screenshot shows the game alone.
+    if (std::exchange(tools_.report.save, false))
+        save_debug_report();
 
     ImGui::Render();
     const ImGuiIO &io = ImGui::GetIO();

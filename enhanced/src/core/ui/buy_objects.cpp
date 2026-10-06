@@ -454,7 +454,7 @@ void placement_mouse(ObjectUi &oui, Game &game, int cell, const UiMouse &mouse, 
     // Objects hugging a room's wall turn with the wall instead (mode 1).
     if (mouse.right_pressed && p.mode != 1)
         change_placing_angle(p, -1);
-    update_placement(game.world, p, cell);
+    game.update_placement(cell);
     oui.cursor_shown = true;
     if (mouse.left_pressed && p.ok)
         game.event = {EV_PLACE_OBJECT, p.tile, 0, uint16_t(p.kind | p.dir << 8)};

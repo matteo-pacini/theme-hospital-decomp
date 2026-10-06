@@ -36,6 +36,7 @@ constexpr uint32_t kPfWaitingForRoom = 0x80;
 constexpr uint32_t kPfSentHomeByInspector = 0x100;
 constexpr uint32_t kPfNeedsDiagnosisRoom = 0x400;
 constexpr uint32_t kPfFedUp = 0x4000;
+constexpr uint32_t kPfNoDiagnosis = 0x80000;
 constexpr uint32_t kPfNoTreatment = 0x100000;
 constexpr uint32_t kPfTooExpensive = 0x800000;
 
@@ -52,8 +53,7 @@ inline constexpr std::array<uint8_t, 47> kExpertiseCategory = {
 // companies at the game's static table, the advisor's counts cleared; and
 // points it at what the patients' states read (World::settings and on),
 // which must outlive the turns run.
-void start_queues(World &world, const Balance &settings, HospitalMarket &market, const int &reputation,
-                  const Finance &finance);
+void start_queues(World &world, const Balance &settings, HospitalMarket &market, const Finance &finance);
 
 // The three values start_turn (src/game.cpp) draws from world.seed at the
 // start of every turn, in order: othervar.rand_pct (which every reader
@@ -103,9 +103,9 @@ int16_t all_queue_capacity(const World &world, uint16_t type, bool waiting, uint
 // way to the toilets (person_ok_to_call), takes it out of its queue and
 // what it is doing (interrupt_person) and sends it walking (PS_GOTO_QUEUE)
 // to `room`'s queue: to the nearest manned desk of a reception, or the
-// room's door. As in the game, the desk's thing is kept in 8 bits, so a desk
-// past thing 255 is the wrong one, and with none no destination is set.
-// Staff are not paged (page_staff_i_need is not ported).
+// room's door, paging the staff its treatment needs there. As in the game,
+// the desk's thing is kept in 8 bits, so a desk past thing 255 is the wrong
+// one, and with none no destination is set.
 void queue_person_to_new_queue(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t room,
                                uint16_t id, uint32_t game_turn);
 

@@ -43,8 +43,9 @@ class HireStaffArt
 };
 
 // The hire staff requester's state (the game's crequester while it is
-// REQ_HIRE_STAFF) and the applicant being placed (mouse mode MM_PLACE_STAFF:
-// gamevar.held_staff and the cursor's cache).
+// REQ_HIRE_STAFF) and the applicant or picked-up member of staff being
+// placed (mouse mode MM_PLACE_STAFF: gamevar.held_staff and the cursor's
+// cache).
 struct HireStaff {
     // crequester.mode: 1 until a kind is chosen, then 2.
     uint8_t mode = 1;
@@ -53,7 +54,8 @@ struct HireStaff {
     // crequester.arg2: the applicant shown, 0 for none. Kept when the
     // requester closes, as in the game.
     uint16_t shown = 0;
-    // The applicant being placed and their kind; 0 when not placing.
+    // The applicant or member of staff being placed and their kind; 0 when
+    // not placing.
     uint16_t held = 0;
     uint16_t held_kind = 0;
     // draw_staff_cursor's last cell, and whether the held applicant may be
@@ -96,13 +98,22 @@ Event hire_staff_cancel(const HireStaff &hire);
 void hire_staff_event(HireStaff &hire, Interface &ui, const World &world, const Event &event);
 
 // After Game::process_turn: stops placing once the held applicant was put
-// down (place_staff_on_map ends MM_PLACE_STAFF).
+// down (place_staff_on_map ends MM_PLACE_STAFF), and starts placing a
+// member of staff picked up (World::held_staff taken off the map,
+// staff_picked_up's MM_PLACE_STAFF).
 void hire_staff_after_turn(HireStaff &hire, const World &world);
 
 // draw_staff_cursor's test (0x2b690), redone when `cell` (the map cell
 // under the mouse, clamped to the map) changes: sets and returns
 // hire.place_ok.
 bool update_staff_cursor(HireStaff &hire, const World &world, int cell);
+
+// A right click on the map in the normal mouse mode with no requester open
+// and no room being edited (process_right_button, 0x5b95c), on `pointed`
+// (PointedThing, core/render/view.h): EV_PICK_UP_STAFF if it is a member of
+// player 0's staff, else EV_NONE (picking up objects is not ported). The
+// game plays SFX_PICKUP with it.
+Event pick_up_staff_click(const World &world, uint16_t pointed);
 
 // A left click on the map at `cell` while placing (process_mouse,
 // MM_PLACE_STAFF): EV_PLACE_STAFF if the held applicant may go there, else

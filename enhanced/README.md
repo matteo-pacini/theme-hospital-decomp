@@ -85,9 +85,17 @@ Milestone 4 so far, the game's interface:
   bank manager and loans, policy, research, graphs, staff list, casebook
   prices and the status screen;
 - building rooms (the panel's build room): the requester, the blueprint,
-  doors and windows, the walls, the cost and the room's objects.
+  doors and windows, the walls, the cost and the room's objects;
+- the GP's office and the diagnosis rooms in use: the GP sending patients
+  on to diagnosis, the doctors' work in general diagnosis, the cardiogram,
+  the scanner, ultrascan, blood machine and X-ray (these four need
+  research, not there yet, to be built in the game) and psychiatry (which
+  also cures), the ward's nurse putting patients to bed, the fees, the
+  machines' wear and the handymen's repairs; emergencies offered (not
+  taken on).
 
-Not yet: rooms in use (staff, diagnosis, treatment) and editing rooms.
+Not yet: the treatment rooms, research, staff rooms, earthquakes and
+editing rooms.
 Route planning defaults to A*; the game's wall following stays selectable
 in the tools window.
 
@@ -127,12 +135,65 @@ read it from the development folder and are skipped without it.
 Without a window, `--screenshot OUT.bmp --data FOLDER [--level N] [--size WxH]`
 renders a level's start view to a BMP.
 
+The tools window (F12) has a debug report: Save report
+writes `debug-reports/<time>/` under the folder the game was started from,
+with `screenshot.png` (the window without the tools), `state.txt` (the
+screen, the last command, money, finance and the hospitals, building and
+placing, every room, every person and object with all their fields, the map
+around the mouse, and the turn in the replay trace format; `dump_game`,
+core/world/debug_dump.h), `note.txt` (the text typed in the tool),
+`snapshot.bin` (the whole game state, core/world/snapshot.h) and
+`commands.txt` (every command and other input since the level started,
+`Game::command_log`), for review.
+
+To reproduce a report (with a build of the same snapshot id: a hash of the
+snapshotted structures' headers and code, ignoring comments; another build
+refuses the snapshot, and the byte lines of commands.txt):
+
+    th_replay --load debug-reports/X/snapshot.bin --turns +N \
+        --dump dump.txt --focus CELL --render view.png --camera X,Y
+
+runs N turns on from the moment it was saved, then writes `dump_game` of the
+end state (the map around CELL) and the hospital view as the game draws it
+(`--camera` from state.txt's camera line, `--size WxH`; a `.ppm` name writes
+a PPM). `--script FILE` adds commands, its turns counted from the
+snapshot's. `th_replay --script debug-reports/X/commands.txt --turns T`
+plays the level again from its start up to turn T instead.
+
 Replay check against the original: `tools/replay/orig_trace.sh` relinks an
 instrumented HOSPITAL.EXE from the decompilation and runs it in DOSBox-X
 without a window, writing a trace of every turn (the random seed, date,
-balance, hospitals and things); `th_replay` writes the same trace from this
-engine, and `tools/replay/compare.py` reports the first turn they differ.
-See the scripts for their arguments.
+balance, hospitals and things) with the turn's events in order (a patient
+made, a complex given, a queue joined, money spent, ...; the list is in
+core/world/trace.h); `th_replay` writes the same trace from this engine, and
+`tools/replay/compare.py` reports the first turn they differ: the first
+differing event, with those round it, before the state. `TRACE_RAND=1
+orig_trace.sh ...` and `th_replay --rand` also trace every draw from the
+random seed with the function that drew it. Whoever ports a function the
+game writes an event for, or adds an event, writes it on both sides, at the
+same point: in the port (`trace_event`) and in `tools/replay/instrument.py`'s
+EVENTS; a port named otherwise than the game's function names it in its
+draws (`old_newrand(seed, "name")`). See the scripts for their arguments.
+The player's commands checked so far are in `tools/replay/scripts/`
+(`reception.txt`: a reception desk and receptionist; `gp_office.txt`: a
+GP's office and its doctor too; `pick_up_staff.txt`: the GP's office with
+the receptionist and the doctor picked up, re-placed and dropped;
+`gp_prices.txt`: the GP's office with general practice's price moved up
+and down in the casebook; `sack_staff.txt`: the GP's office with its doctor
+sacked during a consultation; `general_diag.txt`, `psychiatry.txt` and
+`ward.txt`: the GP's office and a diagnosis room with its doctor or nurse;
+`cardiogram.txt`, on level 6, where the cardiogram can be built: its own
+GP's office, the cardiogram room, its doctor and a handyman to repair it;
+`th_replay --level 6` and orig_trace.sh's LEVEL 6 for that one), compared
+with SKIP `computer_action,manage_rats,generate_disaster,generate_mayors`:
+
+    enhanced/tools/replay/orig_trace.sh orig.txt 18000 \
+        enhanced/tools/replay/scripts/gp_office.txt \
+        computer_action,manage_rats,generate_disaster,generate_mayors
+    th_replay --script enhanced/tools/replay/scripts/gp_office.txt \
+        --turns 18000 --out enhanced.txt
+    enhanced/tools/replay/compare.py orig.txt enhanced.txt
+
 
 ## Layout
 
