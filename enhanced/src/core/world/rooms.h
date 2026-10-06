@@ -135,16 +135,25 @@ void staff_abandon_pager_response(World &world, uint16_t id);
 // make_a_playercall (0x1824c): a call of `type` about `subject` for hospital
 // `owner`, expiring after `timeout` days (expire_playercalls), never if 0.
 // Returns its id (World::next_call_id, from 1), or 0 if the table is full.
-// The fax on the panel is not ported.
+// Its fax icon goes on the panel (add_panel_popup), and it becomes its
+// kind's head call (World::first_call) if the kind has none.
 uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_t timeout, uint8_t owner);
 
-// expire_playercalls (0x18908), once a day: the calls with a timeout age
-// by a day and go once it runs out. The answers the game then gives to the
-// calls of a VIP's visit, an epidemic and an emergency are not ported.
+// expire_playercalls (0x18908), once a day: the calls with a timeout (and
+// the entries of calls removed before theirs ran out) age by a day and go
+// once it runs out, with its icon (delete_panel_popup); an emergency's
+// result (kind 5, subject 1) going ends the emergency (World::Emergency::
+// state 0). A head call going leaves its kind's head to the first call of
+// that kind in the table. The answers the game then gives to the calls of a
+// VIP's visit and an epidemic are not ported.
 void expire_playercalls(World &world);
 
 // get_playercall (0x18710): removes `owner`'s call of `type` with `id`, or
-// the first with id 0. Returns its subject, 0 if none.
+// the first with id 0: only its kind is cleared, so a timer it had runs on
+// and the free entry still expires (expire_playercalls), as in the game.
+// Its icon goes (delete_panel_popup) and, if it was its kind's head, the
+// oldest left of its kind takes over (get_new_popup_head). Returns its
+// subject, 0 if none.
 uint16_t get_playercall(World &world, uint16_t type, uint16_t id, uint8_t owner);
 
 // check_playercall (0x18838): `owner`'s calls of `type`; for types other
@@ -207,9 +216,9 @@ void change_health(World &world, const AnimData &anims, uint16_t id, int16_t amo
 // health, its cure counted (hospital 0's illnesses[].cured, Finance cures
 // and cures_this_month), the
 // reputation for it, its illness gone, contagion cleared
-// (clean_contagious_peep, without the vaccination queue), no longer an
-// emergency patient, and recorded (record_person_as_patient). The
-// emergency's cures are not counted.
+// (clean_contagious_peep, without the vaccination queue), an emergency
+// patient counted cured (World::Emergency::cured) and one no longer, and
+// recorded (record_person_as_patient).
 void cure_illness(World &world, uint16_t id);
 
 // pre_administer_drugs (0x3dcfc): whether hospital 0 has a drug for patient
@@ -272,10 +281,10 @@ void thingpage_cancel_my_response(World::ThingPager &pager, uint16_t handyman);
 // holding `tile`: counted (up to twice its strength), the handymen paged
 // to repair it once past a third of its strength (World::repair_pager,
 // hospital 0's alone; the priority its wear in percent), and from 75% worn
-// (modify_machine) smoking, drawing from world.seed. A breakdown
-// (machine_disaster) is not ported: the machine goes on, and it returns
-// false, as when it does not break down.
-bool treatment_machine_used(World &world, uint8_t illness, uint16_t tile);
+// smoking and maybe breaking down (modify_machine, core/world/disaster.h),
+// drawing from world.seed. Returns whether it broke down (machine_disaster:
+// the room destroyed, its staff gone and its patients dying).
+bool treatment_machine_used(World &world, const AnimData &anims, uint8_t illness, uint16_t tile, uint32_t game_turn);
 
 // find_possible_diagnosis (0x3e468): a diagnosis room the hospital has for
 // patient `id`'s illness and that it has not been to, picked at random
@@ -297,5 +306,34 @@ void force_peep_to_be_cured(World &world, const AnimData &anims, uint16_t id, ui
 // The game checks nothing more; the window offers them only when it may.
 // Returns false for other commands.
 bool apply_patient_event(Game &game, const Event &event);
+
+// The fax answers to the player's calls about patients and illnesses
+// (EV_CHOICE_RESULT values, the game's CH_*).
+constexpr uint16_t kChoiceTreatSendHome = 0;
+constexpr uint16_t kChoiceTreatWait = 1;
+constexpr uint16_t kChoiceTreatResearch = 2;
+constexpr uint16_t kChoiceDiagSendHome = 0x28;
+constexpr uint16_t kChoiceDiagGuess = 0x29;
+constexpr uint16_t kChoiceDiagWait = 0x2a;
+
+// Carries out the player's commands about patients' calls, as process_turn
+// (src/io.cpp):
+// - EV_ANSWER_PLAYERCALL 4 (no treatment) and 8 (no diagnosis): the call
+//   `arg` (0: the first of its kind) is taken (get_playercall) and, if it
+//   was there, the fax about its patient shown (Game::choice_screen kinds 7
+//   and 10); 7 (a new illness): the first such call is taken and the fax
+//   about its illness shown (kind 4) whether or not there was one;
+// - EV_CHOICE_RESULT, for patient `arg` still awaiting a decision
+//   (kPfAwaitingDecision): kChoiceTreatSendHome and kChoiceDiagSendHome
+//   send it home turned away (kPfNoTreatment, kPfNoDiagnosis);
+//   kChoiceTreatWait and kChoiceDiagWait have it wait for a room
+//   (kPfWaitingForRoom, from this turn); kChoiceTreatResearch sends it for
+//   an autopsy (treatment kIllAutopsy, state kPsGoForTreatment), which the
+//   fax offers only once autopsies can be done; kChoiceDiagGuess guesses
+//   its illness (interrupt_complex, best_guess_treatment, a draw from
+//   world.seed) and sends it on (next_treatment_now_setup). Any patient
+//   `arg` forgets its call. Status icons are not ported.
+// Returns false for other commands.
+bool apply_call_event(Game &game, const Event &event);
 
 } // namespace th

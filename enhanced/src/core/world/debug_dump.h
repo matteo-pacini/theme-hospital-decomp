@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace th
 {
 
 class Game;
+struct World;
 
 // A plain-text dump of `game` for bug reports, as much of its state as is
 // ported, each line `name=value` pairs:
@@ -26,5 +29,35 @@ class Game;
 //     thing and room.
 // Fields added to Thing, RoomInfo or World are not in it until added here.
 std::string dump_game(const Game &game, int focus, int radius = 10);
+
+// How an inspected field reads: a number, a yes/no flag or text (positions,
+// lists, masks).
+enum class InspectKind : uint8_t { Number, Flag, Text };
+
+// One field of an inspected thing. `value` is its text; `number` holds a
+// Number's or Flag's value; `note` names it where the game's code does (a
+// patient's or member of staff's state).
+struct InspectField {
+    std::string name;
+    std::string value;
+    int64_t number = 0;
+    InspectKind kind = InspectKind::Number;
+    std::string note;
+};
+
+// A group of fields: the first is the thing itself ("patient 12"), then its
+// action sequence, queue, needs, work and so on.
+struct InspectSection {
+    std::string title;
+    std::vector<InspectField> fields;
+};
+
+// Thing `id`'s fields as dump_game lists them, patients' and staff's states
+// named. Empty for id 0 or one out of range.
+std::vector<InspectSection> inspect_thing(const World &world, uint16_t id);
+
+// inspect_thing as dump_game's text: the first section's title and fields
+// on one line, each other section on a line of its own.
+std::string dump_thing(const World &world, uint16_t id);
 
 } // namespace th

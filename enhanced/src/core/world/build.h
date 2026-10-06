@@ -11,6 +11,7 @@ namespace th
 
 class Game;
 struct AnimData;
+struct Balance;
 struct Event;
 struct ObjectPlacing;
 struct World;
@@ -282,6 +283,11 @@ uint16_t room_at(const World &world, uint16_t tile);
 // entrance, each room from the one before.
 bool check_room_access(const World &world, int owner);
 
+// place_small_thing (src/objects.cpp): puts blueprint marker `id` (0 takes
+// it off) at the end of `tile`'s thing list, unless `keep` and one is
+// there. Markers from 0x4b set their cell flags.
+void place_small_thing(World &world, int tile, int id, bool keep);
+
 // find_small_thing (src/objects.cpp): the blueprint marker (kBlueprints
 // index) at the end of `tile`'s thing list, 0 for none.
 uint16_t find_small_thing(const World &world, int tile);
@@ -343,5 +349,9 @@ void place_existing_object(World &world, const AnimData &anims, uint16_t id, int
 // its state and the cell saved). Returns whether it found one. Draws from
 // the random generator.
 bool move_peep_from_blueprint(World &world, uint16_t id);
+
+// room_available (src/req1.cpp): the player can buy every object room type
+// `room_type` requires (equipment_available).
+bool room_available(const World &world, int room_type);
 
 } // namespace th

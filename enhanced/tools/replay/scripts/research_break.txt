@@ -1,0 +1,40 @@
+# Level 3: research_default.txt's research room and two researchers, a
+# staff room (50,69)-(54,73) with its door above it and a sofa (cell 9139
+# facing 0), and the policy sending staff for a rest from tiredness 100:
+# the researchers take breaks and go back to research
+# (send_doctor_to_research). Researcher 13 is ordered out of the research
+# room (EV_ORDER_LEAVE_ROOM), researcher 16 picked up and put down in the
+# corridor (cell 9656), and researcher 13 ordered to rest (EV_ORDER_REST).
+101 55 0 0
+102 53 28 28
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 28 0
+110 7 9260 55
+111 7 9264 257
+112 7 8880 258
+113 1 0 0
+114 48 1 13
+115 5 9004 13
+116 48 1 16
+117 5 9005 16
+130 55 0 0
+131 53 25 25
+132 2 8882 0
+133 2 9398 0
+134 8 9398 0
+135 18 0 0
+136 26 8756 0
+137 3 0 0
+138 4 25 0
+139 7 9139 19
+140 1 0 0
+150 113 4 100
+6000 97 13 0
+9000 104 16 0
+9001 5 9656 16
+12000 94 13 0

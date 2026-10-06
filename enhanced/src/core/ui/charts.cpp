@@ -1118,8 +1118,24 @@ class Frame
             c_.state = 2;
     }
 
-    // The research categories' progress bars need research costs, which
-    // nothing works out yet: none is drawn, as for a category with no cost.
+    // A category's progress bar, once it has worked towards something
+    // (Research::cost): as the game, every bar measures the points banked
+    // for the next new cure machine (choose_next_research_illness by
+    // find_new_cure_cost) against that category's cost.
+    void draw_research_bar(int i)
+    {
+        const Research &r = game_.world.research;
+        if (r.cost[size_t(i)] <= 0)
+            return;
+        uint8_t illness = choose_next_research_illness(game_.world, ResearchCost::NewCure);
+        if (!illness)
+            return;
+        auto len = int16_t(r.illness_research[illness] * 0x122 / r.cost[size_t(i)]);
+        len = std::clamp<int16_t>(len, 0, 0x122);
+        for (int x = 0; x < len; x += 5)
+            reqspr(kCoords[i + 0x5c].x + x, kCoords[i + 0x5c].y, 3);
+    }
+
     void draw_research_text()
     {
         const int f = 9;
@@ -1127,6 +1143,7 @@ class Frame
             text(f, kCoords[i + 0x57].x, kCoords[i + 0x57].y, str(TextSection::ResearchNames, i));
             if (hs_.research_alloc[size_t(i)] >= 0) {
                 text(f, kCoords[i + 0x61].x, kCoords[i + 0x61].y, format("%d", hs_.research_alloc[size_t(i)]));
+                draw_research_bar(i);
             } else {
                 const Rect &b = kBoxes[i + 0x29];
                 draw_box(dst_, b.x, b.y, b.w, b.h, 0xb);
@@ -1422,11 +1439,10 @@ class Frame
     bool casebook_lists(int i) const
     {
         const IllnessFigures &f = hs_.illnesses[size_t(i)];
-        const Balance &bal = game_.settings();
         return (i < kFirstDiagnosis && f.discovered) ||
                (i >= kFirstDiagnosis && game_.world.cure_available[size_t(i)] == 1) ||
-               (i == kIllAutopsy && bal.objects[kObjAutoAutopsy].start_avail != 0 &&
-                bal.objects[kObjAutoAutopsy].available_for_level != 0 && has_room(game_.world, kRoomResearch));
+               (i == kIllAutopsy && equipment_available(game_.world, kObjAutoAutopsy) &&
+                has_room(game_.world, kRoomResearch));
     }
 
     // get_next_illness: the illness before (forward 0) or after `from`,
@@ -1604,13 +1620,10 @@ class Frame
     // level offers it.
     void display_drugs_missing_cure(const ExpertiseRow &def)
     {
-        // The equipment is buyable (equipment[].available, at the start
-        // objects[].StartAvail) for the level.
-        const Balance::Object &obj = game_.settings().objects[def.kind];
         if (def.kind == kObjPharmacyCabinet) {
             cure_sprite(7);
             drug_effect("?");
-        } else if (obj.start_avail == 1 && obj.available_for_level == 1) {
+        } else if (equipment_available(game_.world, def.kind)) {
             cure_sprite(6);
             if (def.staff_mask == 0x40)
                 cure_sprite(10);
@@ -2565,6 +2578,7 @@ void set_policy(HospitalSettings &settings, const Event &event)
 // the total is a byte.
 void alter_research(HospitalSettings &settings, const Event &event)
 {
+    trace_event("alter_research %u value=%u", unsigned(uint8_t(event.value)), unsigned(uint8_t(event.arg)));
     if (event.value >= 5)
         return;
     int8_t &alloc = settings.research_alloc[event.value];

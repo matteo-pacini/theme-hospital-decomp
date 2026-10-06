@@ -1,10 +1,13 @@
 #include "core/world/game.h"
 
 #include "core/world/build.h"
+#include "core/world/counts.h"
+#include "core/world/disaster.h"
 #include "core/world/nav.h"
 #include "core/world/objects.h"
 #include "core/world/queue.h"
 #include "core/world/reaper.h"
+#include "core/world/research.h"
 #include "core/world/rooms.h"
 #include "core/world/snapshot.h"
 #include "core/world/staff.h"
@@ -28,6 +31,7 @@ constexpr std::array<int, 12> kCalendar = {31, 28, 31, 30, 31, 30, 31, 31, 30, 3
 
 // Object states (the game's OS_*, include/enums.h) handled so far.
 constexpr uint8_t kObjectStatic = 2;
+constexpr uint8_t kObjectInUse = 4;
 
 // The bytes of `now` that differ from `was` as "<offset> <hex>", from the
 // first that differs to the last; all of them if `all`; empty if none differ.
@@ -104,9 +108,16 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     open = open_countdown == 0;
     balance = size_t(number) < settings.towns.size() ? int(settings.towns[size_t(number)].start_cash) : 0;
     start_finance(finance, balance, settings, number);
+    // init_player's.
+    count_hospital_area(finance, world);
     start_queues(world, settings_, arrivals.hospitals[0], finance);
+    // init_player's.
+    calc_pricing_factor(arrivals.hospitals[0], settings_, world.cure_available);
     start_rooms_in_use(*this, complexes, staff_complexes);
     connect_world();
+    start_research(world);
+    world.emergency = {};
+    world.emergency.heli_pad_tile = level.emergency_tile[0];
     disasters = {};
     setup_next_emergency(disasters, world, settings_, date);
     setup_next_quake(disasters, world, settings_, date);
@@ -136,9 +147,11 @@ void turn_month_end(Game &g)
 {
     Date &date = g.date;
     const Balance &settings = g.settings();
+    auto_available(g.world, date);
     // month_end's money, before the month moves on.
     month_end(g.finance, g.balance, g.world, settings, g.level_number(),
               {days_in_month(date.month), date.month, count_radiators(g.world, 0), g.reputation()});
+    calc_pricing_factor(g.arrivals.hospitals[0], settings, g.world.cure_available);
     calc_visitors_this_month(g.arrivals, settings);
     date.day = 1;
     date.month++;
@@ -161,20 +174,31 @@ void turn_month_end(Game &g)
 void turn_daily_admin(Game &g)
 {
     g.date.day++;
-    try_to_generate_emergency(g.disasters, g.world, g.settings(), g.date, g.open, g.turn_count);
+    try_to_generate_emergency(g);
+    daily_admin_emergency(g);
     expire_playercalls(g.world);
+    do_research(g.world);
     if (g.date.day > days_in_month(g.date.month))
         turn_month_end(g);
 }
 
-// process_things' turn of object `id`.
+// process_things' turn of object or explosion debris `id`.
 void process_things_object(World &world, const AnimData &anims, uint16_t id, uint32_t turn_count)
 {
     Thing &t = world.things[id];
-    if (t.state == kObjectStatic) {
+    if (t.type == kThingDebris) {
+        process_bang(world, anims, id, turn_count);
+    } else if (t.state == kObjectStatic) {
         // object_static (src/objects.cpp).
-        if (t.anim_speed && turn_count % t.anim_speed == 0 && t.sprite < anims.frames.size())
+        if (t.anim_speed && turn_count % t.anim_speed == 0 && t.sprite < anims.frames.size()) {
             t.sprite = anims.frames[t.sprite].next;
+            if (t.overlay_frame && t.overlay_frame < anims.frames.size())
+                t.overlay_frame = anims.frames[t.overlay_frame].next;
+        }
+    } else if (t.state == kObjectInUse) {
+        // A machine in use smokes every turn.
+        if (t.overlay_frame && t.overlay_frame < anims.frames.size())
+            t.overlay_frame = anims.frames[t.overlay_frame].next;
     } else if (t.state == kObjectHell) {
         object_hell(world, anims, id, turn_count);
     } else {
@@ -190,10 +214,17 @@ void process_things(Game &g, std::vector<bool> &walkers, const PersonComplexes &
     World &world = g.world;
     const AnimData &anims = g.anims();
     uint32_t turn_count = g.turn_count;
+    reset_all_count(world, turn_count);
     for (size_t i = 1; i < world.things.size(); i++) {
         Thing &t = world.things[i];
         if (t.type == kThingFree)
             walkers[i] = false;
+        if (t.type == kThingPatient)
+            person_count(world, uint16_t(i), turn_count);
+        else if (t.type == kThingStaff)
+            staff_count(world, uint16_t(i), turn_count);
+        else if (t.type == kThingObject)
+            object_count(world, uint16_t(i), turn_count);
         if (t.type == kThingPatient && walkers[i]) {
             if (walk_turn(world, anims, uint16_t(i), turn_count) != WalkResult::Walking)
                 play_frame(t, anims, kPatientAnims[t.subtype % kPatientAnims.size()].stand);
@@ -207,19 +238,28 @@ void process_things(Game &g, std::vector<bool> &walkers, const PersonComplexes &
             numfx_ages(world, uint16_t(i));
         } else if (t.type == kThingReaper) {
             reaper_turn(world, anims, uint16_t(i), turn_count);
-        } else if (t.type == kThingObject) {
+        } else if (t.type == kThingHelicopter) {
+            helicopter_turn(world, anims, uint16_t(i));
+        } else if (t.type == kThingObject || t.type == kThingDebris) {
             process_things_object(world, anims, uint16_t(i), turn_count);
         }
     }
+    final_count(world, turn_count);
 }
 
 } // namespace
 
 void Game::turn()
 {
+    if (start_turn())
+        run_things();
+}
+
+bool Game::start_turn()
+{
     log_inputs();
     if (paused)
-        return;
+        return false;
     turn_count++;
     EventScope scope(&events, turn_count);
     draw_turn_randoms(world);
@@ -227,6 +267,7 @@ void Game::turn()
     new_patients.clear();
     if (turn_count % (kTurnsPerDay / 2) == 0) {
         // twice_daily_admin
+        twice_daily_admin_emergency(world);
         if (uint16_t id = create_a_peep(world, arrivals, {settings_, *anims_, level_number_}, open, turn_count)) {
             new_patients.push_back(id);
             start_person_going(world, *anims_, *complexes_, id, turn_count);
@@ -240,14 +281,24 @@ void Game::turn()
         opening_countdown = 0;
         open = true;
     }
+    return true;
+}
 
-    // effect_illness and person_dies tell the advisor (advisor.event_flags).
+void Game::run_things()
+{
+    EventScope scope(&events, turn_count);
+    // effect_illness and person_dies tell the advisor (advisor.event_flags),
+    // as helicopter_lands does (advisor.heli_landed).
     const uint16_t cures = finance.cures, deaths = finance.deaths;
+    const uint8_t heli_landed = world.emergency.heli_landed;
     process_things(*this, walkers_, *complexes_, *staff_complexes_);
     if (finance.cures != cures)
         advisor.event_flags |= kAdvisorEventCure;
     if (finance.deaths != deaths)
         advisor.event_flags |= kAdvisorEventDeath;
+    if (!heli_landed && world.emergency.heli_landed)
+        advisor.heli_landed = true;
+    advisor.event_flags |= std::exchange(world.advisor_events, 0);
     build_turn(*this);
     remember_inputs();
 }
@@ -260,17 +311,26 @@ void Game::process_turn()
     if (e.type != EV_NONE)
         log_line(std::format("{} {} {}", unsigned(e.type), e.value, e.arg));
     carry_out(e);
+    advisor.event_flags |= std::exchange(world.advisor_events, 0);
     remember_inputs();
 }
 
 void Game::carry_out(const Event &e)
 {
     EventScope scope(&events, turn_count + 1);
+    choice_screen = {};
     if (e.type != EV_NONE)
         trace_event("cmd type=%u value=%u arg=%u", unsigned(e.type), unsigned(e.value), unsigned(e.arg));
+    if (e.type == EV_CHOICE_RESULT) {
+        const Thing &p = world.things[e.arg < world.things.size() ? e.arg : 0];
+        trace_event("choice %u arg=%u awaiting=%u", unsigned(e.value), unsigned(e.arg),
+                    unsigned(p.type == kThingPatient && (p.person_flags & kPfAwaitingDecision)));
+    }
 
     // Each part's commands are carried out in its own file. EV_CANCEL_BUILD
     // is the staff side's, the build tool's and the objects', in that order.
+    if (apply_emergency_event(*this, e) || apply_call_event(*this, e) || apply_machine_event(*this, e))
+        return;
     if (e.type == EV_CANCEL_BUILD)
         apply_staff_event(*this, e);
     if (apply_build_event(*this, e))

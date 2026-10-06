@@ -18,6 +18,9 @@ constexpr uint8_t kObjReceptionDesk = 11;
 constexpr uint8_t kObjLitterBomb = 17;
 constexpr uint8_t kObjPlant = 45;
 constexpr uint8_t kObjGatesOfHell = 48;
+// The autopsy machine, and the autopsy (ILL_AUTOPSY) it makes available.
+constexpr uint8_t kObjAutoAutopsy = 55;
+constexpr uint8_t kIllAutopsy = 44;
 
 // PS_WAITS_FOR_DECISION (include/enums.h).
 constexpr uint8_t kPsWaitsForDecision = 0x44;
@@ -89,8 +92,9 @@ bool no_peeps_on_cell(const World &w, int tile, int side)
 // leave the rooms and desks reachable (check_room_access); an object of
 // the kind lifted off the map while a room went back to a blueprint
 // (BuildState::objects) is put back at no charge, else a new one is bought
-// at object_stats' cost (the level's StartCost; research does not lower it
-// yet) and the balance is charged (change_balance TX_BUY_OBJECT).
+// at object_stats' cost (object_cost: the level's StartCost, lowered by
+// research) and the balance is charged (change_balance TX_BUY_OBJECT). An
+// autopsy machine makes the autopsy available (World::cure_available).
 uint16_t player_place_object(Game &game, int tile, int kind, int dir)
 {
     World &w = game.world;
@@ -109,6 +113,8 @@ uint16_t player_place_object(Game &game, int tile, int kind, int dir)
     }
     if (!no_peeps_in_way(w, tile, kind, dir))
         return 0;
+    if (kind == kObjAutoAutopsy)
+        w.cure_available[kIllAutopsy] = 1;
     for (uint16_t &lifted : w.building.build.objects) {
         if (lifted && w.things[lifted].subtype == kind && w.things[lifted].owner == kPlayer) {
             uint16_t id = lifted;
@@ -120,7 +126,7 @@ uint16_t player_place_object(Game &game, int tile, int kind, int dir)
     // Charged once a thing is free for it, before it is made, as the game.
     if (std::none_of(w.things.begin() + 1, w.things.end(), [](const Thing &t) { return t.type == kThingFree; }))
         return 0;
-    int cost = game.settings().objects[size_t(kind)].start_cost;
+    int cost = object_cost(w, kind);
     if (cost)
         change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxBuyObject, -cost});
     return place_object(w, game.anims(), {tile, kind, dir}, kPlayer, true);
@@ -176,16 +182,14 @@ void object_placed(ObjectPlacing &p)
 }
 
 // set_buyable_items (src/req1.cpp) for the corridor: the kinds the player
-// can buy, available from the start of the level (equipment[].available is
-// object_stats' equip_available, the level's StartAvail, while research and
-// WhenAvail dates are not ported) and in the level (AvailableForLevel).
-void set_buyable_items(ObjectPlacing &p, const Balance &settings)
+// can buy (equipment_available: from the start of the level, its WhenAvail
+// month or research) and in the level (AvailableForLevel).
+void set_buyable_items(ObjectPlacing &p, const World &world)
 {
     p.requester_mode = 3;
     size_t count = 0;
     for (uint8_t kind : kCorridorObjects) {
-        const Balance::Object &o = settings.objects[kind];
-        if (count < p.offered.size() && o.available_for_level == 1 && o.start_avail == 1)
+        if (count < p.offered.size() && equipment_available(world, kind))
             p.offered[count++] = kind;
     }
     for (; count < p.offered.size(); count++)
@@ -371,7 +375,7 @@ bool apply_object_event(Game &game, const Event &event)
         if (p.requester != ObjectRequester::None)
             return true;
         p.arg = 1;
-        set_buyable_items(p, game.settings());
+        set_buyable_items(p, game.world);
         p.requester = ObjectRequester::BuyObjects;
         p.room_type = kRoomCorridor;
         p.arg3 = 0;

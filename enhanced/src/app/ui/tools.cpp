@@ -1,6 +1,12 @@
 #include "app/ui/tools.h"
 
+#include "core/world/build.h"
+#include "core/world/debug_dump.h"
+#include "core/world/world.h"
+
 #include <imgui.h>
+#include <string>
+#include <vector>
 
 namespace th
 {
@@ -51,6 +57,102 @@ MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::
 namespace
 {
 
+// One field's read-only control: a number box (with its name beside it, if
+// any), a greyed checkbox or a text box.
+void draw_inspect_value(const InspectField &f)
+{
+    switch (f.kind) {
+    case InspectKind::Number: {
+        int64_t value = f.number;
+        ImGui::SetNextItemWidth(f.note.empty() ? -FLT_MIN : 120.0f);
+        ImGui::InputScalar("##value", ImGuiDataType_S64, &value, nullptr, nullptr, nullptr,
+                           ImGuiInputTextFlags_ReadOnly);
+        if (!f.note.empty()) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", f.note.c_str());
+        }
+        break;
+    }
+    case InspectKind::Flag: {
+        bool value = f.number != 0;
+        ImGui::BeginDisabled();
+        ImGui::Checkbox("##value", &value);
+        ImGui::EndDisabled();
+        break;
+    }
+    case InspectKind::Text: {
+        std::string text = f.value;
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputText("##value", text.data(), text.size() + 1, ImGuiInputTextFlags_ReadOnly);
+        break;
+    }
+    }
+}
+
+void draw_inspect_fields(const InspectSection &section)
+{
+    if (!ImGui::BeginTable("fields", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV))
+        return;
+    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed, 160.0f);
+    ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+    for (const InspectField &f : section.fields) {
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(f.name.c_str());
+        ImGui::TableNextColumn();
+        ImGui::PushID(f.name.c_str());
+        draw_inspect_value(f);
+        ImGui::PopID();
+    }
+    ImGui::EndTable();
+}
+
+void draw_inspected_thing(const World &world, uint16_t id)
+{
+    std::vector<InspectSection> sections = inspect_thing(world, id);
+    ImGui::BeginChild("thing", ImVec2(560, 480));
+    for (size_t i = 0; i < sections.size(); i++) {
+        ImGui::PushID(int(i));
+        if (i == 0)
+            ImGui::SeparatorText(sections[i].title.c_str());
+        if (i == 0 || ImGui::CollapsingHeader(sections[i].title.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            draw_inspect_fields(sections[i]);
+        ImGui::PopID();
+    }
+    ImGui::EndChild();
+}
+
+void draw_inspect_tool(InspectTool &tool, const World &world)
+{
+    if (tool.picking) {
+        ImGui::TextUnformatted("Click a person or object in the hospital (right click cancels).");
+        if (ImGui::Button("Cancel"))
+            tool.picking = false;
+        return;
+    }
+    if (ImGui::Button(tool.thing ? "Pick another" : "Pick"))
+        tool.picking = true;
+    if (!tool.thing) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("Nothing inspected.");
+        return;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Clear")) {
+        tool.thing = 0;
+        return;
+    }
+    const Thing &t = world.things[tool.thing];
+    if (t.type == kThingFree) {
+        ImGui::TextDisabled("Thing %u is gone.", tool.thing);
+        return;
+    }
+    uint16_t room = room_at(world, uint16_t(t.x.tile + t.y.tile * kMapSize));
+    ImGui::Text("Cell %d,%d, room %u", t.x.tile, t.y.tile, room);
+    draw_inspected_thing(world, tool.thing);
+}
+
 void draw_debug_report(DebugReport &report)
 {
     ImGui::TextDisabled("A screenshot, the game's state and this note.");
@@ -63,23 +165,27 @@ void draw_debug_report(DebugReport &report)
 
 } // namespace
 
-void draw_tools(ToolsState &state, World *world)
+void draw_tools(ToolsState &state, const World *world)
 {
     if (!state.open)
         return;
     if (ImGui::Begin("Tools (F12)", &state.open, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTabBar("tools")) {
+            if (world && ImGui::BeginTabItem("Inspect")) {
+                draw_inspect_tool(state.inspect, *world);
+                ImGui::EndTabItem();
+            }
             if (world && ImGui::BeginTabItem("Path finding")) {
                 draw_nav_tool(state.nav, *world);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Debug report")) {
+                draw_debug_report(state.report);
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Display")) {
                 const char *scales[] = {"Automatic", "1x", "2x", "3x", "4x"};
                 ImGui::Combo("UI scale", &state.ui_scale, scales, IM_ARRAYSIZE(scales));
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Debug report")) {
-                draw_debug_report(state.report);
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();

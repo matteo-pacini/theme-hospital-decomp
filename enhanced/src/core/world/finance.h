@@ -181,6 +181,11 @@ void month_end(Finance &finance, int32_t &balance, World &world, const Balance &
 // empties the statement and opens the new year and statement at `balance`.
 void year_end(Finance &finance, int32_t balance, const World &world, const Balance &settings, int reputation);
 
+// count_hospital_area (0x19a1c) for player 0: the cells it owns
+// (Finance::area), counted as a level starts, at each month's end and in
+// calculate_value.
+void count_hospital_area(Finance &finance, const World &world);
+
 // calculate_value (src/finance.cpp) for player 0: the hospital's area, its
 // value (land at gbv.land_cost_per_tile a cell, 1000 per 50 reputation,
 // its machines and leisure objects at their balance cost, and a base of

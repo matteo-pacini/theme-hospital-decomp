@@ -5,10 +5,12 @@
 #include "core/world/build.h"
 #include "core/world/complex.h"
 #include "core/world/complex_tables.h"
+#include "core/world/disaster.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
+#include "core/world/popups.h"
 #include "core/world/queue.h"
 #include "core/world/reaper.h"
 #include "core/world/reception.h"
@@ -313,14 +315,17 @@ void best_guess_treatment(World &world, Thing &p)
 
 // announce_new_illness (0x3dfcc): the illness discovered by hospital 0
 // (HospitalSettings illnesses[].discovered), with a call (kind 7, expiring
-// after 15 days) the first time. The advisor's word on it is not ported.
+// after 15 days) the first time, which the advisor hears of
+// (kAdvisorEventCall).
 void announce_new_illness(World &world, uint8_t illness, uint8_t owner)
 {
     if (!world.hospital || owner != 0)
         return;
     uint8_t &discovered = world.hospital->illnesses[illness % kIllnessCount].discovered;
-    if (discovered == 0)
+    if (discovered == 0) {
+        world.advisor_events |= kAdvisorEventCall;
         make_a_playercall(world, kCallNewIllness, illness, 0xf, owner);
+    }
     discovered = 1;
 }
 
@@ -463,8 +468,11 @@ void cure_illness(World &world, uint16_t id)
     }
     if (p.owner == 0 && world.ledger)
         world.ledger->cures_this_month++;
-    if (p.person_flags & kPfEmergency)
+    if (p.person_flags & kPfEmergency) {
+        trace_event("emergency_cure %u", unsigned(id));
+        world.emergency.cured++;
         p.person_flags &= ~kPfEmergency;
+    }
     record_person_as_patient(world, id);
 }
 
@@ -574,38 +582,6 @@ const PersonComplexes &person_complexes_of(const World &world)
 {
     static const PersonComplexes none;
     return world.person_complexes ? *world.person_complexes : none;
-}
-
-// modify_machine (0x38f14): from 75% of its strength a worn machine puffs
-// smoke (a draw from world.seed picks where), from 100% it may break down,
-// surely by 150%. Its warning sounds and the smoke's overlay frame are not
-// ported, nor the breakdown (machine_disaster): only its draw is made.
-void modify_machine(World &world, Thing &machine)
-{
-    if (machine.strength * 75 / 100 <= machine.times_used) {
-        int count = 0;
-        for (uint8_t puff : machine.smoke)
-            count += puff == 1;
-        if (machine.strength * 85 / 100 <= machine.times_used && count != 0) {
-            if (machine.strength * 95 / 100 <= machine.times_used) {
-                machine.smoke = {1, 1, 1};
-            } else if (count == 1) {
-                size_t j = 0;
-                while (j < 3 && machine.smoke[j] != 1)
-                    j++;
-                j = (j + 1 + (old_newrand(world.seed) & 1)) % 3;
-                machine.smoke[j] = 1;
-            }
-        } else {
-            machine.smoke[old_newrand(world.seed) % 3] = 1;
-        }
-    }
-    if (machine.times_used >= machine.strength) {
-        int32_t i = machine.strength * 3 / 2 - machine.times_used + 1;
-        // The game's machine_disaster follows a 0, or at once if i <= 1.
-        if (i > 1)
-            old_newrand(world.seed);
-    }
 }
 
 } // namespace
@@ -905,7 +881,17 @@ uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_
     for (size_t i = 1; i < world.calls.size(); i++) {
         World::PlayerCall &call = world.calls[i];
         if (call.type == 0) {
-            call = {type, subject, world.next_call_id++, owner, timeout};
+            // The panel slot and slide step are left as they were until
+            // add_panel_popup sets them, as in the game.
+            call.type = type;
+            call.id = world.next_call_id++;
+            call.subject = subject;
+            call.timer = timeout;
+            call.owner = owner;
+            add_panel_popup(world, uint16_t(i));
+            uint16_t &head = world.first_call[owner & 3][type % 9];
+            if (head == 0)
+                head = uint16_t(i);
             trace_event("playercall %u type=%u subject=%u owner=%u", unsigned(call.id), unsigned(type),
                         unsigned(subject), unsigned(owner));
             return call.id;
@@ -916,10 +902,31 @@ uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_
 
 void expire_playercalls(World &world)
 {
+    bool changed = false;
     for (size_t i = 1; i < world.calls.size(); i++) {
         World::PlayerCall &call = world.calls[i];
-        if (call.timer && --call.timer <= 0)
-            call = {};
+        if (!call.timer || --call.timer > 0)
+            continue;
+        trace_event("expire_call %u type=%u subject=%u", unsigned(call.id), unsigned(call.type),
+                    unsigned(call.subject));
+        if (call.type == kCallEmergencyOver && call.subject == 1 && call.owner == 0)
+            world.emergency.state = 0;
+        uint16_t &head = world.first_call[call.owner & 3][call.type % 9];
+        if (head == i) {
+            head = 0;
+            changed = true;
+        }
+        delete_panel_popup(world, uint16_t(i));
+        call.type = 0;
+    }
+    if (!changed)
+        return;
+    // The heads lost go to the first call of their kind in the table.
+    for (size_t i = 1; i < world.calls.size(); i++) {
+        const World::PlayerCall &call = world.calls[i];
+        uint16_t &head = world.first_call[call.owner & 3][call.type % 9];
+        if (call.type && head == 0)
+            head = uint16_t(i);
     }
 }
 
@@ -932,7 +939,13 @@ uint16_t get_playercall(World &world, uint16_t type, uint16_t id, uint8_t owner)
             continue;
         if (id == 0 || id == call.id) {
             uint16_t subject = call.subject;
-            call = {};
+            call.type = 0;
+            delete_panel_popup(world, uint16_t(i));
+            uint16_t &head = world.first_call[owner & 3][type % 9];
+            if (head == i) {
+                head = 0;
+                get_new_popup_head(world, type, owner);
+            }
             return subject;
         }
     }
@@ -1139,6 +1152,8 @@ void next_treatment_now_setup(World &world, const AnimData &anims, uint16_t id, 
             p.next_state = kPsWaitsForDecision;
             p.timer = int16_t(game_turn);
             p.playercall = make_a_playercall(world, kCallNoDiagnosis, id, 0, p.owner);
+            if (p.owner == 0)
+                world.advisor_events |= kAdvisorEventCall;
         } else {
             p.treatment = 0;
             p.next_state = kPsGoForTreatment;
@@ -1150,6 +1165,8 @@ void next_treatment_now_setup(World &world, const AnimData &anims, uint16_t id, 
             p.next_state = kPsWaitsForDecision;
             p.timer = int16_t(game_turn);
             p.playercall = make_a_playercall(world, kCallNoTreatment, id, 0, p.owner);
+            if (p.owner == 0)
+                world.advisor_events |= kAdvisorEventCall;
         } else {
             p.treatment = 0;
             p.next_state = kPsGoForTreatment;
@@ -1290,7 +1307,7 @@ void thingpage_cancel_my_response(World::ThingPager &pager, uint16_t handyman)
     }
 }
 
-bool treatment_machine_used(World &world, uint8_t illness, uint16_t tile)
+bool treatment_machine_used(World &world, const AnimData &anims, uint8_t illness, uint16_t tile, uint32_t game_turn)
 {
     uint8_t kind = kExpertiseData[illness % kExpertiseData.size()].kind;
     if (!kObjectUse[kind].overlay_anim)
@@ -1306,7 +1323,7 @@ bool treatment_machine_used(World &world, uint8_t illness, uint16_t tile)
         thingpage_request(world.repair_pager, id, uint8_t(percent < 100 ? percent : 100));
     }
     if (machine.strength * 75 / 100 <= machine.times_used)
-        modify_machine(world, machine);
+        return modify_machine(world, anims, id, game_turn);
     return false;
 }
 
@@ -1417,6 +1434,91 @@ void force_peep_to_be_cured(World &world, const AnimData &anims, uint16_t id, ui
     interrupt_person(world, anims, person_complexes_of(world), id, game_turn);
     best_guess_treatment(world, p);
     next_treatment_now_setup(world, anims, id, false, game_turn);
+}
+
+namespace
+{
+
+// apply_call_event's EV_CHOICE_RESULT for patient `id` awaiting a decision.
+void apply_call_event_decision(Game &game, uint16_t id, uint16_t choice)
+{
+    World &world = game.world;
+    Thing &p = world.things[id];
+    const PersonComplexes &complexes = person_complexes_of(world);
+    switch (choice) {
+    case kChoiceTreatSendHome:
+    case kChoiceDiagSendHome:
+        p.treatment = 0;
+        turned_away(world, p);
+        person_go_home(world, game.anims(), complexes, id, game.turn_count);
+        p.person_flags |= choice == kChoiceTreatSendHome ? kPfNoTreatment : kPfNoDiagnosis;
+        break;
+    case kChoiceTreatWait:
+    case kChoiceDiagWait:
+        p.person_flags &= ~kPfAwaitingDecision;
+        p.person_flags |= kPfWaitingForRoom;
+        p.timer = int16_t(game.turn_count);
+        break;
+    case kChoiceTreatResearch:
+        p.treatment = kIllAutopsy;
+        p.person_flags &= ~kPfAwaitingDecision;
+        p.state = kPsGoForTreatment;
+        break;
+    case kChoiceDiagGuess:
+        p.person_flags &= ~kPfAwaitingDecision;
+        interrupt_complex(world, game.anims(), complexes, id, game.turn_count);
+        best_guess_treatment(world, p);
+        next_treatment_now_setup(world, game.anims(), id, false, game.turn_count);
+        break;
+    default:
+        break;
+    }
+}
+
+// apply_call_event's EV_ANSWER_PLAYERCALL.
+bool apply_call_event_answer(Game &game, const Event &event)
+{
+    uint16_t subject = 0;
+    switch (event.value) {
+    case kCallNoTreatment:
+        subject = get_playercall(game.world, kCallNoTreatment, event.arg, 0);
+        if (subject)
+            game.choice_screen = {kFaxNoTreatment, subject, 0};
+        return true;
+    case kCallNewIllness:
+        subject = get_playercall(game.world, kCallNewIllness, 0, 0);
+        game.choice_screen = {kFaxNewIllness, subject, 0};
+        return true;
+    case kCallNoDiagnosis:
+        subject = get_playercall(game.world, kCallNoDiagnosis, event.arg, 0);
+        if (subject)
+            game.choice_screen = {kFaxNoDiagnosis, subject, 0};
+        return true;
+    default:
+        return false;
+    }
+}
+
+} // namespace
+
+bool apply_call_event(Game &game, const Event &event)
+{
+    if (event.type == EV_ANSWER_PLAYERCALL)
+        return apply_call_event_answer(game, event);
+    if (event.type != EV_CHOICE_RESULT)
+        return false;
+    constexpr std::array<uint16_t, 6> kChoices = {kChoiceTreatSendHome, kChoiceTreatWait, kChoiceTreatResearch,
+                                                  kChoiceDiagSendHome,  kChoiceDiagGuess, kChoiceDiagWait};
+    if (std::find(kChoices.begin(), kChoices.end(), event.value) == kChoices.end())
+        return false;
+    if (event.arg >= game.world.things.size())
+        return true;
+    Thing &p = game.world.things[event.arg];
+    if (p.type == kThingPatient && (p.person_flags & kPfAwaitingDecision))
+        apply_call_event_decision(game, event.arg, event.value);
+    if (p.type == kThingPatient)
+        p.playercall = 0;
+    return true;
 }
 
 bool apply_patient_event(Game &game, const Event &event)

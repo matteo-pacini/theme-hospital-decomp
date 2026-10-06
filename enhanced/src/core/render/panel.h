@@ -27,6 +27,10 @@ struct PanelFigures {
     // OpenCountdown.
     int opening_countdown = 0;
     int open_countdown = 0;
+    // The emergency taken on: half days left (allhosps.emergency_timer, 0
+    // for none) and its state (World::Emergency::state).
+    int emergency_timer = 0;
+    int emergency_state = 0;
 };
 
 // The same panel as 0xAARRGGBB pixels, transparent where no sprite covers
@@ -131,13 +135,24 @@ PanelAction panel_frame(PanelState &state, const UiMouse &mouse, const GameData 
 // panel_ml_button (src/panel.cpp) do: the icon set `state` chooses, its
 // pressed icon, and with `figures` the balance, date and reputation marker
 // as draw_money_on_panel, draw_date_on_panel and draw_rep_on_panel draw
-// them, and the opening countdown's watch above the panel's left end.
+// them. The watch is draw_emergency's.
 // While state.shown_balance differs from the balance, the balance is drawn
 // at roll step state.balance_roll_step: the new figures come down from
 // above as the shown ones go down, 6 pixels a step, but for the first digit
 // column, which shows the new figure at once (draw_money_on_panel always
 // counts one changed column).
 void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data);
+
+// draw_popup_icons' redraw of the panel's left end (src/panel.cpp): its
+// first two icons, unpressed, and with `figures` the balance, date and
+// reputation, as draw_panel_ui draws them.
+void redraw_panel_left(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data);
+
+// draw_emergency (src/panel.cpp): the watch above the panel's left end, for
+// an emergency (its time left; an empty watch once the time is up and its
+// result is due) or else the opening countdown (with its "open now"
+// button). Epidemics are not ported.
+void draw_emergency(UiLayer &layer, const PanelFigures &figures, const GameData &data);
 
 // After a frame's draw_panel_ui, advances the balance's roll to `balance`
 // as draw_money_on_panel does: a step a frame, the roll ending after the

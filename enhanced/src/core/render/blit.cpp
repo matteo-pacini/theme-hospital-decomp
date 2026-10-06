@@ -1,5 +1,10 @@
 #include "core/render/blit.h"
 
+#include "core/render/iso.h"
+
+#include <algorithm>
+#include <vector>
+
 namespace th
 {
 
@@ -86,6 +91,50 @@ void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flag
         else
             out = colour;
     });
+}
+
+namespace
+{
+
+// A pixel of colour `colour` drawn over `out`, see-through as `flags` say.
+void put_pixel(uint8_t &out, uint8_t colour, unsigned flags, const uint8_t *ghost)
+{
+    if (ghost && (flags & kDrawGhost))
+        out = ghost[colour << 8 | out];
+    else if (ghost && (flags & kDrawGhostUnder))
+        out = ghost[out << 8 | colour];
+    else
+        out = colour;
+}
+
+} // namespace
+
+void draw_sprite_scaled(Surface &dst, Rect box, const Sprite &sprite, unsigned flags, const uint8_t *ghost)
+{
+    const int x = box.x, y = box.y;
+    const Point size = {box.w, box.h};
+    if (sprite.empty() || size.x <= 0 || size.y <= 0)
+        return;
+    // The sprite's pixels, -1 where transparent.
+    std::vector<int> pixels(size_t(sprite.width) * size_t(sprite.height), -1);
+    decode(sprite, [&](int row, int col, uint8_t colour) {
+        if (col < sprite.width)
+            pixels[size_t(row) * size_t(sprite.width) + size_t(col)] = colour;
+    });
+    const Rect &clip = dst.clip();
+    for (int dy = std::max(0, clip.y - y); dy < size.y && y + dy < clip.y + clip.h; dy++) {
+        int row = dy * sprite.height / size.y;
+        if (flags & kDrawFlipY)
+            row = sprite.height - 1 - row;
+        for (int dx = std::max(0, clip.x - x); dx < size.x && x + dx < clip.x + clip.w; dx++) {
+            int col = dx * sprite.width / size.x;
+            if (flags & kDrawFlipX)
+                col = sprite.width - 1 - col;
+            int colour = pixels[size_t(row) * size_t(sprite.width) + size_t(col)];
+            if (colour >= 0)
+                put_pixel(dst.row(y + dy)[x + dx], uint8_t(colour), flags, ghost);
+        }
+    }
 }
 
 void draw_sprite_one_colour(Surface &dst, int x, int y, const Sprite &sprite, uint8_t colour, unsigned flags)

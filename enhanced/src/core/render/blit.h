@@ -23,6 +23,11 @@ enum DrawFlags : unsigned {
 // solid.
 void draw_sprite(Surface &dst, int x, int y, const Sprite &sprite, unsigned flags = 0, const uint8_t *ghost = nullptr);
 
+// Draws `sprite` stretched over `box`, as LbSpriteDrawScaled, each pixel
+// taking the sprite's nearest to it; otherwise as draw_sprite.
+void draw_sprite_scaled(Surface &dst, Rect box, const Sprite &sprite, unsigned flags = 0,
+                        const uint8_t *ghost = nullptr);
+
 // Draws `sprite`'s shape at (x, y) in the single colour `colour` (as
 // LbSpriteDrawOneColour), mirrored by kDrawFlipX and kDrawFlipY in `flags`,
 // clipped like draw_sprite.

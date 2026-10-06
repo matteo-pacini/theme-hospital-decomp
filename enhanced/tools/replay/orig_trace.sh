@@ -19,14 +19,16 @@
 # Needs the decompilation built (`ninja`: build/base's objects), the
 # decompilation's tools (`nix develop path:./nix`: python3 with capstone,
 # wibo, WATCOM_10_6, wlink, objconv) and dosbox-x on PATH. Works in
-# build/replay/tree and build/replay/run.
+# $REPLAY_DIR (default build/replay): its tree and run folders, so runs in
+# different folders can go at the same time.
 set -eu
 
 out=$1 turns=$2 script=${3:-} skip=${4:-} level=${5:-1}
 root=$PWD
 here=$(cd "$(dirname "$0")" && pwd)
-tree=build/replay/tree
-run=build/replay/run
+work=${REPLAY_DIR:-build/replay}
+tree=$work/tree
+run=$work/run
 [ -d build/base ] || { echo "build/base is missing: build the decompilation first (ninja)" >&2; exit 1; }
 
 # A copy of the sources and objects: tools/link.py links whatever tree it is in.
@@ -52,7 +54,7 @@ cp "$tree/build/link/hosp.exe" "$run/HOSPITAL.EXE"
 rm -f "$run/TRACE.TXT" "$run/SCRIPT.TXT"
 [ -n "$script" ] && cp "$script" "$run/SCRIPT.TXT"
 
-conf=build/replay/dosbox.conf
+conf=$work/dosbox.conf
 cat > "$conf" <<EOF
 [dosbox]
 machine=svga_s3
@@ -77,5 +79,5 @@ HOSPITAL.EXE -L$level -Q
 exit
 EOF
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy dosbox-x -nopromptfolder -fastlaunch \
-  -set "dosbox quit warning=false" -conf "$root/$conf" > build/replay/dosbox.log 2>&1
+  -set "dosbox quit warning=false" -conf "$root/$conf" > "$work/dosbox.log" 2>&1
 cp "$run/TRACE.TXT" "$out"

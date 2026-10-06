@@ -2,7 +2,9 @@
 
 #include "core/data/gamedata.h"
 #include "core/world/complex_tables.h"
+#include "core/world/counts.h"
 #include "core/world/nav.h"
+#include "core/world/research.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
@@ -565,15 +567,28 @@ void set_start(Thing &t, const AnimData &anims, size_t start)
     t.flip = uint8_t(anims.starts[start].flip);
 }
 
-// complex_success (0x423c8) for a member of staff: a rest on a sofa, at
-// snooker or a video game (kinds 18, 20, 22) and a use of their object
-// (24, Thing.times_used). Research (8, 10, 14, 16) and an autopsy (12) are
-// not ported.
+// complex_success (0x423c8) for a member of staff: research done
+// (research_contribution: kinds 8, 10, 14 and 16 for 200, 400, 50 and 100
+// points), a rest on a sofa, at snooker or a video game (kinds 18, 20, 22)
+// and a use of their object (24, Thing.times_used). An autopsy (12) is not
+// ported.
 void staff_success(World &world, Thing &s, uint16_t kind)
 {
     static const Balance statics;
     const Balance::Gbv &gbv = world.settings ? world.settings->gbv : statics.gbv;
     switch (kind) {
+    case 8:
+        research_contribution(world, s, 200);
+        break;
+    case 10:
+        research_contribution(world, s, 400);
+        break;
+    case 14:
+        research_contribution(world, s, 50);
+        break;
+    case 16:
+        research_contribution(world, s, 100);
+        break;
     case 18:
         rest_staff(world, s, int16_t(gbv.rest_sofa));
         break;
@@ -1113,8 +1128,11 @@ uint8_t process(const Run &r, uint16_t id)
     process_advance(world, e, entry);
     process_finish(r, id, entry);
     // Action 50: the game runs process_things for the member of staff alone.
-    if (entry.action == 50)
+    if (entry.action == 50) {
+        process_things_alone_begin(world, id, r.game_turn);
         staff_turn(world, r.anims, r.person, r.staff, id, r.game_turn);
+        final_count(world, r.game_turn);
+    }
     return 1;
 }
 

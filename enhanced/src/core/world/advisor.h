@@ -47,6 +47,8 @@ constexpr uint8_t kAdvisorBadPlacement = 0x2;
 // Advisor::event_flags bits (advisor.event_flags): what happened since the
 // advice about it was last given.
 constexpr uint32_t kAdvisorEventResign = 0x1;
+// A call about a patient awaiting a decision, or a new illness's, made.
+constexpr uint32_t kAdvisorEventCall = 0x4;
 // A patient of the player's cured, or dead (set by Game::turn).
 constexpr uint32_t kAdvisorEventCure = 0x40;
 constexpr uint32_t kAdvisorEventDeath = 0x80;
@@ -106,8 +108,9 @@ struct Advisor {
     int16_t box_left = 0;
     // kAdvisorEvent* bits.
     uint32_t event_flags = 0;
-    // The statistics pass found patients (not ported: never set).
-    bool has_patients = false;
+    // The emergency's helicopter has landed since the advice about it was
+    // last given (advisor.heli_landed; set by Game::turn).
+    bool heli_landed = false;
     // The player's advisor setting (myplayer.advisor_flags[20]).
     bool enabled = true;
     // Messages given once per game (myplayer.advisor_flags[0..19]).
@@ -147,9 +150,17 @@ struct AdvisorInputs {
     int reputation = 500;
     const Finance *finance = nullptr;
     const Balance *settings = nullptr;
-    const World *world = nullptr;
+    // The world, which some advice changes as the game does: the patients
+    // gone home fed up and the doctors cracked up, counted since said; a
+    // treatment not paid for, forgotten once said; the last room opened.
+    World *world = nullptr;
+    // The patients the hospital has had (allhosps.visitors).
+    uint32_t visitors = 0;
     // The language's text.
     const LanguageText *text = nullptr;
+    // Where the advice given puts the announcement it plays (play_ambient,
+    // a kAnnounce* index of core/audio/sounds.h), if given.
+    uint8_t *ambient = nullptr;
     // For the tutorial: the command waiting to be carried out this frame
     // (player_events[player]) and the one carried out last frame
     // (old_packet[player]); whether staff held may be put down where the
@@ -181,12 +192,32 @@ void start_advisor(Advisor &advisor, bool tutorial);
 // hospital value targets (0x42, 0x43), too many staff for no staff room
 // (0x49), a reception desk with no receptionist on level 1 (0x69), a staff
 // member threatening to resign (0x1c, kAdvisorEventResign), the cures and
-// deaths so far (0x51, 0x4c, kAdvisorEventCure and kAdvisorEventDeath),
-// and the event and mouse-help messages (forced_advice_id 1 and 3-0x11 but
-// 2 and 8, and mouse_advice_id). The others need what is not ported yet
-// (rooms, the statistics pass, research, emergencies, epidemics, rats,
-// earthquakes, the level's cures and deaths targets, prices) and are never
-// given.
+// deaths so far (0x51, 0x4c, kAdvisorEventCure and kAdvisorEventDeath; the
+// first of each, 0x52 and 0x47), an emergency's helicopter landed (0x15,
+// heli_landed), the event and mouse-help messages (forced_advice_id 1 and
+// 3-0x11 but 2 and 8, and mouse_advice_id); from the statistics pass
+// (World::counts, once it has found patients): the patients' waiting
+// (0xb), happiness and those gone home fed up (0xe), thirst (0xf), warmth
+// (0x11) and bladders (0x13), too few or many doctors and nurses (7, 8,
+// 0x64, 0x65), the staff's warmth (0x12), the machines' wear (3, 0x78), a
+// doctor cracked up (0x5e); the litter (0x45, 0x46), the plants (0x5c,
+// 0x5b, 0x4a), the benches (0x4b), no visitors or cures yet (9, 0xa), the
+// rooms open (0x6b), a room just opened (0x50, 0x53, 0x8c, 0x5d, 0x68), a
+// treatment not paid for (0x75), the deaths near the level's limit (0x41),
+// the first call about a patient or a new illness (0x87,
+// kAdvisorEventCall), a person stuck (0xc, World::announce_stuck) and the
+// prices high or low (0x76, 0x77, HospitalMarket::price_level), the cures
+// short of the level's target (0x88). The
+// plants, benches and rooms open are counted from the world, where the
+// game keeps running counts (which never uncount a bench sold). The others
+// need what is not ported yet (research, epidemics, rats, earthquakes,
+// plants wilting, the other announcements, the level's win and lose
+// progress (0x6f, 0x72, and 0x88's target passed), new staff in rooms,
+// what an illness requires) and are never given; the staff's tiredness
+// (0x10) the game works out but never says.
+//
+// Advice about the warmth and the litter plays an announcement, put in
+// AdvisorInputs::ambient for the caller.
 //
 // The tutorial is ported to the "build a GP's office" message (steps 0x1d
 // to 0x24 and 0x20): the reception desk and the receptionist. Its hints that

@@ -1,8 +1,11 @@
 #include "core/world/arrivals.h"
 
+#include "core/world/emergency.h"
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
 #include "core/world/trace.h"
+
+#include <algorithm>
 
 namespace th
 {
@@ -158,6 +161,22 @@ int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &setti
                                                                         : hosp.reputation[size_t(treatment)];
     int32_t price = base * rep / 500;
     return base > price ? base : price;
+}
+
+void calc_pricing_factor(HospitalMarket &hosp, const Balance &settings, const std::array<uint8_t, 47> &cure_available)
+{
+    uint32_t max_total = 0;
+    int32_t price_total = 0;
+    for (size_t i = 0; i < cure_available.size(); i++) {
+        if (cure_available[i] == 1) {
+            max_total += uint32_t(max_price_for_treatment(hosp, settings, int(i)));
+            price_total += hosp.price[i];
+        }
+    }
+    // Divided unsigned, as in the game.
+    int32_t level = max_total > 0 ? int32_t(uint32_t(price_total * 100) / max_total) : 100;
+    hosp.price_level = int16_t(std::clamp(level, 0, 300));
+    trace_event("price_level %d", int(hosp.price_level));
 }
 
 void update_single_cure_cost(HospitalMarket &hosp, const Balance &settings, int treatment)
@@ -458,7 +477,10 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const PeepSetup &s
 uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup, bool hospital_open,
                        uint32_t game_turn)
 {
-    if (kTownExtras[town_index(setup.level_number)].special_kind == 1 || !state.peep_interval)
+    if (kTownExtras[town_index(setup.level_number)].special_kind == 1)
+        return 0;
+    create_a_peep_emergency(world, state, setup);
+    if (!state.peep_interval)
         return 0;
     if (game_turn % uint32_t(state.peep_interval) >= 25)
         return 0;

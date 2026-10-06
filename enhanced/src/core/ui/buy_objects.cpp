@@ -189,11 +189,11 @@ void walk_frame(const GameData &data, uint32_t frame_id, Point at, bool flip, in
 }
 
 // cost_of_all_selected_objects (src/req1.cpp).
-int64_t cost_of_all_selected(const ObjectPlacing &p, const Balance &settings)
+int64_t cost_of_all_selected(const ObjectPlacing &p, const World &world)
 {
     int64_t total = 0;
     for (int i = 0; i < kObjectKinds - 1; i++)
-        total += int64_t(p.buy_count[size_t(i)]) * settings.objects[size_t(i)].start_cost;
+        total += int64_t(p.buy_count[size_t(i)]) * object_cost(world, i);
     return total;
 }
 
@@ -208,8 +208,7 @@ void clicked_buy_objects(Game &game, int entry, bool buy, bool shift, bool ctrl)
     if (!p.offered[size_t(entry)] || obj >= kObjectKinds)
         return;
     if (buy) {
-        int64_t cost = cost_of_all_selected(p, game.settings()) +
-                       int64_t(game.settings().objects[size_t(obj)].start_cost) * amount;
+        int64_t cost = cost_of_all_selected(p, game.world) + int64_t(object_cost(game.world, obj)) * amount;
         if (game.balance > 0 && cost <= game.balance)
             game.event = {EV_BUY_OBJECT, uint16_t(obj), 0, uint16_t(amount)};
     } else if (p.buy_count[size_t(obj)] >= amount) {
@@ -233,12 +232,11 @@ void draw_buy_objects(UiLayer &layer, const Window &win, const ObjectUi &oui, co
 {
     const ObjectPlacing &p = game.world.placing;
     const LanguageText &text = data.text();
-    const Balance &settings = game.settings();
     const Rect screen = {0, 0, kUiWidth, kUiHeight};
     auto put = [&](const Font &font, int x, int y, std::string_view s) {
         layer.draw_text(font, win.x + x, win.y + y, s, {{0, 0, kUiWidth}, screen});
     };
-    auto cost = [&](int kind) { return settings.objects[size_t(kind)].start_cost; };
+    auto cost = [&](int kind) { return object_cost(game.world, kind); };
     int total = 0;
     for (int i = 0; i < kEntries && p.offered[size_t(i)]; i++)
         total += p.buy_count[p.offered[size_t(i)]] * cost(p.offered[size_t(i)]);

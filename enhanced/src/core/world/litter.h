@@ -36,12 +36,14 @@ constexpr int kStartHeatingLevel = 5;
 // place_litter (0x7a710): drops litter of `kind` (1-15) on `tile` if the
 // cell is `owner`'s land and indoors (owner_flags exactly 1 << owner), on a
 // clean cell; vomit and the rats' mess (4) also replace other litter, but
-// not rat holes. Nothing stops litter on a cell under an object. The
-// hospital's litter count and last litter cell are not kept.
+// not rat holes. Nothing stops litter on a cell under an object. Litter on
+// a clean cell of hospital 0 counts in World::litter_count; the hospital's
+// last litter cell is not kept.
 void place_litter(World &world, uint16_t tile, uint8_t owner, uint8_t kind);
 
 // remove_litter (0x7a814): cleans `tile` if it is `owner`'s land and holds
-// litter other than rat holes.
+// litter other than rat holes, uncounting it from World::litter_count for
+// hospital 0.
 void remove_litter(World &world, uint16_t tile, uint8_t owner);
 
 // A patient's urge to drop litter grows by `amount`, as using a drinks
@@ -65,10 +67,13 @@ void staff_check_around(const World &world, Thing &s);
 // `heating_level` (check_warmth), plants (check_feelgood), litter around
 // (check_around), spreading contagion (spread_epidemic), then impatience,
 // thirst, the toilet, heat, happiness and 1 health (change_health, which
-// may kill). Draws from world.seed as the game does.
-// Not ported, as what they need does not exist yet: emergencies, the
-// contagious and vaccinated flags (never set), status icons, a room's
-// radiators (its warmth is 0) and effect_illness on a spreading carrier.
+// may kill). Draws from world.seed as the game does. An emergency patient
+// (kPfEmergency) only gets the health held back in a room, or, once the
+// emergency's time is up (World::Emergency::state 2), loses all of it and
+// is an emergency patient no longer.
+// Not ported, as what they need does not exist yet: the contagious and
+// vaccinated flags (never set), status icons, a room's radiators (its warmth
+// is 0) and effect_illness on a spreading carrier.
 void modify_person(World &world, const AnimData &anims, const Balance &settings, int heating_level, uint16_t id,
                    uint32_t game_turn);
 

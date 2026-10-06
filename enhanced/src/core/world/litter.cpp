@@ -3,6 +3,7 @@
 #include "core/data/level.h"
 #include "core/world/complex.h"
 #include "core/world/complex_tables.h"
+#include "core/world/emergency.h"
 #include "core/world/patient_tables.h"
 #include "core/world/rooms.h"
 #include "core/world/trace.h"
@@ -278,6 +279,8 @@ void place_litter(World &world, uint16_t tile, uint8_t owner, uint8_t kind)
     if (m.owner_flags != 1 << owner)
         return;
     uint8_t cur = m.litter_shadow & 0xf;
+    if (cur == 0 && owner == 0)
+        world.litter_count++;
     if (cur == 0 || ((kind == kLitterVomit || kind == 4) && !(cur == 7 || cur == 8)))
         m.litter_shadow = uint8_t((m.litter_shadow & 0xf0) | kind);
 }
@@ -289,8 +292,11 @@ void remove_litter(World &world, uint16_t tile, uint8_t owner)
         return;
     MapCell &m = world.map[tile];
     uint8_t cur = m.litter_shadow & 0xf;
-    if (m.owner_flags == 1 << owner && !(cur == 0 || cur == 7 || cur == 8))
+    if (m.owner_flags == 1 << owner && !(cur == 0 || cur == 7 || cur == 8)) {
         m.litter_shadow &= 0xf0;
+        if (owner == 0)
+            world.litter_count--;
+    }
 }
 
 void add_litter_urge(Thing &patient, uint16_t amount)
@@ -304,7 +310,7 @@ void modify_person(World &world, const AnimData &anims, const Balance &settings,
     Thing &p = world.things[id];
     const Balance::Gbv &gbv = settings.gbv;
     auto now = uint16_t(game_turn);
-    if (!(now > p.modify_time || p.modify_time - now > 0x7fff))
+    if (modify_person_emergency(world, anims, id, game_turn) || !(now > p.modify_time || p.modify_time - now > 0x7fff))
         return;
     p.modify_time = uint16_t(game_turn + gbv.modify_freq);
     if (!indoors(world, p))

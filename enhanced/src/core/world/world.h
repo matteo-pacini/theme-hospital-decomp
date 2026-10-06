@@ -6,6 +6,7 @@
 #include "core/world/build.h"
 #include "core/world/object_tables.h"
 #include "core/world/objects.h"
+#include "core/world/research.h"
 
 #include <array>
 #include <cstdint>
@@ -30,7 +31,10 @@ constexpr uint8_t kThingPatient = 2;
 constexpr uint8_t kThingStaff = 4;
 constexpr uint8_t kThingObject = 6;
 constexpr uint8_t kThingReaper = 0xa;
+constexpr uint8_t kThingDebris = 0xe;
+constexpr uint8_t kThingHelicopter = 0x10;
 constexpr uint8_t kThingNumfx = 0x12;
+constexpr uint8_t kThingShadow = 0x18;
 
 // A map cell by column and row (the game's PathStep and wallhug_waypoint).
 struct Waypoint {
@@ -358,6 +362,25 @@ struct Thing {
     uint16_t next_sprite = 0;
     uint8_t next_flip = 0;
     uint8_t reaper_next_state = 0;
+
+    // Emergencies (emergency.cpp)
+    // Helicopters (kThingHelicopter): their height above their cell, falling
+    // by `speed` a turn as they land and rising as they leave, and their
+    // shadow (a kThingShadow), 0 for none. Shadows: the thing casting them.
+    int16_t altitude = 0;
+    uint16_t shadow = 0;
+    uint16_t caster = 0;
+
+    // Machine disasters (disaster.cpp)
+    // Machines: the frame of their smoke drawn over them once worn
+    // (modify_machine), 0 for none. Explosion debris (kThingDebris): its
+    // speed across (1/256 cell) and up (1/256 pixel, its altitude the
+    // same) a turn, and the room it was thrown in, 0 for none.
+    uint16_t overlay_frame = 0;
+    int16_t vel_x = 0;
+    int16_t vel_y = 0;
+    int16_t vel_z = 0;
+    uint16_t bang_room = 0;
 };
 
 // Staff at work (staff_complex.cpp)
@@ -437,6 +460,66 @@ struct Balance;
 struct HospitalMarket;
 struct Finance;
 
+// The panel's fax icons (src/panel.cpp), as the game keeps them with its
+// calls: per slot 0-8, left to right, the World::calls index shown there
+// (panel_popup_pos), 0 for none; the message bar's shutter
+// (othervar.popup_shutter_state, width and timer), which a new icon closes
+// before it slides in; and the calls given to the player since the
+// interface last played their sound (add_panel_popup's SFX_NEWFAX). The
+// panel's drawing advances them; nothing in the simulation reads them.
+struct PanelPopups {
+    std::array<uint16_t, 9> pos{};
+    uint8_t shutter_state = 0;
+    uint8_t shutter_width = 0;
+    uint8_t shutter_timer = 0;
+    uint8_t new_faxes = 0;
+};
+
+// The statistics pass of every 32nd turn (the game's adcounts, src/environ.cpp:
+// reset_all_count, person_count, staff_count, object_count, final_count),
+// hospital 0's figures for the advisor; sums kept in the game's widths.
+// patients starts at 1, so that it divides. idle_staff is per staff kind,
+// [4] the surgeons' (the game's byte past its idle_staff[4]).
+struct AdCounts {
+    uint16_t patients = 1;
+    uint16_t impatience_sum = 0;
+    int32_t waiting_sum = 0;
+    std::array<int32_t, 5> wait_sums{};
+    std::array<int32_t, 5> wait_counts{};
+    int16_t happiness_sum = 0;
+    int16_t max_happiness = 0;
+    int16_t min_happiness = 999;
+    int16_t refreshment_sum = 0;
+    int16_t min_refreshment = 999;
+    int16_t warmth_sum = 0;
+    int16_t max_warmth = 0;
+    int16_t min_warmth = 999;
+    int16_t bladder_sum = 0;
+    int16_t max_bladder = 0;
+    std::array<uint8_t, 0x26> illness_counts{};
+    uint16_t doctors_and_nurses = 0;
+    uint8_t surgeons = 0;
+    uint8_t consultants = 0;
+    uint8_t researchers = 0;
+    uint8_t psychiatrists = 0;
+    std::array<int16_t, 4> staff_tiredness_by_kind{};
+    std::array<int16_t, 4> staff_happiness_by_kind{};
+    uint16_t staff_happiness_sum = 0;
+    int16_t staff_tiredness_sum = 0;
+    int16_t max_staff_tiredness = 0;
+    int16_t staff_warmth_sum = 0;
+    std::array<uint8_t, 5> idle_staff{};
+    // Doctors who cracked up since the pass began (doctor_cracks_up).
+    uint8_t crackups = 0;
+    uint8_t machines = 0;
+    int32_t machine_wear_sum = 0;
+    int32_t max_machine_wear = 0;
+    uint8_t worst_machine = 0;
+    // The statistics pass found a patient, of any hospital, since the level
+    // began (advisor.has_patients).
+    bool has_patients = false;
+};
+
 struct World {
     std::array<MapCell, kMapCells> map{};
     std::vector<Thing> things = std::vector<Thing>(kThingCount);
@@ -491,6 +574,14 @@ struct World {
     // (advisor.event_flags 2).
     uint8_t patients_left_count = 0;
     int32_t bench_shortage = 0;
+    // What the simulation tells the advisor (advisor.event_flags'
+    // kAdvisorEventResign and kAdvisorEventCall of core/world/advisor.h),
+    // which Game moves into Advisor::event_flags after each turn and
+    // command.
+    uint32_t advisor_events = 0;
+    // A person of hospital 0 got stuck (gamevar.announce[ANN_STUCK]), until
+    // the advisor says so.
+    bool announce_stuck = false;
     uint16_t unpaid_treatment = 0;
     bool too_expensive = false;
     // Hospital 0's drinks sales this month (allhosps[0].drinks_income), which
@@ -523,13 +614,18 @@ struct World {
     std::array<uint16_t, 31> room_of_type{};
     // The player calls waiting for an answer (the game's playercall[], entry
     // 0 unused): their kind (0 for a free entry), subject, id and hospital,
-    // and the days left before they expire (0 never).
+    // and the days left before they expire (0 never). A call of hospital 0
+    // also has its fax icon's panel slot (0-8, 9 when all were taken) and
+    // the step of its slide onto the panel (kPopupSlide index, 0 once in
+    // place), which the panel's drawing advances (core/world/popups.h).
     struct PlayerCall {
         uint16_t type = 0;
         uint16_t subject = 0;
         uint16_t id = 0;
         uint8_t owner = 0;
         int16_t timer = 0;
+        uint8_t slot = 0;
+        uint8_t slide_step = 0;
     };
     std::array<PlayerCall, 50> calls{};
     // Hospital 0's requests for a handyman to see to a thing (the game's
@@ -548,6 +644,64 @@ struct World {
     ThingPager repair_pager;
     // The id the next call gets (popup_id[0], from 1).
     uint16_t next_call_id = 1;
+    // Per hospital and call kind (1-8), the call its panel icon stands for
+    // (the game's listhead[].first_call): a calls index, 0 for none.
+    std::array<std::array<uint16_t, 9>, 4> first_call{};
+    // The panel's fax icons (core/world/popups.h).
+    PanelPopups popups;
+    // The statistics pass (core/world/counts.h).
+    AdCounts counts;
+    // Hospital 0's litter on the map (allhosps[0].litter_count).
+    uint16_t litter_count = 0;
+
+    // Emergencies (emergency.cpp)
+    // Hospital 0's emergency taken on (allhosps[0]'s emergency fields).
+    struct Emergency {
+        // 0 none; 10 once accepted, falling by a day to 5, when the
+        // helicopter is sent (3 once it is); 2 once the timer runs out; 1
+        // once over, until its result call is answered or expires.
+        int8_t state = 0;
+        // Half days left to treat the patients, from 100 (the panel's watch).
+        int16_t timer = 0;
+        // The patients' illness, how many come, how many are still to leave
+        // the helicopter, how many were cured, the bonus per patient cured
+        // and the percentage to cure for it.
+        uint8_t illness = 0;
+        uint8_t patients = 0;
+        int8_t to_spawn = 0;
+        uint8_t cured = 0;
+        uint16_t bonus = 0;
+        uint8_t win_percent = 0;
+        // Emergency patients indoors at the last statistics pass
+        // (person_count, every 32 turns).
+        uint8_t present = 0;
+        // The helicopter (a thing), 0 for none, and 1 while it waits landed.
+        uint16_t heli = 0;
+        uint8_t heli_landed = 0;
+        // Where the patients come out of the helicopter (Level::emergency_tile[0]);
+        // it lands a row below.
+        uint16_t heli_pad_tile = 0;
+    };
+    Emergency emergency;
+
+    // Machine disasters (disaster.cpp)
+    // Hospital 0's machines blown up (allhosps[0].mishaps), and whether one
+    // has (award_counts.machine_exploded, for the year's awards). The
+    // machines' sound effects (SFX_*) and announcements (play_ambient's
+    // Ambients index) made since the interface last played and cleared
+    // them, up to 8 of each.
+    uint16_t mishaps = 0;
+    bool machine_exploded = false;
+    std::vector<uint8_t> machine_sounds;
+    std::vector<uint8_t> machine_announcements;
+
+    // Research (research.cpp)
+    // Hospital 0's research and object figures (core/world/research.h).
+    Research research;
+    // The advisor's announcements waiting, by kind (the game's
+    // gamevar.announce, ANN_* kinds): up to four values each, oldest first,
+    // 0 past the last (announce_this).
+    std::array<std::array<uint32_t, 4>, kAnnounceKinds> announce{};
     // What rooms in use read and change outside the world, set by
     // start_rooms_in_use (core/world/rooms.h): the player's policy, prices'
     // statistics and insurance claims, the accounts, the balance, the date
@@ -623,7 +777,9 @@ void remove_object_shape(World &world, int tile, int kind, int dir);
 // place_object (src/objects.cpp) without its checks of the hospital's
 // access, of people in the way and of picked-up objects, and without
 // charging: a new `object` for `owner`, and its second part where that
-// fits, linked into the map and World::first_of_kind (player 0's). Unless
+// fits (a picked-up one of its kind put back, else one bought at
+// object_stats' cost), linked into the map and World::first_of_kind
+// (player 0's). Unless
 // `force`, refuses with 0 when it does not fit (can_place_object). Returns
 // its thing id, 0 if refused or the things table is full. Draws two random
 // numbers per object made.

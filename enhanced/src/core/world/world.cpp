@@ -2,10 +2,14 @@
 
 #include "core/data/balance.h"
 #include "core/world/arrivals.h"
+#include "core/world/build.h"
+#include "core/world/finance.h"
+#include "core/world/game.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/trace.h"
 
+#include <algorithm>
 #include <bit>
 
 namespace th
@@ -220,6 +224,33 @@ void place_existing_object_insert_object(World &w, uint16_t id, int tile)
     first = id;
 }
 
+// place_existing_object's place_object of a two-part object's second part,
+// for `owner`, if it fits (can_place_object): one of its kind the player
+// lifted off the map (BuildState::objects) is put back, else a new one is
+// bought at object_stats' cost (object_cost; nothing for the objects a
+// level starts with, as research has not started then) once a thing is
+// free for it. Its checks of people in the way and of the rooms' access
+// are not ported. Returns its thing id, 0 if none.
+uint16_t place_existing_object_next_part(World &w, const AnimData &anims, ObjectAt part, int owner)
+{
+    if (!can_place_object(w, part.pos, part.kind, part.dir, owner))
+        return 0;
+    for (uint16_t &lifted : w.building.build.objects) {
+        if (lifted && w.things[lifted].subtype == part.kind && w.things[lifted].owner == owner) {
+            uint16_t id = lifted;
+            place_existing_object(w, anims, id, part.pos, part.dir);
+            lifted = 0;
+            return id;
+        }
+    }
+    if (std::none_of(w.things.begin() + 1, w.things.end(), [](const Thing &t) { return t.type == kThingFree; }))
+        return 0;
+    int32_t cost = object_cost(w, part.kind);
+    if (cost && owner == 0 && w.ledger && w.balance && w.date)
+        change_balance(*w.ledger, *w.balance, w.date->day, w.date->month, {kTxBuyObject, -cost});
+    return place_object(w, anims, part, owner, true);
+}
+
 } // namespace
 
 // place_existing_object (src/objects.cpp) without the hardware statistics,
@@ -254,8 +285,8 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
 
     if (control.next_part != -1) {
         const NextPartInfo &part = kNextParts[size_t(control.next_part)];
-        uint16_t other = place_object(
-            w, anims, {uint16_t(tile + part.offset[size_t(dir)]), part.kind, part.dir[size_t(dir)]}, obj.owner, false);
+        uint16_t other = place_existing_object_next_part(
+            w, anims, {uint16_t(tile + part.offset[size_t(dir)]), part.kind, part.dir[size_t(dir)]}, obj.owner);
         if (other) {
             w.things[other].pair = id;
             obj.pair = other;
@@ -277,8 +308,8 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
 // objects exist, so check_no_peeps_in_way always passes and a new thing is
 // always taken; check_room_access is taken to pass. Prices and strengths
 // come from allhosps' object_stats, still zero then (init_player fills them
-// after the map is built), so nothing is charged; later the strength is the
-// level's StartStrength (World::settings; research does not raise it yet).
+// after the map is built), so nothing is charged; later the strength is
+// hospital 0's object_stats one (object_strength, which research raises).
 // The player's placing does those checks and the charge first
 // (core/world/objects.cpp).
 uint16_t place_object(World &w, const AnimData &anims, ObjectAt object, int owner, bool force)
@@ -306,7 +337,7 @@ uint16_t place_object(World &w, const AnimData &anims, ObjectAt object, int owne
     obj.anim_speed = 2;
     obj.use_style = kObjects[size_t(kind)].use_style;
     obj.owner = uint8_t(owner);
-    obj.strength = w.settings ? w.settings->objects[size_t(kind)].start_strength : 0;
+    obj.strength = object_strength(w, kind);
     obj.times_used = 0;
     obj.layers[10] = 0;
     obj.layers[11] = uint8_t(old_newrand(w.seed) & 3);
@@ -399,6 +430,7 @@ void start_level(World &world, const Level &level, const AnimData &anims, uint32
     world.building = {};
     world.held_staff = 0;
     world.held_staff_tile = 0;
+    world.research = {};
     world.seed = seed;
     build_start_map(world.map, level, [&](int cell) {
         world.map[size_t(cell)].first = level.tiles[size_t(cell)].first;

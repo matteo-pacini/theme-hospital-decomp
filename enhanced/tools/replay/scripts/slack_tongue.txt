@@ -1,0 +1,81 @@
+# Level 3: the slack tongue slicer researched, built and curing: xray.txt's
+# reception, handyman, GP's office and research room, with all research
+# put into new treatment machines (EV_ALTER_RESEARCH: the others 0, cures
+# 100): the slicer is researched at turn 1200.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9771 11
+10 48 3 24
+11 5 9906 24
+12 48 2 21
+13 5 9904 21
+20 115 21 31
+21 115 21 31
+22 115 21 31
+23 115 21 31
+24 115 21 31
+25 115 21 31
+26 115 21 31
+27 115 21 31
+28 115 21 31
+29 115 21 31
+30 115 21 31
+31 115 21 31
+60 55 0 0
+61 53 7 7
+62 2 8882 0
+63 2 9398 0
+64 8 9398 0
+65 18 0 0
+66 26 8756 0
+67 3 0 0
+68 4 7 0
+69 7 9140 1
+70 7 8886 2
+71 7 9141 6
+72 1 0 0
+73 48 1 15
+74 5 9908 15
+101 55 0 0
+102 53 28 28
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 28 0
+110 7 9260 55
+111 7 9264 257
+112 7 8880 258
+113 1 0 0
+114 48 1 13
+115 5 9004 13
+116 48 1 16
+117 5 9005 16
+121 80 1 0
+122 80 2 0
+123 80 3 0
+124 80 4 0
+125 80 0 100
+# A slack tongue room (55,73)-(58,76), its door above it; the room waits
+# for the people on its floor to leave before it is furnished; the slicer
+# (cell 9786 facing 1); opened; its doctor (applicant 17) in the corridor;
+# the policy guessing cures from 10% (sending none home). The GP sends the
+# slack tongues there, cured.
+1300 55 0 0
+1301 53 20 20
+1302 2 9399 0
+1303 2 9786 0
+1304 8 9786 0
+1305 18 0 0
+1306 26 9272 0
+1307 3 0 0
+1308 4 20 0
+1360 7 9786 282
+1361 1 0 0
+1370 48 1 17
+1371 5 9910 17
+1380 113 1 0
+1381 113 2 10

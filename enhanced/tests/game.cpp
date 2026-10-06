@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -388,4 +389,151 @@ void test_advisor_advice(const char *dir)
     CHECK(a.advisor.bubble);
     check_advice_dismissed(a);
     CHECK(a.advisor.advice[80].times_given == 1);
+}
+
+namespace
+{
+
+// The advice the advisor gives first, from the start, once `set` has set
+// the hospital up: its situation (Advice::id), 0 for none; its message in
+// `text` and the announcement it plays in `ambient`.
+uint16_t first_advice(AdvisorFixture &a, const std::function<void(th::World &, th::AdCounts &)> &set,
+                      std::string *text = nullptr, uint8_t *ambient = nullptr)
+{
+    th::World &w = a.f.game->world;
+    th::start_advisor(a.advisor, false);
+    w.counts = {};
+    w.counts.has_patients = true;
+    w.patients_left_count = 0;
+    w.litter_count = 0;
+    w.bench_shortage = 0;
+    a.finance.area = 1000;
+    uint8_t played = 0;
+    a.in.ambient = &played;
+    set(w, w.counts);
+    a.frame();
+    a.in.ambient = nullptr;
+    if (text)
+        *text = a.advisor.text;
+    if (ambient)
+        *ambient = played;
+    return a.advisor.advice_id ? a.advisor.advice[size_t(a.advisor.advice_id)].id : 0;
+}
+
+// Patients in their right minds: `n` counted, happy, refreshed, warm and
+// with empty bladders.
+void calm_patients(th::AdCounts &c, int n)
+{
+    c.patients = uint16_t(n + 1);
+    c.happiness_sum = int16_t(80 * c.patients);
+    c.refreshment_sum = int16_t(80 * c.patients);
+    c.warmth_sum = int16_t(50 * c.patients);
+}
+
+// The advice about the patients' figures, each alone.
+void check_advice_patients(AdvisorFixture &a)
+{
+    const th::LanguageText &text = a.f.gd.text();
+    const int bowel_full = a.f.settings.gbv.bowel_full;
+    std::string said;
+    uint8_t ambient = 0;
+    // Nothing is said of calm patients.
+    CHECK(first_advice(a, [](th::World &, th::AdCounts &c) { calm_patients(c, 12); }) == 0);
+    // Thirsty patients: the first time, its situation's own words.
+    auto thirsty = [](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        c.refreshment_sum = int16_t(20 * c.patients);
+    };
+    CHECK(first_advice(a, thirsty, &said) == 0xf);
+    CHECK(said == text.at(th::TextSection::AdvisorSituations, 15) && a.advisor.given[18] == 1);
+    // Full bladders and no toilet.
+    auto bursting = [&](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        c.bladder_sum = int16_t((bowel_full + 10) * c.patients);
+    };
+    CHECK(first_advice(a, bursting, &said) == 0x13 && said == text.advisor(0x13));
+    // Cold patients and no radiator: the announcer says it is too cold.
+    auto cold = [](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        c.warmth_sum = int16_t(15 * c.patients);
+    };
+    CHECK(first_advice(a, cold, &said, &ambient) == 0x11);
+    CHECK(said == text.at(th::TextSection::AdvisorSituations, 12) && ambient == 0xd8);
+    // Patients gone home fed up, then forgotten.
+    auto fed_up = [](th::World &w, th::AdCounts &c) {
+        calm_patients(c, 12);
+        w.patients_left_count = 3;
+    };
+    CHECK(first_advice(a, fed_up, &said) == 0xe);
+    CHECK(said == text.at(th::TextSection::ExtraAdvice, 7) && a.f.game->world.patients_left_count == 0);
+    // Without patients counted, none of these is said.
+    auto uncounted = [](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        c.refreshment_sum = 0;
+        c.has_patients = false;
+    };
+    CHECK(first_advice(a, uncounted) == 0);
+}
+
+// The advice about the litter, benches, machines and staff, each alone.
+void check_advice_hospital(AdvisorFixture &a)
+{
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    uint8_t ambient = 0;
+    // Litter and no handyman: first the once-only advice, then the litter's.
+    auto littered = [](th::World &w, th::AdCounts &c) {
+        calm_patients(c, 2);
+        w.litter_count = 200;
+    };
+    CHECK(first_advice(a, littered, &said) == 0x45);
+    a.advisor.advice[51].times_given = 1;
+    a.advisor.advice_id = 0;
+    a.in.ambient = &ambient;
+    a.frame();
+    a.in.ambient = nullptr;
+    CHECK(a.advisor.advice[size_t(a.advisor.advice_id)].id == 0x46 && ambient == 0xd7);
+    CHECK(a.advisor.text == text.at(th::TextSection::ExtraAdvice, 0x11));
+    // Patients standing for want of benches.
+    auto standing = [](th::World &w, th::AdCounts &c) {
+        calm_patients(c, 8);
+        w.bench_shortage = 100;
+    };
+    CHECK(first_advice(a, standing, &said) == 0x4b && said == text.at(th::TextSection::ExtraAdvice, 0x1b));
+    // Worn machines and no handyman.
+    auto worn = [](th::World &, th::AdCounts &c) {
+        calm_patients(c, 2);
+        c.machines = 2;
+        c.machine_wear_sum = 600;
+    };
+    CHECK(first_advice(a, worn, &said) == 3 && said == text.at(th::TextSection::ExtraAdvice, 0x21));
+    // A person stuck, said and forgotten; the first call about a patient,
+    // once per game.
+    CHECK(first_advice(a, [](th::World &w, th::AdCounts &) { w.announce_stuck = true; }, &said) == 0xc);
+    CHECK(said == text.advisor(12) && !a.f.game->world.announce_stuck);
+    a.advisor.event_flags = th::kAdvisorEventCall;
+    a.advisor.advice_id = 0;
+    a.frame();
+    CHECK(a.advisor.advice[size_t(a.advisor.advice_id)].id == 0x87 && a.advisor.given[8] == 1);
+    // Prices far above what patients will pay.
+    CHECK(first_advice(a, [](th::World &w, th::AdCounts &) { w.market->price_level = 200; }, &said) == 0x76);
+    CHECK(said == text.advisor(0x76));
+    a.f.game->world.market->price_level = 100;
+    // A doctor cracked up, said once and forgotten.
+    CHECK(first_advice(a, [](th::World &, th::AdCounts &c) { c.crackups = 1; }, &said) == 0x5e);
+    CHECK(said == text.advisor(0x5e) && a.f.game->world.counts.crackups == 0);
+}
+
+} // namespace
+
+// The advice of the statistics pass (World::counts) and of what the
+// hospital holds, each as the game gives it in its situation, alone.
+void test_advisor_counts(const char *dir)
+{
+    AdvisorFixture a;
+    CHECK(a.start(dir, false));
+    if (!a.f.level)
+        return;
+    check_advice_patients(a);
+    check_advice_hospital(a);
 }

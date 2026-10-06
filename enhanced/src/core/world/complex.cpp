@@ -4,6 +4,7 @@
 #include "core/data/gamedata.h"
 #include "core/ui/charts.h"
 #include "core/world/complex_tables.h"
+#include "core/world/counts.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
@@ -289,8 +290,8 @@ void start_going(const Run &r, uint16_t id);
 
 // person_nav_failure (0x1752c): heading from the corridor for a room built
 // in the last 500 turns, sent on again (start_person_going); else back to
-// queueing if it was to queue, or PS_STUCK. The game also announces a stuck
-// patient of the player's.
+// queueing if it was to queue, or PS_STUCK, announced to the advisor
+// (World::announce_stuck) for a patient of hospital 0's.
 void person_nav_failure(const Run &r, uint16_t id)
 {
     World &world = r.world;
@@ -311,6 +312,8 @@ void person_nav_failure(const Run &r, uint16_t id)
     p.saved_dest_y = p.dest_y;
     p.state = kPsStuck;
     p.countdown = 0;
+    if (p.owner == 0)
+        world.announce_stuck = true;
 }
 
 // complex_success (0x423c8) for a patient: the effect of a step of action
@@ -715,8 +718,11 @@ uint8_t process(const Run &r, uint16_t id)
     process_advance(world, p, entry);
     process_finish(r, id, entry);
     // Action 50: the game runs process_things for the person alone.
-    if (entry.action == 50)
+    if (entry.action == 50) {
+        process_things_alone_begin(world, id, r.game_turn);
         turn(r, id);
+        final_count(world, r.game_turn);
+    }
     return 1;
 }
 
@@ -1286,8 +1292,10 @@ void go_for_treatment(const Run &r, uint16_t id)
         treatment = 0;
     uint8_t category = kExpertiseCategory[treatment];
     if (p.person_flags & kPfEmergency) {
-        if (!first_room(world, p.owner, category))
+        if (!first_room(world, p.owner, category)) {
+            trace_event("emergency_leaves %u", unsigned(id));
             treatment = 0;
+        }
     } else if (p.owner != 0 || world.cure_available[treatment] == 0) {
         if (p.owner == 0)
             reputation_affected(world, uint8_t(treatment), kRepGoForTreatment);
@@ -1496,7 +1504,9 @@ void person_fills(const Run &r, uint16_t id)
     // find_person_in_room (0x1b150).
     for (uint16_t o = world.rooms[p.room].first_person; o; o = world.things[o].room_next) {
         if (world.things[o].type == kThingStaff && world.things[o].subtype == kStaffDoctor) {
+            process_things_alone_begin(world, o, r.game_turn);
             staff_turn(world, r.anims, r.complexes, *world.staff_complexes, o, r.game_turn);
+            final_count(world, r.game_turn);
             break;
         }
     }

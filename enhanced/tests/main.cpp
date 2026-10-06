@@ -64,6 +64,8 @@ void test_town_map(const char *dir);
 void test_jukebox(const char *dir);
 void test_charts(const char *dir);
 void test_info_windows(const char *dir);
+void test_panel_popups(const char *dir);
+void test_fax(const char *dir);
 
 // staff.cpp
 void test_applicants_level1(const char *dir);
@@ -82,6 +84,7 @@ void test_finance_level1(const char *dir);
 void test_balance_roll(const char *dir);
 void test_advisor_tutorial(const char *dir);
 void test_advisor_advice(const char *dir);
+void test_advisor_counts(const char *dir);
 
 // rooms.cpp
 void test_furnish_corridor(const char *dir);
@@ -94,6 +97,13 @@ void test_gp_office_level1(const char *dir);
 void test_blueprint_cleared_level1(const char *dir);
 void test_general_diag_level1(const char *dir);
 void test_cardiogram_level6(const char *dir);
+void test_emergency_accept_level6(const char *dir);
+void test_emergency_refused_level6(const char *dir);
+void test_emergency_untreatable_level6(const char *dir);
+void test_emergency_fail_level6(const char *dir);
+void test_decisions_diagnosis_level1(const char *dir);
+void test_decisions_treatment_level1(const char *dir);
+void test_new_illness_call(const char *dir);
 void test_ward_level1(const char *dir);
 void test_psychiatry_level1(const char *dir);
 void test_treatment_level1(const char *dir);
@@ -102,6 +112,15 @@ void test_nearest_room_info();
 void test_staff_room_level1(const char *dir);
 void test_toilets_level1(const char *dir);
 void test_toilets_none_level1(const char *dir);
+void test_machine_explodes_level6(const char *dir);
+void test_machine_saved_level6(const char *dir);
+void test_machine_replace_level6(const char *dir);
+
+// research.cpp
+void test_research_choices();
+void test_research_drugs();
+void test_research_contribution();
+void test_research_level3(const char *dir);
 
 // replay.cpp
 void test_snapshot_round_trip(const char *dir);
@@ -141,6 +160,9 @@ const Test kTests[] = {
     TEST(test_xmi_parse),
     TEST(test_adjust_handyman_values),
     TEST(test_nearest_room_info),
+    TEST(test_research_choices),
+    TEST(test_research_drugs),
+    TEST(test_research_contribution),
 };
 
 const DataTest kDataTests[] = {
@@ -173,6 +195,7 @@ const DataTest kDataTests[] = {
     TEST(test_balance_roll),
     TEST(test_advisor_tutorial),
     TEST(test_advisor_advice),
+    TEST(test_advisor_counts),
     TEST(test_staff_at_work_level1),
     TEST(test_litter_drawn),
     TEST(test_litter_dropping_level1),
@@ -192,11 +215,21 @@ const DataTest kDataTests[] = {
     TEST(test_snapshot_round_trip),
     TEST(test_snapshot_refused),
     TEST(test_command_log_replay),
+    TEST(test_research_level3),
     TEST(test_pick_up_staff),
     TEST(test_sack_doctor),
     TEST(test_staff_notice_runs_out),
     TEST(test_general_diag_level1),
     TEST(test_cardiogram_level6),
+    TEST(test_emergency_accept_level6),
+    TEST(test_emergency_refused_level6),
+    TEST(test_emergency_untreatable_level6),
+    TEST(test_emergency_fail_level6),
+    TEST(test_decisions_diagnosis_level1),
+    TEST(test_decisions_treatment_level1),
+    TEST(test_new_illness_call),
+    TEST(test_panel_popups),
+    TEST(test_fax),
     TEST(test_ward_level1),
     TEST(test_psychiatry_level1),
     TEST(test_treatment_level1),
@@ -204,6 +237,9 @@ const DataTest kDataTests[] = {
     TEST(test_staff_room_level1),
     TEST(test_toilets_level1),
     TEST(test_toilets_none_level1),
+    TEST(test_machine_explodes_level6),
+    TEST(test_machine_saved_level6),
+    TEST(test_machine_replace_level6),
 };
 
 } // namespace

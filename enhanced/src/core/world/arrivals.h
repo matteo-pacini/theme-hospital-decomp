@@ -18,7 +18,7 @@ namespace th
 // which is not ported). Their patients are still made (drawing what the
 // game draws for them) and then dropped, but process_computer_peep's own
 // draws are missing, so the random generator leaves the game's once a rival
-// gets a patient. Emergencies are not made.
+// gets a patient. Emergency patients come by helicopter (create_a_peep).
 
 // What who_owns_peep weighs for one hospital, per illness (the game's
 // allhosps[].rooms[]), and whether it takes patients. Hospital 0's is the
@@ -46,6 +46,10 @@ struct HospitalMarket {
     // allhosps.visitors and month_visitors: patients won, in all and this month.
     uint32_t visitors = 0;
     uint32_t month_visitors = 0;
+    // allhosps.price_level: its prices against the most patients will pay
+    // for the treatments it can give, in percent, 0-300
+    // (calc_pricing_factor).
+    int16_t price_level = 100;
 };
 
 // The arrivals' state: the game's gamevar and othervar fields that
@@ -78,6 +82,12 @@ void start_arrivals(ArrivalState &state, const Balance &settings);
 // by the reputation for it over 500 (the hospital's as a whole for general
 // practice and from treatment 0x24 on), never below the start price.
 int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &settings, int treatment);
+
+// calc_pricing_factor (0x58f7c) for hospital 0 (`hosp`), which can give
+// the treatments `cure_available` says (1 if so): its price_level, 100 if
+// it can give none. The game runs it as a level starts and at each month's
+// end (a `price_level` trace event).
+void calc_pricing_factor(HospitalMarket &hosp, const Balance &settings, const std::array<uint8_t, 47> &cure_available);
 
 // update_single_cure_cost (0x143e0): moves hospital `hosp`'s price for
 // `treatment` (0-46) to its share (price_scale) of the most patients will
@@ -140,8 +150,12 @@ struct PeepSetup {
 uint16_t make_a_peep(World &world, const ArrivalState &state, const PeepSetup &setup, uint16_t pos, uint8_t illness,
                      uint8_t owner);
 
-// create_a_peep (0x6ffec) without emergencies: in the first 25 turns of
-// every peep_interval turns (by `game_turn`, the game's actual_game_turn),
+// create_a_peep (0x6ffec): first, while hospital 0's emergency helicopter
+// waits landed with patients left (World::Emergency), one emergency patient
+// on its pad (kPfEmergency, knowing its illness, quoted its treatment and
+// in PS_GO_FOR_TREATMENT, or going home if it will not pay), the helicopter
+// leaving after the last. Then, in the first 25 turns of every
+// peep_interval turns (by `game_turn`, the game's actual_game_turn),
 // makes a patient with a random illness for the hospital that wins them.
 // Hospital 0's stands at one of its four entrances (World::entrances[0],
 // picked at random) and is returned, to be set going; a rival's is made and

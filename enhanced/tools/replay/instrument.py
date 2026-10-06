@@ -325,6 +325,18 @@ FINANCE_CALLS = [
 ID = "(unsigned)({} - thing)"
 EVENTS = {
     "finance.cpp": [
+        (("before", "if (wages[i] != 0)"), "month_end", 'if (i == 0) trace_event("area %u", (unsigned)allhosps[0].area);'),
+        (("before", "total += allhosps[i].month_visitors;"), "month_end",
+         'if (i == 0) trace_event("price_level %d", (int)allhosps[0].price_level);'),
+        (("before", "area_value = hosp->area * gbv.land_cost_per_tile;"), "calculate_value",
+         'if (owner == 0) trace_event("area %u", (unsigned)hosp->area);'),
+        (("before", "if (hosp->emergency_timer_s == 0 && hosp->emergency_state_s > 0)"), "twice_daily_admin",
+         'trace_event("emergency_timer %d state=%d", (int)hosp->emergency_timer_s, (int)hosp->emergency_state_s);'),
+        (("before", "allhosps[i].emergency_state = 1;"), "daily_admin",
+         'trace_event("emergency_over cured=%u patients=%u bonus=%ld", (unsigned)allhosps[i].emergency_cured, '
+         '(unsigned)allhosps[i].emergency_patients, (long)(allhosps[i].emergency_cured * 100 / '
+         'allhosps[i].emergency_patients >= allhosps[i].emergency_win_pct ? '
+         'allhosps[i].emergency_bonus * allhosps[i].emergency_cured : 0));'),
         ("entry", "change_balance",
          'if (owner == 0) trace_event("balance %u amount=%ld arg=%u", (unsigned)type, (long)amount, '
          '(type == TX_INSURANCE || type == TX_TREAT || type == TX_FINAL_TREAT || type == TX_CURE_TREATMENT || '
@@ -347,6 +359,8 @@ EVENTS = {
          '(unsigned)person->dest_room);'),
     ],
     "treat.cpp": [
+        (("before", "treatment = 0;\n        }\n    } else if"), "person_go_for_treatment",
+         f'trace_event("emergency_leaves %u", {ID.format("patient")});'),
         ("entry", "record_person_as_patient", f'trace_event("record %u", {ID.format("patient")});'),
         ("entry", "diagnose_patient",
          f'trace_event("diagnose %u staff=%u", {ID.format("patient")}, {ID.format("staff")});'),
@@ -365,8 +379,17 @@ EVENTS = {
          f'trace_event("drugs %u staff=%u", {ID.format("patient")}, {ID.format("staff")});'),
     ],
     "examine.cpp": [
+        (("before", "allhosps[patient->owner].emergency_cured++;"), "effect_illness",
+         f'trace_event("emergency_cure %u", {ID.format("patient")});'),
         ("entry", "effect_illness",
          f'if (cured == 1) trace_event("cure %u illness=%u", {ID.format("patient")}, (unsigned)patient->illness);'),
+    ],
+    # Not an event: a comment line (compare.py ignores it), as th_replay
+    # --advisor writes it.
+    "advisor.cpp": [
+        ("exit", "find_advice",
+         'if (r == 1) { static char note[24]; sprintf(note, "advice %u", (unsigned)advice[id].id); '
+         'trace_note(note); }'),
     ],
     "reaper.cpp": [
         ("entry", "summon_the_reaper", f'trace_event("summon_reaper %u", {ID.format("victim")});'),
@@ -377,6 +400,8 @@ EVENTS = {
          '(unsigned)(doctor->room - room_info));'),
     ],
     "peepmake.cpp": [
+        (("before", "patient->known_illness = patient->illness;"), "create_a_peep",
+         f'trace_event("emergency_peep %u", {ID.format("patient")});'),
         ("exit", "make_a_peep",
          'if (r) trace_event("peep %u illness=%u owner=%u pos=%u", (unsigned)(r - thing), (unsigned)illness, '
          '(unsigned)owner, (unsigned)pos);'),
@@ -386,6 +411,9 @@ EVENTS = {
          f'trace_event("remove_thing %u type=%u", {ID.format("target")}, (unsigned)target->type);'),
     ],
     "peeps.cpp": [
+        (("before", "owner2 = call->owner;"), "expire_playercalls",
+         'trace_event("expire_call %u type=%u subject=%u", (unsigned)call->id, (unsigned)call->type, '
+         '(unsigned)call->subject);'),
         ("entry", "start_person_going", f'trace_event("start_going %u", {ID.format("person")});'),
         ("entry", "person_go_home",
          f'trace_event("go_home %u state=%u", {ID.format("person")}, (unsigned)person->state);'),
@@ -411,12 +439,37 @@ EVENTS = {
          'which_room(tile) ? (unsigned)(which_room(tile) - room_info) : 0u);'),
     ],
     "environ.cpp": [
+        (("before", "change_health(person, -1000);"), "modify_person",
+         f'trace_event("emergency_dies %u", {ID.format("person")});'),
         (("before", "reset_icon_value(peep, ICON_TOILET);"), "do_reaction",
          f'trace_event("wets %u bladder=%d", {ID.format("peep")}, (int)peep->bladder);'),
+        ("entry", "final_count",
+         'if (othervar.every_32_turns) trace_event("counts patients=%u impatience=%u waiting=%ld happy=%d '
+         'refresh=%d warm=%d bladder=%d staff=%u tired=%d,%d,%d,%d,%d happy=%u warm=%d idle=%u,%u,%u,%u,%u '
+         'machines=%u wear=%ld,%ld worst=%u crackups=%u visitors=%ld", (unsigned)adcounts.patients, '
+         '(unsigned)adcounts.impatience_sum, (long)adcounts.waiting_sum, (int)adcounts.happiness_sum, '
+         '(int)adcounts.refreshment_sum, (int)adcounts.warmth_sum, (int)adcounts.bladder_sum, '
+         '(unsigned)adcounts.doctors_and_nurses, (int)adcounts.staff_tiredness_sum, '
+         '(int)adcounts.staff_tiredness_by_kind[0], (int)adcounts.staff_tiredness_by_kind[1], '
+         '(int)adcounts.staff_tiredness_by_kind[2], (int)adcounts.staff_tiredness_by_kind[3], '
+         '(unsigned)adcounts.staff_happiness_sum, (int)adcounts.staff_warmth_sum, (unsigned)adcounts.idle_staff[0], '
+         '(unsigned)adcounts.idle_staff[1], (unsigned)adcounts.idle_staff[2], (unsigned)adcounts.idle_staff[3], '
+         '(unsigned)((u8 *)&adcounts)[0x9d], (unsigned)adcounts.machines, (long)adcounts.machine_wear_sum, '
+         '(long)adcounts.max_machine_wear, (unsigned)adcounts.worst_machine, (unsigned)adcounts.crackups, '
+         '(long)mycontrol->history[4][0][11]);'),
     ],
     "io.cpp": [
+        (("before", "if (statvar.num_players > 1) {\n                    restore_popup(2);"), "process_turn",
+         'trace_event("emergency_refuse %u", (unsigned)popup_store[player][2].id);'),
+        (("before", "allhosps[i].emergency_state = 10;"), "process_turn", 'trace_event("emergency_start");'),
+        (("before", "u8 quiet = 0;"), "process_turn",
+         'trace_event("choice %u arg=%u awaiting=%u", (unsigned)player_events[i].value, '
+         '(unsigned)player_events[i].arg, (unsigned)(thing[player_events[i].arg].type == THING_PATIENT && '
+         '(thing[player_events[i].arg].flags0 & PF_AWAITING_DECISION) ? 1 : 0));'),
         (("before", "allhosps[i].rest_threshold = player_events[i].arg;"), "process_turn",
          'trace_event("policy_rest %u", (unsigned)player_events[i].arg);'),
+        (("before", "thingpage_request(&allhosps[i].repair_pager, player_events[i].value, 0xff);"), "process_turn",
+         'trace_event("repair_request %u", (unsigned)player_events[i].value);'),
     ],
     "req4.cpp": [
         (("before", "handyman->litter_count = 0;"), "adjust_handyman_values",
@@ -456,6 +509,18 @@ EVENTS = {
          '(unsigned)tile, (unsigned)dir, (unsigned)owner);'),
         ("entry", "remove_object",
          f'trace_event("remove_object %u owner=%u", {ID.format("obj")}, (unsigned)owner);'),
+        ("entry", "modify_machine",
+         f'trace_event("modify_machine %u used=%ld strength=%ld smoke=%u,%u,%u", {ID.format("machine")}, '
+         '(long)machine->times_used, (long)machine->strength, (unsigned)machine->smoke[0], '
+         '(unsigned)machine->smoke[1], (unsigned)machine->smoke[2]);'),
+        (("before", "play_sound(SNDSRC_GENERAL, SFX_MACHWARN, -1, -1);"), "modify_machine",
+         f'trace_event("machine_warning %u", {ID.format("machine")});'),
+        (("before", "if (machine->times_used >= machine->strength) {"), "modify_machine",
+         f'trace_event("machine_smoke %u smoke=%u,%u,%u", {ID.format("machine")}, (unsigned)machine->smoke[0], '
+         '(unsigned)machine->smoke[1], (unsigned)machine->smoke[2]);'),
+        ("entry", "replace_machine",
+         f'trace_event("replace_machine %u used=%ld strength=%ld", {ID.format("machine")}, '
+         '(long)machine->times_used, (long)machine->strength);'),
     ],
     "staff.cpp": [
         ("entry", "place_staff_on_map", 'trace_event("place_staff %u tile=%u", (unsigned)id, (unsigned)tile);'),
@@ -484,9 +549,24 @@ EVENTS = {
         ("entry", "place_litter",
          'trace_event("litter %u type=%u owner=%u", (unsigned)tile, (unsigned)type, (unsigned)(u8)owner);'),
         ("entry", "remove_litter", 'trace_event("unlitter %u owner=%u", (unsigned)tile, (unsigned)owner);'),
+        (("before", "seq = objects[thing[handyman->object].subtype].repair_aniseq;"), "handyman_works",
+         f'trace_event("repair %u machine=%u", {ID.format("handyman")}, (unsigned)handyman->object);'),
+        (("before", "handyman->room->state = 0;"), "handyman_works",
+         f'trace_event("repaired %u machine=%u room=%u", {ID.format("handyman")}, (unsigned)handyman->object, '
+         '(unsigned)(handyman->room - room_info));'),
     ],
     "epidemic.cpp": [
         ("entry", "spread_epidemic", f'trace_event("epidemic %u", {ID.format("carrier")});'),
+    ],
+    "disaster.cpp": [
+        ("entry", "machine_disaster",
+         f'trace_event("machine_disaster %u kind=%u room=%u", {ID.format("machine")}, (unsigned)machine->subtype, '
+         '(unsigned)machine->room_id);'),
+        (("before", "restart_entire_queue(room);"), "machine_disaster",
+         'trace_event("room_destroyed %u mishaps=%u", (unsigned)(room - room_info), (unsigned)allhosps[0].mishaps);'),
+        ("entry", "create_explosion", 'trace_event("explosion tile=%u anim=%u", (unsigned)tile, (unsigned)anim);'),
+        (("before", "cx = tile % 128;"), "blast_effect",
+         'trace_event("blast tile=%u radius=%d", (unsigned)tile, (int)radius);'),
     ],
     "blueprnt.cpp": [
         ("entry", "commit_blueprint", 'if (owner == 0) trace_event("commit_blueprint");'),
@@ -496,14 +576,59 @@ EVENTS = {
         ("exit", "allocate_reception_roominfo",
          'if (r) trace_event("reception %u", (unsigned)(r - room_info));'),
     ],
+    "emerg.cpp": [
+        ("entry", "setup_emergency_stats",
+         'trace_event("emergency_offer %u illness=%u count=%u bonus=%u win=%u", (unsigned)call, '
+         '(unsigned)gamevar.emergency_illness, (unsigned)gamevar.emergency_patients, '
+         '(unsigned)gamevar.emergency_bonus, (unsigned)gamevar.emergency_win_percent);'),
+        (("before", "gamevar.emergency_calls[i].used = 0;"), "give_emergency_stats",
+         'trace_event("emergency_accept %u illness=%u count=%u bonus=%u win=%u", (unsigned)call, '
+         '(unsigned)hosp->emergency_illness, (unsigned)hosp->emergency_patients, (unsigned)hosp->emergency_bonus, '
+         '(unsigned)hosp->emergency_win_pct);'),
+        (("before", "if (hosp->emergency_heli) {"), "try_to_generate_emergency",
+         'trace_event("heli %u", (unsigned)hosp->emergency_heli);'),
+        (("before", "allhosps[heli->owner].heli_landed = 1;"), "helicopter_lands",
+         f'trace_event("heli_landed %u", {ID.format("heli")});'),
+        (("before", "hosp->heli_landed = 0;"), "helicopter_leaves",
+         f'trace_event("heli_gone %u", {ID.format("heli")});'),
+    ],
     "build.cpp": [
         ("entry", "open_room", 'if (owner == 0) trace_event("open_room");'),
         ("entry", "delete_room", 'trace_event("delete_room %u", (unsigned)(room - room_info));'),
+    ],
+    "research.cpp": [
+        (("before", "allhosps[researcher->owner].research_points += amount;"), "research_contribution",
+         f'if (researcher->owner == 0) trace_event("research_points %u amount=%d points=%ld", '
+         f'{ID.format("researcher")}, (int)amount, (long)allhosps[0].research_points);'),
+        ("entry", "do_illness_research",
+         'if (owner == 0) trace_event("research %u illness=%u amount=%lu", (unsigned)category, (unsigned)illness, '
+         '(unsigned long)amount);'),
+        ("entry", "item_researched",
+         'if (owner == 0) trace_event("researched %u illness=%u", (unsigned)item, (unsigned)illness);'),
+        ("entry", "drug_researched", 'if (owner == 0) trace_event("drug_researched %u", (unsigned)illness);'),
+        (("before", "if (owner == player && done)"), "drug_improved",
+         'if (owner == 0) trace_event("drug_improved %u effect=%u cost=%u", (unsigned)illness, '
+         '(unsigned)hosp->rooms[illness].drug.effectiveness, (unsigned)hosp->rooms[illness].drug.cost);'),
+        (("before", "if (owner == player)\n        announce_this(ANN_OBJECT_IMPROVED"), "item_upgraded",
+         'if (owner == 0) trace_event("upgraded %u level=%u strength=%u cost=%ld", (unsigned)item, '
+         '(unsigned)hosp->equipment[item].upgrade_level[0], (unsigned)hosp->object_stats[item].strength, '
+         '(long)hosp->object_stats[item].cost);'),
+        (("before", "allhosps[owner].equipment[item].available = 1;"), "auto_available",
+         'if (owner == 0) trace_event("available %u", (unsigned)item);'),
+        ("entry", "research_category_exhausted",
+         'if (owner == 0) trace_event("category_exhausted %u", (unsigned)category);'),
+        (("before", "staff_exit_room_check(doctor);"), "send_doctor_to_research",
+         f'trace_event("send_to_research %u room=%u", {ID.format("doctor")}, (unsigned)id);'),
+    ],
+    "rschscrn.cpp": [
+        ("entry", "alter_research",
+         'if (owner == 0) trace_event("alter_research %u value=%u", (unsigned)cat, (unsigned)value);'),
     ],
 }
 
 DECLS = '''// Replay check instrumentation (instrument.py).
 extern "C" void trace_event(const char *format, ...);
+extern "C" void trace_note(const char *label);
 extern "C" unsigned long trace_newrand(const char *caller);
 extern "C" unsigned long trace_normal_rand(const char *caller, unsigned long low, unsigned long high);
 '''

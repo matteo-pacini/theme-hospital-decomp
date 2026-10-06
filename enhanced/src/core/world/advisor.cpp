@@ -2,6 +2,8 @@
 
 #include "core/data/gamedata.h"
 #include "core/render/panel.h"
+#include "core/world/arrivals.h"
+#include "core/world/finance.h"
 #include "core/world/objects.h"
 #include "core/world/staff.h"
 #include "core/world/world.h"
@@ -75,6 +77,8 @@ constexpr int kAdvisorLeft = 531, kAdvisorTop = 336, kAdvisorRight = 619, kAdvis
 // Win and lose criteria (WinLose.criteria).
 constexpr uint16_t kCriterionReputation = 1;
 constexpr uint16_t kCriterionBalance = 2;
+constexpr uint16_t kCriterionCures = 4;
+constexpr uint16_t kCriterionDeaths = 5;
 constexpr uint16_t kCriterionValue = 6;
 
 // The game's OBJ_RECEPTION_DESK.
@@ -295,6 +299,569 @@ bool find_advice_cures(Advisor &a, const AdvisorInputs &in, uint32_t &safeseed)
     return true;
 }
 
+// What find_advice's situations of the statistics pass read: hospital 0's
+// figures (World::counts) and staff, and where the advice goes.
+struct Situation {
+    Advisor &a;
+    const AdvisorInputs &in;
+    World &world;
+    const AdCounts &c;
+    StaffCounts staff;
+    uint32_t &safeseed;
+
+    bool has_patients() const { return c.has_patients; }
+    int handymen() const { return staff.by_kind[kStaffHandyman]; }
+    std::string_view text(int i) const { return advisor_text(in, i); }
+    std::string_view extra(int i) const { return extra_advice(in, i); }
+    std::string_view situation(int i) const { return in.text->at(TextSection::AdvisorSituations, i); }
+    // play_ambient of an announcement, for the caller to play.
+    void ambient(uint8_t index) const
+    {
+        if (in.ambient)
+            *in.ambient = index;
+    }
+    // A message given once per game (myplayer.advisor_flags[flag]) or else
+    // `otherwise`.
+    void once(int flag, int situation_text, std::string_view otherwise)
+    {
+        if (!a.given[size_t(flag)]) {
+            say(a, situation(situation_text));
+            a.given[size_t(flag)] = 1;
+        } else {
+            say(a, otherwise);
+        }
+    }
+};
+
+// The game's OBJ_* kinds and ROOM_* types the advice tests.
+constexpr uint8_t kObjectBench = 4;
+constexpr uint8_t kObjectDrinksMachine = 7;
+constexpr uint8_t kObjectPlant = 45;
+constexpr uint8_t kObjectToilet = 51;
+constexpr uint8_t kRoomGpOffice = 7;
+constexpr uint8_t kRoomTrainingRoom = 22;
+constexpr uint8_t kRoomStaffRoom = 25;
+constexpr uint8_t kRoomResearchRoom = 28;
+constexpr uint8_t kRoomFirstBuilt = 7;
+
+// play_ambient's announcements of the advisor (kAnnounceLitter,
+// kAnnounceTooCold and kAnnounceTooHot of core/audio/sounds.h).
+constexpr uint8_t kAmbientLitter = 0xd7;
+constexpr uint8_t kAmbientTooCold = 0xd8;
+constexpr uint8_t kAmbientTooHot = 0xd9;
+
+// Hospital 0's objects of `kind` (listhead.objects' lists, which the game
+// counts as NRAdcounts.plants and benches as they are placed; it never
+// uncounts a bench sold).
+int count_objects(const World &world, uint8_t kind)
+{
+    int n = 0;
+    for (const Thing &t : world.things)
+        n += t.type == kThingObject && t.subtype == kind && t.owner == 0;
+    return n;
+}
+
+// NRAdcounts.open_rooms: the rooms the player has opened (open_room) and
+// not deleted.
+int count_open_rooms(const World &world)
+{
+    int n = 0;
+    for (const RoomInfo &r : world.rooms)
+        n += r.type >= kRoomFirstBuilt && r.owner == 0 && r.paid_for;
+    return n;
+}
+
+// advisor_old_hardware (0x60f90): the machines' average wear.
+bool advisor_old_hardware(Situation &s)
+{
+    int32_t wear = s.c.machine_wear_sum, m = s.c.machines;
+    if (wear * 20 * m > m * 0x1300) {
+        say(s.a, s.handymen() > 0 ? s.text(3) : s.extra(0x21));
+        return true;
+    }
+    if (wear * 5 * m > m * 0x400) {
+        say(s.a, s.extra(0x1f));
+        return true;
+    }
+    if (wear * 5 * m > m * 0x300) {
+        say(s.a, s.handymen() > 0 ? s.extra(0x20) : s.extra(0x22));
+        return true;
+    }
+    if (wear * 2 * m <= m * 0x100)
+        return false;
+    if (!s.a.given[12]) {
+        say(s.a, s.situation(10));
+        s.a.given[12] = 1;
+        return true;
+    }
+    if (s.handymen() == 0)
+        return false;
+    say(s.a, s.extra(0x23));
+    return true;
+}
+
+// find_advice's too few doctors (7, `kind` kStaffDoctor) or nurses (0x64):
+// patients waiting long with none of them idle.
+bool advise_short_staffed(Situation &s, uint8_t kind, int message)
+{
+    const AdCounts &c = s.c;
+    if (c.patients <= 3 || !s.has_patients())
+        return false;
+    // wait_sums[0] and [1] are the nurses' and doctors' figures.
+    size_t k = kind == kStaffDoctor ? 1 : 0;
+    if (c.wait_counts[k] <= 0 || c.idle_staff[kind] != 0)
+        return false;
+    if ((c.wait_sums[k] << 8) / c.wait_counts[k] <= (s.in.settings->gbv.leave_max << 8) / 2)
+        return false;
+    say(s.a, s.text(message));
+    return true;
+}
+
+// find_advice's too many doctors (8: at least 6, a third idle) or nurses
+// (0x65: at least 4, a quarter idle).
+bool advise_overstaffed(Situation &s, uint8_t kind, int least, int part, int message)
+{
+    int n = s.staff.by_kind[kind];
+    if (n < least || s.c.idle_staff[kind] <= n / part || !s.has_patients())
+        return false;
+    say(s.a, s.text(message));
+    return true;
+}
+
+// find_advice's no visitors (9) and no cures (0xa) after the fourth month.
+bool advise_no_visitors(Situation &s, int id, bool cures)
+{
+    const Finance &f = *s.in.finance;
+    int32_t visitors = f.history[kHistoryVisitors][11];
+    if (s.in.month <= 4 || !s.in.open || s.a.advice[size_t(id)].times_given >= 1)
+        return false;
+    if (!cures && visitors != 0)
+        return false;
+    if (cures && (f.history[kHistoryCures][11] != 0 || visitors <= 0 || s.in.visitors <= s.world.patients_left_count))
+        return false;
+    say(s.a, s.text(cures ? 10 : 9));
+    return true;
+}
+
+// find_advice's long waits (0xb).
+bool advise_waiting(Situation &s)
+{
+    const AdCounts &c = s.c;
+    int leave_max = s.in.settings->gbv.leave_max;
+    if (c.patients <= 5 || !s.has_patients() || (c.waiting_sum << 8) / c.patients <= (leave_max << 9) / 4)
+        return false;
+    int32_t value = ((c.impatience_sum - c.waiting_sum) << 8) / leave_max;
+    say(s.a, value * 10 < 0x100 ? s.text(11) : s.extra(0x32));
+    return true;
+}
+
+// advisor_peeps_unhappy (0x612b8): patients gone home fed up (counted
+// since last said), else their happiness.
+bool advisor_peeps_unhappy(Situation &s)
+{
+    const Balance::Gbv &gbv = s.in.settings->gbv;
+    int32_t happiness = (s.c.happiness_sum << 10) / s.c.patients;
+    if (s.world.patients_left_count) {
+        say(s.a, s.world.patients_left_count > 1 ? s.extra(7) : s.extra(0x31));
+        s.world.patients_left_count = 0;
+        return true;
+    }
+    if ((gbv.very_unhappy << 10) > happiness) {
+        say(s.a, s.extra(6));
+        return true;
+    }
+    if ((gbv.unhappy << 10) > happiness) {
+        say(s.a, s.text(14));
+        return true;
+    }
+    return false;
+}
+
+// advisor_thirsty_peeps (0x61188): the patients' refreshment. Its "very
+// thirsty" test (below 10) comes after one below 30 and is never reached.
+bool advisor_thirsty_peeps(Situation &s)
+{
+    if (s.c.refreshment_sum / s.c.patients >= 0x1e)
+        return false;
+    if (!s.a.given[18]) {
+        say(s.a, s.situation(15));
+        s.a.given[18] = 1;
+    } else {
+        say(s.a, s.world.first_of_kind[kObjectDrinksMachine] == 0 ? s.text(15) : s.extra(4));
+    }
+    return true;
+}
+
+// advisor_peeps_warmth (0x613a0): the patients' warmth, with the
+// announcer's too hot or too cold.
+bool advisor_peeps_warmth(Situation &s)
+{
+    int warmth = s.c.warmth_sum / s.c.patients;
+    bool cold = warmth < 0x14;
+    if (warmth * 2 > 0xf0)
+        say(s.a, s.extra(0x34));
+    else if (warmth > 0x50)
+        s.once(17, 14, s.text(0x11));
+    else if (warmth < 10)
+        say(s.a, s.extra(0x35));
+    else if (!cold)
+        return false;
+    else if (!s.a.given[15] && count_radiators(s.world, 0) == 0)
+        s.once(15, 12, {});
+    else if (s.a.given[15] && !s.a.given[16] && count_radiators(s.world, 0) == 0)
+        s.once(16, 13, {});
+    else
+        say(s.a, s.extra(13));
+    s.ambient(warmth < 10 || cold ? kAmbientTooCold : kAmbientTooHot);
+    return true;
+}
+
+// advisor_staff_warmth (0x61b34): the staff's warmth.
+bool advisor_staff_warmth(Situation &s)
+{
+    int warmth = s.c.staff_warmth_sum / s.staff.total;
+    if (warmth > 0x50) {
+        say(s.a, s.text(0x12));
+        s.ambient(kAmbientTooHot);
+        return true;
+    }
+    if (warmth < 0x14) {
+        say(s.a, s.extra(0x36));
+        s.ambient(kAmbientTooCold);
+        return true;
+    }
+    return false;
+}
+
+// advisor_toilets (0x60c78): the patients' bladders, and whether there is
+// a toilet.
+bool advisor_toilets(Situation &s)
+{
+    const Balance::Gbv &gbv = s.in.settings->gbv;
+    int ratio = s.c.bladder_sum / s.c.patients;
+    bool none = s.world.first_of_kind[kObjectToilet] == 0;
+    if (ratio * 4 > gbv.bowel_full * 3 && none)
+        say(s.a, s.text(0x13));
+    else if (gbv.bowel_full < ratio)
+        say(s.a, none ? s.extra(10) : s.extra(11));
+    else if (gbv.bowel_overflows < ratio)
+        say(s.a, none ? s.extra(0x26) : s.extra(12));
+    else
+        return false;
+    return true;
+}
+
+// advisor_litter_problem (0x61558): the litter per area of the hospital.
+bool advisor_litter_problem(Situation &s)
+{
+    int32_t litter = (int32_t(s.world.litter_count) << 14) / s.in.finance->area;
+    if (litter > 0x600) {
+        s.ambient(kAmbientLitter);
+        say(s.a, s.handymen() > 0 ? s.extra(0x12) : s.extra(0x11));
+        return true;
+    }
+    if (litter > 0x300) {
+        say(s.a, s.extra(0x10));
+        return true;
+    }
+    if (litter <= 0x100 || s.handymen() == 1)
+        return false;
+    say(s.a, s.handymen() > 1 ? s.text(0x46) : s.extra(0x13));
+    return true;
+}
+
+// advisor_plants (0x60e18): the plants per area, by the patients'
+// impatience and happiness.
+bool advisor_plants(Situation &s)
+{
+    const Balance::Gbv &gbv = s.in.settings->gbv;
+    const AdCounts &c = s.c;
+    int32_t per_area = (count_objects(s.world, kObjectPlant) << 14) / s.in.finance->area;
+    int32_t impatience = (c.impatience_sum << 6) / (c.patients * gbv.leave_max);
+    int32_t happiness = (c.happiness_sum << 10) / c.patients;
+    int few = per_area < 0x100 ? 0 : per_area < 0x200 ? 1 : -1;
+    if (impatience > 0x30 || (gbv.very_unhappy << 10) > happiness) {
+        if (few < 0)
+            return false;
+        say(s.a, s.extra((impatience > 0x30 ? 0x14 : 0x16) + few));
+        return true;
+    }
+    if (per_area < 0x400 || per_area > 0x800)
+        return false;
+    say(s.a, s.text(0x4a));
+    return true;
+}
+
+// advisor_benches (0x616b4): the bench shortage per patient, and the
+// benches.
+bool advisor_benches(Situation &s)
+{
+    int32_t standing = (s.world.bench_shortage << 10) / s.c.patients;
+    int benches = count_objects(s.world, kObjectBench);
+    if (standing > 0x1000)
+        say(s.a, s.extra(0x1b));
+    else if (standing > 0x400)
+        say(s.a, s.extra(0x18));
+    else if (benches > s.in.level + 8 && standing < -0x1400)
+        say(s.a, s.extra(0x1a));
+    else if (benches > 8 && standing < -0x400)
+        say(s.a, s.extra(0x19));
+    else if (benches > 4)
+        say(s.a, s.text(0x4b));
+    else
+        return false;
+    return true;
+}
+
+// find_advice's rooms just opened: a training room with no consultant
+// (0x50), a research room with no researcher (0x53) or at all (0x8c), a
+// room with machines and no handyman (0x5d), a GP's office with no doctor
+// on level 1 (0x68). Each forgets the room once said.
+bool advise_room_built(Situation &s, uint16_t situation)
+{
+    uint8_t &built = s.world.building.last_built_room;
+    const std::array<uint16_t, 31> &rooms = s.world.room_of_type;
+    bool found = false;
+    if (situation == 0x50 && rooms[kRoomTrainingRoom] && s.c.consultants == 0 && built == kRoomTrainingRoom &&
+        s.has_patients()) {
+        say(s.a, s.text(0x50));
+        found = true;
+    } else if (situation == 0x53 && rooms[kRoomResearchRoom] && s.c.researchers == 0 && built == kRoomResearchRoom &&
+               s.has_patients()) {
+        s.once(1, 2, s.text(0x53));
+        found = true;
+    } else if (situation == 0x8c && !s.a.given[0] && built == kRoomResearchRoom) {
+        s.once(0, 1, {});
+        found = true;
+    } else if (situation == 0x5d && s.c.machines > 0 && s.handymen() == 0 && built > 0 && s.has_patients()) {
+        say(s.a, s.text(0x5d));
+        found = true;
+    } else if (situation == 0x68 && rooms[kRoomGpOffice] && s.staff.by_kind[kStaffDoctor] == 0 &&
+               built == kRoomGpOffice && s.in.level == 1) {
+        say(s.a, s.text(0x68));
+        found = true;
+    }
+    if (found)
+        built = 0;
+    return found;
+}
+
+// find_advice's patients' figures: unhappy (0xe), thirsty (0xf), cold or
+// hot (0x11), needing the toilet (0x13), waiting long (0xb), each once
+// enough patients were counted.
+bool advise_patients(Situation &s, uint16_t situation)
+{
+    if (!s.has_patients())
+        return false;
+    switch (situation) {
+    case 0xb:
+        return advise_waiting(s);
+    case 0xe:
+        return s.c.patients > 5 && advisor_peeps_unhappy(s);
+    case 0xf:
+        return s.c.patients > 5 && advisor_thirsty_peeps(s);
+    case 0x11:
+        return s.c.patients > 10 && advisor_peeps_warmth(s);
+    case 0x13:
+        return s.c.patients > 10 && advisor_toilets(s);
+    case 0x4a:
+        return s.c.patients > 8 && s.in.finance->area > 0 && advisor_plants(s);
+    case 0x4b:
+        return s.c.patients > 5 && advisor_benches(s);
+    default:
+        return false;
+    }
+}
+
+// find_advice's staff and machines: the most worn machine (0x78) and the
+// machines' wear (3), too few or many doctors and nurses (7, 8, 0x64,
+// 0x65), the staff's warmth (0x12), a doctor cracked up (0x5e).
+bool advise_staff(Situation &s, uint16_t situation)
+{
+    switch (situation) {
+    case 0x5e:
+        if (!s.c.crackups || !s.has_patients() || s.c.crackups != 1)
+            return false;
+        say(s.a, s.text(0x5e));
+        s.world.counts.crackups = 0;
+        return true;
+    case 0x78:
+        if (!s.c.worst_machine || !s.has_patients())
+            return false;
+        say(s.a, s.text(0x78), std::string(s.in.text->at(TextSection::ObjectNames, s.c.worst_machine)).c_str());
+        return true;
+    case 3:
+        return s.c.machines > 0 && s.has_patients() && advisor_old_hardware(s);
+    case 7:
+        return advise_short_staffed(s, kStaffDoctor, 7);
+    case 0x64:
+        return advise_short_staffed(s, kStaffNurse, 0x64);
+    case 8:
+        return advise_overstaffed(s, kStaffDoctor, 6, 3, 8);
+    case 0x65:
+        return advise_overstaffed(s, kStaffNurse, 4, 4, 0x65);
+    case 0x12:
+        return s.staff.total > 10 && s.has_patients() && advisor_staff_warmth(s);
+    default:
+        return false;
+    }
+}
+
+// find_advice's litter and plants: litter and no handyman (0x45, once),
+// the litter (0x46), plants and no handyman (0x5c), too many plants
+// (0x5b).
+bool advise_litter_and_plants(Situation &s, int id, uint16_t situation)
+{
+    int32_t area = s.in.finance->area;
+    int plants = count_objects(s.world, kObjectPlant);
+    switch (situation) {
+    case 0x45:
+        if (s.a.advice[size_t(id)].times_given >= 1 || s.world.litter_count == 0 || s.handymen() != 0)
+            return false;
+        say(s.a, s.text(0x45));
+        return true;
+    case 0x46:
+        return area > 0 && s.has_patients() && advisor_litter_problem(s);
+    case 0x5c:
+        if (plants <= 0 || s.handymen() != 0)
+            return false;
+        say(s.a, s.text(0x5c));
+        return true;
+    case 0x5b:
+        if (!area || !s.has_patients() || (plants << 14) / area <= 0x800)
+            return false;
+        say(s.a, s.text(0x5b));
+        return true;
+    default:
+        return false;
+    }
+}
+
+// find_advice's deaths near the level's limit (0x41), after a death
+// (kAdvisorEventDeath, forgotten once tested).
+bool advise_deaths_limit(Situation &s)
+{
+    const Balance &settings = *s.in.settings;
+    int crit = relevant_criterion(kCriterionDeaths, settings.lose_criteria);
+    if (!crit || !s.in.open || !s.in.visitors || !(s.a.event_flags & kAdvisorEventDeath))
+        return false;
+    int32_t value = settings.lose_criteria[size_t(crit)].value;
+    int32_t deaths = s.in.finance->deaths;
+    auto visitors = int32_t(s.in.visitors);
+    bool found = true;
+    if (value - deaths * 100 / visitors < 10)
+        say(s.a, s.extra(0x3a));
+    else if (value - deaths * 100 / visitors < 0x19)
+        say(s.a, s.text(0x41), visitors * value / 100 - deaths);
+    else
+        found = false;
+    s.a.event_flags &= ~kAdvisorEventDeath;
+    return found;
+}
+
+// find_advice's cures short of the level's target (0x88), after a cure
+// (kAdvisorEventCure, forgotten once tested). Its advice for the target
+// passed, which also needs the level's lose progress, is not ported.
+bool advise_cures_target(Situation &s)
+{
+    const Balance &settings = *s.in.settings;
+    int crit = relevant_criterion(kCriterionCures, settings.win_criteria);
+    const Finance &f = *s.in.finance;
+    if (!crit || !s.in.open || !(s.a.event_flags & kAdvisorEventCure) || f.cures <= s.in.level * 3)
+        return false;
+    int32_t value = settings.win_criteria[size_t(crit)].value;
+    bool found = f.cures < value;
+    if (found)
+        say(s.a, s.text(0x88), value - f.cures);
+    s.a.event_flags &= ~kAdvisorEventCure;
+    return found;
+}
+
+// find_advice's first death (0x47) and cure (0x52), each once; the rooms
+// open (0x6b, between 3 and 6); a treatment the patients will not pay for
+// (0x75, advisor.event_flags 2); deaths near the level's limit (0x41); the
+// first call awaiting a decision (0x87); a person stuck (0xc); the prices
+// high or low (0x76, 0x77).
+bool advise_hospital(Situation &s, int id, uint16_t situation)
+{
+    const Finance &f = *s.in.finance;
+    bool first = s.a.advice[size_t(id)].times_given < 1;
+    switch (situation) {
+    case 0x47:
+    case 0x52:
+        if (!first || (situation == 0x47 ? f.deaths : f.cures) != 1)
+            return false;
+        say(s.a, s.text(situation));
+        return true;
+    case 0x6b: {
+        int open = count_open_rooms(s.world);
+        if (open <= 2 || open >= 7)
+            return false;
+        say(s.a, s.text(0x6b + saferand(s.safeseed) % 3));
+        return true;
+    }
+    case 0x75:
+        if (!s.world.too_expensive || s.world.unpaid_treatment == 0)
+            return false;
+        say(s.a, s.text(0x75), std::string(s.in.text->at(TextSection::Illness, s.world.unpaid_treatment)).c_str());
+        s.world.too_expensive = false;
+        return true;
+    case 0x41:
+        return advise_deaths_limit(s);
+    case 0x88:
+        return advise_cures_target(s);
+    case 0x76:
+    case 0x77: {
+        // The prices high (over 150%) or low (under 60%).
+        int level = s.world.market ? s.world.market->price_level : 100;
+        if (situation == 0x76 ? level <= 0x96 : (level == 0 || level >= 0x3c))
+            return false;
+        say(s.a, s.text(situation));
+        return true;
+    }
+    case 0xc:
+        if (!s.world.announce_stuck)
+            return false;
+        say(s.a, s.text(12));
+        s.world.announce_stuck = false;
+        return true;
+    case 0x87:
+        // Once per game, after a call about a patient or a new illness.
+        if (s.a.given[8] || !(s.a.event_flags & kAdvisorEventCall))
+            return false;
+        say(s.a, s.text(0x87));
+        s.a.given[8] = 1;
+        s.a.event_flags &= ~kAdvisorEventCall;
+        return true;
+    default:
+        return false;
+    }
+}
+
+// find_advice's situations of the statistics pass and of what the
+// hospital holds (see advisor_frame).
+bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &safeseed)
+{
+    if (!in.world || !in.finance || !in.settings)
+        return false;
+    Situation s{a, in, *in.world, in.world->counts, count_staff(*in.world), safeseed};
+    uint16_t situation = a.advice[size_t(id)].id;
+    switch (situation) {
+    case 9:
+    case 0xa:
+        return advise_no_visitors(s, id, situation == 0xa);
+    case 0x50:
+    case 0x53:
+    case 0x8c:
+    case 0x5d:
+    case 0x68:
+        return advise_room_built(s, situation);
+    default:
+        return advise_patients(s, situation) || advise_staff(s, situation) ||
+               advise_litter_and_plants(s, id, situation) || advise_hospital(s, id, situation);
+    }
+}
+
 // find_advice's test of the situation advice `id` is about.
 bool find_advice_situation(Advisor &a, int id, const AdvisorInputs &in, uint32_t &safeseed)
 {
@@ -318,8 +885,7 @@ bool find_advice_situation(Advisor &a, int id, const AdvisorInputs &in, uint32_t
         a.text = in.text->at(TextSection::MouseAdvice, a.mouse_advice_id);
         return true;
     case 0x49:
-        // No staff room can be built yet.
-        if (count_staff(*in.world).total <= in.level + 5)
+        if (count_staff(*in.world).total <= in.level + 5 || in.world->room_of_type[kRoomStaffRoom])
             return false;
         say(a, advisor_text(in, 0x49));
         return true;
@@ -327,11 +893,22 @@ bool find_advice_situation(Advisor &a, int id, const AdvisorInputs &in, uint32_t
         if (!has_reception(*in.world) || count_staff(*in.world).by_kind[kStaffReceptionist] != 0 || in.level != 1)
             return false;
         say(a, advisor_text(in, 0x69));
+        in.world->building.last_built_room = 0;
         return true;
     case 0x4c:
         return find_advice_deaths(a, in, safeseed);
     case 0x51:
         return find_advice_cures(a, in, safeseed);
+    case 0x15:
+        if (!a.heli_landed)
+            return false;
+        if (!a.given[19])
+            say(a, in.text->at(TextSection::AdvisorSituations, 16));
+        else
+            say(a, advisor_text(in, 0x15));
+        a.given[19] = 1;
+        a.heli_landed = false;
+        return true;
     case 0x1c:
         if (a.given[10] || !(a.event_flags & kAdvisorEventResign))
             return false;
@@ -340,7 +917,7 @@ bool find_advice_situation(Advisor &a, int id, const AdvisorInputs &in, uint32_t
         a.event_flags &= ~kAdvisorEventResign;
         return true;
     default:
-        return false;
+        return find_advice_counts(a, id, in, safeseed);
     }
 }
 
@@ -881,7 +1458,6 @@ void start_advisor(Advisor &a, bool tutorial)
     a.forced_advice_id = 0;
     a.mouse_advice_id = 0;
     a.text.clear();
-    a.has_patients = false;
     a.event_flags = 0;
     // setup_new_level and the area screen.
     a.tutorial_shown = {};

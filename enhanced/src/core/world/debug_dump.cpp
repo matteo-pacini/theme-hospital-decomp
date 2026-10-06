@@ -5,11 +5,16 @@
 #include "core/world/complex.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
+#include "core/world/queue.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
 
+#include <cstdint>
 #include <format>
+#include <span>
+#include <utility>
+#include <vector>
 
 namespace th
 {
@@ -33,12 +38,239 @@ template <typename Array> void list(std::string &out, const char *name, const Ar
         out += std::format("{}{}", i ? "," : "", +values[i]);
 }
 
-void pos(std::string &out, const char *name, MapPos x, MapPos y)
+#define F(s, name) field(out, #name, s.name)
+
+// Names of game values, after include/enums.h's.
+struct StateName {
+    uint8_t value;
+    const char *name;
+};
+
+// Thing.type (THING_).
+constexpr StateName kThingTypes[] = {
+    {0x00, "free"},   {0x02, "patient"},   {0x04, "staff"},  {0x06, "object"},     {0x08, "door"},
+    {0x0a, "reaper"}, {0x0c, "rat"},       {0x0e, "debris"}, {0x10, "helicopter"}, {0x12, "numfx"},
+    {0x14, "mayor"},  {0x16, "inspector"}, {0x18, "shadow"},
+};
+
+// Thing.subtype of a member of staff (STAFF_).
+constexpr StateName kStaffKinds[] = {
+    {0, "nurse"}, {1, "doctor"}, {2, "handyman"}, {3, "receptionist"}, {4, "surgeon"},
+};
+
+// Thing.subtype of a patient: only the alien kind is named (PK_ALIEN).
+constexpr StateName kPatientKinds[] = {{0x0e, "alien"}};
+
+// Thing.subtype of an object or door (OBJ_).
+constexpr StateName kObjectKinds[] = {
+    {1, "desk"},
+    {2, "cabinet"},
+    {3, "door"},
+    {4, "bench"},
+    {5, "table"},
+    {6, "chair"},
+    {7, "drinks_machine"},
+    {8, "bed"},
+    {9, "inflator"},
+    {10, "pool_table"},
+    {11, "reception_desk"},
+    {12, "table2"},
+    {13, "cardio"},
+    {14, "scanner"},
+    {15, "console"},
+    {16, "screen"},
+    {17, "litter_bomb"},
+    {18, "couch"},
+    {19, "sofa"},
+    {20, "crash_trolley"},
+    {21, "tv"},
+    {22, "ultrascanner"},
+    {23, "dna_fixer"},
+    {24, "cast_remover"},
+    {25, "hair_restorer"},
+    {26, "slicer"},
+    {27, "xray"},
+    {28, "radiation_shield"},
+    {29, "xray_viewer"},
+    {30, "operating_table"},
+    {31, "lamp"},
+    {32, "sink"},
+    {33, "sink2"},
+    {34, "sink3"},
+    {35, "surgeon_screen"},
+    {36, "lecture_chair"},
+    {37, "projector"},
+    {38, "bed2"},
+    {39, "pharmacy_cabinet"},
+    {40, "computer"},
+    {41, "atom_analyser"},
+    {42, "blood_machine"},
+    {43, "fire_extinguisher"},
+    {44, "radiator"},
+    {45, "plant"},
+    {46, "electrolyser"},
+    {47, "jelly_moulder"},
+    {48, "gates_of_hell"},
+    {49, "bed3"},
+    {50, "bin"},
+    {51, "toilet"},
+    {52, "swing_door"},
+    {53, "swing_door2"},
+    {54, "shower"},
+    {55, "auto_autopsy"},
+    {56, "bookcase"},
+    {57, "video_game"},
+    {58, "entrance_left_door"},
+    {59, "entrance_right_door"},
+    {60, "skeleton"},
+    {61, "comfy_chair"},
+};
+
+// Patient and staff states, after the routines process_things runs for them
+// (PS_ and SS_).
+
+constexpr StateName kPatientStates[] = {
+    {0x04, "waits_for_busy"},
+    {0x06, "goto_destination"},
+    {0x08, "return_to_queue_area"},
+    {0x0c, "go_home"},
+    {0x0e, "gone"},
+    {0x10, "play_complex_anim"},
+    {0x12, "arrives_at_door"},
+    {0x14, "in_queue"},
+    {0x16, "goto_object"},
+    {0x18, "entertains_themself"},
+    {0x1a, "wait_for_complex_slave"},
+    {0x20, "slave_ready"},
+    {0x22, "two_peeps_interact"},
+    {0x24, "goto_queue"},
+    {0x26, "go_for_treatment"},
+    {0x28, "merged"},
+    {0x2a, "complex_retry"},
+    {0x2c, "in_bed"},
+    {0x2e, "fills"},
+    {0x30, "energises"},
+    {0x32, "dead"},
+    {0x34, "flys"},
+    {0x36, "in_bogs"},
+    {0x38, "leave_toilets"},
+    {0x3a, "showanim"},
+    {0x3c, "stuck"},
+    {0x40, "bp_goto"},
+    {0x42, "at_hell_gate"},
+    {0x44, "waits_for_decision"},
+    {0x46, "arrived_from_call"},
+};
+
+constexpr StateName kStaffStates[] = {
+    {0x06, "doctor_in_office"},
+    {0x08, "doctor_works_at_desk"},
+    {0x0a, "receptionist_works"},
+    {0x0c, "receptionist_finds_reception"},
+    {0x0e, "play_complex_anim"},
+    {0x10, "surgeon_waits"},
+    {0x12, "goto_object"},
+    {0x14, "doctor_waits_for_patient"},
+    {0x18, "assistant_ready"},
+    {0x1a, "two_peeps_interact"},
+    {0x1c, "doctor_examines"},
+    {0x20, "recept_waits_for_patient"},
+    {0x22, "recept_admits_patient"},
+    {0x24, "doctor_in_machine_room"},
+    {0x26, "wait_for_complex_slave"},
+    {0x28, "in_corridor"},
+    {0x2c, "complex_retry"},
+    {0x2e, "applicant"},
+    {0x30, "in_staff_room"},
+    {0x32, "nurse_in_ward"},
+    {0x34, "wanders"},
+    {0x36, "evacuate"},
+    {0x38, "back_to_applicants"},
+    {0x3c, "handyman_works"},
+    {0x3e, "doctor_researches"},
+    {0x40, "nurse_vaccinates"},
+    {0x42, "doctor_in_theatre"},
+    {0x44, "held"},
+    {0x46, "doctor_is_trained"},
+    {0x48, "consultant_trains"},
+    {0x4a, "receptionist_setup"},
+    {0x4c, "bp_goto"},
+    {0x4e, "stuck"},
+    {0x50, "play_aniseq"},
+};
+
+// Builds a thing's InspectSections: F, L and pos on it add a field to the
+// last section.
+class Inspection
 {
-    out += std::format(" {}={}.{:02x},{}.{:02x}", name, x.tile, x.frac, y.tile, y.frac);
+  public:
+    explicit Inspection(std::vector<InspectSection> &sections) : sections_(sections) {}
+    void section(std::string title) { sections_.push_back({std::move(title), {}}); }
+    void add(InspectField f) { sections_.back().fields.push_back(std::move(f)); }
+    void number(const char *name, int64_t value, std::string note = {})
+    {
+        add({name, std::to_string(value), value, InspectKind::Number, std::move(note)});
+    }
+    void flag(const char *name, bool value) { add({name, value ? "true" : "false", value, InspectKind::Flag, {}}); }
+    void text(const char *name, std::string value) { add({name, std::move(value), 0, InspectKind::Text, {}}); }
+
+  private:
+    std::vector<InspectSection> &sections_;
+};
+
+template <typename T> void field(Inspection &out, const char *name, T value)
+{
+    out.number(name, int64_t(value));
 }
 
-#define F(s, name) field(out, #name, s.name)
+template <typename Array> void list(Inspection &out, const char *name, const Array &values)
+{
+    std::string text;
+    for (size_t i = 0; i < values.size(); i++)
+        text += std::format("{}{}", i ? "," : "", +values[i]);
+    out.text(name, std::move(text));
+}
+
+void pos(Inspection &out, const char *name, MapPos x, MapPos y)
+{
+    out.text(name, std::format("{}.{:02x},{}.{:02x}", x.tile, x.frac, y.tile, y.frac));
+}
+
+// `value`'s name in `names`, empty when it has none.
+std::string named(std::span<const StateName> names, uint8_t value)
+{
+    for (const StateName &n : names)
+        if (n.value == value)
+            return n.name;
+    return {};
+}
+
+// The state's name for a patient or member of staff, empty when it has none.
+std::string state_name(const Thing &t, uint8_t value)
+{
+    if (t.type == kThingPatient)
+        return named(kPatientStates, value);
+    if (t.type == kThingStaff)
+        return named(kStaffStates, value);
+    return {};
+}
+
+// The kind Thing.subtype names for the thing's type, empty when unnamed.
+std::string subtype_name(const Thing &t)
+{
+    if (t.type == kThingPatient)
+        return named(kPatientKinds, t.subtype);
+    if (t.type == kThingStaff)
+        return named(kStaffKinds, t.subtype);
+    if (t.type == kThingObject || t.type == kThingDoor)
+        return named(kObjectKinds, t.subtype);
+    return {};
+}
+
+void state_field(Inspection &out, const char *name, const Thing &t, uint8_t value)
+{
+    out.number(name, value, state_name(t, value));
+}
 
 // RoomInfo.type of a staff room and of the toilets (ROOM_STAFF_ROOM,
 // ROOM_TOILETS).
@@ -71,9 +303,9 @@ const char *toilet_state(const World &w, const Thing &t)
 }
 #define L(s, name) list(out, #name, s.name)
 
-void dump_thing_object(std::string &out, const Thing &t)
+void dump_thing_object(Inspection &out, const Thing &t)
 {
-    out += " object:";
+    out.section("object");
     L(t, layers);
     pos(out, "use", t.use_x, t.use_y);
     L(t, use_pos);
@@ -93,43 +325,60 @@ void dump_thing_object(std::string &out, const Thing &t)
     F(t, times_used);
     F(t, strength);
     L(t, smoke);
+    F(t, overlay_frame);
     F(t, aux_sprite);
     F(t, aux_flip);
     F(t, split_height);
     F(t, aux_draw_flags);
     F(t, aux_param);
     F(t, remove_after_anim);
-    out += '\n';
 }
 
-void dump_thing_reaper(std::string &out, const Thing &t)
+void dump_thing_helicopter(Inspection &out, const Thing &t)
 {
-    out += " reaper:";
+    out.section(t.type == kThingHelicopter ? "helicopter" : "shadow");
+    F(t, altitude);
+    F(t, shadow);
+    F(t, caster);
+}
+
+void dump_thing_debris(Inspection &out, const Thing &t)
+{
+    out.section("debris");
+    F(t, altitude);
+    F(t, vel_x);
+    F(t, vel_y);
+    F(t, vel_z);
+    F(t, bang_room);
+}
+
+void dump_thing_reaper(Inspection &out, const Thing &t)
+{
+    out.section("reaper");
     F(t, slave);
     F(t, gate);
     F(t, timer);
     F(t, reaper_next_state);
     F(t, next_sprite);
     F(t, next_flip);
-    out += '\n';
 }
 
 // dump_thing's action sequence and queue lines of a person.
-void dump_thing_sequence(std::string &out, const Thing &t)
+void dump_thing_sequence(Inspection &out, const Thing &t)
 {
-    out += " sequence:";
+    out.section("sequence");
     F(t, complex_pc);
     F(t, complex_action);
     F(t, complex_resume);
     F(t, complex_queued);
     F(t, complex_queued2);
-    out += std::format(" queued_arg={},{} queued2_arg={},{}", t.queued_arg_x, t.queued_arg_y, t.queued2_arg_x,
-                       t.queued2_arg_y);
+    out.text("queued_arg", std::format("{},{}", t.queued_arg_x, t.queued_arg_y));
+    out.text("queued2_arg", std::format("{},{}", t.queued2_arg_x, t.queued2_arg_y));
     F(t, complex_repeat);
-    F(t, next_state);
-    F(t, resume_state);
-    F(t, saved_state);
-    out += std::format(" saved_dest={},{}", t.saved_dest_x, t.saved_dest_y);
+    state_field(out, "next_state", t, t.next_state);
+    state_field(out, "resume_state", t, t.resume_state);
+    state_field(out, "saved_state", t, t.saved_state);
+    out.text("saved_dest", std::format("{},{}", t.saved_dest_x, t.saved_dest_y));
     F(t, saved_depth);
     F(t, saved_sprite);
     F(t, saved_flip);
@@ -145,9 +394,8 @@ void dump_thing_sequence(std::string &out, const Thing &t)
     F(t, seq_index);
     F(t, interact_repeat);
     F(t, interact_anim);
-    out += '\n';
 
-    out += " queue:";
+    out.section("queue");
     F(t, queue_prev);
     F(t, queue_next);
     F(t, queue_room);
@@ -156,12 +404,11 @@ void dump_thing_sequence(std::string &out, const Thing &t)
     F(t, call_retries);
     F(t, waiting_time);
     F(t, impatience);
-    out += '\n';
 }
 
-void dump_thing_patient(std::string &out, const World &w, const Thing &t)
+void dump_thing_patient(Inspection &out, const World &w, const Thing &t)
 {
-    out += " patient:";
+    out.section("patient");
     F(t, illness);
     F(t, known_illness);
     F(t, treatment);
@@ -177,8 +424,7 @@ void dump_thing_patient(std::string &out, const World &w, const Thing &t)
     F(t, fee);
     F(t, substate);
     F(t, slave);
-    out += '\n';
-    out += " needs:";
+    out.section("needs");
     F(t, health);
     F(t, health_delta);
     L(t, health_history);
@@ -189,14 +435,15 @@ void dump_thing_patient(std::string &out, const World &w, const Thing &t)
     F(t, nausea);
     F(t, litter_urge);
     F(t, modify_time);
-    out += std::format(" person_flags={:#x}", t.person_flags);
-    out += '\n';
-    out += std::format(" toilets: {}\n", toilet_state(w, t));
+    out.text("person_flags", std::format("{:#x}", t.person_flags));
+    out.flag("emergency", (t.person_flags & kPfEmergency) != 0);
+    out.section("toilets");
+    out.text("visit", toilet_state(w, t));
 }
 
-void dump_thing_staff(std::string &out, const World &w, const Thing &t)
+void dump_thing_staff(Inspection &out, const World &w, const Thing &t)
 {
-    out += " staff:";
+    out.section("staff");
     F(t, substate);
     F(t, skills);
     F(t, ability);
@@ -221,16 +468,15 @@ void dump_thing_staff(std::string &out, const World &w, const Thing &t)
     F(t, ref_bad);
     F(t, slave);
     F(t, happiness);
-    out += std::format(" person_flags={:#x}", t.person_flags);
-    out += '\n';
-    out += std::format(" rest: break={}", break_state(w, t));
+    out.text("person_flags", std::format("{:#x}", t.person_flags));
+    out.section("rest");
+    out.text("break", break_state(w, t));
     F(t, tiredness);
-    out += std::format(" orders={:#x}", t.orders);
+    out.text("orders", std::format("{:#x}", t.orders));
     F(t, resign_time);
     F(t, warmth);
     F(t, modify_time);
-    out += '\n';
-    out += " work:";
+    out.section("work");
     F(t, prio_litter);
     F(t, prio_plants);
     F(t, prio_repair);
@@ -239,25 +485,36 @@ void dump_thing_staff(std::string &out, const World &w, const Thing &t)
     F(t, litter_count);
     F(t, plant_count);
     F(t, repair_count);
-    out += '\n';
 }
 
 const char *dump_thing_kind(const Thing &t)
 {
-    return t.type == kThingPatient                               ? "patient"
-           : t.type == kThingStaff && t.state == kStaffApplicant ? "applicant"
-           : t.type == kThingStaff                               ? "staff"
-           : t.type == kThingObject                              ? "object"
-           : t.type == kThingReaper                              ? "reaper"
-                                                                 : "thing";
+    switch (t.type) {
+    case kThingPatient:
+        return "patient";
+    case kThingStaff:
+        return t.state == kStaffApplicant ? "applicant" : "staff";
+    case kThingObject:
+        return "object";
+    case kThingReaper:
+        return "reaper";
+    case kThingHelicopter:
+        return "helicopter";
+    case kThingShadow:
+        return "shadow";
+    case kThingDebris:
+        return "debris";
+    default:
+        return "thing";
+    }
 }
 
-void dump_thing(std::string &out, const World &w, const Thing &t, int id)
+void dump_thing(Inspection &out, const World &w, const Thing &t, int id)
 {
-    out += std::format("{} {}", dump_thing_kind(t), id);
-    F(t, type);
-    F(t, subtype);
-    F(t, state);
+    out.section(std::format("{} {}", dump_thing_kind(t), id));
+    out.number("type", t.type, named(kThingTypes, t.type));
+    out.number("subtype", t.subtype, subtype_name(t));
+    state_field(out, "state", t, t.state);
     pos(out, "at", t.x, t.y);
     F(t, facing);
     F(t, flip);
@@ -269,11 +526,11 @@ void dump_thing(std::string &out, const World &w, const Thing &t, int id)
     F(t, owner);
     F(t, cell_prev);
     F(t, cell_next);
-    out += std::format(" dest={},{}", t.dest_x, t.dest_y);
-    out += std::format(" path={},{}->{},{}:", t.path.x0, t.path.y0, t.path.x1, t.path.y1);
+    out.text("dest", std::format("{},{}", t.dest_x, t.dest_y));
+    std::string path = std::format("{},{}->{},{}:", t.path.x0, t.path.y0, t.path.x1, t.path.y1);
     for (int i = 0; i < t.path.count && i < int(t.path.steps.size()); i++)
-        out += std::format("{}{},{}", i ? ";" : "", t.path.steps[size_t(i)].x, t.path.steps[size_t(i)].y);
-    out += '\n';
+        path += std::format("{}{},{}", i ? ";" : "", t.path.steps[size_t(i)].x, t.path.steps[size_t(i)].y);
+    out.text("path", std::move(path));
 
     if (t.type == kThingObject) {
         dump_thing_object(out, t);
@@ -281,6 +538,14 @@ void dump_thing(std::string &out, const World &w, const Thing &t, int id)
     }
     if (t.type == kThingReaper) {
         dump_thing_reaper(out, t);
+        return;
+    }
+    if (t.type == kThingHelicopter || t.type == kThingShadow) {
+        dump_thing_helicopter(out, t);
+        return;
+    }
+    if (t.type == kThingDebris) {
+        dump_thing_debris(out, t);
         return;
     }
     if (t.type != kThingPatient && t.type != kThingStaff)
@@ -327,6 +592,7 @@ void dump_hospital(std::string &out, const HospitalMarket &h, int id)
     F(h, hospital_rep_events);
     F(h, visitors);
     F(h, month_visitors);
+    F(h, price_level);
     L(h, reputation);
     L(h, price);
     L(h, price_scale);
@@ -377,15 +643,77 @@ void dump_game_world(std::string &out, const World &w)
     F(w, object_near_dist);
     F(w, patients_left_count);
     F(w, bench_shortage);
+    F(w, advisor_events);
+    F(w, announce_stuck);
     F(w, unpaid_treatment);
     F(w, too_expensive);
     F(w, drinks_income);
     F(w, held_staff);
     F(w, held_staff_tile);
     F(w, next_call_id);
+    F(w, litter_count);
+    F(w, mishaps);
+    F(w, machine_exploded);
+    L(w, machine_sounds);
+    L(w, machine_announcements);
     L(w, cure_available);
     L(w, ins_control);
     L(w, room_of_type);
+    out += '\n';
+    for (size_t i = 0; i < w.first_call.size(); i++) {
+        out += std::format("first_call {}", i);
+        list(out, "by_kind", w.first_call[i]);
+        out += '\n';
+    }
+    const PanelPopups &p = w.popups;
+    out += "popups:";
+    L(p, pos);
+    F(p, shutter_state);
+    F(p, shutter_width);
+    F(p, shutter_timer);
+    F(p, new_faxes);
+    out += '\n';
+}
+
+// dump_game's statistics pass (World::counts).
+void dump_game_counts(std::string &out, const World &w)
+{
+    const AdCounts &c = w.counts;
+    out += "counts:";
+    F(c, patients);
+    F(c, impatience_sum);
+    F(c, waiting_sum);
+    L(c, wait_sums);
+    L(c, wait_counts);
+    F(c, happiness_sum);
+    F(c, max_happiness);
+    F(c, min_happiness);
+    F(c, refreshment_sum);
+    F(c, min_refreshment);
+    F(c, warmth_sum);
+    F(c, max_warmth);
+    F(c, min_warmth);
+    F(c, bladder_sum);
+    F(c, max_bladder);
+    L(c, illness_counts);
+    F(c, doctors_and_nurses);
+    F(c, surgeons);
+    F(c, consultants);
+    F(c, researchers);
+    F(c, psychiatrists);
+    L(c, staff_tiredness_by_kind);
+    L(c, staff_happiness_by_kind);
+    F(c, staff_happiness_sum);
+    F(c, staff_tiredness_sum);
+    F(c, max_staff_tiredness);
+    F(c, staff_warmth_sum);
+    L(c, idle_staff);
+    F(c, crackups);
+    F(c, machines);
+    F(c, machine_wear_sum);
+    F(c, max_machine_wear);
+    F(c, worst_machine);
+    F(c, has_patients);
     out += '\n';
 }
 
@@ -400,6 +728,7 @@ void dump_game_disasters(std::string &out, const Disasters &d)
     F(d, emergency_pending);
     L(d, emergency_used);
     F(d, emergencies_active);
+    F(d, popup_call);
     F(d, next_quake_turn);
     F(d, quake_severity);
     F(d, quake_pending);
@@ -411,6 +740,65 @@ void dump_game_disasters(std::string &out, const Disasters &d)
             out += std::format("emergency_offer {} call={} illness={} count={} bonus={} win_percent={}\n", i, o.call,
                                o.illness, o.count, o.bonus, o.win_percent);
     }
+}
+
+// dump_game's emergency taken on (World::Emergency).
+void dump_game_emergency(std::string &out, const World &w)
+{
+    const World::Emergency &e = w.emergency;
+    out += "emergency:";
+    F(e, state);
+    F(e, timer);
+    F(e, illness);
+    F(e, patients);
+    F(e, to_spawn);
+    F(e, cured);
+    F(e, bonus);
+    F(e, win_percent);
+    F(e, present);
+    F(e, heli);
+    F(e, heli_landed);
+    F(e, heli_pad_tile);
+    out += '\n';
+}
+
+// dump_game's research (World::research, Game::hospital's allocation), the
+// doctors researching or to go back to it, the object kinds' figures (those
+// not all 0) and the advisor's announcements waiting.
+void dump_game_research(std::string &out, const Game &game)
+{
+    const World &w = game.world;
+    const Research &r = w.research;
+    out += "research:";
+    F(r, points);
+    F(r, earned);
+    F(r, spent);
+    F(r, exhausted);
+    list(out, "alloc", game.hospital.research_alloc);
+    out += std::format(" research_illness={}", game.hospital.research_illness);
+    list(out, "cost", r.cost);
+    list(out, "illness_research", r.illness_research);
+    out += "\nresearch_doctors=";
+    const char *sep = "";
+    for (size_t i = 1; i < w.things.size(); i++) {
+        const Thing &t = w.things[i];
+        if (t.type == kThingStaff && t.subtype == kStaffDoctor && (t.skills & kSkillResearcher) &&
+            t.state != kStaffApplicant) {
+            out += std::format("{}{}:state={}:orders={:#x}", sep, i, t.state, t.orders);
+            sep = ",";
+        }
+    }
+    out += '\n';
+    for (size_t i = 0; i < r.objects.size(); i++) {
+        const ObjectStats &o = r.objects[i];
+        if (o.cost || o.available || o.strength || o.equip_available || o.upgrade_level)
+            out += std::format("object_stats {} cost={} available={} strength={} equip_available={} upgrade_level={}\n",
+                               i, o.cost, o.available, o.strength, o.equip_available, o.upgrade_level);
+    }
+    for (size_t i = 0; i < w.announce.size(); i++)
+        if (w.announce[i][0])
+            out += std::format("announce {} values={},{},{},{}\n", i, w.announce[i][0], w.announce[i][1],
+                               w.announce[i][2], w.announce[i][3]);
 }
 
 // dump_game's pagers, calls and repair pages.
@@ -425,8 +813,8 @@ void dump_game_pagers(std::string &out, const World &w)
     for (size_t i = 0; i < w.calls.size(); i++) {
         const World::PlayerCall &c = w.calls[i];
         if (c.type)
-            out += std::format("call {} type={} subject={} id={} owner={} timer={}\n", i, c.type, c.subject, c.id,
-                               c.owner, c.timer);
+            out += std::format("call {} type={} subject={} id={} owner={} timer={} slot={} slide_step={}\n", i, c.type,
+                               c.subject, c.id, c.owner, c.timer, c.slot, c.slide_step);
     }
     for (size_t i = 0; i < w.repair_pager.count && i < w.repair_pager.pages.size(); i++) {
         const World::ThingPage &pg = w.repair_pager.pages[i];
@@ -504,7 +892,12 @@ std::string dump_game(const Game &game, int focus, int radius)
     for (size_t i = 0; i < game.arrivals.hospitals.size(); i++)
         dump_hospital(out, game.arrivals.hospitals[i], int(i));
     dump_game_world(out, w);
+    dump_game_counts(out, w);
+    out += std::format("choice_screen type={} subject={} timeout={}\n", game.choice_screen.type,
+                       game.choice_screen.subject, game.choice_screen.timeout);
     dump_game_disasters(out, game.disasters);
+    dump_game_emergency(out, w);
+    dump_game_research(out, game);
 
     dump_game_building(out, w);
 
@@ -516,7 +909,7 @@ std::string dump_game(const Game &game, int focus, int radius)
     out += "\n## Things (patients, staff, job applicants, objects; at = tile.frac)\n";
     for (size_t i = 1; i < w.things.size(); i++)
         if (w.things[i].type != kThingFree)
-            dump_thing(out, w, w.things[i], int(i));
+            out += dump_thing(w, uint16_t(i));
 
     if (focus >= 0 && focus < kMapCells)
         dump_game_map(out, w, focus, radius);
@@ -528,6 +921,29 @@ std::string dump_game(const Game &game, int focus, int radius)
     out += "\n## Trace (core/world/trace.h)\n";
 
     out += trace_turn(game);
+    return out;
+}
+
+std::vector<InspectSection> inspect_thing(const World &world, uint16_t id)
+{
+    std::vector<InspectSection> sections;
+    if (id && id < world.things.size()) {
+        Inspection out(sections);
+        dump_thing(out, world, world.things[id], id);
+    }
+    return sections;
+}
+
+std::string dump_thing(const World &world, uint16_t id)
+{
+    std::string out;
+    for (const InspectSection &s : inspect_thing(world, id)) {
+        out += out.empty() ? s.title : std::format(" {}:", s.title);
+        for (const InspectField &f : s.fields)
+            out += f.note.empty() ? std::format(" {}={}", f.name, f.value)
+                                  : std::format(" {}={}({})", f.name, f.value, f.note);
+        out += '\n';
+    }
     return out;
 }
 

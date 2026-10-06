@@ -139,6 +139,9 @@ AnimStart anim_start(const GameData &data, uint32_t anim)
     return anim < starts.size() ? starts[anim] : AnimStart{};
 }
 
+// OS_IN_USE (include/enums.h): an object someone is using.
+constexpr uint8_t kObjectInUse = 4;
+
 // Whether the game's mapwho_* tests `t` for being under the pointer: people
 // always, objects and doors in the states mapwho_object draws whole.
 bool pointed_testable(const Thing &t)
@@ -217,14 +220,14 @@ void draw_cell_overlays(CellFrames &frames, const MapCell &cell, int index, int1
 }
 
 // Whether draw_cell_things draws thing `t`. mapwho_object (objects and
-// doors), mapwho_person's usual case (draw_special_id_frame) and
-// mapwho_reaper are drawn; people's glow, wobble and status icons, and a
-// machine's user drawn split (draw_split_frame) or energised, are not drawn
-// yet.
+// doors), mapwho_person's usual case (draw_special_id_frame), mapwho_reaper
+// and mapwho_bang (explosion debris) are drawn; people's glow, wobble and
+// status icons, and a machine's user drawn split (draw_split_frame) or
+// energised, are not drawn yet.
 bool cell_thing_drawn(const Thing &t)
 {
     if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff &&
-        t.type != kThingReaper)
+        t.type != kThingReaper && t.type != kThingDebris && t.type != kThingHelicopter && t.type != kThingShadow)
         return false;
     // mapwho_person draws no patient gone, merged into a member of staff's
     // animation or gone into the gates of hell; mapwho_reaper no reaper being
@@ -247,13 +250,35 @@ void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id,
     const Thing &t = drawing.world.things[size_t(id)];
     int tx = at.x + kTileWidth / 2 + ((int(t.x.frac) - int(t.y.frac)) >> 3);
     int ty = at.y + ((int(t.x.frac) + int(t.y.frac)) >> 4);
-    // A dead patient floating away is drawn its height up (fly_height).
+    // A dead patient floating away is drawn its height up (fly_height),
+    // debris its altitude in 1/256 pixel, all its elements (mapwho_bang's
+    // draw_a_frame).
     if (t.type == kThingPatient && t.state == kPsFlys)
         ty -= t.countdown;
+    if (t.type == kThingDebris)
+        ty -= t.altitude >> 8;
+    // mapwho_helicopter: a helicopter its altitude up; mapwho_shadow: its
+    // shadow, all its elements, smaller as the helicopter rises
+    // (draw_a_frame_scaled).
+    if (t.type == kThingHelicopter)
+        ty -= t.altitude;
+    int32_t scale = 0x10000;
+    if (t.type == kThingShadow)
+        scale = 0x640000 / (drawing.world.things[t.caster].altitude + 100);
+    const uint8_t *layers = t.type == kThingDebris || t.type == kThingShadow ? nullptr : t.layers.data();
     Rect sprites;
-    Rect box =
-        draw_frame(frames.dst, {tx, ty}, t.sprite, t.flip != 0, data, {.layers = t.layers.data(), .extent = &sprites});
+    Rect box = draw_frame(frames.dst, {tx, ty}, t.sprite, t.flip != 0, data,
+                          {.layers = layers, .extent = &sprites, .scale = scale});
     grow(frames.bounds, box);
+    // mapwho_object's smoke of a worn machine, over it: the game draws it
+    // with the layer choices of the bytes holding Thing::smoke, a puff on
+    // each of layers 10-12 shown once its byte is 1.
+    if (t.type == kThingObject && t.overlay_frame && (pointed_testable(t) || t.state == kObjectInUse)) {
+        std::array<uint8_t, kLayerCount> smoke{};
+        std::copy(t.smoke.begin(), t.smoke.end(), smoke.begin() + 10);
+        grow(frames.bounds, draw_frame(frames.dst, {tx, ty}, t.overlay_frame, t.flip != 0, data,
+                                       {.layers = smoke.data(), .extent = &sprites}));
+    }
     PointedThing *pointed = drawing.drawn.pointed;
     if (pointed && pointed_testable(t) && box.x < pointed->at.x && box.x + box.w > pointed->at.x &&
         box.y < pointed->at.y && box.y + box.h > pointed->at.y)

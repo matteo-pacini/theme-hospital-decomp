@@ -5,6 +5,7 @@
 // the game's state and render the view.
 //
 // Usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] [--astar] [--rand]
+//                  [--advisor]
 //                  [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm [--camera X,Y] [--size WxH]]
 //   --data    the game data folder (default: the development folder)
 //   --level   the level to start (default 1); with --load, the snapshot's
@@ -21,6 +22,11 @@
 //   --astar   plan routes with A* rather than the game's wall following
 //             (from the level's start; a snapshot or command log keeps its own)
 //   --rand    also trace every draw from the random seed (`rand` events)
+//   --advisor also run the advisor (core/world/advisor.h) in each turn,
+//             after its start, as the game's frame does, and note each advice
+//             it gives in the trace as a comment line "# advice <situation>"
+//             (compare.py ignores it; the instrumented original writes the
+//             same, followed by the seed)
 //   --out     where to write the trace (default: standard output, unless
 //             --dump or --render is given)
 //   --dump    write dump_game (core/world/debug_dump.h) at the end, with the
@@ -62,9 +68,10 @@ namespace
 
 int usage()
 {
-    std::fprintf(stderr, "usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] "
-                         "[--astar] [--rand] [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm "
-                         "[--camera X,Y] [--size WxH]]\n");
+    std::fprintf(stderr,
+                 "usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] "
+                 "[--astar] [--rand] [--advisor] [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm "
+                 "[--camera X,Y] [--size WxH]]\n");
     return 2;
 }
 
@@ -209,6 +216,7 @@ struct Options {
     std::string turns_arg = "2000";
     bool astar = false;
     bool rand = false;
+    bool advisor = false;
     const char *out_path = nullptr;
     const char *script_path = nullptr;
     const char *load_path = nullptr;
@@ -266,6 +274,8 @@ bool parse_args(int argc, char **argv, Options &o)
             o.astar = true;
         } else if (!std::strcmp(argv[i], "--rand")) {
             o.rand = true;
+        } else if (!std::strcmp(argv[i], "--advisor")) {
+            o.advisor = true;
         } else {
             return false;
         }
@@ -322,11 +332,39 @@ bool start_level(th::Game &game, const Options &o, const th::GameData &data)
     return true;
 }
 
+// display_advisor as the game's frame runs it, between the turn's start and
+// its things: each advice given is noted in `out` (when not null) as a
+// comment line.
+void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out)
+{
+    th::AdvisorInputs in;
+    in.game_turn = game.turn_count;
+    in.level = game.level_number();
+    in.month = game.date.month;
+    in.open = game.open;
+    in.balance = game.balance;
+    in.reputation = game.reputation();
+    in.finance = &game.finance;
+    in.settings = &game.settings();
+    in.world = &game.world;
+    in.visitors = game.arrivals.hospitals[0].visitors;
+    in.text = &data.text();
+    std::array<uint8_t, th::kAdviceCount> given{};
+    for (size_t i = 0; i < given.size(); i++)
+        given[i] = game.advisor.advice[i].times_given;
+    // The presentation's generator, which nothing traced reads.
+    static uint32_t safeseed = th::kLevelStartSeed;
+    th::advisor_frame(game.advisor, in, data.anims(), safeseed);
+    for (size_t i = 0; i < given.size(); i++)
+        if (out && game.advisor.advice[i].times_given != given[i])
+            std::fprintf(out, "# advice %u\n", unsigned(game.advisor.advice[i].id));
+}
+
 // Runs turns up to `last_turn`, carrying out the script's commands between
 // them and tracing each to `out` (when not null). False, reported on
 // standard error, when a command cannot be carried out.
 bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &script, uint32_t last_turn,
-               std::FILE *out)
+               std::FILE *out, const th::GameData &data)
 {
     std::string error;
     size_t next = 0;
@@ -341,7 +379,12 @@ bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &
             std::fprintf(stderr, "the script leaves the game paused before turn %u\n", game.turn_count + 1);
             break;
         }
-        game.turn();
+        if (!o.advisor) {
+            game.turn();
+        } else if (game.start_turn()) {
+            run_advisor(game, data, out);
+            game.run_things();
+        }
         if (out)
             std::fputs(th::trace_turn(game, &game.events).c_str(), out);
         game.events.events.clear();
@@ -415,7 +458,7 @@ int main(int argc, char **argv)
     // with no frame limit.
     if (out)
         std::fputs(th::trace_turn(*game).c_str(), out);
-    bool ran = run_turns(*game, o, script, last_turn, out);
+    bool ran = run_turns(*game, o, script, last_turn, out, data);
     if (o.out_path)
         std::fclose(out);
     if (!ran)

@@ -21,6 +21,10 @@ struct FrameOptions {
     // If given, set to the rectangle covering every sprite drawn, which may
     // reach outside the returned box.
     Rect *extent = nullptr;
+    // The size drawn at, 16.16 fixed point, as draw_a_frame_scaled: each
+    // element's offset and size scaled (LbSpriteDrawScaled). The box
+    // returned is unscaled, as the game's.
+    int32_t scale = 0x10000;
 };
 
 // Draws composite frame `frame_id` with its origin at `at`, mirrored if

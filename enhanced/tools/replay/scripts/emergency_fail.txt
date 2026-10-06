@@ -1,0 +1,28 @@
+# Level 6: an emergency accepted and lost. cardiogram.txt's reception desk
+# and receptionist, then emergency_accept.txt's inflation room and inflator
+# but no doctor at all. The emergency accepted at turn 6201 brings its
+# patients to the inflation room's queue, where no one treats them; when
+# its time is up they lose their health (modify_person) and die, and the
+# reputation falls for the patients not cured. Compare up to turn 18000.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The inflation room and its inflator.
+130 55 0 0
+131 53 17 17
+132 2 6196 0
+133 2 6583 0
+134 8 6583 0
+135 18 0 0
+136 26 6069 0
+137 3 0 0
+138 4 17 0
+139 7 6454 9
+140 1 0 0
+# The emergency's call answered and the emergency accepted.
+6200 10 2 0
+6201 125 31 0

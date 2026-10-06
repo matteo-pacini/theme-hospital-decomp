@@ -104,6 +104,8 @@ std::vector<uint32_t> panel_to_argb(const GameData &data, const PanelFigures *fi
     if (figures)
         state.shown_balance = figures->balance;
     draw_panel_ui(layer, state, figures, data);
+    if (figures)
+        draw_emergency(layer, *figures, data);
     std::vector<uint32_t> all = layer.to_argb(data.palette());
     std::vector<uint32_t> pixels(size_t(width) * size_t(height));
     for (int y = 0; y < height; y++) {
@@ -187,20 +189,13 @@ PanelAction panel_frame(PanelState &state, const UiMouse &mouse, const GameData 
     return action;
 }
 
-void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data)
+namespace
+{
+
+// draw_money_on_panel, draw_date_on_panel and draw_rep_on_panel.
+void draw_panel_figures(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data)
 {
     const SpriteSheet &panel = data.panel();
-    int x = 0;
-    std::span<const PanelIconDef> icons = panel_icons(state.raised);
-    for (size_t i = 0; i < icons.size(); i++) {
-        Sprite sprite = panel.at(icons[i].sprite);
-        bool pressed = int(i) == state.pressed && icons[i].pressed;
-        layer.draw_sprite(x, kUiHeight - sprite.height, pressed ? panel.at(icons[i].pressed) : sprite);
-        x += sprite.width;
-    }
-    if (!figures)
-        return;
-
     // Positions are the game's (HiresBoxes, HiresCoords in src/coords.cpp).
     const Font &money = data.font(5);
     // draw_money_on_panel clips to the height of font sprite 18 ('1').
@@ -232,14 +227,56 @@ void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *
     layer.draw_text(data.font(6), 0, 6, buf, {{date_box.x, date_box.y, date_box.w}, date_box, kTextCentre});
 
     layer.draw_sprite(55 + (119 - 55) * figures->reputation / 1000, 467, panel.at(36));
+}
 
-    // draw_emergency for the opening countdown: the watch, its "open now"
-    // button and a face for each thirteenth of the countdown left.
-    if (figures->opening_countdown > 0 && figures->open_countdown >= 13) {
-        const SpriteSheet &watch = data.watch();
+} // namespace
+
+void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data)
+{
+    const SpriteSheet &panel = data.panel();
+    int x = 0;
+    std::span<const PanelIconDef> icons = panel_icons(state.raised);
+    for (size_t i = 0; i < icons.size(); i++) {
+        Sprite sprite = panel.at(icons[i].sprite);
+        bool pressed = int(i) == state.pressed && icons[i].pressed;
+        layer.draw_sprite(x, kUiHeight - sprite.height, pressed ? panel.at(icons[i].pressed) : sprite);
+        x += sprite.width;
+    }
+    if (figures)
+        draw_panel_figures(layer, state, figures, data);
+}
+
+void redraw_panel_left(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data)
+{
+    const SpriteSheet &panel = data.panel();
+    std::span<const PanelIconDef> icons = panel_icons(state.raised);
+    int x = 0;
+    for (size_t i = 0; i < 2; i++) {
+        Sprite sprite = panel.at(icons[i].sprite);
+        layer.draw_sprite(x, kUiHeight - sprite.height, sprite);
+        x += sprite.width;
+    }
+    if (figures)
+        draw_panel_figures(layer, state, figures, data);
+}
+
+void draw_emergency(UiLayer &layer, const PanelFigures &figures, const GameData &data)
+{
+    const SpriteSheet &watch = data.watch();
+    bool countdown = figures.opening_countdown > 0 && figures.open_countdown >= 13;
+    if (figures.emergency_timer > 0 || countdown || figures.emergency_state > 1)
         layer.draw_sprite(kWatchX, kWatchY, watch.at(13));
+    if (figures.emergency_timer > 0) {
+        // The emergency's time left, in eighths of 100 half days.
+        int face = figures.emergency_timer / 8;
+        if (face >= 6)
+            layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(1));
+        layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(size_t(watch_face(face))));
+    } else if (countdown) {
+        // The opening countdown: the "open now" button and a face for each
+        // thirteenth of the countdown left.
         layer.draw_sprite(kWatchButtonX, kWatchButtonY, watch.at(16));
-        int face = figures->opening_countdown / (figures->open_countdown / 13);
+        int face = figures.opening_countdown / (figures.open_countdown / 13);
         if (face >= 6)
             layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(1));
         layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(size_t(watch_face(face))));

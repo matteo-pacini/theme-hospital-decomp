@@ -42,6 +42,20 @@ enum class Speed : int {
 // The game's calendar: 50 turns a day (start_turn, src/game.cpp).
 constexpr int kTurnsPerDay = 50;
 
+// The fax screen's kinds (the game's choice.value, display_choice_screen):
+// an emergency offered, an emergency's result, a new illness, an epidemic
+// found, an epidemic's end, a patient with no treatment, a VIP asking to
+// visit, the VIP's verdict, a patient with no diagnosis.
+constexpr uint8_t kFaxEmergency = 2;
+constexpr uint8_t kFaxEmergencyOver = 3;
+constexpr uint8_t kFaxNewIllness = 4;
+constexpr uint8_t kFaxEpidemic = 5;
+constexpr uint8_t kFaxEpidemicOver = 6;
+constexpr uint8_t kFaxNoTreatment = 7;
+constexpr uint8_t kFaxVip = 8;
+constexpr uint8_t kFaxVipResult = 9;
+constexpr uint8_t kFaxNoDiagnosis = 10;
+
 struct Date {
     int day = 1;   // 1 to the month's length
     int month = 0; // 0 January to 11 December
@@ -69,6 +83,13 @@ class Game
     // random values the game draws every turn, the date every 50 turns,
     // the opening countdown, then the things.
     void turn();
+    // turn() in its two halves, between which the game's frame runs (its
+    // display, the advisor among it): start_turn (the game's start_turn:
+    // the turn count, the random values, the twice daily and daily admin,
+    // the opening countdown; false, doing nothing, while paused), then
+    // run_things (process_things and the blueprints').
+    bool start_turn();
+    void run_things();
 
     World world;
     Date date;
@@ -109,6 +130,18 @@ class Game
     // the start of every frame, paused or not: run it before the frame's
     // turns. Commands not ported yet are dropped.
     void process_turn();
+    // The fax the last command carried out asks to show the player
+    // (display_choice_screen's arguments, src/choice.cpp): its kind (kFax*,
+    // 0 for none), its subject (choice_spare_data: a patient or an
+    // illness) and the turns without the mouse moving after which it may
+    // close itself (choice_time_out; 0: it must be answered). process_turn
+    // clears it before each command; the interface opens the fax from it.
+    struct ChoiceScreen {
+        uint8_t type = 0;
+        uint16_t subject = 0;
+        int16_t timeout = 0;
+    };
+    ChoiceScreen choice_screen;
 
     // What the player and the interface did since the level started, a line
     // each, for th_replay's --script (tools/replay/main.cpp): "<turn> <rest>",

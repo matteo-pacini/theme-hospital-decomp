@@ -18,11 +18,13 @@
 #include "core/ui/build_room.h"
 #include "core/ui/buy_objects.h"
 #include "core/ui/charts.h"
+#include "core/ui/fax.h"
 #include "core/ui/hire_staff.h"
 #include "core/ui/info_windows.h"
 #include "core/ui/jukebox.h"
 #include "core/ui/layer.h"
 #include "core/ui/menubar.h"
+#include "core/ui/popups.h"
 #include "core/ui/startup.h"
 #include "core/ui/town_map.h"
 #include "core/ui/windows.h"
@@ -273,8 +275,8 @@ class App
     void game_key(const SDL_KeyboardEvent &key);
     void open_chart_key(int chart);
     void mouse_down(const SDL_MouseButtonEvent &button);
+    void inspect_click(uint8_t button);
     void mouse_up(const SDL_MouseButtonEvent &button);
-    void nav_click(uint8_t button, float x, float y);
     // The mouse in a layer drawn at (ox, oy) at `scale`.
     UiMouse ui_mouse(int ox, int oy, int scale) const;
     void menu_step(int out_w, int scale);
@@ -287,6 +289,10 @@ class App
     void edge_scroll(float dt);
     void apply_scroll();
     void render();
+    // The frame of what takes the whole window, if anything: the start-up
+    // screens, the fax, a chart or the town map. False when it is the
+    // hospital's.
+    bool screen_step(int out_w, int out_h);
     void hospital_step(int out_w, int out_h);
     void resize_view(int vw, int vh);
     void view_sounds(int vw, int vh);
@@ -313,9 +319,15 @@ class App
     // (debug_state) and the note, in a new folder under debug-reports/.
     void save_debug_report();
     std::string debug_state() const;
+    // debug_state's fax icons and open fax.
+    std::string debug_state_calls(const Game &g) const;
     void open_town_map();
     void town_step(int out_w, int out_h);
     void charts_step(int out_w, int out_h);
+    void fax_step(int out_w, int out_h);
+    // The sounds and announcements of what the game did since the last
+    // frame: new faxes, the emergency's helicopter sent, its clock.
+    void game_sounds(Game &game);
     // Carries out the frame's command (Game::event): the interface's part,
     // then the game's (process_turn).
     void run_command(Game &game);
@@ -357,6 +369,13 @@ class App
     // place of everything else while open, the game running behind them.
     Charts charts_;
     SDL_Texture *charts_tex_ = nullptr;
+    // The fax (the choice screen), shown in place of everything else while
+    // open, the game running behind it; and the fax icons above the panel.
+    Fax fax_;
+    SDL_Texture *fax_tex_ = nullptr;
+    PopupIcons popups_;
+    // The emergency's helicopter at the last frame, for its announcement.
+    uint16_t heli_seen_ = 0;
     // The thing under the pointer as the view was drawn this frame.
     PointedThing pointed_;
     // The start-up screens (intro, menus, the level's area movie), shown
@@ -377,6 +396,9 @@ class App
         int w = 0, h = 0;
     };
     std::array<PointerTexture, kPointerQueue + 1> pointers_{};
+    // The system crosshair, shown over the game while the inspector picks.
+    SDL_Cursor *crosshair_ = nullptr;
+    bool crosshair_shown_ = false;
     // The patient, staff and handyman windows, and the view of their person
     // drawn into them (its surface and draw_world's scratch).
     InfoWindows info_;
@@ -504,6 +526,8 @@ bool App::try_load_data(const std::filesystem::path &dir)
         std::fprintf(stderr, "%s\n", error.c_str());
     if (!load_charts(charts_, dir, data_->text(), data_->palette(), &error))
         std::fprintf(stderr, "%s\n", error.c_str());
+    if (!load_fax(fax_, dir, data_->text(), &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
     init_object_ui(object_ui_, data_->palette());
     if (!bank_.load(dir, data_->language(), &error))
         std::fprintf(stderr, "%s\n", error.c_str());
@@ -544,6 +568,9 @@ void App::load_level(int number)
     setup_insurances(map_->game.world, uint32_t(SDL_GetTicks()));
     charts_.hospital_names[0] = startup_.player_name();
     charts_.open = false;
+    fax_.open = false;
+    popups_ = {};
+    heli_seen_ = 0;
     town_.close();
     panel_state_.shown_balance = map_->game.balance;
     sounds_.safeseed = kLevelStartSeed;
@@ -590,6 +617,8 @@ void App::interface_step(int out_w, int out_h, int scale)
     bool paused = game && game->paused;
     bool input = !events.mouse_on_window && !interface_.modal() && !menu_.active;
     PanelAction action = panel_frame(panel_state_, mouse, *data_, paused, input);
+    if (game)
+        popup_icons_frame(popups_, game->world, mouse, *data_, frame_seconds_);
     if (game) {
         bool placing = game->world.placing.placing || hire_.placing();
         interface_panel_action(*game, action, placing);
@@ -749,6 +778,15 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
         pointer_sprite_ = kPointerDefault;
         return;
     }
+    if (popups_.hovered) {
+        // Hover action 7: a fax icon, which a click answers.
+        pointer_sprite_ = kPointerDefault;
+        if (mouse.left_pressed) {
+            close_irequesters(interface_);
+            game.event = popup_icon_click(popups_);
+        }
+        return;
+    }
     MapHover hover = map_hover(game.world, pointed_.thing);
     if (hover.pointer != kPointerKeep)
         pointer_sprite_ = hover.pointer;
@@ -775,13 +813,18 @@ void App::interface_advisor(Game &game, const UiMouse &mouse, bool input, bool p
     in.finance = &game.finance;
     in.settings = &game.settings();
     in.world = &game.world;
+    in.visitors = game.arrivals.hospitals[0].visitors;
     in.text = &data_->text();
+    uint8_t ambient = 0;
+    in.ambient = &ambient;
     in.pending = game.event;
     in.last = last_event_;
     in.staff_place_ok = hire_.place_ok;
     if (game.world.placing.placing)
         in.object_place_ok = game.world.placing.ok;
     advisor_frame(game.advisor, in, game.anims(), sounds_.safeseed);
+    if (ambient)
+        sounds_.play_ambient(ambient, has_receptionist(game.world), paused);
     last_event_ = game.event;
 }
 
@@ -811,11 +854,17 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
     if (map_) {
         const Game &g = map_->game;
         figures = {g.balance, g.date.day, g.date.month, g.reputation(), g.opening_countdown, g.open_countdown};
+        figures.emergency_timer = g.world.emergency.timer;
+        figures.emergency_state = g.world.emergency.state;
         // The watch is not shown while the tutorial holds the countdown.
         if (g.advisor.flags & kAdvisorTutorial)
             figures.opening_countdown = 0;
     }
     draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
+    if (map_) {
+        draw_popup_icons(ui_, popups_, *data_, panel_state_, &figures);
+        draw_emergency(ui_, figures, *data_);
+    }
     if (game) {
         draw_advisor(ui_, game->advisor, *data_, data_->font(0x1d));
         advance_balance_roll(panel_state_, game->balance);
@@ -880,7 +929,17 @@ void App::draw_pointer(int scale, uint8_t sprite)
     float density = SDL_GetWindowPixelDensity(window_);
     const PointerTexture &pt =
         pointers_[sprite < pointers_.size() && pointers_[sprite].texture ? sprite : kPointerDefault];
-    if (pt.texture && SDL_GetMouseFocus() == window_ && !ImGui::GetIO().WantCaptureMouse) {
+    bool over_game = SDL_GetMouseFocus() == window_ && !ImGui::GetIO().WantCaptureMouse;
+    bool crosshair = tools_.inspect.picking && over_game;
+    if (crosshair && !crosshair_)
+        crosshair_ = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
+    if (crosshair != crosshair_shown_) {
+        SDL_SetCursor(crosshair ? crosshair_ : SDL_GetDefaultCursor());
+        crosshair_shown_ = crosshair;
+    }
+    if (crosshair) {
+        SDL_ShowCursor();
+    } else if (pt.texture && over_game) {
         SDL_HideCursor();
         SDL_FRect p = {mx * density, my * density, float(pt.w * scale), float(pt.h * scale)};
         SDL_RenderTexture(renderer_, pt.texture, nullptr, &p);
@@ -980,11 +1039,51 @@ void App::run_command(Game &game)
     if (game.event.type == EV_SACK_STAFF)
         sounds_.play_sound(kSourceGeneral, kSfxSack);
     info_window_event(info_, interface_, game.world, game.event);
+    fax_command(fax_, game.event);
     game.process_turn();
+    // display_choice_screen, from the command's answer to a call.
+    if (game.choice_screen.type) {
+        close_irequesters(interface_);
+        display_choice_screen(fax_, game.choice_screen);
+    }
     hire_staff_after_turn(hire_, game.world);
     for (uint8_t sfx : game.world.building.sounds)
         sounds_.play_sound(kSourceGeneral, sfx);
     game.world.building.sounds.clear();
+    game_sounds(game);
+}
+
+void App::game_sounds(Game &game)
+{
+    // add_panel_popup's SFX_NEWFAX.
+    constexpr uint8_t kSfxNewFax = 0xdd;
+    for (; game.world.popups.new_faxes; game.world.popups.new_faxes--)
+        sounds_.play_sound(kSourceGeneral, kSfxNewFax);
+    // summon_vehicle's announcement of the emergency's illness, as its
+    // helicopter is sent.
+    const World::Emergency &e = game.world.emergency;
+    if (e.heli && e.heli != heli_seen_ && e.illness < 0x24)
+        sounds_.play_ambient(kAnnounceEmergency + e.illness, has_receptionist(game.world), game.paused);
+    heli_seen_ = e.heli;
+}
+
+// One frame of the fax, in place of the view and the interface, drawn
+// aspect-fit in the window; then the turn's command.
+void App::fax_step(int out_w, int out_h)
+{
+    Game &game = map_->game;
+    SDL_FRect at = fit_rect(fax_.surface, out_w, out_h);
+    UiMouse mouse = fitted_mouse(at, fax_.surface);
+    FaxKeys keys;
+    keys.escape = std::exchange(escape_, false) || std::exchange(chart_space_, false);
+    FaxResult r = fax_frame(fax_, mouse, keys, frame_seconds_, game, sounds_.safeseed);
+    for (uint8_t sfx : r.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    if (r.event.type)
+        game.event = r.event;
+    last_event_ = game.event;
+    run_command(game);
+    draw_fitted(fax_.surface, fax_.palette, fax_tex_, at);
 }
 
 // One frame of the open chart, in place of the view and the interface,
@@ -1121,6 +1220,7 @@ std::string App::debug_state() const
     s += std::format("window: {}x{} px, zoom {}, UI scale {}\n", w, h, zoom(), ui_scale());
     const char *screen = in_startup_       ? "start-up screens"
                          : !map_           ? "no level"
+                         : fax_.open       ? "fax"
                          : charts_.open    ? "chart"
                          : town_.is_open() ? "town map"
                                            : "hospital";
@@ -1153,8 +1253,41 @@ std::string App::debug_state() const
     s += std::format("balance: {}, reputation {}\n", g.balance, g.arrivals.hospitals[0].hospital_reputation);
     s += std::format("last command: type={} value={} flags={} arg={}\n", last_event_.type, last_event_.value,
                      last_event_.flags, last_event_.arg);
+    s += debug_state_calls(g);
     s += "\n";
     s += dump_game(g, map_cell_);
+    return s;
+}
+
+std::string App::debug_state_calls(const Game &g) const
+{
+    // The panel's fax icons as last drawn, and the call each stands for.
+    std::string s =
+        std::format("fax icons: hovered kind {}, emergency flash {}\n", popups_.hovered, popups_.emergency_frame);
+    auto icon = [&](const char *where, const PopupIcons::Icon &i) {
+        uint16_t head = g.world.first_call[0][i.kind];
+        const World::PlayerCall &c = g.world.calls[head];
+        s += std::format("  {} kind {} call {} (id {}) subject {} timer {} slot {} slide_step {} at {},{}\n", where,
+                         i.kind, head, c.id, c.subject, c.timer, c.slot, c.slide_step, i.x, i.y);
+    };
+    for (uint8_t i = 0; i < popups_.rising_count; i++)
+        icon("rising", popups_.rising[i]);
+    for (uint8_t i = 0; i < popups_.level_count; i++)
+        icon("level", popups_.level[i]);
+    if (!fax_.open)
+        return s + "fax: closed\n";
+    // The open fax: its call, answers and the button under the mouse.
+    const UiMouse &m = fax_.pending_mouse;
+    std::vector<Rect> boxes = fax_answer_buttons(fax_);
+    int hovered = -1;
+    for (size_t i = 0; i < boxes.size(); i++)
+        if (m.x >= boxes[i].x && m.x < boxes[i].x + boxes[i].w && m.y >= boxes[i].y && m.y < boxes[i].y + boxes[i].h)
+            hovered = int(i);
+    s += std::format("fax: kind {} subject {} timeout {} state {:#x}, enabled {:#x}, hovered answer {}, dialled {}\n",
+                     fax_.choice.type, fax_.choice.subject, fax_.choice.timeout, fax_.state, fax_.available, hovered,
+                     fax_.dialled_count);
+    for (size_t i = 0; i < fax_.buttons.size(); i++)
+        s += std::format("  answer {}: {}\n", i, fax_.buttons[i]);
     return s;
 }
 
@@ -1190,9 +1323,6 @@ int App::zoom() const
     return std::max(1, h / kMinViewHeight);
 }
 
-// The path finding tool's clicks on the view (window coordinates): left
-// places a walker, selects the person on the cell or sends the selected one
-// there; right deselects.
 UiMouse App::ui_mouse(int ox, int oy, int scale) const
 {
     float mx, my;
@@ -1328,32 +1458,6 @@ void App::open_menu_screen(int chart)
         map_->game.event = e;
 }
 
-void App::nav_click(uint8_t button, float x, float y)
-{
-    NavTool &nav = tools_.nav;
-    Game &game = map_->game;
-    if (button == SDL_BUTTON_RIGHT) {
-        nav.selected = 0;
-        return;
-    }
-    if (button != SDL_BUTTON_LEFT)
-        return;
-    float density = SDL_GetWindowPixelDensity(window_);
-    int z = zoom();
-    Point cell = world_to_cell({camera_.x + int(x * density) / z, camera_.y + int(y * density) / z});
-    if (cell.x < 0 || cell.x >= kMapSize || cell.y < 0 || cell.y >= kMapSize)
-        return;
-    int tile = cell.x + cell.y * kMapSize;
-    if (nav.placing) {
-        nav.placing = false;
-        nav.selected = game.add_walker(tile);
-    } else if (uint16_t id = person_at(game.world, cell.x, cell.y)) {
-        nav.selected = id;
-    } else if (nav.selected) {
-        game.send_walker(nav.selected, tile);
-    }
-}
-
 void App::handle_event(const SDL_Event &e)
 {
     ImGui_ImplSDL3_ProcessEvent(&e);
@@ -1420,6 +1524,11 @@ void App::key_down(const SDL_KeyboardEvent &key)
 // A key pressed over the hospital or a chart, with no modal requester up.
 void App::game_key(const SDL_KeyboardEvent &key)
 {
+    if (fax_.open) {
+        // The fax reads Escape and Space alone.
+        chart_space_ = chart_space_ || key.key == SDLK_SPACE;
+        return;
+    }
     if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
         // The charts, from the game or another chart; not while paused.
         if (!map_->game.paused)
@@ -1452,22 +1561,37 @@ void App::open_chart_key(int chart)
         map_->game.event = ev;
 }
 
+// The inspector's pick: a left click on a person or object inspects it, a
+// right click gives up; the game sees neither.
+void App::inspect_click(uint8_t button)
+{
+    InspectTool &inspect = tools_.inspect;
+    if (button == SDL_BUTTON_RIGHT)
+        inspect.picking = false;
+    if (button != SDL_BUTTON_LEFT || !pointed_.thing)
+        return;
+    inspect.thing = pointed_.thing;
+    inspect.picking = false;
+}
+
 void App::mouse_down(const SDL_MouseButtonEvent &button)
 {
+    if (tools_.inspect.picking && map_) {
+        inspect_click(button.button);
+        return;
+    }
     if (button.button == SDL_BUTTON_LEFT)
         buttons_.left = buttons_.left_pressed = true;
     if (button.button == SDL_BUTTON_RIGHT)
         buttons_.right = buttons_.right_pressed = true;
     // An open menu, a modal requester or the town map takes the clicks.
-    if (menu_.active || interface_.modal() || town_.is_open() || charts_.open)
+    if (menu_.active || interface_.modal() || town_.is_open() || charts_.open || fax_.open)
         return;
     // While something is being placed, its clicks are the interface's.
     if (map_ && (map_->game.world.placing.placing || hire_.placing()))
         return;
     if (button.button == SDL_BUTTON_MIDDLE || button.button == SDL_BUTTON_RIGHT)
         dragging_ = true;
-    if (tools_.open && map_)
-        nav_click(button.button, button.x, button.y);
 }
 
 void App::mouse_up(const SDL_MouseButtonEvent &button)
@@ -1490,7 +1614,7 @@ void App::update(float dt)
         return;
     if (map_ && !map_->game.paused)
         run_turns(dt);
-    if (town_.is_open() || charts_.open)
+    if (town_.is_open() || charts_.open || fax_.open)
         return;
     const ImGuiIO &io = ImGui::GetIO();
     if (!io.WantCaptureKeyboard)
@@ -1558,6 +1682,26 @@ void App::apply_scroll()
         camera_.y += dy;
 }
 
+bool App::screen_step(int out_w, int out_h)
+{
+    if (in_startup_) {
+        startup_step(out_w, out_h);
+    } else if (map_ && fax_.open) {
+        fax_step(out_w, out_h);
+    } else if (map_ && charts_.open) {
+        charts_step(out_w, out_h);
+    } else if (map_ && (town_.is_open() || std::exchange(open_town_, false))) {
+        if (!town_.is_open())
+            open_town_map();
+        town_step(out_w, out_h);
+    } else {
+        return false;
+    }
+    mixer_.update(sounds_, &music_);
+    draw_pointer(ui_scale());
+    return true;
+}
+
 void App::render()
 {
     ImGui_ImplSDLRenderer3_NewFrame();
@@ -1576,21 +1720,7 @@ void App::render()
             running_ = false;
         else if (action == MissingDataAction::Choose)
             SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
-    } else if (in_startup_) {
-        startup_step(out_w, out_h);
-        mixer_.update(sounds_, &music_);
-        draw_pointer(ui_scale());
-    } else if (map_ && charts_.open) {
-        charts_step(out_w, out_h);
-        mixer_.update(sounds_, &music_);
-        draw_pointer(ui_scale());
-    } else if (map_ && (town_.is_open() || std::exchange(open_town_, false))) {
-        if (!town_.is_open())
-            open_town_map();
-        town_step(out_w, out_h);
-        mixer_.update(sounds_, &music_);
-        draw_pointer(ui_scale());
-    } else {
+    } else if (!screen_step(out_w, out_h)) {
         hospital_step(out_w, out_h);
     }
 
@@ -1672,7 +1802,20 @@ void App::view_sounds(int vw, int vh)
 {
     sounds_.frames_drawn(frame_sounds_, vw);
     sounds_.manage_sound(map_->game.world, camera_, vw, vh);
-    sounds_.manage_background_sounds(map_->game.paused);
+    const World::Emergency &emergency = map_->game.world.emergency;
+    sounds_.manage_background_sounds(map_->game.paused,
+                                     emergency.timer > 0 ? std::optional<int>(emergency.timer) : std::nullopt);
+    // twice_daily_admin stops the clock as the emergency's time runs out.
+    if (emergency.timer <= 0 && sounds_.playing(kSourceClock, 0xa9))
+        sounds_.stop_sample(kSourceClock, 0xa9);
+    // The worn machines' warnings and announcements, and explosions.
+    World &world = map_->game.world;
+    for (uint8_t sfx : world.machine_sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    for (uint8_t announcement : world.machine_announcements)
+        sounds_.play_ambient(announcement, has_receptionist(world), map_->game.paused);
+    world.machine_sounds.clear();
+    world.machine_announcements.clear();
     // The music moves on to the next song, and the announcer speaks, as
     // the game does each frame; only the announcer while a modal
     // requester is up.
@@ -1755,11 +1898,15 @@ void App::shutdown()
         SDL_DestroyTexture(town_tex_);
     if (charts_tex_)
         SDL_DestroyTexture(charts_tex_);
+    if (fax_tex_)
+        SDL_DestroyTexture(fax_tex_);
     if (ui_tex_)
         SDL_DestroyTexture(ui_tex_);
     for (PointerTexture &pt : pointers_)
         if (pt.texture)
             SDL_DestroyTexture(pt.texture);
+    if (crosshair_)
+        SDL_DestroyCursor(crosshair_);
     if (screen_)
         SDL_DestroyTexture(screen_);
     if (imgui_ready_) {

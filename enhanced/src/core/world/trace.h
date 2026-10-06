@@ -162,6 +162,103 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          overflowing
 //   policy_rest <n>                        process_turn's EV_SET_POLICY of
 //                                          the rest threshold (value 4)
+//   expire_call <id> type=<n> subject=<n>  expire_playercalls, a call
+//                                          expiring unanswered (type 2: an
+//                                          emergency offer)
+//   emergency_offer <call> illness=<n> count=<n> bonus=<n> win=<n>
+//                                          setup_emergency_stats: an
+//                                          emergency offered (bonus per
+//                                          patient, win the percentage)
+//   emergency_accept <call> illness=<n> count=<n> bonus=<n> win=<n>
+//                                          give_emergency_stats, the offer
+//                                          taken on (before its slot is freed)
+//   emergency_refuse <call>                process_turn's CH_EMERGENCY_REFUSE
+//                                          (the call last taken off the panel)
+//   emergency_start                        process_turn's EV_START_EMERGENCY
+//   heli <id>                              try_to_generate_emergency, the
+//                                          helicopter summoned (0: none free)
+//   heli_landed <id>                       helicopter_lands, on landing
+//   heli_gone <id>                         helicopter_leaves, at the top,
+//                                          before it and its shadow go
+//   emergency_peep <id>                    create_a_peep, an emergency patient
+//                                          made (after its peep event)
+//   emergency_timer <timer> state=<n>      twice_daily_admin, the emergency's
+//                                          timer counted down (timer after,
+//                                          state before)
+//   emergency_over cured=<n> patients=<n> bonus=<n>  daily_admin, the
+//                                          emergency over (bonus 0: failed)
+//   emergency_cure <patient>               effect_illness, an emergency
+//                                          patient cured
+//   emergency_dies <patient>               modify_person, an emergency
+//                                          patient losing its health as time
+//                                          is up
+//   emergency_leaves <patient>             person_go_for_treatment, an
+//                                          emergency patient finding no room
+//                                          of its treatment's kind (one that
+//                                          will not pay: treatment 0's), so
+//                                          going home
+//   area <n>                               count_hospital_area for player 0,
+//                                          at its end (month_end's and
+//                                          calculate_value's)
+//   price_level <n>                        calc_pricing_factor for player 0,
+//                                          at month_end
+//   choice <value> arg=<n> awaiting=<0 or 1>  process_turn's EV_CHOICE_RESULT
+//                                          (a fax answered), awaiting 1 if
+//                                          thing arg is a patient awaiting
+//                                          a decision (PF_AWAITING_DECISION)
+//   counts patients=<n> impatience=<n> waiting=<n> happy=<n> refresh=<n>
+//          warm=<n> bladder=<n> staff=<n> tired=<sum>,<per kind 0-3>
+//          happy=<n> warm=<n> idle=<per kind 0-4> machines=<n>
+//          wear=<sum>,<most> worst=<kind> crackups=<n> visitors=<n>
+//                                          final_count, on the turns of a
+//                                          statistics pass (adcounts: the
+//                                          patients' sums, staff = doctors
+//                                          and nurses, then the staff's sums;
+//                                          visitors: this month's in the
+//                                          graphs' history)
+//   modify_machine <id> used=<n> strength=<n> smoke=<n>,<n>,<n>
+//                                          modify_machine: a machine worn to
+//                                          75% or more, as it was
+//   machine_warning <id>                   modify_machine, its warning sound
+//   machine_smoke <id> smoke=<n>,<n>,<n>   modify_machine, its smoke after
+//                                          it, before it may break down
+//   machine_disaster <id> kind=<n> room=<n>  machine_disaster
+//   explosion tile=<n> anim=<n>            create_explosion
+//   blast tile=<n> radius=<n>              blast_effect, the radius drawn
+//   room_destroyed <room> mishaps=<n>      machine_disaster, the room
+//                                          destroyed, before its queue is
+//                                          sent on (mishaps hospital 0's)
+//   replace_machine <id> used=<n> strength=<n>  replace_machine
+//   repair_request <id>                    process_turn's EV_THINGPAGE_REQUEST
+//   repair <handyman> machine=<id>         handyman_works, the repair
+//                                          started (machine 0: none left,
+//                                          as after an explosion)
+//   repaired <handyman> machine=<id> room=<n>  handyman_works, the repair
+//                                          done, before the room opens
+//   research_points <staff> amount=<n> points=<n>  research_contribution,
+//                                          hospital 0's, before the points
+//                                          are added (amount with the
+//                                          researcher's ability, points
+//                                          before)
+//   research <category> illness=<n> amount=<n>  do_illness_research,
+//                                          hospital 0's (the illness as
+//                                          given, before a machine's is
+//                                          found)
+//   researched <object> illness=<n>        item_researched, hospital 0's
+//   drug_researched <illness>              drug_researched, hospital 0's
+//   drug_improved <illness> effect=<n> cost=<n>  drug_improved, hospital 0's,
+//                                          the drug as it ends
+//   upgraded <object> level=<n> strength=<n> cost=<n>  item_upgraded,
+//                                          hospital 0's, the object as it
+//                                          ends
+//   available <object>                     auto_available, hospital 0's
+//                                          object becoming available
+//   category_exhausted <category>          research_category_exhausted,
+//                                          hospital 0's
+//   send_to_research <doctor> room=<n>     send_doctor_to_research, a room
+//                                          found
+//   alter_research <category> value=<n>    alter_research (process_turn's
+//                                          EV_ALTER_RESEARCH), hospital 0's
 // Whoever ports one of these functions writes its event on both sides.
 std::string trace_turn(const Game &game, const EventLog *events = nullptr);
 

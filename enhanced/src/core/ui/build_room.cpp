@@ -88,7 +88,7 @@ int64_t room_price(const Game &game, int room_type)
     const RoomTypeInfo &type = kRoomTypeInfo[size_t(room_type) % kRoomTypes];
     int64_t total = game.settings().rooms[size_t(room_type) % kRoomTypes].cost;
     for (int k = 0; k < type.compulsory_count; k++)
-        total += game.settings().objects[type.objects[size_t(k)]].start_cost;
+        total += object_cost(game.world, type.objects[size_t(k)]);
     return total;
 }
 

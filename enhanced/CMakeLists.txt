@@ -44,12 +44,14 @@ add_library(th_core STATIC
   src/core/render/view.cpp
   src/core/ui/build_room.cpp
   src/core/ui/buy_objects.cpp
+  src/core/ui/fax.cpp
   src/core/ui/charts.cpp
   src/core/ui/hire_staff.cpp
   src/core/ui/info_windows.cpp
   src/core/ui/jukebox.cpp
   src/core/ui/layer.cpp
   src/core/ui/menubar.cpp
+  src/core/ui/popups.cpp
   src/core/ui/startup.cpp
   src/core/ui/town_map.cpp
   src/core/ui/windows.cpp
@@ -57,17 +59,21 @@ add_library(th_core STATIC
   src/core/world/arrivals.cpp
   src/core/world/build.cpp
   src/core/world/complex.cpp
+  src/core/world/counts.cpp
   src/core/world/debug_dump.cpp
+  src/core/world/disaster.cpp
   src/core/world/emergency.cpp
   src/core/world/finance.cpp
   src/core/world/game.cpp
   src/core/world/litter.cpp
   src/core/world/nav.cpp
   src/core/world/objects.cpp
+  src/core/world/popups.cpp
   src/core/world/queue.cpp
   src/core/world/reaper.cpp
   src/core/world/reception.cpp
   src/core/world/reputation.cpp
+  src/core/world/research.cpp
   src/core/world/rooms.cpp
   src/core/world/snapshot.cpp
   src/core/world/staff.cpp
@@ -91,6 +97,7 @@ set(TH_SNAPSHOT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/game.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/object_tables.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/objects.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/research.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/snapshot.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/staff.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/trace.h
@@ -143,6 +150,7 @@ if(BUILD_TESTING)
     tests/patients.cpp
     tests/render.cpp
     tests/replay.cpp
+    tests/research.cpp
     tests/rooms.cpp
     tests/staff.cpp
     tests/ui.cpp

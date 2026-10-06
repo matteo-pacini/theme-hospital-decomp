@@ -49,10 +49,10 @@ extern const std::array<std::array<uint16_t, 0x8c>, 5> kStaffAnimStarts;
 //
 // Doors (actions 14, 20 and 22) take the member of staff into or out of a
 // room, claiming it on the way in (check_room_mutex_on_entry) and
-// answering its page (pager_arrival); complex_success (action 52) rests
-// staff and counts a use of their object. Not yet ported: research and
-// autopsies among complex_success's kinds, and the operating theatre's
-// surgeon counts (60, 62).
+// answering its page (pager_arrival); complex_success (action 52) adds
+// research points, rests staff and counts a use of their object. Not yet
+// ported: autopsies among complex_success's kinds, and the operating
+// theatre's surgeon counts (60, 62).
 uint8_t process_staff_complex(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                               const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
 

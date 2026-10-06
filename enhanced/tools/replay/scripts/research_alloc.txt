@@ -1,0 +1,35 @@
+# Level 3: research_default.txt's research room and two researchers, the
+# allocation changed as research goes on (EV_ALTER_RESEARCH): all to new
+# treatment machines until that category runs out and closes; then
+# diagnosis 50% and the closed category opened again at 50% (it closes
+# again the next day); improvements 30%; specialisation 20% with research
+# concentrated on heaped piles' drug (illness 32), then the concentration
+# taken off again.
+101 55 0 0
+102 53 28 28
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 28 0
+110 7 9260 55
+111 7 9264 257
+112 7 8880 258
+113 1 0 0
+114 48 1 13
+115 5 9004 13
+116 48 1 16
+117 5 9005 16
+121 80 1 0
+122 80 2 0
+123 80 3 0
+124 80 4 0
+125 80 0 100
+7000 80 1 50
+7001 80 0 50
+10000 80 3 30
+12000 114 32 0
+12001 80 4 20
+14000 114 32 0

@@ -174,9 +174,8 @@ void play(World &w, uint8_t sfx)
     w.building.sounds.push_back(sfx);
 }
 
-// place_small_thing (src/objects.cpp): puts blueprint marker `id` (0 takes
-// it off) at the end of `tile`'s thing list, unless `keep` and one is
-// there. Markers from 0x4b set their cell flags.
+} // namespace
+
 void place_small_thing(World &w, int tile, int id, bool keep)
 {
     if (!in_map(tile))
@@ -195,6 +194,9 @@ void place_small_thing(World &w, int tile, int id, bool keep)
             c.flags |= kBlueprints[size_t(id)].flags;
     }
 }
+
+namespace
+{
 
 // find_bluep_who (src/build.cpp): the negated marker at the end of `tile`'s
 // list, 0 for none or for markers past 0x4b.
@@ -1325,9 +1327,9 @@ void recolour_all_rooms(World &w)
 }
 
 // The object kinds a room type's furnishing offers, as set_buyable_items
-// (src/req1.cpp) lists them: available to the player (StartAvail; research
-// is not ported) and in the level.
-void set_buyable_items(World &w, const Balance &settings, int room_type)
+// (src/req1.cpp) lists them: available to the player (equipment_available:
+// from the start, by their month or researched) and in the level.
+void set_buyable_items(World &w, int room_type)
 {
     ObjectPlacing &p = w.placing;
     const RoomTypeInfo &type = kRoomTypeInfo[size_t(room_type) % kRoomTypes];
@@ -1336,7 +1338,7 @@ void set_buyable_items(World &w, const Balance &settings, int room_type)
     size_t count = 0;
     for (int i = 0; i < type.buyable_count && count < p.offered.size(); i++) {
         uint8_t obj = type.buyable[size_t(i)];
-        if (settings.objects[obj].start_avail == 1 && settings.objects[obj].available_for_level == 1)
+        if (equipment_available(w, obj))
             p.offered[count++] = obj;
     }
     for (; count < p.offered.size(); count++)
@@ -1345,18 +1347,19 @@ void set_buyable_items(World &w, const Balance &settings, int room_type)
     p.item = kRoomTypeInfo[p.room_type % kRoomTypes].buyable[0];
 }
 
-// room_available (src/req1.cpp): the player has every object the room type
-// requires.
-bool room_available(const Balance &settings, int room_type)
+} // namespace
+
+bool room_available(const World &world, int room_type)
 {
     const RoomTypeInfo &type = kRoomTypeInfo[size_t(room_type) % kRoomTypes];
-    for (int i = 0; i < type.compulsory_count; i++) {
-        const Balance::Object &o = settings.objects[type.objects[size_t(i)]];
-        if (o.start_avail == 0 || o.available_for_level == 0)
+    for (int i = 0; i < type.compulsory_count; i++)
+        if (!equipment_available(world, type.objects[size_t(i)]))
             return false;
-    }
     return true;
 }
+
+namespace
+{
 
 // delete_object (src/objects.cpp), as remove_object_from_map calls it: `obj`
 // out of the object list of `room` (if any) and of its kind.
@@ -1398,12 +1401,15 @@ bool remove_object_from_map_is_big(const World &w, int t)
     return false;
 }
 
-// remove_object_from_map (src/objects.cpp) without the statistics, pagers
-// and interrupting its user, which are not ported: the object off the map
-// and its lists, kept in the things table (state OS_REMOVED).
+// remove_object_from_map (src/objects.cpp) without the statistics, the
+// plants' pages and interrupting its user, which are not ported: its repair
+// page cancelled, the object off the map and its lists, kept in the things
+// table (state OS_REMOVED).
 void remove_object_from_map(World &w, uint16_t id)
 {
     Thing &obj = w.things[id];
+    if (obj.owner == kPlayer)
+        thingpage_cancel(w.repair_pager, id);
     int tile = obj.x.tile + (obj.y.tile << 7);
     remove_object_shape(w, tile, obj.subtype, obj.facing);
     uint16_t room = room_at(w, uint16_t(tile));
@@ -2160,7 +2166,7 @@ void apply_build_event_reset_rooms(Game &game, uint16_t dept_id)
     const DepartmentInfo &dept = kDepartments[dept_id % kDepartments.size()];
     size_t count = 0;
     for (int i = 0; i < dept.count; i++)
-        if (room_available(game.settings(), dept.rooms[size_t(i)]))
+        if (room_available(game.world, dept.rooms[size_t(i)]))
             p.offered[count++] = dept.rooms[size_t(i)];
     for (; count < p.offered.size(); count++)
         p.offered[count] = 0;
@@ -2176,7 +2182,7 @@ void apply_build_event_init_blueprint(Game &game, int type)
     b = BuildState{};
     b.room_type = uint8_t(type);
     p.room_type = uint16_t(type);
-    set_buyable_items(w, game.settings(), type);
+    set_buyable_items(w, type);
     // buy_compulsory_items (src/req1.cpp).
     p.buy_count = {};
     const RoomTypeInfo &info = kRoomTypeInfo[size_t(type)];
@@ -2217,7 +2223,7 @@ void apply_build_event_furnish_edited_room(Game &game)
             counts[obj]--;
         }
     }
-    set_buyable_items(w, game.settings(), room.type);
+    set_buyable_items(w, room.type);
     p.requester = ObjectRequester::BuyObjects;
     p.room_type = bd.build.room_type;
     p.arg3 = room.pos & 0xff;

@@ -12,24 +12,29 @@
 #include "core/render/panel.h"
 #include "core/render/surface.h"
 #include "core/ui/charts.h"
+#include "core/ui/fax.h"
 #include "core/ui/hire_staff.h"
 #include "core/ui/info_windows.h"
 #include "core/ui/jukebox.h"
 #include "core/ui/layer.h"
 #include "core/ui/menu_tables.h"
 #include "core/ui/menubar.h"
+#include "core/ui/popups.h"
 #include "core/ui/startup.h"
 #include "core/ui/town_map.h"
 #include "core/ui/windows.h"
 #include "core/world/arrivals.h"
 #include "core/world/events.h"
 #include "core/world/finance.h"
+#include "core/world/popups.h"
+#include "core/world/rooms.h"
 #include "core/world/staff.h"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -1260,4 +1265,294 @@ void test_info_windows(const char *dir)
     check_staff_window(*t);
     check_handyman_window(*t);
     check_window_follows_person(*t);
+}
+
+namespace
+{
+
+// Game frames of the fax icons, the mouse at `m`, until `done` or `limit`
+// frames; the frames run.
+int popup_frames(th::PopupIcons &icons, th::World &w, const th::GameData &gd, const th::UiMouse &m, int limit,
+                 const std::function<bool()> &done)
+{
+    for (int i = 0; i < limit; i++) {
+        if (done())
+            return i;
+        th::popup_icons_frame(icons, w, m, gd, 0.04);
+    }
+    return limit;
+}
+
+bool popups_settled(const th::World &w)
+{
+    for (size_t kind = 1; kind < th::kPopupIcons.size(); kind++)
+        if (uint16_t head = w.first_call[0][kind]; head && w.calls[head].slide_step)
+            return false;
+    return true;
+}
+
+// The kinds of the icons level with their slots, left to right.
+std::vector<int> level_kinds(const th::PopupIcons &icons)
+{
+    std::vector<std::pair<int, int>> by_x;
+    for (uint8_t i = 0; i < icons.level_count; i++)
+        by_x.emplace_back(icons.level[i].x, icons.level[i].kind);
+    std::sort(by_x.begin(), by_x.end());
+    std::vector<int> kinds;
+    for (auto [x, kind] : by_x)
+        kinds.push_back(kind);
+    return kinds;
+}
+
+// The icons settled, a game frame on: those level with their slots.
+void popups_settle(th::PopupIcons &icons, th::World &w, const th::GameData &gd)
+{
+    th::UiMouse away;
+    popup_frames(icons, w, gd, away, 200, [&] { return popups_settled(w); });
+    th::popup_icons_frame(icons, w, away, gd, 0.04);
+}
+
+// Three calls of three kinds and a second of the first kind: the three
+// rise and slide into their slots, the fourth has none.
+void check_popups_slide(th::PopupIcons &icons, th::World &w, const th::GameData &gd)
+{
+    uint16_t first = th::make_a_playercall(w, 4, 10, 0, 0);
+    th::make_a_playercall(w, 7, 22, 0xf, 0);
+    th::make_a_playercall(w, 8, 11, 0, 0);
+    uint16_t second = th::make_a_playercall(w, 4, 12, 0, 0);
+    CHECK(first == 1 && second == 4 && w.popups.new_faxes == 4);
+    CHECK(w.first_call[0][4] == 1 && w.first_call[0][7] == 2 && w.first_call[0][8] == 3);
+    CHECK(w.calls[1].slot == 0 && w.calls[2].slot == 1 && w.calls[3].slot == 2 && w.calls[1].slide_step == 1);
+    CHECK(w.popups.shutter_state == 2);
+    th::UiMouse away;
+    th::popup_icons_frame(icons, w, away, gd, 0.04);
+    CHECK(w.popups.pos[3] == 0 && icons.rising_count == 3 && icons.level_count == 0);
+    CHECK(icons.rising[0].y == 29 && icons.rising[0].x == th::kPopupSlotX[0] + 174 && w.calls[1].slide_step == 1);
+    int frames = popup_frames(icons, w, gd, away, 200, [&] { return popups_settled(w); });
+    CHECK(frames > 13 && frames < 100);
+    th::popup_icons_frame(icons, w, away, gd, 0.04);
+    CHECK(icons.rising_count == 0 && level_kinds(icons) == std::vector<int>({4, 7, 8}));
+    for (uint8_t i = 0; i < icons.level_count; i++)
+        CHECK(icons.level[i].x == th::kPopupSlotX[w.calls[w.first_call[0][icons.level[i].kind]].slot]);
+}
+
+// The mouse over the second icon: it answers the new illness's call; just
+// above the icons, nothing.
+void check_popups_hover(th::PopupIcons &icons, th::World &w, const th::GameData &gd)
+{
+    th::UiMouse over;
+    over.x = th::kPopupSlotX[1] + 2;
+    over.y = icons.level[0].hover_y + 2;
+    th::popup_icons_frame(icons, w, over, gd, 0.0);
+    CHECK(icons.hovered == 7);
+    th::Event click = th::popup_icon_click(icons);
+    CHECK(click.type == th::EV_ANSWER_PLAYERCALL && click.value == 7 && click.arg == 0);
+    over.y = icons.level[0].hover_y - 1;
+    th::popup_icons_frame(icons, w, over, gd, 0.0);
+    CHECK(icons.hovered == 0 && th::popup_icon_click(icons).type == th::EV_NONE);
+}
+
+// Drawn in their window above the panel's left end, which is redrawn.
+void check_popups_drawn(const th::PopupIcons &icons, const th::GameData &gd)
+{
+    th::UiLayer layer;
+    layer.resize(th::kUiWidth, th::kUiHeight);
+    layer.clear();
+    th::draw_popup_icons(layer, icons, gd, {}, nullptr);
+    std::vector<uint32_t> argb = layer.to_argb(gd.palette());
+    int top = th::kUiHeight, right = 0;
+    for (int y = 0; y < th::panel_top(gd); y++)
+        for (int x = 0; x < th::kUiWidth; x++)
+            if (argb[size_t(y * th::kUiWidth + x)]) {
+                top = std::min(top, y);
+                right = std::max(right, x);
+            }
+    CHECK(top == icons.level[0].hover_y + th::kPopupWindowDy);
+    CHECK(right == th::kPopupSlotX[1] + gd.panel().at(th::kPopupIcons[4]).width - 1);
+    CHECK(argb[size_t((th::kUiHeight - 1) * th::kUiWidth + 10)] != 0);
+}
+
+} // namespace
+
+// The panel's fax icons: a call of each kind takes the next slot and rises
+// from behind the panel, held until the message bar's shutter has closed,
+// then slides left into its slot; a second call of a kind shows no icon of
+// its own. The icon under the mouse answers its kind's first call. As
+// calls are answered or expire the icons close up, the next call of a kind
+// taking over its icon.
+void test_panel_popups(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::World &w = f.game->world;
+    th::PopupIcons icons;
+    check_popups_slide(icons, w, f.gd);
+    check_popups_hover(icons, w, f.gd);
+    // The first call answered: the second of its kind takes its icon, at the
+    // end, the others closing up.
+    CHECK(th::get_playercall(w, 4, 1, 0) == 10 && w.first_call[0][4] == 4);
+    popups_settle(icons, w, f.gd);
+    CHECK(level_kinds(icons) == std::vector<int>({7, 8, 4}));
+    // The new illness's call expires after 15 days.
+    for (int day = 0; day < 15; day++)
+        th::expire_playercalls(w);
+    CHECK(w.first_call[0][7] == 0);
+    popups_settle(icons, w, f.gd);
+    CHECK(level_kinds(icons) == std::vector<int>({8, 4}));
+    check_popups_drawn(icons, f.gd);
+}
+
+namespace
+{
+
+// A left click at `at` on the fax: pressed, then released a game frame on.
+th::FaxResult fax_click(th::Fax &fax, const th::Game &g, uint32_t &safeseed, th::Point at)
+{
+    th::UiMouse m;
+    m.x = at.x;
+    m.y = at.y;
+    m.left_pressed = m.left_held = true;
+    th::fax_frame(fax, m, {}, 0.04, g, safeseed);
+    m.left_pressed = m.left_held = false;
+    m.left_released = true;
+    return th::fax_frame(fax, m, {}, 0.04, g, safeseed);
+}
+
+th::FaxResult fax_answer(th::Fax &fax, const th::Game &g, uint32_t &safeseed, size_t button)
+{
+    th::Rect b = th::fax_answer_buttons(fax)[button];
+    return fax_click(fax, g, safeseed, {b.x + b.w / 2, b.y + b.h / 2});
+}
+
+bool has_sound(const th::FaxResult &r, uint8_t sfx)
+{
+    return std::find(r.sounds.begin(), r.sounds.end(), sfx) != r.sounds.end();
+}
+
+// The fax opened for `choice`: its first frame, which draws it.
+th::FaxResult fax_open(th::Fax &fax, const th::Game &g, uint32_t &safeseed, th::Game::ChoiceScreen choice)
+{
+    th::display_choice_screen(fax, choice);
+    return th::fax_frame(fax, {}, {}, 0.04, g, safeseed);
+}
+
+// The emergency offered: accept or refuse; accepting refused while an
+// emergency runs.
+void check_fax_emergency(th::Fax &fax, th::Game &g, uint32_t &safeseed, const th::LanguageText &text)
+{
+    g.disasters.offers[0] = {5, 500, 1, 2, 6, 75};
+    g.disasters.popup_call = 5;
+    th::FaxResult r = fax_open(fax, g, safeseed, {th::kFaxEmergency, 0, 0});
+    CHECK(has_sound(r, 0xab) && fax.open && fax.buttons.size() == 2 && (fax.available & 3) == 3);
+    uint16_t available = 0xffff;
+    uint32_t seed = safeseed;
+    std::string message = th::fax_message(fax, g, available, seed);
+    CHECK(message.find(std::string(text.at(th::TextSection::Illness, 2))) != std::string::npos);
+    CHECK(message.find("3000") != std::string::npos);
+    r = fax_answer(fax, g, safeseed, 0);
+    CHECK(r.event.type == th::EV_CHOICE_RESULT && r.event.value == th::kChoiceEmergencyAccept && has_sound(r, 0x41));
+    th::fax_command(fax, r.event);
+    CHECK(!fax.open);
+    g.world.emergency.state = 10;
+    fax_open(fax, g, safeseed, {th::kFaxEmergency, 0, 0});
+    CHECK((fax.available & 1) == 0 && fax_answer(fax, g, safeseed, 0).event.type == th::EV_NONE);
+    r = fax_answer(fax, g, safeseed, 1);
+    CHECK(r.event.type == th::EV_CHOICE_RESULT && r.event.value == th::kChoiceEmergencyRefuse);
+    g.world.emergency.state = 0;
+}
+
+// A patient with no treatment (send home, wait, or the research department,
+// refused until autopsies can be done) and with no diagnosis (guessing
+// refused unless the hospital knows and can cure the illness).
+void check_fax_patient(th::Fax &fax, th::Game &g, uint32_t &safeseed, uint16_t patient)
+{
+    th::Thing &p = g.world.things[patient];
+    p.type = th::kThingPatient;
+    p.illness = 2;
+    fax_open(fax, g, safeseed, {th::kFaxNoTreatment, patient, 0});
+    CHECK(fax.buttons.size() == 3 && (fax.available & 7) == 3);
+    CHECK(fax_answer(fax, g, safeseed, 2).event.type == th::EV_NONE);
+    th::FaxResult r = fax_answer(fax, g, safeseed, 1);
+    CHECK(r.event.type == th::EV_CHOICE_RESULT && r.event.value == th::kChoiceTreatWait && r.event.arg == patient);
+    r = fax_answer(fax, g, safeseed, 0);
+    CHECK(r.event.value == th::kChoiceTreatSendHome && r.event.arg == patient);
+    fax_open(fax, g, safeseed, {th::kFaxNoDiagnosis, patient, 0});
+    CHECK(fax.buttons.size() == 3 && (fax.available & 7) == 5);
+    g.world.cure_available[2] = 1;
+    g.hospital.illnesses[2].discovered = 1;
+    fax_open(fax, g, safeseed, {th::kFaxNoDiagnosis, patient, 0});
+    CHECK((fax.available & 7) == 7);
+    r = fax_answer(fax, g, safeseed, 1);
+    CHECK(r.event.value == th::kChoiceDiagGuess && r.event.arg == patient);
+    CHECK(fax_answer(fax, g, safeseed, 2).event.value == th::kChoiceDiagWait);
+}
+
+// A new illness's fax closes by its one button, sending nothing; the
+// emergency's result closes on Escape, once the mouse has not moved for 400
+// turns, or by the close button.
+void check_fax_closing(th::Fax &fax, th::Game &g, uint32_t &safeseed)
+{
+    fax_open(fax, g, safeseed, {th::kFaxNewIllness, 2, 0});
+    CHECK(fax.buttons.size() == 1);
+    th::FaxResult r = fax_answer(fax, g, safeseed, 0);
+    CHECK(r.event.type == th::EV_NONE && !fax.open);
+    fax_open(fax, g, safeseed, {th::kFaxEmergencyOver, 0, 400});
+    CHECK(fax.buttons.size() == 1);
+    r = th::fax_frame(fax, {}, {true}, 0.04, g, safeseed);
+    CHECK(!fax.open && has_sound(r, 0x42));
+    fax_open(fax, g, safeseed, {th::kFaxEmergencyOver, 0, 400});
+    g.turn_count += 400;
+    th::fax_frame(fax, {}, {}, 0.04, g, safeseed);
+    CHECK(fax.open);
+    g.turn_count += 1;
+    th::fax_frame(fax, {}, {}, 0.04, g, safeseed);
+    CHECK(!fax.open);
+    fax_open(fax, g, safeseed, {th::kFaxEmergencyOver, 0, 400});
+    fax_click(fax, g, safeseed, {600, 450});
+    CHECK(!fax.open);
+}
+
+// The keypad: digits beep their own sounds; a cheat's number dialled and
+// sent plays SFX_FAX_YES, another SFX_FAX_NO. The close button does nothing
+// on a fax that must be answered; an answer carried out closes it.
+void check_fax_keypad(th::Fax &fax, th::Game &g, uint32_t &safeseed, uint16_t patient)
+{
+    fax_open(fax, g, safeseed, {th::kFaxNoTreatment, patient, 0});
+    for (int i = 0; i < 3; i++)
+        CHECK(has_sound(fax_click(fax, g, safeseed, {330, 375}), 0xc7));
+    CHECK(has_sound(fax_click(fax, g, safeseed, {170, 352}), 0xac));
+    CHECK(has_sound(fax_click(fax, g, safeseed, {222, 352}), 0xbf));
+    CHECK(has_sound(fax_click(fax, g, safeseed, {480, 355}), 0xad));
+    fax_click(fax, g, safeseed, {600, 450});
+    CHECK(fax.open);
+    th::fax_command(fax, {th::EV_CHOICE_RESULT, th::kChoiceTreatWait, 0, patient});
+    CHECK(!fax.open);
+}
+
+} // namespace
+
+// The fax for each kind of call: its message and buttons, each button's
+// answer as the game sends it, the buttons the game refuses, closing it,
+// and the keypad.
+void test_fax(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &g = *f.game;
+    th::Fax fax;
+    std::string error;
+    CHECK(th::load_fax(fax, dir, f.gd.text(), &error));
+    uint32_t safeseed = th::kLevelStartSeed;
+    uint16_t patient = 0;
+    for (uint16_t i = 1; i < g.world.things.size() && !patient; i++)
+        if (g.world.things[i].type == th::kThingFree)
+            patient = i;
+    check_fax_emergency(fax, g, safeseed, f.gd.text());
+    check_fax_patient(fax, g, safeseed, patient);
+    check_fax_closing(fax, g, safeseed);
+    check_fax_keypad(fax, g, safeseed, patient);
 }

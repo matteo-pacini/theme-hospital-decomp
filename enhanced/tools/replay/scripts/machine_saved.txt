@@ -1,0 +1,53 @@
+# Level 6: cardiogram.txt without its handyman until the cardiogram is worn
+# out: at turn 13900, at its full strength's wear and smoking, a handyman
+# is called for it (EV_THINGPAGE_REQUEST, the machine window's), and at
+# turn 14200 one is hired (applicant 53, placed at cell 6841). Worn past
+# its strength at turn 14346, the machine does not break down; the handyman
+# repairs it at turn 14372, just in time. Compare up to turn 18000.
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair (arg: kind | facing << 8); opened.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+# Its doctor: hire applicant 18, place at cell 6969.
+114 48 1 18
+115 5 6969 18
+# A cardiogram room (52,48)-(55,51), its door above it, a cardiogram (cell
+# 6454 facing 0) and a screen (cell 6452 facing 1); opened.
+130 55 0 0
+131 53 12 12
+132 2 6196 0
+133 2 6583 0
+134 8 6583 0
+135 18 0 0
+136 26 6069 0
+137 3 0 0
+138 4 12 0
+139 7 6454 13
+140 7 6452 272
+141 1 0 0
+# A second doctor: hire applicant 19, place at cell 6970.
+142 48 1 19
+143 5 6970 19
+# The call for a handyman, then the handyman hired.
+13900 118 45 0
+14200 48 2 53
+14201 5 6841 53

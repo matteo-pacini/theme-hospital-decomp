@@ -143,6 +143,7 @@ void month_end(Finance &f, int32_t &balance, World &world, const Balance &settin
             appraise_staff(t, settings);
         }
     }
+    count_hospital_area(f, world);
     if (wages != 0)
         change_balance(f, balance, day, month, {kTxWages, -wages});
     if (world.drinks_income != 0) {
@@ -184,6 +185,16 @@ void year_end(Finance &f, int32_t balance, const World &world, const Balance &se
     f.statement_balance = balance;
 }
 
+void count_hospital_area(Finance &f, const World &world)
+{
+    int area = 0;
+    for (const MapCell &cell : world.map)
+        if (cell.owner_flags & 1)
+            area++;
+    f.area = uint16_t(area);
+    trace_event("area %u", unsigned(f.area));
+}
+
 void calculate_value(Finance &f, const World &world, const Balance &settings, int reputation)
 {
     int32_t object_value = 0;
@@ -195,12 +206,7 @@ void calculate_value(Finance &f, const World &world, const Balance &settings, in
             object_value += settings.objects[t.subtype].start_cost;
     }
     int32_t rep_value = reputation / 50 * 1000;
-    // count_hospital_area
-    int area = 0;
-    for (const MapCell &cell : world.map)
-        if (cell.owner_flags & 1)
-            area++;
-    f.area = uint16_t(area);
+    count_hospital_area(f, world);
     f.hospital_value = f.area * settings.gbv.land_cost_per_tile + object_value + rep_value + 10000;
     f.hospital_value = std::max(f.hospital_value, 0);
     f.max_loan = std::clamp(f.hospital_value / 3 + 10000, 0, 100000);

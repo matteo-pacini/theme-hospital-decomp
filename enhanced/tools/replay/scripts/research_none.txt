@@ -1,0 +1,18 @@
+# Level 3: research_default.txt's research room with no researcher: a
+# doctor without the research skill (applicant 15) placed in it leaves;
+# no points, nothing researched.
+101 55 0 0
+102 53 28 28
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 28 0
+110 7 9260 55
+111 7 9264 257
+112 7 8880 258
+113 1 0 0
+114 48 1 15
+115 5 9004 15

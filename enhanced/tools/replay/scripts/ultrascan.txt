@@ -1,0 +1,81 @@
+# Level 8: the ultrascan researched, built and in use: blood_machine.txt's
+# hospital (reception, handyman, GP's office and research room, three
+# researchers in the second month) with research concentrated on the
+# ultrascan (illness 40) instead.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 5785 11
+10 48 3 28
+11 5 6044 28
+12 48 2 20
+13 5 6045 20
+20 115 20 31
+21 115 20 31
+22 115 20 31
+23 115 20 31
+24 115 20 31
+25 115 20 31
+26 115 20 31
+27 115 20 31
+28 115 20 31
+29 115 20 31
+30 115 20 31
+31 115 20 31
+60 55 0 0
+61 53 7 7
+62 2 4372 0
+63 2 4888 0
+64 8 4888 0
+65 18 0 0
+66 26 4246 0
+67 3 0 0
+68 4 7 0
+69 7 4630 1
+70 7 4376 2
+71 7 4631 6
+72 1 0 0
+73 48 1 14
+74 5 6046 14
+101 55 0 0
+102 53 28 28
+103 2 4366 0
+104 2 4882 0
+105 8 4882 0
+106 18 0 0
+107 26 4240 0
+108 3 0 0
+109 4 28 0
+110 7 4750 55
+111 7 4754 257
+112 7 4370 258
+113 1 0 0
+120 114 40 0
+121 80 0 0
+122 80 1 0
+123 80 2 0
+124 80 3 0
+125 80 4 100
+4700 48 1 15
+4701 5 4494 15
+4702 48 1 16
+4703 5 4495 16
+4704 48 1 18
+4705 5 4496 18
+# The ultrascan, researched at turn 11950: a room (26,34)-(29,37), its door
+# above it; the room waits for the people on its floor to leave before it
+# is furnished (commit_doors); the ultrascan (cell 4508 facing 1); opened;
+# its doctor (applicant 32) in the corridor. The GP sends patients there.
+12000 55 0 0
+12001 53 14 14
+12002 2 4378 0
+12003 2 4765 0
+12004 8 4765 0
+12005 18 0 0
+12006 26 4251 0
+12007 3 0 0
+12008 4 14 0
+12060 7 4508 278
+12061 1 0 0
+12070 48 1 32
+12071 5 6047 32

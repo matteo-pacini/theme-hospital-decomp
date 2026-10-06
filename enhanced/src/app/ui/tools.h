@@ -4,6 +4,7 @@
 #include "app/ui/nav_tool.h"
 
 #include <array>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -27,16 +28,24 @@ struct DebugReport {
     std::string last;
 };
 
+// The inspector: a person or object picked by clicking it in the hospital
+// view, its fields read live each frame.
+struct InspectTool {
+    uint16_t thing = 0;   // the thing inspected, 0 for none
+    bool picking = false; // the next click on the view picks the thing
+};
+
 // State of the tools window (F12).
 struct ToolsState {
     bool open = false;
     int ui_scale = 0; // panel and pointer scale: 0 automatic, else the integer scale
+    InspectTool inspect;
     NavTool nav;
     DebugReport report;
 };
 
-// The tools window; with `world` (a level in play), also the path finding
-// tool.
-void draw_tools(ToolsState &state, World *world);
+// The tools window; with `world` (a level in play), also the inspector and
+// the path finding tool.
+void draw_tools(ToolsState &state, const World *world);
 
 } // namespace th
