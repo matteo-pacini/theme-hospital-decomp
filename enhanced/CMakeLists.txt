@@ -46,6 +46,9 @@ add_library(th_core STATIC
   src/core/ui/buy_objects.cpp
   src/core/ui/fax.cpp
   src/core/ui/charts.cpp
+  src/core/ui/helpmsg.cpp
+  src/core/ui/helpmsg_callbacks.cpp
+  src/core/ui/helpmsg_table.cpp
   src/core/ui/hire_staff.cpp
   src/core/ui/info_windows.cpp
   src/core/ui/jukebox.cpp
@@ -146,6 +149,9 @@ if(BUILD_TESTING)
     tests/audio.cpp
     tests/data.cpp
     tests/game.cpp
+    tests/help.cpp
+    tests/help_callbacks.cpp
+    tests/help_screens.cpp
     tests/nav.cpp
     tests/patients.cpp
     tests/render.cpp

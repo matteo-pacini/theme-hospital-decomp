@@ -5,6 +5,7 @@
 #include "core/render/blit.h"
 #include "core/render/panel.h"
 #include "core/render/text.h"
+#include "core/ui/helpmsg.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/staff.h"
@@ -619,9 +620,52 @@ class Frame
             r_.event = {EV_CLOSE_SCREEN};
             break;
         }
+        draw_help();
     }
 
   private:
+    // The chart's help tooltip (src/helpmsg.cpp's per-screen compute_help_text
+    // calls), drawn over the chart in its palette. The bank manager's three
+    // groups are tested in the original's order.
+    void draw_help()
+    {
+        if (!c_.help || !c_.help_context)
+            return;
+        HelpSystem &help = *c_.help;
+        HelpContext &ctx = *c_.help_context;
+        if (c_.chart == kChartBank) {
+            help.compute_help_text(ctx, 0, 0, c_.value ? 0x17 : 0x16);
+            help.compute_help_text(ctx, 0, 0, 0x15);
+        } else {
+            help.compute_help_text(ctx, 0, 0, uint8_t(chart_help_group(c_.chart)));
+        }
+        HelpBox &box = help.box();
+        box.screen_pic_loaded = true;
+        help.draw(dst_, c_.palette);
+        box.screen_pic_loaded = false;
+    }
+    static int chart_help_group(int chart)
+    {
+        switch (chart) {
+        case kChartStatement:
+            return 0xf;
+        case kChartCasebook:
+            return 0xe;
+        case kChartPolicy:
+            return 0x19;
+        case kChartResearch:
+            return 0x10;
+        case kChartGraphs:
+            return 0x11;
+        case kChartStaff:
+            return 6;
+        case kChartStatus:
+            return 0x18;
+        default:
+            return 0;
+        }
+    }
+
     // load_ingame_pic: the chart's picture shown in its palette.
     void load_pic()
     {

@@ -18,6 +18,9 @@
 namespace th
 {
 
+class HelpSystem;
+struct HelpContext;
+
 // A key press as the start-up screens read it (lbInkey).
 struct StartupKey {
     enum Code : uint8_t {
@@ -86,6 +89,14 @@ class Startup
     // kept for the next game frame when none runs.
     StartupResult frame(const UiMouse &mouse, std::span<const StartupKey> keys, double seconds);
 
+    // The help system and context the main menu's tooltip is drawn from (the
+    // caller owns both; the context's mouse is the one frame gets).
+    void set_help(HelpSystem &system, HelpContext &context)
+    {
+        help_ = &system;
+        help_ctx_ = &context;
+    }
+
     StartupScreen screen() const { return screen_; }
     // The movie playing (a MovieIndex), -1 if none.
     int movie() const { return movie_index_; }
@@ -149,6 +160,9 @@ class Startup
     void show(const Picture &picture);
     void calculate_grey(const Picture &picture);
     void main_menu(const UiMouse &mouse, std::span<const StartupKey> keys);
+    // tri_test's help: the hovered main-menu entry's tooltip, drawn over the
+    // menu from help_, help_ctx_.
+    void main_menu_help(const UiMouse &mouse);
     void name_screen(std::span<const StartupKey> keys);
     void preferences(const UiMouse &mouse, std::span<const StartupKey> keys);
     void draw_new_prefs_screen(const UiMouse &mouse, bool several);
@@ -216,6 +230,10 @@ class Startup
     int current_display_ = 0, desired_display_ = 0;
     BoxColours colours_;
     StartupResult result_;
+    // The help system and context the main menu's tooltip is drawn from,
+    // passed to frame(); null when none.
+    HelpSystem *help_ = nullptr;
+    HelpContext *help_ctx_ = nullptr;
 };
 
 // The level's briefing, the help page the game opens once level `level`

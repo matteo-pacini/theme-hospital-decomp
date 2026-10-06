@@ -17,7 +17,9 @@ namespace th
 {
 
 class Game;
+class HelpSystem;
 struct Balance;
+struct HelpContext;
 struct World;
 enum class PanelAction;
 
@@ -147,6 +149,18 @@ struct Charts {
     // A chart is up; `chart` says which.
     bool open = false;
     int chart = kChartStatement;
+
+    // The help system and context the open chart's tooltip is drawn from,
+    // set with set_help; null for none. The context's mouse is the one
+    // chart_frame is given.
+    HelpSystem *help = nullptr;
+    HelpContext *help_context = nullptr;
+    void set_help(HelpSystem &system, HelpContext &context)
+    {
+        help = &system;
+        help_context = &context;
+    }
+
     // The hospitals' names (allhosps[i].name): [0] the player's, which the
     // caller sets; the rivals' are chosen when a level starts
     // (setup_computer_players), which is not ported.
@@ -230,6 +244,7 @@ void chart_command(Charts &charts, const Event &event);
 // surface's coordinates) and keys: a game frame per 40 ms passed, at most
 // one per call; presses, releases and keys wait for it. Draws the chart
 // into `surface`. Nothing if no chart is open.
+// When set_help was called, the chart's help tooltip is drawn over it too.
 ChartsResult chart_frame(Charts &charts, const UiMouse &mouse, const ChartKeys &keys, double seconds, const Game &game,
                          const HospitalSettings &settings);
 

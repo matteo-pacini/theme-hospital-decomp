@@ -67,6 +67,38 @@ void test_info_windows(const char *dir);
 void test_panel_popups(const char *dir);
 void test_fax(const char *dir);
 
+// help.cpp
+void test_help_table();
+void test_help_group_starts();
+void test_help_timing();
+void test_help_tooltip_text(const char *dir);
+void test_help_text_ids(const char *dir);
+void test_help_box_clamped(const char *dir);
+void test_help_page(const char *dir);
+void test_help_clears_after_draw(const char *dir);
+void test_help_white(const char *dir);
+void test_help_callback_wrapped(const char *dir);
+void test_help_requester_groups();
+void test_help_panel_and_requester();
+void test_help_draw_gate(const char *dir);
+void test_help_main_menu_font(const char *dir);
+void test_help_page_shadow(const char *dir);
+
+// help_callbacks.cpp
+void test_help_callbacks_panel(const char *dir);
+void test_help_callbacks_patient_windows(const char *dir);
+void test_help_callbacks_staff_windows(const char *dir);
+void test_help_callbacks_requesters(const char *dir);
+void test_help_callbacks_slist(const char *dir);
+void test_help_callbacks_manager(const char *dir);
+void test_help_callbacks_status(const char *dir);
+void test_help_callbacks_drugs(const char *dir);
+
+// help_screens.cpp
+void test_help_charts_screens(const char *dir);
+void test_help_town_map_screen(const char *dir);
+void test_help_main_menu_screen(const char *dir);
+
 // staff.cpp
 void test_applicants_level1(const char *dir);
 void test_hire_receptionist(const char *dir);
@@ -163,6 +195,11 @@ const Test kTests[] = {
     TEST(test_research_choices),
     TEST(test_research_drugs),
     TEST(test_research_contribution),
+    TEST(test_help_table),
+    TEST(test_help_group_starts),
+    TEST(test_help_timing),
+    TEST(test_help_requester_groups),
+    TEST(test_help_panel_and_requester),
 };
 
 const DataTest kDataTests[] = {
@@ -240,6 +277,27 @@ const DataTest kDataTests[] = {
     TEST(test_machine_explodes_level6),
     TEST(test_machine_saved_level6),
     TEST(test_machine_replace_level6),
+    TEST(test_help_tooltip_text),
+    TEST(test_help_text_ids),
+    TEST(test_help_box_clamped),
+    TEST(test_help_page),
+    TEST(test_help_clears_after_draw),
+    TEST(test_help_white),
+    TEST(test_help_callback_wrapped),
+    TEST(test_help_draw_gate),
+    TEST(test_help_main_menu_font),
+    TEST(test_help_page_shadow),
+    TEST(test_help_callbacks_panel),
+    TEST(test_help_callbacks_patient_windows),
+    TEST(test_help_callbacks_staff_windows),
+    TEST(test_help_callbacks_requesters),
+    TEST(test_help_callbacks_slist),
+    TEST(test_help_callbacks_manager),
+    TEST(test_help_callbacks_status),
+    TEST(test_help_callbacks_drugs),
+    TEST(test_help_charts_screens),
+    TEST(test_help_town_map_screen),
+    TEST(test_help_main_menu_screen),
 };
 
 } // namespace

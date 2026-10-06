@@ -6,6 +6,7 @@
 #include "core/render/panel.h"
 #include "core/render/shadows.h"
 #include "core/render/text.h"
+#include "core/ui/helpmsg.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/object_tables.h"
@@ -815,6 +816,14 @@ TownMapResult TownMap::frame(const TownMapInput &input, const Game &game, const 
         break;
     }
     display_overhead_map(game, land, m, hospital_name, panel);
+    if (help_ && help_ctx_ && state_ == State::Shown) {
+        // draw_town_select's help (src/town.cpp): group 0x13 over the map.
+        help_->compute_help_text(*help_ctx_, 0, 0, 0x13);
+        HelpBox &box = help_->box();
+        box.screen_pic_loaded = true;
+        help_->draw(surface_, palette_);
+        box.screen_pic_loaded = false;
+    }
     const Rect &bank = kBankHotspot;
     if (m.left_released && over(m, bank.x, bank.y, bank.w, bank.h)) {
         // process_keys(0, KC_F7), then the map is set up again.

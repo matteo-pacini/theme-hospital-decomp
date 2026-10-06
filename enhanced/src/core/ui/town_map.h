@@ -20,6 +20,8 @@ namespace th
 {
 
 class Game;
+class HelpSystem;
+struct HelpContext;
 struct PanelState;
 struct Thing;
 
@@ -121,8 +123,18 @@ class TownMap
     // A right click on the map calls `go_to(column, row)`, which centres the
     // view on that cell and returns true, or leaves it and returns false if
     // it would pass the scroll limits (the map then stays open).
+    // When set_help was called, the map's help tooltip is drawn over it while
+    // shown.
     TownMapResult frame(const TownMapInput &input, const Game &game, const TownLand &land, PanelState &panel,
                         std::string_view hospital_name, const std::function<bool(int column, int row)> &go_to);
+
+    // The help system and context the map's tooltip is drawn from (the caller
+    // owns both; the context's mouse is input.mouse).
+    void set_help(HelpSystem &system, HelpContext &context)
+    {
+        help_ = &system;
+        help_ctx_ = &context;
+    }
 
     const Surface &surface() const { return surface_; }
     const Palette &palette() const { return palette_; }
@@ -163,6 +175,8 @@ class TownMap
     void text(const Font &font, int x, int y, std::string_view s);
 
     const LanguageText *text_ = nullptr;
+    HelpSystem *help_ = nullptr;
+    HelpContext *help_ctx_ = nullptr;
     Surface picture_;
     Surface background_; // bscreen: the picture with the walls drawn at setup
     Surface surface_;

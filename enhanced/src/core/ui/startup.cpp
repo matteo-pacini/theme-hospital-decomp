@@ -5,6 +5,7 @@
 #include "core/data/gamedata.h"
 #include "core/render/blit.h"
 #include "core/render/text.h"
+#include "core/ui/helpmsg.h"
 
 #include <algorithm>
 #include <cctype>
@@ -739,6 +740,10 @@ void Startup::main_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
     if (shown >= 0x11)
         sound(kSfxHighlight);
 
+    // tri_test's help (src/mainmenu.cpp): the hovered entry's tooltip, by its
+    // absolute hotspot index in help group 1, drawn over the menu.
+    main_menu_help(mouse);
+
     // process_keys_main_menu: Escape or Q quits at once.
     for (const StartupKey &k : keys) {
         if (k.code == StartupKey::Escape || (k.code == StartupKey::Letter && std::toupper(k.letter) == 'Q')) {
@@ -748,6 +753,34 @@ void Startup::main_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
     }
     if (mouse.left_released)
         menu_state_ = release_main_menu(menu_state_, mouse.x, mouse.y);
+}
+
+void Startup::main_menu_help(const UiMouse &mouse)
+{
+    if (!help_ || !help_ctx_)
+        return;
+    int hotspot = 0;
+    if (over_menu_entry(kEntryNewGame, mouse.x, mouse.y))
+        hotspot = 1;
+    else if (over_menu_entry(kEntryLoad, mouse.x, mouse.y))
+        hotspot = 2;
+    else if (over_menu_entry(kEntryContinue, mouse.x, mouse.y))
+        hotspot = 3;
+    else if (over_menu_entry(kEntryNetwork, mouse.x, mouse.y))
+        hotspot = 4;
+    else if (over_menu_entry(kEntryQuit, mouse.x, mouse.y))
+        hotspot = 5;
+    if (!hotspot)
+        return;
+    help_ctx_->mouse = &mouse;
+    help_->box().screen_pic_loaded = true;
+    // The main menu measures and draws with font cache 0x2d
+    // (display_mode == DM_MAIN_MENU in set_help_text/draw_help_text).
+    help_->set_main_menu(true);
+    help_->help_hotspot_detected(*help_ctx_, uint16_t(hotspot), 1, 0, 0);
+    help_->draw(surface_, palette_);
+    help_->set_main_menu(false);
+    help_->box().screen_pic_loaded = false;
 }
 
 void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys)

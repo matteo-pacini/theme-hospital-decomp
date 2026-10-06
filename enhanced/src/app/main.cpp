@@ -19,6 +19,7 @@
 #include "core/ui/buy_objects.h"
 #include "core/ui/charts.h"
 #include "core/ui/fax.h"
+#include "core/ui/helpmsg.h"
 #include "core/ui/hire_staff.h"
 #include "core/ui/info_windows.h"
 #include "core/ui/jukebox.h"
@@ -28,6 +29,7 @@
 #include "core/ui/startup.h"
 #include "core/ui/town_map.h"
 #include "core/ui/windows.h"
+#include "core/world/build.h"
 #include "core/world/debug_dump.h"
 #include "core/world/game.h"
 #include "core/world/snapshot.h"
@@ -311,6 +313,28 @@ class App
     void interface_advisor(Game &game, const UiMouse &mouse, bool input, bool paused);
     void interface_command(Game &game, const InfoWindowResult &info);
     void interface_draw(Game *game, int ox, int oy, int scale);
+    // The help tooltip of the screen open this frame (src/helpmsg.cpp): the
+    // group depends on the front requester.
+    void interface_help();
+    // The text font (cache slots 0 and 0x2d), the requester frame art and the
+    // blend table the help system draws with.
+    void load_help_art(const std::filesystem::path &dir);
+    // compute_help_text for help group `group` at (x, y), with a context of
+    // the in-game interfaces.
+    void help_screen(int group, int x, int y);
+    // Fills help_ctx_ for the current frame (the game, the data and the mouse
+    // the last interface frame saw) and sets the help clock.
+    void help_context();
+    // Points the full-screen screens at help_ and help_ctx_ (once, after the
+    // data and help art are loaded).
+    void wire_screen_help();
+    // build.cpp's show_help_page(0, type): a room type's page the first time
+    // one is built.
+    void interface_room_help(Game &game);
+    // Draws the prepared help box onto the interface layer.
+    void help_draw();
+    // Whether a framed help page is open.
+    bool help_page_open() const { return help_.box().style == 2 && !help_.box().msg.empty(); }
     void draw_info_view(Game &game);
     void ask_quit();
     void draw_pointer(int scale, uint8_t sprite = kPointerDefault);
@@ -361,6 +385,17 @@ class App
     HireStaffArt hire_art_;
     BuildUi build_ui_;
     Jukebox jukebox_;
+    // The help system (tooltips and room help pages), its text font (cache
+    // slot 0) and the mouse the last interface frame saw.
+    HelpSystem help_;
+    Font help_font_;
+    Font help_menu_font_;
+    UiMouse help_mouse_;
+    // The help context the full-screen screens share, filled by help_context.
+    HelpContext help_ctx_;
+    // Which room types have shown their help page, and the last room built.
+    std::array<bool, kRoomTypes> room_help_seen_{};
+    uint8_t last_built_room_ = 0;
     // The town map: while open it takes the window from the view, the
     // interface and the menu bar; the game keeps running behind it.
     TownMap town_;
@@ -536,6 +571,9 @@ bool App::try_load_data(const std::filesystem::path &dir)
         std::fprintf(stderr, "no music: %s\n", error.c_str());
     if (!mixer_.is_open() && !mixer_.open(&error))
         std::fprintf(stderr, "no sound: %s\n", error.c_str());
+    help_.setup_page_indices(data_->text());
+    load_help_art(dir);
+    wire_screen_help();
     make_ui_textures();
     data_error_.clear();
     // The start-up screens choose the level, unless --level did.
@@ -604,6 +642,21 @@ void App::interface_step(int out_w, int out_h, int scale)
     UiMouse mouse = ui_mouse(ox, oy, scale);
     Game *game = map_ ? &map_->game : nullptr;
     InfoWindowResult info;
+    help_mouse_ = mouse;
+
+    // A framed help page holds the screen: its close button, Escape or Space
+    // closes it, and the screen behind is not read.
+    if (help_page_open()) {
+        if (help_.update_close_hover(mouse.x, mouse.y))
+            sounds_.play_sound(kSourceGeneral, kSfxHighlight5);
+        bool close = std::exchange(escape_, false) || (mouse.left_pressed && help_.box().close_hover);
+        if (close) {
+            help_.finish_composite_help();
+            sounds_.play_sound(kSourceGeneral, kSfxYesX);
+        }
+        interface_draw(game, ox, oy, scale);
+        return;
+    }
 
     bool escape = interface_escape(game);
     if (game) {
@@ -628,6 +681,8 @@ void App::interface_step(int out_w, int out_h, int scale)
         interface_map_hover(*game, mouse, on_map, placing);
         interface_advisor(*game, mouse, input, paused);
         interface_command(*game, info);
+        interface_room_help(*game);
+        interface_help();
     }
     interface_draw(game, ox, oy, scale);
 }
@@ -881,10 +936,122 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
         draw_build_requester(ui_, interface_, build_ui_, *game, requester_art_, *data_);
         draw_hire_staff(ui_, hire_, interface_, {requester_art_, hire_art_, data_->text()}, game->world);
     }
+    help_draw();
     std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
     SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
     SDL_FRect dst = {float(ox), float(oy), float(kUiWidth * scale), float(kUiHeight * scale)};
     SDL_RenderTexture(renderer_, ui_tex_, nullptr, &dst);
+}
+
+// The help tooltip of the screen open this frame: the original computes the
+// front requester's group in its overdraw (draw_main_window), then the
+// panel's group 3 in draw_all_windows, every hospital frame.
+void App::interface_help()
+{
+    if (interface_.modal()) {
+        help_screen(8, 0, 0); // req13, the yes/no requester
+    } else if (uint8_t group = requester_help_group(interface_.requester())) {
+        const Window *w = nullptr;
+        Requester r = interface_.requester();
+        if (r == Requester::BuildRoom || r == Requester::HireStaff || r == Requester::EditRoom)
+            w = &interface_.window(int(r));
+        help_screen(group, w ? w->x : 0, w ? w->y : 0);
+    }
+    help_screen(3, 0, 0); // the panel, after the requester
+}
+
+void App::interface_room_help(Game &game)
+{
+    uint8_t built = game.world.building.last_built_room;
+    if (built == last_built_room_)
+        return;
+    last_built_room_ = built;
+    if (built == 0 || built >= int(room_help_seen_.size()) || room_help_seen_[built])
+        return;
+    room_help_seen_[built] = true;
+    help_.show_help_page(data_->text(), built);
+}
+
+void App::help_screen(int group, int x, int y)
+{
+    if (!data_)
+        return;
+    help_context();
+    help_.compute_help_text(help_ctx_, x, y, uint8_t(group));
+}
+
+void App::load_help_art(const std::filesystem::path &dir)
+{
+    std::string error;
+    if (!load_font(dir, 0, help_font_, &error))
+        std::fprintf(stderr, "%s\n", error.c_str());
+    if (load_font(dir, 0x2d, help_menu_font_, &error))
+        help_.set_main_menu_font(help_menu_font_);
+    else
+        std::fprintf(stderr, "%s\n", error.c_str());
+    help_.set_art(help_font_, menu_.sprites);
+    help_.set_ghost(data_->ghost().data());
+}
+
+void App::help_context()
+{
+    help_ctx_ = HelpContext{};
+    if (map_) {
+        help_ctx_.game = &map_->game;
+        help_ctx_.world = &map_->game.world;
+        help_ctx_.placing = &map_->game.world.placing;
+    }
+    help_ctx_.data = data_.get();
+    help_ctx_.text = &data_->text();
+    help_ctx_.ui = &interface_;
+    help_ctx_.hire = &hire_;
+    help_ctx_.info = &info_;
+    help_ctx_.charts = &charts_;
+    help_ctx_.object_ui = &object_ui_;
+    help_ctx_.build = &build_ui_;
+    help_ctx_.mouse = &help_mouse_;
+    help_ctx_.pulldv = &menu_.sprites;
+    help_ctx_.help = &help_.box();
+    help_.set_clock(uint32_t(SDL_GetTicks()));
+}
+
+void App::wire_screen_help()
+{
+    town_.set_help(help_, help_ctx_);
+    charts_.set_help(help_, help_ctx_);
+    startup_.set_help(help_, help_ctx_);
+}
+
+void App::help_draw()
+{
+    if (!data_ || help_.box().msg.empty())
+        return;
+    // mouse_mode_help_allowed: a tooltip only in the normal mode, not while
+    // something is placed or built; the advisor's tutorial overrides. A
+    // framed page is MM_HELP, which is allowed.
+    bool page = help_.box().style == 2;
+    bool allowed = page;
+    bool tutorial = false;
+    if (map_) {
+        const Game &g = map_->game;
+        tutorial = (g.advisor.flags & kAdvisorTutorial) != 0;
+        allowed = allowed || (!g.world.placing.placing && !build_tool_busy(g) && !hire_.placing() &&
+                              interface_.requester() != Requester::EditRoom);
+    }
+    if (!(allowed || tutorial)) {
+        // The tooltip was not computed in a mode that may show it; drop it so
+        // it cannot reappear once the mode is allowed again.
+        help_.box().msg.clear();
+        return;
+    }
+    help_.draw(ui_.pixels(), data_->palette(), allowed, tutorial);
+    const HelpBox &b = help_.box();
+    Rect m{b.x, b.y, b.w, b.h};
+    if (b.style == 2) {
+        m.w += 0xc;
+        m.h += 0xc;
+    }
+    ui_.mark(m);
 }
 
 // The view window over the query window showing a person, under its art.
@@ -1007,6 +1174,8 @@ void App::town_step(int out_w, int out_h)
     const Surface &src = town_.surface();
     SDL_FRect at = fit_rect(src, out_w, out_h);
     UiMouse mouse = fitted_mouse(at, src);
+    help_mouse_ = mouse;
+    help_context();
     bool escape = escape_;
     escape_ = false;
     auto go_to = [this](int column, int row) {
@@ -1093,6 +1262,8 @@ void App::charts_step(int out_w, int out_h)
     Game &game = map_->game;
     SDL_FRect at = fit_rect(charts_.surface, out_w, out_h);
     UiMouse mouse = fitted_mouse(at, charts_.surface);
+    help_mouse_ = mouse;
+    help_context();
     const bool *held = SDL_GetKeyboardState(nullptr);
     ChartKeys keys;
     keys.escape = std::exchange(escape_, false);
@@ -1128,6 +1299,8 @@ void App::startup_step(int out_w, int out_h)
     const Surface &src = startup_.surface();
     SDL_FRect at = fit_rect(src, out_w, out_h);
     UiMouse mouse = fitted_mouse(at, src);
+    help_mouse_ = mouse;
+    help_context();
     StartupResult r = startup_.frame(mouse, startup_keys_, frame_seconds_);
     startup_keys_.clear();
     for (uint8_t sfx : startup_.take_sounds())
