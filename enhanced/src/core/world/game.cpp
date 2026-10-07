@@ -116,6 +116,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     start_rooms_in_use(*this, complexes, staff_complexes);
     connect_world();
     start_research(world);
+    start_year_end(*this);
     world.emergency = {};
     world.emergency.heli_pad_tile = level.emergency_tile[0];
     disasters = {};
@@ -136,13 +137,26 @@ void Game::connect_world()
     world.date = &date;
     world.person_complexes = complexes_;
     world.staff_complexes = staff_complexes_;
+    world.game = this;
 }
 
 namespace
 {
 
-// Game::turn's month_end (src/finance.cpp), with year_end at the end of
-// the year.
+// Game::turn's month_end (src/finance.cpp), with the year end at the end of
+// the year. month_end's own order is kept: the market shares, then the month
+// moves on, then the awards' monthly figures and the prices, and only then
+// the year end (which start_turn calls after month_end).
+void finish_month_market_share(Game &g)
+{
+    int32_t total = 0;
+    for (const HospitalMarket &h : g.arrivals.hospitals)
+        total += int32_t(h.month_visitors);
+    g.progress.market_share = total != 0 ? int32_t(g.arrivals.hospitals[0].month_visitors) * 100 / total : 0;
+    for (HospitalMarket &h : g.arrivals.hospitals)
+        h.month_visitors = 0;
+}
+
 void turn_month_end(Game &g)
 {
     Date &date = g.date;
@@ -151,23 +165,23 @@ void turn_month_end(Game &g)
     // month_end's money, before the month moves on.
     month_end(g.finance, g.balance, g.world, settings, g.level_number(),
               {days_in_month(date.month), date.month, count_radiators(g.world, 0), g.reputation()});
+    finish_month_market_share(g);
     calc_pricing_factor(g.arrivals.hospitals[0], settings, g.world.cure_available);
     calc_visitors_this_month(g.arrivals, settings);
     date.day = 1;
     date.month++;
-    if (date.month >= 12) {
-        date.month = 0;
-        date.year++;
-        year_end(g.finance, g.balance, g.world, settings, g.reputation());
-    }
     g.arrivals.game_month = uint16_t(date.year * 12 + date.month);
     create_job_market(g.world, g.staff_market, settings, date.year * 12 + date.month, g.turn_count);
+    monthly_update_of_award_counts(g, date.month);
     monthly_update_of_advisor_counts(g.advisor);
     update_cure_costs(g.arrivals, settings);
-    // The game's year_end, which puts the held member of staff back
-    // (start_year_end), runs after month_end.
-    if (date.month == 0)
-        put_back_held_staff(g);
+    // The game's year_end runs after month_end, from start_turn; the
+    // quarterly check when the month is a quarter's (level 12 and later have
+    // no early win).
+    if (date.month >= 12)
+        year_end_sim(g);
+    else if (date.month % 3 == 0)
+        check_quarterly_game_over(g);
 }
 
 // Game::turn's daily_admin, then month_end and year_end (src/finance.cpp).
@@ -215,6 +229,7 @@ void process_things(Game &g, std::vector<bool> &walkers, const PersonComplexes &
     const AnimData &anims = g.anims();
     uint32_t turn_count = g.turn_count;
     reset_all_count(world, turn_count);
+    check_win_status(g);
     for (size_t i = 1; i < world.things.size(); i++) {
         Thing &t = world.things[i];
         if (t.type == kThingFree)
@@ -286,6 +301,9 @@ bool Game::start_turn()
 
 void Game::run_things()
 {
+    // The year-end turn pauses for the screens before the things run.
+    if (std::exchange(progress.skip_things, false))
+        return;
     EventScope scope(&events, turn_count);
     // effect_illness and person_dies tell the advisor (advisor.event_flags),
     // as helicopter_lands does (advisor.heli_landed).

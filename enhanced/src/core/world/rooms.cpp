@@ -356,6 +356,8 @@ void diagnose_patient_complete(World &world, Thing &staff, uint16_t id, int16_t 
         reputation_affected(world, illness, kRepIllnessFound);
         record_person_as_patient(world, id);
         p.known_illness = illness;
+        if (world.market)
+            world.market->diagnosed++;
     }
     p.person_flags |= kPfDiagnosed;
     if (diag < hospital_of(world).diag_threshold && diagnose_patient_find_room(world, id))

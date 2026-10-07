@@ -592,10 +592,54 @@ void dump_hospital(std::string &out, const HospitalMarket &h, int id)
     F(h, hospital_rep_events);
     F(h, visitors);
     F(h, month_visitors);
+    F(h, diagnosed);
     F(h, price_level);
     L(h, reputation);
     L(h, price);
     L(h, price_scale);
+    out += '\n';
+}
+
+void dump_game_progress(std::string &out, const Game &game)
+{
+    const YearEnd &p = game.progress;
+    out += "progress:";
+    F(p, score);
+    F(p, start_score);
+    F(p, win_progress);
+    F(p, lose_progress);
+    F(p, best_win_group);
+    F(p, market_share);
+    F(p, year_start_visitors);
+    F(p, year_start_cures);
+    F(p, year_start_deaths);
+    F(p, year_start_staff);
+    F(p, prev_year_deaths);
+    F(p, level_won);
+    F(p, win_declined);
+    F(p, winlose_result);
+    F(p, next_level_offer);
+    F(p, bonus_level);
+    F(p, level_after_bonus);
+    F(p, year_end_type);
+    out += '\n';
+    out += "awards:";
+    for (size_t i = 0; i < p.awards.size(); i++)
+        if (p.awards[i].text_index)
+            out += std::format(" {}={{id={} dir={} value={} kind={} text={}}}", i, p.awards[i].id,
+                               int(p.awards[i].direction), p.awards[i].value, p.awards[i].reward_kind,
+                               p.awards[i].text_index);
+    out += "\ntrophies:";
+    for (size_t i = 0; i < p.trophies.size(); i++)
+        if (p.trophies[i].text_index)
+            out += std::format(" {}={{id={} value={} kind={} text={}}}", i, p.trophies[i].id, p.trophies[i].value,
+                               p.trophies[i].reward_kind, p.trophies[i].text_index);
+    out += '\n';
+    out += "criteria:";
+    for (size_t i = 0; i < p.win_criteria.size(); i++)
+        out += std::format(" {}={{c={} g={} met={} now={} pct={}}}", i, p.win_criteria[i].criterion,
+                           p.win_criteria[i].group, p.win_criteria[i].met, p.win_criteria[i].current,
+                           p.win_criteria[i].progress);
     out += '\n';
 }
 
@@ -611,6 +655,7 @@ void dump_game_finance(std::string &out, const Game &game)
     F(f, heating_level);
     F(f, heating_price);
     F(f, hospital_value);
+    F(f, object_value);
     F(f, area);
     F(f, cures);
     F(f, deaths);
@@ -889,6 +934,7 @@ std::string dump_game(const Game &game, int focus, int radius)
     out += std::format("balance={} seed={:08x} route_planner={}\n", game.balance, w.seed,
                        w.path_finder == PathFinder::AStar ? "A*" : "original");
     dump_game_finance(out, game);
+    dump_game_progress(out, game);
     for (size_t i = 0; i < game.arrivals.hospitals.size(); i++)
         dump_hospital(out, game.arrivals.hospitals[i], int(i));
     dump_game_world(out, w);

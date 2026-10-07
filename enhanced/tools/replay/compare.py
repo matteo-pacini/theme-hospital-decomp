@@ -16,6 +16,7 @@ Usage: compare.py ORIGINAL ENHANCED [--all] [--context N] [--no-events]
 """
 
 import sys
+from itertools import zip_longest
 
 
 def turns(path):
@@ -122,8 +123,14 @@ def main(argv):
         print(__doc__.strip(), file=sys.stderr)
         return 2
     count = 0
-    for (a_turn, a_head, a_events, a_things), (b_turn, b_head, b_events, b_things) in zip(turns(paths[0]),
-                                                                                          turns(paths[1])):
+    missing = object()
+    for a, b in zip_longest(turns(paths[0]), turns(paths[1]), fillvalue=missing):
+        if a is missing or b is missing:
+            longer = "enhanced" if a is missing else "original"
+            print(f"the traces differ in length: after {count} turns in lockstep the {longer} one "
+                  f"continues, the other ends")
+            return 1
+        (a_turn, a_head, a_events, a_things), (b_turn, b_head, b_events, b_things) = a, b
         if a_turn != b_turn:
             print(f"turn numbers differ: {a_turn} (original) and {b_turn} (enhanced)")
             return 1

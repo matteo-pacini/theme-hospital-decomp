@@ -388,6 +388,11 @@ bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &
         if (out)
             std::fputs(th::trace_turn(game, &game.events).c_str(), out);
         game.events.events.clear();
+        // The original ends the run at the turn the win or loss is decided
+        // (its year-end screens wait for input the replay cannot give), so
+        // the port stops here too, at the same turn.
+        if (game.progress.winlose_result != 0)
+            break;
     }
     return true;
 }

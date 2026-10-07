@@ -1412,6 +1412,7 @@ void remove_object_from_map(World &w, uint16_t id)
         thingpage_cancel(w.repair_pager, id);
     int tile = obj.x.tile + (obj.y.tile << 7);
     remove_object_shape(w, tile, obj.subtype, obj.facing);
+    add_object_value(w, obj.subtype, -1);
     uint16_t room = room_at(w, uint16_t(tile));
     if (kObjects[obj.subtype].category == 6 && room)
         w.rooms[room].radiators--;

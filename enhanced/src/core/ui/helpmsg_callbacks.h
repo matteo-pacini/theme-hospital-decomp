@@ -74,8 +74,8 @@ struct HelpBox {
     bool screen_pic_loaded = false;
 };
 
-// What a help callback may read, so it does not touch globals. tips-callbacks
-// fills the entries it needs; the fields a callback does not use stay null.
+// What a help callback may read, so it does not touch globals. The caller
+// fills the entries it has; the fields a callback does not use stay null.
 struct HelpContext {
     Game *game = nullptr;
     World *world = nullptr;

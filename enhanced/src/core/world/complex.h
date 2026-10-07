@@ -104,6 +104,12 @@ bool set_complex(World &world, uint16_t id, uint16_t action, uint16_t arg);
 uint8_t process_person_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                                uint32_t game_turn);
 
+// complex_success (0x423c8): the effect of patient `id`'s finished step of
+// action 52 of `kind`: 2 a drink (a can counted for the drinks trophy, for
+// hospital 0's income), 4 a paid amusement, 6 the toilet, 24 a use of their
+// object. The staff's kinds do nothing here.
+void complex_success(World &world, uint16_t id, uint16_t kind);
+
 // find_nearest_free_object (0x37d28): in the seeker's room, a free object
 // of `kind` of the room drawn from world.seed among the first 30 (a 31st
 // found is taken at once); outside rooms, the nearest free object of `kind`

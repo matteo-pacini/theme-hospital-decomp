@@ -280,6 +280,7 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
 
     place_existing_object_insert_node(w, id, tile);
     place_existing_object_insert_object(w, id, tile);
+    add_object_value(w, obj.subtype, 1);
     if (control.category == 6 && obj.room_id)
         w.rooms[obj.room_id].radiators++;
 
@@ -347,6 +348,15 @@ uint16_t place_object(World &w, const AnimData &anims, ObjectAt object, int owne
     trace_event("place_object %u kind=%d tile=%d dir=%d owner=%d", unsigned(id), kind, tile, dir, owner);
     place_existing_object(w, anims, id, tile, dir);
     return id;
+}
+
+void add_object_value(World &w, int kind, int sign)
+{
+    if (!w.ledger || kind <= 0 || kind >= kObjectKinds)
+        return;
+    uint8_t category = kObjects[size_t(kind)].category;
+    if (category == 1 || category == 2 || category == 3)
+        w.ledger->object_value += sign * object_cost(w, kind);
 }
 
 void create_numfx(World &world, uint8_t type, uint16_t tile, uint8_t colour, uint8_t height)

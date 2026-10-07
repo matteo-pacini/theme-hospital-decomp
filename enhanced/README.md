@@ -195,6 +195,13 @@ read it from the development folder and are skipped without it.
 Without a window, `--screenshot OUT.bmp --data FOLDER [--level N] [--size WxH]`
 renders a level's start view to a BMP.
 
+`--drive SCRIPT --out DIR` plays the whole program headless from a script
+of clicks, keys and waits, with screenshots, state dumps and expectations,
+on a driven clock so that a run repeats exactly; `--control` takes the same
+commands on stdin, answering each on stdout (src/app/drive.h).
+`--visible` shows the window while it runs. The scripts in tests/drive are
+interface tests: `tools/drive_tests.sh` runs them.
+
 The tools window (F12) has a debug report: Save report
 writes `debug-reports/<time>/` under the folder the game was started from,
 with `screenshot.png` (the window without the tools), `state.txt` (the

@@ -21,6 +21,12 @@
 # wibo, WATCOM_10_6, wlink, objconv) and dosbox-x on PATH. Works in
 # $REPLAY_DIR (default build/replay): its tree and run folders, so runs in
 # different folders can go at the same time.
+#
+# The instrumented HOSPITAL.EXE is cached in build/replay-cache under a hash
+# of everything it is built from, so it is only rebuilt when the sources,
+# objects or instrument.py change; one run builds it while others wait.
+# DOSBox runs in one of TH_REPLAY_SLOTS (default 4) slots shared by every
+# caller (enhanced/tools/slot.sh; `slot.sh --status replay` lists them).
 set -eu
 
 out=$1 turns=$2 script=${3:-} skip=${4:-} level=${5:-1}
@@ -31,26 +37,45 @@ tree=$work/tree
 run=$work/run
 [ -d build/base ] || { echo "build/base is missing: build the decompilation first (ninja)" >&2; exit 1; }
 
-# A copy of the sources and objects: tools/link.py links whatever tree it is in.
-mkdir -p "$tree/build"
-rm -rf "$tree/src" "$tree/include" "$tree/tools" "$tree/config" "$tree/build/base"
-cp -a src include tools config configure.py "$tree/"
-cp -a build/base "$tree/build/"
-units=$(python3 "$here/instrument.py" "$tree")
-(
-  cd "$tree"
-  for unit in $units; do
-    python3 tools/cc.py "$unit" "build/base/$(basename "$unit" .cpp).o"
-  done
-  python3 tools/link.py | grep -E "^(unresolved|duplicate)"
+# Everything the instrumented executable is built from.
+key=$(
+  {
+    find src include tools config build/base -type f ! -path '*/__pycache__/*' -print0 | sort -z | xargs -0 sha256sum
+    sha256sum configure.py "$here/instrument.py"
+  } | sha256sum | cut -c1-16
 )
+cache=build/replay-cache
+exe=$cache/$key/HOSPITAL.EXE
+mkdir -p "$cache"
+exec 8>"$cache/$key.lock"
+flock 8
+if [ ! -f "$exe" ]; then
+  # A copy of the sources and objects: tools/link.py links whatever tree it is in.
+  mkdir -p "$tree/build"
+  rm -rf "$tree/src" "$tree/include" "$tree/tools" "$tree/config" "$tree/build/base"
+  cp -a src include tools config configure.py "$tree/"
+  cp -a build/base "$tree/build/"
+  units=$(python3 "$here/instrument.py" "$tree")
+  (
+    cd "$tree"
+    for unit in $units; do
+      python3 tools/cc.py "$unit" "build/base/$(basename "$unit" .cpp).o"
+    done
+    python3 tools/link.py | grep -E "^(unresolved|duplicate)"
+  )
+  rm -rf "$cache/$key.tmp"
+  mkdir -p "$cache/$key.tmp"
+  cp "$tree/build/link/hosp.exe" "$cache/$key.tmp/HOSPITAL.EXE"
+  mv "$cache/$key.tmp" "$cache/$key"
+fi
+exec 8>&-
 
 mkdir -p "$run/SAVE"
 for f in ANIMS DATA DATAM INTRO LEVELS QDATA QDATAM SOUND DOS4GW.EXE MODEM.INI; do
   [ -e "orig/$f" ] && ln -sfn "$root/orig/$f" "$run/$f"
 done
 sed 's/^LANGUAGE=.*/LANGUAGE=ENG/' orig/HOSPITAL.CFG > "$run/HOSPITAL.CFG"
-cp "$tree/build/link/hosp.exe" "$run/HOSPITAL.EXE"
+cp "$exe" "$run/HOSPITAL.EXE"
 rm -f "$run/TRACE.TXT" "$run/SCRIPT.TXT"
 [ -n "$script" ] && cp "$script" "$run/SCRIPT.TXT"
 
@@ -78,6 +103,8 @@ set TRACE_RAND=${TRACE_RAND:-0}
 HOSPITAL.EXE -L$level -Q
 exit
 EOF
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy dosbox-x -nopromptfolder -fastlaunch \
+TH_SLOT_INFO="$work ${script:-no script} level $level to turn $turns" \
+  SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$here/../slot.sh" replay "${TH_REPLAY_SLOTS:-4}" \
+  dosbox-x -nopromptfolder -fastlaunch \
   -set "dosbox quit warning=false" -conf "$root/$conf" > "$work/dosbox.log" 2>&1
 cp "$run/TRACE.TXT" "$out"

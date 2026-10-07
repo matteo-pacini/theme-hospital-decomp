@@ -13,6 +13,7 @@
 
 // render.cpp
 void test_blit_clips_and_skips();
+void test_drive_script();
 void test_req_format();
 void test_iso_round_trip();
 void test_static_shadows();
@@ -159,6 +160,20 @@ void test_snapshot_round_trip(const char *dir);
 void test_snapshot_refused(const char *dir);
 void test_command_log_replay(const char *dir);
 
+// yearend.cpp
+void test_hall_scores_table();
+void test_yearend_screens(const char *dir);
+void test_winlose_screen(const char *dir);
+void test_winlose_letters(const char *dir);
+
+// sim_yearend.cpp
+void test_yearend_criteria(const char *dir);
+void test_yearend_score(const char *dir);
+void test_yearend_year(const char *dir);
+void test_yearend_trophy_kept(const char *dir);
+void test_yearend_drinks_counted(const char *dir);
+void test_yearend_object_value(const char *dir);
+
 namespace
 {
 
@@ -176,6 +191,7 @@ struct DataTest {
 
 const Test kTests[] = {
     TEST(test_blit_clips_and_skips),
+    TEST(test_drive_script),
     TEST(test_req_format),
     TEST(test_iso_round_trip),
     TEST(test_rnc_rejects_garbage),
@@ -200,6 +216,7 @@ const Test kTests[] = {
     TEST(test_help_timing),
     TEST(test_help_requester_groups),
     TEST(test_help_panel_and_requester),
+    TEST(test_hall_scores_table),
 };
 
 const DataTest kDataTests[] = {
@@ -298,6 +315,15 @@ const DataTest kDataTests[] = {
     TEST(test_help_charts_screens),
     TEST(test_help_town_map_screen),
     TEST(test_help_main_menu_screen),
+    TEST(test_yearend_screens),
+    TEST(test_winlose_screen),
+    TEST(test_winlose_letters),
+    TEST(test_yearend_criteria),
+    TEST(test_yearend_score),
+    TEST(test_yearend_year),
+    TEST(test_yearend_trophy_kept),
+    TEST(test_yearend_drinks_counted),
+    TEST(test_yearend_object_value),
 };
 
 } // namespace

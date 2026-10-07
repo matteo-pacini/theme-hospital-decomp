@@ -15,6 +15,7 @@
 #include "core/world/staff_complex.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
+#include "core/world/year_end.h"
 
 #include <cstdint>
 #include <memory>
@@ -119,6 +120,10 @@ class Game
     // show and change; the app starts it (start_hospital_settings). Prices
     // and reputations are in `arrivals`, the insurers in world.ins_control.
     HospitalSettings hospital;
+    // The year-end and win/lose state (core/world/year_end.h): the score,
+    // the criteria, this year's awards and trophies and the year-end league
+    // tables.
+    YearEnd progress;
     // The applicants for jobs (src/staff.cpp); the caller sets ref_counts
     // from the language text before start().
     StaffMarket staff_market;

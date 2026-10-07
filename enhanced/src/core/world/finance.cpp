@@ -16,11 +16,7 @@ namespace
 
 constexpr int32_t kMaxBalance = 9999999;
 
-// ObjectInfo.category values the hospital's statistics count
-// (inc_hardware_stats, src/objects.cpp).
-constexpr uint8_t kCategoryMachine = 1;
-constexpr uint8_t kCategoryDiagnosisMachine = 2;
-constexpr uint8_t kCategoryLeisure = 3;
+// ObjectInfo.category of the radiators the month's heating counts (src/objects.cpp).
 constexpr uint8_t kCategoryRadiator = 6;
 
 // The game's town table has one entry per level; past it, nothing.
@@ -197,17 +193,13 @@ void count_hospital_area(Finance &f, const World &world)
 
 void calculate_value(Finance &f, const World &world, const Balance &settings, int reputation)
 {
-    int32_t object_value = 0;
-    for (const Thing &t : world.things) {
-        if (t.type != kThingObject || t.owner != 0 || t.subtype >= kObjectKinds)
-            continue;
-        uint8_t category = kObjects[t.subtype].category;
-        if (category == kCategoryMachine || category == kCategoryDiagnosisMachine || category == kCategoryLeisure)
-            object_value += settings.objects[t.subtype].start_cost;
-    }
     int32_t rep_value = reputation / 50 * 1000;
+    int32_t room_value = 0;
+    for (const RoomInfo &room : world.rooms)
+        if (room.owner == 0 && room.type != kRoomFree)
+            room_value += settings.rooms[room.type].cost;
     count_hospital_area(f, world);
-    f.hospital_value = f.area * settings.gbv.land_cost_per_tile + object_value + rep_value + 10000;
+    f.hospital_value = f.area * settings.gbv.land_cost_per_tile + f.object_value + rep_value + room_value + 10000;
     f.hospital_value = std::max(f.hospital_value, 0);
     f.max_loan = std::clamp(f.hospital_value / 3 + 10000, 0, 100000);
 }

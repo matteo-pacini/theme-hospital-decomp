@@ -109,6 +109,10 @@ struct Finance {
     // The hospital's value (calculate_value) and its land in cells.
     int32_t hospital_value = 0;
     uint16_t area = 0;
+    // The value of its machines and leisure objects (allhosps.object_value),
+    // added as each is placed (inc_hardware_stats) and taken away as one is
+    // removed (dec_hardware_stats).
+    int32_t object_value = 0;
     // The level's starting cash (towns[level].start_cash).
     uint32_t start_cash = 0;
     // Set by change_balance once the balance is under 7/8 of the starting
@@ -187,12 +191,12 @@ void year_end(Finance &finance, int32_t balance, const World &world, const Balan
 void count_hospital_area(Finance &finance, const World &world);
 
 // calculate_value (src/finance.cpp) for player 0: the hospital's area, its
-// value (land at gbv.land_cost_per_tile a cell, 1000 per 50 reputation,
-// its machines and leisure objects at their balance cost, and a base of
-// 10000; rooms, of which there are none yet, would add their cost) and the
-// loan limit, a third of the value plus 10000, at most 100000. The game
-// counts the objects' value as they are bought, at the price of the day;
-// here it is summed from the objects on the map.
+// value (land at gbv.land_cost_per_tile a cell, 1000 per 50 reputation, its
+// machines and leisure objects at their balance cost, the rooms it owns at
+// their cost, and a base of 10000) and the loan limit, a third of the value
+// plus 10000, at most 100000. The game counts the objects' value as they are
+// bought, at the price of the day; here it is summed from the objects on the
+// map.
 void calculate_value(Finance &finance, const World &world, const Balance &settings, int reputation);
 
 } // namespace th

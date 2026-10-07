@@ -96,6 +96,15 @@ void trace_rand(const char *function, uint32_t seed);
 //   leave_queue <id> room=<queue_room> dest=<dest_room>  leave_queue
 //   record <id>                            record_person_as_patient
 //   shall_pay <id> pays=<0 or 1>           shall_peep_pay, at its end
+//   crit <0 win or 1 lose> <row 0-9> c=<criterion> now=<current>
+//          target=<value> met=<0 or 1>      check_criteria_values, each of
+//                                          player 0's rows, at its end
+//   score <n>                              calculate_score, player 0's, after
+//                                          the growth
+//   winlose win group=<n> offer=<n>        check_game_over, player 0's win
+//   winlose lose group=<n>                 check_game_over, player 0's lose
+//   quarterly progress=<n> offered=<0 or 1>  check_quarterly_game_over,
+//                                          player 0's, every call
 //   checkin <patient> receptionist=<id>    recept_admits_patient admits
 //   pay <id> kind=<n> fee=<n> cash=<n>     pay_for_treatment
 //   call <caller> id=<n> action=<n> result=<n>  call_person_to_room, at its end

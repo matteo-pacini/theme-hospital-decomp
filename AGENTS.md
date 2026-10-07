@@ -29,7 +29,28 @@ Done means all of these are green:
 
 python3 is not on PATH outside the decomp's dev shell (`nix develop path:./nix`).
 Run the game with `nix run path:./nix#enhanced -- --level N`; the user runs the
-GUI, so agents don't.
+GUI, so agents don't — drive it headless instead (below).
+
+## Driving the app
+`th_enhanced` runs headless with clicks and keys from a script, through the
+real interface (commands in `enhanced/src/app/drive.h`):
+
+    env -u LD_LIBRARY_PATH build/enhanced/th_enhanced --level 1 \
+      --drive SCRIPT --out DIR        # exit 1 if an expect failed
+    ... --control --out DIR           # the same commands on stdin, one answer
+                                      # per line on stdout, step by step
+
+- Screen coordinates are the game's 640 x 480 of what is shown; `cell C R`
+  and `thing ID` aim at the map. `screenshot NAME` and `dump NAME` (the debug
+  report's state text) go to DIR; `expect TEXT` checks the state text.
+- The clock is driven and frames run unpaced: a run repeats exactly, in
+  seconds. English text unless `--language`; the player's settings are not
+  read. `--visible` shows the window, `--size WxH` sets it (default
+  1280x720).
+- Explore with screenshots to find coordinates, then keep the script as a
+  test in `enhanced/tests/drive/` (`# Level N` in its header);
+  `enhanced/tools/drive_tests.sh` runs them all. Fix interface bugs with one
+  of these first, failing.
 
 ## Replay check
 `enhanced/tools/replay/orig_trace.sh` runs an instrumented original headless in
@@ -56,6 +77,21 @@ and `compare.py` diffs the two traces turn by turn, random draws included
   `core/world/snapshot.cpp`; size `static_assert`s enforce the snapshot.
 - The original keeps once-only advisor flags in `run/SAVE/HORZA.HDT`. Clear
   SAVE before comparing `# advice` lines.
+
+## Sharing the machine
+Several agents can run at once:
+- DOSBox runs in one of `TH_REPLAY_SLOTS` (default 4) shared slots; a run
+  waits for a free one. `enhanced/tools/slot.sh --status replay` shows who
+  holds them. Never kill another agent's DOSBox.
+- The instrumented `HOSPITAL.EXE` is cached in `build/replay-cache`, keyed by
+  a hash of everything it is built from, so it's rebuilt only when the decomp
+  or `instrument.py` changes.
+- Driven runs of `th_enhanced` (`--drive`, `--control`) take one of
+  `TH_DRIVE_SLOTS` (default 6) slots themselves, held until they exit;
+  `enhanced/tools/slot.sh --status drive` shows them. Quit a `--control`
+  session when done: it holds its slot while open.
+- Cap your build and tidy jobs: `CMAKE_BUILD_PARALLEL_LEVEL=4`,
+  `TIDY_JOBS=4`.
 
 ## Debugging
 F12 opens the tools window:

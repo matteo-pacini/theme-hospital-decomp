@@ -1,10 +1,12 @@
 #include "core/world/counts.h"
 
 #include "core/world/finance.h"
+#include "core/world/game.h"
 #include "core/world/object_tables.h"
 #include "core/world/queue.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
+#include "core/world/year_end.h"
 
 namespace th
 {
@@ -161,6 +163,9 @@ void object_count(World &world, uint16_t id, uint32_t game_turn)
 void process_things_alone_begin(World &world, uint16_t id, uint32_t game_turn)
 {
     reset_all_count(world, game_turn);
+    // process_things re-entered for one thing checks the win status too.
+    if (world.game)
+        check_win_status(*world.game);
     if (world.things[id].type == kThingPatient)
         person_count(world, id, game_turn);
     else if (world.things[id].type == kThingStaff)

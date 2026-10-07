@@ -89,6 +89,10 @@ class Startup
     // kept for the next game frame when none runs.
     StartupResult frame(const UiMouse &mouse, std::span<const StartupKey> keys, double seconds);
 
+    // mainmenu.state MMS_UNLOAD_GAME: returns to the main menu from a level
+    // that ended (the losing letter), showing its opening movie.
+    void return_to_main_menu() { enter_menu(); }
+
     // The help system and context the main menu's tooltip is drawn from (the
     // caller owns both; the context's mouse is the one frame gets).
     void set_help(HelpSystem &system, HelpContext &context)

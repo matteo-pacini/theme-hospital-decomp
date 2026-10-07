@@ -46,6 +46,8 @@ struct HospitalMarket {
     // allhosps.visitors and month_visitors: patients won, in all and this month.
     uint32_t visitors = 0;
     uint32_t month_visitors = 0;
+    // allhosps.diagnosed: patients whose illness was found (diagnose_patient).
+    uint32_t diagnosed = 0;
     // allhosps.price_level: its prices against the most patients will pay
     // for the treatments it can give, in percent, 0-300
     // (calc_pricing_factor).

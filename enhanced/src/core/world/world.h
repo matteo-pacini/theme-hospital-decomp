@@ -459,6 +459,7 @@ enum class PathFinder : uint8_t { AStar, Original };
 struct Balance;
 struct HospitalMarket;
 struct Finance;
+class Game;
 
 // The panel's fax icons (src/panel.cpp), as the game keeps them with its
 // calls: per slot 0-8, left to right, the World::calls index shown there
@@ -709,6 +710,9 @@ struct World {
     struct HospitalSettings *hospital = nullptr;
     Finance *ledger = nullptr;
     int *balance = nullptr;
+    // The game, for the nested process_things that re-checks the win status
+    // (complex.cpp's action 50), set by Game::connect_world.
+    Game *game = nullptr;
     const struct Date *date = nullptr;
     const struct PersonComplexes *person_complexes = nullptr;
     const struct StaffComplexes *staff_complexes = nullptr;
@@ -784,6 +788,13 @@ void remove_object_shape(World &world, int tile, int kind, int dir);
 // its thing id, 0 if refused or the things table is full. Draws two random
 // numbers per object made.
 uint16_t place_object(World &world, const AnimData &anims, ObjectAt object, int owner, bool force);
+
+// inc_hardware_stats' and dec_hardware_stats' hospital value part
+// (src/objects.cpp) for hospital 0: a machine, diagnosis machine or leisure
+// object is worth its object_stats cost, added as one is placed (`sign` 1) and
+// taken away as one is removed (-1). Nothing before the ledger is connected
+// (at a level's start, where the cost is 0 in the game too).
+void add_object_value(World &world, int kind, int sign);
 
 // The game's NUMFX_MONEY and the hospital palette's colours setup_colors
 // finds for color.black and color.red (LbPaletteFindColour).

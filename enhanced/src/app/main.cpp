@@ -4,10 +4,12 @@
 
 #include "app/audio/mixer.h"
 #include "app/datadir.h"
+#include "app/drive.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
 #include "core/audio/music.h"
 #include "core/audio/sounds.h"
+#include "core/data/fs.h"
 #include "core/data/gamedata.h"
 #include "core/render/blit.h"
 #include "core/render/iso.h"
@@ -29,6 +31,8 @@
 #include "core/ui/startup.h"
 #include "core/ui/town_map.h"
 #include "core/ui/windows.h"
+#include "core/ui/winlose.h"
+#include "core/ui/yearend.h"
 #include "core/world/build.h"
 #include "core/world/debug_dump.h"
 #include "core/world/game.h"
@@ -43,14 +47,17 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <utility>
 
 namespace th
@@ -243,6 +250,14 @@ Speed menu_speed(int value)
                          : Speed::AndThenSome;
 }
 
+// saferand (src/rand.cpp), for the year-end presentation's letter variants.
+uint16_t saferand(uint32_t &seed)
+{
+    seed = seed * 0x24a1 + 0x24df;
+    seed = (seed >> 13) | (seed << 19);
+    return uint16_t(seed);
+}
+
 // A key pressed in the start-up screens, which read keys as lbInkey.
 StartupKey startup_key(SDL_Keycode key)
 {
@@ -262,14 +277,38 @@ StartupKey startup_key(SDL_Keycode key)
     return k;
 }
 
-class App
+class App : public DriveHost
 {
   public:
     bool init(int argc, char **argv);
     void run();
     void shutdown();
+    // 1 when a drive script's expectations failed, else 0.
+    int exit_code() const { return driver_ && driver_->failures() > 0 ? 1 : 0; }
 
   private:
+    // --drive SCRIPT, --control, --out DIR, --size WxH, --visible.
+    void parse_drive_args(int argc, char **argv);
+    // One of TH_DRIVE_SLOTS (default 6) slots shared by every driven run on
+    // the machine, under the repository's build/slots/drive.
+    void hold_drive_slot();
+    bool create_window(bool driving);
+    void start_driver();
+    // Milliseconds since start: the real clock, or the driven one, which
+    // moves a fixed step per frame so driven runs repeat exactly.
+    uint32_t ticks_ms() const;
+    // Window points of map pixel `p` in the hospital view, false off the
+    // window.
+    bool drive_warp_world(Point p);
+    bool drive_move_screen(int x, int y) override;
+    bool drive_move_cell(int col, int row) override;
+    bool drive_move_thing(uint16_t id) override;
+    void drive_button(int button, bool down) override;
+    bool drive_key(std::string_view name, bool down) override;
+    void drive_screenshot(const std::filesystem::path &path) override;
+    std::string drive_state() const override;
+    int64_t drive_turn() const override;
+
     bool try_load_data(const std::filesystem::path &dir);
     void load_level(int number);
     void handle_event(const SDL_Event &e);
@@ -343,12 +382,27 @@ class App
     // (debug_state) and the note, in a new folder under debug-reports/.
     void save_debug_report();
     std::string debug_state() const;
+    // What fills the window this frame, for debug_state.
+    std::string screen_name() const;
     // debug_state's fax icons and open fax.
     std::string debug_state_calls(const Game &g) const;
     void open_town_map();
     void town_step(int out_w, int out_h);
     void charts_step(int out_w, int out_h);
     void fax_step(int out_w, int out_h);
+    // The year-end screens (the hall of fame, the league tables and awards)
+    // and the win/lose sequence.
+    void check_year_end();
+    void open_year_end();
+    void year_end_step(int out_w, int out_h);
+    void open_winlose();
+    int lose_line_index(int anim);
+    void winlose_step(int out_w, int out_h);
+    // Plays the win/lose movie (index -1 when none): its frames and audio, as
+    // startup_step plays a start-up movie.
+    void open_winlose_movie(int index);
+    void advance_winlose_movie();
+    void load_ui_art(const std::filesystem::path &dir);
     // The sounds and announcements of what the game did since the last
     // frame: new faxes, the emergency's helicopter sent, its clock.
     void game_sounds(Game &game);
@@ -371,6 +425,7 @@ class App
     SDL_Texture *ui_tex_ = nullptr;
     PanelState panel_state_;
     Interface interface_;
+    HospScores hosp_scores_;
     RequesterArt requester_art_;
     // Furnishing and hiring (milestone 4 steps 2 and 3).
     // Sound effects: the bank, the game's rules for playing them and the
@@ -408,7 +463,14 @@ class App
     // open, the game running behind it; and the fax icons above the panel.
     Fax fax_;
     SDL_Texture *fax_tex_ = nullptr;
+    SDL_Texture *year_end_tex_ = nullptr;
+    SDL_Texture *winlose_tex_ = nullptr;
     PopupIcons popups_;
+    // The year-end screens (the hall of fame, the league tables and awards)
+    // and the win/lose sequence: shown in place of everything else, the game
+    // paused behind them.
+    YearEndScreen year_end_;
+    WinLoseScreen winlose_;
     // The emergency's helicopter at the last frame, for its announcement.
     uint16_t heli_seen_ = 0;
     // The thing under the pointer as the view was drawn this frame.
@@ -419,6 +481,15 @@ class App
     std::vector<StartupKey> startup_keys_; // keys pressed since the last frame
     SDL_Texture *startup_tex_ = nullptr;
     SDL_AudioStream *movie_stream_ = nullptr;
+    // The win/lose movie: its frames (into winlose_movie_surface_) and audio,
+    // played before the letter as startup_step plays a start-up movie.
+    SmackerVideo winlose_movie_;
+    int winlose_movie_index_ = -1;
+    unsigned winlose_movie_flags_ = 0;
+    double winlose_movie_time_ = 0;
+    Surface winlose_movie_surface_;
+    Palette winlose_movie_palette_{};
+    std::vector<int16_t> winlose_movie_audio_;
     std::string balance_id_{kDefaultBalanceId};
     Event last_event_; // the command carried out the frame before (the tutorial reads it)
     // The commands the yes/no requester sends for yes and for no when it
@@ -443,6 +514,7 @@ class App
     Settings settings_;
     DataSearch search_;
     std::string data_error_;
+    std::filesystem::path hiscore_path_;
     FolderPick pick_;
     std::unique_ptr<GameData> data_;
 
@@ -462,6 +534,9 @@ class App
     SDL_Texture *menu_tex_ = nullptr;
 
     int level_ = 1;
+    int year_end_phase_ = 0; // 0 the hall, 1 the charts
+    int last_year_ = 0;      // the game's year the last frame saw
+    int winlose_pick_ = 0;   // the letter variant drawn
     // The map cell under the pointer this frame (column + row * 128), -1
     // when off the map.
     int map_cell_ = -1;
@@ -471,9 +546,13 @@ class App
     Speed speed_ = Speed::Normal;
     // The pointer shown over the hospital (othervar.pointer_sprite).
     uint8_t pointer_sprite_ = kPointerDefault;
-    bool open_town_ = false;   // the T key asked for the town map this frame
-    bool chart_space_ = false; // Space pressed for the charts this frame
-    bool in_startup_ = false;  // the start-up screens are shown
+    bool open_town_ = false; // the T key asked for the town map this frame
+    bool year_end_showing_ = false;
+    bool winlose_showing_ = false;
+    bool restart_level_ = false;
+    bool winlose_to_menu_ = false; // the losing letter asked for the main menu
+    bool chart_space_ = false;     // Space pressed for the charts this frame
+    bool in_startup_ = false;      // the start-up screens are shown
     bool level_from_cli_ = false;
     bool tutorial_ = false;    // the advisor's tutorial, chosen in the start-up screens
     bool escape_ = false;      // Escape pressed this frame
@@ -489,6 +568,25 @@ class App
     } buttons_;
     bool running_ = true;
     bool imgui_ready_ = false;
+
+    // Driven runs (drive.h): the script or control input, its options, the
+    // driven clock and the screenshot asked for this frame.
+    std::unique_ptr<Driver> driver_;
+    std::filesystem::path drive_script_;
+    std::filesystem::path drive_out_ = "drive-out";
+    bool drive_control_ = false;
+    bool drive_visible_ = false;
+    int drive_w_ = 1280, drive_h_ = 720;
+    uint64_t drive_ns_ = 0;
+    std::filesystem::path drive_shot_;
+    // The full-screen screen drawn last (draw_fitted): where, its size and
+    // the frame, for driven clicks in its 640 x 480 coordinates.
+    struct {
+        SDL_FRect at{};
+        int w = 0, h = 0;
+        uint64_t frame = 0;
+    } fit_;
+    uint64_t frame_ = 0;
 };
 
 bool App::init(int argc, char **argv)
@@ -504,16 +602,43 @@ bool App::init(int argc, char **argv)
         } else if (arg == "--language" && i + 1 < argc)
             language_ = std::atoi(argv[++i]);
     }
+    parse_drive_args(argc, argv);
+    bool driving = !drive_script_.empty() || drive_control_;
+    if (driving)
+        hold_drive_slot();
+    if (driving && !drive_visible_) {
+        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "offscreen");
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+    }
 
+    if (!create_window(driving))
+        return false;
+
+    // A driven run does not depend on, or change, the player's settings.
+    if (driving)
+        start_driver();
+    else
+        settings_.load();
+    search_ = find_data_dir(data_arg, settings_);
+    if (search_.found)
+        try_load_data(*search_.found);
+    return true;
+}
+
+// SDL, the window and its renderer, and ImGui; a driven run's window is the
+// --size it asked for, at a scale of 1.
+bool App::create_window(bool driving)
+{
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         std::fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
         return false;
     }
     float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-    if (scale <= 0)
+    if (scale <= 0 || driving)
         scale = 1.0f;
-    window_ = SDL_CreateWindow("Theme Hospital Enhanced", int(1280 * scale), int(720 * scale),
-                               SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    int win_w = driving ? drive_w_ : 1280, win_h = driving ? drive_h_ : 720;
+    window_ = SDL_CreateWindow("Theme Hospital Enhanced", int(float(win_w) * scale), int(float(win_h) * scale),
+                               driving ? 0 : SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window_) {
         std::fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
         return false;
@@ -523,7 +648,9 @@ bool App::init(int argc, char **argv)
         std::fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError());
         return false;
     }
-    SDL_SetRenderVSync(renderer_, 1);
+    // A driven run's frames go as fast as they can: its clock is its own.
+    if (!driving)
+        SDL_SetRenderVSync(renderer_, 1);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -534,11 +661,6 @@ bool App::init(int argc, char **argv)
     ImGui_ImplSDL3_InitForSDLRenderer(window_, renderer_);
     ImGui_ImplSDLRenderer3_Init(renderer_);
     imgui_ready_ = true;
-
-    settings_.load();
-    search_ = find_data_dir(data_arg, settings_);
-    if (search_.found)
-        try_load_data(*search_.found);
     return true;
 }
 
@@ -551,21 +673,34 @@ bool App::try_load_data(const std::filesystem::path &dir)
         return false;
     }
     data_ = std::move(data);
-    if (!menu_.load(dir, data_->text(), &error))
-        std::fprintf(stderr, "%s\n", error.c_str());
-    if (!requester_art_.load(dir, &error))
-        std::fprintf(stderr, "%s\n", error.c_str());
-    if (!hire_art_.load(dir, &error))
-        std::fprintf(stderr, "%s\n", error.c_str());
-    if (!town_.load(dir, data_->text(), &error))
-        std::fprintf(stderr, "%s\n", error.c_str());
-    if (!load_charts(charts_, dir, data_->text(), data_->palette(), &error))
-        std::fprintf(stderr, "%s\n", error.c_str());
-    if (!load_fax(fax_, dir, data_->text(), &error))
-        std::fprintf(stderr, "%s\n", error.c_str());
+    load_ui_art(dir);
+    data_error_.clear();
+    // The start-up screens choose the level, unless --level did.
+    if (!level_from_cli_ && startup_.load(dir, data_->text(), data_->language(), &error))
+        in_startup_ = true;
+    else
+        load_level(level_);
+    return true;
+}
+
+void App::load_ui_art(const std::filesystem::path &dir)
+{
+    std::string error;
+    auto report = [&](bool ok) {
+        if (!ok)
+            std::fprintf(stderr, "%s\n", error.c_str());
+    };
+    report(menu_.load(dir, data_->text(), &error));
+    report(requester_art_.load(dir, &error));
+    report(hire_art_.load(dir, &error));
+    report(town_.load(dir, data_->text(), &error));
+    report(load_charts(charts_, dir, data_->text(), data_->palette(), &error));
+    report(load_fax(fax_, dir, data_->text(), &error));
+    report(year_end_.load(dir, data_->text(), data_->palette(), &error));
+    report(winlose_.load(dir, data_->text(), data_->palette(), &error));
+    hiscore_path_ = dir / "save" / "hiscore.dat";
     init_object_ui(object_ui_, data_->palette());
-    if (!bank_.load(dir, data_->language(), &error))
-        std::fprintf(stderr, "%s\n", error.c_str());
+    report(bank_.load(dir, data_->language(), &error));
     sounds_.set_bank(&bank_);
     if (!music_.load(dir, &error))
         std::fprintf(stderr, "no music: %s\n", error.c_str());
@@ -575,13 +710,6 @@ bool App::try_load_data(const std::filesystem::path &dir)
     load_help_art(dir);
     wire_screen_help();
     make_ui_textures();
-    data_error_.clear();
-    // The start-up screens choose the level, unless --level did.
-    if (!level_from_cli_ && startup_.load(dir, data_->text(), data_->language(), &error))
-        in_startup_ = true;
-    else
-        load_level(level_);
-    return true;
 }
 
 void App::load_level(int number)
@@ -603,17 +731,23 @@ void App::load_level(int number)
     info_ = {};
     start_advisor(map_->game.advisor, tutorial_);
     start_hospital_settings(map_->game.hospital, map_->game.settings());
-    setup_insurances(map_->game.world, uint32_t(SDL_GetTicks()));
+    setup_insurances(map_->game.world, ticks_ms());
     charts_.hospital_names[0] = startup_.player_name();
     charts_.open = false;
     fax_.open = false;
     popups_ = {};
     heli_seen_ = 0;
     town_.close();
+    year_end_.close();
+    year_end_showing_ = false;
+    winlose_.close();
+    winlose_showing_ = false;
+    winlose_movie_index_ = -1;
+    last_year_ = map_->game.date.year;
     panel_state_.shown_balance = map_->game.balance;
     sounds_.safeseed = kLevelStartSeed;
     // A level starts on a song picked by the clock, as the game does.
-    music_.start_level(uint32_t(SDL_GetTicks()));
+    music_.start_level(ticks_ms());
     sounds_.init_ambients();
     // Centre the view on the player's starting cell, as load_level does.
     int start = level->camera_start[0];
@@ -969,6 +1103,9 @@ void App::interface_room_help(Game &game)
     if (built == 0 || built >= int(room_help_seen_.size()) || room_help_seen_[built])
         return;
     room_help_seen_[built] = true;
+    // open_room closes the edit room requester before the page; the page
+    // then holds the screen, so the next frame's sync would come too late.
+    sync_object_requesters(interface_, game);
     help_.show_help_page(data_->text(), built);
 }
 
@@ -1012,7 +1149,7 @@ void App::help_context()
     help_ctx_.mouse = &help_mouse_;
     help_ctx_.pulldv = &menu_.sprites;
     help_ctx_.help = &help_.box();
-    help_.set_clock(uint32_t(SDL_GetTicks()));
+    help_.set_clock(ticks_ms());
 }
 
 void App::wire_screen_help()
@@ -1147,6 +1284,10 @@ void App::draw_fitted(const Surface &src, const Palette &palette, SDL_Texture *&
         }
         SDL_UnlockTexture(tex);
         SDL_RenderTexture(renderer_, tex, nullptr, &dst);
+        fit_.at = dst;
+        fit_.w = sw;
+        fit_.h = sh;
+        fit_.frame = frame_;
     }
 }
 
@@ -1199,6 +1340,7 @@ void App::town_step(int out_w, int out_h)
 
 void App::run_command(Game &game)
 {
+    bool restart = game.event.type == EV_RESTART_LEVEL;
     hire_staff_event(hire_, interface_, game.world, game.event);
     jukebox_event(jukebox_, interface_, game.event);
     chart_command(charts_, game.event);
@@ -1220,6 +1362,8 @@ void App::run_command(Game &game)
         sounds_.play_sound(kSourceGeneral, sfx);
     game.world.building.sounds.clear();
     game_sounds(game);
+    if (restart)
+        restart_level_ = true;
 }
 
 void App::game_sounds(Game &game)
@@ -1290,6 +1434,242 @@ void App::charts_step(int out_w, int out_h)
         charts_.open = false;
         open_town_map();
     }
+}
+
+// Opens the year-end screens when the year moves on (year_end), or the
+// win/lose sequence when a level ends (check_game_over /
+// check_quarterly_game_over). The original's start_year_end pauses the game
+// for the screens.
+void App::check_year_end()
+{
+    if (!map_ || year_end_showing_ || winlose_showing_)
+        return;
+    Game &game = map_->game;
+    bool year_moved = game.date.year != last_year_;
+    last_year_ = game.date.year;
+    if (year_moved)
+        open_year_end();
+    else if (game.progress.winlose_result != 0)
+        open_winlose();
+}
+
+void App::open_year_end()
+{
+    Game &game = map_->game;
+    hosp_scores_ = default_hosp_scores();
+    load_highscores(hiscore_path_, hosp_scores_);
+    bool showing_fame = insert_hall_details(hosp_scores_, startup_.player_name(), game.progress.score);
+    save_highscores(hiscore_path_, hosp_scores_);
+    year_end_.open(hosp_scores_, showing_fame);
+    year_end_phase_ = 0;
+    year_end_showing_ = true;
+    game.paused = true;
+}
+
+// One frame of the year-end screens, drawn aspect-fit in the window; the
+// game is paused behind them.
+void App::year_end_step(int out_w, int out_h)
+{
+    Game &game = map_->game;
+    const Surface &src = year_end_.surface();
+    SDL_FRect at = fit_rect(src, out_w, out_h);
+    UiMouse mouse = fitted_mouse(at, src);
+    YearEndKeys keys;
+    keys.escape = std::exchange(escape_, false);
+    keys.space = std::exchange(chart_space_, false);
+    YearEndResult r;
+    if (year_end_phase_ == 0) {
+        r = year_end_.hall_frame(mouse, keys, frame_seconds_, startup_.player_name(), game.progress.score);
+        if (r.hall_done)
+            year_end_phase_ = 1;
+    } else {
+        YearEndView view;
+        view.year = game.date.year;
+        view.level = game.level_number();
+        view.awards = &game.progress.awards;
+        view.trophies = &game.progress.trophies;
+        view.chart = &game.progress.chart;
+        view.hospital_names = &charts_.hospital_names;
+        r = year_end_.charts_frame(mouse, keys, frame_seconds_, view);
+        if (r.charts_done) {
+            year_end_.close();
+            year_end_showing_ = false;
+            game.paused = false;
+        }
+    }
+    for (uint8_t sfx : r.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    draw_fitted(src, year_end_.palette(), year_end_tex_, at);
+}
+
+// The losing-line index `anim`'s group carries (the original's nested scans
+// of win_lose), drawn from the presentation's safeseed.
+int App::lose_line_index(int anim)
+{
+    const LanguageText &t = data_->text();
+    int count = int(t.size(TextSection::WinLose));
+    int tc = 0;
+    for (int n = anim; n != 0; n--)
+        while (tc < count && t.at(TextSection::WinLose, tc++) != ".") {
+        }
+    int len = 0;
+    while (tc + len < count && t.at(TextSection::WinLose, tc + len) != ".")
+        len++;
+    if (len <= 0)
+        return std::min(tc, std::max(count - 1, 0));
+    return tc + saferand(sounds_.safeseed) % len;
+}
+
+// Opens the win or lose sequence: the movie, then the letter.
+void App::open_winlose()
+{
+    Game &game = map_->game;
+    bool win = game.progress.winlose_result == 1;
+    int movie = kMovieWinLevel;
+    if (win) {
+        if (game.level_number() >= 12)
+            winlose_pick_ = saferand(sounds_.safeseed) % 4 + 8;
+        else {
+            winlose_pick_ = saferand(sounds_.safeseed) % 4;
+            if (game.progress.win_declined % 2 == 1)
+                winlose_pick_ += 4;
+        }
+    } else {
+        int anim = saferand(sounds_.safeseed) % 6;
+        if (anim == 2)
+            anim = 1; // ANIM_LOSE3 plays ANIM_LOSE2
+        movie = anim;
+        winlose_pick_ = lose_line_index(anim);
+        // insert_hall_details: the losing score enters the hall of shame.
+        hosp_scores_ = default_hosp_scores();
+        load_highscores(hiscore_path_, hosp_scores_);
+        insert_hall_details(hosp_scores_, startup_.player_name(), game.progress.score);
+        save_highscores(hiscore_path_, hosp_scores_);
+    }
+    winlose_.open(win, game.level_number());
+    winlose_showing_ = true;
+    winlose_to_menu_ = !win;
+    game.progress.winlose_result = 0;
+    game.paused = true;
+    open_winlose_movie(movie);
+}
+
+// Starts the win/lose movie `index` (-1: none), as play_movie does for the
+// start-up screens.
+void App::open_winlose_movie(int index)
+{
+    winlose_movie_index_ = -1;
+    if (movie_stream_) {
+        SDL_DestroyAudioStream(movie_stream_);
+        movie_stream_ = nullptr;
+    }
+    movie_playing_ = -1;
+    if (index < 0)
+        return;
+    const MovieInfo &info = movie_info(index);
+    auto path = resolve_ci(data_->dir(), info.file);
+    if (!path || !winlose_movie_.open(*path) || !winlose_movie_.next_frame())
+        return;
+    winlose_movie_index_ = index;
+    movie_playing_ = index;
+    winlose_movie_flags_ = info.flags;
+    winlose_movie_time_ = 0;
+    winlose_movie_surface_.resize(kUiWidth, kUiHeight);
+    winlose_movie_surface_.fill(0);
+    copy_frame_to_screen(winlose_movie_, winlose_movie_surface_, winlose_movie_flags_);
+    winlose_movie_palette_ = winlose_movie_.palette();
+    winlose_movie_audio_.clear();
+    SmackerAudioFormat format = winlose_movie_.audio_format(0);
+    if (!(winlose_movie_flags_ & kSmkNoSound) && format.present()) {
+        SDL_AudioSpec spec{SDL_AUDIO_S16, format.channels, format.rate};
+        movie_stream_ = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+        if (movie_stream_)
+            SDL_ResumeAudioStreamDevice(movie_stream_);
+        winlose_movie_audio_.insert(winlose_movie_audio_.end(), winlose_movie_.audio(0).begin(),
+                                    winlose_movie_.audio(0).end());
+    }
+}
+
+void App::advance_winlose_movie()
+{
+    if (winlose_movie_index_ < 0)
+        return;
+    bool ended = false;
+    winlose_movie_time_ += frame_seconds_ * 1e6;
+    while (!ended && winlose_movie_time_ >= double(winlose_movie_.frame_duration_us())) {
+        winlose_movie_time_ -= double(winlose_movie_.frame_duration_us());
+        if (!winlose_movie_.next_frame()) {
+            ended = true;
+            break;
+        }
+        copy_frame_to_screen(winlose_movie_, winlose_movie_surface_, winlose_movie_flags_);
+        winlose_movie_palette_ = winlose_movie_.palette();
+        if (!(winlose_movie_flags_ & kSmkNoSound))
+            winlose_movie_audio_.insert(winlose_movie_audio_.end(), winlose_movie_.audio(0).begin(),
+                                        winlose_movie_.audio(0).end());
+    }
+    if (ended) {
+        winlose_movie_index_ = -1;
+        movie_playing_ = -1;
+        winlose_movie_audio_.clear();
+        if (movie_stream_) {
+            SDL_DestroyAudioStream(movie_stream_);
+            movie_stream_ = nullptr;
+        }
+    }
+}
+
+// One frame of the win or lose sequence: its movie, then its letter. Accepting
+// a win starts the next level; dismissing the losing letter returns to the
+// main menu, as the original does.
+void App::winlose_step(int out_w, int out_h)
+{
+    Game &game = map_->game;
+    if (winlose_movie_index_ >= 0) {
+        advance_winlose_movie();
+        if (movie_stream_ && !winlose_movie_audio_.empty()) {
+            SDL_PutAudioStreamData(movie_stream_, winlose_movie_audio_.data(),
+                                   int(winlose_movie_audio_.size() * sizeof(int16_t)));
+            winlose_movie_audio_.clear();
+        }
+        SDL_FRect mat = fit_rect(winlose_movie_surface_, out_w, out_h);
+        draw_fitted(winlose_movie_surface_, winlose_movie_palette_, winlose_tex_, mat);
+        return;
+    }
+    const Surface &src = winlose_.surface();
+    SDL_FRect at = fit_rect(src, out_w, out_h);
+    UiMouse mouse = fitted_mouse(at, src);
+    WinLoseKeys keys;
+    keys.escape = std::exchange(escape_, false);
+    keys.space = std::exchange(chart_space_, false);
+    WinLoseView view;
+    view.win = game.progress.level_won != 0;
+    view.level = game.level_number();
+    view.score = game.progress.score;
+    view.next_level_offer = game.progress.next_level_offer;
+    view.pick = winlose_pick_;
+    view.lose_font = 0x13;
+    view.hospital_name = startup_.player_name();
+    WinLoseResult r = winlose_.frame(mouse, keys, frame_seconds_, view);
+    for (uint8_t sfx : r.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    if (r.closed) {
+        winlose_.close();
+        winlose_showing_ = false;
+        if (r.next_level > 0) {
+            load_level(r.next_level);
+            help_.set_page(-1, -1, level_briefing(data_->text(), r.next_level));
+        } else if (winlose_to_menu_ && !level_from_cli_) {
+            // DM_MAIN_MENU: back to the main menu (the game is unloaded).
+            map_.reset();
+            in_startup_ = true;
+            startup_.return_to_main_menu();
+        } else {
+            game.paused = false;
+        }
+        winlose_to_menu_ = false;
+    }
+    draw_fitted(src, winlose_.palette(), winlose_tex_, at);
 }
 
 // One frame of the start-up screens: drawn aspect-fit in the window, with
@@ -1382,6 +1762,25 @@ void App::save_debug_report()
     std::fprintf(stderr, "debug report: %s\n", tools_.report.last.c_str());
 }
 
+std::string App::screen_name() const
+{
+    if (in_startup_)
+        return "start-up screens";
+    if (!map_)
+        return "no level";
+    if (year_end_showing_)
+        return std::format("year end {} (phase {})", int(year_end_.phase()), year_end_phase_);
+    if (winlose_showing_)
+        return std::format("win/lose (movie {})", winlose_movie_index_);
+    if (fax_.open)
+        return "fax";
+    if (charts_.open)
+        return std::format("chart {}", charts_.chart);
+    if (town_.is_open())
+        return "town map";
+    return "hospital";
+}
+
 std::string App::debug_state() const
 {
     int w = 0, h = 0;
@@ -1391,20 +1790,19 @@ std::string App::debug_state() const
     std::string s = "# Theme Hospital Enhanced debug report\n";
     s += std::format("data: {}\n", data_ ? data_->dir().string() : "");
     s += std::format("window: {}x{} px, zoom {}, UI scale {}\n", w, h, zoom(), ui_scale());
-    const char *screen = in_startup_       ? "start-up screens"
-                         : !map_           ? "no level"
-                         : fax_.open       ? "fax"
-                         : charts_.open    ? "chart"
-                         : town_.is_open() ? "town map"
-                                           : "hospital";
-    s += std::format("screen: {}", screen);
-    if (charts_.open)
-        s += std::format(" {}", charts_.chart);
+    s += std::format("screen: {}", screen_name());
     s += std::format("\nmouse: {},{} (window points), map cell {}", mx, my, map_cell_);
     if (map_cell_ >= 0)
         s += std::format(" (column {}, row {})", map_cell_ % kMapSize, map_cell_ / kMapSize);
     s += std::format("\ninterface: requester {}, modal {}, menu open {}\n", int(interface_.requester()),
                      interface_.modal(), menu_.active);
+    // The help page shown, if any, and the last tooltip drawn (on one line).
+    const HelpBox &help = help_.box();
+    bool page = help.style == 2 && !help.msg.empty();
+    std::string tooltip = help_.drawn_text();
+    std::replace(tooltip.begin(), tooltip.end(), '\n', ' ');
+    s += std::format("help: page {}{}, last tooltip \"{}\"\n", page ? "open" : "closed",
+                     page ? std::format(" (room type {})", help.sub) : "", tooltip);
     // The query windows (Requester::Patient, Staff, Handyman) and what they show.
     s += std::format("query window: patient {} (thing {}, {}, toggle delay {}), staff {} (thing {}), handyman {}; "
                      "pointer {}, staff list on {}\n",
@@ -1596,6 +1994,20 @@ void App::perform(const MenuEvent &event)
         if (map_)
             map_->game.event = {EV_OPEN_JUKEBOX};
         break;
+    case MenuAction::Restart:
+        // File > Restart: ask_restart_level's yes/no requester.
+        if (map_ && !interface_.modal()) {
+            interface_.open_yes_no(data_->text().at(TextSection::YesNo, 6));
+            yes_event_ = {EV_RESTART_LEVEL};
+            no_event_ = {};
+            asking_quit_ = false;
+        }
+        break;
+    case MenuAction::Briefing:
+        // Charts > Briefing: show_help_page(1, level).
+        if (map_)
+            help_.set_page(-1, -1, level_briefing(data_->text(), level_));
+        break;
     default:
         break;
     }
@@ -1702,6 +2114,11 @@ void App::game_key(const SDL_KeyboardEvent &key)
         chart_space_ = chart_space_ || key.key == SDLK_SPACE;
         return;
     }
+    if (year_end_showing_ || winlose_showing_) {
+        // The year-end screens and the letters read Escape and Space alone.
+        chart_space_ = chart_space_ || key.key == SDLK_SPACE;
+        return;
+    }
     if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
         // The charts, from the game or another chart; not while paused.
         if (!map_->game.paused)
@@ -1758,7 +2175,8 @@ void App::mouse_down(const SDL_MouseButtonEvent &button)
     if (button.button == SDL_BUTTON_RIGHT)
         buttons_.right = buttons_.right_pressed = true;
     // An open menu, a modal requester or the town map takes the clicks.
-    if (menu_.active || interface_.modal() || town_.is_open() || charts_.open || fax_.open)
+    if (menu_.active || interface_.modal() || town_.is_open() || charts_.open || fax_.open || year_end_showing_ ||
+        winlose_showing_)
         return;
     // While something is being placed, its clicks are the interface's.
     if (map_ && (map_->game.world.placing.placing || hire_.placing()))
@@ -1785,9 +2203,16 @@ void App::update(float dt)
 {
     if (!data_ || in_startup_)
         return;
+    if (restart_level_) {
+        restart_level_ = false;
+        load_level(level_);
+        return;
+    }
     if (map_ && !map_->game.paused)
         run_turns(dt);
-    if (town_.is_open() || charts_.open || fax_.open)
+    if (map_ && !year_end_showing_ && !winlose_showing_)
+        check_year_end();
+    if (year_end_showing_ || winlose_showing_ || town_.is_open() || charts_.open || fax_.open)
         return;
     const ImGuiIO &io = ImGui::GetIO();
     if (!io.WantCaptureKeyboard)
@@ -1859,6 +2284,10 @@ bool App::screen_step(int out_w, int out_h)
 {
     if (in_startup_) {
         startup_step(out_w, out_h);
+    } else if (map_ && year_end_showing_) {
+        year_end_step(out_w, out_h);
+    } else if (map_ && winlose_showing_) {
+        winlose_step(out_w, out_h);
     } else if (map_ && fax_.open) {
         fax_step(out_w, out_h);
     } else if (map_ && charts_.open) {
@@ -1877,6 +2306,7 @@ bool App::screen_step(int out_w, int out_h)
 
 void App::render()
 {
+    frame_++;
     ImGui_ImplSDLRenderer3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
@@ -1902,6 +2332,14 @@ void App::render()
     // Read back before ImGui draws, so the screenshot shows the game alone.
     if (std::exchange(tools_.report.save, false))
         save_debug_report();
+    if (!drive_shot_.empty()) {
+        SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+        if (!shot || !SDL_SavePNG(shot, drive_shot_.string().c_str()))
+            std::fprintf(stderr, "drive: screenshot %s: %s\n", drive_shot_.string().c_str(), SDL_GetError());
+        if (shot)
+            SDL_DestroySurface(shot);
+        drive_shot_.clear();
+    }
 
     ImGui::Render();
     const ImGuiIO &io = ImGui::GetIO();
@@ -2032,6 +2470,17 @@ void App::run()
 {
     uint64_t last = SDL_GetTicksNS();
     while (running_) {
+        // A driven run moves on only as its commands ask for frames.
+        if (driver_) {
+            if (driver_->finished()) {
+                driver_->flush();
+                break;
+            }
+            if (!driver_->frame(*this)) {
+                SDL_Delay(5);
+                continue;
+            }
+        }
         SDL_Event e;
         while (SDL_PollEvent(&e))
             handle_event(e);
@@ -2054,10 +2503,169 @@ void App::run()
         uint64_t now = SDL_GetTicksNS();
         float dt = float(now - last) / 1e9f;
         last = now;
+        if (driver_) {
+            dt = 1.0f / 60.0f;
+            drive_ns_ += 16666667;
+        }
         frame_seconds_ = std::min(dt, 0.1f);
         update(frame_seconds_);
         render();
     }
+}
+
+void App::parse_drive_args(int argc, char **argv)
+{
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--drive" && i + 1 < argc)
+            drive_script_ = argv[++i];
+        else if (arg == "--out" && i + 1 < argc)
+            drive_out_ = argv[++i];
+        else if (arg == "--size" && i + 1 < argc)
+            std::sscanf(argv[++i], "%dx%d", &drive_w_, &drive_h_);
+        else if (arg == "--control")
+            drive_control_ = true;
+        else if (arg == "--visible")
+            drive_visible_ = true;
+    }
+}
+
+void App::hold_drive_slot()
+{
+    const char *env = std::getenv("TH_DRIVE_SLOTS");
+    int max = env ? std::max(1, std::atoi(env)) : 6;
+    // The executable sits in build/<tree>/ of the repository.
+    const char *base = SDL_GetBasePath();
+    std::filesystem::path dir = std::filesystem::path(base ? base : "").parent_path().parent_path() / "slots" / "drive";
+    std::string info =
+        drive_control_ ? std::string("th_enhanced --control") : "th_enhanced --drive " + drive_script_.string();
+    if (!hold_slot(dir, max, info))
+        std::fprintf(stderr, "drive: no slot files in %s; running without a slot\n", dir.string().c_str());
+}
+
+void App::start_driver()
+{
+    // English unless --language says otherwise, whatever HOSPITAL.CFG holds,
+    // so that expectations on text hold everywhere.
+    if (!language_)
+        language_ = kEnglish;
+    driver_ = std::make_unique<Driver>(drive_out_, drive_control_);
+    if (!drive_control_) {
+        std::ifstream in(drive_script_);
+        if (!in)
+            std::fprintf(stderr, "drive: cannot read %s\n", drive_script_.string().c_str());
+        for (std::string line; std::getline(in, line);)
+            driver_->add_line(line);
+        driver_->end_input();
+        return;
+    }
+    // Control commands come one per line on stdin, as the controller sends
+    // them; the app waits between them.
+    std::thread([driver = driver_.get()] {
+        for (std::string line; std::getline(std::cin, line);)
+            driver->add_line(line);
+        driver->end_input();
+    }).detach();
+}
+
+uint32_t App::ticks_ms() const
+{
+    return driver_ ? uint32_t(drive_ns_ / 1000000) : uint32_t(SDL_GetTicks());
+}
+
+bool App::drive_warp_world(Point p)
+{
+    int w = 0, h = 0;
+    SDL_GetWindowSizeInPixels(window_, &w, &h);
+    int z = zoom();
+    float px = float((p.x - camera_.x) * z), py = float((p.y - camera_.y) * z);
+    if (px < 0 || py < 0 || px >= float(w) || py >= float(h))
+        return false;
+    float density = SDL_GetWindowPixelDensity(window_);
+    SDL_WarpMouseInWindow(window_, px / density, py / density);
+    return true;
+}
+
+bool App::drive_move_screen(int x, int y)
+{
+    if (x < 0 || y < 0 || x >= kUiWidth || y >= kUiHeight)
+        return false;
+    float px = 0, py = 0;
+    if (fit_.frame == frame_ && fit_.w > 0 && fit_.h > 0) {
+        px = fit_.at.x + (float(x) + 0.5f) * fit_.at.w / float(fit_.w);
+        py = fit_.at.y + (float(y) + 0.5f) * fit_.at.h / float(fit_.h);
+    } else {
+        int w = 0, h = 0;
+        SDL_GetWindowSizeInPixels(window_, &w, &h);
+        int scale = ui_scale();
+        px = float((w - kUiWidth * scale) / 2 + x * scale + scale / 2);
+        py = float(h - kUiHeight * scale + y * scale + scale / 2);
+    }
+    float density = SDL_GetWindowPixelDensity(window_);
+    SDL_WarpMouseInWindow(window_, px / density, py / density);
+    return true;
+}
+
+bool App::drive_move_cell(int col, int row)
+{
+    if (!map_ || in_startup_ || col < 0 || row < 0 || col >= kMapSize || row >= kMapSize)
+        return false;
+    Point p = cell_to_world(col, row);
+    return drive_warp_world({p.x, p.y + kTileHeight / 2});
+}
+
+bool App::drive_move_thing(uint16_t id)
+{
+    if (!map_ || in_startup_ || id == 0 || id >= map_->game.world.things.size())
+        return false;
+    const Thing &t = map_->game.world.things[id];
+    if (t.type == kThingFree)
+        return false;
+    // Above the thing's feet, onto its sprite.
+    Point p = thing_to_world(t);
+    return drive_warp_world({p.x, p.y - kTileHeight / 2});
+}
+
+void App::drive_button(int button, bool down)
+{
+    SDL_Event e{};
+    e.type = down ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+    e.button.windowID = SDL_GetWindowID(window_);
+    e.button.button = uint8_t(button);
+    e.button.down = down;
+    e.button.clicks = 1;
+    SDL_GetMouseState(&e.button.x, &e.button.y);
+    SDL_PushEvent(&e);
+}
+
+bool App::drive_key(std::string_view name, bool down)
+{
+    SDL_Keycode key = SDL_GetKeyFromName(std::string(name).c_str());
+    if (key == SDLK_UNKNOWN)
+        return false;
+    SDL_Event e{};
+    e.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+    e.key.windowID = SDL_GetWindowID(window_);
+    e.key.key = key;
+    e.key.scancode = SDL_GetScancodeFromKey(key, nullptr);
+    e.key.down = down;
+    SDL_PushEvent(&e);
+    return true;
+}
+
+void App::drive_screenshot(const std::filesystem::path &path)
+{
+    drive_shot_ = path;
+}
+
+std::string App::drive_state() const
+{
+    return debug_state();
+}
+
+int64_t App::drive_turn() const
+{
+    return map_ && !in_startup_ ? int64_t(map_->game.turn_count) : -1;
 }
 
 void App::shutdown()
@@ -2073,6 +2681,10 @@ void App::shutdown()
         SDL_DestroyTexture(charts_tex_);
     if (fax_tex_)
         SDL_DestroyTexture(fax_tex_);
+    if (year_end_tex_)
+        SDL_DestroyTexture(year_end_tex_);
+    if (winlose_tex_)
+        SDL_DestroyTexture(winlose_tex_);
     if (ui_tex_)
         SDL_DestroyTexture(ui_tex_);
     for (PointerTexture &pt : pointers_)
@@ -2128,5 +2740,5 @@ int main(int argc, char **argv)
     if (app.init(argc, argv))
         app.run();
     app.shutdown();
-    return 0;
+    return app.exit_code();
 }

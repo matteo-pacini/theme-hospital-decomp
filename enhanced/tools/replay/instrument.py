@@ -273,6 +273,23 @@ GAME_EDITS = [
     # No mouse: in a building mode the pointer's cell would send commands
     # every frame (EV_HOVER_BLUEPRINT, EV_TEMP_PLACE_DOOR at the pointer).
     ("""                process_mouse();\n""", ""),
+    # The win or loss is detected in year_end, at the turn, so that its
+    # events are in that turn's trace; do_year_end no longer repeats it (its
+    # case 4 only restores the screen).
+    ("""\n        check_game_over();\n""", "\n"),
+    # The win/lose screens wait for a mouse click that headless never gives.
+    # The decision is already in the turn (check_game_over in year_end);
+    # leave the screen unplayed and end the run at that turn, so its trace is
+    # written (do_year_end runs in the same frame, before trace_dump).
+    ("""    case 5:
+    case 6:
+    case 7:
+        play_winlose();
+        break;""", """    case 5:
+    case 6:
+    case 7:
+        quit_game = 1;
+        break;"""),
     ("""        if (othervar.fade_palette) {""", """        if (gamevar.mouse_mode == MM_HELP)
             finish_composite_help();
         if (actual_game_turn != trace_turn) {
@@ -306,6 +323,27 @@ extern "C" int trace_skip(const char *name);"""),
     trace_note("daily_admin");"""),
     ("""        if (epidemic_status(i))""", """        trace_note("twice_daily_admin");
         if (epidemic_status(i))"""),
+    # The win or loss is checked here, at the turn (see GAME_EDITS), so that
+    # its draw from the seed and events are in the turn's trace.
+    ("""    check_awards_won();
+    swap_year_end_packets();""", """    check_awards_won();
+    check_game_over();
+    swap_year_end_packets();"""),
+]
+
+# sim.cpp: the year's score, criteria, win/lose and quarterly events.
+SIM_EDITS = [
+    # The lose branch: keep the criterion group so the event can name it.
+    ("""        } else if (check_criteria(1, player)) {
+            year_end_type = 7;""", """        } else if ((pct = check_criteria(1, player)) != 0) {
+            trace_event("winlose lose group=%d", (int)pct);
+            year_end_type = 7;"""),
+    # The quarterly check: every call says its progress, win offered or not.
+    ("""        if (evaluate_criteria(player) < 100)
+            return;""", """        pct = evaluate_criteria(player);
+        trace_event("quarterly progress=%ld offered=%d", (long)pct, pct >= 100 ? 1 : 0);
+        if (pct < 100)
+            return;"""),
 ]
 
 # The calls of daily_admin and twice_daily_admin that may draw, with their
@@ -350,6 +388,15 @@ EVENTS = {
          'if (owner == 0) trace_event("rep %u event=%u amount=%ld", (unsigned)treatment, (unsigned)event, '
          '(long)amount);'),
         ("exit", "shall_peep_pay", f'trace_event("shall_pay %u pays=%d", {ID.format("patient")}, r ? 1 : 0);'),
+        (("before", "return max;"), "check_criteria_values",
+         'if (owner == 0) { int ti; for (ti = 0; ti < 10; ti++) trace_event("crit %u %d c=%u now=%ld target=%ld '
+         'met=%u", (unsigned)mode, ti, (unsigned)table[ti].criterion, (long)table[ti].current, '
+         '(long)table[ti].value, (unsigned)table[ti].met); }'),
+        (("before", "if (hosp->score > 200000000)"), "calculate_score",
+         'if (owner == 0) trace_event("score %ld", (long)hosp->score);'),
+        (("before", "year_end_type = 5;"), "check_game_over",
+         'trace_event("winlose win group=%u offer=%ld", (unsigned)othervar.best_win_group, '
+         '(long)othervar.next_level_offer);'),
     ],
     "queue.cpp": [
         ("entry", "join_queue",
@@ -724,6 +771,9 @@ def instrument(tree):
                 fn = call.split("(")[0]
                 rep(f"{indent}{call}\n",
                     f'{indent}if (!trace_skip("{fn}"))\n{indent}    {call}\n{indent}trace_note("{fn} done");\n')
+        elif unit == "sim.cpp":
+            for old, new in SIM_EDITS:
+                rep(old, new)
         for where, name, code in EVENTS.get(unit, []):
             if where == "entry":
                 s = entry(s, name, code)

@@ -5,6 +5,7 @@
 #include "core/ui/charts.h"
 #include "core/world/complex_tables.h"
 #include "core/world/counts.h"
+#include "core/world/game.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
@@ -316,11 +317,13 @@ void person_nav_failure(const Run &r, uint16_t id)
         world.announce_stuck = true;
 }
 
+} // namespace
+
 // complex_success (0x423c8) for a patient: the effect of a step of action
-// 52 of `kind`. The drinks sold go to World::drinks_income for hospital 0;
-// the cans counted for the awards and the jukebox's takings are not kept;
-// kind 24 counts a use of the patient's object (Thing.times_used). The
-// staff's kinds do nothing here.
+// 52 of `kind`. A drink counts a can for the drinks trophy and pays hospital
+// 0's drinks income; the jukebox's takings are not kept; kind 24 counts a
+// use of the patient's object (Thing.times_used). The staff's kinds do
+// nothing here.
 void complex_success(World &world, uint16_t id, uint16_t kind)
 {
     Thing &w = world.things[id];
@@ -335,6 +338,8 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
             w.warmth = 60;
         w.cash -= 20;
         create_numfx(world, kNumfxMoney, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
+        if (world.game)
+            world.game->progress.award_counts.cans_of_coke++;
         if (w.owner == 0)
             world.drinks_income += 20;
         break;
@@ -361,6 +366,9 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
     else if (int16_t(w.happiness) > 100)
         w.happiness = 100;
 }
+
+namespace
+{
 
 // The game's PLAY_FRAME of patient_stand after a failed or abandoned
 // complex.
