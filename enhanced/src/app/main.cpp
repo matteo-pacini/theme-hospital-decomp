@@ -27,7 +27,10 @@
 #include "core/ui/jukebox.h"
 #include "core/ui/layer.h"
 #include "core/ui/menubar.h"
+#include "core/ui/panel_info.h"
 #include "core/ui/popups.h"
+#include "core/ui/queue_window.h"
+#include "core/ui/staff_demand.h"
 #include "core/ui/startup.h"
 #include "core/ui/town_map.h"
 #include "core/ui/windows.h"
@@ -36,7 +39,10 @@
 #include "core/world/build.h"
 #include "core/world/debug_dump.h"
 #include "core/world/game.h"
+#include "core/world/icons.h"
+#include "core/world/rooms.h"
 #include "core/world/snapshot.h"
+#include "core/world/vaccine.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -73,7 +79,8 @@ constexpr float kScrollSpeed = 900.0f; // view pixels per second
 // The in-game pointers drawn: the default one and those hovering on the map
 // shows (core/ui/info_windows.h), all with their hotspot at the top-left
 // corner.
-constexpr uint8_t kPointersDrawn[] = {kPointerDefault, kPointerStaff, kPointerMachine, kPointerPatient, kPointerQueue};
+constexpr uint8_t kPointersDrawn[] = {kPointerDefault, kPointerStaff,     kPointerMachine,        kPointerPatient,
+                                      kPointerQueue,   kPointerVaccinate, kPointerVaccinateTarget};
 
 // The folder chosen in the native dialog, handed over from its callback,
 // which SDL may call on another thread.
@@ -308,12 +315,15 @@ class App : public DriveHost
     void drive_screenshot(const std::filesystem::path &path) override;
     std::string drive_state() const override;
     int64_t drive_turn() const override;
+    bool drive_staff_demand(uint16_t id) override;
 
     bool try_load_data(const std::filesystem::path &dir);
     void load_level(int number);
     void handle_event(const SDL_Event &e);
     void key_down(const SDL_KeyboardEvent &key);
     void game_key(const SDL_KeyboardEvent &key);
+    // The speed keys 1-5: true when `key` is one and the speed was set.
+    bool game_speed_key(const SDL_KeyboardEvent &key);
     void open_chart_key(int chart);
     void mouse_down(const SDL_MouseButtonEvent &button);
     void inspect_click(uint8_t button);
@@ -347,8 +357,23 @@ class App : public DriveHost
     InfoWindowResult interface_requesters(Game &game, const InterfaceEvents &events, const UiMouse &mouse);
     void interface_yes_no(Game *game, const InterfaceEvents &events);
     void interface_panel_action(Game &game, PanelAction action, bool placing);
+    // The panel's edit room button (panel_l_button): toggles the edit-room
+    // mouse mode. Returns whether it refused.
+    bool panel_edit_room(Game &game);
     void interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, bool placing);
+    // The map's right button this frame (process_right_button): the edit-room
+    // modes, picking up or cancelling. Returns the command, EV_NONE for none.
+    Event interface_map_right(Game &game, bool placing);
     void interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing);
+    // The watch's buttons over the panel (process_left_button): the epidemic's
+    // vaccination button and the opening countdown's open-now button. True
+    // when one took the left click.
+    bool interface_watch_buttons(Game &game, const UiMouse &mouse);
+    // The pointer and left click of interface_map_hover for what it is over.
+    void interface_map_hover_click(Game &game, const UiMouse &mouse, const MapHover &hover);
+    // After interface_map_hover while the queue window is open: its panel
+    // information, the drag pointer and the door hotspot's scroll (req7_overdraw).
+    void queue_window_after_frame(Game &game);
     void interface_advisor(Game &game, const UiMouse &mouse, bool input, bool paused);
     void interface_command(Game &game, const InfoWindowResult &info);
     void interface_draw(Game *game, int ox, int oy, int scale);
@@ -438,6 +463,13 @@ class App : public DriveHost
     ObjectUi object_ui_;
     HireStaff hire_;
     HireStaffArt hire_art_;
+    StaffDemand demand_;
+    // The panel information bar's kind and the thing under the pointer
+    // (othervar.panel_info and panel_thing).
+    uint8_t panel_info_ = 0;
+    uint16_t panel_thing_ = 0;
+    // othervar.panel_info_timer: frames the bar stays once the pointer leaves.
+    int panel_info_timer_ = 0;
     BuildUi build_ui_;
     Jukebox jukebox_;
     // The help system (tooltips and room help pages), its text font (cache
@@ -510,6 +542,8 @@ class App : public DriveHost
     InfoWindows info_;
     Surface info_view_;
     Surface info_scratch_;
+    // The queue window (src/req7.cpp).
+    QueueWindow queue_;
 
     Settings settings_;
     DataSearch search_;
@@ -546,6 +580,10 @@ class App : public DriveHost
     Speed speed_ = Speed::Normal;
     // The pointer shown over the hospital (othervar.pointer_sprite).
     uint8_t pointer_sprite_ = kPointerDefault;
+    // The epidemic's vaccination tool chosen (mouse mode MM_VACCINATE): a
+    // click on the watch's vaccination button toggles it, a click on a
+    // highlighted patient queues or unqueues them.
+    bool vaccinate_ = false;
     bool open_town_ = false; // the T key asked for the town map this frame
     bool year_end_showing_ = false;
     bool winlose_showing_ = false;
@@ -813,6 +851,8 @@ void App::interface_step(int out_w, int out_h, int scale)
         bool on_map = input && !paused && mouse.y < panel_top(*data_);
         interface_map_mouse(*game, mouse, on_map, placing);
         interface_map_hover(*game, mouse, on_map, placing);
+        if (interface_.requester() == Requester::Queue)
+            queue_window_after_frame(*game);
         interface_advisor(*game, mouse, input, paused);
         interface_command(*game, info);
         interface_room_help(*game);
@@ -832,6 +872,11 @@ bool App::interface_escape(Game *game)
     if (hire_.placing() || interface_.requester() == Requester::HireStaff ||
         interface_.requester() == Requester::Jukebox) {
         game->event = hire_staff_cancel(hire_);
+        return false;
+    }
+    if (interface_.requester() == Requester::Queue) {
+        // setup_abort_all_requesters closes the queue window (EV_CANCEL_BUILD).
+        game->event = {EV_CLOSE_QUEUE_WINDOW, 0, 0, 0};
         return false;
     }
     if (object_escape(*game))
@@ -861,9 +906,18 @@ InfoWindowResult App::interface_requesters(Game &game, const InterfaceEvents &ev
     bool ctrl = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
     object_requesters_input(interface_, object_ui_, game, events, mouse, {shift, ctrl});
     build_requesters_input(interface_, build_ui_, game, events, mouse);
+    queue_window_input(queue_, interface_, game, {*data_, requester_art_, map_cell_, events, mouse});
     if (Event e = hire_staff_click(hire_, events, game); e.type)
         game.event = e;
-    InfoWindowResult info = info_window_frame(info_, interface_, events, mouse, game.world, {scroll_min_, scroll_max_});
+    if (interface_.requester() == Requester::StaffDemand) {
+        bool accept = false;
+        if (Event e = staff_demand_click(demand_, events, accept); e.type) {
+            sounds_.play_sound(kSourceGeneral, accept ? kSfxBonus2 : kSfxSack);
+            game.event = e;
+        }
+    }
+    InfoWindowResult info = info_window_frame(info_, interface_, events, mouse,
+                                              {game.world, data_->text(), {scroll_min_, scroll_max_}, game.balance});
     for (uint8_t sfx : info.sounds)
         sounds_.play_sound(kSourceGeneral, sfx);
     if (info.event.type)
@@ -896,6 +950,19 @@ void App::interface_yes_no(Game *game, const InterfaceEvents &events)
     yes_event_ = no_event_ = {};
 }
 
+// panel_l_button's room editing on/off (MM_EDIT_ROOM): from the normal mode
+// it starts editing, from the edit mode it stops; refused otherwise.
+bool App::panel_edit_room(Game &game)
+{
+    BuildMouse mode = game.world.building.mouse;
+    if ((mode != BuildMouse::None && mode != BuildMouse::EditRoom) || interface_.requester() != Requester::None)
+        return true;
+    game.world.building.mouse = mode == BuildMouse::None ? BuildMouse::EditRoom : BuildMouse::None;
+    game.world.building.build.edit_room = 0;
+    game.world.building.build.draw_mode = 0;
+    return false;
+}
+
 // Carries out the panel button pressed this frame, with its sound; `placing`
 // says whether an object or a member of staff is being placed.
 void App::interface_panel_action(Game &game, PanelAction action, bool placing)
@@ -914,6 +981,8 @@ void App::interface_panel_action(Game &game, PanelAction action, bool placing)
         refused = hire_.placing() || build_tool_busy(game);
         if (!refused)
             open_build_room(game);
+    } else if (action == PanelAction::EditRoom) {
+        refused = panel_edit_room(game);
     } else if (action == PanelAction::TownMap) {
         open_town_map();
     } else if (int chart = chart_for_panel_action(action); chart >= 0) {
@@ -931,7 +1000,7 @@ void App::interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, boo
 {
     int cell = on_map ? map_cell_ : -1;
     placement_mouse(object_ui_, game, cell, mouse, on_map);
-    build_mouse(build_ui_, game, cell, mouse, on_map);
+    build_mouse(build_ui_, game, cell, pointed_.thing, mouse, on_map);
     if (hire_.placing() && on_map && cell >= 0) {
         update_staff_cursor(hire_, game.world, cell);
         if (mouse.left_pressed) {
@@ -940,30 +1009,74 @@ void App::interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, boo
         } else if (mouse.right_pressed) {
             game.event = hire_staff_cancel(hire_);
         }
-    } else if (mouse.right_pressed && on_map && !placing && !build_tool_busy(game) && interface_.window_count() == 0 &&
-               game.world.building.build.room == 0 && !advisor_hit(game.advisor, mouse.x, mouse.y)) {
-        // process_right_button in the normal mouse mode, no requester
-        // open and no room being edited: picks up the player's member of
-        // staff under the pointer.
-        if (Event e = pick_up_staff_click(game.world, pointed_.thing); e.type) {
+    } else if (mouse.right_pressed && on_map && !advisor_hit(game.advisor, mouse.x, mouse.y) &&
+               (interface_.requester() == Requester::None || interface_.requester() == Requester::EditRoom)) {
+        if (Event e = interface_map_right(game, placing); e.type)
             game.event = e;
-            sounds_.play_sound(kSourceGeneral, kSfxPickup);
-        }
-    } else if (mouse.right_pressed && on_map && !placing && !build_tool_busy(game) &&
-               interface_.requester() == Requester::None && interface_.window_count() > 0 &&
-               !advisor_hit(game.advisor, mouse.x, mouse.y)) {
-        // process_right_button with a query window open: as Escape,
-        // EV_CANCEL_BUILD.
-        game.event = hire_staff_cancel(hire_);
     }
+}
+
+// process_right_button on the map: the edit-room modes, picking up an object
+// or member of staff, or cancelling. Returns the command, EV_NONE for none.
+Event App::interface_map_right(Game &game, bool placing)
+{
+    BuildMouse mode = game.world.building.mouse;
+    if (mode == BuildMouse::EditRoomWait)
+        return {EV_CANCEL_EDIT_ROOM, 0, 0, uint16_t(mode)};
+    if (mode == BuildMouse::EditRoom || mode == BuildMouse::PickUpObject) {
+        object_escape(game);
+        return {};
+    }
+    if (mode != BuildMouse::None || placing || build_tool_busy(game))
+        return {};
+    if (game.world.building.build.room)
+        return check_object_right_click_in_room_edit(game.world, pointed_.thing);
+    if (interface_.window_count() > 0)
+        return hire_staff_cancel(hire_);
+    if (Event e = pick_up_object_right_click(game.world, pointed_.thing); e.type)
+        return e;
+    if (Event e = pick_up_staff_click(game.world, pointed_.thing); e.type) {
+        sounds_.play_sound(kSourceGeneral, kSfxPickup);
+        return e;
+    }
+    return {};
+}
+
+// The watch's buttons over the panel (process_left_button): a left click on
+// the epidemic's vaccination button toggles the MM_VACCINATE pointer; on the
+// opening countdown's it opens the hospital at once (EV_OPEN_HOSPITAL) with
+// its fanfare. The game uses watch[14] for both hotspots. True when one took
+// the click.
+bool App::interface_watch_buttons(Game &game, const UiMouse &mouse)
+{
+    if (!mouse.left_pressed)
+        return false;
+    Sprite button = data_->watch().at(14);
+    if (mouse.x < kPanelWatchButtonX || mouse.x >= kPanelWatchButtonX + button.width || mouse.y < kPanelWatchButtonY ||
+        mouse.y >= kPanelWatchButtonY + button.height)
+        return false;
+    if (game.world.epidemic.timer > 0) {
+        vaccinate_ = !vaccinate_;
+        return true;
+    }
+    if (game.opening_countdown > 0) {
+        game.event = {EV_OPEN_HOSPITAL};
+        sounds_.play_sound(kSourceGeneral, kSfxFanfare);
+        return true;
+    }
+    return false;
 }
 
 // process_mouse's MM_NORMAL: what the pointer is over, and a left click
 // there (process_left_button) opens its window.
 void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing)
 {
-    if (!on_map || placing || build_tool_busy(game) || interface_.requester() != Requester::None ||
-        advisor_hit(game.advisor, mouse.x, mouse.y)) {
+    // The bar stays 100 frames after the pointer leaves a thing
+    // (othervar.panel_info_timer).
+    if (panel_info_timer_ && --panel_info_timer_ == 0)
+        panel_info_ = 0;
+    if (!on_map || placing || build_tool_busy(game) || game.world.building.mouse != BuildMouse::None ||
+        interface_.requester() != Requester::None || advisor_hit(game.advisor, mouse.x, mouse.y)) {
         pointer_sprite_ = kPointerDefault;
         return;
     }
@@ -976,12 +1089,70 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
         }
         return;
     }
+    // The watch's buttons handled the click; a left click on a contagious
+    // patient queues them for vaccination (EV_TOGGLE_VACCINATION).
+    if (interface_watch_buttons(game, mouse))
+        return;
+    const World::Epidemic &epidemic = game.world.epidemic;
     MapHover hover = map_hover(game.world, pointed_.thing);
+    if (hover.hit) {
+        panel_info_timer_ = 100;
+        panel_info_ = hover.info;
+        panel_thing_ = hover.thing;
+    }
+    // During a cover-up, hovering a contagious patient shows the vaccination
+    // pointer, as process_mouse's MM_NORMAL does; a click on one queues them.
+    uint16_t target = 0;
+    if (epidemic.active && hover.hit && is_person_highlighted_for_vaccination(game.world, hover.thing, target)) {
+        pointer_sprite_ = kPointerVaccinateTarget;
+        if (mouse.left_pressed)
+            game.event = {EV_TOGGLE_VACCINATION, target, 0, 0};
+        return;
+    }
+    if (vaccinate_ && epidemic.timer > 0) {
+        bool highlighted = is_person_highlighted_for_vaccination(game.world, pointed_.thing, target);
+        pointer_sprite_ = highlighted ? kPointerVaccinateTarget : kPointerVaccinate;
+        if (mouse.left_pressed && highlighted)
+            game.event = {EV_TOGGLE_VACCINATION, target, 0, 0};
+        return;
+    }
+    if (epidemic.timer == 0)
+        vaccinate_ = false;
+    interface_map_hover_click(game, mouse, hover);
+}
+
+// interface_map_hover's pointer and left click for the thing `hover` is over:
+// its pointer, its status icon and, on a click, map_left_click's command.
+void App::interface_map_hover_click(Game &game, const UiMouse &mouse, const MapHover &hover)
+{
     if (hover.pointer != kPointerKeep)
         pointer_sprite_ = hover.pointer;
+    // peep_icon (src/mouse.cpp): passing the mouse over a person announces
+    // their pending status icon.
+    if (hover.hit && hover.thing && hover.thing < game.world.things.size()) {
+        Thing &h = game.world.things[hover.thing];
+        if ((h.type == kThingPatient || h.type == kThingStaff) && h.owner == 0)
+            peep_icon(game.world, h);
+    }
     if (mouse.left_pressed)
-        if (Event e = map_left_click(game.world, hover, interface_); e.type)
+        if (Event e = map_left_click(game.world, hover, interface_, map_cell_); e.type)
             game.event = e;
+}
+
+// After interface_map_hover while the queue window is open: req7_overdraw's
+// panel information and MM_MOVE_QUEUE_PERSON pointer, and the door hotspot's
+// scroll to the room.
+void App::queue_window_after_frame(Game &game)
+{
+    panel_info_ = queue_.panel_info;
+    panel_thing_ = queue_.panel_thing;
+    if (game.world.building.mouse == BuildMouse::MoveQueuePerson)
+        pointer_sprite_ = kPointerMoveQueuePerson;
+    if (queue_.goto_cell >= 0) {
+        Point p = cell_to_world(queue_.goto_cell % kMapSize, queue_.goto_cell / kMapSize);
+        if (!beyond_scroll_limit(p, scroll_min_, scroll_max_))
+            camera_ = {p.x - surface_.width() / 2, p.y - surface_.height() / 2};
+    }
 }
 
 // The advisor: a right click on him or his bubble dismisses him; then his
@@ -1023,7 +1194,9 @@ void App::interface_command(Game &game, const InfoWindowResult &info)
 {
     run_command(game);
     if (info.event.type == EV_OPEN_YES_NO) {
-        interface_.open_yes_no(data_->text().at(TextSection::YesNo, info.question));
+        std::string q = info.question_text.empty() ? std::string(data_->text().at(TextSection::YesNo, info.question))
+                                                   : info.question_text;
+        interface_.open_yes_no(q);
         yes_event_ = info.yes;
         no_event_ = info.no;
     }
@@ -1045,11 +1218,15 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
         figures = {g.balance, g.date.day, g.date.month, g.reputation(), g.opening_countdown, g.open_countdown};
         figures.emergency_timer = g.world.emergency.timer;
         figures.emergency_state = g.world.emergency.state;
+        figures.epidemic_timer = g.world.epidemic.timer;
+        figures.epidemic_illness = g.world.epidemic.illness != 0;
         // The watch is not shown while the tutorial holds the countdown.
         if (g.advisor.flags & kAdvisorTutorial)
             figures.opening_countdown = 0;
     }
     draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
+    if (map_ && game)
+        draw_panel_info({ui_, panel_top(*data_), requester_art_.font()}, panel_info_, panel_thing_, *game, *data_);
     if (map_) {
         draw_popup_icons(ui_, popups_, *data_, panel_state_, &figures);
         draw_emergency(ui_, figures, *data_);
@@ -1063,12 +1240,15 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
     if (game)
         draw_info_windows(ui_, info_, interface_, {requester_art_, hire_art_, data_->text()}, game->world,
                           object_ui_.red);
+    if (game)
+        draw_queue_window(ui_, queue_, interface_, game->world, requester_art_, *data_);
     if (interface_.requester() == Requester::Jukebox)
         draw_jukebox(ui_, interface_, requester_art_, music_);
     if (game) {
         draw_object_requesters(ui_, interface_, object_ui_, *game, requester_art_, *data_);
         draw_build_requester(ui_, interface_, build_ui_, *game, requester_art_, *data_);
         draw_hire_staff(ui_, hire_, interface_, {requester_art_, hire_art_, data_->text()}, game->world);
+        draw_staff_demand(ui_, demand_, interface_, {requester_art_, hire_art_, data_->text()}, *data_, game->world);
     }
     help_draw();
     std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
@@ -1087,10 +1267,12 @@ void App::interface_help()
     } else if (uint8_t group = requester_help_group(interface_.requester())) {
         const Window *w = nullptr;
         Requester r = interface_.requester();
-        if (r == Requester::BuildRoom || r == Requester::HireStaff || r == Requester::EditRoom)
+        if (r == Requester::BuildRoom || r == Requester::HireStaff || r == Requester::EditRoom || r == Requester::Queue)
             w = &interface_.window(int(r));
         help_screen(group, w ? w->x : 0, w ? w->y : 0);
     }
+    if (queue_.help_group)
+        help_screen(queue_.help_group, queue_.help_x, queue_.help_y);
     help_screen(3, 0, 0); // the panel, after the requester
 }
 
@@ -1183,12 +1365,11 @@ void App::help_draw()
     }
     help_.draw(ui_.pixels(), data_->palette(), allowed, tutorial);
     const HelpBox &b = help_.box();
-    Rect m{b.x, b.y, b.w, b.h};
-    if (b.style == 2) {
-        m.w += 0xc;
-        m.h += 0xc;
-    }
-    ui_.mark(m);
+    ui_.mark({b.x, b.y, b.w, b.h});
+    // The framed page's shadow is a ghost blend in the original, but the
+    // interface layer is transparent, so it is drawn translucent instead.
+    for (Rect r : help_.page_shadow_rects())
+        ui_.shadow(r, HelpSystem::kPageShadowAlpha);
 }
 
 // The view window over the query window showing a person, under its art.
@@ -1341,6 +1522,16 @@ void App::town_step(int out_w, int out_h)
 void App::run_command(Game &game)
 {
     bool restart = game.event.type == EV_RESTART_LEVEL;
+    // Answering a member of staff's resignation call opens the staff demand
+    // requester once the command has removed the call (io.cpp's
+    // EV_ANSWER_PLAYERCALL).
+    uint16_t demand_staff = 0;
+    if (game.event.type == EV_ANSWER_PLAYERCALL && game.event.value == 1)
+        demand_staff = playercall_subject(game.world, 1, game.event.arg, 0);
+    // The demand's answers close its requester (process_turn's
+    // close_crequester and close_irequesters).
+    bool demand_answer = game.event.type == EV_REFUSE_STAFF_DEMAND || game.event.type == EV_RAISE_STAFF_SALARY ||
+                         game.event.type == EV_GIVE_STAFF_BONUS;
     hire_staff_event(hire_, interface_, game.world, game.event);
     jukebox_event(jukebox_, interface_, game.event);
     chart_command(charts_, game.event);
@@ -1350,8 +1541,20 @@ void App::run_command(Game &game)
     if (game.event.type == EV_SACK_STAFF)
         sounds_.play_sound(kSourceGeneral, kSfxSack);
     info_window_event(info_, interface_, game.world, game.event);
+    queue_window_event(queue_, interface_, game.world, game.event);
     fax_command(fax_, game.event);
     game.process_turn();
+    if (demand_answer) {
+        interface_.close_requester(Requester::StaffDemand);
+        close_irequesters(interface_);
+    }
+    // compute_whether_user_not_busy (user_idle): the demand opens only with
+    // no window open and nothing being placed.
+    if (demand_staff && !interface_.modal() && !game.world.placing.placing && !build_tool_busy(game) &&
+        !hire_.placing()) {
+        sounds_.play_sound(kSourceGeneral, kSfxStaffDemand);
+        open_staff_resign_requester(demand_, interface_, game.world, demand_staff, sounds_.safeseed);
+    }
     // display_choice_screen, from the command's answer to a call.
     if (game.choice_screen.type) {
         close_irequesters(interface_);
@@ -1370,8 +1573,12 @@ void App::game_sounds(Game &game)
 {
     // add_panel_popup's SFX_NEWFAX.
     constexpr uint8_t kSfxNewFax = 0xdd;
+    // research_category_exhausted's SFX_RESEARCH_EXHAUSTED.
+    constexpr uint8_t kSfxResearchExhausted = 0xdb;
     for (; game.world.popups.new_faxes; game.world.popups.new_faxes--)
         sounds_.play_sound(kSourceGeneral, kSfxNewFax);
+    for (; game.world.research.exhausted; game.world.research.exhausted--)
+        sounds_.play_sound(kSourceGeneral, kSfxResearchExhausted);
     // summon_vehicle's announcement of the emergency's illness, as its
     // helicopter is sent.
     const World::Emergency &e = game.world.emergency;
@@ -1803,13 +2010,15 @@ std::string App::debug_state() const
     std::replace(tooltip.begin(), tooltip.end(), '\n', ' ');
     s += std::format("help: page {}{}, last tooltip \"{}\"\n", page ? "open" : "closed",
                      page ? std::format(" (room type {})", help.sub) : "", tooltip);
-    // The query windows (Requester::Patient, Staff, Handyman) and what they show.
-    s += std::format("query window: patient {} (thing {}, {}, toggle delay {}), staff {} (thing {}), handyman {}; "
-                     "pointer {}, staff list on {}\n",
+    // The query windows (Requester::Patient, Staff, Handyman, Machine) and
+    // what they show.
+    s += std::format("query window: patient {} (thing {}, {}, toggle delay {}), staff {} (thing {}), handyman {}, "
+                     "machine {} (thing {}); pointer {}, staff list on {}\n",
                      interface_.is_open(int(Requester::Patient)), info_.patient,
                      info_.show_graph ? "health graph" : "treatments", info_.toggle_delay,
                      interface_.is_open(int(Requester::Staff)), info_.staff,
-                     interface_.is_open(int(Requester::Handyman)), pointer_sprite_, charts_.slist_staff);
+                     interface_.is_open(int(Requester::Handyman)), interface_.is_open(int(Requester::Machine)),
+                     info_.machine, pointer_sprite_, charts_.slist_staff);
     if (!map_ || in_startup_)
         return s;
     const Game &g = map_->game;
@@ -1817,6 +2026,7 @@ std::string App::debug_state() const
     s += std::format("camera: {},{}\n", camera_.x, camera_.y);
     s += std::format("speed: {} turns/s, paused {}\n", int(speed_), g.paused);
     s += std::format("route planner: {}\n", g.world.path_finder == PathFinder::AStar ? "A*" : "original");
+    s += std::format("panel info: kind {}, thing {}\n", panel_info_, panel_thing_);
     s += std::format("placing: object {}, staff {}, build mouse {}\n", g.world.placing.placing, hire_.placing(),
                      int(g.world.building.mouse));
     s += std::format("date: year {} month {} day {}, turn {}\n", g.date.year, g.date.month, g.date.day, g.turn_count);
@@ -2106,6 +2316,18 @@ void App::key_down(const SDL_KeyboardEvent &key)
     }
 }
 
+// The game's speed keys 1-5 (process_game_keys, src/keyboard.cpp): key 1 is
+// ignored with Shift, its cheat. True when `key` is one and set the speed.
+bool App::game_speed_key(const SDL_KeyboardEvent &key)
+{
+    if (key.key < SDLK_1 || key.key > SDLK_5)
+        return false;
+    if (key.key == SDLK_1 && (key.mod & SDL_KMOD_SHIFT))
+        return false;
+    speed_ = menu_speed(10 * int(key.key - SDLK_1 + 1));
+    return true;
+}
+
 // A key pressed over the hospital or a chart, with no modal requester up.
 void App::game_key(const SDL_KeyboardEvent &key)
 {
@@ -2119,6 +2341,8 @@ void App::game_key(const SDL_KeyboardEvent &key)
         chart_space_ = chart_space_ || key.key == SDLK_SPACE;
         return;
     }
+    if (map_ && game_speed_key(key))
+        return;
     if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
         // The charts, from the game or another chart; not while paused.
         if (!map_->game.paused)
@@ -2225,6 +2449,10 @@ void App::update(float dt)
 // The turns due after `dt` seconds at the game's speed.
 void App::run_turns(float dt)
 {
+    // The staff demand requester is modal (display_mode DM_MODAL): the game's
+    // turns pause while it is open.
+    if (map_ && interface_.requester() == Requester::StaffDemand)
+        return;
     // At most a few frames' worth of turns after a stall.
     turn_clock_ = std::min(turn_clock_ + dt * double(int(speed_)), 8.0);
     for (; turn_clock_ >= 1; turn_clock_ -= 1)
@@ -2364,7 +2592,9 @@ void App::hospital_step(int out_w, int out_h)
     float cdensity = SDL_GetWindowPixelDensity(window_);
     pointed_.at = {int(cmx * cdensity) / z, int(cmy * cdensity) / z};
     frame_sounds_.clear();
-    draw_view(surface_, *data_, map_.get(), camera_, shadows_, {&frame_sounds_, &pointed_});
+    // The earthquake's shake offset (shake_screen) moved the original view.
+    Point shaken = {camera_.x + map_->game.world.shake_x, camera_.y + map_->game.world.shake_y};
+    draw_view(surface_, *data_, map_.get(), shaken, shadows_, {&frame_sounds_, &pointed_});
     if (map_)
         view_sounds(vw, vh);
     mixer_.update(sounds_, &music_);
@@ -2427,6 +2657,9 @@ void App::view_sounds(int vw, int vh)
         sounds_.play_ambient(announcement, has_receptionist(world), map_->game.paused);
     world.machine_sounds.clear();
     world.machine_announcements.clear();
+    for (uint8_t sfx : world.epidemic_sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    world.epidemic_sounds.clear();
     // The music moves on to the next song, and the announcer speaks, as
     // the game does each frame; only the announcer while a modal
     // requester is up.
@@ -2666,6 +2899,14 @@ std::string App::drive_state() const
 int64_t App::drive_turn() const
 {
     return map_ && !in_startup_ ? int64_t(map_->game.turn_count) : -1;
+}
+
+bool App::drive_staff_demand(uint16_t id)
+{
+    if (!map_ || in_startup_ || id == 0 || id >= map_->game.world.things.size())
+        return false;
+    open_staff_resign_requester(demand_, interface_, map_->game.world, id, sounds_.safeseed);
+    return true;
 }
 
 void App::shutdown()

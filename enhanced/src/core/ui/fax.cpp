@@ -5,7 +5,10 @@
 #include "core/render/text.h"
 #include "core/world/build.h"
 #include "core/world/emergency.h"
+#include "core/world/epidemic.h"
+#include "core/world/mayor.h"
 #include "core/world/queue.h"
+#include "core/world/reputation.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
 
@@ -264,6 +267,72 @@ std::string emergency_over(const Fax &fax, const Game &game)
     return format(str(fax, 0), total, bonus) + "\n" + format(str(fax, 1), int(e.cured), int(e.patients));
 }
 
+// A VIP's name (mayor_names).
+std::string mayor_name(const Fax &fax, int idx)
+{
+    return std::string(fax.text->at(TextSection::MayorNames, idx));
+}
+
+// mayor_requester (0xa0b70): the VIP's name in the offer's text (strs[0]).
+std::string vips_offer(const Fax &fax, const Game &game)
+{
+    return format(str(fax, 0), mayor_name(fax, game.world.mayor.name).c_str());
+}
+
+// report_mayor_result (0xa17e8): the Telegram, the VIP's remark (the
+// verdict's quote, mayor_result index + 5), the cash grant if there is one
+// and the reputation line for the good and bad verdicts (not fair).
+std::string report_mayor_result(const Fax &fax, const Game &game)
+{
+    const World::Mayor &m = game.world.mayor;
+    int verdict = m.verdict;
+    std::string text = format(str(fax, 0));
+    text += "\n" + format(str(fax, 1), mayor_name(fax, m.name).c_str());
+    text += "\n\n" + format(str(fax, verdict + 5));
+    int value = kMayorResult[verdict % kMayorResult.size()].cash_bonus;
+    if (value != 0)
+        text += "\n" + format(str(fax, 2), value);
+    uint8_t event = kMayorResult[verdict % kMayorResult.size()].reputation_event;
+    if (event == kRepVipGood)
+        text += "\n" + format(str(fax, 3));
+    else if (event == kRepVipBad)
+        text += "\n" + format(str(fax, 4));
+    return text;
+}
+
+// declare_epidemic (0xa0240): the illness, the fine declaring it costs, and
+// the two questions.
+std::string declare_epidemic(const Fax &fax, const Game &game)
+{
+    std::string illness = illness_name(fax, game.world.epidemic.illness);
+    std::string text = format(str(fax, 0), illness.c_str());
+    text += "\n" + format(str(fax, 1), int(game.world.epidemic.fine));
+    text += "\n" + format(str(fax, 2));
+    text += "\n" + format(str(fax, 3));
+    return text;
+}
+
+// epidemic_over (0xa073c): the result fax, chosen by the inspector's verdict
+// (World::Epidemic::inspection[0]) and the illness it judged.
+std::string epidemic_over(const Fax &fax, const Game &game)
+{
+    const World::Epidemic &e = game.world.epidemic;
+    std::string illness = illness_name(fax, e.inspected_illness);
+    switch (e.inspection[0]) {
+    case 0:
+        return format(str(fax, 2), illness.c_str()) + "\n" + format(str(fax, 3)) + "\n" +
+               format(str(fax, 4), int(e.fine));
+    case 1:
+        return format(str(fax, 0), illness.c_str()) + "\n" + format(str(fax, 1)) + "\n" +
+               format(str(fax, 5), int(e.fine));
+    case 2:
+        return format(str(fax, 0), illness.c_str()) + "\n" + format(str(fax, 1)) + "\n" +
+               format(str(fax, 6), int(e.fine));
+    default:
+        return format(str(fax, 0), illness.c_str()) + "\n" + format(str(fax, 1)) + "\n" + format(str(fax, 7));
+    }
+}
+
 // How sure the diagnosis of patient `p` is, in percent, 0-99.
 int diagnosis_percent(const Thing &p)
 {
@@ -389,8 +458,9 @@ void display_choice_draw(Fax &fax, const Game &game, uint32_t &safeseed, FaxResu
 
 // The answer button `button`'s handler: process_emergency_start_buttons,
 // process_emergency_end_buttons, process_no_treatment_buttons,
-// process_announce_new_illness_buttons or process_no_diagnosis_buttons.
-void process_answer(Fax &fax, size_t button, FaxResult &result)
+// process_announce_new_illness_buttons, process_mayor_start_buttons,
+// process_mayor_end_buttons or process_no_diagnosis_buttons.
+void process_answer(Fax &fax, size_t button, FaxResult &result, Game &game)
 {
     auto answer = [&](const std::array<uint16_t, 3> &values) {
         // packet_choice_result: with the fax's subject.
@@ -404,7 +474,14 @@ void process_answer(Fax &fax, size_t button, FaxResult &result)
         else if (button == 1)
             result.event = {EV_CHOICE_RESULT, kChoiceEmergencyRefuse, 0, 0};
         break;
+    case kFaxEpidemic:
+        if (button == 0)
+            result.event = {EV_CHOICE_RESULT, kChoiceEpidemicDeclare, 0, 0};
+        else if (button == 1)
+            result.event = {EV_CHOICE_RESULT, kChoiceEpidemicCoverUp, 0, 0};
+        break;
     case kFaxEmergencyOver:
+    case kFaxEpidemicOver:
     case kFaxNewIllness:
         if (button == 0)
             fax.state = kFaxClose;
@@ -415,6 +492,25 @@ void process_answer(Fax &fax, size_t button, FaxResult &result)
     case kFaxNoDiagnosis:
         answer(kNoDiagnosisAnswers);
         break;
+    case kFaxVip:
+        if (button == 0) {
+            game.world.mayor.postponed = 0;
+            result.event = {EV_CHOICE_RESULT, kChoiceVipAccept, 0, 0};
+        } else if (button == 1) {
+            // process_mayor_start_buttons: a refusal is sent, then, after more
+            // than five refusals in a row while the turn's random percentage
+            // is below 10, an acceptance overwrites it.
+            result.event = {EV_CHOICE_RESULT, kChoiceVipRefuse, 0, 0};
+            if (++game.world.mayor.postponed > 5 && game.world.rand_pct < 10) {
+                game.world.mayor.postponed = 0;
+                result.event = {EV_CHOICE_RESULT, kChoiceVipAccept, 0, 0};
+            }
+        }
+        break;
+    case kFaxVipResult:
+        if (button == 0)
+            fax.state = kFaxClose;
+        break;
     default:
         break;
     }
@@ -423,7 +519,7 @@ void process_answer(Fax &fax, size_t button, FaxResult &result)
 // check_choice_buttons (0xa3430): the enabled answer button under a held
 // left button drawn pressed; one under a released left button answered.
 // Returns whether the release was taken.
-bool check_choice_buttons(Fax &fax, const UiMouse &m, FaxResult &result)
+bool check_choice_buttons(Fax &fax, const UiMouse &m, FaxResult &result, Game &game)
 {
     std::vector<Rect> boxes = fax_answer_buttons(fax);
     for (size_t i = 0; i < boxes.size(); i++) {
@@ -431,7 +527,7 @@ bool check_choice_buttons(Fax &fax, const UiMouse &m, FaxResult &result)
             continue;
         if (m.left_released) {
             result.sounds.push_back(kSfxYesX);
-            process_answer(fax, i, result);
+            process_answer(fax, i, result, game);
         }
         if (m.left_held || m.left_released)
             draw_sprite(fax.surface, boxes[i].x, boxes[i].y, fax.sprites.at(kSpriteAnswerPressed));
@@ -483,10 +579,10 @@ void check_fax_buttons(Fax &fax, const UiMouse &m, FaxResult &result)
 }
 
 // display_choice's second state, the fax up.
-void display_choice_up(Fax &fax, const UiMouse &m, bool escape, const Game &game, FaxResult &result)
+void display_choice_up(Fax &fax, const UiMouse &m, bool escape, Game &game, FaxResult &result)
 {
     fax.surface = fax.background;
-    if (!check_choice_buttons(fax, m, result))
+    if (!check_choice_buttons(fax, m, result, game))
         check_fax_buttons(fax, m, result);
     if (!fax.choice.timeout)
         return;
@@ -544,8 +640,7 @@ void fax_command(Fax &fax, const Event &event)
         fax.open = false;
 }
 
-FaxResult fax_frame(Fax &fax, const UiMouse &mouse, const FaxKeys &keys, double seconds, const Game &game,
-                    uint32_t &safeseed)
+FaxResult fax_frame(Fax &fax, const UiMouse &mouse, const FaxKeys &keys, double seconds, Game &game, uint32_t &safeseed)
 {
     FaxResult result;
     if (!fax.open)
@@ -589,12 +684,20 @@ std::string fax_message(const Fax &fax, const Game &game, uint16_t &available, u
         return announce_emergency(fax, game, available, safeseed);
     case kFaxEmergencyOver:
         return emergency_over(fax, game);
+    case kFaxEpidemic:
+        return declare_epidemic(fax, game);
+    case kFaxEpidemicOver:
+        return epidemic_over(fax, game);
     case kFaxNoTreatment:
         return call_no_treatment(fax, game, fax.choice.subject, available);
     case kFaxNewIllness:
         return announce_new_illness_fax(fax, fax.choice.subject);
     case kFaxNoDiagnosis:
         return call_no_diagnosis(fax, game, fax.choice.subject, available);
+    case kFaxVip:
+        return vips_offer(fax, game);
+    case kFaxVipResult:
+        return report_mayor_result(fax, game);
     default:
         return {};
     }

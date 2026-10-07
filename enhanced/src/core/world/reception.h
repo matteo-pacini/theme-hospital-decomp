@@ -84,8 +84,8 @@ void update_single_cure_cost(World &world, uint16_t treatment);
 // short of cash, plus a draw from world.seed of up to half the price. One
 // who will not is marked kPfTooExpensive, and World::too_expensive and
 // unpaid_treatment are set for the advisor, and it is counted in the
-// statistics (record_person_as_patient). Its status icon is not ported.
-bool shall_peep_pay(World &world, uint16_t id);
+// statistics (record_person_as_patient), with the too-expensive status icon.
+bool shall_peep_pay(World &world, const AnimData &anims, uint16_t id);
 
 // The patient's part of recept_admits_patient (0x984a0), once `receptionist`
 // has dealt with them: patient `patient`'s impatience and waiting time
@@ -93,6 +93,6 @@ bool shall_peep_pay(World &world, uint16_t id);
 // treatment's price (pay_for_treatment kind 3, which takes no money: it is
 // paid at the treatment), else its treatment cleared to 0; then
 // PS_GO_FOR_TREATMENT.
-void reception_serves_patient(World &world, uint16_t receptionist, uint16_t patient);
+void reception_serves_patient(World &world, const AnimData &anims, uint16_t receptionist, uint16_t patient);
 
 } // namespace th

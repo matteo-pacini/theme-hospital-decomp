@@ -143,6 +143,12 @@ inline constexpr std::array<BlueprintPiece, 107> kBlueprints = {{
     {1706, 0, 60, 0, 0, 0},  {1708, 0, 60, 0, 0, 0},  {0, 0, 255, 0, 0, 0},
 }};
 
+// The game's rooms[].has_queue (src/tables.cpp): hovering over a room type's
+// door shows its queue, and a click opens the queue window.
+inline constexpr std::array<uint8_t, kRoomTypes> kRoomHasQueue = {
+    0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1,
+};
+
 // The game's doortype[] (DoorInfo in include/hosp.h; src/tables.cpp): the
 // pieces of a door or window, four entries (one per wall: north, south,
 // west, east) per kind: 0-3 double doors, 4-7 single doors, 8-11 windows,
@@ -202,9 +208,13 @@ struct BuildState {
     // The room built or furnished (a World::rooms index; also
     // allhosps.edited_room), 0 for none.
     uint16_t room = 0;
+    // The room under the pointer while editing a room (build.edit_room), 0
+    // for none; hovering sets it, and it is what a click picks up or edits.
+    uint16_t edit_room = 0;
     uint8_t drag = kDragNone;
     uint8_t room_type = 0;
-    // 1 while the blueprint is laid out (drawn every frame), else 0.
+    // 1 while the blueprint is laid out (drawn every frame), 2 while the
+    // room under the pointer is highlighted, else 0.
     uint8_t draw_mode = 0;
     // The door being placed: its cell and kDoorTypes index, as the last
     // EV_TEMP_PLACE_DOOR found them.
@@ -224,8 +234,20 @@ struct BuildState {
 };
 
 // The game's mouse modes of building (gamevar.mouse_mode): MM_BLUEPRINT,
-// MM_PLACE_DOOR and 0x10 (waiting for the room to empty).
-enum class BuildMouse : uint8_t { None, Blueprint, PlaceDoor, WaitClear };
+// MM_PLACE_DOOR and 0x10 (waiting for the room to empty), and editing a
+// finished room: MM_EDIT_ROOM (choosing a room), MM_EDIT_ROOM_WAIT (it is
+// emptying), MM_PICK_UP_OBJECT (lifting one of its objects) and
+// MM_MOVE_QUEUE_PERSON (moving a patient between queues).
+enum class BuildMouse : uint8_t {
+    None,
+    Blueprint,
+    PlaceDoor,
+    WaitClear,
+    EditRoom,
+    EditRoomWait,
+    PickUpObject,
+    MoveQueuePerson,
+};
 
 // The player's building state: the game's BuildState and the parts of
 // gamevar and othervar the build commands set.
@@ -323,6 +345,36 @@ bool place_object_nav_check(World &world, uint16_t room, ObjectAt object, Object
 // for an object moved into room `room`, and the people in it still able to
 // reach its door.
 bool corridor_object_room_nav_check(World &world, int pos, int kind, int dir, uint16_t room);
+
+// compute_object_pointed (src/build.cpp): `pointed` if it is the player's
+// and, with `room` nonzero, an object of that room other than a swing door;
+// else 0.
+uint16_t compute_object_pointed(const World &world, uint16_t pointed, uint16_t room);
+
+// compute_room_pointed (src/blueprnt.cpp): hovering in edit-room mode: the
+// room at `tile` becomes build.edit_room to highlight (`draw_mode` 2); outside
+// rooms build.room is cleared and `pickup_thing` becomes the movable
+// corridor object under `pointed`, or the object a person there is using.
+void compute_room_pointed(World &world, int tile, uint16_t pointed, uint16_t &pickup_thing);
+
+// clicked_for_edit (src/build.cpp): the local player's click in edit mode:
+// picks up object `pickup_thing` (EV_PICK_UP_OBJECT, `both` when the edit or
+// buy-objects requester is open, which also lifts its other half) or starts
+// editing build.edit_room (EV_INIT_EDIT_ROOM).
+Event clicked_for_edit(World &world, uint16_t pickup_thing);
+
+// pick_up_object_right_click (src/build.cpp): picks up the pointed object
+// (or the object a patient is using) if it is the player's and may be moved.
+// Returns EV_PICK_UP_OBJECT for the caller, EV_NONE for none.
+Event pick_up_object_right_click(World &world, uint16_t pointed);
+
+// check_object_right_click_in_room_edit (src/build.cpp): queues picking up
+// the pointed object if it is in the room being edited.
+Event check_object_right_click_in_room_edit(const World &world, uint16_t pointed);
+
+// cancel_room_edit (src/build.cpp): cancels editing the player's room,
+// clearing its waiting flag and its outline.
+void cancel_room_edit(World &world);
 
 // does_room_contain_compulsory_objects (src/build.cpp).
 bool room_has_compulsory_objects(const World &world, uint16_t room);

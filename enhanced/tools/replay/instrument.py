@@ -504,6 +504,10 @@ EVENTS = {
          '(unsigned)((u8 *)&adcounts)[0x9d], (unsigned)adcounts.machines, (long)adcounts.machine_wear_sum, '
          '(long)adcounts.max_machine_wear, (unsigned)adcounts.worst_machine, (unsigned)adcounts.crackups, '
          '(long)mycontrol->history[4][0][11]);'),
+        (("before", "employee->skills &= ~8;"), "appraise_staff",
+         'trace_event("appraise %u skill=%u", (unsigned)(employee - thing), 8);'),
+        (("before", "employee->skills |= SKILL_CONSULTANT;"), "appraise_staff",
+         'trace_event("appraise %u skill=%u", (unsigned)(employee - thing), 128);'),
     ],
     "io.cpp": [
         (("before", "if (statvar.num_players > 1) {\n                    restore_popup(2);"), "process_turn",
@@ -517,6 +521,10 @@ EVENTS = {
          'trace_event("policy_rest %u", (unsigned)player_events[i].arg);'),
         (("before", "thingpage_request(&allhosps[i].repair_pager, player_events[i].value, 0xff);"), "process_turn",
          'trace_event("repair_request %u", (unsigned)player_events[i].value);'),
+        (("before", "count_and_flag_contagious_peeps(allhosps[i].epidemic_illness, 2, i);"), "process_turn",
+         'trace_event("epidemic_declare");'),
+        (("before", "count_and_flag_contagious_peeps(allhosps[i].epidemic_illness, 1, i);"), "process_turn",
+         'trace_event("epidemic_cover_up");'),
     ],
     "req4.cpp": [
         (("before", "handyman->litter_count = 0;"), "adjust_handyman_values",
@@ -601,6 +609,13 @@ EVENTS = {
         (("before", "handyman->room->state = 0;"), "handyman_works",
          f'trace_event("repaired %u machine=%u room=%u", {ID.format("handyman")}, (unsigned)handyman->object, '
          '(unsigned)(handyman->room - room_info));'),
+        (("before", "NRAdcounts.thirsty_plants++;"), "plant_ages",
+         f'trace_event("plant_thirsty %u priority=%u", {ID.format("plant")}, (unsigned)stage);'),
+        (("before", "NRAdcounts.thirsty_plants += 2;"), "plant_ages",
+         f'trace_event("plant_dead %u", {ID.format("plant")});'),
+        (("before", "plant->state = OS_PLANT_AGES;"), "handyman_works",
+         f'trace_event("watered %u plant=%u health=%d", {ID.format("handyman")}, {ID.format("plant")}, '
+         '(int)plant->plant_health);'),
     ],
     "epidemic.cpp": [
         ("entry", "spread_epidemic", f'trace_event("epidemic %u", {ID.format("carrier")});'),
@@ -670,6 +685,20 @@ EVENTS = {
     "rschscrn.cpp": [
         ("entry", "alter_research",
          'if (owner == 0) trace_event("alter_research %u value=%u", (unsigned)cat, (unsigned)value);'),
+    ],
+    "training.cpp": [
+        (("before", "staff_exit_room_check(doctor);"), "send_doctor_to_training",
+         'trace_event("send_to_training %u room=%u", (unsigned)(doctor - thing), (unsigned)room);'),
+        ("entry", "training_done",
+         'trace_event("training %u kind=%u", (unsigned)(consultant - thing), (unsigned)kind);'),
+        (("before", "points = base / (students * count);"), "training_done",
+         'trace_event("train_ability %u ability=%u", (unsigned)(student - thing), (unsigned)student->ability);'),
+        (("before", "student->skills |= SKILL_SURGEON;"), "training_done",
+         'trace_event("promoted %u skill=%u", (unsigned)(student - thing), 32);'),
+        (("before", "student->skills |= SKILL_PSYCHIATRIST;"), "training_done",
+         'trace_event("promoted %u skill=%u", (unsigned)(student - thing), 64);'),
+        (("before", "student->skills |= SKILL_RESEARCHER;"), "training_done",
+         'trace_event("promoted %u skill=%u", (unsigned)(student - thing), 256);'),
     ],
 }
 

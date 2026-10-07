@@ -508,8 +508,10 @@ void fail(const Run &r, uint16_t id)
         s.complex_pc = s.complex_queued = s.complex_queued2 = 0;
         s.complex_action = s.complex_resume = 0;
         play_staff_anim(r.anims, s, kAnimStand);
-        if (s.subtype == kStaffHandyman)
+        if (s.subtype == kStaffHandyman) {
+            thingpage_cancel_my_response(r.world.plant_pager, id);
             thingpage_cancel_my_response(r.world.repair_pager, id);
+        }
     } else {
         s.state = kStaffComplexRetry;
     }
@@ -951,6 +953,20 @@ uint8_t process_slave_complex(const Run &r, uint16_t id, const ComplexStep &entr
     return kStepDone;
 }
 
+// Actions 60 and 62: a surgeon changing at the surgeon screen. The animation
+// (staff and screen) follows the number of surgeons the room counts: the
+// first and second each have one, a third none.
+void screen_change_anim(const Run &r, uint16_t id, uint8_t action)
+{
+    Thing &e = r.world.things[id];
+    uint8_t count = count_surgeons(r.world, e.room);
+    bool matched = action == 60 ? count == 1 : count == 2;
+    uint8_t staff_column = action == 60 ? (matched ? 19 : 20) : (matched ? 22 : 21);
+    uint16_t screen_anim = matched ? 0x56c : (action == 60 ? 0x56b : 0x56a);
+    play_staff_anim(r.anims, e, staff_column);
+    play_frame(r.world.things[e.object], r.anims, screen_anim);
+}
+
 // The step's actions that sequence the complex, animate or change the
 // member of staff alone.
 uint8_t process_sequence_action(const Run &r, uint16_t id, const ComplexStep &entry)
@@ -998,9 +1014,12 @@ uint8_t process_sequence_action(const Run &r, uint16_t id, const ComplexStep &en
     case 58:
         e.subtype = uint8_t(entry.anim);
         break;
+    case 60:
+    case 62:
+        screen_change_anim(r, id, entry.action);
+        break;
     default:
-        // 0 and 12 do nothing, nor does 50 here (see process); 60 and 62
-        // are not ported, see process_staff_complex.
+        // 0 and 12 do nothing, nor does 50 here (see process).
         break;
     }
     return kStepDone;

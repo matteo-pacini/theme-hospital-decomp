@@ -1,0 +1,52 @@
+# Level 6: two training rooms (each with a projector and two lecture chairs)
+# and a staff room. A consultant (applicant 25) and a doctor (18) in the
+# first, a consultant (17) and a doctor (19) in the second, the policy's rest
+# at 50. Their breaks and returns make find_emptiest_training_room compare
+# the two rooms and find_training_room_no_consultant choose past a room that
+# has a consultant.
+101 55 0 0
+102 53 22 22
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 22 0
+110 7 6445 37
+111 7 6188 36
+112 7 6318 36
+113 1 0 0
+114 48 1 25
+115 5 6574 25
+116 48 1 18
+117 5 6575 18
+130 55 0 0
+131 53 22 22
+132 2 6196 0
+133 2 6712 0
+134 8 6712 0
+135 18 0 0
+136 26 6070 0
+137 3 0 0
+138 4 22 0
+139 7 6453 37
+140 7 6196 36
+141 7 6326 36
+142 1 0 0
+143 48 1 17
+144 5 6582 17
+145 48 1 19
+146 5 6583 19
+160 55 0 0
+161 53 25 25
+162 2 6202 0
+163 2 6718 0
+164 8 6718 0
+165 18 0 0
+166 26 6076 0
+167 3 0 0
+168 4 25 0
+169 7 6331 19
+170 1 0 0
+200 113 4 50

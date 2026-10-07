@@ -7,6 +7,7 @@
 #include "core/world/events.h"
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace th
@@ -15,16 +16,17 @@ namespace th
 struct WindowArt;
 struct World;
 
-// The patient, staff and handyman windows (src/req3.cpp, src/req4.cpp): the
-// game's query windows over the hospital (irequester_slots[1] and [2]),
-// opened by clicking a person on the map. Which of them is open is the
-// Interface's (Requester::Patient, Staff or Handyman); this is what they
-// show.
+// The patient, staff, handyman and machine windows (src/req3.cpp,
+// src/req4.cpp, src/req5.cpp): the game's query windows over the hospital
+// (irequester_slots[1] to [3]), opened by clicking a person or a machine on
+// the map. Which of them is open is the Interface's (Requester::Patient,
+// Staff, Handyman or Machine); this is what they show.
 struct InfoWindows {
-    // irequester_slots[1].value and [2].value: the patient and the member of
-    // staff shown.
+    // irequester_slots[1].value to [3].value: the patient, member of staff
+    // and machine shown.
     uint16_t patient = 0;
     uint16_t staff = 0;
+    uint16_t machine = 0;
     // irequester_slots[1].show_graph: the patient window shows the health
     // graph, else the treatments; toggle_delay: frames before clicking it
     // toggles again.
@@ -43,6 +45,12 @@ constexpr uint8_t kPointerStaff = 0x10;
 constexpr uint8_t kPointerMachine = 0x11;
 constexpr uint8_t kPointerPatient = 0x12;
 constexpr uint8_t kPointerQueue = 0x13;
+// MM_MOVE_QUEUE_PERSON's pointer, PTR_MOVE_QUEUE_PERSON.
+constexpr uint8_t kPointerMoveQueuePerson = 0x0f;
+// The epidemic's vaccination pointer: the tool, over a patient it can
+// vaccinate.
+constexpr uint8_t kPointerVaccinate = 0x0c;
+constexpr uint8_t kPointerVaccinateTarget = 0x0d;
 
 // What the pointer is over on the map in the normal mouse mode
 // (process_mouse's MM_NORMAL, src/mouse.cpp): with `hit`, `thing` is
@@ -52,6 +60,10 @@ struct MapHover {
     bool hit = false;
     uint16_t thing = 0;
     uint8_t pointer = kPointerDefault;
+    // The panel's information kind (othervar.panel_info): 1 staff, 2 patient,
+    // 3 machine, 4 a queue, 5 a VIP or the inspector, 6 a special object, 0
+    // none.
+    uint8_t info = 0;
 };
 
 // process_mouse's MM_NORMAL test of `pointed` (othervar.pointed_thing,
@@ -59,10 +71,10 @@ struct MapHover {
 // the reception desk (the queue pointer, the person kept); using a machine,
 // the machine (the machine pointer); of objects, a machine (by its first
 // part) or one whose objects[].flags bit 1 is set (the pointer kept);
-// otherwise a patient or member of staff (their pointers). Doors, whose
-// queue windows are not ported, and rats, the mayor and the inspector,
-// none of which exist yet, are not tested. The epidemic's vaccination
-// pointer is not ported.
+// otherwise a patient or member of staff (their pointers), a VIP or the
+// inspector (the pointer kept), a door of a room with a queue (the queue
+// pointer). Rats are not tested. The epidemic's vaccination pointer is set by the interface
+// (app/main.cpp), not here.
 MapHover map_hover(const World &world, uint16_t pointed);
 
 // process_left_button's left click on the map in the normal mouse mode with
@@ -70,18 +82,19 @@ MapHover map_hover(const World &world, uint16_t pointed);
 // member of staff, closes the query windows (close_irequesters) and gives
 // EV_OPEN_THING_WINDOW, or with a pending call about them EV_ANSWER_PLAYERCALL
 // (a resigning member of staff: 1; a patient waiting for a diagnosis room:
-// 8, for a decision: 4). EV_NONE for the rest: a receptionist at her desk
-// (the queue window) and objects (the machine window) open windows that are
-// not ported; poaching another player's staff needs network games.
-Event map_left_click(const World &world, const MapHover &hover, Interface &ui);
+// 8, for a decision: 4). For the player's machine, EV_OPEN_THING_WINDOW (the
+// machine window). EV_NONE for the rest: a receptionist at her desk (the
+// queue window) opens a window that is not ported; poaching another player's
+// staff needs network games.
+Event map_left_click(World &world, const MapHover &hover, Interface &ui, int cell = -1);
 
 // The windows' part of command `event` (process_turn, src/io.cpp), before
 // Game::process_turn: EV_OPEN_THING_WINDOW opens the window for the player's
-// patient (the health graph shown) or member of staff (the handyman window
-// for a handyman) `value`, closing the others; EV_CLOSE_QUERY closes them;
-// EV_PICK_UP_STAFF closes them; EV_CANCEL_SACK (after the yes/no requester
-// closed) and EV_RETURN_TO_THING_WINDOW (the staff list leaving to `arg`,
-// when no requester is open) open the window again.
+// patient (the health graph shown), member of staff (the handyman window
+// for a handyman) or machine `value`, closing the others; EV_CLOSE_QUERY
+// closes them; EV_PICK_UP_STAFF closes them; EV_CANCEL_SACK (after the
+// yes/no requester closed) and EV_RETURN_TO_THING_WINDOW (the staff list
+// leaving to `arg`, when no requester is open) open the window again.
 void info_window_event(InfoWindows &info, Interface &ui, const World &world, const Event &event);
 
 // What a frame of the windows asks of the caller.
@@ -91,6 +104,9 @@ struct InfoWindowResult {
     // With event EV_OPEN_YES_NO: the yes/no requester's question (language
     // section YesNo) and the commands for its answers.
     int question = 0;
+    // The question itself when it needs arguments formatted into it (the
+    // machine window's replacement question); empty for `question`.
+    std::string question_text;
     Event yes;
     Event no;
     // Sound effects to play.
@@ -106,17 +122,28 @@ struct InfoWindowResult {
     uint16_t slist_staff = 0;
 };
 
-// One frame of the open patient, staff or handyman window, after the
-// Interface's frame (`events`, `mouse` in its coordinates): req3 and req4
-// for the button pressed, then req3_overdraw's and req4_overdraw's clicks on
-// the window (left on the person's view: centre on them; right on it: the
-// next of their kind, find_next_thing; left on the treatments: toggle the
-// graph; left on a member of staff's face: the staff list), then
-// process_tracking_windows: the windows close once their person is beyond
-// the level's scroll area `scroll` widened by 10 cells, or gone. The patient
-// window's queue button opens the queue window, not ported: it does nothing.
+// What the windows' frame reads of the game and the interface: the hospital
+// world, the level's language text, the level's scroll area (cells) and the
+// player's balance.
+struct InfoWindowContext {
+    const World &world;
+    const LanguageText &text;
+    ScrollArea scroll;
+    int balance;
+};
+
+// One frame of the open patient, staff, handyman or machine window, after
+// the Interface's frame (`events`, `mouse` in its coordinates): req3, req4
+// and req5 for the button pressed, then req3_overdraw's, req4_overdraw's and
+// req5_overdraw's clicks on the window (left on the person's or machine's
+// view: centre on it; right on it: the next of their kind, find_next_thing;
+// left on the treatments: toggle the graph; left on a member of staff's face:
+// the staff list), then process_tracking_windows: the windows close once
+// their thing is beyond the level's scroll area widened by 10 cells, or gone.
+// The patient window's queue button opens the queue window, not ported: it
+// does nothing.
 InfoWindowResult info_window_frame(InfoWindows &info, Interface &ui, const InterfaceEvents &events,
-                                   const UiMouse &mouse, const World &world, ScrollArea scroll);
+                                   const UiMouse &mouse, const InfoWindowContext &context);
 
 // find_next_thing (0x73bb0) for people: the next thing after `from` in thing
 // order, wrapping round, of type `type` and the player's, of subtype `sub1`

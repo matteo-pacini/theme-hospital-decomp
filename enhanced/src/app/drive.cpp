@@ -240,6 +240,14 @@ int Driver::run(DriveHost &host, const Command &c)
         return run_pointer(host, c);
     if (verb == "click" || verb == "click-cell" || verb == "click-thing" || verb == "key")
         return run_click(host, c);
+    if (verb == "demand") {
+        int id = 0;
+        bool ok = number(c.words, 1, id) && host.drive_staff_demand(uint16_t(id));
+        if (!ok)
+            failures_++;
+        reply((ok ? "ok " : "fail ") + c.line, !ok);
+        return 0;
+    }
     return run_output(host, c);
 }
 

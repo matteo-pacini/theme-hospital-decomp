@@ -34,6 +34,8 @@ constexpr uint8_t kThingReaper = 0xa;
 constexpr uint8_t kThingDebris = 0xe;
 constexpr uint8_t kThingHelicopter = 0x10;
 constexpr uint8_t kThingNumfx = 0x12;
+constexpr uint8_t kThingMayor = 0x14;
+constexpr uint8_t kThingInspector = 0x16;
 constexpr uint8_t kThingShadow = 0x18;
 
 // A map cell by column and row (the game's PathStep and wallhug_waypoint).
@@ -144,6 +146,11 @@ struct Thing {
     uint8_t contagion = 0;
     // Status icon over their head (the game's icon_table index), 0 for none.
     int8_t icon_id = 0;
+    // The status icon's animation frame (icon_id's start[] frame, advanced by
+    // update_icon_counter), and how many turns it has left (0xffff, -1 as a
+    // signed value, for a permanent icon).
+    uint16_t icon_frame = 0;
+    int16_t icon_timer = 0;
     // 0-1000, dead at 0.
     int16_t health = 0;
     // Health over time; a new patient's is their health truncated to a byte.
@@ -184,6 +191,9 @@ struct Thing {
     // (PS_COMPLEX_RETRY).
     uint8_t next_state = 0;
     uint8_t resume_state = 0;
+    // A VIP or inspector: the state it enters on reaching its destination
+    // (mayor_goto).
+    uint8_t goto_state = 0;
     // People: the state and destination PS_STUCK resumes.
     uint8_t saved_state = 0;
     uint8_t saved_dest_x = 0;
@@ -222,6 +232,11 @@ struct Thing {
     uint16_t discontent = 0;
     // Doctors: 1 once they have cracked up (doctor_cracks_up).
     uint8_t crazy = 0;
+    // Doctors: training points towards each skill (surgeon, psychiatrist,
+    // researcher), gained in a training room (training_done).
+    uint8_t surgeon_training = 0;
+    uint8_t psych_training = 0;
+    uint8_t research_training = 0;
     // Staff: kOrder* bits (the game's ORD_*), and the game turn their
     // notice runs out; the notices handed in since hired.
     uint8_t orders = 0;
@@ -280,6 +295,9 @@ struct Thing {
     // Patients: the game turn, in 16 bits, from which modify_person runs
     // again.
     uint16_t modify_time = 0;
+    // Patients: their neighbour in their hospital's vaccination queue
+    // (World::Epidemic::vaccine_queue), 0 for none (vaccine.cpp).
+    uint16_t vaccine_next = 0;
     // Patients: grows near litter and after a drink; past gbv.litter_drop
     // they drop litter.
     uint16_t litter_urge = 0;
@@ -354,6 +372,10 @@ struct Thing {
     uint8_t aux_draw_flags = 0;
     uint8_t aux_param = 0;
     uint8_t remove_after_anim = 0;
+    // Projectors: 1 once the consultant has started the lecture, cleared
+    // when they leave the training room (consultant_trains,
+    // staff_exit_room_check).
+    uint8_t lecture_started = 0;
 
     // The grim reaper (kThingReaper; reaper.cpp)
     // The gates of hell it leads its victim (slave) to; the frame, mirroring
@@ -370,6 +392,11 @@ struct Thing {
     int16_t altitude = 0;
     uint16_t shadow = 0;
     uint16_t caster = 0;
+
+    // Epidemics (epidemic.cpp)
+    // The health inspector (kThingInspector): the room it is at, counted
+    // through the hospital's rooms, 0 for the reception desk (src/mayor.cpp).
+    uint8_t inspect_room = 0;
 
     // Machine disasters (disaster.cpp)
     // Machines: the frame of their smoke drawn over them once worn
@@ -519,6 +546,9 @@ struct AdCounts {
     // The statistics pass found a patient, of any hospital, since the level
     // began (advisor.has_patients).
     bool has_patients = false;
+    // The strength of the last earthquake (NRAdcounts.last_quake_size), for
+    // the advisor's damage report.
+    uint8_t last_quake_size = 0;
 };
 
 struct World {
@@ -556,7 +586,9 @@ struct World {
     const Finance *finance = nullptr;
     // The turn's random distances (othervar.queue_near_dist, 0-5, and
     // object_near_dist, 1-4; draw_turn_randoms): how near their queue's cell
-    // or their object patients count as there.
+    // or their object patients count as there. rand_pct is the turn's first
+    // draw modulo 100 (othervar.rand_pct).
+    uint8_t rand_pct = 0;
     uint8_t queue_near_dist = 0;
     uint8_t object_near_dist = 0;
     // Hospital 0's treatments it can give (allhosps[0].rooms[].cure_available,
@@ -575,6 +607,13 @@ struct World {
     // (advisor.event_flags 2).
     uint8_t patients_left_count = 0;
     int32_t bench_shortage = 0;
+    // Hospital 0's plant figures as the game keeps them (NRAdcounts.plants,
+    // thirsty_plants and plant_health_sum), which placing, plant_ages,
+    // watering and removal update; the advisor's plant advice and the year's
+    // plant trophy read them.
+    uint16_t plants = 0;
+    uint16_t thirsty_plants = 0;
+    int32_t plant_health_sum = 0;
     // What the simulation tells the advisor (advisor.event_flags'
     // kAdvisorEventResign and kAdvisorEventCall of core/world/advisor.h),
     // which Game moves into Advisor::event_flags after each turn and
@@ -593,10 +632,17 @@ struct World {
     // from (held_staff_tile), where cancelling puts them back.
     uint16_t held_staff = 0;
     uint16_t held_staff_tile = 0;
+    // Hospital 0's nurses that wandered this turn (allhosps[0].idle_nurses,
+    // reset by start_turn), which a nurse in a room leaving to vaccinate and
+    // the advisors read.
+    uint16_t idle_nurses = 0;
 
     // Building (build.cpp)
     // The room the player builds and the build tool's state.
     Building building;
+    // 1 while a finished room is opened for editing (othervar.editing_room):
+    // open_room then leaves last_built_room alone.
+    uint8_t editing_room = 0;
 
     // Rooms in use (gp)
     // A request for staff with given skills to come to a room (the game's
@@ -643,6 +689,9 @@ struct World {
         std::array<ThingPage, 0x40> pages{};
     };
     ThingPager repair_pager;
+    // Hospital 0's requests for a handyman to water a plant (the game's
+    // ThingPager allhosps[0].plant_pager), by priority.
+    ThingPager plant_pager;
     // The id the next call gets (popup_id[0], from 1).
     uint16_t next_call_id = 1;
     // Per hospital and call kind (1-8), the call its panel icon stands for
@@ -685,6 +734,31 @@ struct World {
     };
     Emergency emergency;
 
+    // VIP visits (mayor.cpp)
+    // Hospital 0's VIP visit (allhosps[0]'s mayor fields): the thing (0 for
+    // none), the VIP's name index (mayor_names), 0 none / 1 offered / 2
+    // scheduled / 3 on site / 4 gone, the turn an accepted visit starts, the
+    // verdict (a mayor_result index), how many offers in a row were refused,
+    // and the days counted towards the next offer.
+    struct Mayor {
+        uint32_t arrival_turn = 0;
+        uint16_t thing = 0;
+        uint8_t name = 0;
+        uint8_t state = 0;
+        uint16_t verdict = 0;
+        uint16_t postponed = 0;
+        uint16_t launch_count = 0;
+    };
+    Mayor mayor;
+    // The level's scroll area (Level::scroll_min and scroll_max), which the
+    // earthquake's screen shake stays within.
+    uint16_t scroll_min = 0;
+    uint16_t scroll_max = kMapCells - 1;
+    // The earthquake's view shake so far, in map pixels (shake_screen), which
+    // the interface adds to its camera.
+    int16_t shake_x = 0;
+    int16_t shake_y = 0;
+
     // Machine disasters (disaster.cpp)
     // Hospital 0's machines blown up (allhosps[0].mishaps), and whether one
     // has (award_counts.machine_exploded, for the year's awards). The
@@ -695,6 +769,37 @@ struct World {
     bool machine_exploded = false;
     std::vector<uint8_t> machine_sounds;
     std::vector<uint8_t> machine_announcements;
+
+    // Epidemics (epidemic.cpp)
+    // Hospital 0's epidemic (allhosps[0]'s epidemic fields): the illness it
+    // is of and the fine declaring it would cost, how many patients the last
+    // statistics pass found contagious (contagious_count), the cover-up's
+    // timer in half days (epidemic_timer, 0 for none) and whether one is
+    // covered up (epidemic_active) or over (epidemic_over), the illness the
+    // inspector judged (inspected_illness) and its verdict (inspection[0]),
+    // whether an inspector is on the way (inspection[1]), and the patients
+    // queued for vaccination (vaccine_queue, the head) with how many asked
+    // (vaccine_requests).
+    struct Epidemic {
+        uint8_t illness = 0;
+        uint16_t fine = 0;
+        uint16_t contagious_count = 0;
+        int16_t timer = 0;
+        uint8_t active = 0;
+        uint8_t over = 0;
+        uint8_t inspected_illness = 0;
+        std::array<uint8_t, 2> inspection{};
+        uint16_t vaccine_queue = 0;
+        uint16_t vaccine_requests = 0;
+        // An epidemic call ran out unanswered (expire_playercalls), to be
+        // covered up as the game's default answer once the turn's admin is
+        // done (Game::start_turn).
+        bool cover_up_expired = false;
+    };
+    Epidemic epidemic;
+    // The epidemic's sound effects (SFX_*) made since the interface last
+    // played and cleared them.
+    std::vector<uint8_t> epidemic_sounds;
 
     // Research (research.cpp)
     // Hospital 0's research and object figures (core/world/research.h).

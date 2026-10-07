@@ -570,6 +570,49 @@ void test_handyman_sweeps(const char *dir)
     CHECK(turns == 44 && w.seed == 0xe7957f81);
 }
 
+// With the game data: a handyman on level 1 waters a plant beside him that a
+// handyman page asks for, and it is healthy and counted as watered
+// afterwards. plant_ages, which makes the page, is checked by the plant
+// replay scripts.
+void test_handyman_waters(const char *dir)
+{
+    th::StaffComplexes sc;
+    std::string error;
+    CHECK(th::load_staff_complexes(dir, sc, &error));
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::World &w = f.game->world;
+    uint16_t handyman = hire_and_place(f, th::kStaffHandyman);
+    CHECK(handyman != 0);
+    if (!handyman)
+        return;
+    const th::Thing &h = w.things[handyman];
+    int cell = 0;
+    for (int offset : {1, -1, th::kMapSize, -th::kMapSize}) {
+        int c = h.x.tile + h.y.tile * th::kMapSize + offset;
+        if (w.map[size_t(c)].owner_flags == 1 && w.map[size_t(c)].first == 0) {
+            cell = c;
+            break;
+        }
+    }
+    CHECK(cell != 0);
+    uint16_t plant = th::place_object(w, f.gd.anims(), {cell, 45, 0}, 0, true);
+    CHECK(plant != 0);
+    if (!plant)
+        return;
+    w.things[plant].plant_health = 300;
+    th::thingpage_request(w.plant_pager, plant, 1);
+    int turns = 0;
+    while (turns < 4000 && w.things[plant].plant_health != 400) {
+        staff_work_turn(f, sc);
+        turns++;
+    }
+    std::printf("handyman watered in %d turns, seed %#x\n", turns, unsigned(w.seed));
+    CHECK(w.things[plant].plant_health == 400 && h.plant_count == 1);
+}
+
 namespace
 {
 

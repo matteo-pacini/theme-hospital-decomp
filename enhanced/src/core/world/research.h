@@ -69,8 +69,8 @@ struct Research {
     // (award_counts.research_earned, research_spent).
     int32_t earned = 0;
     int32_t spent = 0;
-    // A category ran out since the interface last looked
-    // (othervar.research_exhausted); it plays SFX_RESEARCH_EXHAUSTED.
+    // The categories that ran out since the interface last looked
+    // (othervar.research_exhausted); each plays SFX_RESEARCH_EXHAUSTED.
     uint8_t exhausted = 0;
 };
 
@@ -84,6 +84,10 @@ void start_research(World &world);
 // advisor's announcement of `kind` (World::announce), up to four waiting,
 // once each.
 void announce_this(World &world, uint8_t kind, uint32_t value);
+
+// done_announcement (0x60bf4 in src/advisor.cpp): drops the oldest
+// announcement of `kind`, moving the rest down.
+void done_announcement(World &world, uint8_t kind);
 
 // The player can buy objects of `kind`: researched or available from the
 // start (equipment[].available), and in the level (AvailableForLevel).

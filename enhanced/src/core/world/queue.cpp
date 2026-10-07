@@ -28,7 +28,7 @@ void start_queues(World &world, const Balance &settings, HospitalMarket &market,
 
 void draw_turn_randoms(World &world)
 {
-    old_newrand(world.seed, "start_turn");
+    world.rand_pct = uint8_t(old_newrand(world.seed, "start_turn") % 100);
     world.queue_near_dist = uint8_t(old_newrand(world.seed, "start_turn") % 6);
     world.object_near_dist = uint8_t((old_newrand(world.seed, "start_turn") & 3) + 1);
 }

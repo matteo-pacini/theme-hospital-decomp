@@ -98,6 +98,7 @@ void reset_all_count(World &world, uint32_t game_turn)
     world.counts = {};
     world.counts.has_patients = has_patients;
     world.emergency.present = 0;
+    world.epidemic.contagious_count = 0;
 }
 
 void person_count(World &world, uint16_t id, uint32_t game_turn)
@@ -106,12 +107,17 @@ void person_count(World &world, uint16_t id, uint32_t game_turn)
         return;
     Thing &p = world.things[id];
     world.counts.has_patients = true;
-    if (outdoors(world, p))
+    if (outdoors(world, p)) {
+        if ((p.person_flags & kPfContagious) && p.owner == 0)
+            world.epidemic.timer = 0;
         return;
+    }
     if (p.owner == 0)
         person_count_figures(world.counts, p);
     if ((p.person_flags & kPfEmergency) && p.owner == 0)
         world.emergency.present++;
+    if (int8_t(p.contagion) != 0 && p.owner == 0)
+        world.epidemic.contagious_count++;
     if (!(p.person_flags & kPfCountedVisitor)) {
         // Only hospital 0's history is kept; the game adds every
         // hospital's patients to it.

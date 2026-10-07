@@ -1,0 +1,27 @@
+# Level 3, where a research room can be built from the start: a research
+# room (44,69)-(48,73), its door above it, the autopsy machine (cell 9260
+# facing 0), a desk (cell 9264 facing 1) and a filing cabinet (cell 8880
+# facing 1); opened. Two researchers (applicants 13 and 16) placed in it;
+# research with the default allocation (20% each).
+101 55 0 0
+102 53 28 28
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 28 0
+110 7 9260 55
+111 7 9264 257
+112 7 8880 258
+113 1 0 0
+114 48 1 13
+115 5 9004 13
+116 48 1 16
+117 5 9005 16
+# Edit the research room (room 5) while a researcher is in it; it waits,
+# then its objects are placed again and it is opened (editing_room.
+# suppresses the room-built advice on open_room).
+500 70 5 0
+1500 1 0 0

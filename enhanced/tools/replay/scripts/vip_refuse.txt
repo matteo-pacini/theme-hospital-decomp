@@ -1,0 +1,16 @@
+# Level 1: reception.txt with the VIP's visit refused each time it is
+# offered (EV_ANSWER_PLAYERCALL 6, then EV_CHOICE_RESULT CH_VIP_REFUSE),
+# twice in a row, so that the launch count starts again.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The first offer (day 150) and the second (day 300), refused.
+7501 10 6 0
+7502 125 21 0
+15001 10 6 0
+15002 125 21 0

@@ -1,0 +1,32 @@
+# Level 1: a reception desk with its receptionist and a GP's office with no
+# doctor, so patients queue at the reception; the queue window's commands on
+# a patient other than the head, at a turn the queue holds several:
+# EV_BACK_QUEUE and EV_FRONT_QUEUE (a non-head patient to the back then the
+# front), EV_QUEUE_PERSON_GO_HOME and EV_QUEUE_PERSON_GO_RECEPTION (a
+# non-head patient leaves) and EV_QUEUE_PERSON_TO_NEW_QUEUE (the head patient
+# sent to the GP's office). Compare up to turn 18300.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# At turn 10000 the reception (room 5) holds its patients; the head is 36.
+10000 9 6 36
+10001 61 5 2
+10002 60 5 2
+10003 81 5 2
+10004 85 5 2

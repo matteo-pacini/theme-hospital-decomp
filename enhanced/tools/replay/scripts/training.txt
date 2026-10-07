@@ -1,0 +1,37 @@
+# Level 6: a training room with a projector, two lecture chairs, a bookcase
+# and a skeleton, and a staff room; a consultant (applicant 25) and a doctor
+# (applicant 18) in the training room, the policy's rest at 50. The
+# consultant starts the projector and lectures, teaches from the bookcase and
+# skeleton, the doctor gains ability and training points; both take breaks in
+# the staff room and come back to training.
+101 55 0 0
+102 53 22 22
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 22 0
+110 7 6445 37
+111 7 6188 36
+112 7 6318 36
+113 7 6191 56
+114 7 6316 60
+115 1 0 0
+116 48 1 25
+117 5 6574 25
+118 48 1 18
+119 5 6575 18
+130 55 0 0
+131 53 25 25
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 25 0
+139 7 6331 19
+140 1 0 0
+200 113 4 50

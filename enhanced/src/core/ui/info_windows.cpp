@@ -7,10 +7,12 @@
 #include "core/world/build.h"
 #include "core/world/object_tables.h"
 #include "core/world/queue.h"
+#include "core/world/research.h"
 #include "core/world/staff.h"
 #include "core/world/world.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 
@@ -23,6 +25,7 @@ namespace
 constexpr int kPatientWindow = int(Requester::Patient);
 constexpr int kStaffWindow = int(Requester::Staff);
 constexpr int kHandymanWindow = int(Requester::Handyman);
+constexpr int kMachineWindow = int(Requester::Machine);
 
 // hires_requester_buttons (src/reqbut.cpp), counted from 1 in each window's
 // list: [0xd] to [0x11] the patient window's close, casebook, send home,
@@ -41,6 +44,13 @@ constexpr int kHandymanPickUp = 28;
 constexpr int kStaffClose = 15;
 constexpr int kStaffSack = 16;
 constexpr int kStaffPickUp = 17;
+constexpr int kMachineClose = 12;
+constexpr int kMachineHandyman = 13;
+constexpr int kMachineReplace = 14;
+
+// The yes/no requester's question asking to replace a machine
+// (yesno_text[2], its arguments the object's name then its cost).
+constexpr int kReplaceQuestion = 2;
 
 // The yes/no requester's question asking to sack (yesno_text[5]).
 constexpr int kSackQuestion = 5;
@@ -99,6 +109,19 @@ constexpr int kPriorityX[3] = {55, 111, 167};
 constexpr int kPriorityY = 202;
 constexpr int kPriorityLen = 40;
 
+// HiresCoords and HiresBoxes (src/coords.cpp), relative to the window, as
+// req5_overdraw reads them: the machine's name and the room's patients seen,
+// its strength bar (HiresBoxes[0x53]) and the view (clicked) of the machine
+// (HiresBoxes[0x54]).
+constexpr Point kMachineNameAt = {68, 29};
+constexpr Point kMachineCountAt = {102, 62};
+constexpr Rect kMachineUsageBar = {97, 100, 39, 0};
+constexpr Rect kMachineViewBox = {59, 22, 120, 20};
+
+// hires_requester_sprites[4]: the segment req5_draw_machine_usage_bar
+// repeats.
+constexpr int kUsageBarSprite = 5;
+
 // HiresBoxes read as Rect (x0, y0, x1, y1) for each window's view of its
 // person (EV_OPEN_THING_WINDOW's open_new_window): [0x20] staff, [0x21]
 // handyman, [0x22] patient.
@@ -138,6 +161,26 @@ constexpr int kTrackLift = 24;
 bool over(int mx, int my, Point at, Rect box)
 {
     return mx >= at.x + box.x && mx < at.x + box.x + box.w && my >= at.y + box.y && my < at.y + box.y + box.h;
+}
+
+// A language string with its arguments formatted in, as the game's sprintf.
+template <typename... Args> std::string format(std::string_view fmt, Args... args)
+{
+    std::string f(fmt);
+    char buf[200];
+    std::snprintf(buf, sizeof buf, f.c_str(), args...);
+    return buf;
+}
+
+// is_thing_paged (src/req5.cpp): whether thing `id` is among the pager's
+// requests.
+bool is_thing_paged(const World &world, uint16_t id)
+{
+    const World::ThingPager &pager = world.repair_pager;
+    for (int i = pager.count - 1; i >= 0; i--)
+        if (pager.pages[size_t(i)].id == id)
+            return true;
+    return false;
 }
 
 const Thing *thing_at(const World &world, uint16_t id)
@@ -334,14 +377,14 @@ void draw_staff_window(UiLayer &layer, const InfoWindows &info, const Window &wi
 // handyman's; -1 for none.
 int open_info_window(const Interface &ui)
 {
-    for (int w : {kPatientWindow, kStaffWindow, kHandymanWindow})
+    for (int w : {kPatientWindow, kStaffWindow, kHandymanWindow, kMachineWindow})
         if (ui.is_open(w))
             return w;
     return -1;
 }
 
 // The window EV_OPEN_THING_WINDOW (and its kin) open for thing `id`: -1 if
-// none (not the player's, or not a person).
+// none (not the player's, or not a person or machine).
 int window_for(const World &world, uint16_t id)
 {
     const Thing *t = thing_at(world, id);
@@ -351,6 +394,8 @@ int window_for(const World &world, uint16_t id)
         return kPatientWindow;
     if (t->type == kThingStaff)
         return t->subtype == kStaffHandyman ? kHandymanWindow : kStaffWindow;
+    if (t->type == kThingObject && kObjectIsMachine[t->subtype % kObjectKinds])
+        return kMachineWindow;
     return -1;
 }
 
@@ -361,6 +406,8 @@ void open_for(InfoWindows &info, Interface &ui, int window, uint16_t id)
         info.patient = id;
         info.show_graph = true;
         info.toggle_delay = 0;
+    } else if (window == kMachineWindow) {
+        info.machine = id;
     } else {
         info.staff = id;
     }
@@ -389,7 +436,10 @@ void patient_click(const Thing &p, uint16_t id, int button, InfoWindowResult &r)
         }
         break;
     case kPatientQueue:
-        // EV_OPEN_QUEUE_WINDOW: the queue window is not ported.
+        if (p.queue_room) {
+            r.event = {EV_OPEN_QUEUE_WINDOW, p.queue_room, 0, 0};
+            r.sounds.push_back(kSfxSelectX);
+        }
         break;
     case kPatientCure:
         if (p.treatment != 0 && !(p.person_flags & (kPfGuessed | kPfFedUp)) && p.illness != p.known_illness &&
@@ -447,9 +497,25 @@ MapHover object_hover(const World &world, uint16_t id, const Thing *hovered)
         hovered = pair;
     }
     if (kObjectIsMachine[hovered->subtype % kObjectKinds])
-        return {true, id, kPointerMachine};
+        return {true, id, kPointerMachine, 3};
     if (kObjectFlags[hovered->subtype % kObjectKinds] & kObjectFlagHoverInfo)
-        return {true, id, kPointerKeep};
+        return {true, id, kPointerKeep, 6};
+    return {};
+}
+
+// map_hover's last test of the resolved thing `id`: a patient or member of
+// staff, the mayor or inspector (panel line 5), or a door of a room with a
+// queue (the queue pointer).
+MapHover map_hover_thing(const World &world, uint16_t id, const Thing &hovered)
+{
+    if (hovered.type == kThingPatient)
+        return {true, id, kPointerPatient, 2};
+    if (hovered.type == kThingStaff)
+        return {true, id, kPointerStaff, 1};
+    if (hovered.type == kThingMayor || hovered.type == kThingInspector)
+        return {true, id, kPointerKeep, 5};
+    if (hovered.type == kThingDoor && kRoomHasQueue[world.rooms[hovered.room_id % kRoomCount].type % kRoomTypes])
+        return {true, id, kPointerQueue, 4};
     return {};
 }
 
@@ -465,7 +531,7 @@ MapHover map_hover(const World &world, uint16_t pointed)
     if (hovered->type == kThingPatient || hovered->type == kThingStaff) {
         if (uint16_t used = partner(world, *hovered, pointed)) {
             if (world.things[used].subtype == kObjReceptionDesk)
-                return {true, pointed, kPointerQueue};
+                return {true, pointed, kPointerQueue, 4};
             if (kObjectIsMachine[world.things[used].subtype % kObjectKinds]) {
                 id = used;
                 hovered = &world.things[used];
@@ -485,37 +551,78 @@ MapHover map_hover(const World &world, uint16_t pointed)
         if (!hovered)
             return h;
     }
-    if (hovered->type == kThingPatient)
-        return {true, id, kPointerPatient};
-    if (hovered->type == kThingStaff)
-        return {true, id, kPointerStaff};
-    return h;
+    MapHover tail = map_hover_thing(world, id, *hovered);
+    return tail.hit ? tail : h;
 }
 
-Event map_left_click(const World &world, const MapHover &hover, Interface &ui)
+// map_left_click on a member of staff: a receptionist at her desk opens the
+// queue window; otherwise close the query windows and open theirs (or answer
+// their call).
+Event map_left_click_staff(const World &world, const Thing &t, const MapHover &hover, Interface &ui)
+{
+    if (t.subtype == kStaffReceptionist) {
+        uint16_t desk = partner(world, t, hover.thing);
+        if (desk && world.things[desk].subtype == kObjReceptionDesk && t.room)
+            return {EV_OPEN_QUEUE_WINDOW, t.room, 0, 0};
+    }
+    close_irequesters(ui);
+    if ((t.orders & kOrderResign) && t.playercall)
+        return {EV_ANSWER_PLAYERCALL, 1, 0, t.playercall};
+    return {EV_OPEN_THING_WINDOW, hover.thing};
+}
+
+// map_left_click on a patient: close the query windows and open theirs, or
+// answer their call.
+Event map_left_click_patient(const Thing &t, const MapHover &hover, Interface &ui)
+{
+    close_irequesters(ui);
+    if ((t.person_flags & kPfNeedsDiagnosisRoom) && t.playercall)
+        return {EV_ANSWER_PLAYERCALL, 8, 0, t.playercall};
+    if ((t.person_flags & kPfAwaitingDecision) && t.playercall)
+        return {EV_ANSWER_PLAYERCALL, 4, 0, t.playercall};
+    return {EV_OPEN_THING_WINDOW, hover.thing};
+}
+
+// map_left_click on an object: a machine opens its window, a reception desk
+// the queue window of its receptionist's room.
+Event map_left_click_object(const World &world, const Thing &t, const MapHover &hover, Interface &ui)
+{
+    if (kObjectIsMachine[t.subtype % kObjectKinds]) {
+        close_irequesters(ui);
+        return {EV_OPEN_THING_WINDOW, hover.thing};
+    }
+    if (t.subtype == kObjReceptionDesk) {
+        const Thing *user = t.user < world.things.size() ? &world.things[t.user] : nullptr;
+        if (user && user->type == kThingStaff && user->room)
+            return {EV_OPEN_QUEUE_WINDOW, user->room, 0, 0};
+    }
+    return {};
+}
+
+// map_left_click on a door of a queued room: open its queue window and
+// highlight the room (src/mouse.cpp's compute_room_pointed).
+Event map_left_click_door(World &world, const Thing &t, int cell)
+{
+    if (!kRoomHasQueue[world.rooms[t.room_id % kRoomCount].type % kRoomTypes])
+        return {};
+    uint16_t scratch = 0;
+    compute_room_pointed(world, cell, 0, scratch);
+    return {EV_OPEN_QUEUE_WINDOW, t.room_id, 0, uint16_t((t.y.tile << 7) + t.x.tile)};
+}
+
+Event map_left_click(World &world, const MapHover &hover, Interface &ui, int cell)
 {
     const Thing *t = thing_at(world, hover.thing);
     if (!hover.hit || !t || t->owner != 0)
         return {};
-    if (t->type == kThingStaff) {
-        if (t->subtype == kStaffReceptionist) {
-            uint16_t desk = partner(world, *t, hover.thing);
-            if (desk && world.things[desk].subtype == kObjReceptionDesk && t->room)
-                return {};
-        }
-        close_irequesters(ui);
-        if ((t->orders & kOrderResign) && t->playercall)
-            return {EV_ANSWER_PLAYERCALL, 1, 0, t->playercall};
-        return {EV_OPEN_THING_WINDOW, hover.thing};
-    }
-    if (t->type == kThingPatient) {
-        close_irequesters(ui);
-        if ((t->person_flags & kPfNeedsDiagnosisRoom) && t->playercall)
-            return {EV_ANSWER_PLAYERCALL, 8, 0, t->playercall};
-        if ((t->person_flags & kPfAwaitingDecision) && t->playercall)
-            return {EV_ANSWER_PLAYERCALL, 4, 0, t->playercall};
-        return {EV_OPEN_THING_WINDOW, hover.thing};
-    }
+    if (t->type == kThingStaff)
+        return map_left_click_staff(world, *t, hover, ui);
+    if (t->type == kThingPatient)
+        return map_left_click_patient(*t, hover, ui);
+    if (t->type == kThingObject)
+        return map_left_click_object(world, *t, hover, ui);
+    if (t->type == kThingDoor)
+        return map_left_click_door(world, *t, cell);
     return {};
 }
 
@@ -640,49 +747,167 @@ void staff_window_clicks(InfoWindows &info, InfoWindowResult &r, const World &wo
     }
 }
 
+// req5 (0x88260): the machine window's buttons.
+void machine_click(const Thing &m, uint16_t id, int button, InfoWindowResult &r, const InfoWindowContext &context)
+{
+    switch (button) {
+    case kMachineClose:
+        r.event = {EV_CLOSE_QUERY, 3, 0, 0};
+        r.sounds.push_back(kSfxNo4);
+        break;
+    case kMachineHandyman:
+        r.event = {EV_THINGPAGE_REQUEST, id, 0, 0};
+        r.sounds.push_back(kSfxSelectX);
+        break;
+    case kMachineReplace: {
+        int cost = object_cost(context.world, m.subtype);
+        if (context.balance >= cost && context.balance > 0) {
+            r.event = {EV_OPEN_YES_NO, 0, 0, 0};
+            r.question_text = format(context.text.at(TextSection::YesNo, kReplaceQuestion),
+                                     std::string(context.text.at(TextSection::ObjectNames, m.subtype)).c_str(), cost);
+            r.yes = {EV_REPLACE_MACHINE, id, 0, 0};
+            r.no = {EV_CLOSE_YES_NO, 0, 0, 0};
+            r.sounds.push_back(kSfxSelectX);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+// req5_overdraw's usage bar: `filled` of `total` of `box`'s width, the
+// segment sprite repeated from the left.
+void draw_machine_usage_bar(UiLayer &layer, Point at, int filled, int total, Rect box, const Sprite &sprite)
+{
+    int step = (total << 16) / box.w;
+    if (step <= 0)
+        return;
+    for (int i = (filled << 16) / step - 1; i >= 0; i--)
+        layer.draw_sprite(at.x + box.x + i, at.y + box.y, sprite);
+}
+
+// req5_overdraw: the machine's name (in brackets while a handyman is paged),
+// the room's patient count and the strength left as a bar.
+void draw_machine_window(UiLayer &layer, const InfoWindows &info, const Window &win, const WindowArt &window_art,
+                         const World &world)
+{
+    const Thing *mp = thing_at(world, info.machine);
+    if (!mp || mp->type != kThingObject)
+        return;
+    const Thing &m = *mp;
+    const RequesterArt &art = window_art.art;
+    const LanguageText &text = window_art.text;
+    const Point at = {win.x, win.y};
+    const Rect screen = {0, 0, kUiWidth, kUiHeight};
+    const TextWindow whole = {0, 0, kUiWidth};
+    std::string name(text.at(TextSection::ObjectNames, m.subtype));
+    if (is_thing_paged(world, info.machine))
+        name = "(" + name + ")";
+    layer.draw_text(art.font(), at.x + kMachineNameAt.x, at.y + kMachineNameAt.y, name, {whole, screen});
+    if (m.room_id) {
+        const RoomInfo &room = world.rooms[m.room_id % kRoomCount];
+        layer.draw_text(art.font(), at.x + kMachineCountAt.x, at.y + kMachineCountAt.y,
+                        std::to_string(room.patients_seen), {whole, screen});
+    }
+    int32_t max = object_strength(world, m.subtype);
+    int pct = max ? int((max - m.times_used) * 100 / max) : 0;
+    draw_machine_usage_bar(layer, at, pct, 100, kMachineUsageBar, art.sheet(kMachineWindow).at(kUsageBarSprite));
+}
+
+// req5_overdraw's clicks: centring on the machine and the next machine.
+void machine_window_clicks(InfoWindows &info, InfoWindowResult &r, const World &world, uint16_t id,
+                           const InfoClick &click)
+{
+    const UiMouse &mouse = click.mouse;
+    if (click.left && over(mouse.x, mouse.y, click.at, click.view))
+        r.centre_on = id;
+    if (click.right_click && over(mouse.x, mouse.y, click.at, click.view)) {
+        uint16_t next = find_next_thing(world, id, kThingObject, -1, -1, click.scroll);
+        if (next < world.things.size() && next != id) {
+            info.machine = next;
+            r.centre_on = next;
+            r.sounds.push_back(kSfxCamClick);
+        }
+    }
+}
+
+// The window open and the thing it shows.
+struct InfoWindowShow {
+    int window;
+    uint16_t id;
+    const Thing *thing;
+};
+
+// The window's button, req3, req4 or req5 as it is.
+void info_window_button(Interface &ui, const InterfaceEvents &events, const InfoWindowShow &show, InfoWindowResult &r,
+                        const InfoWindowContext &context)
+{
+    if (events.triggered_window != show.window)
+        return;
+    if (show.window == kPatientWindow)
+        patient_click(*show.thing, show.id, events.triggered_button, r);
+    else if (show.window == kMachineWindow)
+        machine_click(*show.thing, show.id, events.triggered_button, r, context);
+    else
+        staff_click(*show.thing, show.id, events.triggered_button, r, ui);
+}
+
+// req3_overdraw's, req4_overdraw's and req5_overdraw's clicks.
+void info_window_click(InfoWindows &info, Interface &ui, const InfoWindowShow &show, const UiMouse &mouse,
+                       InfoWindowResult &r, const InfoWindowContext &context)
+{
+    const Window &win = ui.window(show.window);
+    const Point at = {win.x, win.y};
+    const bool left = mouse.left_held || mouse.left_pressed;
+    const bool right = mouse.right_held || mouse.right_pressed;
+    const bool right_click = right && !info.right_was_down;
+    const Rect view = show.window == kPatientWindow    ? kPatientViewBox
+                      : show.window == kMachineWindow  ? kMachineViewBox
+                      : show.window == kHandymanWindow ? kHandymanViewBox
+                                                       : kStaffViewBox;
+    const InfoClick click = {mouse, at, view, left, right_click, context.scroll};
+    if (show.window == kPatientWindow)
+        patient_window_clicks(info, r, context.world, show.id, click);
+    else if (show.window == kMachineWindow)
+        machine_window_clicks(info, r, context.world, show.id, click);
+    else
+        staff_window_clicks(info, r, context.world, show.id, click);
+    info.right_was_down = right;
+}
+
 } // namespace
 
 InfoWindowResult info_window_frame(InfoWindows &info, Interface &ui, const InterfaceEvents &events,
-                                   const UiMouse &mouse, const World &world, ScrollArea scroll)
+                                   const UiMouse &mouse, const InfoWindowContext &context)
 {
     InfoWindowResult r;
     const int window = open_info_window(ui);
     if (window < 0)
         return r;
     const bool patient = window == kPatientWindow;
-    const uint16_t id = patient ? info.patient : info.staff;
-    const Thing *t = shown(world, id, patient ? kThingPatient : kThingStaff);
-    if (!t || t->owner != 0) {
+    const bool machine = window == kMachineWindow;
+    const uint16_t id = patient ? info.patient : machine ? info.machine : info.staff;
+    const Thing *t =
+        machine ? thing_at(context.world, id) : shown(context.world, id, patient ? kThingPatient : kThingStaff);
+    if (!t || t->owner != 0 || (machine && t->type != kThingObject)) {
         close_irequesters(ui);
         return r;
     }
-    if (events.triggered_window == window) {
-        if (patient)
-            patient_click(*t, id, events.triggered_button, r);
-        else
-            staff_click(*t, id, events.triggered_button, r, ui);
-    }
+    const InfoWindowShow show = {window, id, t};
+    info_window_button(ui, events, show, r, context);
     if (!ui.is_open(window))
         return r;
+    info_window_click(info, ui, show, mouse, r, context);
 
-    // req3_overdraw's and req4_overdraw's clicks.
-    const Window &win = ui.window(window);
-    const Point at = {win.x, win.y};
-    const bool left = mouse.left_held || mouse.left_pressed;
-    const bool right = mouse.right_held || mouse.right_pressed;
-    const bool right_click = right && !info.right_was_down;
-    const Rect view = patient ? kPatientViewBox : window == kHandymanWindow ? kHandymanViewBox : kStaffViewBox;
-    const InfoClick click = {mouse, at, view, left, right_click, scroll};
-    if (patient)
-        patient_window_clicks(info, r, world, id, click);
-    else
-        staff_window_clicks(info, r, world, id, click);
-    info.right_was_down = right;
-
-    // process_tracking_windows.
+    // process_tracking_windows: the machine window has no view and is not
+    // tracked.
+    if (machine)
+        return r;
     const uint16_t tracked = patient ? info.patient : info.staff;
-    const Thing *tt = shown(world, tracked, patient ? kThingPatient : kThingStaff);
-    if (!tt || beyond_scroll_limit(thing_position(world, tracked), scroll.min_cell, scroll.max_cell, 10))
+    const Thing *tt = shown(context.world, tracked, patient ? kThingPatient : kThingStaff);
+    if (!tt || beyond_scroll_limit(thing_position(context.world, tracked), context.scroll.min_cell,
+                                   context.scroll.max_cell, 10))
         close_irequesters(ui);
     return r;
 }
@@ -690,7 +915,7 @@ InfoWindowResult info_window_frame(InfoWindows &info, Interface &ui, const Inter
 bool info_view(const InfoWindows &info, const Interface &ui, const World &world, Rect &box, Point &camera)
 {
     const int window = open_info_window(ui);
-    if (window < 0)
+    if (window < 0 || window == kMachineWindow)
         return false;
     const bool patient = window == kPatientWindow;
     const uint16_t id = patient ? info.patient : info.staff;
@@ -710,6 +935,8 @@ void draw_info_windows(UiLayer &layer, const InfoWindows &info, const Interface 
     const int window = open_info_window(ui);
     if (window == kPatientWindow)
         draw_patient_window(layer, info, ui.window(window), window_art, world, red);
+    else if (window == kMachineWindow)
+        draw_machine_window(layer, info, ui.window(window), window_art, world);
     else if (window >= 0)
         draw_staff_window(layer, info, ui.window(window), window, window_art, world);
 }

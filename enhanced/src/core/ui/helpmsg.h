@@ -31,6 +31,11 @@ uint8_t requester_help_group(Requester requester);
 class HelpSystem
 {
   public:
+    // The framed page's drop shadow is drawn as black at this opacity: the
+    // ghost table's blend of black into what is under it (draw flag 4) is two
+    // thirds of the backdrop, which a black pixel at one third opacity gives.
+    static constexpr uint8_t kPageShadowAlpha = 0x55;
+
     HelpSystem();
 
     // setup_help_indices: fills help_start with the index each help group's
@@ -97,6 +102,10 @@ class HelpSystem
     // The text the last draw showed: box().msg is cleared after a tooltip is
     // drawn, as the original clears help_msg, so this keeps what was shown.
     const std::string &drawn_text() const { return drawn_; }
+    // The framed page's drop shadow as the two rectangles to its right and
+    // below, which the caller draws translucent over what is behind the help
+    // layer (a ghost blend has no backdrop there). Empty without a page.
+    std::array<Rect, 2> page_shadow_rects() const;
 
     // copy_and_format: `src` wrapped to a width that grows with its length.
     static std::string copy_and_format(std::string_view src);

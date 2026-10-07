@@ -1,0 +1,12 @@
+# Level 1: the panel's watch while the opening countdown runs. A left click
+# on the watch's "open now" button opens the hospital at once
+# (EV_OPEN_HOSPITAL, process_left_button): the state's open line flips from
+# false to true when the click's command is carried out.
+wait 60
+dump closed
+expect open: false, opening countdown
+click 17 343            # the watch's open-now button (kPanelWatchButtonX/Y)
+wait 20
+dump opened
+expect open: true, opening countdown 0
+screenshot open_hospital

@@ -156,7 +156,14 @@ void draw_line(Surface &dst, Point from, Point to, uint8_t colour, Rect clip)
 
 bool build_tool_busy(const Game &game)
 {
-    return game.world.building.mouse != BuildMouse::None;
+    switch (game.world.building.mouse) {
+    case BuildMouse::Blueprint:
+    case BuildMouse::PlaceDoor:
+    case BuildMouse::WaitClear:
+        return true;
+    default:
+        return false;
+    }
 }
 
 void open_build_room(Game &game)
@@ -236,6 +243,13 @@ void build_requesters_edit_button(Game &game, int i)
         sounds.push_back(kSfxSelectX);
         return;
     }
+    if (i == kEditRoomPickUp && !(p.arg & (1u << kEditRoomPickUp))) {
+        game.world.building.mouse = BuildMouse::PickUpObject;
+        set_room_requester_mode(game.world, 8);
+        p.arg3 = 0;
+        sounds.push_back(kSfxSelectX);
+        return;
+    }
     if (i != kEditRoomConfirm || (p.arg & (1u << kEditRoomConfirm)))
         return;
     switch (p.requester_mode) {
@@ -270,7 +284,27 @@ void build_requesters_input(Interface &ui, BuildUi &bui, Game &game, const Inter
         build_requesters_edit_button(game, events.triggered_button);
 }
 
-void build_mouse(BuildUi &bui, Game &game, int cell, const UiMouse &mouse, bool on_map)
+// build_mouse in the edit-room modes: MM_EDIT_ROOM hovers and picks a room or
+// a corridor object, MM_PICK_UP_OBJECT lifts one of the room's objects.
+void build_mouse_edit(BuildUi &bui, Game &game, int cell, uint16_t pointed, const UiMouse &mouse, BuildMouse mode)
+{
+    game.world.placing.mouse_cell = cell;
+    if (mode == BuildMouse::PickUpObject) {
+        bui.pickup_thing = compute_object_pointed(game.world, pointed, game.world.building.build.room);
+        if (mouse.left_pressed && bui.pickup_thing &&
+            game.world.things[bui.pickup_thing].room_id == game.world.building.build.room)
+            game.event = {EV_PICK_UP_OBJECT, bui.pickup_thing, 0, 1};
+        return;
+    }
+    compute_room_pointed(game.world, cell, pointed, bui.pickup_thing);
+    // Only the player's own land may be clicked, as process_mouse tests.
+    if (mouse.left_pressed && game.world.map[size_t(cell)].owner_flags == 1u << 0) {
+        if (Event e = clicked_for_edit(game.world, bui.pickup_thing); e.type)
+            game.event = e;
+    }
+}
+
+void build_mouse(BuildUi &bui, Game &game, int cell, uint16_t pointed, const UiMouse &mouse, bool on_map)
 {
     if (!on_map || cell < 0 || cell >= kMapCells) {
         bui.cell = -1;
@@ -291,6 +325,10 @@ void build_mouse(BuildUi &bui, Game &game, int cell, const UiMouse &mouse, bool 
             game.event = {EV_PLACE_BP_DOOR, 1, 0, 0};
         else if (!mouse.left_held && !mouse.right_held)
             game.event = {EV_TEMP_PLACE_DOOR, uint16_t(bui.prev_cell >= 0 ? bui.prev_cell : cell), 0, 0};
+        break;
+    case BuildMouse::EditRoom:
+    case BuildMouse::PickUpObject:
+        build_mouse_edit(bui, game, cell, pointed, mouse, game.world.building.mouse);
         break;
     default:
         break;
@@ -448,6 +486,29 @@ void draw_overdrawn_blueprints(const OverlayPainter &paint, const World &world, 
     }
 }
 
+// draw_blueprint_area in mode 2: the room being edited highlighted, its
+// outline only, through the ghost table with the flag rotating each of six
+// turns (and nothing on the fourth), as the game flashes it.
+void draw_edit_room_outline(const OverlayPainter &paint, const BuildState &b, int turn)
+{
+    int phase = turn % 6;
+    if (phase == 3)
+        return;
+    unsigned flags = phase == 1 || phase == 5   ? unsigned(kDrawGhost)
+                     : phase == 2 || phase == 4 ? unsigned(kDrawGhostUnder)
+                                                : 0u;
+    for (int y = b.y0; y <= b.y1 + 1; y++) {
+        for (int x = b.x0; x <= b.x1 + 1; x++) {
+            int piece = blueprint_outline_piece(b, x, y);
+            if (!piece)
+                continue;
+            AnimStart start = anim_start(paint.data, kBlueprints[size_t(piece)].anim);
+            int px = paint.cell_x(x, y - 1), py = paint.cell_y(x, y - 1);
+            draw_frame(paint.dst, {px, py}, start.frame, start.flip != 0, paint.data, FrameOptions{.flags = flags});
+        }
+    }
+}
+
 // draw_cell_no: the outline of cell `cell`.
 void draw_cell_no(const OverlayPainter &paint, int cell)
 {
@@ -488,6 +549,8 @@ void draw_build_overlay(const ViewTarget &target, const Game &game, const BuildU
     target.dst.set_clip(target.view);
     if (bd.build.draw_mode == 1)
         draw_overdrawn_blueprints(paint, world, bd.build);
+    else if (bd.build.draw_mode == 2)
+        draw_edit_room_outline(paint, bd.build, game.turn_count);
     // The cell under the pointer while the blueprint is laid out.
     if (bd.mouse == BuildMouse::Blueprint && bui.cell >= 0)
         draw_cell_no(paint, bui.cell);

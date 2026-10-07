@@ -30,7 +30,10 @@ constexpr uint8_t kIllAutopsy = 44;
 
 // Thing.person_flags bits (the game's PF_*, include/enums.h) besides
 // core/world/litter.h's.
+constexpr uint32_t kPfVaccineRequested = 0x1;
+constexpr uint32_t kPfVaccineNurseSent = 0x2;
 constexpr uint32_t kPfAwaitingDecision = 0x10;
+constexpr uint32_t kPfContagious = 0x20;
 constexpr uint32_t kPfEmergency = 0x40;
 constexpr uint32_t kPfWaitingForRoom = 0x80;
 constexpr uint32_t kPfSentHomeByInspector = 0x100;
@@ -39,6 +42,8 @@ constexpr uint32_t kPfGuessed = 0x1000;
 constexpr uint32_t kPfCured = 0x2000;
 constexpr uint32_t kPfFedUp = 0x4000;
 constexpr uint32_t kPfSentHome = 0x8000;
+constexpr uint32_t kPfReferred = 0x10000;
+constexpr uint32_t kPfDiagnosed = 0x20000;
 constexpr uint32_t kPfNoDiagnosis = 0x80000;
 constexpr uint32_t kPfNoTreatment = 0x100000;
 constexpr uint32_t kPfTooExpensive = 0x800000;

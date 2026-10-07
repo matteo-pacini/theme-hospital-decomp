@@ -28,6 +28,9 @@ constexpr uint8_t kPsShowanim = 0x3a;
 // playing ends in vomit or a puddle.
 constexpr uint32_t kPfVomits = 0x4;
 constexpr uint32_t kPfWets = 0x8;
+// An earthquake's shook this patient (PF_QUAKE_SHAKEN); do_reaction clears it
+// playing the quake reaction.
+constexpr uint32_t kPfQuakeShaken = 0x200;
 
 // The heating level a hospital starts with (allhosps.heating_level,
 // init_player in src/start.cpp).
@@ -71,9 +74,8 @@ void staff_check_around(const World &world, Thing &s);
 // (kPfEmergency) only gets the health held back in a room, or, once the
 // emergency's time is up (World::Emergency::state 2), loses all of it and
 // is an emergency patient no longer.
-// Not ported, as what they need does not exist yet: the contagious and
-// vaccinated flags (never set), status icons, a room's radiators (its warmth
-// is 0) and effect_illness on a spreading carrier.
+// Not ported, as what they need does not exist yet: the status icons and a
+// room's radiators (its warmth is 0).
 void modify_person(World &world, const AnimData &anims, const Balance &settings, int heating_level, uint16_t id,
                    uint32_t game_turn);
 

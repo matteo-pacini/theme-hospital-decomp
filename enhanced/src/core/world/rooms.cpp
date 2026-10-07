@@ -6,8 +6,11 @@
 #include "core/world/complex.h"
 #include "core/world/complex_tables.h"
 #include "core/world/disaster.h"
+#include "core/world/epidemic.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
+#include "core/world/icons.h"
+#include "core/world/mayor.h"
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
 #include "core/world/popups.h"
@@ -44,7 +47,6 @@ constexpr uint8_t kFirstDiagnosis = 0x24;
 // Thing.person_flags bits (the game's PF_*) besides core/world/queue.h's.
 constexpr uint32_t kPfWrongGuess = 0x800;
 constexpr uint32_t kPfDiagnosed = 0x20000;
-constexpr uint32_t kPfContagious = 0x20;
 
 // Illnesses (the game's ILL_*) whose cure changes a patient's looks back.
 constexpr uint8_t kIllBloatyHead = 2;
@@ -359,6 +361,8 @@ void diagnose_patient_complete(World &world, Thing &staff, uint16_t id, int16_t 
         if (world.market)
             world.market->diagnosed++;
     }
+    if (p.contagion)
+        alert_epidemic(world, p.illness, p.owner);
     p.person_flags |= kPfDiagnosed;
     if (diag < hospital_of(world).diag_threshold && diagnose_patient_find_room(world, id))
         return;
@@ -464,16 +468,15 @@ void cure_illness(World &world, uint16_t id)
         world.hospital->illnesses[p.illness % kIllnessCount].cured++;
     reputation_affected(world, p.illness, kRepCured);
     p.known_illness = p.illness = 0;
-    if (p.contagion) {
-        p.person_flags &= ~kPfContagious;
-        p.contagion = 0;
-    }
+    if (p.contagion)
+        clean_contagious_peep(world, id);
     if (p.owner == 0 && world.ledger)
         world.ledger->cures_this_month++;
     if (p.person_flags & kPfEmergency) {
         trace_event("emergency_cure %u", unsigned(id));
         world.emergency.cured++;
         p.person_flags &= ~kPfEmergency;
+        reset_icon_value(p, kIconEmergency);
     }
     record_person_as_patient(world, id);
 }
@@ -497,7 +500,7 @@ bool setup_next_treatment_outcome(World &world, const AnimData &anims, uint16_t 
     case 1:
         pay_for_treatment(world, id, 2);
         p.treatment = kIllGeneralPractice;
-        pay = shall_peep_pay(world, id);
+        pay = shall_peep_pay(world, anims, id);
         if (pay)
             pay_for_treatment(world, id, 3);
         break;
@@ -518,7 +521,7 @@ bool setup_next_treatment_outcome(World &world, const AnimData &anims, uint16_t 
     case 4:
         pay_for_treatment(world, id, 2);
         diagnose_patient(world, anims, world.things[staff_id], id, game_turn);
-        pay = shall_peep_pay(world, id);
+        pay = shall_peep_pay(world, anims, id);
         if (pay)
             pay_for_treatment(world, id, 3);
         break;
@@ -530,7 +533,7 @@ bool setup_next_treatment_outcome(World &world, const AnimData &anims, uint16_t 
         } else {
             p.treatment = kIllGeneralPractice;
         }
-        pay = shall_peep_pay(world, id);
+        pay = shall_peep_pay(world, anims, id);
         if (pay)
             pay_for_treatment(world, id, 3);
         break;
@@ -596,6 +599,7 @@ void start_rooms_in_use(Game &game, const PersonComplexes &person_complexes, con
     world.calls = {};
     world.next_call_id = 1;
     world.repair_pager = {};
+    world.plant_pager = {};
     world.hospital = &game.hospital;
     world.ledger = &game.finance;
     world.balance = &game.balance;
@@ -913,6 +917,12 @@ void expire_playercalls(World &world)
                     unsigned(call.subject));
         if (call.type == kCallEmergencyOver && call.subject == 1 && call.owner == 0)
             world.emergency.state = 0;
+        else if (call.type == kCallVip && call.owner == 0) {
+            world.mayor.arrival_turn = (world.game ? world.game->turn_count : 0) + 1500;
+            world.mayor.state = 2;
+        } else if (call.type == kCallEpidemic && call.owner == 0) {
+            world.epidemic.cover_up_expired = true;
+        }
         uint16_t &head = world.first_call[call.owner & 3][call.type % 9];
         if (head == i) {
             head = 0;
@@ -930,6 +940,16 @@ void expire_playercalls(World &world)
         if (call.type && head == 0)
             head = uint16_t(i);
     }
+}
+
+uint16_t playercall_subject(const World &world, uint16_t type, uint16_t id, uint8_t owner)
+{
+    for (size_t i = 1; i < world.calls.size(); i++) {
+        const World::PlayerCall &call = world.calls[i];
+        if (call.type == type && call.owner == owner && (id == 0 || id == call.id))
+            return call.subject;
+    }
+    return 0;
 }
 
 uint16_t get_playercall(World &world, uint16_t type, uint16_t id, uint8_t owner)
@@ -1368,6 +1388,22 @@ void change_health(World &world, const AnimData &anims, uint16_t id, int16_t amo
 {
     Thing &p = world.things[id];
     int health = p.health;
+    // change_health's health icon, by the current health (set whatever it is;
+    // set_icon_value leaves a dead patient's alone).
+    if (health <= 20)
+        set_icon_value(anims, p, kIconHealth5);
+    else if (health <= 40)
+        set_icon_value(anims, p, kIconHealth4);
+    else if (health <= 60)
+        set_icon_value(anims, p, kIconHealth3);
+    else if (health <= 80)
+        set_icon_value(anims, p, kIconHealth2);
+    else if (health <= 100) {
+        reset_icon_value(p, p.icon_id);
+        set_icon_value(anims, p, kIconHealth1);
+    } else if (p.icon_id >= kIconHealth1 && p.icon_id <= kIconHealth5) {
+        reset_icon_value(p, p.icon_id);
+    }
     if (health <= 0)
         return;
     if (p.room != 0) {
@@ -1526,6 +1562,35 @@ bool apply_call_event(Game &game, const Event &event)
 bool apply_patient_event(Game &game, const Event &event)
 {
     World &world = game.world;
+    switch (event.type) {
+    case EV_QUEUE_CAPACITY_UP:
+        if (event.value < world.rooms.size() && world.rooms[event.value].queue_capacity < 0x1e)
+            world.rooms[event.value].queue_capacity++;
+        return true;
+    case EV_QUEUE_CAPACITY_DOWN:
+        if (event.value < world.rooms.size() && world.rooms[event.value].queue_capacity)
+            world.rooms[event.value].queue_capacity--;
+        return true;
+    case EV_FRONT_QUEUE:
+        front_queue(world, event.value, event.arg);
+        return true;
+    case EV_BACK_QUEUE:
+        back_queue(world, event.value, event.arg);
+        return true;
+    case EV_QUEUE_PERSON_GO_HOME:
+        queue_person_go_home(world, game.anims(), person_complexes_of(world), event.value, event.arg, game.turn_count);
+        return true;
+    case EV_QUEUE_PERSON_GO_RECEPTION:
+        queue_person_go_reception(world, game.anims(), person_complexes_of(world), event.value, event.arg,
+                                  game.turn_count);
+        return true;
+    case EV_QUEUE_PERSON_TO_NEW_QUEUE:
+        queue_person_to_new_queue(world, game.anims(), person_complexes_of(world), event.value, event.arg,
+                                  game.turn_count);
+        return true;
+    default:
+        break;
+    }
     if (event.type != EV_PERSON_GO_HOME && event.type != EV_FORCE_CURE)
         return false;
     if (event.value >= world.things.size())
@@ -1539,6 +1604,8 @@ bool apply_patient_event(Game &game, const Event &event)
     turned_away(world, p);
     person_go_home(world, game.anims(), person_complexes_of(world), event.value, game.turn_count);
     p.person_flags |= kPfSentHome;
+    if (p.person_flags & kPfContagious)
+        world.epidemic.timer = 0;
     return true;
 }
 

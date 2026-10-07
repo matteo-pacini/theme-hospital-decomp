@@ -227,7 +227,8 @@ void draw_cell_overlays(CellFrames &frames, const MapCell &cell, int index, int1
 bool cell_thing_drawn(const Thing &t)
 {
     if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff &&
-        t.type != kThingReaper && t.type != kThingDebris && t.type != kThingHelicopter && t.type != kThingShadow)
+        t.type != kThingReaper && t.type != kThingDebris && t.type != kThingHelicopter && t.type != kThingShadow &&
+        t.type != kThingMayor)
         return false;
     // mapwho_person draws no patient gone, merged into a member of staff's
     // animation or gone into the gates of hell; mapwho_reaper no reaper being
@@ -267,8 +268,17 @@ void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id,
         scale = 0x640000 / (drawing.world.things[t.caster].altitude + 100);
     const uint8_t *layers = t.type == kThingDebris || t.type == kThingShadow ? nullptr : t.layers.data();
     Rect sprites;
-    Rect box = draw_frame(frames.dst, {tx, ty}, t.sprite, t.flip != 0, data,
-                          {.layers = layers, .extent = &sprites, .scale = scale});
+    FrameOptions opts;
+    opts.layers = layers;
+    opts.extent = &sprites;
+    opts.scale = scale;
+    // A person's status icon hangs over their head, a machine's over its
+    // frame (draw_special_id_frame).
+    if (t.icon_id > 0 && (t.type == kThingPatient || t.type == kThingStaff || t.type == kThingObject)) {
+        opts.icon = t.icon_frame;
+        opts.icon_over_frame = t.type == kThingObject;
+    }
+    Rect box = draw_frame(frames.dst, {tx, ty}, t.sprite, t.flip != 0, data, opts);
     grow(frames.bounds, box);
     // mapwho_object's smoke of a worn machine, over it: the game draws it
     // with the layer choices of the bytes holding Thing::smoke, a puff on

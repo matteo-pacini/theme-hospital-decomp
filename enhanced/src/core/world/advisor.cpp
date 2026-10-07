@@ -84,29 +84,6 @@ constexpr uint16_t kCriterionValue = 6;
 // The game's OBJ_RECEPTION_DESK.
 constexpr uint8_t kObjectReceptionDesk = 11;
 
-// The player's hired staff, as the game counts them as they are hired
-// (allhosps.staff_count, staff_by_kind with surgeons as doctors, and
-// listhead.staff_by_skill).
-struct StaffCounts {
-    int total = 0;
-    std::array<int, 5> by_kind{};
-    int receptionists = 0; // staff_by_skill[0]
-};
-
-StaffCounts count_staff(const World &world)
-{
-    StaffCounts c;
-    for (const Thing &t : world.things) {
-        if (t.type != kThingStaff || t.owner != 0 || t.state == kStaffApplicant)
-            continue;
-        c.total++;
-        c.by_kind[t.subtype == kStaffSurgeon ? kStaffDoctor : t.subtype]++;
-        if (t.skills & kSkillReceptionist)
-            c.receptionists++;
-    }
-    return c;
-}
-
 // The player has a reception (listhead.rooms[ROOM_RECEPTION], which placing
 // the first reception desk sets).
 bool has_reception(const World &world)
@@ -336,7 +313,6 @@ struct Situation {
 // The game's OBJ_* kinds and ROOM_* types the advice tests.
 constexpr uint8_t kObjectBench = 4;
 constexpr uint8_t kObjectDrinksMachine = 7;
-constexpr uint8_t kObjectPlant = 45;
 constexpr uint8_t kObjectToilet = 51;
 constexpr uint8_t kRoomGpOffice = 7;
 constexpr uint8_t kRoomTrainingRoom = 22;
@@ -351,14 +327,22 @@ constexpr uint8_t kAmbientTooCold = 0xd8;
 constexpr uint8_t kAmbientTooHot = 0xd9;
 
 // Hospital 0's objects of `kind` (listhead.objects' lists, which the game
-// counts as NRAdcounts.plants and benches as they are placed; it never
-// uncounts a bench sold).
+// counts as NRAdcounts.benches as they are placed; it never uncounts a
+// bench sold).
 int count_objects(const World &world, uint8_t kind)
 {
     int n = 0;
     for (const Thing &t : world.things)
         n += t.type == kThingObject && t.subtype == kind && t.owner == 0;
     return n;
+}
+
+// The game's `plant_health_sum * factor / plants`, with the product taken in
+// 32 bits as the original's multiply does, so the average wraps the same way
+// past 1309 of sum (24 healthy plants).
+int32_t plant_health_scaled(const World &world, uint32_t factor)
+{
+    return int32_t(uint32_t(world.plant_health_sum) * factor) / world.plants;
 }
 
 // NRAdcounts.open_rooms: the rooms the player has opened (open_room) and
@@ -576,7 +560,7 @@ bool advisor_plants(Situation &s)
 {
     const Balance::Gbv &gbv = s.in.settings->gbv;
     const AdCounts &c = s.c;
-    int32_t per_area = (count_objects(s.world, kObjectPlant) << 14) / s.in.finance->area;
+    int32_t per_area = (s.world.plants << 14) / s.in.finance->area;
     int32_t impatience = (c.impatience_sum << 6) / (c.patients * gbv.leave_max);
     int32_t happiness = (c.happiness_sum << 10) / c.patients;
     int few = per_area < 0x100 ? 0 : per_area < 0x200 ? 1 : -1;
@@ -590,6 +574,40 @@ bool advisor_plants(Situation &s)
         return false;
     say(s.a, s.text(0x4a));
     return true;
+}
+
+// advisor_dead_plants (0x617e4): the plants' average condition
+// (World::plant_health_sum per plant, scaled), by how many handymen the
+// hospital has; a hospital with exactly one is only told the middle bands.
+bool advisor_dead_plants(Situation &s)
+{
+    World &world = s.world;
+    if (world.plants == 0)
+        return false;
+    int32_t health = plant_health_scaled(world, 0x190000);
+    if (health < 0xce4000) {
+        if (s.handymen() == 0) {
+            say(s.a, s.extra(0x27));
+            return true;
+        }
+        if (s.handymen() > 1) {
+            say(s.a, s.extra(0x28));
+            return true;
+        }
+    } else if (health < 0x2260000) {
+        say(s.a, s.extra(0x29));
+        return true;
+    } else if (health < 0x3c28000) {
+        say(s.a, s.text(0x5a));
+        return true;
+    } else if (health > 0x51a4000) {
+        say(s.a, s.extra(0x2b));
+        return true;
+    } else if (plant_health_scaled(world, 0x4000) > 0x490c000) {
+        say(s.a, s.extra(0x2a));
+        return true;
+    }
+    return false;
 }
 
 // advisor_benches (0x616b4): the bench shortage per patient, and the
@@ -708,12 +726,12 @@ bool advise_staff(Situation &s, uint16_t situation)
 }
 
 // find_advice's litter and plants: litter and no handyman (0x45, once),
-// the litter (0x46), plants and no handyman (0x5c), too many plants
-// (0x5b).
+// the litter (0x46), plants and no handyman (0x5c), the plants' condition
+// (0x5a) and too many plants (0x5b).
 bool advise_litter_and_plants(Situation &s, int id, uint16_t situation)
 {
     int32_t area = s.in.finance->area;
-    int plants = count_objects(s.world, kObjectPlant);
+    int plants = s.world.plants;
     switch (situation) {
     case 0x45:
         if (s.a.advice[size_t(id)].times_given >= 1 || s.world.litter_count == 0 || s.handymen() != 0)
@@ -727,6 +745,10 @@ bool advise_litter_and_plants(Situation &s, int id, uint16_t situation)
             return false;
         say(s.a, s.text(0x5c));
         return true;
+    case 0x5a:
+        if (plants <= 2 || !s.has_patients())
+            return false;
+        return advisor_dead_plants(s);
     case 0x5b:
         if (!area || !s.has_patients() || (plants << 14) / area <= 0x800)
             return false;
@@ -838,14 +860,19 @@ bool advise_hospital(Situation &s, int id, uint16_t situation)
     }
 }
 
+bool find_advice_announcement(Advisor &a, const AdvisorInputs &in, uint16_t situation);
+
 // find_advice's situations of the statistics pass and of what the
 // hospital holds (see advisor_frame).
 bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &safeseed)
 {
     if (!in.world || !in.finance || !in.settings)
         return false;
-    Situation s{a, in, *in.world, in.world->counts, count_staff(*in.world), safeseed};
     uint16_t situation = a.advice[size_t(id)].id;
+    if (situation == 0x17 || situation == 0x18 || situation == 0x19 || situation == 0x1a || situation == 0x1b ||
+        situation == 0x79)
+        return find_advice_announcement(a, in, situation);
+    Situation s{a, in, *in.world, in.world->counts, count_staff(*in.world), safeseed};
     switch (situation) {
     case 9:
     case 0xa:
@@ -859,6 +886,40 @@ bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &s
     default:
         return advise_patients(s, situation) || advise_staff(s, situation) ||
                advise_litter_and_plants(s, id, situation) || advise_hospital(s, id, situation);
+    }
+}
+
+// find_advice's research announcements (0x17-0x1b, 0x79): the oldest value
+// waiting of the kind, named by its object, illness or research category,
+// dropped once said.
+bool find_advice_announcement(Advisor &a, const AdvisorInputs &in, uint16_t situation)
+{
+    if (!in.world || !in.text)
+        return false;
+    auto once = [&](uint8_t kind, uint16_t advice, TextSection section) {
+        uint32_t value = in.world->announce[kind % kAnnounceKinds][0];
+        if (!value)
+            return false;
+        done_announcement(*in.world, kind);
+        say(a, in.text->at(TextSection::Advisor, int(advice)), std::string(in.text->at(section, int(value))).c_str());
+        a.rewrap = true;
+        return true;
+    };
+    switch (situation) {
+    case 0x17:
+        return once(kAnnObjectResearched, 0x17, TextSection::ObjectNames);
+    case 0x18:
+        return once(kAnnNewDrug, 0x18, TextSection::Illness);
+    case 0x19:
+        return once(kAnnDrugImproved, 0x19, TextSection::Illness);
+    case 0x1a:
+        return once(kAnnObjectImproved, 0x1a, TextSection::ObjectNames);
+    case 0x1b:
+        return once(kAnnObjectAvailable, 0x1b, TextSection::ObjectNames);
+    case 0x79:
+        return once(kAnnCategoryDone, 0x79, TextSection::ResearchNames);
+    default:
+        return false;
     }
 }
 
@@ -1448,6 +1509,20 @@ void advisor_frame_bubble(Advisor &a, const AnimData &anims)
 }
 
 } // namespace
+
+StaffCounts count_staff(const World &world)
+{
+    StaffCounts c;
+    for (const Thing &t : world.things) {
+        if (t.type != kThingStaff || t.owner != 0 || t.state == kStaffApplicant)
+            continue;
+        c.total++;
+        c.by_kind[t.subtype == kStaffSurgeon ? kStaffDoctor : t.subtype]++;
+        if (t.skills & kSkillReceptionist)
+            c.receptionists++;
+    }
+    return c;
+}
 
 void start_advisor(Advisor &a, bool tutorial)
 {

@@ -123,7 +123,7 @@ uint16_t lay_out_gp_office(QueueFixture &f, int near)
         th::UiMouse m;
         m.left_pressed = pressed;
         m.left_held = held;
-        th::build_mouse(bui, game, cell, m, true);
+        th::build_mouse(bui, game, cell, 0, m, true);
         run_build_command(game);
     };
     const int corner = site + 4 + 4 * th::kMapSize;

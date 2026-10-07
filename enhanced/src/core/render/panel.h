@@ -2,6 +2,7 @@
 
 #include "core/data/palette.h"
 #include "core/data/sprites.h"
+#include "core/render/iso.h"
 #include "core/render/surface.h"
 #include "core/ui/layer.h"
 
@@ -31,6 +32,11 @@ struct PanelFigures {
     // for none) and its state (World::Emergency::state).
     int emergency_timer = 0;
     int emergency_state = 0;
+    // The epidemic covered up: half days left (World::Epidemic::timer, 0 for
+    // none), and whether its illness is still known (the watch's button is
+    // drawn faded when not, as the game's draw_flags 4 does).
+    int epidemic_timer = 0;
+    bool epidemic_illness = false;
 };
 
 // The same panel as 0xAARRGGBB pixels, transparent where no sprite covers
@@ -41,6 +47,13 @@ std::vector<uint32_t> panel_to_argb(const GameData &data, const PanelFigures *fi
 
 // No panel icon (which_icon_is_mouse_over's 0x63).
 inline constexpr int kNoPanelIcon = 0x63;
+
+// The watch above the panel's left end (PanelLayout, src/scoords.cpp): the
+// watch's position and its button's, shared with the interface's clicks.
+inline constexpr int kPanelWatchX = 5;
+inline constexpr int kPanelWatchY = 350;
+inline constexpr int kPanelWatchButtonX = 9;
+inline constexpr int kPanelWatchButtonY = 335;
 
 // The panel's icons of the raised set (panel_icons_over, src/array.cpp),
 // left to right. In the normal set the first six are the same and the rest
@@ -114,6 +127,11 @@ struct PanelState {
 
 // The top of the panel in 640 x 480 coordinates (statvar.panel_top).
 int panel_top(const GameData &data);
+
+// The top-left of panel icon `index` of the raised or normal set, laid out
+// from the left edge as setup_panel_icons does. Icon 7's is the origin of a
+// text window over the panel (the game's Icons::x/y, panel->x/y).
+Point panel_icon_at(const GameData &data, bool raised, int index);
 
 // which_icon_is_mouse_over: the icon of the raised or normal set at (x, y),
 // or kNoPanelIcon above the panel or past its icons. An icon also covers

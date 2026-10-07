@@ -112,6 +112,10 @@ void nav_init(const World &world, Thing &person);
 // waypoints and again when the destination is not the path's.
 int person_head_for(World &world, uint16_t person);
 
+// check_points_connected (0x1a6cc in src/utils.cpp): whether a path leads
+// from cell `from` to cell `to` (columns + rows * 128).
+bool points_connected(const World &world, int from, int to);
+
 // set_destination_coords (0x4195c): sends the person to `tile` (column + row
 // * 128), so it decides its first step on its next walk_turn.
 void set_destination_coords(World &world, uint16_t person, int tile);

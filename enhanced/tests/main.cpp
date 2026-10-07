@@ -47,6 +47,7 @@ void test_walk_level1(const char *dir);
 // patients.cpp
 void test_create_an_illness();
 void test_set_complex();
+void test_epidemic();
 void test_arrivals_level1(const char *dir);
 void test_patient_leaves_level1(const char *dir);
 void test_litter_drawn(const char *dir);
@@ -85,6 +86,15 @@ void test_help_draw_gate(const char *dir);
 void test_help_main_menu_font(const char *dir);
 void test_help_page_shadow(const char *dir);
 
+// icons.cpp
+void test_status_icons(const char *dir);
+
+// staff_demand.cpp
+void test_staff_demand(const char *dir);
+
+// panel_info.cpp
+void test_panel_info(const char *dir);
+
 // help_callbacks.cpp
 void test_help_callbacks_panel(const char *dir);
 void test_help_callbacks_patient_windows(const char *dir);
@@ -106,6 +116,7 @@ void test_hire_receptionist(const char *dir);
 void test_hire_requester_image(const char *dir);
 void test_staff_at_work_level1(const char *dir);
 void test_handyman_sweeps(const char *dir);
+void test_handyman_waters(const char *dir);
 void test_pick_up_staff(const char *dir);
 void test_sack_doctor(const char *dir);
 void test_staff_notice_runs_out(const char *dir);
@@ -113,6 +124,7 @@ void test_adjust_handyman_values();
 
 // game.cpp
 void test_game_clock(const char *dir);
+void test_open_hospital(const char *dir);
 void test_finance_level1(const char *dir);
 void test_balance_roll(const char *dir);
 void test_advisor_tutorial(const char *dir);
@@ -148,6 +160,7 @@ void test_toilets_none_level1(const char *dir);
 void test_machine_explodes_level6(const char *dir);
 void test_machine_saved_level6(const char *dir);
 void test_machine_replace_level6(const char *dir);
+void test_do_earthquake_level6(const char *dir);
 
 // research.cpp
 void test_research_choices();
@@ -203,6 +216,7 @@ const Test kTests[] = {
     TEST(test_orthonav_whatnext),
     TEST(test_create_an_illness),
     TEST(test_set_complex),
+    TEST(test_epidemic),
     TEST(test_queue_lists),
     TEST(test_sound_player),
     TEST(test_xmi_parse),
@@ -227,6 +241,7 @@ const DataTest kDataTests[] = {
     TEST(test_draw_world),
     TEST(test_panel_image),
     TEST(test_game_clock),
+    TEST(test_open_hospital),
     TEST(test_language_and_fonts),
     TEST(test_balance),
     TEST(test_walk_level1),
@@ -254,6 +269,7 @@ const DataTest kDataTests[] = {
     TEST(test_litter_drawn),
     TEST(test_litter_dropping_level1),
     TEST(test_handyman_sweeps),
+    TEST(test_handyman_waters),
     TEST(test_entrance_rooms_level1),
     TEST(test_reception_queue_level1),
     TEST(test_events_level1),
@@ -294,6 +310,7 @@ const DataTest kDataTests[] = {
     TEST(test_machine_explodes_level6),
     TEST(test_machine_saved_level6),
     TEST(test_machine_replace_level6),
+    TEST(test_do_earthquake_level6),
     TEST(test_help_tooltip_text),
     TEST(test_help_text_ids),
     TEST(test_help_box_clamped),
@@ -304,6 +321,9 @@ const DataTest kDataTests[] = {
     TEST(test_help_draw_gate),
     TEST(test_help_main_menu_font),
     TEST(test_help_page_shadow),
+    TEST(test_status_icons),
+    TEST(test_staff_demand),
+    TEST(test_panel_info),
     TEST(test_help_callbacks_panel),
     TEST(test_help_callbacks_patient_windows),
     TEST(test_help_callbacks_staff_windows),

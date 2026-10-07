@@ -134,6 +134,10 @@ int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, 
 // row has one for them.
 void transform_peep_who(Thing &person, uint8_t change);
 
+// effect_illness (0x54444) with cured 0: gives the patient `illness` and
+// changes their looks to show it, drawing from `seed` as the game does.
+void effect_illness(uint32_t &seed, Thing &patient, uint8_t illness);
+
 // What making a patient reads besides the world and the arrivals: the
 // level's settings, the animations and the level's number.
 struct PeepSetup {

@@ -127,10 +127,13 @@ uint16_t place_staff_in_struct(World &world, StaffMarket &market, const Balance 
                                uint16_t extra_skills, uint32_t game_turn);
 
 // appraise_staff (0x72374): sets the wage `staff` asks for and makes them
-// happier or less happy by whether their salary meets it. The promotions it
-// also makes (and announces) are not ported: they need an ability above the
-// threshold, which no applicant has.
-void appraise_staff(Thing &staff, const Balance &settings);
+// happier or less happy by whether their salary meets it. A junior or doctor
+// whose ability and time served allow it is promoted to doctor or
+// consultant, announced for player 0; a doctor promoted while in a training
+// room leaves it (with `anims`, the world's action sequences; null when
+// there are none, as at a level's start). `game_turn` is the game's turn
+// count.
+void appraise_staff(World &world, Thing &staff, const Balance &settings, uint32_t game_turn, const AnimData *anims);
 
 // The animation (an AnimData::starts index, the facing to be added) a staff
 // kind shows when placed or held (staff_anim_starts[kind].anims[staff[kind].anim]).
@@ -181,8 +184,9 @@ bool place_staff_on_map(World &world, const StaffSetup &setup, int cell, uint16_
 // - a handyman (handyman_works) repairs the machines paged for repair
 //   (core/world/rooms.h's thingpage_*): into the room, closed for it, the
 //   repair's animation sequence (SS_PLAY_ANISEQ), the machine's wear gone;
-//   with no plant or machine to see to he strolls to a random cell near by,
-//   sweeping litter he spots;
+//   with no machine urgent enough, he waters the plants paged for it
+//   (PlantPager) or sweeps litter he spots, then strolls to a random cell
+//   near by;
 // - walking to an object (staff_goto_object), the complexes' states
 //   (core/world/staff_complex.h), being stuck (peep_stuck) and walking off
 //   a blueprint (peep_bp_goto);
@@ -213,7 +217,7 @@ bool place_staff_on_map(World &world, const StaffSetup &setup, int cell, uint16_
 //   cracking up.
 // Not ported, as they need what does not exist yet: research, training,
 // the treatment rooms' work, the operating theatre,
-// vaccinations, plants' pages, the per-turn counts, status icons and
+// vaccinations, the per-turn counts, status icons and
 // poaching.
 void staff_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                 const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
@@ -222,9 +226,12 @@ void staff_turn(World &world, const AnimData &anims, const PersonComplexes &pers
 // off its door or object), frees the patient it deals with in a room
 // (interrupt_person) and goes to the state for where it is, its pages
 // dropped; a surgeon's partner too. Uses the action sequences
-// start_rooms_in_use gave the world. A handyman drops his repair pages;
-// nurses' vaccinations are not ported.
+// start_rooms_in_use gave the world. A handyman drops his repair pages.
 void interrupt_staff(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
+
+// count_surgeons (0x3be38): the members of staff in room `room_id` dressed as
+// surgeons (kStaffSurgeon). The surgeon screen's change complexes use it.
+uint8_t count_surgeons(const World &world, uint16_t room_id);
 
 // adjust_handyman_values (0x87c44): raises handyman `id`'s priority for the
 // job of `button` (kHandymanLitterButton, kHandymanPlantsButton or
@@ -233,6 +240,14 @@ void interrupt_staff(World &world, const AnimData &anims, uint16_t id, uint32_t 
 // 0. Another button changes no priority. Either way his counts of jobs done
 // (litter_count, plant_count, repair_count) start again from 0.
 void adjust_handyman_values(World &world, uint16_t id, uint8_t button);
+
+// plant_ages (0x7b88c): one turn of object `id` in OS_PLANT_AGES. Every
+// 16th turn, half the time (one draw from world.seed), it loses a point of
+// health; every 80 points it wilts a stage and pages a handyman unless it
+// cannot be reached, counting it for the advisor (World::thirsty_plants,
+// plant_health_sum); once dead it pages urgently 40 points past zero and
+// starts again. Also advances its sprite at a wilting stage.
+void plant_ages(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
 
 // sack_staff (0x2a804): member of staff `id` leaves the hospital. Mode 0
 // (sacked) pays them a month's wage (kTxSeverancePay), mode 1 (notice run
@@ -251,6 +266,12 @@ void sack_staff(World &world, const AnimData &anims, uint16_t id, uint8_t mode, 
 // (place_staff_on_map forced), as the game does before a chart, at the
 // year's end and on EV_CANCEL_BUILD. Returns whether one was held.
 bool put_back_held_staff(Game &game);
+
+// pick_up_object's user branch (src/build.cpp) for a member of staff:
+// complex 0x1b8, the state for where they are, their object abandoned and
+// the walk frame for a receptionist; any other user's complex abandoned,
+// its action cleared.
+void staff_abandon_for_pick_up(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
 
 // Carries out the simulation's part of the commands of hiring, placing and
 // picking up staff, as process_turn (src/io.cpp) for player 0:

@@ -1,0 +1,28 @@
+# Level 1: a reception desk, then the VIP's first offer answered. The offer
+# comes by a call (make_a_playercall, kind 6) at day 150; its panel icon
+# opens the VIP's fax (choice kind 8, mayor_requester), which is answered
+# accepting the visit (EV_CHOICE_RESULT CH_VIP_ACCEPT).
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 84             # buy the reception desk (the first entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the desk
+wait 20
+expect placing: object false
+key 5                    # the fastest speed
+wait 5
+turns 7700               # past day 150, when the VIP is offered
+click 10 420             # the VIP's panel icon (kind 6)
+wait 20
+expect fax: kind 8
+expect answer 0: Issue Official Invitation to the V.I.P.
+expect answer 1: Fob the V.I.P off with excuses.
+screenshot vip_fax
+click 514 245            # accept (the first answer)
+wait 30
+expect fax: closed
+expect mayor: arrival_turn=
+quit

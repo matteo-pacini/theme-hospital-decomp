@@ -1,10 +1,13 @@
 #include "core/world/litter.h"
 
 #include "core/data/level.h"
+#include "core/world/arrivals.h"
 #include "core/world/complex.h"
 #include "core/world/complex_tables.h"
 #include "core/world/emergency.h"
+#include "core/world/icons.h"
 #include "core/world/patient_tables.h"
+#include "core/world/queue.h"
 #include "core/world/rooms.h"
 #include "core/world/trace.h"
 
@@ -19,11 +22,11 @@ namespace
 
 constexpr uint8_t kObjRadiator = 44;
 constexpr uint8_t kObjPlant = 45;
-constexpr uint8_t kIllTheSquits = 29;
 
 // kPatientAnimStarts columns of the reactions.
 constexpr uint16_t kAnimVomit = 0x4b;
 constexpr uint16_t kAnimWet = 0x66;
+constexpr uint16_t kAnimQuake = 0x2d;
 
 // The game's around (src/tables.cpp): the cells beside a cell, then the
 // cell itself.
@@ -219,8 +222,11 @@ void check_around(const World &world, Thing &p)
     }
 }
 
-// spread_epidemic (0xa0040 in src/epidemic.cpp), without effect_illness on
-// the carrier and the contagious flag, which nothing sets.
+// spread_epidemic (0xa0040 in src/epidemic.cpp): passes the carrier's
+// contagious illness to one undiagnosed, uncontagious patient on or next to
+// its cell, splitting the carrier's contagion with them (and applying
+// effect_illness to the carrier, as the game does). othervar.contagious_count
+// is not kept: only the unported advisor epidemic advice reads it.
 void spread_epidemic(World &world, const Balance &settings, uint16_t carrier_id)
 {
     trace_event("epidemic %u", unsigned(carrier_id));
@@ -242,14 +248,20 @@ void spread_epidemic(World &world, const Balance &settings, uint16_t carrier_id)
                 continue;
             if (victim.illness == victim.known_illness)
                 continue;
+            uint8_t other = victim.illness;
             // In this order: the draw is made only for the patients that
             // pass the first two tests.
             if (kNotContagious[victim.illness % kNotContagious.size()] || int8_t(victim.contagion) != 0 ||
                 old_newrand(world.seed) & 1)
                 continue;
-            victim.illness = illness;
+            if (other != illness) {
+                victim.illness = illness;
+                effect_illness(world.seed, carrier, illness);
+            }
             victim.contagion = uint8_t(int8_t(carrier.contagion) / 2);
             carrier.contagion = uint8_t(carrier.contagion - victim.contagion);
+            if (carrier.person_flags & kPfContagious)
+                victim.person_flags |= kPfContagious;
             return;
         }
     }
@@ -304,13 +316,60 @@ void add_litter_urge(Thing &patient, uint16_t amount)
     patient.litter_urge = uint16_t(patient.litter_urge + amount);
 }
 
+// The contagious or vaccinated status icon of a patient whose contagion is
+// set.
+void person_contagion_icon(const AnimData &anims, Thing &p)
+{
+    if (!(p.person_flags & kPfContagious))
+        return;
+    if (int8_t(p.contagion) > 0)
+        set_icon_value(anims, p, kIconContagious);
+    else if (int8_t(p.contagion) < 0)
+        set_icon_value(anims, p, kIconVaccinated);
+}
+
+// modify_person's warmth, happiness and needs: their effect on happiness,
+// impatience and the too hot, too cold, unhappy, toilet and thirsty icons.
+void person_needs(const AnimData &anims, Thing &p, const Balance::Gbv &gbv)
+{
+    if (int16_t(p.warmth) > 80) {
+        add_nausea(p, 1);
+        p.happiness--;
+        set_icon_value(anims, p, kIconTooHot);
+    } else if (int16_t(p.warmth) < 20) {
+        p.happiness--;
+        set_icon_value(anims, p, kIconTooCold);
+    } else {
+        p.happiness++;
+        reset_icon_value(p, kIconTooHot);
+        reset_icon_value(p, kIconTooCold);
+    }
+    if (int16_t(p.happiness) < gbv.unhappy) {
+        set_icon_value(anims, p, kIconUnhappy);
+        p.impatience++;
+    } else {
+        reset_icon_value(p, kIconUnhappy);
+    }
+    if (p.bladder > gbv.bowel_full) {
+        set_icon_value(anims, p, kIconToilet);
+        p.impatience++;
+    }
+    if (p.refreshment < 30) {
+        set_icon_value(anims, p, kIconThirsty);
+        p.impatience++;
+    }
+}
+
 void modify_person(World &world, const AnimData &anims, const Balance &settings, int heating_level, uint16_t id,
                    uint32_t game_turn)
 {
     Thing &p = world.things[id];
     const Balance::Gbv &gbv = settings.gbv;
     auto now = uint16_t(game_turn);
-    if (modify_person_emergency(world, anims, id, game_turn) || !(now > p.modify_time || p.modify_time - now > 0x7fff))
+    if (modify_person_emergency(world, anims, id, game_turn))
+        return;
+    person_contagion_icon(anims, p);
+    if (!(now > p.modify_time || p.modify_time - now > 0x7fff))
         return;
     p.modify_time = uint16_t(game_turn + gbv.modify_freq);
     if (!indoors(world, p))
@@ -325,20 +384,7 @@ void modify_person(World &world, const AnimData &anims, const Balance &settings,
     p.refreshment--;
     if (old_newrand(world.seed) % 3 == 0)
         p.bladder++;
-    if (int16_t(p.warmth) > 80) {
-        add_nausea(p, 1);
-        p.happiness--;
-    } else if (int16_t(p.warmth) < 20) {
-        p.happiness--;
-    } else {
-        p.happiness++;
-    }
-    if (int16_t(p.happiness) < gbv.unhappy)
-        p.impatience++;
-    if (p.bladder > gbv.bowel_full)
-        p.impatience++;
-    if (p.refreshment < 30)
-        p.impatience++;
+    person_needs(anims, p, gbv);
     if (int16_t(p.happiness) < 0)
         p.happiness = 0;
     else if (int16_t(p.happiness) > 100)
@@ -401,6 +447,11 @@ bool do_reaction(World &world, const AnimData &anims, const Balance &settings, u
     uint16_t pos = cell_of(p);
     if (!indoors(world, p) || which_room(world, pos))
         return false;
+    if (p.person_flags & kPfQuakeShaken) {
+        p.person_flags &= ~kPfQuakeShaken;
+        setup_showanim(p, anims, kAnimQuake);
+        return true;
+    }
     if (int16_t(p.nausea) >= gbv.vomit_limit && old_newrand(world.seed) % 5 == 0) {
         setup_showanim(p, anims, kAnimVomit);
         p.nausea = 5;
@@ -410,6 +461,7 @@ bool do_reaction(World &world, const AnimData &anims, const Balance &settings, u
     }
     if (p.bladder >= gbv.bowel_overflows && old_newrand(world.seed) % 5 == 0) {
         trace_event("wets %u bladder=%d", unsigned(id), int(p.bladder));
+        reset_icon_value(p, kIconToilet);
         setup_showanim(p, anims, kAnimWet);
         p.bladder = p.illness == kIllTheSquits ? int16_t(gbv.bowel_full / 2) : int16_t(0);
         p.person_flags |= kPfWets;

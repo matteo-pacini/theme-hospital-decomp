@@ -1,0 +1,16 @@
+# Level 1: reception.txt with the VIP's visit accepted as soon as it is
+# offered (EV_ANSWER_PLAYERCALL 6, then EV_CHOICE_RESULT CH_VIP_ACCEPT), the
+# visit run to its end and its report answered (EV_ANSWER_PLAYERCALL 5).
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The first VIP offer (day 150): answer it and accept the visit.
+7501 10 6 0
+7502 125 20 0
+# The report is queued when the visit ends (turn 10542): answer it.
+10543 10 5 0

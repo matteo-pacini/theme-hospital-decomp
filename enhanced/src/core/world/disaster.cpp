@@ -7,6 +7,7 @@
 #include "core/world/events.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
+#include "core/world/icons.h"
 #include "core/world/nav.h"
 #include "core/world/queue.h"
 #include "core/world/reaper.h"
@@ -89,9 +90,6 @@ constexpr std::array<uint8_t, kObjectKinds> kObjectDebris = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  85, 0, 0, 0,  73, 79, 0, 0, 0, 0, 0, 0, 89, 0, 0,  0,  0,  0,  0, 0, 0,
 };
 
-// Object states (the game's OS_*).
-constexpr uint8_t kObjectInUse = 4;
-
 // RoomInfo.type and state of a room whose machine blew up (ROOM_DESTROYED,
 // RS_CLOSED).
 constexpr uint8_t kRoomDestroyed = 6;
@@ -156,10 +154,9 @@ uint16_t create_bang(World &world, const AnimData &anims, uint16_t id, uint16_t 
 }
 
 // blast_things (0x758b8): every object on cell `tile` taken off
-// (remove_object), the wreck of a machine left in its place. The game's
-// remove_object_from_map interrupts a person using it; here before it is
-// taken off.
-void blast_things(World &world, const AnimData &anims, uint16_t tile, uint32_t game_turn)
+// (remove_object), the wreck of a machine left in its place. remove_object
+// (remove_object_from_map) interrupts the person using it, as in the game.
+void blast_things(World &world, uint16_t tile)
 {
     for (;;) {
         int16_t id = world.map[tile].first;
@@ -170,13 +167,6 @@ void blast_things(World &world, const AnimData &anims, uint16_t tile, uint32_t g
         const Thing &obj = world.things[size_t(id)];
         uint8_t debris = kObjectDebris[obj.subtype % kObjectDebris.size()];
         uint8_t facing = obj.facing;
-        if (obj.state == kObjectInUse && obj.user) {
-            const Thing &user = world.things[obj.user];
-            if (user.type == kThingStaff)
-                interrupt_staff(world, anims, obj.user, game_turn);
-            else if (user.type == kThingPatient && world.person_complexes)
-                interrupt_person(world, anims, *world.person_complexes, obj.user, game_turn);
-        }
         if (!remove_object(world, uint16_t(id), obj.owner))
             return;
         if (debris)
@@ -216,7 +206,7 @@ void blast_walls_and_floor(World &world, uint16_t tile)
 // blast_effect (0x755c8): the cells of room `room_id` within 4-7 cells (a
 // draw) of `tile` wrecked: their objects taken off (blast_things) and,
 // the nearer the likelier (a draw each), their walls damaged.
-void blast_effect(World &world, const AnimData &anims, uint16_t tile, uint16_t room_id, uint32_t game_turn)
+void blast_effect(World &world, uint16_t tile, uint16_t room_id)
 {
     const RoomInfo &room = world.rooms[room_id];
     int radius = int(old_newrand(world.seed, "blast_effect") & 3) + 4;
@@ -230,7 +220,7 @@ void blast_effect(World &world, const AnimData &anims, uint16_t tile, uint16_t r
                 continue;
             auto cell = uint16_t(x + (y << 7));
             int d2 = (x - cx) * (x - cx) + (y - cy) * (y - cy);
-            blast_things(world, anims, cell, game_turn);
+            blast_things(world, cell);
             if (int(old_newrand(world.seed, "blast_effect") & 0x3ff) > (d2 << 10) / r2)
                 blast_walls_and_floor(world, cell);
         }
@@ -341,7 +331,7 @@ void machine_disaster(World &world, const AnimData &anims, uint16_t id, uint32_t
     uint16_t room_id = machine.room_id;
     auto tile = uint16_t(uint16_t(machine.x.tile + (machine.y.tile << 7)) + kExplosionOffset);
     create_explosion(world, anims, tile, kAnimMachineDebris);
-    blast_effect(world, anims, tile, room_id, game_turn);
+    blast_effect(world, tile, room_id);
     explosion_kills_dudes_in_room(world, anims, room_id, game_turn);
     remove_expertise_room(world, room_id);
     room_deleted_update_listhead(world, room_id);
@@ -421,6 +411,7 @@ void replace_machine(Game &game, uint16_t id)
     machine.times_used = 0;
     machine.overlay_frame = 0;
     machine.smoke = {};
+    reset_icon_value(machine, kIconNeedsRepair);
     World::ThingPager &pager = world.repair_pager;
     for (int i = pager.count - 1; i >= 0; i--) {
         const World::ThingPage &page = pager.pages[size_t(i)];
@@ -444,8 +435,10 @@ bool apply_machine_event(Game &game, const Event &event)
         return true;
     case EV_THINGPAGE_REQUEST:
         trace_event("repair_request %u", unsigned(event.value));
-        if (machine)
+        if (machine) {
             thingpage_request(world.repair_pager, event.value, 0xff);
+            set_icon_value(game.anims(), world.things[event.value], kIconNeedsRepair);
+        }
         return true;
     default:
         return false;

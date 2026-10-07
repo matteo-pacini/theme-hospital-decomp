@@ -1,0 +1,55 @@
+# Level 6: cardiogram.txt with a second GP doctor and, past year 2, a
+# Turns 24700
+# diagnosed contagious patient: the epidemic call is taken and the
+# epidemic DECLARED (EV_CHOICE_RESULT CH_EPIDEMIC_DECLARE, 10).
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair (arg: kind | facing << 8); opened.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+# Its doctor: hire applicant 18, place at cell 6969.
+114 48 1 18
+115 5 6969 18
+# A cardiogram room (52,48)-(55,51), its door above it, a cardiogram (cell
+# 6454 facing 0) and a screen (cell 6452 facing 1); opened.
+130 55 0 0
+131 53 12 12
+132 2 6196 0
+133 2 6583 0
+134 8 6583 0
+135 18 0 0
+136 26 6069 0
+137 3 0 0
+138 4 12 0
+139 7 6454 13
+140 7 6452 272
+141 1 0 0
+# A second doctor: hire applicant 19, place at cell 6970.
+142 48 1 19
+143 5 6970 19
+# A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
+144 48 2 28
+145 5 6841 28
+# A second GP doctor, and the epidemic call (EV_ANSWER_PLAYERCALL 3)
+# answered, then declared.
+146 48 1 17
+147 5 6970 17
+24572 10 3 0
+24573 125 10 0

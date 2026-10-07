@@ -2,6 +2,7 @@
 
 #include "core/data/blocks.h"
 #include "core/render/shadows.h"
+#include "core/world/complex.h"
 #include "core/world/events.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
@@ -9,7 +10,9 @@
 #include "core/world/nav.h"
 #include "core/world/objects.h"
 #include "core/world/queue.h"
+#include "core/world/reception.h"
 #include "core/world/rooms.h"
+#include "core/world/staff.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
 
@@ -28,12 +31,17 @@ constexpr int kPlayer = 0;
 constexpr uint8_t kObjDoor = 3;
 constexpr uint8_t kObjReceptionDesk = 11;
 constexpr uint8_t kObjLitterBomb = 17;
+constexpr uint8_t kObjPlant = 45;
 constexpr uint8_t kObjGatesOfHell = 48;
 constexpr uint8_t kObjSwingDoor = 52;
 constexpr uint8_t kObjSwingDoor2 = 53;
 
-// OS_STATIC and OS_REMOVED (include/enums.h).
+// RoomInfo.type of a room destroyed by a machine disaster (ROOM_DESTROYED).
+constexpr uint8_t kRoomDestroyed = 6;
+
+// OS_STATIC, OS_IN_USE and OS_REMOVED (include/enums.h).
 constexpr uint8_t kObjectStatic = 2;
+constexpr uint8_t kObjectInUse = 4;
 constexpr uint8_t kObjectRemoved = 0x12;
 
 // SFX_* (include/enums.h).
@@ -158,15 +166,6 @@ void set_flags(World &w, int index, uint8_t bits)
 const ShapeInfo &shape_of(int kind, int dir)
 {
     return kShapes[kObjects[size_t(kind)].shapes[size_t(dir)]];
-}
-
-// check_points_connected (src/utils.cpp).
-bool points_connected(const World &w, int from, int to)
-{
-    OrthonavPath path;
-    orthonav_init(w, path, uint16_t(from) % kMapSize, uint16_t(from) / kMapSize, uint16_t(to) % kMapSize,
-                  uint16_t(to) / kMapSize);
-    return path.count != 0;
 }
 
 void play(World &w, uint8_t sfx)
@@ -1401,13 +1400,23 @@ bool remove_object_from_map_is_big(const World &w, int t)
     return false;
 }
 
-// remove_object_from_map (src/objects.cpp) without the statistics, the
-// plants' pages and interrupting its user, which are not ported: its repair
-// page cancelled, the object off the map and its lists, kept in the things
-// table (state OS_REMOVED).
+// remove_object_from_map (src/objects.cpp) without the statistics and
+// interrupting its user, which are not ported: its plant and repair pages
+// cancelled, its plant figures kept (World::plants, plant_health_sum), the
+// object off the map and its lists, kept in the things table (state
+// OS_REMOVED).
 void remove_object_from_map(World &w, uint16_t id)
 {
     Thing &obj = w.things[id];
+    if (obj.subtype == kObjPlant) {
+        thingpage_cancel(w.plant_pager, id);
+        w.plant_health_sum -= (obj.plant_health * 2 + 0x50) / 16;
+        if (obj.owner == kPlayer) {
+            w.plants--;
+            if (obj.plant_health < 0)
+                w.thirsty_plants--;
+        }
+    }
     if (obj.owner == kPlayer)
         thingpage_cancel(w.repair_pager, id);
     int tile = obj.x.tile + (obj.y.tile << 7);
@@ -1416,6 +1425,10 @@ void remove_object_from_map(World &w, uint16_t id)
     uint16_t room = room_at(w, uint16_t(tile));
     if (kObjects[obj.subtype].category == 6 && room)
         w.rooms[room].radiators--;
+    // remove_object_from_map interrupts the person using the object before it
+    // goes (interrupt_peep).
+    if (obj.state == kObjectInUse && obj.user)
+        interrupt_peep(w, obj.user);
     obj.state = kObjectRemoved;
     remove_object_from_map_delete_object(w, obj, room);
     // adjust_big_cell_flag (src/engine.cpp), which still finds the object on
@@ -1680,6 +1693,7 @@ void init_edit_room(World &w, uint16_t r)
         // The game waits for the room to empty (MM_EDIT_ROOM_WAIT), which a
         // new room always is.
         room.being_edited = 1;
+        w.building.mouse = BuildMouse::EditRoomWait;
     }
 }
 
@@ -1785,13 +1799,15 @@ void open_room(Game &game)
         change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxBuildRoom, -cost});
         room.paid_for = 1;
     }
-    w.building.last_built_room = room.type;
+    if (!w.editing_room)
+        w.building.last_built_room = room.type;
     add_shadows(w);
     w.building.mouse = BuildMouse::None;
     w.placing.placing = false;
     if (w.placing.requester == ObjectRequester::EditRoom)
         w.placing.requester = ObjectRequester::None;
     b.room = 0;
+    w.editing_room = 0;
 }
 
 // allocate_roominfo (src/blueprnt.cpp): a free room for the blueprint, whose
@@ -2158,6 +2174,107 @@ void apply_build_event_delete_room(Game &game, const Event &event)
     apply_object_event(game, cancel);
 }
 
+// apply_build_event on EV_CANCEL_EDIT_ROOM: cancel_room_edit then
+// EV_CANCEL_BUILD value 0 and the mouse mode as arg (src/io.cpp).
+void apply_build_event_cancel_edit_room(Game &game, const Event &event)
+{
+    cancel_room_edit(game.world);
+    Event cancel{EV_CANCEL_BUILD, 0, 0, event.arg};
+    apply_staff_event(game, cancel);
+    cancel_build(game);
+    apply_object_event(game, cancel);
+}
+
+// apply_build_event on EV_PICK_UP_OBJECT: pick_up_object (src/build.cpp):
+// lifts object `value` into the build list, with `arg` also its other half
+// (editing a room), takes it off the map and starts placing it again from
+// where it was.
+// The first free slot of the lifted-objects list, `id` in it; -1 if full.
+int lift_object_slot(World &w, uint16_t id)
+{
+    for (int i = 0; i < int(w.building.build.objects.size()); i++)
+        if (w.building.build.objects[size_t(i)] == 0) {
+            w.building.build.objects[size_t(i)] = id;
+            return i;
+        }
+    return -1;
+}
+
+// pick_up_object's `both`: lift the object's other half too, and go on with
+// whichever part has a next part.
+void pick_up_object_pair(World &w, uint16_t id, Thing *&obj)
+{
+    remove_object_from_map(w, id);
+    Thing *other = obj->pair < w.things.size() ? &w.things[obj->pair] : nullptr;
+    if (!other || !obj->pair)
+        return;
+    lift_object_slot(w, obj->pair);
+    remove_object_from_map(w, obj->pair);
+    if (kObjects[other->subtype % kObjectKinds].next_part != -1)
+        obj = other;
+}
+
+// pick_up_object's else: stop whoever uses `obj` (a member of staff is
+// abandoned, a patient taken off its complex).
+void pick_up_object_stop_user(Game &game, const Thing &obj)
+{
+    World &w = game.world;
+    if (obj.in_use != 1 || !obj.user || obj.user >= w.things.size())
+        return;
+    const Thing &user = w.things[obj.user];
+    if (user.type == kThingStaff)
+        staff_abandon_for_pick_up(w, game.anims(), obj.user, game.turn_count);
+    else if (user.type == kThingPatient)
+        patient_abandon_complex(w, game.anims(), game.person_complexes(), obj.user, game.turn_count);
+}
+
+// apply_build_event on EV_PICK_UP_OBJECT: pick_up_object (src/build.cpp).
+void apply_build_event_pick_up_object(Game &game, const Event &event)
+{
+    World &w = game.world;
+    ObjectPlacing &p = w.placing;
+    if (event.value >= w.things.size())
+        return;
+    Thing *obj = &w.things[event.value];
+    uint16_t room = 0;
+    lift_object_slot(w, event.value);
+    if (event.arg) {
+        pick_up_object_pair(w, event.value, obj);
+        room = w.building.build.room;
+    } else {
+        pick_up_object_stop_user(game, *obj);
+        remove_object_from_map(w, event.value);
+        p.mode = 2;
+        p.room_type = kRoomCorridor;
+    }
+    p.buy_count[obj->subtype % kObjectKinds]++;
+    p.dir = obj->facing;
+    int offset = obj->x.tile + (obj->y.tile << 7) - p.mouse_cell;
+    init_place_object(p, obj->subtype, p.mode, room, offset);
+}
+
+// apply_build_event on EV_INIT_EDIT_ROOM: init_edit_room (src/build.cpp) for
+// an existing room; clicked_for_edit left the mouse mode normal first, and
+// an occupied room's init_edit_room sets it back to waiting.
+void apply_build_event_init_edit_room(Game &game, uint16_t room)
+{
+    game.world.editing_room = 1;
+    game.world.building.mouse = BuildMouse::None;
+    init_edit_room(game.world, room);
+}
+
+// apply_build_event on EV_SETUP_PLACE_OBJECT_REQUESTER: the room being edited
+// finished emptying, so it goes on to placing its objects (src/io.cpp).
+void apply_build_event_setup_place_object(Game &game)
+{
+    World &w = game.world;
+    RoomInfo &room = w.rooms[w.building.build.room % kRoomCount];
+    room.state = kRoomStateEdited;
+    room.being_edited = 0;
+    setup_place_object_requester(w);
+    w.building.mouse = BuildMouse::None;
+}
+
 // apply_build_event on EV_REQ1_RESET_ROOMS: req1_reset_rooms (src/req1.cpp).
 void apply_build_event_reset_rooms(Game &game, uint16_t dept_id)
 {
@@ -2400,6 +2517,22 @@ void build_turn(Game &game)
 {
     if (game.world.building.build.state == 2)
         commit_doors(game);
+    // game.cpp's end-of-turn edit-room check: once the room being edited is
+    // empty, go on to placing its objects, or (no longer waiting) cancel the
+    // edit.
+    World &w = game.world;
+    uint16_t r = w.building.build.room;
+    if (!r)
+        return;
+    RoomInfo &room = w.rooms[r % kRoomCount];
+    if (!room.being_edited || !is_room_empty(w, r))
+        return;
+    if (w.building.mouse == BuildMouse::EditRoomWait) {
+        if (room.first_person == 0)
+            apply_build_event(game, Event{EV_SETUP_PLACE_OBJECT_REQUESTER, r, 0, 0});
+        return;
+    }
+    apply_build_event(game, Event{EV_CANCEL_EDIT_ROOM, 0, 0, uint16_t(w.building.mouse)});
 }
 
 namespace
@@ -2488,6 +2621,18 @@ bool apply_build_event(Game &game, const Event &event)
     case EV_EDIT_BLUEPRINT:
         edit_blueprint(w);
         return true;
+    case EV_INIT_EDIT_ROOM:
+        apply_build_event_init_edit_room(game, event.value);
+        return true;
+    case EV_PICK_UP_OBJECT:
+        apply_build_event_pick_up_object(game, event);
+        return true;
+    case EV_SETUP_PLACE_OBJECT_REQUESTER:
+        apply_build_event_setup_place_object(game);
+        return true;
+    case EV_CANCEL_EDIT_ROOM:
+        apply_build_event_cancel_edit_room(game, event);
+        return true;
     case EV_DELETE_ROOM:
         apply_build_event_delete_room(game, event);
         return true;
@@ -2497,6 +2642,110 @@ bool apply_build_event(Game &game, const Event &event)
     default:
         return false;
     }
+}
+
+uint16_t compute_object_pointed(const World &world, uint16_t pointed, uint16_t room)
+{
+    const Thing *obj = pointed < world.things.size() ? &world.things[pointed] : nullptr;
+    if (!obj || obj->owner != kPlayer)
+        return 0;
+    if (!room)
+        return pointed;
+    if (obj->type == kThingObject && obj->room_id == room && obj->subtype != kObjSwingDoor &&
+        obj->subtype != kObjSwingDoor2)
+        return pointed;
+    return 0;
+}
+
+void compute_room_pointed(World &world, int tile, uint16_t pointed, uint16_t &pickup_thing)
+{
+    uint16_t r = room_at(world, uint16_t(tile));
+    BuildState &b = world.building.build;
+    if (r && world.rooms[r % kRoomCount].type != kRoomDestroyed) {
+        const RoomInfo &room = world.rooms[r % kRoomCount];
+        b.edit_room = r;
+        b.draw_mode = 2;
+        b.x0 = uint8_t(room.pos % 128);
+        b.y0 = uint8_t(room.pos / 128);
+        b.x1 = uint8_t(room.pos % 128 + room.width - 1);
+        b.y1 = uint8_t(room.pos / 128 + room.height - 1);
+        return;
+    }
+    b.edit_room = 0;
+    b.draw_mode = 0;
+    const Thing *p = pointed < world.things.size() ? &world.things[pointed] : nullptr;
+    if (!p)
+        return;
+    if (p->type == kThingObject) {
+        if (p->room_id == 0 && !(kObjectFlags[p->subtype % kObjectKinds] & 1) && p->owner == kPlayer)
+            pickup_thing = pointed;
+    } else if (p->type == kThingPatient || p->type == kThingStaff) {
+        const Thing *used = p->object < world.things.size() ? &world.things[p->object] : nullptr;
+        if (used && (used->type == kThingObject || used->type == kThingDoor) && used->user == pointed &&
+            used->room_id == 0 && p->owner == kPlayer)
+            pickup_thing = pointed;
+    }
+}
+
+Event clicked_for_edit(World &world, uint16_t pickup_thing)
+{
+    Event e;
+    // The edit or buy-objects requester open means the object is lifted with
+    // its other half; click_to_edit's `edit`.
+    const ObjectRequester requester = world.placing.requester;
+    bool edit =
+        requester == ObjectRequester::EditRoom || (requester == ObjectRequester::BuyObjects && world.placing.arg != 1);
+    if (pickup_thing && pickup_thing < world.things.size()) {
+        const Thing &p = world.things[pickup_thing];
+        if (edit && p.room_id != world.building.build.edit_room)
+            return e;
+        e.type = EV_PICK_UP_OBJECT;
+        e.value = p.type == kThingObject ? pickup_thing : p.object;
+        e.arg = edit ? 1 : 0;
+    } else if (world.building.build.edit_room) {
+        e.type = EV_INIT_EDIT_ROOM;
+        e.value = world.building.build.edit_room;
+    }
+    return e;
+}
+
+Event pick_up_object_right_click(World &world, uint16_t pointed)
+{
+    const Thing *clicked = pointed < world.things.size() ? &world.things[pointed] : nullptr;
+    if (!clicked)
+        return {};
+    // LINKED_OBJECT: a patient using an object.
+    if (clicked->type == kThingPatient) {
+        const Thing *used = clicked->object < world.things.size() ? &world.things[clicked->object] : nullptr;
+        if (used && (used->type == kThingObject || used->type == kThingDoor) && used->user == pointed)
+            clicked = used;
+    }
+    if (clicked->type == kThingObject && clicked->owner == kPlayer &&
+        (!clicked->room_id || (kObjectFlags[clicked->subtype % kObjectKinds] & 8)) &&
+        !(kObjectFlags[clicked->subtype % kObjectKinds] & 1))
+        return clicked_for_edit(world, pointed);
+    return {};
+}
+
+Event check_object_right_click_in_room_edit(const World &world, uint16_t pointed)
+{
+    const Thing *obj = pointed < world.things.size() ? &world.things[pointed] : nullptr;
+    if (obj && obj->type == kThingObject && obj->room_id == world.building.build.room)
+        return {EV_PICK_UP_OBJECT, pointed, 0, 1};
+    return {};
+}
+
+void cancel_room_edit(World &world)
+{
+    BuildState &b = world.building.build;
+    if (!b.room)
+        return;
+    RoomInfo &room = world.rooms[b.room % kRoomCount];
+    room.being_edited = 0;
+    for (int x = b.x0; x <= b.x1 + 1; x++)
+        for (int y = b.y0; y <= b.y1 + 1; y++)
+            place_small_thing(world, cell_index(x, y), 0, false);
+    b.room = 0;
 }
 
 } // namespace th

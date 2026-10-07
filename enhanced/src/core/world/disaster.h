@@ -60,7 +60,7 @@ void process_bang(World &world, const AnimData &anims, uint16_t id, uint32_t gam
 // kind's price (object_cost) if the balance is positive and covers it: its
 // strength that of a new one (object_strength), no wear or
 // smoke, the handyman on his way to repair it called off (interrupt_staff)
-// and its repair page cancelled. Its icon is not ported.
+// and its repair page cancelled.
 void replace_machine(Game &game, uint16_t id);
 
 // Carries out the machine window's commands, as process_turn: EV_REPLACE_MACHINE

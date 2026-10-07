@@ -46,6 +46,7 @@ class FakeHost : public th::DriveHost
     void drive_screenshot(const std::filesystem::path &) override { calls.push_back(std::format("{} shot", frame)); }
     std::string drive_state() const override { return state; }
     int64_t drive_turn() const override { return turn; }
+    bool drive_staff_demand(uint16_t id) override { return id != 0; }
 };
 
 // Runs the driver to its end, one frame per call that asks for one; the

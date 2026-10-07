@@ -1,0 +1,12 @@
+# Level 1: a plant in the corridor with no handyman, so it wilts, dies once
+# (plant_dead) and pages again; a handyman is hired only at turn 15000, when
+# the plant is dead, and waters it (handyman_works substate 5 clamps its
+# health and starts the last stage's animation). Compare up to turn 18000.
+# plant is object kind 45; open the corridor requester 98, buy 37, place 43,
+# place 7 (cell | kind << 8); a handyman is applicant 20.
+5 98 0 0
+6 37 45 1
+7 43 0 0
+8 7 9407 45
+15000 48 2 20
+15001 5 10044 20

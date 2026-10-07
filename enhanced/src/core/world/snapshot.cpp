@@ -31,19 +31,19 @@ template <typename... T> constexpr uint64_t layout_hash()
 constexpr uint64_t kLayoutHash =
     layout_hash<Thing, RoomInfo, MapCell, ObjectPlacing, BuildState, Finance, Advice, ArrivalState, TownLand,
                 HospitalSettings, StaffMarket, Disasters, Event, Date, World::Pager, World::PlayerCall,
-                World::ThingPager, World::Emergency, PanelPopups, AdCounts, Game::ChoiceScreen, Balance::Gbv,
-                Balance::AwardsTrophies, Research, YearEnd, void *, bool, int>();
+                World::ThingPager, World::Emergency, World::Epidemic, PanelPopups, AdCounts, Game::ChoiceScreen,
+                Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd, void *, bool, int>();
 
 // Fields of World, Game and the structures they hold that are not copied
 // as a whole must each be listed below; on the build the code is written on,
 // these sizes catch one added without being listed.
 #if defined(__GLIBCXX__) && defined(__x86_64__)
-static_assert(sizeof(World) == 138696, "World changed: list its new fields in snapshot.cpp");
+static_assert(sizeof(World) == 139560, "World changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(Building) == 224, "Building changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(Balance) == 3776, "Balance changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp");
-static_assert(sizeof(Game) == 316800, "Game changed: list its new fields in snapshot.cpp");
+static_assert(sizeof(Game) == 317688, "Game changed: list its new fields in snapshot.cpp");
 #endif
 
 class Writer
@@ -227,10 +227,16 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.rooms);
     io(w.queue_near_dist);
     io(w.object_near_dist);
+    io(w.rand_pct);
+    io(w.shake_x);
+    io(w.shake_y);
     io(w.cure_available);
     io(w.ins_control);
     io(w.patients_left_count);
     io(w.bench_shortage);
+    io(w.plants);
+    io(w.thirsty_plants);
+    io(w.plant_health_sum);
     io(w.advisor_events);
     io(w.announce_stuck);
     io(w.unpaid_treatment);
@@ -238,7 +244,9 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.drinks_income);
     io(w.held_staff);
     io(w.held_staff_tile);
+    io(w.idle_nurses);
     building_fields(io, w.building);
+    io(w.editing_room);
     io(w.pagers);
     io(w.room_of_type);
     io(w.calls);
@@ -248,7 +256,11 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.counts);
     io(w.litter_count);
     io(w.repair_pager);
+    io(w.plant_pager);
     io(w.emergency);
+    io(w.mayor);
+    io(w.epidemic);
+    io(w.epidemic_sounds);
     io(w.mishaps);
     io(w.machine_exploded);
     io(w.machine_sounds);

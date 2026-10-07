@@ -9,6 +9,7 @@ namespace th
 {
 
 struct World;
+struct AnimData;
 
 // change_balance's transaction types, as listed in the bank statement (the
 // game's TX_*, include/enums.h; language section 7 at the same index).
@@ -154,13 +155,16 @@ void change_balance(Finance &finance, int32_t &balance, int day, int month, cons
 // counts as they are placed and sold).
 int count_radiators(const World &world, uint8_t owner);
 
-// What month_end closes the month with: its last day `day` of `month`, and
-// the hospital's `radiators` and `reputation`.
+// What month_end closes the month with: its last day `day` of `month`, the
+// hospital's `radiators` and `reputation`, and appraise_staff's `game_turn`
+// and `anims` (null when there are none, as at a level's start).
 struct MonthEndFigures {
     int day = 0;
     int month = 0;
     int radiators = 0;
     int reputation = 0;
+    uint32_t game_turn = 0;
+    const AnimData *anims = nullptr;
 };
 
 // The money part of month_end (src/finance.cpp) for the local player (player

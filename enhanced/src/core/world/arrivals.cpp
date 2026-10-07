@@ -40,6 +40,8 @@ size_t town_index(int level_number)
     return level_number > 14 ? 1 : size_t(level_number);
 }
 
+} // namespace
+
 // effect_illness (0x54444) with cured 0: gives the patient `illness` and
 // changes their looks to show it.
 void effect_illness(uint32_t &seed, Thing &patient, uint8_t illness)
@@ -99,9 +101,13 @@ void effect_illness(uint32_t &seed, Thing &patient, uint8_t illness)
     patient.illness = illness;
 }
 
+namespace
+{
+
 // add_contagiousness (0x707f4). The game gives no contagion during its
-// hospital's epidemic (allhosps.epidemic_active); there are no epidemics yet.
-void add_contagiousness(uint32_t &seed, Thing &patient, const ArrivalState &state, const Balance &settings)
+// hospital's epidemic (allhosps.epidemic_active).
+void add_contagiousness(uint32_t &seed, Thing &patient, const ArrivalState &state, const Balance &settings,
+                        bool epidemic_active)
 {
     if (kNotContagious[patient.illness])
         return;
@@ -116,6 +122,8 @@ void add_contagiousness(uint32_t &seed, Thing &patient, const ArrivalState &stat
         early = true;
     if (early)
         chance = uint8_t(chance * gbv.reduce_cont_rate / 100);
+    if (epidemic_active)
+        chance = 0;
     if (chance && old_newrand(seed) % chance == 0)
         patient.contagion = uint8_t(old_newrand(seed) % gbv.how_contagious + 1);
 }
@@ -449,7 +457,7 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const PeepSetup &s
     peep.layers[3] = pal->layer3[old_newrand(seed) % pal->count3];
     peep.layers[4] = 0;
     effect_illness(seed, peep, illness);
-    add_contagiousness(seed, peep, state, setup.settings);
+    add_contagiousness(seed, peep, state, setup.settings, owner == 0 && world.epidemic.active);
     peep.icon_id = 0;
     play_frame(peep, setup.anims, kPatientAnims[peep.subtype].walk);
     peep.happiness = 100;

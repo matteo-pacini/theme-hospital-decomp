@@ -1,0 +1,13 @@
+# Level 1: reception.txt with the hospital opened early from the panel's
+# watch: EV_OPEN_HOSPITAL (0x8b) at turn 100 instead of the level's 5000-turn
+# countdown, so the player's patients (peep owner=0) start arriving then.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# Open the hospital now.
+100 139 0 0

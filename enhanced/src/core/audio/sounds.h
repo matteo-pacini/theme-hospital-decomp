@@ -39,6 +39,9 @@ enum : uint8_t {
     kSfxHighlight5 = 0x44,  // SFX_HLIGHT5: a menu item under the mouse
     kSfxPickup = 0x99,      // SFX_PICKUP: a member of staff picked up
     kSfxSack = 0xaa,        // SFX_SACK: a member of staff sacked
+    kSfxStaffDemand = 0x9a, // SFX_STAFF_DEMAND: a member of staff's demand opens
+    kSfxBonus2 = 0xb8,      // SFX_BONUS2: a demand accepted
+    kSfxFanfare = 0xd9,     // SFX_FANFARE: the hospital opens
 };
 // Entries of sfx_details; play_sound ignores higher numbers.
 constexpr int kSfxCount = 0xf2;

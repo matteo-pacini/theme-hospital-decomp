@@ -6,6 +6,7 @@
 #include "core/data/text.h"
 #include "core/render/surface.h"
 #include "core/ui/helpmsg.h"
+#include "core/ui/layer.h"
 #include "core/ui/menubar.h"
 
 #include <cstdint>
@@ -462,4 +463,19 @@ void test_help_page_shadow(const char *dir)
     int x = b.x + b.w + 2, y = b.y + b.h / 2;
     CHECK(x < 640 && y < 480);
     CHECK(dst.row(y)[x] == 7);
+
+    // The page's shadow is the two strips to its right and below.
+    std::array<th::Rect, 2> rects = help.page_shadow_rects();
+    CHECK(rects[0].x == b.x + b.w && rects[0].y == b.y + 0xc && rects[0].w == 0xc && rects[0].h == b.h);
+    CHECK(rects[1].x == b.x + 0xc && rects[1].y == b.y + b.h && rects[1].w == b.w - 0xc && rects[1].h == 0xc);
+
+    // The interface layer is transparent, so its shadow has no backdrop to
+    // blend into; it is drawn as black at the ghost table's opacity.
+    th::UiLayer layer;
+    layer.resize(640, 480);
+    layer.clear();
+    layer.shadow(rects[0], th::HelpSystem::kPageShadowAlpha);
+    std::vector<uint32_t> argb = layer.to_argb(gd.palette());
+    uint32_t px = argb[size_t(rects[0].y + 1) * 640 + size_t(rects[0].x + 1)];
+    CHECK((px >> 24) == th::HelpSystem::kPageShadowAlpha);
 }

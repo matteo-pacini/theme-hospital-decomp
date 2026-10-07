@@ -48,14 +48,6 @@ const ShapeInfo &shape_of(int kind, int dir)
     return kShapes[kObjects[size_t(kind)].shapes[size_t(dir)]];
 }
 
-// check_points_connected (src/utils.cpp).
-bool points_connected(const World &w, int from, int to)
-{
-    OrthonavPath path;
-    orthonav_init(w, path, from % kMapSize, from / kMapSize, to % kMapSize, to / kMapSize);
-    return path.count != 0;
-}
-
 // The cell where the player's patients come in: the door tile of its first
 // entrance (room_info[myhosp->entrances[0]].door_tile).
 int entrance_tile(const World &w)

@@ -38,6 +38,18 @@ struct Advice {
 // included.
 constexpr int kAdviceCount = 85;
 
+// The player's hired staff, as the game counts them as they are hired
+// (allhosps.staff_count, staff_by_kind with surgeons as doctors, and
+// listhead.staff_by_skill).
+struct StaffCounts {
+    int total = 0;
+    std::array<int, 5> by_kind{};
+    int receptionists = 0; // staff_by_skill[0]
+};
+
+// count_staff: hospital 0's members of staff that are not applicants.
+StaffCounts count_staff(const World &world);
+
 // Advisor::flags bits (advisor.flags).
 constexpr uint8_t kAdvisorTutorial = 0x1;
 // The object being placed may not go where it is (set while the object
@@ -201,17 +213,18 @@ void start_advisor(Advisor &advisor, bool tutorial);
 // (0x11) and bladders (0x13), too few or many doctors and nurses (7, 8,
 // 0x64, 0x65), the staff's warmth (0x12), the machines' wear (3, 0x78), a
 // doctor cracked up (0x5e); the litter (0x45, 0x46), the plants (0x5c,
-// 0x5b, 0x4a), the benches (0x4b), no visitors or cures yet (9, 0xa), the
+// 0x5a, 0x5b, 0x4a), the benches (0x4b), no visitors or cures yet (9, 0xa), the
 // rooms open (0x6b), a room just opened (0x50, 0x53, 0x8c, 0x5d, 0x68), a
 // treatment not paid for (0x75), the deaths near the level's limit (0x41),
 // the first call about a patient or a new illness (0x87,
 // kAdvisorEventCall), a person stuck (0xc, World::announce_stuck) and the
 // prices high or low (0x76, 0x77, HospitalMarket::price_level), the cures
-// short of the level's target (0x88). The
+// short of the level's target (0x88), and the research discoveries research
+// announces (World::announce: 0x17 to 0x1b and 0x79). The
 // plants, benches and rooms open are counted from the world, where the
 // game keeps running counts (which never uncount a bench sold). The others
-// need what is not ported yet (research, epidemics, rats, earthquakes,
-// plants wilting, the other announcements, the level's win and lose
+// need what is not ported yet (epidemics, rats, earthquakes,
+// the other announcements, the level's win and lose
 // progress (0x6f, 0x72, and 0x88's target passed), new staff in rooms,
 // what an illness requires) and are never given; the staff's tiredness
 // (0x10) the game works out but never says.

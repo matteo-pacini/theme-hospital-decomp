@@ -143,6 +143,10 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          in SS_BACK_TO_APPLICANTS
 //   litter <tile> type=<n> owner=<n>       place_litter
 //   unlitter <tile> owner=<n>              remove_litter
+//   plant_thirsty <plant> priority=<n>     plant_ages, at a wilting stage
+//   plant_dead <plant>                     plant_ages, once 40 past dead
+//   watered <handyman> plant=<n> health=<n>  handyman_works, a plant watered,
+//                                          with the condition it had
 //   commit_blueprint / uncommit_blueprint / commit_doors / open_room /
 //   delete_blueprint_room                  those of player 0's build tool
 //   delete_room <room>                     delete_room
@@ -184,6 +188,8 @@ void trace_rand(const char *function, uint32_t seed);
 //   emergency_refuse <call>                process_turn's CH_EMERGENCY_REFUSE
 //                                          (the call last taken off the panel)
 //   emergency_start                        process_turn's EV_START_EMERGENCY
+//   epidemic_declare                       process_turn's CH_EPIDEMIC_DECLARE
+//   epidemic_cover_up                      process_turn's CH_EPIDEMIC_COVER_UP
 //   heli <id>                              try_to_generate_emergency, the
 //                                          helicopter summoned (0: none free)
 //   heli_landed <id>                       helicopter_lands, on landing
@@ -266,6 +272,16 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          hospital 0's
 //   send_to_research <doctor> room=<n>     send_doctor_to_research, a room
 //                                          found
+//   send_to_training <doctor> room=<n>     send_doctor_to_training, a room
+//                                          found
+//   training <consultant> kind=<n>         training_done, at its start
+//   train_ability <student> ability=<n>    training_done, a student's ability
+//                                          after its gain
+//   promoted <student> skill=<n>           training_done, a student gaining a
+//                                          skill
+//   appraise <staff> skill=<n>             appraise_staff, a promotion (8 a
+//                                          junior becoming a doctor, 128 a
+//                                          doctor a consultant)
 //   alter_research <category> value=<n>    alter_research (process_turn's
 //                                          EV_ALTER_RESEARCH), hospital 0's
 // Whoever ports one of these functions writes its event on both sides.

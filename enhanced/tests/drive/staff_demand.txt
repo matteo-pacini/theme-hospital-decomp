@@ -1,0 +1,23 @@
+# Level 1: the staff pay-raise requester (req12). A doctor is hired and the
+# demand window opened for them with the drive's `demand` hook (the window
+# normally needs a resignation, about 9000 turns and discontent); its layout
+# is compared with the original's req12_overdraw, then the grant button closes
+# it.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 60 68         # place the doctor (thing 11)
+wait 20
+demand 11                # open the pay-raise window for them
+wait 10
+dump demand
+expect interface: requester 12,
+screenshot staff_demand
+click 375 312            # grant the demand
+wait 10
+dump answered
+expect-not interface: requester 12,

@@ -1,0 +1,21 @@
+# Level 1: the speed keys 1-5 set the game's speed (process_game_keys,
+# src/keyboard.cpp): Slowest, Slower, Normal, Max and "and then some".
+wait 60
+key 1
+wait 5
+expect speed: 1 turns/s
+key 2
+wait 5
+expect speed: 5 turns/s
+key 3
+wait 5
+expect speed: 22 turns/s
+key 4
+wait 5
+expect speed: 25 turns/s
+key 5
+wait 5
+expect speed: 75 turns/s
+key 3
+wait 5
+expect speed: 22 turns/s

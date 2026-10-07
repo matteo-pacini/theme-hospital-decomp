@@ -3,8 +3,12 @@
 #include "core/world/build.h"
 #include "core/world/counts.h"
 #include "core/world/disaster.h"
+#include "core/world/epidemic.h"
+#include "core/world/icons.h"
+#include "core/world/mayor.h"
 #include "core/world/nav.h"
 #include "core/world/objects.h"
+#include "core/world/quake.h"
 #include "core/world/queue.h"
 #include "core/world/reaper.h"
 #include "core/world/research.h"
@@ -32,6 +36,7 @@ constexpr std::array<int, 12> kCalendar = {31, 28, 31, 30, 31, 30, 31, 31, 30, 3
 // Object states (the game's OS_*, include/enums.h) handled so far.
 constexpr uint8_t kObjectStatic = 2;
 constexpr uint8_t kObjectInUse = 4;
+constexpr uint8_t kObjectPlantAges = 0x0a;
 
 // The bytes of `now` that differ from `was` as "<offset> <hex>", from the
 // first that differs to the last; all of them if `all`; empty if none differ.
@@ -94,6 +99,8 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     new_patients.clear();
     walkers_.assign(kThingCount, false);
     start_level(world, level, anims);
+    world.scroll_min = level.scroll_min;
+    world.scroll_max = level.scroll_max;
     start_entrance_rooms(world, level);
     start_town_land(land, level, number);
     std::array<uint8_t, 3> refs = staff_market.ref_counts;
@@ -163,8 +170,9 @@ void turn_month_end(Game &g)
     const Balance &settings = g.settings();
     auto_available(g.world, date);
     // month_end's money, before the month moves on.
-    month_end(g.finance, g.balance, g.world, settings, g.level_number(),
-              {days_in_month(date.month), date.month, count_radiators(g.world, 0), g.reputation()});
+    month_end(
+        g.finance, g.balance, g.world, settings, g.level_number(),
+        {days_in_month(date.month), date.month, count_radiators(g.world, 0), g.reputation(), g.turn_count, &g.anims()});
     finish_month_market_share(g);
     calc_pricing_factor(g.arrivals.hospitals[0], settings, g.world.cure_available);
     calc_visitors_this_month(g.arrivals, settings);
@@ -189,7 +197,9 @@ void turn_daily_admin(Game &g)
 {
     g.date.day++;
     try_to_generate_emergency(g);
+    generate_mayors(g);
     daily_admin_emergency(g);
+    generate_quake(g);
     expire_playercalls(g.world);
     do_research(g.world);
     if (g.date.day > days_in_month(g.date.month))
@@ -215,8 +225,41 @@ void process_things_object(World &world, const AnimData &anims, uint16_t id, uin
             t.overlay_frame = anims.frames[t.overlay_frame].next;
     } else if (t.state == kObjectHell) {
         object_hell(world, anims, id, turn_count);
+    } else if (t.state == kObjectPlantAges) {
+        plant_ages(world, anims, id, turn_count);
     } else {
         sliding_door_turn(world, anims, id, turn_count);
+    }
+}
+
+// process_things' turn of the thing at `i`, once its counts are taken.
+void turn_thing(Game &g, std::vector<bool> &walkers, const PersonComplexes &complexes,
+                const StaffComplexes &staff_complexes, size_t i, uint32_t turn_count)
+{
+    World &world = g.world;
+    const AnimData &anims = g.anims();
+    Thing &t = world.things[i];
+    if (t.type == kThingPatient && walkers[i]) {
+        if (walk_turn(world, anims, uint16_t(i), turn_count) != WalkResult::Walking)
+            play_frame(t, anims, kPatientAnims[t.subtype % kPatientAnims.size()].stand);
+    } else if (t.type == kThingPatient) {
+        person_turn(world, anims, complexes, uint16_t(i), turn_count);
+    } else if (t.type == kThingStaff) {
+        staff_turn(world, anims, complexes, staff_complexes, uint16_t(i), turn_count);
+    } else if (t.type == kThingDoor) {
+        door_turn(world, anims, uint16_t(i), turn_count);
+    } else if (t.type == kThingNumfx) {
+        numfx_ages(world, uint16_t(i));
+    } else if (t.type == kThingReaper) {
+        reaper_turn(world, anims, uint16_t(i), turn_count);
+    } else if (t.type == kThingHelicopter) {
+        helicopter_turn(world, anims, uint16_t(i));
+    } else if (t.type == kThingInspector) {
+        inspector_turn(g, uint16_t(i), turn_count);
+    } else if (t.type == kThingMayor) {
+        mayor_turn(g, uint16_t(i), turn_count);
+    } else if (t.type == kThingObject || t.type == kThingDebris) {
+        process_things_object(world, anims, uint16_t(i), turn_count);
     }
 }
 
@@ -226,7 +269,6 @@ void process_things(Game &g, std::vector<bool> &walkers, const PersonComplexes &
                     const StaffComplexes &staff_complexes)
 {
     World &world = g.world;
-    const AnimData &anims = g.anims();
     uint32_t turn_count = g.turn_count;
     reset_all_count(world, turn_count);
     check_win_status(g);
@@ -240,24 +282,11 @@ void process_things(Game &g, std::vector<bool> &walkers, const PersonComplexes &
             staff_count(world, uint16_t(i), turn_count);
         else if (t.type == kThingObject)
             object_count(world, uint16_t(i), turn_count);
-        if (t.type == kThingPatient && walkers[i]) {
-            if (walk_turn(world, anims, uint16_t(i), turn_count) != WalkResult::Walking)
-                play_frame(t, anims, kPatientAnims[t.subtype % kPatientAnims.size()].stand);
-        } else if (t.type == kThingPatient) {
-            person_turn(world, anims, complexes, uint16_t(i), turn_count);
-        } else if (t.type == kThingStaff) {
-            staff_turn(world, anims, complexes, staff_complexes, uint16_t(i), turn_count);
-        } else if (t.type == kThingDoor) {
-            door_turn(world, anims, uint16_t(i), turn_count);
-        } else if (t.type == kThingNumfx) {
-            numfx_ages(world, uint16_t(i));
-        } else if (t.type == kThingReaper) {
-            reaper_turn(world, anims, uint16_t(i), turn_count);
-        } else if (t.type == kThingHelicopter) {
-            helicopter_turn(world, anims, uint16_t(i));
-        } else if (t.type == kThingObject || t.type == kThingDebris) {
-            process_things_object(world, anims, uint16_t(i), turn_count);
-        }
+        // update_icon_counter (src/things.cpp), before the state turn, for
+        // the things that show a status icon.
+        if (t.type == kThingPatient || t.type == kThingStaff || t.type == kThingObject)
+            update_icon_counter(g.anims(), t);
+        turn_thing(g, walkers, complexes, staff_complexes, i, turn_count);
     }
     final_count(world, turn_count);
 }
@@ -278,11 +307,14 @@ bool Game::start_turn()
     turn_count++;
     EventScope scope(&events, turn_count);
     draw_turn_randoms(world);
+    world.idle_nurses = 0;
 
     new_patients.clear();
     if (turn_count % (kTurnsPerDay / 2) == 0) {
         // twice_daily_admin
         twice_daily_admin_emergency(world);
+        if (epidemic_status(world, 0))
+            generate_inspector(world, *anims_, 0);
         if (uint16_t id = create_a_peep(world, arrivals, {settings_, *anims_, level_number_}, open, turn_count)) {
             new_patients.push_back(id);
             start_person_going(world, *anims_, *complexes_, id, turn_count);
@@ -295,6 +327,15 @@ bool Game::start_turn()
     if (!open && !(advisor.flags & kAdvisorTutorial) && --opening_countdown <= 0) {
         opening_countdown = 0;
         open = true;
+    }
+    if (disasters.quake_strength != 0)
+        earthquake(*this, int8_t(disasters.quake_strength), disasters.quake_step_chance);
+    // An epidemic call that ran out unanswered is covered up now, as the
+    // game carries out the default answer the frame after daily_admin.
+    if (world.epidemic.cover_up_expired) {
+        world.epidemic.cover_up_expired = false;
+        trace_event("choice 11 arg=99 awaiting=0");
+        expire_epidemic_cover_up(world);
     }
     return true;
 }
@@ -344,10 +385,20 @@ void Game::carry_out(const Event &e)
         trace_event("choice %u arg=%u awaiting=%u", unsigned(e.value), unsigned(e.arg),
                     unsigned(p.type == kThingPatient && (p.person_flags & kPfAwaitingDecision)));
     }
+    // process_turn's EV_OPEN_HOSPITAL: the panel's watch, clicked while the
+    // countdown runs, opens the hospital at once. Single player, so the
+    // player's hospital_open is the game's own open flag
+    // (allhosps[player].hospital_open, io.cpp).
+    if (e.type == EV_OPEN_HOSPITAL) {
+        opening_countdown = 0;
+        open = true;
+        return;
+    }
 
     // Each part's commands are carried out in its own file. EV_CANCEL_BUILD
     // is the staff side's, the build tool's and the objects', in that order.
-    if (apply_emergency_event(*this, e) || apply_call_event(*this, e) || apply_machine_event(*this, e))
+    if (apply_emergency_event(*this, e) || apply_epidemic_event(*this, e) || apply_call_event(*this, e) ||
+        apply_mayor_event(*this, e) || apply_machine_event(*this, e))
         return;
     if (e.type == EV_CANCEL_BUILD)
         apply_staff_event(*this, e);
@@ -472,7 +523,7 @@ bool replay_input_command(Game &g, std::string_view line, std::string *error)
 // Game::replay_input's @paused, @tutorial, @path_finder and @build_mouse.
 bool replay_input_setting(Game &g, const std::string &name, std::istream &in, std::string_view line, std::string *error)
 {
-    auto v = replay_input_value(in, 0, name == "@build_mouse" ? int(BuildMouse::WaitClear) : 1);
+    auto v = replay_input_value(in, 0, name == "@build_mouse" ? int(BuildMouse::MoveQueuePerson) : 1);
     if (!v)
         return replay_input_fail(line, error, "bad value");
     if (name == "@paused")

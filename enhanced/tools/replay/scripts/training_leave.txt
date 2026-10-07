@@ -1,0 +1,46 @@
+# Level 6: a training room with a projector and two lecture chairs, and a
+# staff room; a consultant (applicant 25) and a doctor (18). A second
+# consultant (17) is put in the consultant's room (losing check_room_mutex,
+# so it evacuates); the consultant and then the doctor are ordered out of the
+# room (ORD_LEAVE_ROOM); the consultant is picked up, put back and the room
+# is edited under it (the room-being-edited evacuation).
+101 55 0 0
+102 53 22 22
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 22 0
+110 7 6445 37
+111 7 6188 36
+112 7 6318 36
+113 1 0 0
+114 48 1 25
+115 5 6574 25
+116 48 1 18
+117 5 6575 18
+130 55 0 0
+131 53 25 25
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 25 0
+139 7 6331 19
+140 1 0 0
+200 113 4 50
+# A second consultant into the held room: it loses the room's mutex.
+2000 48 1 17
+2001 5 6573 17
+# The consultant, then the doctor, ordered out of the room.
+4000 97 25 0
+6000 97 18 0
+# The consultant picked up and put back into the room.
+8000 104 25 0
+8001 5 6574 25
+# The room edited under the consultant: it evacuates.
+10000 70 5 0

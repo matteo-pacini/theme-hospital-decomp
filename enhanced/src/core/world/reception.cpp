@@ -1,6 +1,7 @@
 #include "core/world/reception.h"
 
 #include "core/world/arrivals.h"
+#include "core/world/icons.h"
 #include "core/world/reputation.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
@@ -204,7 +205,7 @@ bool reception_cure_available(const World &world, uint16_t patient)
     return p.owner == 0 && world.cure_available[p.treatment] == 1;
 }
 
-bool shall_peep_pay(World &world, uint16_t id)
+bool shall_peep_pay(World &world, const AnimData &anims, uint16_t id)
 {
     Thing &p = world.things[id];
     HospitalMarket &hosp = market_of(world);
@@ -231,6 +232,7 @@ bool shall_peep_pay(World &world, uint16_t id)
             break;
     }
     if (!pays) {
+        set_icon_value(anims, p, kIconTooExpensive);
         p.person_flags |= kPfTooExpensive;
         record_person_as_patient(world, id);
         if (p.owner == 0)
@@ -240,13 +242,13 @@ bool shall_peep_pay(World &world, uint16_t id)
     return pays;
 }
 
-void reception_serves_patient(World &world, uint16_t receptionist, uint16_t patient)
+void reception_serves_patient(World &world, const AnimData &anims, uint16_t receptionist, uint16_t patient)
 {
     trace_event("checkin %u receptionist=%u", unsigned(patient), unsigned(receptionist));
     Thing &p = world.things[patient];
     p.impatience = 0;
     p.waiting_time = 0;
-    if (shall_peep_pay(world, patient))
+    if (shall_peep_pay(world, anims, patient))
         pay_for_treatment(world, patient, 3);
     else
 

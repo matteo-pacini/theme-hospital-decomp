@@ -144,8 +144,8 @@ uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_
 // once it runs out, with its icon (delete_panel_popup); an emergency's
 // result (kind 5, subject 1) going ends the emergency (World::Emergency::
 // state 0). A head call going leaves its kind's head to the first call of
-// that kind in the table. The answers the game then gives to the calls of a
-// VIP's visit and an epidemic are not ported.
+// that kind in the table. The answer the game then gives to a VIP's visit
+// is not ported.
 void expire_playercalls(World &world);
 
 // get_playercall (0x18710): removes `owner`'s call of `type` with `id`, or
@@ -159,6 +159,10 @@ uint16_t get_playercall(World &world, uint16_t type, uint16_t id, uint8_t owner)
 // check_playercall (0x18838): `owner`'s calls of `type`; for types other
 // than 2, 3, 4 and 8, only those about `subject`.
 uint16_t check_playercall(const World &world, uint16_t type, uint16_t subject, uint8_t owner);
+
+// The subject of `owner`'s call of `type` with `id`, or the first of that
+// type, without removing it (get_playercall removes it); 0 if none.
+uint16_t playercall_subject(const World &world, uint16_t type, uint16_t id, uint8_t owner);
 
 // find_object (0x3791c): an object of `kind` for `tile`: in the room holding
 // it, else outside rooms within 7 cells on each axis and reachable from the
@@ -301,7 +305,8 @@ void force_peep_to_be_cured(World &world, const AnimData &anims, uint16_t id, ui
 // Carries out the patient window's commands, as process_turn (src/io.cpp):
 // - EV_PERSON_GO_HOME: patient `value` sent home: no treatment, counted
 //   turned away for its illness, going home (person_go_home) and marked
-//   kPfSentHome; ending an epidemic for a contagious one is not ported;
+//   kPfSentHome; a contagious one also ends its epidemic's cover-up
+//   (World::Epidemic::timer 0);
 // - EV_FORCE_CURE: force_peep_to_be_cured on patient `value`.
 // The game checks nothing more; the window offers them only when it may.
 // Returns false for other commands.

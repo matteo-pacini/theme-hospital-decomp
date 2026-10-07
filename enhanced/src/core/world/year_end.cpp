@@ -19,9 +19,6 @@ namespace th
 namespace
 {
 
-// OBJ_PLANT (include/enums.h), the plant object's kind.
-constexpr uint8_t kObjectPlant = 45;
-
 // rating[] (src/tables.cpp): the score growth bands calculate_score uses.
 struct Rating {
     int16_t threshold;
@@ -50,21 +47,6 @@ int player_staff(const World &world)
         if (t.type == kThingStaff && t.owner == 0 && t.state != kStaffApplicant)
             n++;
     return n;
-}
-
-// NRAdcounts.plants and plant_health_sum for hospital 0, recomputed from the
-// map (each plant contributes 0x37, as placing one does; the port does not
-// wilt or water them). `count` only when it exceeds `min`.
-void plant_counts(const World &world, int &plants, int32_t &health_sum)
-{
-    plants = 0;
-    health_sum = 0;
-    for (const Thing &t : world.things) {
-        if (t.type != kThingObject || t.owner != 0 || t.subtype != kObjectPlant)
-            continue;
-        plants++;
-        health_sum += 0x37;
-    }
 }
 
 // The player's current win (mode 0) or lose criterion rows.
@@ -325,10 +307,10 @@ void update_monthly_award_counts(YearEnd &state, const World &world, int month, 
         ac.peep_happiness[size_t(month)] = 0;
         ac.waiting_times[size_t(month)] = leave_max << 8;
     }
-    int plants = 0;
-    int32_t plant_health_sum = 0;
-    plant_counts(world, plants, plant_health_sum);
-    ac.plant_health[size_t(month)] = plants > 7 ? plant_health_sum * 0x190000 / plants : 0;
+    int plants = world.plants;
+    int32_t plant_health_sum = world.plant_health_sum;
+    // The product wraps in 32 bits, as the original's multiply does.
+    ac.plant_health[size_t(month)] = plants > 7 ? int32_t(uint32_t(plant_health_sum) * 0x190000u) / plants : 0;
     ac.machine_wear[size_t(month)] = c.machine_wear_sum;
     ac.machines[size_t(month)] = c.machines;
 }

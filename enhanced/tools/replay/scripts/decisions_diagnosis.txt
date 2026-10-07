@@ -37,16 +37,17 @@
 # (EV_ANSWER_PLAYERCALL 8 1) and the patient sent home (CH_DIAG_SEND_HOME).
 7260 10 8 1
 7261 125 40 29
-# Patient 36's call (id 2, turn 8283) answered from its popup (arg 0) and
+# Patient 36's call (id 3, turn 8283) answered from its popup (arg 0) and
 # its illness guessed (CH_DIAG_GUESS): with no treatment for it, a call
-# about no treatment (id 3) follows at once, answered from the patient and
-# the patient sent to the research department (CH_TREAT_RESEARCH, which the
-# fax offers only once autopsies can be done): with none, it goes home.
+# about no treatment (id 4, after the VIP offer's id 2) follows at once,
+# answered from the patient and the patient sent to the research department
+# (CH_TREAT_RESEARCH, which the fax offers only once autopsies can be done):
+# with none, it goes home.
 8300 10 8 0
 8301 125 41 36
-8350 10 4 3
+8350 10 4 4
 8351 125 2 36
-# Patient 6's call (id 4, turn 8753) answered and the patient asked to wait
+# Patient 6's call (id 5, turn 8753) answered and the patient asked to wait
 # for a diagnosis room (CH_DIAG_WAIT): it goes home 1500 turns on.
-8800 10 8 4
+8800 10 8 5
 8801 125 42 6

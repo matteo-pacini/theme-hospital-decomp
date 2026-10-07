@@ -1,0 +1,88 @@
+# Level 6: a reception desk and receptionist, a GP's office and its doctor,
+# then an operating theatre and two surgeons (applicants 17 and 20, who
+# change at its surgeon screen), a staff room and a ward whose nurse
+# diagnoses the surgery patients the GP sends on. The theatre's objects: the
+# operating table (cell 6584 facing 0), its lamp (made with it), the two
+# sinks (cell 6331, and the second made with it), the X-ray viewer (cell
+# 6715) and, the room opened, the surgeon screen (cell 6708 facing 0).
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair (arg: kind | facing << 8); opened.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+# Its doctor: hire applicant 18, place at cell 6969.
+114 48 1 18
+115 5 6969 18
+# The operating theatre (50,48)-(59,53), its door above it; opened.
+130 55 0 0
+131 53 10 10
+132 2 6194 0
+133 2 6843 0
+134 8 6843 0
+135 18 0 0
+136 26 6071 0
+137 3 0 0
+138 4 10 0
+139 7 6584 30
+140 7 6331 33
+141 7 6715 29
+142 1 0 0
+143 7 6708 35
+# Two surgeons (applicants 17 and 20): hired and placed in the theatre at
+# cells 6324 and 6325, by the operating table.
+144 48 1 17
+145 5 6324 17
+146 48 1 20
+147 5 6325 20
+# A staff room (60,48)-(64,52), its door above it, a sofa (cell 6463); opened,
+# so that the staff rest and stay.
+160 55 0 0
+161 53 25 25
+162 2 6204 0
+163 2 6720 0
+164 8 6720 0
+165 18 0 0
+166 26 6078 0
+167 3 0 0
+168 4 25 0
+169 7 6463 19
+170 1 0 0
+# A ward (66,48)-(71,53), its door above it, a bed (cell 6468) and a desk
+# (cell 6339); opened. Its nurse (applicant 9). Surgery's treatments need a
+# ward first, so the GP sends surgery patients there to be diagnosed before
+# the theatre.
+260 55 0 0
+261 53 9 9
+262 2 6210 0
+263 2 6855 0
+264 8 6855 0
+265 18 0 0
+266 26 6084 0
+267 3 0 0
+268 4 9 0
+269 7 6468 264
+270 7 6339 1
+271 1 0 0
+272 48 0 9
+273 5 6469 9
+# Policy: never send home early, guess a cure from 10%.
+280 113 1 0
+281 113 2 10

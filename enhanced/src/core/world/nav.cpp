@@ -899,6 +899,15 @@ void orthonav_init(const World &world, OrthonavPath &path, int x0, int y0, int x
         path.steps[i] = hug.route[i];
 }
 
+// check_points_connected (0x1a6cc in src/utils.cpp): whether a path leads
+// from cell `from` to cell `to`.
+bool points_connected(const World &world, int from, int to)
+{
+    OrthonavPath path;
+    orthonav_init(world, path, from % kMapSize, from / kMapSize, to % kMapSize, to / kMapSize);
+    return path.count != 0;
+}
+
 bool free_orthog_line(const World &world, int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
     if (x1 == x2) {

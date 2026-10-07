@@ -53,10 +53,6 @@ std::span<const PanelIconDef> panel_icons(bool raised)
     return kPanelIconsNormal;
 }
 
-// The panel watch and its "open now" button (HiresCoords).
-constexpr int kWatchX = 5, kWatchY = 350;
-constexpr int kWatchButtonX = 9, kWatchButtonY = 335;
-
 // The watch sprite for each thirteenth of a countdown left (the game's
 // watch_face, src/tables.cpp; 0 past its listed entries).
 int watch_face(int thirteenths)
@@ -96,7 +92,7 @@ std::vector<uint32_t> panel_to_argb(const GameData &data, const PanelFigures *fi
     int panel_height;
     panel_size(data.panel(), width, panel_height);
     // The watch's button is the highest thing drawn over the panel.
-    height = std::max(panel_height, kUiHeight - kWatchButtonY);
+    height = std::max(panel_height, kUiHeight - kPanelWatchButtonY);
     UiLayer layer;
     layer.resize(std::max(width, kUiWidth), kUiHeight);
     layer.clear();
@@ -119,6 +115,17 @@ int panel_top(const GameData &data)
 {
     // choose_panel_icons: the top of icon 1, the same in both sets.
     return kUiHeight - data.panel().at(kPanelIconsNormal[1].sprite).height;
+}
+
+Point panel_icon_at(const GameData &data, bool raised, int index)
+{
+    std::span<const PanelIconDef> icons = panel_icons(raised);
+    int x = 0;
+    int i = 0;
+    for (; i < index && i < int(icons.size()); i++)
+        x += data.panel().at(icons[size_t(i)].sprite).width;
+    Sprite top = i < int(icons.size()) ? data.panel().at(icons[size_t(i)].sprite) : Sprite{};
+    return {x, kUiHeight - top.height};
 }
 
 int panel_icon_at(const GameData &data, bool raised, int x, int y)
@@ -264,22 +271,30 @@ void draw_emergency(UiLayer &layer, const PanelFigures &figures, const GameData 
 {
     const SpriteSheet &watch = data.watch();
     bool countdown = figures.opening_countdown > 0 && figures.open_countdown >= 13;
-    if (figures.emergency_timer > 0 || countdown || figures.emergency_state > 1)
-        layer.draw_sprite(kWatchX, kWatchY, watch.at(13));
+    bool watch_new = figures.emergency_timer > 0 || countdown || figures.epidemic_timer > 0;
+    if (watch_new || figures.emergency_state > 1)
+        layer.draw_sprite(kPanelWatchX, kPanelWatchY, watch.at(13));
     if (figures.emergency_timer > 0) {
         // The emergency's time left, in eighths of 100 half days.
         int face = figures.emergency_timer / 8;
         if (face >= 6)
-            layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(1));
-        layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(size_t(watch_face(face))));
+            layer.draw_sprite(kPanelWatchX + 2, kPanelWatchY + 19, watch.at(1));
+        layer.draw_sprite(kPanelWatchX + 2, kPanelWatchY + 19, watch.at(size_t(watch_face(face))));
+    } else if (figures.epidemic_timer > 0) {
+        // The cover-up's time left, with the vaccination button beside it.
+        int face = figures.epidemic_timer / 8;
+        layer.draw_sprite(kPanelWatchButtonX, kPanelWatchButtonY, watch.at(14));
+        if (face >= 6)
+            layer.draw_sprite(kPanelWatchX + 2, kPanelWatchY + 19, watch.at(1));
+        layer.draw_sprite(kPanelWatchX + 2, kPanelWatchY + 19, watch.at(size_t(watch_face(face))));
     } else if (countdown) {
         // The opening countdown: the "open now" button and a face for each
         // thirteenth of the countdown left.
-        layer.draw_sprite(kWatchButtonX, kWatchButtonY, watch.at(16));
+        layer.draw_sprite(kPanelWatchButtonX, kPanelWatchButtonY, watch.at(16));
         int face = figures.opening_countdown / (figures.open_countdown / 13);
         if (face >= 6)
-            layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(1));
-        layer.draw_sprite(kWatchX + 2, kWatchY + 19, watch.at(size_t(watch_face(face))));
+            layer.draw_sprite(kPanelWatchX + 2, kPanelWatchY + 19, watch.at(1));
+        layer.draw_sprite(kPanelWatchX + 2, kPanelWatchY + 19, watch.at(size_t(watch_face(face))));
     }
 }
 

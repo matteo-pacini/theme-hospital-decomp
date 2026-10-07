@@ -25,7 +25,17 @@ struct FrameOptions {
     // element's offset and size scaled (LbSpriteDrawScaled). The box
     // returned is unscaled, as the game's.
     int32_t scale = 0x10000;
+    // A thing's status icon: the frame to draw above it (0 for none). A
+    // person's icon hangs over the first head element (flags 0x200/0x250);
+    // with `icon_over_frame` (a machine) it hangs over the frame's box
+    // instead.
+    uint32_t icon = 0;
+    bool icon_over_frame = false;
 };
+
+// icon_gap (HiresCoords' IconScreen, src/coords.cpp): the lift of a status
+// icon above the thing's frame.
+constexpr int kIconGap = 8;
 
 // Draws composite frame `frame_id` with its origin at `at`, mirrored if
 // `flip`, as the game's draw_a_frame. Returns the box the drawn elements

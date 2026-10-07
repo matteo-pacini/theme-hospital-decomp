@@ -1,0 +1,64 @@
+# Level 1: an inflation room's inflator (a machine) opens the machine window
+# (req5): its name, the room's patients seen and its strength bar; the close,
+# call a handyman and replace buttons. The machine window is opened by
+# EV_OPEN_THING_WINDOW from a click on the machine (map_left_click).
+wait 60
+click 228 453            # panel: build room
+wait 10
+click 240 130            # Clinics
+wait 10
+click 380 85             # the room (Inflation, kind 17)
+wait 10
+cell 58 66
+wait 5
+down left
+wait 5
+cell 62 70
+wait 10
+up left
+wait 10
+click 580 148            # confirm the blueprint
+wait 10
+click-cell 58 68         # the door
+wait 10
+click 580 148            # no windows: confirm
+wait 30
+click-cell 60 67
+wait 10
+click 505 189            # the object in the list
+wait 10
+click-cell 59 69
+wait 10
+click 580 148            # confirm the room
+wait 30
+key Escape               # close the room's first help page
+wait 10
+click-thing 31            # the machine
+wait 10
+screenshot machine_open
+dump machine_open
+expect query window: patient false (thing 0, health graph, toggle delay 0), staff false (thing 0), handyman false, machine true (thing 31)
+click 582 40             # close
+wait 10
+dump machine_closed
+expect machine false (thing 31)
+click-thing 31            # reopen
+wait 10
+click 456 148            # call a handyman (EV_THINGPAGE_REQUEST)
+wait 10
+dump machine_handyman
+expect repair_page 0 id=31
+click 511 52 right       # the name box: the next machine (none: the same)
+wait 10
+dump machine_next
+expect machine true (thing 31)
+click-thing 31            # reopen (the handyman page keeps the window)
+wait 10
+click 528 148            # replace: asks to confirm
+wait 10
+dump machine_replace
+expect interface: requester 4,
+click 373 281            # yes: EV_REPLACE_MACHINE, the page cancelled
+wait 10
+dump machine_replaced
+expect-not repair_page 0 id=31

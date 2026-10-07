@@ -4,6 +4,9 @@
 `enhanced/` is a C++20 port of it (SDL3, ImGui for dev tools only), ported
 function by function with the same RNG draw order. Read `enhanced/README.md`.
 
+When `HERDR_ENV=1` and you lead or work in a multi-agent herdr session, also
+read `docs/agents/herdr.md`.
+
 ## Git
 - Enhanced work lives on branch `enhanced` only, never on master.
 - Commit only when asked; stage by path; no `commit -a`, no
@@ -58,7 +61,7 @@ DOSBox-X (its work folder is `$REPLAY_DIR`, default `build/replay`; use your
 own when running in parallel). `th_replay` runs the same script in the port,
 and `compare.py` diffs the two traces turn by turn, random draws included
 (`--rand`). The usual SKIP list is
-`computer_action,manage_rats,generate_disaster,generate_mayors`.
+`computer_action,manage_rats,generate_disaster`.
 
 - The scripts in `enhanced/tools/replay/scripts/` are lines of
   `turn event value arg`, with `# Level N` in the header. All of them must

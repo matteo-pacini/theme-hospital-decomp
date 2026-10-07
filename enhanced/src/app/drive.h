@@ -32,6 +32,10 @@ class DriveHost
     virtual std::string drive_state() const = 0;
     // The game's turn count, or -1 with no level loaded.
     virtual int64_t drive_turn() const = 0;
+    // Opens the staff pay-raise requester (req12) for thing `id`, as
+    // answering a resignation call does. A test hook: the window otherwise
+    // needs a member of staff to resign (about 9000 turns and discontent).
+    virtual bool drive_staff_demand(uint16_t id) = 0;
 };
 
 // Waits for one of `max` slots in `dir` (enhanced/tools/slot.sh's files,
@@ -57,6 +61,8 @@ bool hold_slot(const std::filesystem::path &dir, int max, const std::string &inf
 //   click-cell C R [b]  the same on a map cell
 //   click-thing ID [b]  the same on a thing
 //   key NAME            press a key, 4 frames, release, 2 frames
+//   demand ID           open the staff pay-raise requester for thing ID (a
+//                       test hook; the window normally needs a resignation)
 //   screenshot NAME     save the next frame as OUT/NAME.png
 //   dump NAME           save the state text as OUT/NAME.txt
 //   expect TEXT         fail unless the state text contains TEXT

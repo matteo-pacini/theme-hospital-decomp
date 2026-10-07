@@ -332,6 +332,7 @@ void dump_thing_object(Inspection &out, const Thing &t)
     F(t, aux_draw_flags);
     F(t, aux_param);
     F(t, remove_after_anim);
+    F(t, lecture_started);
 }
 
 void dump_thing_helicopter(Inspection &out, const Thing &t)
@@ -419,7 +420,7 @@ void dump_thing_patient(Inspection &out, const World &w, const Thing &t)
     F(t, orig_subtype);
     F(t, insurance);
     F(t, contagion);
-    F(t, icon_id);
+    F(t, vaccine_next);
     F(t, cash);
     F(t, fee);
     F(t, substate);
@@ -453,6 +454,9 @@ void dump_thing_staff(Inspection &out, const World &w, const Thing &t)
     F(t, discontent);
     F(t, resign_count);
     F(t, crazy);
+    F(t, surgeon_training);
+    F(t, psych_training);
+    F(t, research_training);
     F(t, hire_expiry);
     F(t, hire_time);
     F(t, work_delay);
@@ -509,9 +513,9 @@ const char *dump_thing_kind(const Thing &t)
     }
 }
 
-void dump_thing(Inspection &out, const World &w, const Thing &t, int id)
+// dump_thing's fields every thing has.
+void dump_thing_common(Inspection &out, const Thing &t)
 {
-    out.section(std::format("{} {}", dump_thing_kind(t), id));
     out.number("type", t.type, named(kThingTypes, t.type));
     out.number("subtype", t.subtype, subtype_name(t));
     state_field(out, "state", t, t.state);
@@ -531,7 +535,15 @@ void dump_thing(Inspection &out, const World &w, const Thing &t, int id)
     for (int i = 0; i < t.path.count && i < int(t.path.steps.size()); i++)
         path += std::format("{}{},{}", i ? ";" : "", t.path.steps[size_t(i)].x, t.path.steps[size_t(i)].y);
     out.text("path", std::move(path));
+    out.section("icon");
+    F(t, icon_id);
+    F(t, icon_frame);
+    F(t, icon_timer);
+}
 
+// dump_thing's fields by the thing's type.
+void dump_thing_body(Inspection &out, const World &w, const Thing &t)
+{
     if (t.type == kThingObject) {
         dump_thing_object(out, t);
         return;
@@ -548,6 +560,13 @@ void dump_thing(Inspection &out, const World &w, const Thing &t, int id)
         dump_thing_debris(out, t);
         return;
     }
+    if (t.type == kThingInspector) {
+        out.section("inspector");
+        F(t, inspect_room);
+        F(t, timer);
+        F(t, goto_state);
+        return;
+    }
     if (t.type != kThingPatient && t.type != kThingStaff)
         return;
     dump_thing_sequence(out, t);
@@ -555,6 +574,13 @@ void dump_thing(Inspection &out, const World &w, const Thing &t, int id)
         dump_thing_patient(out, w, t);
     else
         dump_thing_staff(out, w, t);
+}
+
+void dump_thing(Inspection &out, const World &w, const Thing &t, int id)
+{
+    out.section(std::format("{} {}", dump_thing_kind(t), id));
+    dump_thing_common(out, t);
+    dump_thing_body(out, w, t);
 }
 
 void dump_room(std::string &out, const RoomInfo &r, int id)
@@ -681,35 +707,41 @@ void dump_game_finance(std::string &out, const Game &game)
     }
 }
 
-void dump_game_world(std::string &out, const World &w)
+// dump_game's epidemic (World::Epidemic).
+void dump_game_epidemic(std::string &out, const World &w)
 {
-    out += "world:";
-    F(w, queue_near_dist);
-    F(w, object_near_dist);
-    F(w, patients_left_count);
-    F(w, bench_shortage);
-    F(w, advisor_events);
-    F(w, announce_stuck);
-    F(w, unpaid_treatment);
-    F(w, too_expensive);
-    F(w, drinks_income);
-    F(w, held_staff);
-    F(w, held_staff_tile);
-    F(w, next_call_id);
-    F(w, litter_count);
-    F(w, mishaps);
-    F(w, machine_exploded);
-    L(w, machine_sounds);
-    L(w, machine_announcements);
-    L(w, cure_available);
-    L(w, ins_control);
-    L(w, room_of_type);
+    out += "epidemic:";
+    F(w.epidemic, illness);
+    F(w.epidemic, fine);
+    F(w.epidemic, contagious_count);
+    F(w.epidemic, timer);
+    F(w.epidemic, active);
+    F(w.epidemic, over);
+    F(w.epidemic, inspected_illness);
+    L(w.epidemic, inspection);
+    F(w.epidemic, vaccine_queue);
+    F(w.epidemic, vaccine_requests);
+    F(w.epidemic, cover_up_expired);
     out += '\n';
-    for (size_t i = 0; i < w.first_call.size(); i++) {
-        out += std::format("first_call {}", i);
-        list(out, "by_kind", w.first_call[i]);
-        out += '\n';
-    }
+}
+
+// dump_game's VIP visit (World::Mayor).
+void dump_game_mayor(std::string &out, const World &w)
+{
+    out += "mayor:";
+    F(w.mayor, arrival_turn);
+    F(w.mayor, thing);
+    F(w.mayor, name);
+    F(w.mayor, state);
+    F(w.mayor, verdict);
+    F(w.mayor, postponed);
+    F(w.mayor, launch_count);
+    out += '\n';
+}
+
+// dump_game's panel fax icons (World::popups).
+void dump_game_popups(std::string &out, const World &w)
+{
     const PanelPopups &p = w.popups;
     out += "popups:";
     L(p, pos);
@@ -718,6 +750,49 @@ void dump_game_world(std::string &out, const World &w)
     F(p, shutter_timer);
     F(p, new_faxes);
     out += '\n';
+}
+
+void dump_game_world(std::string &out, const World &w)
+{
+    out += "world:";
+    F(w, queue_near_dist);
+    F(w, object_near_dist);
+    F(w, rand_pct);
+    F(w, shake_x);
+    F(w, shake_y);
+    F(w, patients_left_count);
+    F(w, bench_shortage);
+    F(w, plants);
+    F(w, thirsty_plants);
+    F(w, plant_health_sum);
+    F(w, advisor_events);
+    F(w, announce_stuck);
+    F(w, unpaid_treatment);
+    F(w, too_expensive);
+    F(w, drinks_income);
+    F(w, held_staff);
+    F(w, editing_room);
+    F(w, held_staff_tile);
+    F(w, idle_nurses);
+    F(w, next_call_id);
+    F(w, litter_count);
+    F(w, mishaps);
+    F(w, machine_exploded);
+    L(w, machine_sounds);
+    L(w, machine_announcements);
+    L(w, epidemic_sounds);
+    L(w, cure_available);
+    L(w, ins_control);
+    L(w, room_of_type);
+    out += '\n';
+    dump_game_epidemic(out, w);
+    dump_game_mayor(out, w);
+    for (size_t i = 0; i < w.first_call.size(); i++) {
+        out += std::format("first_call {}", i);
+        list(out, "by_kind", w.first_call[i]);
+        out += '\n';
+    }
+    dump_game_popups(out, w);
 }
 
 // dump_game's statistics pass (World::counts).
@@ -759,6 +834,7 @@ void dump_game_counts(std::string &out, const World &w)
     F(c, max_machine_wear);
     F(c, worst_machine);
     F(c, has_patients);
+    F(c, last_quake_size);
     out += '\n';
 }
 
@@ -778,6 +854,14 @@ void dump_game_disasters(std::string &out, const Disasters &d)
     F(d, quake_severity);
     F(d, quake_pending);
     L(d, quake_used);
+    F(d, quake_timer);
+    F(d, quake_phase);
+    F(d, quake_strength);
+    F(d, quake_step_chance);
+    F(d, quake_amplitude);
+    F(d, quake_ramp);
+    F(d, quake_shake_index);
+    F(d, shake_seed);
     out += '\n';
     for (size_t i = 0; i < d.offers.size(); i++) {
         const Disasters::Offer &o = d.offers[i];
@@ -866,6 +950,11 @@ void dump_game_pagers(std::string &out, const World &w)
         out += std::format("repair_page {} id={} priority={} responder={} claimed_until={}\n", i, pg.id, pg.priority,
                            pg.responder, pg.claimed_until);
     }
+    for (size_t i = 0; i < w.plant_pager.count && i < w.plant_pager.pages.size(); i++) {
+        const World::ThingPage &pg = w.plant_pager.pages[i];
+        out += std::format("plant_page {} id={} priority={} responder={} claimed_until={}\n", i, pg.id, pg.priority,
+                           pg.responder, pg.claimed_until);
+    }
 }
 
 // dump_game's building and placing, and the pagers, calls and repair pages.
@@ -877,6 +966,7 @@ void dump_game_building(std::string &out, const World &w)
     out += std::format("build mouse={} door_invalid={} blueprint={},{}-{},{}", int(bd.mouse), bd.door_invalid, b.x0,
                        b.y0, b.x1, b.y1);
     F(b, room);
+    F(b, edit_room);
     F(b, room_type);
     F(b, drag);
     F(b, draw_mode);

@@ -6,6 +6,7 @@
 #include "core/world/complex_tables.h"
 #include "core/world/counts.h"
 #include "core/world/game.h"
+#include "core/world/icons.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
@@ -330,6 +331,7 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
     const Balance::Gbv &gbv = settings_of(world).gbv;
     switch (kind) {
     case 2:
+        reset_icon_value(w, kIconThirsty);
         w.refreshment = 100;
         w.happiness = uint16_t(w.happiness + gbv.drink_happy);
         add_litter_urge(w, 10);
@@ -350,6 +352,7 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
         break;
     case 6:
         trace_event("relieved %u bladder=%d", unsigned(id), int(w.bladder));
+        reset_icon_value(w, kIconToilet);
         w.happiness = uint16_t(w.happiness + gbv.toilet_happy);
         w.bladder = w.illness == kIllTheSquits ? int16_t(gbv.bowel_full / 2) : int16_t(0);
         w.impatience = 0;
@@ -1109,6 +1112,7 @@ void wait_in_queue(const Run &r, uint16_t id, bool entertaining)
     if (entertaining && (p.impatience > settings.gbv.leave_max || (p.person_flags & kPfSentHomeByInspector))) {
         if (p.owner == 0)
             world.patients_left_count++;
+        set_icon_value(r.anims, p, kIconFedUp);
         go_home(r, id);
         p.person_flags |= kPfFedUp;
         return;
@@ -1296,7 +1300,7 @@ void go_for_treatment(const Run &r, uint16_t id)
     Thing &p = world.things[id];
     trace_event("go_for_treatment %u treatment=%u", unsigned(id), unsigned(p.treatment));
     uint16_t treatment = p.treatment;
-    if (!shall_peep_pay(world, id))
+    if (!shall_peep_pay(world, r.anims, id))
         treatment = 0;
     uint8_t category = kExpertiseCategory[treatment];
     if (p.person_flags & kPfEmergency) {
@@ -1464,6 +1468,7 @@ void stuck(const Run &r, uint16_t id)
             p.impatience = 0;
             if (!(p.person_flags & kPfFedUp) && p.owner == 0)
                 world.patients_left_count++;
+            set_icon_value(r.anims, p, kIconFedUp);
             go_home(r, id);
             p.person_flags |= kPfFedUp;
             return;
@@ -1717,8 +1722,7 @@ bool someone_at_door(const World &world, const Thing &door)
             continue;
         for (int16_t i = world.map[size_t(cell)].first; i > 0; i = world.things[size_t(i)].cell_next) {
             uint8_t type = world.things[size_t(i)].type;
-            // The game also opens for the mayor and the inspector.
-            if (type == kThingPatient || type == kThingStaff)
+            if (type == kThingPatient || type == kThingStaff || type == kThingMayor || type == kThingInspector)
                 return true;
         }
     }
@@ -1895,6 +1899,18 @@ void interrupt_complex(World &world, const AnimData &anims, const PersonComplexe
         w.speed = kPeepSpeed;
         w.anim_speed = kPeepAnimSpeed;
     }
+}
+
+void interrupt_peep(World &world, uint16_t id)
+{
+    if (!world.game)
+        return;
+    uint32_t game_turn = world.game->turn_count;
+    const AnimData &anims = world.game->anims();
+    if (world.things[id].type == kThingStaff)
+        interrupt_staff(world, anims, id, game_turn);
+    else if (world.things[id].type == kThingPatient && world.person_complexes)
+        interrupt_person(world, anims, *world.person_complexes, id, game_turn);
 }
 
 void remove_person(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
@@ -2117,6 +2133,13 @@ void peep_bp_goto_turn(World &world, const AnimData &anims, uint16_t id, uint32_
     if (--peep.countdown <= 0 && !peep_bp_goto_step(world, anims, id))
         return;
     step_on(world, id);
+}
+
+void patient_abandon_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
+                             uint32_t game_turn)
+{
+    abandon_complex(Run{world, anims, complexes, game_turn}, id);
+    world.things[id].complex_action = 0;
 }
 
 } // namespace th

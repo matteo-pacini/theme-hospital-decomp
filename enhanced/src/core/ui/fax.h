@@ -22,11 +22,11 @@ namespace th
 // with its message and answer buttons and the machine's keypad. The game
 // runs on behind it. Its kinds are Game::choice_screen's (kFax*): the
 // emergency offered (accept, refused while an emergency runs, or refuse),
-// its result, a new illness, and a patient with no treatment (send home,
+// its result, a new illness, an epidemic found and its result, and a
+// patient with no treatment (send home,
 // wait, or the research department for an autopsy, once it can be done) or
 // no diagnosis (send home, guess the cure, once the illness is known and
-// curable, or wait); the epidemic's and the VIP's are not ported and show
-// nothing.
+// curable, or wait); the VIP's faxes are not ported and show nothing.
 struct Fax {
     // A fax is up, display_choice's state (0x5a drawing it, 0x5b up, 0x5c
     // closing), and what it is about (choice.value, choice_spare_data and
@@ -101,8 +101,10 @@ struct FaxKeys {
 // left button released on an answer runs its handler (the command, or
 // closing the fax) and on the keypad dials. A fax that may close itself
 // closes on Escape or Space, the keypad's close button or `timeout` turns
-// without the mouse moving. Nothing if no fax is open.
-FaxResult fax_frame(Fax &fax, const UiMouse &mouse, const FaxKeys &keys, double seconds, const Game &game,
+// without the mouse moving. An answer that carries out part of its handler
+// in the interface (a VIP's refusals in a row) updates `game`. Nothing if
+// no fax is open.
+FaxResult fax_frame(Fax &fax, const UiMouse &mouse, const FaxKeys &keys, double seconds, Game &game,
                     uint32_t &safeseed);
 
 // The fax's answer buttons as calculate_buttons lays them out: their

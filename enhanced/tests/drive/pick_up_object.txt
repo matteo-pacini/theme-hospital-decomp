@@ -1,0 +1,19 @@
+# Level 1: a bench put in the corridor and picked up again by a right click
+# (pick_up_object_right_click, EV_PICK_UP_OBJECT both 0): after placing it,
+# the right button lifts it and starts placing it again.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+expect interface: requester 10,
+click 328 100            # buy a bench (the second entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the bench
+wait 20
+dump placed
+expect placing: object false
+click-thing 30 right     # pick it up again
+wait 20
+dump picked
+expect placing: object true

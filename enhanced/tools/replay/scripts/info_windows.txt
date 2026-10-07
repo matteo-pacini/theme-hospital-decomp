@@ -116,6 +116,6 @@
 # inflator, guesses a cure; then 50, walking to a queue, guesses one and 5,
 # waiting, is sent home.
 12550 116 26 0
-12560 134 9 0
+12560 134 21 0
 12600 134 50 0
 12700 116 5 0

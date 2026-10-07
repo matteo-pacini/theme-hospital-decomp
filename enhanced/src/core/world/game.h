@@ -204,6 +204,8 @@ class Game
     const Balance &settings() const { return settings_; }
     int level_number() const { return level_number_; }
     const AnimData &anims() const { return *anims_; }
+    // The level's action sequences (start_rooms_in_use).
+    const PersonComplexes &person_complexes() const { return *complexes_; }
 
   private:
     friend bool save_snapshot(const Game &game, std::vector<uint8_t> &out);

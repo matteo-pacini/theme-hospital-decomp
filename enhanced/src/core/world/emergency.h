@@ -58,6 +58,21 @@ struct Disasters {
     uint8_t quake_severity = 0;
     bool quake_pending = false;
     std::array<uint8_t, 16> quake_used{};
+
+    // The earthquake running (gamevar.quake_*; quake.cpp): its phase 0-4, the
+    // strength it ramps to, the 1-in-chance each turn steps it, the amplitude
+    // so far, the ramp (+1 up, -1 down), the turn the phase ends and the
+    // shake index into the quake table.
+    uint32_t quake_timer = 0;
+    uint8_t quake_phase = 0;
+    uint8_t quake_strength = 0;
+    uint8_t quake_step_chance = 0;
+    int8_t quake_amplitude = 0;
+    int8_t quake_ramp = 0;
+    uint8_t quake_shake_index = 0;
+    // The presentation generator (the game's saferand, src/rand.cpp) the
+    // quake's shake index draws from; nothing simulation reads.
+    uint32_t shake_seed = kLevelStartSeed;
 };
 
 // Helicopter states (the game's HELI_*): coming down, waiting landed while
@@ -92,11 +107,11 @@ void setup_next_quake(Disasters &d, World &world, const Balance &settings, const
 // a thing landing a row below World::Emergency::heli_pad_tile, with its
 // shadow; state 3, or 0 with no free thing). Then, once the scheduled
 // emergency is due (check_emergency_criteria: the hospital open, no
-// epidemic call waiting, no emergency of its own, fewer than four offers
+// epidemic call or cover-up, no emergency of its own, fewer than four offers
 // outstanding), it is offered by a call (kCallEmergency, expiring after 20
 // days; setup_emergency_stats) if hospital 0 has discovered its illness,
 // and the next one is scheduled. Last, an accepted emergency's state above
-// 5 falls by one. Epidemics are not ported.
+// 5 falls by one.
 void try_to_generate_emergency(Game &game);
 
 // daily_admin's end of an emergency (src/finance.cpp): once its time is up

@@ -46,6 +46,10 @@ struct HireFixture {
         level = gd.load_level(1, &error);
         if (!level || !th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error))
             return false;
+        // These scripts fix the generator's sequence; a VIP visit would draw
+        // from it at day 150 and move every later seed. The VIPs' own
+        // scenarios are the replay check's (scripts/vip_*.txt).
+        settings.gbv.mayor_launch = 0xffff;
         // Game::start makes the first applicants, as the game does.
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
@@ -75,6 +79,10 @@ struct QueueFixture {
         if (!level || !th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error))
             return false;
         settings.gbv.open_countdown = 0;
+        // No VIP visit: it would draw from the generator at day 150 and move
+        // every later seed of these scripts (the replay check's vip_*.txt
+        // cover the VIPs).
+        settings.gbv.mayor_launch = 0xffff;
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
         th::start_queues(game->world, game->settings(), game->arrivals.hospitals[0], game->finance);

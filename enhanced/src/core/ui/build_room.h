@@ -22,6 +22,9 @@ struct BuildUi {
     // The map cell under the pointer this frame, -1 when the pointer is not
     // on the map.
     int cell = -1;
+    // The object (or the person using one) under the pointer that
+    // edit-room mode may pick up next (othervar.pickup_thing), 0 for none.
+    uint16_t pickup_thing = 0;
 };
 
 // Whether the panel refuses the build room, furnish corridor and hire staff
@@ -53,13 +56,18 @@ void build_requesters_input(Interface &ui, BuildUi &bui, Game &game, const Inter
                             const UiMouse &mouse);
 
 // The map's part of process_mouse for the build tool, every frame, with
-// `on_map` and `cell` as for placement_mouse (core/ui/buy_objects.h): laying
+// `on_map` and `cell` as for placement_mouse (core/ui/buy_objects.h) and
+// `pointed` the thing under the pointer (othervar.pointed_thing): laying
 // the blueprint out, a left press or drag reshapes it (EV_MODIFY_BLUEPRINT)
 // and no button updates its pointer and ends a drag (EV_HOVER_BLUEPRINT);
 // placing the door, a left click puts the door or a window where it is
 // shown and a right click takes a window out (EV_PLACE_BP_DOOR), no button
-// shows it nearest the pointer (EV_TEMP_PLACE_DOOR).
-void build_mouse(BuildUi &bui, Game &game, int cell, const UiMouse &mouse, bool on_map);
+// shows it nearest the pointer (EV_TEMP_PLACE_DOOR); in edit-room mode
+// (MM_EDIT_ROOM) a click picks up a corridor object (EV_PICK_UP_OBJECT) or
+// starts editing the room under the pointer (EV_INIT_EDIT_ROOM, through
+// clicked_for_edit), and in pick-up mode (MM_PICK_UP_OBJECT) a click lifts
+// one of the room's objects.
+void build_mouse(BuildUi &bui, Game &game, int cell, uint16_t pointed, const UiMouse &mouse, bool on_map);
 
 // After draw_interface, while the build room requester is open, its own
 // drawing (req10_overdraw): the instructions, the departments (the one

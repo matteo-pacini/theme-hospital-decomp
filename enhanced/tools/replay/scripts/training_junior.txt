@@ -1,0 +1,35 @@
+# Level 3: a training room with a projector and two lecture chairs, and a
+# staff room; a consultant (applicant 18, no trainable skill, so students
+# gain ability fastest) and a junior doctor (applicant 19), the policy's rest
+# at 50. The junior's ability passes the doctor threshold and, at a month's
+# end after 9000 turns served, it is promoted to a doctor (appraise_staff,
+# skill 8).
+101 55 0 0
+102 53 22 22
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 22 0
+110 7 9133 37
+111 7 8876 36
+112 7 9006 36
+113 1 0 0
+114 48 1 18
+115 5 9005 18
+116 48 1 19
+117 5 9007 19
+130 55 0 0
+131 53 25 25
+132 2 8882 0
+133 2 9398 0
+134 8 9398 0
+135 18 0 0
+136 26 8756 0
+137 3 0 0
+138 4 25 0
+139 7 9011 19
+140 1 0 0
+200 113 4 50

@@ -1,0 +1,26 @@
+# Level 1: three plants in the corridor, a reception desk and receptionist
+# Turns 7000
+# (so patients come and the advisor's plant advice may be given) and a
+# handyman, whose pages keep the plants watered. The advisor gives 0x5c
+# before the handyman is hired (plants and none), then 0x5a as the plants'
+# average condition crosses its bands (advisor_dead_plants). The original
+# writes the same `# advice` lines on the same turns (run th_replay
+# --advisor). Stopped at 7000 turns, before the first mayor's draw, so the
+# traces can be compared with generate_mayors skipped on the original.
+# Three plants, bought at once and placed before any other command.
+5 98 0 0
+6 37 45 3
+7 43 0 0
+8 7 9407 45
+12 7 9663 45
+16 7 9278 45
+# A reception desk and receptionist.
+20 98 0 0
+21 37 11 1
+22 43 0 0
+23 7 9534 11
+24 48 3 22
+25 5 9788 22
+# A handyman.
+30 48 2 20
+31 5 10044 20

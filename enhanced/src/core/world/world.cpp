@@ -189,6 +189,15 @@ uint16_t compute_plant_frame(const Thing &plant, const AnimData &anims)
     return uint16_t(f);
 }
 
+// A placed plant's sprite at its condition, and the advisor's count of the
+// player's plants (place_existing_object's switch on OBJ_PLANT).
+void on_plant_placed(World &w, Thing &obj, const AnimData &anims)
+{
+    obj.sprite = compute_plant_frame(obj, anims);
+    if (obj.owner == 0)
+        w.plants++;
+}
+
 // place_existing_object's insert_node: at the head of the cell's list.
 void place_existing_object_insert_node(World &w, uint16_t id, int tile)
 {
@@ -301,7 +310,7 @@ void place_existing_object(World &w, const AnimData &anims, uint16_t id, int til
         adjust_big_cell_flag(w, tile);
     }
     if (obj.subtype == kObjPlant)
-        obj.sprite = compute_plant_frame(obj, anims);
+        on_plant_placed(w, obj, anims);
 }
 
 // place_object (src/objects.cpp), `force` standing for
@@ -343,8 +352,16 @@ uint16_t place_object(World &w, const AnimData &anims, ObjectAt object, int owne
     obj.layers[10] = 0;
     obj.layers[11] = uint8_t(old_newrand(w.seed) & 3);
     obj.layers[12] = uint8_t(old_newrand(w.seed) & 3);
-    if (kind == kObjPlant)
+    if (kind == kObjPlant) {
         obj.plant_health = kPlantHealthy;
+        if (obj.owner == 0) {
+            w.plant_health_sum += 0x37;
+            if (w.plant_health_sum < 0)
+                w.plant_health_sum = 0;
+            else if (w.plants * 0x37 < w.plant_health_sum)
+                w.plant_health_sum = w.plants * 0x37;
+        }
+    }
     trace_event("place_object %u kind=%d tile=%d dir=%d owner=%d", unsigned(id), kind, tile, dir, owner);
     place_existing_object(w, anims, id, tile, dir);
     return id;
@@ -441,6 +458,9 @@ void start_level(World &world, const Level &level, const AnimData &anims, uint32
     world.held_staff = 0;
     world.held_staff_tile = 0;
     world.research = {};
+    world.plants = 0;
+    world.thirsty_plants = 0;
+    world.plant_health_sum = 0;
     world.seed = seed;
     build_start_map(world.map, level, [&](int cell) {
         world.map[size_t(cell)].first = level.tiles[size_t(cell)].first;

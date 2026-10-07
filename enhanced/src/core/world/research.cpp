@@ -210,7 +210,7 @@ void research_category_exhausted(World &world, uint8_t category)
     trace_event("category_exhausted %u", unsigned(category));
     hospital_of(world).research_alloc[category] = -1;
     announce_this(world, kAnnCategoryDone, category);
-    world.research.exhausted = 1;
+    world.research.exhausted++;
 }
 
 // do_research's work for one category with `amount` points; false if it
@@ -270,6 +270,14 @@ void announce_this(World &world, uint8_t kind, uint32_t value)
         if (slot == value)
             break;
     }
+}
+
+void done_announcement(World &world, uint8_t kind)
+{
+    std::array<uint32_t, 4> &queue = world.announce[kind % kAnnounceKinds];
+    for (size_t i = 0; i + 1 < queue.size(); i++)
+        queue[i] = queue[i + 1];
+    queue.back() = 0;
 }
 
 bool equipment_available(const World &world, int kind)

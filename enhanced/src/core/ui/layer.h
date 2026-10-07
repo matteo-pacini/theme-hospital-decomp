@@ -36,6 +36,12 @@ class UiLayer
     // Fills `r` with `colour` and marks it drawn.
     void fill(Rect r, uint8_t colour);
 
+    // Fills `r` with black drawn at opacity `alpha` (0-255): the layer's
+    // pixels stay transparent where nothing is drawn, so a ghost blend has no
+    // backdrop to mix into; a translucent black over what is behind the layer
+    // gives the same result.
+    void shadow(Rect r, uint8_t alpha);
+
     // The indexed pixels, for drawing that needs more than the above; mark
     // what it draws with mark().
     Surface &pixels() { return pixels_; }
@@ -46,7 +52,7 @@ class UiLayer
 
   private:
     Surface pixels_;
-    Surface drawn_; // nonzero where something was drawn
+    Surface drawn_; // the opacity drawn at each pixel (0 transparent, 255 opaque)
 };
 
 // The mouse as the interface sees it, in a layer's coordinates (the game's

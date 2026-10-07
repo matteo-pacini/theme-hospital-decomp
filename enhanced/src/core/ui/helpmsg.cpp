@@ -152,6 +152,8 @@ uint8_t requester_help_group(Requester requester)
         return 0xc; // req4, a handyman
     case Requester::EditRoom:
         return 0xd; // req14
+    case Requester::Queue:
+        return 7; // req7
     case Requester::Jukebox:
         return 0x14; // req6
     default:
@@ -424,6 +426,14 @@ bool HelpSystem::update_close_hover(int mouse_x, int mouse_y)
     bool was = box_.close_hover;
     box_.close_hover = over;
     return over && !was;
+}
+
+std::array<Rect, 2> HelpSystem::page_shadow_rects() const
+{
+    if (box_.style != 2)
+        return {};
+    return {Rect{box_.x + box_.w, box_.y + kPageMargin, kPageMargin, box_.h},
+            Rect{box_.x + kPageMargin, box_.y + box_.h, box_.w - kPageMargin, kPageMargin}};
 }
 
 void HelpSystem::draw_page_frame(Surface &dst, uint8_t black)

@@ -1,0 +1,26 @@
+# Level 1: a GP's office (62,65)-(66,69) with its door, desk, cabinet and
+# chair, built and opened with a plant (kind 45) at cell 8383, and a
+# handyman (applicant 20) at cell 10044. The plant is in the room, so the
+# handyman takes its pages through the room's door (handyman_works substate
+# 4) before watering it (5 and 6). Compare up to turn 18000 (no year's end).
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet, chair and the plant (arg: kind | facing << 8); opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 7 8383 45
+114 1 0 0
+# The handyman: hire applicant 20, place at cell 10044.
+116 48 2 20
+117 5 10044 20

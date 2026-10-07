@@ -1,0 +1,21 @@
+# Level 1: an inflation room (62,65)-(66,69) with its door and inflator built
+# and opened, then edited as a finished room (EV_INIT_EDIT_ROOM): its
+# inflator lifted (EV_PICK_UP_OBJECT both 1) and put back, and the room
+# opened again.
+101 55 0 0
+102 32 5 0
+103 53 17 17
+104 2 8382 0
+105 2 8898 0
+106 8 8898 0
+107 18 0 0
+108 26 8256 0
+109 3 0 0
+110 4 17 0
+111 7 8640 9
+112 1 0 0
+120 70 5 0
+121 68 31 1
+122 43 0 0
+123 7 8640 9
+124 1 0 0

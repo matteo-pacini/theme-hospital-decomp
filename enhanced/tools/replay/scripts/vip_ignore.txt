@@ -1,0 +1,10 @@
+# Level 1: reception.txt with the VIP's first offer left unanswered, so that
+# expire_playercalls accepts it after 20 days and the visit runs to its end.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22

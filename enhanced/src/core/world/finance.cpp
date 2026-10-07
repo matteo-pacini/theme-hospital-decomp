@@ -136,7 +136,7 @@ void month_end(Finance &f, int32_t &balance, World &world, const Balance &settin
         if (t.type == kThingStaff && t.state != kStaffApplicant) {
             if (t.owner == 0)
                 wages += t.salary;
-            appraise_staff(t, settings);
+            appraise_staff(world, t, settings, figures.game_turn, figures.anims);
         }
     }
     count_hospital_area(f, world);

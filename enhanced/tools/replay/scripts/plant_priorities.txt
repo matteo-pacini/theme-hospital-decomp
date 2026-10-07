@@ -1,0 +1,15 @@
+# Level 1: plant_watered.txt with the handyman's plants priority raised
+# twice (EV_ADJUST_HANDYMAN_VALUES 115, button 30 plants) and his litter
+# priority once (button 29), before the plant wilts: the job he picks and
+# the pages he answers still match. Compare up to turn 18000 (no year's
+# end).
+5 98 0 0
+6 37 45 1
+7 43 0 0
+8 7 9407 45
+10 48 2 20
+11 5 10044 20
+# Plants up twice, then litter once.
+20 115 20 30
+21 115 20 30
+22 115 20 29

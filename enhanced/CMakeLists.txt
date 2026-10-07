@@ -10,11 +10,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Release builds leave it empty and rely on the runtime search (see
 # src/app/datadir.cpp).
 set(TH_DEV_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../orig" CACHE PATH
-    "Game data folder a development build reads first (empty to disable)")
+                    "Game data folder a development build reads first (empty to disable)")
 
 include(cmake/deps.cmake)
 
-if(MSVC)
+if (MSVC)
   set(TH_WARNINGS /W4)
 else()
   set(TH_WARNINGS -Wall -Wextra -Wpedantic)
@@ -54,8 +54,11 @@ add_library(th_core STATIC
   src/core/ui/jukebox.cpp
   src/core/ui/layer.cpp
   src/core/ui/menubar.cpp
+  src/core/ui/panel_info.cpp
   src/core/ui/popups.cpp
+  src/core/ui/queue_window.cpp
   src/core/ui/startup.cpp
+  src/core/ui/staff_demand.cpp
   src/core/ui/town_map.cpp
   src/core/ui/windows.cpp
   src/core/ui/yearend.cpp
@@ -68,12 +71,16 @@ add_library(th_core STATIC
   src/core/world/debug_dump.cpp
   src/core/world/disaster.cpp
   src/core/world/emergency.cpp
+  src/core/world/epidemic.cpp
   src/core/world/finance.cpp
   src/core/world/game.cpp
+  src/core/world/icons.cpp
   src/core/world/litter.cpp
+  src/core/world/mayor.cpp
   src/core/world/nav.cpp
   src/core/world/objects.cpp
   src/core/world/popups.cpp
+  src/core/world/quake.cpp
   src/core/world/queue.cpp
   src/core/world/reaper.cpp
   src/core/world/reception.cpp
@@ -84,9 +91,10 @@ add_library(th_core STATIC
   src/core/world/staff.cpp
   src/core/world/staff_complex.cpp
   src/core/world/trace.cpp
+  src/core/world/training.cpp
+  src/core/world/vaccine.cpp
   src/core/world/world.cpp
-  src/core/world/year_end.cpp
-)
+  src/core/world/year_end.cpp)
 # The snapshot build id (src/core/world/snapshot.h): a hash of the headers of
 # what a snapshot holds and of its code, regenerated when they change.
 set(TH_SNAPSHOT_SOURCES
@@ -130,11 +138,10 @@ add_executable(th_enhanced
   src/app/drive.cpp
   src/app/settings.cpp
   src/app/ui/nav_tool.cpp
-  src/app/ui/tools.cpp
-)
+  src/app/ui/tools.cpp)
 target_link_libraries(th_enhanced PRIVATE th_core th_imgui SDL3::SDL3)
 target_compile_options(th_enhanced PRIVATE ${TH_WARNINGS})
-if(TH_DEV_DATA_DIR)
+if (TH_DEV_DATA_DIR)
   target_compile_definitions(th_enhanced PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
 endif()
 
@@ -142,12 +149,12 @@ endif()
 add_executable(th_replay tools/replay/main.cpp)
 target_link_libraries(th_replay PRIVATE th_core)
 target_compile_options(th_replay PRIVATE ${TH_WARNINGS})
-if(TH_DEV_DATA_DIR)
+if (TH_DEV_DATA_DIR)
   target_compile_definitions(th_replay PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
 endif()
 
 include(CTest)
-if(BUILD_TESTING)
+if (BUILD_TESTING)
   add_executable(th_tests
     tests/main.cpp
     tests/common.cpp
@@ -155,11 +162,14 @@ if(BUILD_TESTING)
     tests/data.cpp
     tests/drive.cpp
     src/app/drive.cpp
+    tests/epidemic.cpp
     tests/game.cpp
     tests/help.cpp
     tests/help_callbacks.cpp
     tests/help_screens.cpp
+    tests/icons.cpp
     tests/nav.cpp
+    tests/panel_info.cpp
     tests/patients.cpp
     tests/render.cpp
     tests/replay.cpp
@@ -167,15 +177,13 @@ if(BUILD_TESTING)
     tests/rooms.cpp
     tests/sim_yearend.cpp
     tests/staff.cpp
+    tests/staff_demand.cpp
     tests/ui.cpp
-    tests/yearend.cpp
-  )
+    tests/yearend.cpp)
   target_link_libraries(th_tests PRIVATE th_core)
   target_compile_options(th_tests PRIVATE ${TH_WARNINGS})
   # Tests that need the game data are skipped when TH_TEST_DATA_DIR is unset
   # or missing.
   add_test(NAME th_tests COMMAND th_tests)
-  set_tests_properties(th_tests PROPERTIES
-    ENVIRONMENT "TH_TEST_DATA_DIR=${TH_DEV_DATA_DIR}"
-    SKIP_RETURN_CODE 77)
+  set_tests_properties(th_tests PROPERTIES ENVIRONMENT "TH_TEST_DATA_DIR=${TH_DEV_DATA_DIR}" SKIP_RETURN_CODE 77)
 endif()

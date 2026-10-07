@@ -26,6 +26,7 @@
 #include "core/world/arrivals.h"
 #include "core/world/events.h"
 #include "core/world/finance.h"
+#include "core/world/mayor.h"
 #include "core/world/popups.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
@@ -1063,7 +1064,7 @@ struct InfoFixture {
 
     th::InfoWindowResult frame(const th::InterfaceEvents &ev, const th::UiMouse &m = {})
     {
-        return th::info_window_frame(info, ui, ev, m, world(), scroll);
+        return th::info_window_frame(info, ui, ev, m, {world(), f.gd.text(), scroll, f.game->balance});
     }
 
     void draw_windows() { th::draw_info_windows(layer, info, ui, {art, hire_art, f.gd.text()}, world(), 0xc8); }
@@ -1408,7 +1409,7 @@ namespace
 {
 
 // A left click at `at` on the fax: pressed, then released a game frame on.
-th::FaxResult fax_click(th::Fax &fax, const th::Game &g, uint32_t &safeseed, th::Point at)
+th::FaxResult fax_click(th::Fax &fax, th::Game &g, uint32_t &safeseed, th::Point at)
 {
     th::UiMouse m;
     m.x = at.x;
@@ -1420,7 +1421,7 @@ th::FaxResult fax_click(th::Fax &fax, const th::Game &g, uint32_t &safeseed, th:
     return th::fax_frame(fax, m, {}, 0.04, g, safeseed);
 }
 
-th::FaxResult fax_answer(th::Fax &fax, const th::Game &g, uint32_t &safeseed, size_t button)
+th::FaxResult fax_answer(th::Fax &fax, th::Game &g, uint32_t &safeseed, size_t button)
 {
     th::Rect b = th::fax_answer_buttons(fax)[button];
     return fax_click(fax, g, safeseed, {b.x + b.w / 2, b.y + b.h / 2});
@@ -1432,7 +1433,7 @@ bool has_sound(const th::FaxResult &r, uint8_t sfx)
 }
 
 // The fax opened for `choice`: its first frame, which draws it.
-th::FaxResult fax_open(th::Fax &fax, const th::Game &g, uint32_t &safeseed, th::Game::ChoiceScreen choice)
+th::FaxResult fax_open(th::Fax &fax, th::Game &g, uint32_t &safeseed, th::Game::ChoiceScreen choice)
 {
     th::display_choice_screen(fax, choice);
     return th::fax_frame(fax, {}, {}, 0.04, g, safeseed);
@@ -1531,6 +1532,33 @@ void check_fax_keypad(th::Fax &fax, th::Game &g, uint32_t &safeseed, uint16_t pa
     CHECK(!fax.open);
 }
 
+// A VIP's offer: accepting, refusing, and the acceptance that overwrites a
+// refusal after more than five refusals in a row while the turn's random
+// percentage is below 10 (process_mayor_start_buttons); the report closes by
+// its one button.
+void check_fax_vip(th::Fax &fax, th::Game &g, uint32_t &safeseed)
+{
+    g.world.mayor.postponed = 0;
+    g.world.rand_pct = 10;
+    fax_open(fax, g, safeseed, {th::kFaxVip, 0, 0});
+    CHECK(fax.buttons.size() == 2);
+    th::FaxResult r = fax_answer(fax, g, safeseed, 0);
+    CHECK(r.event.value == th::kChoiceVipAccept && g.world.mayor.postponed == 0);
+    fax_open(fax, g, safeseed, {th::kFaxVip, 0, 0});
+    r = fax_answer(fax, g, safeseed, 1);
+    CHECK(r.event.value == th::kChoiceVipRefuse && g.world.mayor.postponed == 1);
+    // The sixth refusal with the turn's draw below 10 is accepted instead.
+    g.world.mayor.postponed = 5;
+    g.world.rand_pct = 9;
+    fax_open(fax, g, safeseed, {th::kFaxVip, 0, 0});
+    r = fax_answer(fax, g, safeseed, 1);
+    CHECK(r.event.value == th::kChoiceVipAccept && g.world.mayor.postponed == 0);
+    fax_open(fax, g, safeseed, {th::kFaxVipResult, 0, 400});
+    CHECK(fax.buttons.size() == 1);
+    r = fax_answer(fax, g, safeseed, 0);
+    CHECK(r.event.type == th::EV_NONE && !fax.open);
+}
+
 } // namespace
 
 // The fax for each kind of call: its message and buttons, each button's
@@ -1552,6 +1580,7 @@ void test_fax(const char *dir)
         if (g.world.things[i].type == th::kThingFree)
             patient = i;
     check_fax_emergency(fax, g, safeseed, f.gd.text());
+    check_fax_vip(fax, g, safeseed);
     check_fax_patient(fax, g, safeseed, patient);
     check_fax_closing(fax, g, safeseed);
     check_fax_keypad(fax, g, safeseed, patient);

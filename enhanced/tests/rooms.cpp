@@ -17,6 +17,7 @@
 #include "core/world/events.h"
 #include "core/world/finance.h"
 #include "core/world/objects.h"
+#include "core/world/quake.h"
 #include "core/world/queue.h"
 #include "core/world/reaper.h"
 #include "core/world/rooms.h"
@@ -766,13 +767,13 @@ struct BuildFixture {
     {
         th::UiMouse d;
         d.left_pressed = d.left_held = true;
-        th::build_mouse(bui, *game, from_x + from_y * th::kMapSize, d, true);
+        th::build_mouse(bui, *game, from_x + from_y * th::kMapSize, 0, d, true);
         run_build_command(*game);
         d = {};
         d.left_held = true;
-        th::build_mouse(bui, *game, to_x + to_y * th::kMapSize, d, true);
+        th::build_mouse(bui, *game, to_x + to_y * th::kMapSize, 0, d, true);
         run_build_command(*game);
-        th::build_mouse(bui, *game, to_x + to_y * th::kMapSize, {}, true);
+        th::build_mouse(bui, *game, to_x + to_y * th::kMapSize, 0, {}, true);
         run_build_command(*game);
     }
 
@@ -924,7 +925,7 @@ void check_blueprint_dragged(BuildFixture &t)
     view.fill(0);
     th::Point centre = th::cell_to_world(x0 + 2, y0 + 2);
     th::Point camera = {centre.x - 320, centre.y - 240};
-    th::build_mouse(t.bui, *t.game, x0 + 2 + (y0 + 2) * th::kMapSize, {}, true);
+    th::build_mouse(t.bui, *t.game, x0 + 2 + (y0 + 2) * th::kMapSize, 0, {}, true);
     run_build_command(*t.game);
     th::draw_build_overlay({view, {0, 0, 640, 480}, camera}, *t.game, t.bui, t.oui, t.gd);
     int lit = 0;
@@ -966,13 +967,13 @@ void check_door_placed(BuildFixture &t)
     const th::RoomInfo &room = t.room();
     const int door_cell = t.door_cell;
     t.bui.prev_cell = door_cell - th::kMapSize;
-    th::build_mouse(t.bui, game, door_cell - th::kMapSize, {}, true);
+    th::build_mouse(t.bui, game, door_cell - th::kMapSize, 0, {}, true);
     CHECK(game.event.type == th::EV_TEMP_PLACE_DOOR);
     run_build_command(game);
     CHECK(bd.door_shown && !bd.door_invalid && b.door_tile == door_cell && b.door_type == 4);
     th::UiMouse click;
     click.left_pressed = click.left_held = true;
-    th::build_mouse(t.bui, game, door_cell - th::kMapSize, click, true);
+    th::build_mouse(t.bui, game, door_cell - th::kMapSize, 0, click, true);
     run_build_command(game);
     CHECK(t.placing().requester_mode == 4 && b.door_kind == 2 && th::find_small_thing(world, door_cell) == 4);
     CHECK(room.door_tile == door_cell - th::kMapSize && room.door_inside_tile == door_cell);
@@ -1433,6 +1434,10 @@ struct ScriptedGame {
         th::Balance settings;
         if (!level || !th::load_balance(dir, level_number, th::kDefaultBalanceId, settings, &error))
             return false;
+        // No VIP visit: it would draw from the generator at day 150 and move
+        // every later seed of these scripts (the replay check's vip_*.txt
+        // cover the VIPs).
+        settings.gbv.mayor_launch = 0xffff;
         game = std::make_unique<th::Game>();
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, level_number, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
@@ -2259,4 +2264,36 @@ void test_machine_replace_level6(const char *dir)
     CHECK(machine.smoke == (std::array<uint8_t, 3>{}) && w.repair_pager.count == 0);
     CHECK(s.run_to(18000, [] {}));
     CHECK(w.seed == 0x621e65cf);
+}
+
+// generate_quake's do_earthquake: a quake at its peak wears every machine by
+// its severity (Disasters::quake_severity) and hands one past 75% of its
+// strength to modify_machine.
+void test_do_earthquake_level6(const char *dir)
+{
+    ScriptedGame s;
+    CHECK(s.start(dir, 6, cardiogram_without_handyman()));
+    if (!s.game)
+        return;
+    th::Game &g = *s.game;
+    th::World &w = g.world;
+    CHECK(s.run_to(1000, [] {}));
+    th::Thing &machine = w.things[kCardiogram];
+    CHECK(machine.type == th::kThingObject && machine.strength > 0);
+    machine.times_used = machine.strength * 75 / 100 - 1;
+    g.disasters.quake_severity = 6;
+    g.disasters.quake_phase = 3;
+    g.disasters.quake_strength = 16;
+    g.disasters.quake_amplitude = 16;
+    g.disasters.quake_timer = g.turn_count + 100;
+    th::EventLog log;
+    th::EventScope scope(&log, g.turn_count + 1);
+    th::generate_quake(g);
+    CHECK(g.disasters.quake_phase == 4);
+    CHECK(machine.times_used == machine.strength * 75 / 100 + 5);
+    int modified = 0;
+    for (const th::TraceEvent &e : log.events)
+        modified += e.text.starts_with("modify_machine ") &&
+                    e.text.find(" " + std::to_string(kCardiogram) + " ") != std::string::npos;
+    CHECK(modified == 1);
 }

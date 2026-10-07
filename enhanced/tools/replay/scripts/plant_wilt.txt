@@ -1,0 +1,10 @@
+# Level 1: furnish the corridor, buy a plant and place it at cell 9407,
+# with no handyman: it ages, wilts a stage every 80 points and pages a
+# handyman at each stage (none is there to answer), and once 40 past dead
+# pages again and starts over. Compare up to turn 18000 (no year's end).
+# A plant is object kind 45; the corridor requester is open command 98, buy
+# 37, place next 43, place 7 (cell | kind << 8).
+5 98 0 0
+6 37 45 1
+7 43 0 0
+8 7 9407 45

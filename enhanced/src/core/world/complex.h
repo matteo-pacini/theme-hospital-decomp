@@ -90,6 +90,11 @@ bool load_person_complexes(const std::filesystem::path &dir, PersonComplexes &ou
 // The caller then runs its first step (process_person_complex) if wanted.
 bool set_complex(World &world, uint16_t id, uint16_t action, uint16_t arg);
 
+// abandon_complex (0x41f84) for patient `id`, when pick_up_object takes the
+// object it uses: it runs the abandon complex and clears its action.
+void patient_abandon_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
+                             uint32_t game_turn);
+
 // process_person_complex (0x40524): runs the step of patient `id`'s complex
 // at complex_pc and moves on, starting the queued complex or entering
 // next_state at its end; chained steps run at once. Returns 1 after a step,
@@ -180,6 +185,12 @@ bool person_ok_to_call(const World &world, uint16_t id);
 // new patient's speed.
 void interrupt_complex(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                        uint32_t game_turn);
+
+// interrupt_peep (src/complex.cpp, 0x1?): the person `id` using an object
+// taken off the map is interrupted (interrupt_staff or interrupt_person). The
+// game's interrupt_peep has no context; the port reads it from world.game,
+// doing nothing without it.
+void interrupt_peep(World &world, uint16_t id);
 
 // remove_person (0x16760): takes patient `id` off the map and frees its
 // entry: leaves its queue, abandons its complex (abandon_complex) and its

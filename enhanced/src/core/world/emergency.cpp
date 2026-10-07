@@ -3,8 +3,10 @@
 #include "core/ui/charts.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
+#include "core/world/epidemic.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
+#include "core/world/icons.h"
 #include "core/world/nav.h"
 #include "core/world/patient_tables.h"
 #include "core/world/popups.h"
@@ -45,13 +47,14 @@ uint32_t month_of(const Date &date)
 }
 
 // check_emergency_criteria (0xaf118) for a one-player game. The epidemic
-// fax being shown and epidemics running are not ported.
+// fax being shown is the interface's; an epidemic running counts.
 bool check_emergency_criteria(const Disasters &d, const World &world, const Balance &settings, bool open,
                               uint32_t game_turn)
 {
     if (game_turn < d.next_emergency_turn || !d.emergency_pending)
         return false;
-    if (check_playercall(world, kCallEpidemic, 0, 0) || world.emergency.state != 0 || !open)
+    if (check_playercall(world, kCallEpidemic, 0, 0) || world.epidemic.active != 0 || world.emergency.state != 0 ||
+        !open)
         return false;
     return !settings.illness_kinds.empty() && d.emergencies_active < 4;
 }
@@ -326,7 +329,7 @@ void create_a_peep_emergency(World &world, ArrivalState &state, const PeepSetup 
         Thing &p = world.things[id];
         p.known_illness = p.illness;
         p.treatment = p.known_illness;
-        if (shall_peep_pay(world, id))
+        if (shall_peep_pay(world, setup.anims, id))
             pay_for_treatment(world, id, 3);
         else
             p.treatment = 0;
@@ -334,6 +337,7 @@ void create_a_peep_emergency(World &world, ArrivalState &state, const PeepSetup 
         p.speed = kPeepSpeed;
         p.anim_speed = kPeepAnimSpeed;
         p.person_flags |= kPfEmergency;
+        set_icon_value(setup.anims, p, kIconEmergency);
         state.hospitals[0].visitors++;
         state.hospitals[0].month_visitors++;
     }
@@ -353,8 +357,10 @@ bool modify_person_emergency(World &world, const AnimData &anims, uint16_t id, u
         trace_event("emergency_dies %u", unsigned(id));
         change_health(world, anims, id, -1000, game_turn);
         p.person_flags &= ~kPfEmergency;
+        reset_icon_value(p, kIconEmergency);
         return true;
     }
+    set_icon_value(anims, p, kIconEmergency);
     if (p.health_delta)
         change_health(world, anims, id, 0, game_turn);
     return true;
@@ -386,9 +392,17 @@ bool apply_emergency_event(Game &game, const Event &event)
         }
         if (event.value != kCallEmergencyOver)
             return false;
-        if (get_playercall(world, kCallEmergencyOver, 0, 0) == 1) {
-            world.emergency.state = 0;
-            game.choice_screen = {kFaxEmergencyOver, 0, 400};
+        {
+            uint16_t subject = get_playercall(world, kCallEmergencyOver, 0, 0);
+            if (subject == 1) {
+                world.emergency.state = 0;
+                game.choice_screen = {kFaxEmergencyOver, 0, 400};
+            } else if (subject == 2) {
+                world.mayor.state = 0;
+                game.choice_screen = {kFaxVipResult, 0, 400};
+            } else if (subject == 3) {
+                epidemic_over_result(game);
+            }
         }
         return true;
     case EV_CHOICE_RESULT:

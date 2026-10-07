@@ -12,6 +12,7 @@
 #include "core/world/events.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
+#include "core/world/research.h"
 #include "core/world/staff.h"
 #include "core/world/world.h"
 
@@ -60,6 +61,28 @@ void test_game_clock(const char *dir)
     uint32_t turns = game->turn_count;
     game->turn();
     CHECK(game->turn_count == turns);
+}
+
+// The panel's watch, clicked while the countdown runs: process_turn's
+// EV_OPEN_HOSPITAL opens the hospital at once, its command in command_log.
+void test_open_hospital(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    th::Game game;
+    game.start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    CHECK(!game.open && game.opening_countdown == settings.gbv.open_countdown);
+
+    game.event = {th::EV_OPEN_HOSPITAL};
+    game.process_turn();
+    CHECK(game.open && game.opening_countdown == 0);
+    CHECK(!game.command_log.empty() && game.command_log.back().ends_with("139 0 0"));
 }
 
 namespace
@@ -524,6 +547,77 @@ void check_advice_hospital(AdvisorFixture &a)
     CHECK(said == text.advisor(0x5e) && a.f.game->world.counts.crackups == 0);
 }
 
+// The advice about the research announcements: each names what was found,
+// and the announcement is dropped once said.
+void check_advice_announcements(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    auto names = [&](th::TextSection section, int value) { return text.at(section, value); };
+
+    w.announce = {};
+    w.announce[th::kAnnObjectResearched][0] = 20;
+    CHECK(first_advice(a, calm, &said) == 0x17);
+    CHECK(said.find(names(th::TextSection::ObjectNames, 20)) != std::string::npos);
+    CHECK(w.announce[th::kAnnObjectResearched][0] == 0);
+
+    w.announce[th::kAnnNewDrug][0] = 5;
+    CHECK(first_advice(a, calm, &said) == 0x18);
+    CHECK(said.find(names(th::TextSection::Illness, 5)) != std::string::npos);
+    CHECK(w.announce[th::kAnnNewDrug][0] == 0);
+
+    w.announce[th::kAnnDrugImproved][0] = 6;
+    CHECK(first_advice(a, calm, &said) == 0x19);
+    CHECK(said.find(names(th::TextSection::Illness, 6)) != std::string::npos);
+
+    w.announce[th::kAnnObjectImproved][0] = 30;
+    CHECK(first_advice(a, calm, &said) == 0x1a);
+    CHECK(said.find(names(th::TextSection::ObjectNames, 30)) != std::string::npos);
+
+    w.announce[th::kAnnObjectAvailable][0] = 31;
+    CHECK(first_advice(a, calm, &said) == 0x1b);
+    CHECK(said.find(names(th::TextSection::ObjectNames, 31)) != std::string::npos);
+
+    w.announce[th::kAnnCategoryDone][0] = 2;
+    CHECK(first_advice(a, calm, &said) == 0x79);
+    CHECK(said.find(names(th::TextSection::ResearchNames, 2)) != std::string::npos);
+    CHECK(w.announce[th::kAnnCategoryDone][0] == 0);
+}
+
+// The advice about the plants' condition: a middling one with one handyman
+// speaks the plant message; a very poor one with two speaks the two-handymen
+// warning.
+void check_advice_plants(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    th::Thing &h = w.things[3];
+    h = {};
+    h.type = th::kThingStaff;
+    h.subtype = th::kStaffHandyman;
+    h.owner = 0;
+    h.state = th::kStaffWanders;
+    auto plants = [](th::World &w, th::AdCounts &c) {
+        calm_patients(c, 12);
+        w.plants = 3;
+        w.plant_health_sum = 90; // 0x190000 * 90 / 3 is in the 0x5a band
+    };
+    CHECK(first_advice(a, plants, &said) == 0x5a);
+    CHECK(said == text.advisor(0x5a));
+
+    w.things[4] = h;
+    auto dying = [](th::World &w, th::AdCounts &c) {
+        calm_patients(c, 12);
+        w.plants = 3;
+        w.plant_health_sum = 0;
+    };
+    CHECK(first_advice(a, dying, &said) == 0x5a);
+    CHECK(said == text.at(th::TextSection::ExtraAdvice, 0x28));
+}
+
 } // namespace
 
 // The advice of the statistics pass (World::counts) and of what the
@@ -536,4 +630,6 @@ void test_advisor_counts(const char *dir)
         return;
     check_advice_patients(a);
     check_advice_hospital(a);
+    check_advice_announcements(a);
+    check_advice_plants(a);
 }

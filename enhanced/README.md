@@ -138,7 +138,7 @@ Milestone 4 so far, the game's interface:
   cracked walls left), the staff in it killed and its patients dying, the
   room destroyed and its queue sent elsewhere, the reputation lost; and the
   machine window's commands, replace (EV_REPLACE_MACHINE 0x8a) and call a
-  handyman (EV_THINGPAGE_REQUEST 0x76); the window itself is not there yet.
+  handyman (EV_THINGPAGE_REQUEST 0x76).
 
 - research: researchers at work in the research room (the computer, the
   atom analyser, desks and cabinets), their points, back to research after
@@ -147,15 +147,33 @@ Milestone 4 so far, the game's interface:
   better drugs and machine upgrades (stronger, cheaper machines), a
   category running out and closing; objects becoming available in their
   month; what is researched offered in the build and buy requesters; the
-  research screen's bars; the advisor's announcements queued (not yet
-  spoken). The slack tongue slicer cures; the hair restorer, fracture
+  research screen's bars; the advisor's announcements spoken. The slack
+  tongue slicer cures; the hair restorer, fracture
   clinic, electrolysis, jelly vat and decontamination rooms work as the
   slicer's but are not checked against the game yet.
 
-Not yet: autopsies, the DNA fixer, the operating theatre,
-the year's end awards and trophies, earthquakes and editing rooms, epidemics
-and VIPs (and their faxes), and the staff's demands (answering a
-resignation's call opens nothing).
+- the operating theatre: two surgeons taking turns at its screen, its
+  operating table, lamp, sinks and X-ray viewer, the operation itself, and
+  the ward and diagnosis its patients need;
+- the training room: a consultant starting the projector, lecturing and
+  teaching from the bookcase and skeleton, students on its lecture chairs
+  gaining ability and the surgeon, psychiatrist and researcher skills, and
+  their breaks and return;
+- editing a finished room and picking up objects: a room reselected, its
+  objects lifted, put back or sold and reopened;
+- the machine window (name, patients seen, strength, close, replace and call
+  a handyman) and the queue window (its capacity, front, back, go home, go to
+  reception and to another queue);
+- epidemics: a contagious patient, the call declared or covered up (a fine
+  or a reward), the inspector, vaccinations and the epidemic's end;
+- VIP visits and earthquakes: the VIP's visit and verdict, and the
+  earthquake's tremor and damage;
+- the staff's pay-raise demands (raised and bonused, or refused), the status
+  icons over people and machines, the panel's information bar under the
+  pointer, plants wilting, watering and dying with the handyman's priorities,
+  and the panel watch's open-hospital button.
+
+Not yet: autopsies and the DNA fixer.
 Route planning defaults to A*; the game's wall following stays selectable
 in the tools window.
 
@@ -305,11 +323,48 @@ the skill leaving the research room; and the rooms research makes
 available, built once researched and in use: `xray.txt` (level 3, its
 doctor picked up and put back to work), `slack_tongue.txt` (level 3,
 curing), `scanner.txt` (level 4), `blood_machine.txt` and `ultrascan.txt`
-(level 8)), compared with SKIP `computer_action,manage_rats,generate_disaster,generate_mayors`:
+(level 8), and the training room: `training.txt` (level 6, a consultant and a
+doctor, a bookcase and a skeleton, the lectures, the doctor's rests and
+returns to training), `training_walk.txt` (level 6, three doctors and one
+lecture chair, so one walks the room at random), `training_leave.txt` (level
+6, a second consultant into the held room, leave-room orders and the room
+edited under the consultant), `training_two_rooms.txt` (level 6, two training
+rooms, the breaks and returns choosing between them), `training_surgeon.txt`
+and `training_psych.txt` (level 6, the surgeon, then the researcher and
+psychiatrist skills gained from lectures) and `training_junior.txt` (level 3,
+a junior promoted to doctor at a month's end) and `training_appraise.txt`
+(level 6, a doctor and a junior trained until, at a month's end, the doctor
+is promoted to consultant)); and the VIPs' visits and earthquakes:
+`vip_accept.txt`, `vip_refuse.txt`, `vip_ignore.txt` (level 1,
+`reception.txt`'s desk with the
+first offer answered accept or refuse, or left to expire, the visit run to
+its end and its report answered), `vip_tour.txt` (level 1, `gp_office.txt`'s
+room toured), `vip_verdict14.txt` (level 1, the desk lifted before the VIP
+arrives) and `quake_basic.txt` (level 7, its scheduled earthquake); editing a
+room and picking up objects: `edit_room.txt` (level 1, an inflation room
+edited, its inflator lifted and put back), `edit_room_cancel.txt`,
+`edit_room_occupied.txt` and `edit_room_research.txt` (a room edited while
+someone is in it), `pick_object.txt` (a corridor bench lifted and dropped)
+and `pick_up_desk.txt` (the reception desk in use); the queue window:
+`queue_commands.txt`; the staff's pay-raise demands: `staff_demand.txt`
+(raised and bonused) and `staff_demand_refuse.txt` (refused); the
+open-hospital button: `open_hospital.txt`; the plants: `plant_wilt.txt`,
+`plant_watered.txt`, `plant_dead_watered.txt`, `plant_room.txt`,
+`plant_interrupt.txt`, `plant_priorities.txt`, `plant_removed.txt` and
+`plant_advisor.txt`; the operating theatre: `theatre.txt`,
+`theatre_surgery.txt` (a surgery end to end) and `theatre_skill.txt` (the
+surgeon skill gate); on level 6, past year 2, epidemics:
+`epidemic_declare.txt`, `epidemic_coverup_pass.txt`,
+`epidemic_coverup_fail.txt`, `epidemic_inspector.txt` and
+`epidemic_vaccinate.txt`; and the year's ends: `win_level1.txt` and
+`lose_reputation.txt` (level 1 won and lost at the first year end) and
+`yearend_level1.txt` and `yearend_level1_two_years.txt` (its hall, awards,
+trophies and score); compared with SKIP
+`computer_action,manage_rats,generate_disaster`:
 
     enhanced/tools/replay/orig_trace.sh orig.txt 18000 \
         enhanced/tools/replay/scripts/gp_office.txt \
-        computer_action,manage_rats,generate_disaster,generate_mayors
+        computer_action,manage_rats,generate_disaster
     th_replay --script enhanced/tools/replay/scripts/gp_office.txt \
         --turns 18000 --out enhanced.txt
     enhanced/tools/replay/compare.py orig.txt enhanced.txt

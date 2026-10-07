@@ -1,0 +1,35 @@
+# Level 6: a training room with one lecture chair (the minimum, so students
+# outnumber it), a projector and a staff room; three doctors and no
+# consultant, the policy's rest at 50. A doctor finding no free chair walks
+# to a random cell of the room (doctor_is_trained's random walk), taking
+# breaks in between.
+101 55 0 0
+102 53 22 22
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 22 0
+110 7 6445 37
+111 7 6188 36
+112 1 0 0
+113 48 1 18
+114 5 6574 18
+115 48 1 19
+116 5 6575 19
+117 48 1 21
+118 5 6573 21
+130 55 0 0
+131 53 25 25
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 25 0
+139 7 6331 19
+140 1 0 0
+200 113 4 50
