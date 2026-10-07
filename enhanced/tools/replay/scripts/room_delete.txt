@@ -1,0 +1,46 @@
+# Level 1: gp_office.txt's reception desk, receptionist, GP's office
+# (62,65)-(66,69) and doctor, the hospital opened early; the doctor is held
+# so patients queue at the office. The office is then taken back to a
+# blueprint (EV_INIT_EDIT_ROOM, EV_EDIT_BLUEPRINT -> edit_blueprint:
+# delete_room with its objects lifted and its walls and doors down,
+# uncommit_blueprint, repair_invis_walls_around_room) and abandoned
+# (EV_DELETE_ROOM -> delete_blueprint_room: restart_all_queue_peeps with
+# patients queued, half its price refunded).
+#
+# Expect commit_blueprint
+# Expect commit_doors
+# Expect open_room
+# Expect balance 4 amount=-2280
+# Expect delete_room 6
+# Expect uncommit_blueprint
+# Expect delete_blueprint_room
+# Expect balance 4 amount=1140
+# Expect leave_queue 6 room=6
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+# Open the hospital now; hold the doctor so the office's queue fills.
+200 139 0 0
+9000 104 11 0
+# Take the office back to a blueprint, then abandon it.
+11000 70 6 0
+11001 69 0 0
+11002 121 0 0

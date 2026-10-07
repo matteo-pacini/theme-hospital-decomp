@@ -452,11 +452,13 @@ bool commit_blueprint(Game &game)
     World &w = game.world;
     BuildState &b = w.building.build;
     if (!is_valid_room(w, b.x0, b.y0, b.x1, b.y1, kPlayer)) {
+        trace_event("blueprint_invalid");
         game.advisor.forced_advice_id = kAdviceRoomInvalid;
         w.building.mouse = BuildMouse::Blueprint;
         return false;
     }
     if (!check_room_access_with_blueprint(w)) {
+        trace_event("blueprint_blocked");
         game.advisor.forced_advice_id = kAdviceRoomBlocks;
         w.building.mouse = BuildMouse::Blueprint;
         return false;
@@ -581,6 +583,8 @@ void modify_blueprint_drag_edge(BuildState &b, uint8_t x, uint8_t y)
 void modify_blueprint(World &w, bool dragging, uint16_t tile)
 {
     BuildState &b = w.building.build;
+    trace_event("blueprint x0=%u y0=%u x1=%u y1=%u drag=%u", unsigned(b.x0), unsigned(b.y0), unsigned(b.x1),
+                unsigned(b.y1), unsigned(b.drag));
     uint8_t x = uint8_t(tile % 128), y = uint8_t(tile / 128);
     BlueprintSpot at{
         x, y, x == b.x0, y == b.y0, x == b.x1, y == b.y1, x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1};
@@ -718,6 +722,7 @@ void temp_place_door_check_pieces(World &w, int best_tile, int type, bool check_
         }
         if ((check_valid || blocked) && (blocked || !is_valid_door(w, tile, type))) {
             bd.door_piece_invalid[size_t(j)] = true;
+            trace_event("door_invalid");
             bd.door_invalid = true;
         }
     }
@@ -792,6 +797,7 @@ void place_bp_door(Game &game, bool swap)
         room.door_inside_tile = uint16_t(b.door_tile + door->door_inside_offset);
     }
     if (!check_room_access_with_blueprint(w)) {
+        trace_event("door_blocked");
         game.advisor.forced_advice_id = kAdviceDoorBlocks;
         play(w, kSfxWrong2);
         return;
@@ -2508,8 +2514,10 @@ bool move_peep_from_blueprint(World &world, uint16_t id)
         if (best == 0xff)
             return false;
         dist[size_t(side)] = 0xff;
-        if (try_move_peep_to_wall(world, peep, side))
+        if (try_move_peep_to_wall(world, peep, side)) {
+            trace_event("bp_goto %u", unsigned(id));
             return true;
+        }
     }
 }
 

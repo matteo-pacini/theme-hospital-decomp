@@ -4,6 +4,9 @@
 # so it evacuates); the consultant and then the doctor are ordered out of the
 # room (ORD_LEAVE_ROOM); the consultant is picked up, put back and the room
 # is edited under it (the room-being-edited evacuation).
+# Expect cmd type=97
+# Expect staff_picked_up
+# Expect open_room
 101 55 0 0
 102 53 22 22
 103 2 6188 0

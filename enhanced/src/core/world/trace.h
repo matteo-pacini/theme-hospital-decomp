@@ -105,9 +105,20 @@ void trace_rand(const char *function, uint32_t seed);
 //   winlose lose group=<n>                 check_game_over, player 0's lose
 //   quarterly progress=<n> offered=<0 or 1>  check_quarterly_game_over,
 //                                          player 0's, every call
+//   bonus_level <n>                        try_bonus_level, the bonus level it
+//                                          grants (0: none)
 //   checkin <patient> receptionist=<id>    recept_admits_patient admits
 //   pay <id> kind=<n> fee=<n> cash=<n>     pay_for_treatment
 //   call <caller> id=<n> action=<n> result=<n>  call_person_to_room, at its end
+//   call_person_again <caller> action=<n>  call_person_again, at its start
+//   stop_waiting                           stop_waiting_for_patient, at its
+//                                          start (a call dropped)
+//   nav_failure <person>                   person_nav_failure, at its start
+//   staff_nav_failure <staff>              staff_nav_failure, at its start
+//   fail_complex <person>                  fail_person_complex, at its start
+//   abandon_complex <person>               abandon_complex, at its start
+//   return_to_queue_area <person>          return_to_queue_area, at its start
+//   waits_for_busy <person>                person_waits_for_busy, at its start
 //   go_home <id>                           person_go_home
 //   force_cure <patient>                   force_peep_to_be_cured
 //   diagnose <patient> staff=<id>          diagnose_patient
@@ -132,6 +143,9 @@ void trace_rand(const char *function, uint32_t seed);
 //   playercall <id> type=<n> subject=<n> owner=<n>  make_a_playercall, at its end
 //   place_object <id> kind=<n> tile=<n> dir=<n> owner=<n>  place_object, as a
 //                                          new object goes on the map
+//   place_cursor ok=<0 or 1> tile=<n> kind=<n> dir=<n>  update_placement, the
+//                                          object cursor's placement check
+//                                          and where it would go
 //   remove_object <id> owner=<n>           remove_object
 //   place_staff <id> tile=<n>  place_staff_on_map, on entry
 //   staff_picked_up <id>                   staff_picked_up
@@ -149,6 +163,19 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          with the condition it had
 //   commit_blueprint / uncommit_blueprint / commit_doors / open_room /
 //   delete_blueprint_room                  those of player 0's build tool
+//   blueprint_invalid                      commit_blueprint, the room the
+//                                          wrong size
+//   blueprint_blocked                      commit_blueprint, the blueprint
+//                                          cutting rooms off the entrance
+//   door_invalid                           temp_place_door, a piece of the
+//                                          door cannot go there
+//   door_blocked                           place_bp_door, the door cutting
+//                                          rooms off the entrance
+//   blueprint x0=<n> y0=<n> x1=<n> y1=<n> drag=<n>  modify_blueprint, the
+//                                          blueprint before the call
+//   bp_goto <person>                       move_peep_from_blueprint, a
+//                                          person sent off a blueprint
+//                                          (PS_BP_GOTO or SS_BP_GOTO)
 //   delete_room <room>                     delete_room
 //   reception <room>                       allocate_reception_roominfo, at
 //                                          its end
@@ -284,6 +311,9 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          doctor a consultant)
 //   alter_research <category> value=<n>    alter_research (process_turn's
 //                                          EV_ALTER_RESEARCH), hospital 0's
+//   tutorial <step>                        tutorial (src/tutorial.cpp),
+//                                          advisor.tutorial_step, at its
+//                                          entry, while the tutorial runs
 // Whoever ports one of these functions writes its event on both sides.
 std::string trace_turn(const Game &game, const EventLog *events = nullptr);
 

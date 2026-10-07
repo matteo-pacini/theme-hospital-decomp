@@ -63,6 +63,23 @@ and `compare.py` diffs the two traces turn by turn, random draws included
 (`--rand`). The usual SKIP list is
 `computer_action,manage_rats,generate_disaster`.
 
+- `enhanced/tools/replay/replay_all.sh [SCRIPT ...]` runs every script (or
+  the ones named) on both sides, compares them and checks their `# Expect`
+  lines, printing one line per script and a summary and exiting non-zero on
+  any disagreement or failed expectation. It reads each script's `# Turns N`
+  (else `TURNS`, 18300) and `# Level N`, and is the one place the SKIP list
+  above lives (`SKIP` overrides it). It puts its per-script `REPLAY_DIR`s and
+  traces under `build/replay-all-<pid>` (one base per run, so two runs do not
+  clash; set `REPLAY_BASE` to share one), deletes a script's traces once they
+  agree and its expectations hold, keeps a failing pair gzipped with its path
+  printed, and removes the passing `REPLAY_DIR`s at the end; `KEEP=1` keeps
+  everything for debugging, and a `WATCHDOG` (minutes, default 5) kills a run
+  whose original trace stops growing once it holds a slot, marking it failed.
+- A script's header states what it exercises with `# Expect <text> [<op> <n>]`
+  (an event line whose text after `E ` starts with `<text>` occurs `<op> <n>`
+  times, `op` one of `>= == <=`, default `>= 1`) and `# Expect-not <text>`
+  (no such event). `check_expect.py` checks them on both traces.
+
 - The scripts in `enhanced/tools/replay/scripts/` are lines of
   `turn event value arg`, with `# Level N` in the header. All of them must
   agree to turn 18000. The year end (18250) differs until year-end awards are
@@ -76,6 +93,9 @@ and `compare.py` diffs the two traces turn by turn, random draws included
 - Player actions go through `Game::process_turn`, so they land in
   `Game::command_log` and scripts can drive them on both sides.
 - Cover every branch with its own script, and report event counts.
+- `enhanced/tools/coverage.sh` runs every script in a coverage build (engine
+  side only) and writes build/coverage/report/ (index.html, summary.txt):
+  what no script reaches yet.
 - New World, Game or Thing fields go in `core/world/debug_dump.cpp` and
   `core/world/snapshot.cpp`; size `static_assert`s enforce the snapshot.
 - The original keeps once-only advisor flags in `run/SAVE/HORZA.HDT`. Clear
@@ -95,6 +115,14 @@ Several agents can run at once:
   session when done: it holds its slot while open.
 - Cap your build and tidy jobs: `CMAKE_BUILD_PARALLEL_LEVEL=4`,
   `TIDY_JOBS=4`.
+- Disk: `/tmp` is on the root filesystem, and a `--rand` replay trace is
+  35-70 MB per side. Delete both traces once they agree; keep only diverging
+  pairs (gzip them) until the divergence is fixed. Put large temporary output
+  under `build/` or your scratch folder, not loose in `/tmp`.
+- When your task is done, remove what you made: your traces and temporary
+  files, your `REPLAY_DIR` (`build/replay-<you>*`, and `build/replay-all-<pid>*`
+  the runner leaves) and any extra build folders. Keep `build/replay-cache`,
+  `build/slots` and anything still in use by someone else.
 
 ## Debugging
 F12 opens the tools window:

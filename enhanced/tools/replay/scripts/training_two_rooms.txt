@@ -4,6 +4,8 @@
 # at 50. Their breaks and returns make find_emptiest_training_room compare
 # the two rooms and find_training_room_no_consultant choose past a room that
 # has a consultant.
+# Expect send_to_training
+# Expect training
 101 55 0 0
 102 53 22 22
 103 2 6188 0

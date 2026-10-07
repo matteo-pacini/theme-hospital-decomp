@@ -1,0 +1,73 @@
+# Level 8: a hair restorer curing baldness (illness 10). Baldness only
+# arrives from the twelfth month (turn 18000, FULL00.SAM visuals_available
+# [8]=12), so the run goes into the second year. A reception desk and
+# receptionist, a GP's office with its doctor, and a hair restorer room with
+# its hair restorer, a console and a doctor. Once a baldness patient has
+# arrived it is made to guess its cure from its window (EV_FORCE_CURE), which
+# sends it straight to the hair restorer, which cures it (cure_illness,
+# illness 10).
+# Expect cure 31 illness=10 == 1
+# Turns 36500
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 5785 11
+10 48 3 28
+11 5 6044 28
+# A GP's office (20,34)-(24,38), its door above it, desk, cabinet and chair;
+# opened; a doctor (applicant 14) in the corridor.
+60 55 0 0
+61 53 7 7
+62 2 4372 0
+63 2 4888 0
+64 8 4888 0
+65 18 0 0
+66 26 4246 0
+67 3 0 0
+68 4 7 0
+69 7 4630 1
+70 7 4376 2
+71 7 4631 6
+72 1 0 0
+73 48 1 14
+74 5 6046 14
+# A hair restorer room (26,34)-(29,37), its door above it, the hair restorer
+# (cell 4636 facing 0) and a console (cell 4635 facing 0); opened; a doctor
+# (applicant 15) in the corridor.
+100 55 0 0
+101 53 19 19
+102 2 4378 0
+103 2 4765 0
+104 8 4765 0
+105 18 0 0
+106 26 4251 0
+107 3 0 0
+108 4 19 0
+109 7 4636 25
+110 7 4635 15
+111 1 0 0
+112 48 1 15
+113 5 6047 15
+# The baldness patients made to guess their cure from their windows
+# (EV_FORCE_CURE) as they arrive, which sends them to the hair restorer.
+18427 134 31 0
+# Staff salaries raised every 2000 turns (EV_INCREASE_STAFF_SALARIES) so that
+# the doctors stay content into the second year.
+2000 90 100 0
+4000 90 100 0
+6000 90 100 0
+8000 90 100 0
+10000 90 100 0
+12000 90 100 0
+14000 90 100 0
+16000 90 100 0
+18000 90 100 0
+20000 90 100 0
+22000 90 100 0
+24000 90 100 0
+26000 90 100 0
+28000 90 100 0
+30000 90 100 0
+32000 90 100 0
+34000 90 100 0
+36000 90 100 0

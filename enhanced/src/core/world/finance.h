@@ -170,14 +170,14 @@ struct MonthEndFigures {
 // The money part of month_end (src/finance.cpp) for the local player (player
 // 0), on the month's last day (`figures`): appraises every hired staff
 // member (appraise_staff) and pays their salaries as one kTxWages line;
-// banks the month's drinks sales (World::drinks_income) and the insurers'
+// banks the month's drinks sales and paid amusements (World::drinks_income
+// and jukebox_income) and the insurers'
 // payments due this month (World::hospital's insurance_claims); charges
 // heating for the radiators, the loan's monthly interest and, if overdrawn,
 // twice that rate on the overdraft (towns[level].interest_rate, in
 // hundredths of a percent a year); then moves the month's figures into the
 // history (adjust_monthly_figures, with the balance and the reputation).
-// Jukebox takings, which complex_success does not keep, are not ported;
-// the prices month_end updates last (update_cure_costs) are the caller's,
+// The prices month_end updates last (update_cure_costs) are the caller's,
 // which has the hospitals' markets. The game also adds up held
 // applicants' wages, under no hospital (owner 0x63, out of its table's
 // bounds): they are appraised but not paid here.

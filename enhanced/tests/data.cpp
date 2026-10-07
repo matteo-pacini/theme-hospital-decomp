@@ -48,6 +48,7 @@ void test_game_data(const char *dir)
     th::GameData gd;
     std::string error;
     CHECK(gd.load(dir, &error));
+
     if (!error.empty())
         std::fprintf(stderr, "%s\n", error.c_str());
     CHECK(gd.blocks().size() > 0);

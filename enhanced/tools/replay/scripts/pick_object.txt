@@ -1,6 +1,8 @@
 # Level 1: a bench in the corridor picked up and put down again
 # (EV_PICK_UP_OBJECT both 0, pick_up_object_right_click): lift the bench
 # placed at cell 9534 (EV_PICK_UP_OBJECT) and place it back.
+# Expect cmd type=68
+# Expect place_object
 5 98 0 0
 6 37 4 1
 7 43 0 0

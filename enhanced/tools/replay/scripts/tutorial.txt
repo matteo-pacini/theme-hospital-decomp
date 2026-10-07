@@ -1,0 +1,40 @@
+# Level 1
+# Turns 18000
+# The advisor's tutorial (advisor.flags' kAdvisorTutorial, set by
+# replay_input's @tutorial), driven through its ported steps: open the
+# corridor furnishing (0x1d), buy a reception desk (0x28), confirm it
+# (0x2a), place it (0x29), open staff hiring (0x1e), choose receptionists
+# (0x21), look at the next (0x25) and the previous (0x26) applicant, hire
+# one (0x22) and place her (0x24), then open the room building (0x20); step
+# 0x2b on is not ported. Each command is the one the step waits for, and
+# the tutorial's step each turn is traced on both sides.
+# Expect tutorial 29
+# Expect tutorial 40
+# Expect tutorial 42
+# Expect tutorial 41
+# Expect tutorial 30
+# Expect tutorial 33
+# Expect tutorial 37
+# Expect tutorial 38
+# Expect tutorial 34
+# Expect tutorial 36
+# Expect tutorial 32
+# Expect tutorial 43
+2 @tutorial 1
+# Open the corridor furnishing, buy a reception desk and place it at cell
+# 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Open staff hiring, choose receptionists, look at the next and the previous
+# applicant.
+10 46 0 0
+11 47 3 0
+12 50 1 0
+13 50 0 0
+# Hire applicant 22 (a receptionist) and place her at cell 9788.
+14 48 3 22
+15 5 9788 22
+# Open the room building.
+16 55 0 0

@@ -1,5 +1,6 @@
 #include "core/world/rooms.h"
 
+#include "core/audio/sounds.h"
 #include "core/ui/charts.h"
 #include "core/world/arrivals.h"
 #include "core/world/build.h"
@@ -484,6 +485,32 @@ void cure_illness(World &world, uint16_t id)
 namespace
 {
 
+// setup_next_treatment_outcome's outcome 2: the patient pays for the
+// treatment just given and is cured, or on a wrong guess dies; the curing
+// doctor's happiness rises, and both outcomes set the patient's status icon
+// and queue the sound (SFX_CHEER / SFX_BOO).
+void setup_next_treatment_outcome_cure(World &world, const AnimData &anims, uint16_t staff_id, uint16_t id,
+                                       uint32_t game_turn, Thing &p)
+{
+    pay_for_treatment(world, id, 2);
+    p.treatment = 0;
+    cure_illness(world, id);
+    if (staff_id)
+        world.things[staff_id].happiness = uint16_t(world.things[staff_id].happiness + 5);
+    p.person_flags &= ~kPfAwaitingDecision;
+    reset_icon_value(p, kIconAwaitingDecision);
+    if (p.person_flags & kPfWrongGuess) {
+        set_icon_value(anims, p, kIconKilled);
+        change_health(world, anims, id, -1000, game_turn);
+        world.treatment_sounds.push_back(kSfxBoo);
+    } else {
+        set_icon_value(anims, p, kIconCured);
+        change_health(world, anims, id, 1000, game_turn);
+        p.person_flags |= kPfCured;
+        world.treatment_sounds.push_back(kSfxCheer);
+    }
+}
+
 // setup_next_treatment's charge for the treatment just given and its outcome
 // (kExpertiseData[].outcome): the next treatment, a cure or a diagnosis.
 // False when the patient will not pay for what comes next.
@@ -505,18 +532,7 @@ bool setup_next_treatment_outcome(World &world, const AnimData &anims, uint16_t 
             pay_for_treatment(world, id, 3);
         break;
     case 2:
-        pay_for_treatment(world, id, 2);
-        p.treatment = 0;
-        cure_illness(world, id);
-        if (staff_id)
-            world.things[staff_id].happiness = uint16_t(world.things[staff_id].happiness + 5);
-        p.person_flags &= ~kPfAwaitingDecision;
-        if (p.person_flags & kPfWrongGuess) {
-            change_health(world, anims, id, -1000, game_turn);
-        } else {
-            change_health(world, anims, id, 1000, game_turn);
-            p.person_flags |= kPfCured;
-        }
+        setup_next_treatment_outcome_cure(world, anims, staff_id, id, game_turn, p);
         break;
     case 4:
         pay_for_treatment(world, id, 2);
@@ -1112,7 +1128,7 @@ void pay_for_treatment_claim_insurance(World &world, const Thing &p, int32_t fee
                 month = 0;
             world.hospital->insurance_claims[i][size_t(month)] += fee;
         }
-        create_numfx(world, kNumfxMoney, uint16_t(p.x.tile + (p.y.tile << 7)), kColourRed, 0x40);
+        create_numfx(world, kNumfxMoney, int16_t(fee), uint16_t(p.x.tile + (p.y.tile << 7)), kColourRed, 0x40);
         break;
     }
 }
@@ -1149,7 +1165,7 @@ bool pay_for_treatment(World &world, uint16_t id, int kind)
     p.cash -= fee;
     if (world.ledger && world.balance && world.date && p.owner == 0)
         change_balance(*world.ledger, *world.balance, world.date->day, world.date->month, {kTxTreat, fee, p.treatment});
-    create_numfx(world, kNumfxMoney, uint16_t(p.x.tile + (p.y.tile << 7)), kColourBlack, 0x40);
+    create_numfx(world, kNumfxMoney, int16_t(fee), uint16_t(p.x.tile + (p.y.tile << 7)), kColourBlack, 0x40);
     return true;
 }
 
@@ -1443,14 +1459,20 @@ void administer_drugs(World &world, const AnimData &anims, uint16_t staff_id, ui
         cure_illness(world, id);
         staff.happiness = uint16_t(staff.happiness + 5);
         p.person_flags &= ~kPfAwaitingDecision;
+        reset_icon_value(p, kIconAwaitingDecision);
         p.person_flags |= kPfCured;
         change_health(world, anims, id, 1000, game_turn);
+        world.treatment_sounds.push_back(kSfxCheer);
     } else {
         pay_for_treatment(world, id, 2);
-        if ((p.person_flags & kPfEmergency) || kNotContagious[p.illness % kNotContagious.size()])
+        if ((p.person_flags & kPfEmergency) || kNotContagious[p.illness % kNotContagious.size()]) {
             change_health(world, anims, id, -1000, game_turn);
-        else
+            world.treatment_sounds.push_back(kSfxBoo);
+        } else {
+            if (p.health <= 1000 - effect * 10)
+                world.treatment_sounds.push_back(kSfxBoo);
             change_health(world, anims, id, int16_t(-(1000 - effect * 10)), game_turn);
+        }
         p.treatment = kIllGeneralPractice;
         pay_for_treatment(world, id, 3);
     }

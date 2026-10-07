@@ -5,6 +5,9 @@
 # its strength at turn 14346, the machine does not break down; the handyman
 # repairs it at turn 14372, just in time. Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect repair_request
+# Expect repaired
+# Expect-not machine_disaster
 5 98 0 0
 6 37 11 1
 7 43 0 0

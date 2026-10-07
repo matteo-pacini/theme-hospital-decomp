@@ -8,6 +8,8 @@
 # --advisor). Stopped at 7000 turns, before the first mayor's draw, so the
 # traces can be compared with generate_mayors skipped on the original.
 # Three plants, bought at once and placed before any other command.
+# Expect plant_thirsty
+# Expect watered
 5 98 0 0
 6 37 45 3
 7 43 0 0

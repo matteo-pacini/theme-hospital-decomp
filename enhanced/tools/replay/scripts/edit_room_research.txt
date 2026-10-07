@@ -3,6 +3,9 @@
 # facing 0), a desk (cell 9264 facing 1) and a filing cabinet (cell 8880
 # facing 1); opened. Two researchers (applicants 13 and 16) placed in it;
 # research with the default allocation (20% each).
+# Expect cmd type=70
+# Expect research_points
+# Expect open_room
 101 55 0 0
 102 53 28 28
 103 2 8876 0

@@ -1,2 +1,4 @@
 # Level 7: no commands; the level's scheduled earthquake runs on its own
 # (generate_quake, earthquake, do_earthquake).
+# Expect rand generate_quake
+# Expect rand earthquake

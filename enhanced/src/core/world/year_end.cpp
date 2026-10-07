@@ -894,6 +894,7 @@ void try_bonus_level(Game &game)
                 uint8_t((old_newrand(game.world.seed, std::source_location::current()) & 1) + 13);
         }
     }
+    trace_event("bonus_level %u", unsigned(game.progress.bonus_level));
 }
 
 } // namespace th

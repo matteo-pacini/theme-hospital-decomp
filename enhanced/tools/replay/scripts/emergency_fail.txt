@@ -4,6 +4,10 @@
 # patients to the inflation room's queue, where no one treats them; when
 # its time is up they lose their health (modify_person) and die, and the
 # reputation falls for the patients not cured. Compare up to turn 18000.
+# Expect emergency_accept
+# Expect emergency_dies >= 6
+# Expect emergency_over
+# Expect summon_reaper
 5 98 0 0
 6 37 11 1
 7 43 0 0

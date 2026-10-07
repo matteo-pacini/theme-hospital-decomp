@@ -6,6 +6,8 @@
 # sinks (cell 6331, and the second made with it), the X-ray viewer (cell
 # 6715) and, the room opened, the surgeon screen (cell 6708 facing 0).
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect use_object 18 obj=41 kind=1
+# Expect use_object 18 obj=42 kind=2
 5 98 0 0
 6 37 11 1
 7 43 0 0

@@ -90,7 +90,8 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error, std::o
         !load_sheet(dir, "data/panel02v", SpriteFormat::Req, panel_, error) ||
         !load_sheet(dir, "data/vspr-0", SpriteFormat::Rle, sprites_, error) ||
         !load_sheet(dir, "data/mpointer", SpriteFormat::Rle, pointers_, error) ||
-        !load_sheet(dir, "data/watch01v", SpriteFormat::Req, watch_, error) || !anims_.load(dir, error))
+        !load_sheet(dir, "data/watch01v", SpriteFormat::Req, watch_, error) ||
+        !load_sheet(dir, "data/money01v", SpriteFormat::Rle, money_, error) || !anims_.load(dir, error))
         return false;
     auto ghost = load_data_file(dir, "qdata/ghost66.dat", error);
     if (!ghost)
@@ -109,7 +110,7 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error, std::o
     if (!load_language(dir, language_, text_, error))
         return false;
     fonts_.clear();
-    for (int slot : {5, 6, 0x1d})
+    for (int slot : {0, 5, 6, 0x1d})
         if (!load_font(dir, slot, fonts_[slot], error))
             return false;
     return true;

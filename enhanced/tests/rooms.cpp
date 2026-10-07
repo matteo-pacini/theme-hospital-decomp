@@ -1643,6 +1643,7 @@ void test_treatment_level1(const char *dir)
     th::Game &g = *s.game;
     th::World &w = g.world;
     bool energised = false, flying = false, reaper = false, into_hell = false;
+    bool money_fx = false, fed_up = false;
     int drugs = 0, gates_placed = 0, gates_removed = 0;
     CHECK(s.run_to(18249, [&] {
         for (const th::Thing &t : w.things) {
@@ -1650,6 +1651,10 @@ void test_treatment_level1(const char *dir)
             flying |= t.type == th::kThingPatient && t.state == th::kPsFlys;
             into_hell |= t.type == th::kThingPatient && t.state == th::kPsAtHellGate;
             reaper |= t.type == th::kThingReaper;
+            // A floating money number showing a value (create_numfx) and a
+            // patient leaving fed up (person_go_home's ICON_FED_UP).
+            money_fx |= t.type == th::kThingNumfx && t.numfx_amount > 0;
+            fed_up |= t.type == th::kThingPatient && t.icon_id == 7;
         }
         for (const th::TraceEvent &e : g.events.events) {
             drugs += e.text.starts_with("drugs ");
@@ -1664,8 +1669,18 @@ void test_treatment_level1(const char *dir)
     // (29); inflation for bloaty head (2).
     CHECK(drugs > 0 && ill[5].cured > 0 && ill[16].cured > 0 && ill[29].cured > 0 && ill[2].cured > 0);
     CHECK(energised && flying && reaper && into_hell);
+    CHECK(money_fx && fed_up);
     CHECK(gates_placed > 0 && gates_removed == gates_placed);
     CHECK(g.finance.deaths > 0 && ill[5].deaths > 0 && g.finance.cures > 0);
+    // The cure and death sounds the simulation queued for the interface
+    // (SFX_CHEER 0xaf and SFX_BOO 0xae, core/audio/sounds.h).
+    int cheers = 0, boos = 0;
+    for (uint8_t sfx : w.treatment_sounds) {
+        cheers += sfx == 0xaf;
+        boos += sfx == 0xae;
+    }
+    std::printf("treatment sounds: %d cheers, %d boos\n", cheers, boos);
+    CHECK(cheers > 0 && boos > 0);
     CHECK(w.seed == 0x8d8b8fc1);
 }
 

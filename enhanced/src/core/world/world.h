@@ -334,10 +334,11 @@ struct Thing {
     uint16_t door_partner = 0;
     uint16_t door_main = 0;
 
-    // Floating numbers (kThingNumfx): how it is drawn (the game's NUMFX_*).
-    // Its colour is in subtype, its lifetime in speed and its height in
-    // anim_speed.
+    // Floating numbers (kThingNumfx): how it is drawn (the game's NUMFX_*),
+    // the value it shows, its colour in subtype, its lifetime in speed and
+    // its height in anim_speed.
     uint8_t numfx_type = 0;
+    int16_t numfx_amount = 0;
 
     // Rooms in use (gp)
     // Patients: diagnosis progress, complete at the game's
@@ -624,9 +625,11 @@ struct World {
     bool announce_stuck = false;
     uint16_t unpaid_treatment = 0;
     bool too_expensive = false;
-    // Hospital 0's drinks sales this month (allhosps[0].drinks_income), which
-    // month_end banks.
+    // Hospital 0's drinks sales and paid amusements this month
+    // (allhosps[0].drinks_income and jukebox_income, sales_income[0] and
+    // [1]), which month_end banks.
     int32_t drinks_income = 0;
+    int32_t jukebox_income = 0;
     // Hospital 0's member of staff picked up off the map to be placed again
     // (allhosps[0].held_staff), 0 for none, and the cell they were taken
     // from (held_staff_tile), where cancelling puts them back.
@@ -801,6 +804,11 @@ struct World {
     // played and cleared them.
     std::vector<uint8_t> epidemic_sounds;
 
+    // The treatments' sound effects (SFX_*) made since the interface last
+    // played and cleared them: the cheer of a cure and the boo of a death
+    // (administer_drugs and setup_next_treatment).
+    std::vector<uint8_t> treatment_sounds;
+
     // Research (research.cpp)
     // Hospital 0's research and object figures (core/world/research.h).
     Research research;
@@ -907,12 +915,11 @@ constexpr uint8_t kNumfxMoney = 3;
 constexpr uint8_t kColourBlack = 0;
 constexpr uint8_t kColourRed = 12;
 
-// create_numfx (0x9d480): a floating number of `type` showing a value on
+// create_numfx (0x9d480): a floating number of `type` showing `value` on
 // `tile` in palette colour `colour`, drawn `height` pixels up plus 0-15 at
 // random: a thing (kThingNumfx) linked on the cell, unless no thing but the
-// last 50 is free. Draws three random numbers when made. The value shown is
-// not kept, as nothing draws it yet.
-void create_numfx(World &world, uint8_t type, uint16_t tile, uint8_t colour, uint8_t height);
+// last 50 is free. Draws three random numbers when made.
+void create_numfx(World &world, uint8_t type, int16_t value, uint16_t tile, uint8_t colour, uint8_t height);
 
 // numfx_ages (0x9d560): one turn of floating number `id`; removed
 // (remove_thing) when its lifetime runs out, a money one's twice as fast.

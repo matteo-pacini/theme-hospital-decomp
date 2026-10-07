@@ -4,6 +4,7 @@
 #include "core/world/events.h"
 #include "core/world/game.h"
 #include "core/world/nav.h"
+#include "core/world/trace.h"
 #include "core/world/world.h"
 
 #include <algorithm>
@@ -298,6 +299,19 @@ void select_object_to_place(ObjectPlacing &p, int kind)
     set_edit_room_requester_mode(p, 6);
 }
 
+namespace
+{
+
+// Records the object cursor's placement check for the replay trace, where
+// update_placement decided it would go and whether it may.
+void trace_placement(const ObjectPlacing &p)
+{
+    trace_event("place_cursor ok=%u tile=%u kind=%u dir=%u", unsigned(p.ok), unsigned(p.tile), unsigned(p.kind),
+                unsigned(p.dir));
+}
+
+} // namespace
+
 void update_placement(World &world, ObjectPlacing &p, int mouse_cell)
 {
     if (!p.placing || (mouse_cell == p.mouse_cell && !p.redraw))
@@ -326,7 +340,7 @@ void update_placement(World &world, ObjectPlacing &p, int mouse_cell)
     p.tile = uint16_t(tile);
     p.ok = tile >= 0 && tile < kMapCells && can_place_object(world, tile, kind, dir, kPlayer);
     if (!p.ok)
-        return;
+        return trace_placement(p);
     int tile2 = 0, kind2 = 0, dir2 = 0;
     if (part != -1) {
         const NextPartInfo &next = kNextParts[size_t(part)];
@@ -335,7 +349,7 @@ void update_placement(World &world, ObjectPlacing &p, int mouse_cell)
         dir2 = next.dir[size_t(dir)];
         p.ok = tile2 >= 0 && tile2 < kMapCells && can_place_object(world, tile2, kind2, dir2, kPlayer);
         if (!p.ok)
-            return;
+            return trace_placement(p);
     }
     if (p.mode != 2) {
         p.ok = place_object_nav_check(world, p.room, {tile, kind, dir}, {tile2, kind2, dir2});
@@ -346,6 +360,7 @@ void update_placement(World &world, ObjectPlacing &p, int mouse_cell)
     } else {
         p.ok = corridor_object_nav_check(world, tile, kind, dir);
     }
+    trace_placement(p);
 }
 
 void cancel_buy_objects(ObjectPlacing &p)

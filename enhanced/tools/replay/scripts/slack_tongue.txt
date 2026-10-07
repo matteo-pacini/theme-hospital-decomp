@@ -2,6 +2,8 @@
 # reception, handyman, GP's office and research room, with all research
 # put into new treatment machines (EV_ALTER_RESEARCH: the others 0, cures
 # 100): the slicer is researched at turn 1200.
+# Expect cure 14 illness=7 == 1
+# Expect cure 53 illness=7 == 1
 5 98 0 0
 6 37 11 1
 7 43 0 0

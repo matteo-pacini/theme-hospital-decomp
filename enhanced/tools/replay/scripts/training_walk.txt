@@ -3,6 +3,8 @@
 # consultant, the policy's rest at 50. A doctor finding no free chair walks
 # to a random cell of the room (doctor_is_trained's random walk), taking
 # breaks in between.
+# Expect rand doctor_is_trained
+# Expect take_a_break
 101 55 0 0
 102 53 22 22
 103 2 6188 0

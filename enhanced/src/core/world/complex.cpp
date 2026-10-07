@@ -298,6 +298,7 @@ void person_nav_failure(const Run &r, uint16_t id)
 {
     World &world = r.world;
     Thing &p = world.things[id];
+    trace_event("nav_failure %u", unsigned(id));
     if (p.room == 0) {
         uint16_t room = which_room(world, uint16_t(p.dest_x + (p.dest_y << 7)));
         if (room && r.game_turn - 500 < world.rooms[room].created_turn) {
@@ -339,7 +340,7 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
         if (int16_t(w.warmth) > 60)
             w.warmth = 60;
         w.cash -= 20;
-        create_numfx(world, kNumfxMoney, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
+        create_numfx(world, kNumfxMoney, 20, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
         if (world.game)
             world.game->progress.award_counts.cans_of_coke++;
         if (w.owner == 0)
@@ -348,7 +349,9 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
     case 4:
         w.happiness++;
         w.cash -= 10;
-        create_numfx(world, kNumfxMoney, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
+        create_numfx(world, kNumfxMoney, 10, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
+        if (w.owner == 0)
+            world.jukebox_income += 10;
         break;
     case 6:
         trace_event("relieved %u bladder=%d", unsigned(id), int(w.bladder));
@@ -383,6 +386,7 @@ void stand(const Run &r, Thing &p)
 void fail(const Run &r, uint16_t id)
 {
     Thing &p = r.world.things[id];
+    trace_event("fail_complex %u", unsigned(id));
     if (p.resume_state) {
         p.state = p.resume_state;
         p.complex_pc = p.complex_queued = p.complex_queued2 = 0;
@@ -745,6 +749,7 @@ void abandon_complex(const Run &r, uint16_t id)
 {
     World &world = r.world;
     Thing &p = world.things[id];
+    trace_event("abandon_complex %u", unsigned(id));
     MapPos old_x = p.x;
     MapPos old_y = p.y;
     bool user = p.object && world.things[p.object].user == id;
@@ -1188,6 +1193,7 @@ void return_to_queue_area(const Run &r, uint16_t id)
 {
     World &world = r.world;
     Thing &p = world.things[id];
+    trace_event("return_to_queue_area %u", unsigned(id));
     if (p.queue_room) {
         const RoomInfo &room = world.rooms[p.queue_room];
         p.resume_state = kPsEntertainsThemself;
@@ -1545,6 +1551,7 @@ void person_energises(const Run &r, uint16_t id)
 void waits_for_busy(const Run &r, uint16_t id)
 {
     Thing &p = r.world.things[id];
+    trace_event("waits_for_busy %u", unsigned(id));
     if (r.game_turn % p.anim_speed == 0)
         p.sprite = r.anims.frames[p.sprite].next;
     if (p.timer-- <= 0)
@@ -1868,6 +1875,7 @@ void person_go_home(World &world, const AnimData &anims, const PersonComplexes &
     if (set_complex(world, id, kComplexLeave,
                     world.rooms[get_room_info(world, kRoomEntrance, 0x65, p.owner)].door_tile))
         process({world, anims, complexes, game_turn}, id);
+    set_icon_value(anims, p, kIconFedUp);
 }
 
 bool person_ok_to_call(const World &world, uint16_t id)

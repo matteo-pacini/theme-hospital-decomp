@@ -2,6 +2,8 @@
 # picked up before the VIP arrives, so create_mayor finds no desk and leaves
 # at once with verdict 14 (no reception).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect choice 20
+# Expect-not rep 0 event=18
 5 98 0 0
 6 37 11 1
 7 43 0 0

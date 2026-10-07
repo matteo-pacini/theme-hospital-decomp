@@ -2652,7 +2652,8 @@ void change_price(Game &game, const Event &event)
 }
 
 // increase_staff_salaries (src/staff.cpp), by an amount: for one, up to
-// 90000; for all the player's staff the game caps no one.
+// 90000; for all the player's staff the game caps no one. Either way their
+// discontent is cleared and they are made happier.
 void increase_staff_salaries(Game &game, const Event &event)
 {
     for (size_t i = 1; i < game.world.things.size(); i++) {
@@ -2663,6 +2664,7 @@ void increase_staff_salaries(Game &game, const Event &event)
         t.salary += event.value;
         if (event.arg && t.salary > 90000)
             t.salary = 90000;
+        t.discontent = 0;
         make_happier(t);
     }
 }

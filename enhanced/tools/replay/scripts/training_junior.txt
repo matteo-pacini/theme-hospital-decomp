@@ -4,6 +4,9 @@
 # at 50. The junior's ability passes the doctor threshold and, at a month's
 # end after 9000 turns served, it is promoted to a doctor (appraise_staff,
 # skill 8).
+# Expect appraise
+# Expect training
+# Expect train_ability
 101 55 0 0
 102 53 22 22
 103 2 8876 0

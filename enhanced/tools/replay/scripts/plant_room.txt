@@ -5,6 +5,8 @@
 # 4) before watering it (5 and 6). Compare up to turn 18000 (no year's end).
 # The office: open the requester, start a GP's blueprint, drag it out from
 # cell 8382 to 8898 (the hover ends the drag), commit it.
+# Expect watered
+# Expect open_room
 101 55 0 0
 102 53 7 7
 103 2 8382 0

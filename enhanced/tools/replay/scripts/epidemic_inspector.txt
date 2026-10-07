@@ -3,6 +3,9 @@
 # diagnosed contagious patient: the epidemic is covered up, the health
 # inspector visits and judges it, and its result call is answered
 # (EV_ANSWER_PLAYERCALL 5, subject 3).
+# Expect choice 11
+# Expect rep 0 event=15
+# Expect get_playercall 0 type=5
 5 98 0 0
 6 37 11 1
 7 43 0 0

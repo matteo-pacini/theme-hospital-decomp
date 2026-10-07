@@ -3,6 +3,8 @@
 # year 2, a diagnosed contagious patient: the epidemic is covered up and
 # a contagious patient queued for vaccination (EV_TOGGLE_VACCINATION),
 # which the nurse carries out (kTxVaccination).
+# Expect cmd type=130
+# Expect epidemic_cover_up
 5 98 0 0
 6 37 11 1
 7 43 0 0

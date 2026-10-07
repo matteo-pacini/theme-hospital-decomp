@@ -1,0 +1,58 @@
+# Level 1: ward.txt with its GP's office and ward, then the calls dropped:
+# the GP's office door (thing 31) and the ward's doors (object 36 and its
+# pair) are picked up (EV_PICK_UP_OBJECT) so the patients called to them
+# cannot come in. The doctor's call to its patient times out
+# (call_person_again, then stop_waiting_for_patient sends the patient on)
+# and the ward nurse's does too (call_person_again). Each re-issue of the
+# call that fails to enter a door runs fail_person_complex as well. The
+# receptionist's call to the desk is not reached (not found): its timeout
+# needs the called queue head to take more than its 200-turn timer to reach
+# the desk, and no command tried does it: the desk's cells and any machine's
+# use cell refuse objects beside them, check_room_access refuses a room or
+# object that cuts the desk off, and the only patients away from the desk
+# are within 7 cells and return in far fewer than 200 turns. ward.txt's
+# commands.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+130 55 0 0
+131 53 9 9
+132 2 7602 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8371 0
+137 3 0 0
+138 4 9 0
+139 7 7731 264
+140 7 7990 1
+141 1 0 0
+142 48 0 3
+143 5 10044 3
+# The GP's office door and the ward's doors are picked up.
+7000 68 31 0
+7000 68 36 1
+# Expect call_person_again 11 action=40 == 5
+# Expect call_person_again 3 action=40 >= 4
+# Expect stop_waiting
+# Expect start_going >= 2
+# Expect fail_complex >= 1
+# Expect-not winlose

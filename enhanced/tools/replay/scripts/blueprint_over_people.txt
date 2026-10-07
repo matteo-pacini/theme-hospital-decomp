@@ -1,0 +1,20 @@
+# Level 1: a reception desk and its receptionist, the hospital opened early
+# so patients queue in the corridor by the desk. A GP's office blueprint is
+# then drawn over the queue (commit_blueprint); the patients standing on its
+# floor are sent off it (move_peep_from_blueprint -> bp_goto, PS_BP_GOTO).
+#
+# Expect commit_blueprint
+# Expect bp_goto >= 3
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+200 139 0 0
+10001 55 0 0
+10002 53 7 7
+10003 2 9280 0
+10004 2 9923 0
+10005 8 9923 0
+10006 18 0 0

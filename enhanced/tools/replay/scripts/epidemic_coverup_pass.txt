@@ -2,6 +2,9 @@
 # Turns 27000
 # diagnosed contagious patient: the epidemic is COVERED UP and the
 # inspector finds none left, so the hospital is compensated (verdict 0).
+# Expect choice 11
+# Expect-not rep 0 event=15
+# Expect balance 31
 5 98 0 0
 6 37 11 1
 7 43 0 0

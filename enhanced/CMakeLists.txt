@@ -20,6 +20,19 @@ else()
   set(TH_WARNINGS -Wall -Wextra -Wpedantic)
 endif()
 
+# Line coverage of th_core and th_replay (tools/coverage.sh): gcov data with
+# GCC, LLVM source-based coverage with Clang.
+option(TH_COVERAGE "Instrument th_core and th_replay for coverage" OFF)
+if (TH_COVERAGE)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(TH_COVERAGE_FLAGS --coverage)
+  elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(TH_COVERAGE_FLAGS -fprofile-instr-generate -fcoverage-mapping)
+  else()
+    message(FATAL_ERROR "TH_COVERAGE needs GCC or Clang")
+  endif()
+endif()
+
 # The engine: data loading and drawing, with no SDL dependency.
 add_library(th_core STATIC
   src/core/audio/music.cpp
@@ -130,6 +143,8 @@ target_include_directories(th_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated
 target_include_directories(th_core PUBLIC src)
 target_compile_options(th_core PRIVATE ${TH_WARNINGS})
 target_link_libraries(th_core PRIVATE th_ymfm)
+target_compile_options(th_core PRIVATE ${TH_COVERAGE_FLAGS})
+target_link_options(th_core INTERFACE ${TH_COVERAGE_FLAGS})
 
 add_executable(th_enhanced
   src/app/main.cpp
@@ -149,6 +164,7 @@ endif()
 add_executable(th_replay tools/replay/main.cpp)
 target_link_libraries(th_replay PRIVATE th_core)
 target_compile_options(th_replay PRIVATE ${TH_WARNINGS})
+target_compile_options(th_replay PRIVATE ${TH_COVERAGE_FLAGS})
 if (TH_DEV_DATA_DIR)
   target_compile_definitions(th_replay PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
 endif()

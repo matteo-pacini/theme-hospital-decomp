@@ -2,6 +2,8 @@
 # Turns 24700
 # diagnosed contagious patient: the epidemic call is taken and the
 # epidemic DECLARED (EV_CHOICE_RESULT CH_EPIDEMIC_DECLARE, 10).
+# Expect epidemic_declare
+# Expect choice 10
 5 98 0 0
 6 37 11 1
 7 43 0 0

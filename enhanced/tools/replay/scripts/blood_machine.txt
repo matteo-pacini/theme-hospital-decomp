@@ -3,6 +3,7 @@
 # his repair priority raised to 100; a GP's office (20,34)-(24,38) with its
 # door above it, desk, cabinet and chair, and a doctor (14) in the
 # corridor.
+# Expect researched 42 illness=37
 5 98 0 0
 6 37 11 1
 7 43 0 0

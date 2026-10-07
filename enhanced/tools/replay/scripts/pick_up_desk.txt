@@ -1,6 +1,8 @@
 # Level 1: a reception desk and a receptionist ("turn type value arg",
 # th_replay --script and orig_trace.sh's SCRIPT; EV_* in include/enums.h).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect cmd type=68
+# Expect reception
 5 98 0 0
 6 37 11 1
 7 43 0 0

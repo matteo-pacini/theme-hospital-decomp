@@ -1,0 +1,86 @@
+# Level 1: the placing-object cursor (Game::update_placement and the object
+# placement checks). A GP's office, a corridor bench and radiator and a
+# ward's bed are put on the cursor; @cursor lines move it over the rooms'
+# and the corridor's cells, and on the original the tool carries each out as
+# a mouse move, so place_object_nav_check, corridor_object_nav_check,
+# corridor_object_room_nav_check and place_object_wall_hug run on both
+# sides and each check's result is a place_cursor event.
+# Expect place_cursor ok=1 tile=8640 kind=1 dir=0
+# Expect place_cursor ok=0 tile=8512 kind=1 dir=0
+# Expect place_cursor ok=1 tile=9276 kind=4 dir=0
+# Expect place_cursor ok=1 tile=8383 kind=44 dir=0
+# Expect place_cursor ok=1 tile=7732 kind=8 dir=0
+# Expect place_cursor ok=1 tile=7859 kind=8 dir=3
+# Expect place_object 31 kind=1 tile=8640 dir=0
+# Expect place_object 34 kind=4 tile=9534 dir=0
+# Expect place_object 35 kind=44 tile=8383 dir=0
+# Expect place_object 39 kind=8 tile=7731 dir=1
+# Expect commit_doors >= 2
+# Expect open_room >= 2
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# The desk on the cursor (mode 0): over the room, its inside door cell and
+# a cell outside it, then placed with the cabinet and the chair.
+110 @cursor 8640
+111 @cursor 8384
+112 @cursor 8385
+113 @cursor 8898
+114 @cursor 8300
+115 7 8640 1
+116 7 8386 2
+117 7 8641 6
+118 1 0 0
+# Corridor furnish (mode 2): a bench over corridor cells, then placed.
+120 98 0 0
+121 37 4 1
+122 43 0 0
+123 @cursor 9534
+124 @cursor 9276
+125 7 9534 4
+# A radiator (its flags let it go into a room): over a corridor cell and the
+# GP office's cells, then placed in the office.
+126 98 0 0
+127 37 44 1
+128 43 0 0
+129 @cursor 9276
+130 @cursor 8383
+131 @cursor 8640
+132 7 8383 44
+# A plant bought and the requester cancelled (EV_CANCEL_BUY_OBJECTS), then
+# closed (EV_CLOSE_REQUESTERS).
+133 98 0 0
+134 37 45 1
+135 43 0 0
+136 @cursor 9535
+137 100 0 0
+138 38 0 0
+# A ward (50,59)-(55,64), its double door below it: the desk placed first,
+# then the bed on the cursor (mode 1) over each of the room's four walls,
+# and placed.
+140 55 0 0
+141 53 9 9
+142 2 7602 0
+143 2 8247 0
+144 8 8247 0
+145 18 0 0
+146 26 8371 0
+147 3 0 0
+148 4 9 0
+149 7 7990 1
+150 @cursor 7604
+151 @cursor 7858
+152 @cursor 7990
+153 @cursor 8244
+154 @cursor 7346
+155 7 7731 264
+156 1 0 0

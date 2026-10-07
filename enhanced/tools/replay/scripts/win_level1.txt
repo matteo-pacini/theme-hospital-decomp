@@ -1,16 +1,23 @@
 # Level 1
 # Turns 18250
 # Wins level 1 at the first year end (18250): staff_room_none.txt's hospital
-# (16 cures, 41% diagnosed, reputation 551, balance 25311) plus four more
-# inflation rooms (73,65), (62,60), (68,60) and (73,60) built just before the
-# year end, taking hospital_value to 56405 (>= 55000). The rooms are built
+# (10 cures, 44% diagnosed, reputation 641, balance 26923) with the policy's
+# guess-a-cure threshold left at its default 90 (staff_room_none sets it to
+# 10, which guesses patients before their illness is found and leaves the
+# diagnosed criterion at 34%, below the 40% level 1 needs), plus four more
+# inflation rooms (62,60), (68,60), (73,60) and (73,65) built just before the
+# year end, taking hospital_value to 68405 (>= 55000). The rooms are built
 # late so they do not disturb the year's patient flow. The win is detected by
-# check_game_over at 18250 (winlose_result 1, next_level_offer 16350).
+# check_game_over at 18250 (winlose_result 1, next_level_offer 16350) and
+# calls try_bonus_level, which grants no bonus level here: that needs the rat
+# counters (rats are not ported) or the fax cheat's debug.force_bonus_level.
 # Based on treatment.txt, then a handyman, the policy sending staff for a
 # rest from tiredness 50 and a doctor and the handyman ordered to rest
 # (EV_ORDER_REST), with no staff room. gp_office.txt's rooms: a GP's office,
 # a general diagnosis room, a pharmacy and an inflation room.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect winlose win
+# Expect bonus_level 0
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -86,9 +93,10 @@
 200 1 0 0
 201 48 1 12
 202 5 10044 12
-# Policy (EV_SET_POLICY): send home at 0%, guess a cure from 10%.
+# Policy (EV_SET_POLICY): send home at 0%, keep the default guess-a-cure
+# threshold of 90% so patients are diagnosed rather than guessed early.
 220 113 1 0
-221 113 2 10
+221 113 2 90
 # A handyman (applicant 19), at cell 10044.
 260 48 2 19
 261 5 10044 19

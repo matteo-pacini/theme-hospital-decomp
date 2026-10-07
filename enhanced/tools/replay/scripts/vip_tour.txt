@@ -2,6 +2,8 @@
 # offered (EV_ANSWER_PLAYERCALL 6, then EV_CHOICE_RESULT CH_VIP_ACCEPT), so
 # that it tours the GP's office before leaving.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect choice
+# Expect diagnose
 5 98 0 0
 6 37 11 1
 7 43 0 0

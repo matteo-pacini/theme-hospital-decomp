@@ -6,6 +6,7 @@
 #include "core/render/blit.h"
 #include "core/render/frame.h"
 #include "core/render/shadows.h"
+#include "core/render/text.h"
 #include "core/world/complex.h"
 #include "core/world/reaper.h"
 #include "core/world/staff.h"
@@ -14,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <climits>
+#include <cstdio>
 #include <utility>
 #include <vector>
 
@@ -24,6 +26,9 @@ namespace
 {
 
 constexpr int kBuckets = 32;
+
+// OS_IN_USE (include/enums.h): an object someone is using.
+constexpr uint8_t kObjectInUse = 4;
 
 long floor_div(long a, long b)
 {
@@ -99,6 +104,148 @@ Rect intersect(const Rect &a, const Rect &b)
     return {x0, y0, std::max(x1 - x0, 0), std::max(y1 - y0, 0)};
 }
 
+// MapCell.flags: something on the cell covers more than one cell (the game's
+// MAP_BIG_CELL, set by adjust_big_cell_flag).
+constexpr uint8_t kCellBig = 0x20;
+
+// The game's covers table (record_covering_cell, src/engine.cpp): which scan
+// cell covers each position. It is a flat byte table of stride 4, as the
+// original's `s8 covers[][4]`, so column 4 of a row aliases column 0 of the
+// next; only its first 0x38 bytes are reset per line, as the original's
+// memset(covers, 0xff, 0x38), so the rest carries over.
+struct CoverTable {
+    std::array<int8_t, 64> cell{};
+    void reset() { std::fill(cell.begin(), cell.begin() + 0x38, int8_t(-1)); }
+    int8_t &at(int idx, int col) { return cell[size_t(idx) * 4 + size_t(col)]; }
+
+    // check_obscuring_column: the scan cell already covering (x, y) relative
+    // to `row`, or -1.
+    int8_t check(int row, int x, int y) const
+    {
+        int idx = row + (x - y >= 0 ? (x - y) / 2 : (x - y - 1) / 2);
+        int col = -(x + y);
+        if (idx < 0 || idx > 14 || col < 0 || col > 4)
+            return -1;
+        for (; col >= 0; col += -2) {
+            int8_t v = cell[size_t(idx) * 4 + size_t(col)];
+            if (v != -1 && v != row)
+                return v;
+        }
+        return -1;
+    }
+
+    // record_covering_cell: record `row` as covering `pos` (x + y * 128),
+    // unless a row covering x,y+1, x+1,y or x+1,y+1 already does; return that
+    // row, else -1.
+    int8_t record(int row, int pos)
+    {
+        int x = pos % 128;
+        int y = pos / 128;
+        if (x < -0x40) {
+            x += 0x80;
+            y += -1;
+        }
+        int idx = row + (x - y >= 0 ? (x - y) / 2 : (x - y - 1) / 2);
+        int col = -(x + y);
+        if (idx < 0 || idx > 14 || col < 0 || col > 4)
+            return -1;
+        int8_t v = check(row, x, y + 1);
+        if (v < 0)
+            v = check(row, x + 1, y);
+        if (v < 0)
+            v = check(row, x + 1, y + 1);
+        if (v >= 0)
+            return v;
+        at(idx, col) = int8_t(row);
+        return -1;
+    }
+};
+
+// The object footprint's shift from the object's own cell to the cell of a
+// person using it (compute_cell_precedence's person case).
+int16_t person_footprint_offset(const ShapeInfo &shape)
+{
+    return int16_t(-int8_t(shape.use_dx) + (-int8_t(shape.use_dy)) * 128);
+}
+
+// ror13 (src/draw.cpp): a 32-bit value rotated right 13 bits, the energise
+// speckle's step.
+uint32_t ror13(uint32_t v)
+{
+    return (v >> 13) | (v << 19);
+}
+
+// DrawPixBuffer for one pixel: flags bit 0 blends through `ghost`, bit 1 is
+// opaque (else the mask colour 0xfe is transparent) and bit 2 blends with src
+// and dst swapped.
+uint8_t pixbuf_pixel(uint8_t dst, uint8_t src, uint8_t flags, const uint8_t *ghost)
+{
+    if (flags & 1) {
+        if (!(flags & 2) && src == kMaskColour)
+            return dst;
+        return (flags & 4) ? ghost[(src << 8) + dst] : ghost[(dst << 8) + src];
+    }
+    if (flags & 2)
+        return src;
+    return src == kMaskColour ? dst : src;
+}
+
+// compute_cell_precedence's person case: records the cell the person stands on
+// and, if it uses `obj`, the object's footprint shifted by the use position;
+// returns a row that must be drawn before it, or -1.
+int8_t person_covers(const World &world, int row, uint16_t id, const Thing &t, CoverTable &covers)
+{
+    const Thing *obj = t.object && t.object < kThingCount ? &world.things[size_t(t.object)] : nullptr;
+    if (!obj || obj->user != id)
+        return covers.record(row, 0);
+    uint8_t shape_index = kObjects[obj->subtype % kObjects.size()].shapes[obj->facing & 3];
+    const ShapeInfo &shape = kShapes[shape_index % kShapes.size()];
+    covers.record(row, 0);
+    const int16_t off = person_footprint_offset(shape);
+    for (int k = 0; k < int(shape.count); k++) {
+        int8_t v = covers.record(row, shape.points[size_t(k)] + off);
+        if (v >= 0)
+            return v;
+    }
+    return -1;
+}
+
+// compute_cell_precedence's object case: records its footprint unless it is
+// being used (its user draws it).
+int8_t object_covers(int row, const Thing &t, CoverTable &covers)
+{
+    if (t.state == kObjectInUse)
+        return -1;
+    uint8_t shape_index = kObjects[t.subtype % kObjects.size()].shapes[t.facing & 3];
+    const ShapeInfo &shape = kShapes[shape_index % kShapes.size()];
+    for (int k = 0; k < int(shape.count); k++) {
+        int8_t v = covers.record(row, shape.points[size_t(k)]);
+        if (v >= 0)
+            return v;
+    }
+    return -1;
+}
+
+// compute_cell_precedence: records the cells the things on `first` cover for
+// scan position `row`, returning a position that must be drawn before it
+// (they overlap), or -1.
+int8_t cell_precedence(const World &world, int row, int16_t first, CoverTable &covers)
+{
+    for (int16_t id = first; id > 0 && id < kThingCount; id = world.things[size_t(id)].cell_next) {
+        const Thing &t = world.things[size_t(id)];
+        int8_t v = -1;
+        if (t.type == kThingPatient && t.state != kPsMerged)
+            v = person_covers(world, row, uint16_t(id), t, covers);
+        else if (t.type == kThingStaff && t.state != 0x2a && t.state != kStaffApplicant)
+            v = person_covers(world, row, uint16_t(id), t, covers);
+        else if (t.type == kThingObject)
+            v = object_covers(row, t, covers);
+        if (v >= 0)
+            return v;
+    }
+    return -1;
+}
+
 // The game's litter_starts (src/anitable.cpp), by litter kind (MapCell's
 // litter nibble): the animation drawn, and whether it is drawn at the
 // cell's middle rather than at one of kLitterPos. Kinds 9-15 are zero there.
@@ -139,9 +286,6 @@ AnimStart anim_start(const GameData &data, uint32_t anim)
     return anim < starts.size() ? starts[anim] : AnimStart{};
 }
 
-// OS_IN_USE (include/enums.h): an object someone is using.
-constexpr uint8_t kObjectInUse = 4;
-
 // Whether the game's mapwho_* tests `t` for being under the pointer: people
 // always, objects and doors in the states mapwho_object draws whole.
 bool pointed_testable(const Thing &t)
@@ -165,11 +309,16 @@ bool pointed_testable(const Thing &t)
     }
 }
 
-// What draw_cell_things draws from and reports to.
+// What draw_cell_things draws from and reports to. `pixbuf` is set while a
+// cell is drawn into the scratch surface (the game's othervar.drawing_pixbuf),
+// which changes how an energising patient is drawn; `energise` is the 64x64
+// buffer draw_energise_frame works in.
 struct CellDrawing {
     const World &world;
     const GameData &data;
     DrawnThings drawn;
+    bool pixbuf = false;
+    Surface *energise = nullptr;
 };
 
 // The frames draw_cell_things has drawn so far: their box (the game's
@@ -219,16 +368,59 @@ void draw_cell_overlays(CellFrames &frames, const MapCell &cell, int index, int1
     }
 }
 
+// mapwho_numfx (src/mapwho.cpp): a floating money bag (draw_money) or text
+// (draw_text_on_map), risen by its speed; `x, y` are the thing's draw
+// position.
+void draw_numfx(CellFrames &frames, const GameData &data, const Thing &t, int x, int y)
+{
+    const int top = y + int(t.speed) - int(t.anim_speed);
+    if (t.numfx_type == kNumfxMoney) {
+        // draw_money: the bag at x - 2 with the value's digits centred in
+        // money_text_width at money_text_x/y (HiresCoords 172-173,
+        // src/coords.cpp).
+        constexpr int kMoneyTextX = 11, kMoneyTextY = 5, kMoneyTextWidth = 19;
+        const SpriteSheet &money = data.money();
+        char buf[16];
+        std::snprintf(buf, sizeof buf, "%d", int(t.numfx_amount));
+        int width = -1;
+        for (const char *p = buf; *p; p++)
+            width += money.at(size_t(2 + (*p - '0'))).width + 1;
+        Sprite bag = money.at(1);
+        draw_sprite(frames.dst, x - 2, top, bag);
+        grow(frames.bounds, {x - 2, top, bag.width, bag.height});
+        int px = x - 2 + kMoneyTextX + (kMoneyTextWidth - width) / 2;
+        int py = top + kMoneyTextY;
+        for (const char *p = buf; *p; p++) {
+            Sprite digit = money.at(size_t(2 + (*p - '0')));
+            draw_sprite(frames.dst, px, py, digit);
+            grow(frames.bounds, {px, py, digit.width, digit.height});
+            px += digit.width + 1;
+        }
+        return;
+    }
+    // draw_text_on_map: the number in font 0, in the thing's colour.
+    char buf[100];
+    std::snprintf(buf, sizeof buf, "%d", int(t.numfx_amount));
+    TextSettings settings;
+    settings.window = {0, 0, frames.dst.width()};
+    settings.clip = {0, 0, frames.dst.width(), frames.dst.height()};
+    settings.flags = kTextOneColour;
+    settings.colour = t.subtype;
+    const Font &font = data.font(0);
+    draw_text(frames.dst, font, x, top, buf, settings);
+    grow(frames.bounds, {x, top, text_width(font, buf), text_height(font, buf)});
+}
+
 // Whether draw_cell_things draws thing `t`. mapwho_object (objects and
-// doors), mapwho_person's usual case (draw_special_id_frame), mapwho_reaper
-// and mapwho_bang (explosion debris) are drawn; people's glow, wobble and
-// status icons, and a machine's user drawn split (draw_split_frame) or
-// energised, are not drawn yet.
+// doors), mapwho_person (draw_special_id_frame, draw_split_frame and
+// draw_energise_frame), mapwho_reaper, mapwho_bang (explosion debris) and
+// mapwho_numfx are drawn; a patient glowing (radiation) or wobbling
+// (jellyitis) is not yet.
 bool cell_thing_drawn(const Thing &t)
 {
     if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff &&
         t.type != kThingReaper && t.type != kThingDebris && t.type != kThingHelicopter && t.type != kThingShadow &&
-        t.type != kThingMayor)
+        t.type != kThingMayor && t.type != kThingNumfx)
         return false;
     // mapwho_person draws no patient gone, merged into a member of staff's
     // animation or gone into the gates of hell; mapwho_reaper no reaper being
@@ -243,6 +435,135 @@ bool cell_thing_drawn(const Thing &t)
              (t.state == 42 || t.state == kStaffApplicant || t.state == kStaffBackToApplicants));
 }
 
+// draw_split_frame (src/draw.cpp): the patient `t` using machine `obj`, its
+// own frame above the machine's split line and the machine's aux_sprite
+// below it, so that it appears inside the machine. Grows `frames` and returns
+// the box of the patient's frame and the machine's.
+Rect draw_split_frames(CellFrames &frames, const Thing &t, const Thing &obj, Point at, const FrameOptions &opts)
+{
+    Surface &dst = frames.dst;
+    Rect saved = dst.clip();
+    const int split = at.y - int(obj.split_height);
+    FrameOptions person = opts;
+    person.icon = 0;
+    Rect person_sprites;
+    person.extent = &person_sprites;
+    dst.set_clip(intersect(saved, {saved.x, saved.y, saved.w, split - saved.y}));
+    Rect box = draw_frame(dst, at, t.sprite, t.flip != 0, frames.data, person);
+    dst.set_clip(intersect(saved, {saved.x, split, saved.w, saved.y + saved.h - split}));
+    Rect aux_sprites;
+    // The machine is drawn with the patient's layer choices, as
+    // full_draw_frame does (src/draw.cpp:614).
+    grow(box, draw_frame(dst, at, obj.aux_sprite, obj.aux_flip != 0, frames.data,
+                         {.layers = opts.layers, .extent = &aux_sprites}));
+    dst.set_clip(saved);
+    grow(person_sprites, aux_sprites);
+    if (frames.extent)
+        grow(*frames.extent, person_sprites);
+    grow(frames.bounds, box);
+    return box;
+}
+
+// draw_energise_frame's second copy: the patient's frame in a 64x64 buffer
+// (its mask colour transparent), holes speckled in as the machine's
+// split_height grows, blended over the screen through the ghost table
+// (DrawPixBuffer).
+void draw_energise_ghost(CellFrames &frames, Surface &pixbuf, const Thing &t, const Thing &obj, Point at,
+                         const FrameOptions &opts)
+{
+    pixbuf.fill(kMaskColour);
+    pixbuf.reset_clip();
+    draw_frame(pixbuf, {0x20, 0x3a}, t.sprite, t.flip != 0, frames.data, {.layers = opts.layers});
+    uint32_t rng = 0x546b1;
+    for (int i = int(obj.split_height) * 10; i > 0; i--) {
+        for (int shift : {0, 10, 20})
+            pixbuf.row(((rng >> shift) & 0xfff) / 0x40)[((rng >> shift) & 0xfff) % 0x40] = kMaskColour;
+        rng = ror13(rng * 0x24a1 + 0x24df);
+    }
+    const uint8_t *ghost = frames.data.ghost().data();
+    const Rect clip = frames.dst.clip();
+    for (int py = 0; py < 0x40; py++) {
+        int sy = at.y - 0x3a + py;
+        if (sy < clip.y || sy >= clip.y + clip.h)
+            continue;
+        uint8_t *out = frames.dst.row(sy);
+        const uint8_t *in = pixbuf.row(py);
+        for (int px = 0; px < 0x40; px++) {
+            int sx = at.x - 0x20 + px;
+            if (sx < clip.x || sx >= clip.x + clip.w)
+                continue;
+            out[sx] = pixbuf_pixel(out[sx], in[px], obj.aux_param, ghost);
+        }
+    }
+}
+
+// draw_energise_frame (src/draw.cpp): the patient `t` using machine `obj`,
+// drawn with the machine's aux_draw_flags (the first copy is skipped when
+// 0xff) and the ghost copy, in the colour/flags aux_param.
+Rect draw_energise_frames(CellFrames &frames, Surface &pixbuf, const Thing &t, const Thing &obj, Point at,
+                          const FrameOptions &opts)
+{
+    FrameOptions person = opts;
+    person.icon = 0;
+    Rect sprites;
+    person.extent = &sprites;
+    Rect box;
+    if (obj.aux_draw_flags != 0xff) {
+        person.flags = obj.aux_draw_flags;
+        box = draw_frame(frames.dst, at, t.sprite, t.flip != 0, frames.data, person);
+        grow(frames.bounds, box);
+    }
+    if (frames.extent)
+        grow(*frames.extent, sprites);
+    draw_energise_ghost(frames, pixbuf, t, obj, at, opts);
+    if (box.w <= 0)
+        box = intersect(frames.dst.clip(), {at.x - 0x20, at.y - 0x3a, 0x40, 0x40});
+    return box;
+}
+
+// Whether a thing's own frame was drawn, and its box.
+struct ThingFrame {
+    Rect box;
+    bool drawn = false;
+};
+
+// Draws a thing's own frame as mapwho_person/mapwho_object do: a filling
+// patient split around its machine, an energising patient, or the thing's
+// frame when it is not an object being used. Returns the frame's box.
+ThingFrame draw_thing_frame(CellFrames &frames, const CellDrawing &drawing, const Thing &t, const Thing *obj, Point at,
+                            const FrameOptions &opts)
+{
+    ThingFrame frame;
+    if (t.type == kThingPatient && t.state == kPsFills) {
+        // draw_split_frame; with no object it draws nothing.
+        if (obj) {
+            frame.box = draw_split_frames(frames, t, *obj, at, opts);
+            frame.drawn = true;
+        }
+    } else if (t.type == kThingPatient && t.state == kPsEnergises) {
+        // draw_special_id_frame while drawing into the pixbuf, else
+        // draw_energise_frame; with no object it draws nothing.
+        if (drawing.pixbuf) {
+            frame.box = draw_frame(frames.dst, at, t.sprite, t.flip != 0, frames.data, opts);
+            grow(frames.bounds, frame.box);
+            frame.drawn = true;
+        } else if (obj && drawing.energise) {
+            frame.box = draw_energise_frames(frames, *drawing.energise, t, *obj, at, opts);
+            frame.drawn = true;
+        }
+    } else if (!((t.type == kThingObject || t.type == kThingDoor) && t.state == kObjectInUse)) {
+        // mapwho_object draws an object's own frame only when it is not in
+        // use; while one is, its user's animation carries it.
+        frame.box = draw_frame(frames.dst, at, t.sprite, t.flip != 0, frames.data, opts);
+        grow(frames.bounds, frame.box);
+        frame.drawn = true;
+    }
+    return frame;
+}
+
+void finish_cell_thing(CellFrames &frames, const CellDrawing &drawing, const Thing &t, int16_t id, Point at,
+                       ThingFrame frame);
+
 // draw_cell_things for one thing `id` of the cell whose diamond's top-left
 // is `at`.
 void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id, Point at)
@@ -251,6 +572,11 @@ void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id,
     const Thing &t = drawing.world.things[size_t(id)];
     int tx = at.x + kTileWidth / 2 + ((int(t.x.frac) - int(t.y.frac)) >> 3);
     int ty = at.y + ((int(t.x.frac) + int(t.y.frac)) >> 4);
+    // A floating number is drawn by mapwho_numfx, not as a frame.
+    if (t.type == kThingNumfx) {
+        draw_numfx(frames, data, t, tx, ty);
+        return;
+    }
     // A dead patient floating away is drawn its height up (fly_height),
     // debris its altitude in 1/256 pixel, all its elements (mapwho_bang's
     // draw_a_frame).
@@ -266,10 +592,9 @@ void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id,
     int32_t scale = 0x10000;
     if (t.type == kThingShadow)
         scale = 0x640000 / (drawing.world.things[t.caster].altitude + 100);
-    const uint8_t *layers = t.type == kThingDebris || t.type == kThingShadow ? nullptr : t.layers.data();
     Rect sprites;
     FrameOptions opts;
-    opts.layers = layers;
+    opts.layers = t.type == kThingDebris || t.type == kThingShadow ? nullptr : t.layers.data();
     opts.extent = &sprites;
     opts.scale = scale;
     // A person's status icon hangs over their head, a machine's over its
@@ -278,26 +603,42 @@ void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id,
         opts.icon = t.icon_frame;
         opts.icon_over_frame = t.type == kThingObject;
     }
-    Rect box = draw_frame(frames.dst, {tx, ty}, t.sprite, t.flip != 0, data, opts);
-    grow(frames.bounds, box);
-    // mapwho_object's smoke of a worn machine, over it: the game draws it
-    // with the layer choices of the bytes holding Thing::smoke, a puff on
-    // each of layers 10-12 shown once its byte is 1.
+    const Thing *obj = (t.type == kThingPatient || t.type == kThingStaff) && t.object && t.object < kThingCount
+                           ? &drawing.world.things[size_t(t.object)]
+                           : nullptr;
+    finish_cell_thing(frames, drawing, t, id, {tx, ty}, draw_thing_frame(frames, drawing, t, obj, {tx, ty}, opts));
+    if (frames.extent)
+        grow(*frames.extent, sprites);
+}
+
+// draw_cell_thing's tail: mapwho_object's smoke of a worn machine over it, the
+// pointer recorded if the thing's frame is under it, and the frame's sound
+// queued (only when the frame was drawn; the game plays it inside the
+// drawing).
+void finish_cell_thing(CellFrames &frames, const CellDrawing &drawing, const Thing &t, int16_t id, Point at,
+                       ThingFrame frame)
+{
+    const GameData &data = drawing.data;
+    const int tx = at.x, ty = at.y;
+    // The game draws the smoke with the layer choices of the bytes holding
+    // Thing::smoke, a puff on each of layers 10-12 shown once its byte is 1.
     if (t.type == kThingObject && t.overlay_frame && (pointed_testable(t) || t.state == kObjectInUse)) {
         std::array<uint8_t, kLayerCount> smoke{};
         std::copy(t.smoke.begin(), t.smoke.end(), smoke.begin() + 10);
+        Rect overlay_sprites;
         grow(frames.bounds, draw_frame(frames.dst, {tx, ty}, t.overlay_frame, t.flip != 0, data,
-                                       {.layers = smoke.data(), .extent = &sprites}));
+                                       {.layers = smoke.data(), .extent = &overlay_sprites}));
+        if (frames.extent)
+            grow(*frames.extent, overlay_sprites);
     }
     PointedThing *pointed = drawing.drawn.pointed;
-    if (pointed && pointed_testable(t) && box.x < pointed->at.x && box.x + box.w > pointed->at.x &&
-        box.y < pointed->at.y && box.y + box.h > pointed->at.y)
+    if (pointed && pointed_testable(t) && frame.box.x < pointed->at.x && frame.box.x + frame.box.w > pointed->at.x &&
+        frame.box.y < pointed->at.y && frame.box.y + frame.box.h > pointed->at.y)
         pointed->thing = uint16_t(id);
-    if (std::vector<FrameSound> *sounds = drawing.drawn.sounds; sounds && t.sprite < data.anims().frames.size())
+    if (std::vector<FrameSound> *sounds = drawing.drawn.sounds;
+        frame.drawn && sounds && t.sprite < data.anims().frames.size())
         sounds->push_back({uint16_t(id), data.anims().frames[t.sprite].sound,
                            t.type == kThingPatient || t.type == kThingStaff, tx, ty});
-    if (frames.extent)
-        grow(*frames.extent, sprites);
 }
 
 // do_mapwho for `cell` (map index `index`), whose diamond has its left edge
@@ -336,6 +677,8 @@ class WorldDrawing
           map_(world.map.data()), scan_{view_, target.camera}, drawing_{world, data, drawn}, shadows_(shadows),
           scratch_(scratch)
     {
+        pixbuf_.resize(0x40, 0x40);
+        drawing_.energise = &pixbuf_;
     }
 
     void floors() const
@@ -364,8 +707,7 @@ class WorldDrawing
                 if (on_map(col, row))
                     draw_walls(map_[col + row * kMapSize], scan_.x(col, row), base_y);
             }
-            for (int col = col0; col <= col1; col++)
-                cell_things(col, line - col, base_y);
+            draw_line_things(col0, col1, line, base_y);
         });
     }
 
@@ -385,6 +727,77 @@ class WorldDrawing
         }
     }
 
+    // The game's draw_precedence for one line: a big cell's behind/front chain
+    // (a cell covering another is drawn after it) and, for a big cell no other
+    // covers, the `next` chain with `head` its first; `last` is the last cell
+    // that is not big.
+    struct LineOrder {
+        std::vector<int8_t> behind, front, next;
+        int head = -1;
+        int last = -1;
+    };
+
+    // do_mapwho's order for the cells of `line` from `col0` to `col1`
+    // (draw_all_sprites_on_wscreen_selectively_using_pix_buffer). The port
+    // scans the whole view, so its line can hold more cells than the game's
+    // fixed 14-cell covers window; positions past it are not ordered against
+    // each other, as in the game.
+    LineOrder order_line(int col0, int col1, int line) const
+    {
+        const int n = col1 - col0 + 1;
+        LineOrder order;
+        if (n <= 0)
+            return order;
+        order.behind.assign(size_t(n), -1);
+        order.front.assign(size_t(n), -1);
+        order.next.assign(size_t(n), -1);
+        covers_.reset();
+        int tail = -1;
+        for (int i = 0; i < n; i++) {
+            int col = col0 + i, row = line - col;
+            if (!on_map(col, row))
+                continue;
+            const MapCell &cell = map_[col + row * kMapSize];
+            if (!cell.first && !(cell.litter_shadow & 0xf) && !(cell.flags & 0xc0))
+                continue;
+            if (!(cell.flags & kCellBig)) {
+                order.next[size_t(i)] = int8_t(order.last);
+                order.last = i;
+                continue;
+            }
+            int8_t prec = cell_precedence(drawing_.world, i, cell.first, covers_);
+            if (prec < 0) {
+                if (order.head >= 0)
+                    order.next[size_t(tail)] = int8_t(i);
+                else
+                    order.head = i;
+                tail = i;
+                continue;
+            }
+            order.behind[size_t(i)] = order.behind[size_t(prec)];
+            order.front[size_t(i)] = prec;
+            order.behind[size_t(prec)] = int8_t(i);
+        }
+        return order;
+    }
+
+    // Draws one scan line's cells in do_mapwho's order: the ones holding more
+    // than one cell (MAP_BIG_CELL) with their footprints' overlap resolved,
+    // then the rest from the far end of the line.
+    void draw_line_things(int col0, int col1, int line, int base_y)
+    {
+        const LineOrder order = order_line(col0, col1, line);
+        for (int k = order.head; k >= 0; k = order.next[size_t(k)]) {
+            int i = k;
+            while (order.behind[size_t(i)] >= 0)
+                i = order.behind[size_t(i)];
+            for (; i >= 0; i = order.front[size_t(i)])
+                cell_things(col0 + i, line - (col0 + i), base_y);
+        }
+        for (int i = order.last; i >= 0; i = order.next[size_t(i)])
+            cell_things(col0 + i, line - (col0 + i), base_y);
+    }
+
     void cell_things(int col, int row, int base_y)
     {
         if (!on_map(col, row))
@@ -401,9 +814,11 @@ class WorldDrawing
         // every cell further east or south, then copy what is left
         // (draw_window_into_pix_buffer).
         scratch_.set_clip(view_);
+        CellDrawing pixbuf = drawing_;
+        pixbuf.pixbuf = true;
         Rect touched{};
         Rect bounds =
-            intersect(draw_cell_things(scratch_, drawing_, cell, col + row * kMapSize, {x, top}, &touched), view_);
+            intersect(draw_cell_things(scratch_, pixbuf, cell, col + row * kMapSize, {x, top}, &touched), view_);
         touched = intersect(touched, view_);
         scratch_.set_clip(bounds);
         mask_walls_in_front(bounds, col, row);
@@ -448,9 +863,13 @@ class WorldDrawing
     const int tallest_;
     const MapCell *map_;
     const CellScan scan_;
-    const CellDrawing drawing_;
+    CellDrawing drawing_;
     const ShadowSprites *shadows_;
     Surface &scratch_;
+    // The 64x64 buffer draw_energise_frame works in, and the game's covers
+    // table (which persists across lines, as the original's global does).
+    Surface pixbuf_;
+    mutable CoverTable covers_;
 };
 
 } // namespace

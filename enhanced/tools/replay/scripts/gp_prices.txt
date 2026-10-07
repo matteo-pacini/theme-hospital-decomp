@@ -4,6 +4,8 @@
 # (EV_OPEN_SCREEN 51, update_cure_costs) and closed (EV_RETURN_FROM_SCREEN
 # 112) between.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect balance 7 amount=87 arg=1
+# Expect balance 7 amount=50 arg=1
 5 98 0 0
 6 37 11 1
 7 43 0 0

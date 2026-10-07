@@ -192,6 +192,10 @@ extern "C" int trace_skip(const char *name)
 // between turn - 1 and turn, as the replay tool does.
 static u32 script[256][4];
 static int script_count, script_next;
+// The last cell a scripted "@cursor" moved to, as update_placement keeps it.
+static u32 script_mouse_cell;
+
+void draw_object_cursor(void);
 
 static void script_load(void)
 {
@@ -220,7 +224,39 @@ static void script_load(void)
             while (*p == ' ' || *p == '\t')
                 p++;
         }
-        if (field == 4) {
+        if (field >= 1 && p[0] == '@' && p[1] == 'c' && p[2] == 'u' && p[3] == 'r' && p[4] == 's' &&
+            p[5] == 'o' && p[6] == 'r') {
+            // The port's "@cursor <cell>": the move its update_placement
+            // makes, handed to the placement code below.
+            p += 7;
+            while (*p == ' ' || *p == '\t')
+                p++;
+            if (*p >= '0' && *p <= '9') {
+                u32 cell = 0;
+                while (*p >= '0' && *p <= '9')
+                    cell = cell * 10 + (*p++ - '0');
+                script[script_count][0] = v[0];
+                script[script_count][1] = 0x1000;
+                script[script_count][2] = cell;
+                script[script_count][3] = 0;
+                script_count++;
+            }
+        } else if (field >= 1 && p[0] == '@' && p[1] == 't' && p[2] == 'u' && p[3] == 't' && p[4] == 'o' &&
+                   p[5] == 'r' && p[6] == 'i' && p[7] == 'a' && p[8] == 'l') {
+            // The port's "@tutorial <0 or 1>": advisor.flags' tutorial bit,
+            // set by the preferences screen, and its step's start (area.cpp).
+            u32 on = 0;
+            p += 9;
+            while (*p == ' ' || *p == '\t')
+                p++;
+            while (*p >= '0' && *p <= '9')
+                on = on * 10 + (*p++ - '0');
+            script[script_count][0] = v[0];
+            script[script_count][1] = 0x1001;
+            script[script_count][2] = on ? 1 : 0;
+            script[script_count][3] = 0;
+            script_count++;
+        } else if (field == 4) {
             for (i = 0; i < 4; i++)
                 script[script_count][i] = v[i];
             script_count++;
@@ -236,13 +272,36 @@ static void script_run(void)
 {
     while (script_next < script_count && script[script_next][0] <= actual_game_turn + 1) {
         if (script[script_next][0] == actual_game_turn + 1) {
-            player_events[0].type = (u8)script[script_next][1];
-            player_events[0].value = (u16)script[script_next][2];
-            player_events[0].flags = 0;
-            player_events[0].arg = (u16)script[script_next][3];
-            trace_event("cmd type=%u value=%u arg=%u", (unsigned)player_events[0].type,
-                        (unsigned)player_events[0].value, (unsigned)player_events[0].arg);
-            process_turn();
+            // The port's update_placement keeps the cursor's cell between
+            // commands; the redraw code would let the parked DOSBox pointer
+            // overwrite it, so put it back first.
+            othervar.prev_mouse_cell = (u16)script_mouse_cell;
+            othervar.mouse_cell = (u16)script_mouse_cell;
+            if (script[script_next][1] == 0x1000) {
+                // "@cursor <cell>": the cursor move the port's update_placement
+                // makes, without the rest of process_mouse.
+                script_mouse_cell = script[script_next][2];
+                othervar.mouse_cell = (u16)script_mouse_cell;
+                if (gamevar.mouse_mode == MM_PLACE_OBJECT)
+                    draw_object_cursor();
+            } else if (script[script_next][1] == 0x1001) {
+                // "@tutorial <0 or 1>": the preferences screen's flag, and
+                // the area screen's step start (area.cpp).
+                advisor.flags = (advisor.flags & ~1) | (u8)(script[script_next][2] ? 1 : 0);
+                advisor.tutorial_step = 0x1d;
+            } else {
+                player_events[0].type = (u8)script[script_next][1];
+                player_events[0].value = (u16)script[script_next][2];
+                player_events[0].flags = 0;
+                player_events[0].arg = (u16)script[script_next][3];
+                // The port's fixed stand-in for the staff cursor's cell: a
+                // member of staff held by a scripted command is placeable.
+                if (player_events[0].type == EV_MARK_EMPLOYING)
+                    gamevar.staff_place_ok = 1;
+                trace_event("cmd type=%u value=%u arg=%u", (unsigned)player_events[0].type,
+                            (unsigned)player_events[0].value, (unsigned)player_events[0].arg);
+                process_turn();
+            }
         }
         script_next++;
     }
@@ -290,6 +349,19 @@ GAME_EDITS = [
     case 7:
         quit_game = 1;
         break;"""),
+    # The quarterly win screen (display_mode DM_YEAR_END_WINLOSE) would play
+    # the win movie and wait for a mouse answer the headless run cannot give.
+    # Leave it unplayed: the decline command (EV_DECLINE_WIN, process_turn)
+    # restores display_mode and the game carries on; without one, the run
+    # stays here, as the offer's screen does.
+    ("""            case DM_YEAR_END_WINLOSE:
+                lib_memcpy(&choice_backup, &year_end_backup, 10);
+                play_winlose();
+                process_turn();
+                break;""", """            case DM_YEAR_END_WINLOSE:
+                lib_memcpy(&choice_backup, &year_end_backup, 10);
+                process_turn();
+                break;"""),
     ("""        if (othervar.fade_palette) {""", """        if (gamevar.mouse_mode == MM_HELP)
             finish_composite_help();
         if (actual_game_turn != trace_turn) {
@@ -344,6 +416,36 @@ SIM_EDITS = [
         trace_event("quarterly progress=%ld offered=%d", (long)pct, pct >= 100 ? 1 : 0);
         if (pct < 100)
             return;"""),
+]
+
+# The object cursor's placement check, mirroring the port's update_placement
+# (core/world/objects.cpp): the same event at the point its recompute ends.
+# The "no change" gotos stay silent, as the port's early returns do.
+CURSOR_EVENT = (
+    'trace_event("place_cursor ok=%u tile=%u kind=%u dir=%u", (unsigned)gamevar.place_ok, '
+    '(unsigned)gamevar.place_tile, (unsigned)gamevar.place_kind, (unsigned)gamevar.place_dir);'
+)
+CURSOR_EDITS = [
+    ("""    gamevar.place_ok = can_place_object(tile, kind, dir, player);
+    if (!gamevar.place_ok)
+        goto draw;""", f"""    gamevar.place_ok = can_place_object(tile, kind, dir, player);
+    if (!gamevar.place_ok) {{
+        {CURSOR_EVENT}
+        goto draw;
+    }}"""),
+    ("""        gamevar.place_ok = can_place_object(tile2, kind2, dir2, player);
+        if (!gamevar.place_ok)
+            goto draw;""", f"""        gamevar.place_ok = can_place_object(tile2, kind2, dir2, player);
+        if (!gamevar.place_ok) {{
+            {CURSOR_EVENT}
+            goto draw;
+        }}"""),
+    ("""        gamevar.place_ok = place_object_nav_check(&room_info[gamevar.place_room], tile, kind, dir, tile2, kind2, dir2);
+    }
+draw:""", f"""        gamevar.place_ok = place_object_nav_check(&room_info[gamevar.place_room], tile, kind, dir, tile2, kind2, dir2);
+    }}
+    {CURSOR_EVENT}
+draw:"""),
 ]
 
 # The calls of daily_admin and twice_daily_admin that may draw, with their
@@ -445,6 +547,7 @@ EVENTS = {
         (("before", "patient->resume_state = 0;"), "doctor_waits_for_patient_to_arrive",
          f'trace_event("treat %u patient=%u room=%u", {ID.format("doctor")}, {ID.format("patient")}, '
          '(unsigned)(doctor->room - room_info));'),
+        ("entry", "stop_waiting_for_patient", 'trace_event("stop_waiting");'),
     ],
     "peepmake.cpp": [
         (("before", "patient->known_illness = patient->illness;"), "create_a_peep",
@@ -464,10 +567,18 @@ EVENTS = {
         ("entry", "start_person_going", f'trace_event("start_going %u", {ID.format("person")});'),
         ("entry", "person_go_home",
          f'trace_event("go_home %u state=%u", {ID.format("person")}, (unsigned)person->state);'),
+        ("entry", "person_nav_failure",
+         f'trace_event("nav_failure %u", {ID.format("person")});'),
+        ("entry", "return_to_queue_area",
+         f'trace_event("return_to_queue_area %u", {ID.format("person")});'),
+        ("entry", "person_waits_for_busy",
+         f'trace_event("waits_for_busy %u", {ID.format("person")});'),
         ("entry", "person_arrives_at_door", f'trace_event("at_door %u", {ID.format("person")});'),
         ("entry", "call_person_to_room",
          f'trace_event("call %u id=%u action=%u arg=%u", {ID.format("caller")}, (unsigned)id, (unsigned)action, '
          '(unsigned)arg);'),
+        ("entry", "call_person_again",
+         'trace_event("call_person_again %u action=%u", (unsigned)(caller - thing), (unsigned)action);'),
         ("exit", "make_a_playercall",
          'if (r) trace_event("playercall %u type=%u subject=%u owner=%u", (unsigned)r, (unsigned)type, '
          '(unsigned)subject, (unsigned)owner);'),
@@ -510,6 +621,11 @@ EVENTS = {
          'trace_event("appraise %u skill=%u", (unsigned)(employee - thing), 128);'),
     ],
     "io.cpp": [
+        # The win/lose screen's decline button, carried as EV_DECLINE_WIN (0x8f)
+        # by the replay: the offered win is refused and the game carries on.
+        (("before", "case EV_NONE:\n            break;"), "process_turn",
+         'case 0x8f:\n            gamevar.win_declined_count++;\n            othervar.win_declined = 1;\n'
+         '            othervar.bonus_level = 0;\n            display_mode = DM_GAME;\n            break;'),
         (("before", "if (statvar.num_players > 1) {\n                    restore_popup(2);"), "process_turn",
          'trace_event("emergency_refuse %u", (unsigned)popup_store[player][2].id);'),
         (("before", "allhosps[i].emergency_state = 10;"), "process_turn", 'trace_event("emergency_start");'),
@@ -534,6 +650,8 @@ EVENTS = {
     "complex.cpp": [
         ("entry", "set_complex",
          f'trace_event("set_complex %u action=%u arg=%u", {ID.format("w")}, (unsigned)action, (unsigned)arg);'),
+        ("entry", "fail_person_complex", f'trace_event("fail_complex %u", {ID.format("person")});'),
+        ("entry", "abandon_complex", f'trace_event("abandon_complex %u", {ID.format("w")});'),
         (("before", "obj->user = employee - thing;"), "process_staff_complex",
          f'trace_event("use_object %u obj=%u kind=%u", {ID.format("employee")}, (unsigned)employee->object, '
          '(unsigned)obj->subtype);'),
@@ -595,6 +713,8 @@ EVENTS = {
          '(unsigned)staff->crazy);'),
         ("entry", "staff_picked_up", f'trace_event("staff_picked_up %u", {ID.format("staff")});'),
         ("entry", "sack_staff", f'trace_event("sack_staff %u mode=%u", {ID.format("staff")}, (unsigned)mode);'),
+        ("entry", "staff_nav_failure",
+         f'trace_event("staff_nav_failure %u", {ID.format("staff")});'),
     ],
     "things.cpp": [
         (("before", "remove_node(cur);\n                cur->state = SS_APPLICANT;"), "process_things",
@@ -632,9 +752,20 @@ EVENTS = {
     ],
     "blueprnt.cpp": [
         ("entry", "commit_blueprint", 'if (owner == 0) trace_event("commit_blueprint");'),
+        (("before", "advisor.forced_advice_id = 4;"), "commit_blueprint",
+         'if (owner == 0) trace_event("blueprint_invalid");'),
+        (("before", "advisor.forced_advice_id = 5;"), "commit_blueprint",
+         'if (owner == 0) trace_event("blueprint_blocked");'),
+        ("entry", "modify_blueprint",
+         'if (owner == 0) trace_event("blueprint x0=%u y0=%u x1=%u y1=%u drag=%u", '
+         '(unsigned)allhosps[owner].build.x0, (unsigned)allhosps[owner].build.y0, '
+         '(unsigned)allhosps[owner].build.x1, (unsigned)allhosps[owner].build.y1, '
+         '(unsigned)allhosps[owner].build.drag);'),
         ("entry", "uncommit_blueprint", 'if (owner == 0) trace_event("uncommit_blueprint");'),
         ("entry", "commit_doors", 'if (owner == 0) trace_event("commit_doors");'),
         ("entry", "delete_blueprint_room", 'if (owner == 0) trace_event("delete_blueprint_room");'),
+        (("before", "return 1;"), "move_peep_from_blueprint",
+         'trace_event("bp_goto %u", (unsigned)(peep - thing));'),
         ("exit", "allocate_reception_roominfo",
          'if (r) trace_event("reception %u", (unsigned)(r - room_info));'),
     ],
@@ -657,6 +788,10 @@ EVENTS = {
     "build.cpp": [
         ("entry", "open_room", 'if (owner == 0) trace_event("open_room");'),
         ("entry", "delete_room", 'trace_event("delete_room %u", (unsigned)(room - room_info));'),
+        (("before", "othervar.door_invalid[owner] = 1;"), "temp_place_door",
+         'if (owner == 0) trace_event("door_invalid");'),
+        (("before", "advisor.forced_advice_id = 6;"), "place_bp_door",
+         'if (owner == 0) trace_event("door_blocked");'),
     ],
     "research.cpp": [
         (("before", "allhosps[researcher->owner].research_points += amount;"), "research_contribution",
@@ -699,6 +834,13 @@ EVENTS = {
          'trace_event("promoted %u skill=%u", (unsigned)(student - thing), 64);'),
         (("before", "student->skills |= SKILL_RESEARCHER;"), "training_done",
          'trace_event("promoted %u skill=%u", (unsigned)(student - thing), 256);'),
+    ],
+    "rats.cpp": [
+        (("before", "    }\n}"), "try_bonus_level",
+         'trace_event("bonus_level %u", (unsigned)othervar.bonus_level);'),
+    ],
+    "tutorial.cpp": [
+        ("entry", "tutorial", 'trace_event("tutorial %u", (unsigned)advisor.tutorial_step);'),
     ],
 }
 
@@ -802,6 +944,9 @@ def instrument(tree):
                     f'{indent}if (!trace_skip("{fn}"))\n{indent}    {call}\n{indent}trace_note("{fn} done");\n')
         elif unit == "sim.cpp":
             for old, new in SIM_EDITS:
+                rep(old, new)
+        elif unit == "cursor.cpp":
+            for old, new in CURSOR_EDITS:
                 rep(old, new)
         for where, name, code in EVENTS.get(unit, []):
             if where == "entry":

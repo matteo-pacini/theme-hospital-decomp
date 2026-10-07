@@ -102,6 +102,7 @@ uint16_t call_person_to_room(const PersonRun &run, uint16_t caller, uint16_t id,
 uint8_t call_person_again(const PersonRun &run, uint16_t caller, uint16_t action, uint16_t arg)
 {
     World &world = run.world;
+    trace_event("call_person_again %u action=%u", unsigned(caller), unsigned(action));
     Thing &c = world.things[caller];
     if (c.slave == 0)
         return 0;

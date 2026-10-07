@@ -18,8 +18,8 @@ For a session where a lead agent briefs worker agents in herdr panes
   or files you didn't write. Re-read before each edit.
 - No git commands. No broad `pkill`/`kill`: stop only processes you started.
 - Your own build folder, `REPLAY_DIR` and temp folder, as the brief names.
-- When done, write the report file the brief names and reply only
-  `DONE <path>`.
+- When done, clean up what you made (AGENTS.md, "Sharing the machine"),
+  then write the report file the brief names and reply only `DONE <path>`.
 
 ## Lead
 
@@ -31,7 +31,9 @@ For a session where a lead agent briefs worker agents in herdr panes
   after a substantial fix round. Accept nothing on the worker's word,
   least of all a scope cut or an "impossible" claim.
 - Finish a batch with one combined check of the whole tree: every replay
-  script on both sides, every drive test, all gates.
+  script on both sides, every drive test, all gates. Then remove the batch's
+  traces, verification folders and stale `build/replay-*` folders, and check
+  free space on `/` (`/tmp` lives there).
 - Wait for workers going idle or blocked (`herdr agent get`), not for their
   report files: they update reports while working.
 - Give unrelated tasks a fresh session (`/new` in opencode). When a worker

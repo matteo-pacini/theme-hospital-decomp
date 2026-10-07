@@ -4,6 +4,8 @@
 # (resign_count 0 makes the sack draw 0).
 # desk, cabinet and chair, opened, and a doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect rand process_turn == 1
+# Expect-not balance 27 amount=-30
 5 98 0 0
 6 37 11 1
 7 43 0 0

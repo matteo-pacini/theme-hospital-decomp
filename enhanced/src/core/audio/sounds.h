@@ -40,6 +40,8 @@ enum : uint8_t {
     kSfxPickup = 0x99,      // SFX_PICKUP: a member of staff picked up
     kSfxSack = 0xaa,        // SFX_SACK: a member of staff sacked
     kSfxStaffDemand = 0x9a, // SFX_STAFF_DEMAND: a member of staff's demand opens
+    kSfxBoo = 0xae,         // SFX_BOO: a treatment failed and its patient died
+    kSfxCheer = 0xaf,       // SFX_CHEER: a patient cured
     kSfxBonus2 = 0xb8,      // SFX_BONUS2: a demand accepted
     kSfxFanfare = 0xd9,     // SFX_FANFARE: the hospital opens
 };

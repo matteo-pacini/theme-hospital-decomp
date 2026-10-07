@@ -1,6 +1,8 @@
 # Level 1: reception.txt, then a GP's office (62,65)-(66,69) with its door,
 # desk, cabinet and chair, opened, and a doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect staff_picked_up
+# Expect place_staff
 5 98 0 0
 6 37 11 1
 7 43 0 0

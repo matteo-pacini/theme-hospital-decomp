@@ -334,8 +334,10 @@ bool start_level(th::Game &game, const Options &o, const th::GameData &data)
 
 // display_advisor as the game's frame runs it, between the turn's start and
 // its things: each advice given is noted in `out` (when not null) as a
-// comment line.
-void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out)
+// comment line. `last` and `pending` are the commands carried out last and
+// at this turn, for the tutorial's steps.
+void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out, const th::Event &last,
+                 const th::Event &pending)
 {
     th::AdvisorInputs in;
     in.game_turn = game.turn_count;
@@ -349,15 +351,54 @@ void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out)
     in.world = &game.world;
     in.visitors = game.arrivals.hospitals[0].visitors;
     in.text = &data.text();
+    in.last = last;
+    in.pending = pending;
+    // The tutorial's placement steps read the pointer's cell, which a script
+    // does not move; a held member of staff is always placeable here.
+    in.staff_place_ok = true;
     std::array<uint8_t, th::kAdviceCount> given{};
     for (size_t i = 0; i < given.size(); i++)
         given[i] = game.advisor.advice[i].times_given;
     // The presentation's generator, which nothing traced reads.
     static uint32_t safeseed = th::kLevelStartSeed;
+    // The tutorial's step events belong to this turn, as the game's frame
+    // writes its turn's events.
+    th::EventScope scope(&game.events, game.turn_count);
     th::advisor_frame(game.advisor, in, data.anims(), safeseed);
     for (size_t i = 0; i < given.size(); i++)
         if (out && game.advisor.advice[i].times_given != given[i])
             std::fprintf(out, "# advice %u\n", unsigned(game.advisor.advice[i].id));
+}
+
+// The command a script line gives ("<type> <value> <arg>"), or EV_NONE for a
+// line that is not one (an @ setting or a byte change).
+th::Event script_command(const std::string &line)
+{
+    unsigned type = 0, value = 0, arg = 0;
+    if (line.empty() || line[0] == '@' || std::sscanf(line.c_str(), "%u %u %u", &type, &value, &arg) != 3)
+        return {};
+    return {uint8_t(type), uint16_t(value), 0, uint16_t(arg)};
+}
+
+// Carries out the script's commands due before turn `turn`, in order, and
+// leaves the last command's event in `command` (the one the original's
+// process_turn leaves in old_packet). False, reported on standard error,
+// when one cannot be carried out.
+bool apply_script_commands(th::Game &game, const Options &o, const std::vector<ScriptLine> &script, size_t &next,
+                           uint32_t turn, th::Event &command)
+{
+    std::string error;
+    for (; next < script.size() && script[next].turn <= turn; next++) {
+        if (script[next].turn != turn)
+            continue;
+        if (th::Event e = script_command(script[next].input); e.type)
+            command = e;
+        if (!game.replay_input(script[next].input, &error)) {
+            std::fprintf(stderr, "%s: %s\n", o.script_path, error.c_str());
+            return false;
+        }
+    }
+    return true;
 }
 
 // Runs turns up to `last_turn`, carrying out the script's commands between
@@ -366,23 +407,25 @@ void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out)
 bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &script, uint32_t last_turn,
                std::FILE *out, const th::GameData &data)
 {
-    std::string error;
     size_t next = 0;
     while (game.turn_count < last_turn) {
-        for (; next < script.size() && script[next].turn <= game.turn_count + 1; next++) {
-            if (script[next].turn == game.turn_count + 1 && !game.replay_input(script[next].input, &error)) {
-                std::fprintf(stderr, "%s: %s\n", o.script_path, error.c_str());
-                return false;
-            }
-        }
+        th::Event command{};
+        if (!apply_script_commands(game, o, script, next, game.turn_count + 1, command))
+            return false;
         if (game.paused) {
             std::fprintf(stderr, "the script leaves the game paused before turn %u\n", game.turn_count + 1);
             break;
         }
-        if (!o.advisor) {
+        // The tutorial's steps run whether or not --advisor asked for the
+        // advisor, as the game runs them every frame.
+        bool with_advisor = o.advisor || (game.advisor.flags & th::kAdvisorTutorial);
+        if (!with_advisor) {
             game.turn();
         } else if (game.start_turn()) {
-            run_advisor(game, data, out);
+            // The original carries a scripted command out at the end of the
+            // frame before the one it is for, so the advisor of turn N sees
+            // it as the last command, with none pending.
+            run_advisor(game, data, out, command, {});
             game.run_things();
         }
         if (out)

@@ -2,6 +2,7 @@
 # (cell 5160) and receptionist (applicant 16); a handyman (13) with his
 # repair priority raised to 100; a GP's office (35,33)-(39,37) with its
 # door above it, desk, cabinet and chair, and a doctor (9) in the corridor.
+# Expect researched 14 illness=36
 5 98 0 0
 6 37 11 1
 7 43 0 0

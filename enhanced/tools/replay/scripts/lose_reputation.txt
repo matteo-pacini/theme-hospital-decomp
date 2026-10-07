@@ -7,6 +7,8 @@
 # hospital at 175, below level 1's lose value (200), so the level is lost at
 # the first year end, turn 18250.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect winlose lose
+# Expect rep
 5 98 0 0
 6 37 11 1
 7 43 0 0

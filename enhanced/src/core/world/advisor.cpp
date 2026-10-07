@@ -6,6 +6,7 @@
 #include "core/world/finance.h"
 #include "core/world/objects.h"
 #include "core/world/staff.h"
+#include "core/world/trace.h"
 #include "core/world/world.h"
 
 #include <bit>
@@ -1328,6 +1329,7 @@ int tutorial_open_build_room(Tutorial &t)
 // to be hidden, -1 otherwise.
 int tutorial(Advisor &a, const AdvisorInputs &in)
 {
+    trace_event("tutorial %u", unsigned(a.tutorial_step));
     const Event &last = in.last;
     Tutorial t{a,
                in,

@@ -264,6 +264,12 @@ game writes an event for, or adds an event, writes it on both sides, at the
 same point: in the port (`trace_event`) and in `tools/replay/instrument.py`'s
 EVENTS; a port named otherwise than the game's function names it in its
 draws (`old_newrand(seed, "name")`). See the scripts for their arguments.
+`tools/replay/replay_all.sh` runs every script (or the ones named) through
+both sides, checks that each agrees and satisfies the `# Expect` lines in its
+header (`# Expect <text> [<op> <n>]`: an event line whose text after `E `
+starts with `<text>` occurs `<op> <n>` times, `op` one of `>= == <=`, default
+`>= 1`; `# Expect-not <text>`: no such event), and prints one line per script
+and a summary; `check_expect.py` does the checking on both traces.
 The player's commands checked so far are in `tools/replay/scripts/`
 (`reception.txt`: a reception desk and receptionist; `gp_office.txt`: a
 GP's office and its doctor too; `pick_up_staff.txt`: the GP's office with
@@ -345,7 +351,14 @@ room and picking up objects: `edit_room.txt` (level 1, an inflation room
 edited, its inflator lifted and put back), `edit_room_cancel.txt`,
 `edit_room_occupied.txt` and `edit_room_research.txt` (a room edited while
 someone is in it), `pick_object.txt` (a corridor bench lifted and dropped)
-and `pick_up_desk.txt` (the reception desk in use); the queue window:
+and `pick_up_desk.txt` (the reception desk in use); building and deleting
+rooms: `room_delete.txt` (level 1, a furnished office with patients queued
+taken back to a blueprint and abandoned, half its price refunded),
+`blueprint_drag.txt` (level 1, a blueprint dragged by a corner, an edge and
+its middle, a too-small commit refused, a door refused on a wall shared with
+another room, and a commit cut off from the entrance) and
+`blueprint_over_people.txt` (level 1, a blueprint drawn over a queue, sending
+the patients off its floor); the queue window:
 `queue_commands.txt`; the staff's pay-raise demands: `staff_demand.txt`
 (raised and bonused) and `staff_demand_refuse.txt` (refused); the
 open-hospital button: `open_hospital.txt`; the plants: `plant_wilt.txt`,
@@ -368,6 +381,10 @@ trophies and score); compared with SKIP
     th_replay --script enhanced/tools/replay/scripts/gp_office.txt \
         --turns 18000 --out enhanced.txt
     enhanced/tools/replay/compare.py orig.txt enhanced.txt
+
+What the scripts leave unexercised: `tools/coverage.sh` (in the dev shell, GCC)
+builds th_replay with `-DTH_COVERAGE=ON` in build/coverage, runs every script
+there and writes an HTML report and `summary.txt` to build/coverage/report/.
 
 
 ## Layout

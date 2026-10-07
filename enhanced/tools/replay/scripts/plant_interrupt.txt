@@ -2,6 +2,8 @@
 # the first plant page (turn 2736) and before he waters it (turn 2952), so
 # interrupt_staff drops his plant page; he is put back at turn 3400 and
 # waters it then. Compare up to turn 18000.
+# Expect staff_picked_up
+# Expect watered
 5 98 0 0
 6 37 45 1
 7 43 0 0

@@ -1,6 +1,9 @@
 # Level 3: research_default.txt's research room with no researcher: a
 # doctor without the research skill (applicant 15) placed in it leaves;
 # no points, nothing researched.
+# Expect place_staff
+# Expect-not research_points
+# Expect-not researched
 101 55 0 0
 102 53 28 28
 103 2 8876 0

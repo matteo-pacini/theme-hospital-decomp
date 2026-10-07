@@ -146,6 +146,10 @@ void month_end(Finance &f, int32_t &balance, World &world, const Balance &settin
         change_balance(f, balance, day, month, {kTxIncomeDrinks, world.drinks_income});
         world.drinks_income = 0;
     }
+    if (world.jukebox_income != 0) {
+        change_balance(f, balance, day, month, {kTxIncomeJukebox, world.jukebox_income});
+        world.jukebox_income = 0;
+    }
     if (world.hospital) {
         for (uint16_t j = 0; j < 3; j++) {
             int32_t &claims = world.hospital->insurance_claims[j][size_t(month)];

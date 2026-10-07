@@ -3,6 +3,8 @@
 # priority once (button 29), before the plant wilts: the job he picks and
 # the pages he answers still match. Compare up to turn 18000 (no year's
 # end).
+# Expect handyman_values
+# Expect watered
 5 98 0 0
 6 37 45 1
 7 43 0 0

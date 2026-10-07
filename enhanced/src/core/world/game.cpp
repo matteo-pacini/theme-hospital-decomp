@@ -394,6 +394,13 @@ void Game::carry_out(const Event &e)
         open = true;
         return;
     }
+    // The win/lose screen's decline button (winlose.cpp): the offered win is
+    // refused and the game carries on. The replay sends it as EV_DECLINE_WIN.
+    if (e.type == EV_DECLINE_WIN) {
+        progress.win_declined = 1;
+        progress.bonus_level = 0;
+        return;
+    }
 
     // Each part's commands are carried out in its own file. EV_CANCEL_BUILD
     // is the staff side's, the build tool's and the objects', in that order.
@@ -441,6 +448,8 @@ void Game::update_placement(int cell)
         return;
     log_inputs();
     log_line(std::format("@cursor {}", cell));
+    // The check's event belongs to the turn the command runs before.
+    EventScope scope(&events, turn_count + 1);
     th::update_placement(world, p, cell);
     remember_inputs();
 }

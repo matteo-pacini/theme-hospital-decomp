@@ -1,0 +1,127 @@
+# Level 4: transparency (illness 15) cured in the pharmacy's cabinet. A
+# reception desk and receptionist, a handyman, a GP's office with its doctor,
+# a research room whose research makes the scanner (illness 36) available and
+# a scanner room and doctor: the scanner is the diagnosis room transparency
+# needs, so its patients are diagnosed there and sent on. Then a pharmacy
+# (cabinet) with a nurse, where the patient drinks the drug in the cabinet
+# (doctor_examines substates 190 and 191) and is cured (cure_illness,
+# illness 15).
+# Expect cure 32 illness=15 == 1
+# Expect set_complex 7 action=540 == 1
+
+# Turns 18300
+# A reception desk (cell 5160) and receptionist (applicant 16); a handyman
+# (13) with his repair priority raised to 100; a GP's office (35,33)-(39,37)
+# with its door above it, desk, cabinet and chair, and a doctor (9) in the
+# corridor.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 5160 11
+10 48 3 16
+11 5 5293 16
+12 48 2 13
+13 5 5294 13
+20 115 13 31
+21 115 13 31
+22 115 13 31
+23 115 13 31
+24 115 13 31
+25 115 13 31
+26 115 13 31
+27 115 13 31
+28 115 13 31
+29 115 13 31
+30 115 13 31
+31 115 13 31
+60 55 0 0
+61 53 7 7
+62 2 4259 0
+63 2 4775 0
+64 8 4775 0
+65 18 0 0
+66 26 4133 0
+67 3 0 0
+68 4 7 0
+69 7 4517 1
+70 7 4263 2
+71 7 4518 6
+72 1 0 0
+73 48 1 9
+74 5 5295 9
+# A research room (29,33)-(33,37), two researchers (10 and 12), research
+# concentrated on the scanner (illness 36), all of it in the specialisation:
+# the scanner is researched at turn 4000.
+101 55 0 0
+102 53 28 28
+103 2 4253 0
+104 2 4769 0
+105 8 4769 0
+106 18 0 0
+107 26 4127 0
+108 3 0 0
+109 4 28 0
+110 7 4637 55
+111 7 4641 257
+112 7 4257 258
+113 1 0 0
+114 48 1 10
+115 5 4381 10
+116 48 1 12
+117 5 4382 12
+120 114 36 0
+121 80 0 0
+122 80 1 0
+123 80 2 0
+124 80 3 0
+125 80 4 100
+# A pharmacy (42,38)-(45,41), its door below it, a pharmacy cabinet (cell
+# 5163 facing 0); opened; a nurse (applicant 7) in the corridor.
+130 55 0 0
+131 53 11 11
+132 2 4906 0
+133 2 5293 0
+134 8 5293 0
+135 18 0 0
+136 26 5419 0
+137 3 0 0
+138 4 11 0
+139 7 5036 39
+140 1 0 0
+141 48 0 7
+142 5 5297 7
+# A scanner room (41,33)-(45,37), its door above it, the scanner (cell 4652
+# facing 0), its console (4394 facing 0) and screen (4266 facing 1); opened;
+# its doctor (applicant 30) in the corridor. The GP sends patients there to
+# be scanned.
+4100 55 0 0
+4101 53 13 13
+4102 2 4265 0
+4103 2 4781 0
+4104 8 4781 0
+4105 18 0 0
+4106 26 4139 0
+4107 3 0 0
+4108 4 13 0
+4109 7 4652 14
+4110 7 4394 15
+4111 7 4266 272
+4112 1 0 0
+4120 48 1 33
+4121 5 5296 33
+# Staff salaries raised every 1000 turns (EV_INCREASE_STAFF_SALARIES) so that
+# the doctors and the nurse stay content until the patients are cured.
+4000 90 100 0
+5000 90 100 0
+6000 90 100 0
+7000 90 100 0
+8000 90 100 0
+9000 90 100 0
+10000 90 100 0
+11000 90 100 0
+12000 90 100 0
+13000 90 100 0
+14000 90 100 0
+15000 90 100 0
+16000 90 100 0
+17000 90 100 0

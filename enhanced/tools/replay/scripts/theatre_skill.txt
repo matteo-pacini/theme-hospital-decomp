@@ -6,6 +6,8 @@
 # 22) placed in the theatre, which sends them out again (get_state). A staff
 # room and a ward let the GP and nurse work, as theatre.txt's.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect use_object 19 obj=41 kind=1
+# Expect use_object 19 obj=42 kind=2
 5 98 0 0
 6 37 11 1
 7 43 0 0

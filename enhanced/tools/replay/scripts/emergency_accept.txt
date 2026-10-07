@@ -7,6 +7,10 @@
 # patients go straight to the inflation room, all are cured, and the bonus
 # is paid at its end; its result call is left to expire. Compare up to turn
 # 18000.
+# Expect emergency_accept
+# Expect emergency_cure >= 6
+# Expect emergency_over
+# Expect heli_landed
 5 98 0 0
 6 37 11 1
 7 43 0 0

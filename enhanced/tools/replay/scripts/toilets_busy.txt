@@ -3,6 +3,10 @@
 # 18000: the year's end awards (from turn 18250) are not ported.
 # gp_office.txt's commands up to the GP's office opened (turn 113).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect to_toilets
+# Expect in_bogs
+# Expect leave_toilets
+# Expect relieved
 5 98 0 0
 6 37 11 1
 7 43 0 0

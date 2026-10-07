@@ -150,6 +150,10 @@ enum EventType : uint8_t {
     EV_CLOSE_SAVE_YES_NO = 0x8c,
     EV_NETWORK_LOST_FOCUS = 0x8d,
     EV_NETWORK_GAINED_FOCUS = 0x8e,
+    // The player declines a win offered at a quarter (the win/lose screen's
+    // decline button); the replay carries it as this command, which the
+    // instrumented original accepts in process_turn.
+    EV_DECLINE_WIN = 0x8f,
     EV_NET_WIN = 0x90,
     EV_RESTART_LEVEL = 0x91
 };

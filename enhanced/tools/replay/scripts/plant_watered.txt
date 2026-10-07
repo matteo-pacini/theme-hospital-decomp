@@ -2,6 +2,8 @@
 # the plant wilts he takes its pages and waters it in the corridor
 # (handyman_works substates 5 and 6), back to healthy, several times.
 # Compare up to turn 18000 (no year's end).
+# Expect plant_thirsty
+# Expect watered
 5 98 0 0
 6 37 45 1
 7 43 0 0

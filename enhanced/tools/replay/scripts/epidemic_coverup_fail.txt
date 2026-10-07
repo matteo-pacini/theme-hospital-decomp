@@ -2,6 +2,8 @@
 # Turns 26750
 # diagnosed contagious patient: the epidemic is COVERED UP and the
 # inspector still finds contagious patients, so it is found out (verdict 2).
+# Expect choice 11
+# Expect rep 0 event=15
 5 98 0 0
 6 37 11 1
 7 43 0 0

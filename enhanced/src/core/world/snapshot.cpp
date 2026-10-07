@@ -38,12 +38,12 @@ constexpr uint64_t kLayoutHash =
 // as a whole must each be listed below; on the build the code is written on,
 // these sizes catch one added without being listed.
 #if defined(__GLIBCXX__) && defined(__x86_64__)
-static_assert(sizeof(World) == 139560, "World changed: list its new fields in snapshot.cpp");
+static_assert(sizeof(World) == 139584, "World changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(Building) == 224, "Building changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(Balance) == 3776, "Balance changed: list its new fields in snapshot.cpp");
 static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp");
-static_assert(sizeof(Game) == 317688, "Game changed: list its new fields in snapshot.cpp");
+static_assert(sizeof(Game) == 317712, "Game changed: list its new fields in snapshot.cpp");
 #endif
 
 class Writer
@@ -215,6 +215,15 @@ template <typename IO, typename B> void building_fields(IO &io, B &b)
     io(b.sounds);
 }
 
+// The sound-effect queues the interface plays and clears.
+template <typename IO, typename W> void world_sound_fields(IO &io, W &w)
+{
+    io(w.epidemic_sounds);
+    io(w.treatment_sounds);
+    io(w.machine_sounds);
+    io(w.machine_announcements);
+}
+
 template <typename IO, typename W> void world_fields(IO &io, W &w)
 {
     io(w.map);
@@ -242,6 +251,7 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.unpaid_treatment);
     io(w.too_expensive);
     io(w.drinks_income);
+    io(w.jukebox_income);
     io(w.held_staff);
     io(w.held_staff_tile);
     io(w.idle_nurses);
@@ -260,11 +270,9 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.emergency);
     io(w.mayor);
     io(w.epidemic);
-    io(w.epidemic_sounds);
+    world_sound_fields(io, w);
     io(w.mishaps);
     io(w.machine_exploded);
-    io(w.machine_sounds);
-    io(w.machine_announcements);
     io(w.research);
     io(w.announce);
 }

@@ -508,6 +508,8 @@ const char *dump_thing_kind(const Thing &t)
         return "shadow";
     case kThingDebris:
         return "debris";
+    case kThingNumfx:
+        return "numfx";
     default:
         return "thing";
     }
@@ -558,6 +560,12 @@ void dump_thing_body(Inspection &out, const World &w, const Thing &t)
     }
     if (t.type == kThingDebris) {
         dump_thing_debris(out, t);
+        return;
+    }
+    if (t.type == kThingNumfx) {
+        out.section("numfx");
+        out.number("numfx_type", t.numfx_type);
+        F(t, numfx_amount);
         return;
     }
     if (t.type == kThingInspector) {
@@ -770,6 +778,7 @@ void dump_game_world(std::string &out, const World &w)
     F(w, unpaid_treatment);
     F(w, too_expensive);
     F(w, drinks_income);
+    F(w, jukebox_income);
     F(w, held_staff);
     F(w, editing_room);
     F(w, held_staff_tile);
@@ -781,6 +790,7 @@ void dump_game_world(std::string &out, const World &w)
     L(w, machine_sounds);
     L(w, machine_announcements);
     L(w, epidemic_sounds);
+    L(w, treatment_sounds);
     L(w, cure_available);
     L(w, ins_control);
     L(w, room_of_type);

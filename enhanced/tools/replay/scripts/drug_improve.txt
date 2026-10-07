@@ -1,0 +1,69 @@
+# Level 3
+# Turns 18000
+# Two research rooms, one researcher each, and a staff room; the policy's
+# rest at 100 so they take breaks and go back to research
+# (send_doctor_to_research). Research is concentrated on heaped piles' drug
+# (illness 32, the casebook's EV_CONCENTRATE_RESEARCH) with every other
+# category at 0 and specialisation at 100 (EV_ALTER_RESEARCH): its drug is
+# researched, then improved again and again (drug_improved). The second
+# research room is inert: find_rand_research_room has no reachable caller
+# (see the report), so returns always go to the emptiest room.
+# Expect drug_researched 32
+# Expect drug_improved >= 1
+# Expect send_to_research >= 1
+# Research room 1 (44,69)-(48,73), its door above it, the autopsy machine
+# (cell 9260 facing 0), a desk (cell 9264 facing 1) and a filing cabinet
+# (cell 8880 facing 1); opened. Researcher 13 placed at cell 9004.
+101 55 0 0
+102 53 28 28
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 28 0
+110 7 9260 55
+111 7 9264 257
+112 7 8880 258
+113 1 0 0
+114 48 1 13
+115 5 9004 13
+# Research room 2 (50,69)-(54,73), its door above it and a desk (cell 9270
+# facing 1); opened. Researcher 16 placed at cell 9010.
+130 55 0 0
+131 53 28 28
+132 2 8882 0
+133 2 9398 0
+134 8 9398 0
+135 18 0 0
+136 26 8756 0
+137 3 0 0
+138 4 28 0
+139 7 9270 257
+140 1 0 0
+141 48 1 16
+142 5 9010 16
+# A staff room (56,69)-(60,73), its door above it and a sofa (cell 9145
+# facing 0); opened.
+160 55 0 0
+161 53 25 25
+162 2 8888 0
+163 2 9404 0
+164 8 9404 0
+165 18 0 0
+166 26 8762 0
+167 3 0 0
+168 4 25 0
+169 7 9145 19
+170 1 0 0
+# Staff rest from tiredness 100.
+200 113 4 100
+# Research: every category 0 but specialisation 100, concentrated on
+# illness 32.
+300 80 0 0
+301 80 1 0
+302 80 2 0
+303 80 3 0
+304 80 4 100
+305 114 32 0

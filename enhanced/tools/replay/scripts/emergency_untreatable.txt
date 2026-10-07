@@ -7,6 +7,10 @@
 # reputation falls for the 6 not cured. Its result call is answered
 # (EV_ANSWER_PLAYERCALL 5), which ends the emergency's state. Compare up to
 # turn 18000.
+# Expect emergency_accept
+# Expect emergency_leaves >= 6
+# Expect emergency_over
+# Expect-not emergency_cure
 5 98 0 0
 6 37 11 1
 7 43 0 0

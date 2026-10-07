@@ -1,6 +1,9 @@
 # Level 6: a reception desk and receptionist, a GP's office and its doctor,
 # then a cardiogram room, a second doctor and a handyman.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect diagnose
+# Expect treat
+# Expect repaired
 5 98 0 0
 6 37 11 1
 7 43 0 0

@@ -48,6 +48,9 @@ class GameData
     const SpriteSheet &sprites() const { return sprites_; }
     const SpriteSheet &pointers() const { return pointers_; }
     const SpriteSheet &watch() const { return watch_; }
+    // DATA/MONEY01V: the money bag and its digit sprites
+    // (mapwho_numfx's draw_money).
+    const SpriteSheet &money() const { return money_; }
     const AnimData &anims() const { return anims_; }
     // The patients' action sequences (DATA/P_COMP.LEX).
     const PersonComplexes &person_complexes() const { return person_complexes_; }
@@ -59,7 +62,8 @@ class GameData
     const LanguageText &text() const { return text_; }
     int language() const { return language_; }
     // The font in cache slot `slot` (set_font_from_cache); only the slots the
-    // engine draws with are loaded: 5 (panel balance) and 6 (panel date).
+    // engine draws with are loaded: 0 (map text), 5 (panel balance), 6 (panel
+    // date) and 0x1d (advisor).
     const Font &font(int slot) const { return fonts_.at(slot); }
 
   private:
@@ -70,6 +74,7 @@ class GameData
     SpriteSheet sprites_;
     SpriteSheet pointers_;
     SpriteSheet watch_;
+    SpriteSheet money_;
     AnimData anims_;
     PersonComplexes person_complexes_;
     StaffComplexes staff_complexes_;

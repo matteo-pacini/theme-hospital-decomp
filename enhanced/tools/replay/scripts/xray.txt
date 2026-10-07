@@ -3,6 +3,10 @@
 # priority is raised to 100 (EV_ADJUST_HANDYMAN_VALUES); a GP's office
 # (50,69)-(54,73) with its door above it, desk, cabinet and chair, and a
 # doctor (15) in the corridor.
+# Expect research_points
+# Expect researched
+# Expect treat
+# Expect machine_disaster
 5 98 0 0
 6 37 11 1
 7 43 0 0

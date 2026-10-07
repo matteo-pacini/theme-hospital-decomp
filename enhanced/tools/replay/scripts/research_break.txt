@@ -5,6 +5,9 @@
 # (send_doctor_to_research). Researcher 13 is ordered out of the research
 # room (EV_ORDER_LEAVE_ROOM), researcher 16 picked up and put down in the
 # corridor (cell 9656), and researcher 13 ordered to rest (EV_ORDER_REST).
+# Expect send_to_research
+# Expect take_a_break
+# Expect staff_room
 101 55 0 0
 102 53 28 28
 103 2 8876 0

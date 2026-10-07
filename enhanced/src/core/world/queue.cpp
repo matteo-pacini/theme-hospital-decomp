@@ -24,6 +24,7 @@ void start_queues(World &world, const Balance &settings, HospitalMarket &market,
     world.unpaid_treatment = 0;
     world.too_expensive = false;
     world.drinks_income = 0;
+    world.jukebox_income = 0;
 }
 
 void draw_turn_randoms(World &world)

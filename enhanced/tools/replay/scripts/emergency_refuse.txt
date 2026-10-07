@@ -3,6 +3,8 @@
 # has its call answered (EV_ANSWER_PLAYERCALL 2, the fax) and is refused
 # (EV_CHOICE_RESULT CH_EMERGENCY_REFUSE): no helicopter comes, and the
 # offer's slot stays taken, as in the game. Compare up to turn 18000.
+# Expect emergency_refuse
+# Expect-not emergency_start
 5 98 0 0
 6 37 11 1
 7 43 0 0

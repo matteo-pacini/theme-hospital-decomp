@@ -4,6 +4,9 @@
 # pages again and starts over. Compare up to turn 18000 (no year's end).
 # A plant is object kind 45; the corridor requester is open command 98, buy
 # 37, place next 43, place 7 (cell | kind << 8).
+# Expect plant_thirsty
+# Expect plant_dead
+# Expect-not watered
 5 98 0 0
 6 37 45 1
 7 43 0 0

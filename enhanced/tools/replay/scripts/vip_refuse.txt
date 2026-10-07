@@ -2,6 +2,9 @@
 # offered (EV_ANSWER_PLAYERCALL 6, then EV_CHOICE_RESULT CH_VIP_REFUSE),
 # twice in a row, so that the launch count starts again.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect choice 21
+# Expect-not choice 20
+# Expect-not rep 0 event=18
 5 98 0 0
 6 37 11 1
 7 43 0 0

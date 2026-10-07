@@ -2,6 +2,7 @@
 # hospital (reception, handyman, GP's office and research room, three
 # researchers in the second month) with research concentrated on the
 # ultrascan (illness 40) instead.
+# Expect researched 22 illness=40
 5 98 0 0
 6 37 11 1
 7 43 0 0

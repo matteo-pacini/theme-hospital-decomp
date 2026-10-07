@@ -4,6 +4,9 @@
 # ported.
 # gp_office.txt's commands up to the GP's office opened (turn 113).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect wets
+# Expect-not to_toilets
+# Expect-not relieved
 5 98 0 0
 6 37 11 1
 7 43 0 0

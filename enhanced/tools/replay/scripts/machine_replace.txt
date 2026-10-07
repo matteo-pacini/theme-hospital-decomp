@@ -3,6 +3,7 @@
 # the machine is replaced (EV_REPLACE_MACHINE, $1000): new, unworn, its
 # page cancelled and the handyman called off. Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect replace_machine
 5 98 0 0
 6 37 11 1
 7 43 0 0

@@ -3,6 +3,7 @@
 # (EV_RAISE_STAFF_SALARY, 0x6c) and a $30 bonus (EV_GIVE_STAFF_BONUS, 0x6d),
 # as process_turn's apply_staff_event_demand carries out.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect balance 27 amount=-30
 5 98 0 0
 6 37 11 1
 7 43 0 0

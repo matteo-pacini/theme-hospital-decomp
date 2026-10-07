@@ -4,6 +4,10 @@
 # consultant starts the projector and lectures, teaches from the bookcase and
 # skeleton, the doctor gains ability and training points; both take breaks in
 # the staff room and come back to training.
+# Expect training
+# Expect train_ability
+# Expect send_to_training
+# Expect take_a_break
 101 55 0 0
 102 53 22 22
 103 2 6188 0

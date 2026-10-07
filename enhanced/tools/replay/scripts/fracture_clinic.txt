@@ -1,0 +1,97 @@
+# Level 6: a fracture clinic curing broken bones (illness 9). A reception
+# desk and receptionist, a GP's office with a consultant (applicant 17,
+# whose ability completes the diagnosis in the one consultation), a research
+# room and researcher whose research makes the cast remover (illness 9)
+# available, then the fracture clinic with its cast remover and a nurse. The
+# consultant diagnoses the broken bones and sends the patients to the clinic,
+# which cures them (cure_illness, illness 9).
+# Expect cure 18 illness=9 == 1
+
+# Turns 18300
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair; opened; a consultant (applicant 17) in the corridor.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+114 48 1 17
+115 5 6969 17
+# A research room (58,48)-(62,52), its door above it, an autopsy machine, a
+# desk and a filing cabinet; opened; a researcher (applicant 25) in the
+# corridor; research concentrated on the cast remover (illness 9), all of it
+# in the specialisation.
+130 55 0 0
+131 53 28 28
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 28 0
+139 7 6460 55
+140 7 6459 1
+141 7 6461 2
+142 1 0 0
+143 48 1 25
+144 5 6970 25
+145 114 9 0
+146 80 0 0
+147 80 1 0
+148 80 2 0
+149 80 3 0
+150 80 4 100
+# A fracture clinic (52,48)-(55,51), its door above it, the cast remover
+# (cell 6325 facing 0); opened; a nurse (applicant 10) in the corridor.
+160 55 0 0
+161 53 21 21
+162 2 6196 0
+163 2 6583 0
+164 8 6583 0
+165 18 0 0
+166 26 6069 0
+167 3 0 0
+168 4 21 0
+169 7 6453 24
+170 1 0 0
+171 48 0 10
+172 5 6971 10
+# Policy (EV_SET_POLICY): send home at 0%, guess a cure from 10%.
+180 113 1 0
+181 113 2 10
+# Staff salaries raised every 1000 turns (EV_INCREASE_STAFF_SALARIES) so that
+# the consultant, researcher and nurse stay content until the patients are
+# cured.
+2000 90 100 0
+3000 90 100 0
+4000 90 100 0
+5000 90 100 0
+6000 90 100 0
+7000 90 100 0
+8000 90 100 0
+9000 90 100 0
+10000 90 100 0
+11000 90 100 0
+12000 90 100 0
+13000 90 100 0
+14000 90 100 0
+15000 90 100 0
+16000 90 100 0
+17000 90 100 0

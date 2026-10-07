@@ -3,6 +3,9 @@
 # EV_CONCENTRATE_RESEARCH) and every category but the concentration's set
 # to 0, the concentration's to 100 (EV_ALTER_RESEARCH): the X-ray is
 # researched, then upgraded.
+# Expect cmd type=114
+# Expect alter_research
+# Expect upgraded
 101 55 0 0
 102 53 28 28
 103 2 8876 0

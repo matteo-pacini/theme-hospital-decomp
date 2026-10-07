@@ -4,6 +4,8 @@
 # health and starts the last stage's animation). Compare up to turn 18000.
 # plant is object kind 45; open the corridor requester 98, buy 37, place 43,
 # place 7 (cell | kind << 8); a handyman is applicant 20.
+# Expect plant_dead
+# Expect watered
 5 98 0 0
 6 37 45 1
 7 43 0 0

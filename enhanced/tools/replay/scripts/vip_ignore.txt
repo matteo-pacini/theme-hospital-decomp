@@ -1,6 +1,8 @@
 # Level 1: reception.txt with the VIP's first offer left unanswered, so that
 # expire_playercalls accepts it after 20 days and the visit runs to its end.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect expire_call 1 type=6
+# Expect-not choice
 5 98 0 0
 6 37 11 1
 7 43 0 0

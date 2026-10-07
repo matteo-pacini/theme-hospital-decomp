@@ -2660,6 +2660,9 @@ void App::view_sounds(int vw, int vh)
     for (uint8_t sfx : world.epidemic_sounds)
         sounds_.play_sound(kSourceGeneral, sfx);
     world.epidemic_sounds.clear();
+    for (uint8_t sfx : world.treatment_sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    world.treatment_sounds.clear();
     // The music moves on to the next song, and the announcer speaks, as
     // the game does each frame; only the announcer while a modal
     // requester is up.

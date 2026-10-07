@@ -12,6 +12,8 @@
 # `treat` room 7 x2, `set_complex` 790/810/820/830/840/850 x2, patient surgery
 # 630 x2, `cure` x1, on both sides. Agrees with the original for 18000 turns.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect cure
+# Expect treat
 5 98 0 0
 6 37 11 1
 7 43 0 0

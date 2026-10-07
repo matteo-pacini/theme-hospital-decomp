@@ -376,7 +376,7 @@ void add_object_value(World &w, int kind, int sign)
         w.ledger->object_value += sign * object_cost(w, kind);
 }
 
-void create_numfx(World &world, uint8_t type, uint16_t tile, uint8_t colour, uint8_t height)
+void create_numfx(World &world, uint8_t type, int16_t value, uint16_t tile, uint8_t colour, uint8_t height)
 {
     // allocate_thing(0x32).
     uint16_t id = 0;
@@ -394,6 +394,7 @@ void create_numfx(World &world, uint8_t type, uint16_t tile, uint8_t colour, uin
     fx.y = {0x80, uint8_t(tile / kMapSize)};
     fx.depth = 8;
     insert_node(world, id, fx.x, fx.y);
+    fx.numfx_amount = value;
     fx.speed = uint8_t(old_normal_rand(world.seed, 0x16, 0x1e));
     fx.anim_speed = uint8_t(height + (old_newrand(world.seed) & 0xf));
     fx.subtype = colour;

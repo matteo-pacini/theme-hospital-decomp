@@ -1,0 +1,159 @@
+# Level 1
+# Turns 13700
+# A quarterly win offered and declined: the hospital meets level 1's criteria
+# by the third quarter (turn 13650) and the player declines, so the game
+# carries on. Based on win_level1.txt, but the four extra inflation rooms are
+# built at 13400-13447 (not just before the year end) and a fifth, staffed by
+# a fourth doctor (applicant 14), is built early at 203-215; the status screen
+# (EV_OPEN_SCREEN 7) is opened at 13600 so calculate_value recomputes
+# hospital_value mid-year, and closed again. check_quarterly_game_over then
+# finds every criterion met (cures 12, diagnosed 52, value 69405) and offers
+# the win; try_bonus_level runs and grants no bonus (rats are not ported). The
+# win/lose screen's decline is carried by EV_DECLINE_WIN (0x8f) at 13651: the
+# instrumented original restores display_mode and both sides carry on.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect quarterly progress=100 offered=1
+# Expect cmd type=143 value=0 arg=0
+# Expect bonus_level 0
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# A general diagnosis room (51,60)-(55,64), its door below it, a crash
+# trolley (cell 7860) and a screen (cell 8119), both facing 0; opened.
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+# A second doctor: hire applicant 13, place at cell 10044.
+142 48 1 13
+143 5 10044 13
+# A pharmacy (57,60)-(60,63), its door below it, a pharmacy cabinet (cell
+# 7740 facing 0); opened. A nurse: hire applicant 3, place at cell 10044.
+160 55 0 0
+161 53 11 11
+162 2 7737 0
+163 2 8124 0
+164 8 8124 0
+165 18 0 0
+166 26 8250 0
+167 3 0 0
+168 4 11 0
+169 7 7740 39
+170 1 0 0
+171 48 0 3
+172 5 10044 3
+# An inflation room (68,65)-(71,68), its door on its left, an inflator (cell
+# 8518 facing 0); opened. A third doctor: hire applicant 12, place at cell
+# 10044.
+190 55 0 0
+191 53 17 17
+192 2 8388 0
+193 2 8775 0
+194 8 8775 0
+195 18 0 0
+196 26 8515 0
+197 3 0 0
+198 4 17 0
+199 7 8518 9
+200 1 0 0
+201 48 1 12
+202 5 10044 12
+# A second inflation room, staffed by a fourth doctor, so enough
+# patients are cured by the third quarter.
+203 55 0 0
+204 53 17 17
+205 2 8393 0
+206 2 8780 0
+207 8 8780 0
+208 18 0 0
+209 26 8520 0
+210 3 0 0
+211 4 17 0
+212 7 8523 9
+213 1 0 0
+214 48 1 14
+215 5 10044 14
+# Policy (EV_SET_POLICY): send home at 0%, keep the default guess-a-cure
+# threshold of 90% so patients are diagnosed rather than guessed early.
+220 113 1 0
+221 113 2 40
+# A handyman (applicant 19), at cell 10044.
+260 48 2 19
+261 5 10044 19
+# Policy: staff rest at tiredness 50.
+270 113 4 50
+# The first doctor and the handyman ordered to rest.
+3000 94 11 0
+3001 94 19 0
+13400 55 0 0
+13401 53 17 17
+13402 2 7742 0
+13403 2 8130 0
+13404 8 8130 0
+13405 18 0 0
+13406 26 7869 0
+13407 3 0 0
+13408 4 17 0
+13409 7 7873 9
+13410 1 0 0
+13412 55 0 0
+13413 53 17 17
+13414 2 7748 0
+13415 2 8135 0
+13416 8 8135 0
+13417 18 0 0
+13418 26 7875 0
+13419 3 0 0
+13420 4 17 0
+13421 7 7878 9
+13422 1 0 0
+13436 55 0 0
+13437 53 17 17
+13438 2 7753 0
+13439 2 8140 0
+13440 8 8140 0
+13441 18 0 0
+13442 26 7880 0
+13443 3 0 0
+13444 4 17 0
+13445 7 7883 9
+13446 1 0 0
+# Open the status screen (EV_OPEN_SCREEN 7): calculate_value recomputes
+# hospital_value mid-year; close it again. The third-quarter check then finds
+# every criterion met and offers the win.
+13600 51 7 0
+13601 52 0 0
+# The win/lose screen's decline (EV_DECLINE_WIN 0x8f): keep playing.
+13651 143 0 0

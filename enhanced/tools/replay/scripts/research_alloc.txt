@@ -5,6 +5,9 @@
 # again the next day); improvements 30%; specialisation 20% with research
 # concentrated on heaped piles' drug (illness 32), then the concentration
 # taken off again.
+# Expect alter_research
+# Expect category_exhausted
+# Expect researched
 101 55 0 0
 102 53 28 28
 103 2 8876 0

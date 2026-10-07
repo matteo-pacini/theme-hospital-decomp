@@ -5,6 +5,8 @@
 # front), EV_QUEUE_PERSON_GO_HOME and EV_QUEUE_PERSON_GO_RECEPTION (a
 # non-head patient leaves) and EV_QUEUE_PERSON_TO_NEW_QUEUE (the head patient
 # sent to the GP's office). Compare up to turn 18300.
+# Expect join_queue 36 room=6 == 1
+# Expect go_home 36 == 1
 5 98 0 0
 6 37 11 1
 7 43 0 0

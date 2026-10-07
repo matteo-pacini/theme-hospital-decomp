@@ -1,0 +1,72 @@
+# Level 1: the GP's office, a general diagnosis room and an inflation room,
+# with the policy guessing cures. A cured patient leaving the inflation room
+# cannot find its way out: person_nav_failure -> PS_STUCK -> stuck (peep_stuck
+# draws random directions) -> go_home fed up. The GP's chair (object 34) is
+# also picked up at turn 7911 while a patient uses it, so
+# patient_abandon_complex runs. This covers only the PS_STUCK branch of the
+# nav failure: the reaper's, and the ones for a room built in the last 500
+# turns or a queueing/entertaining patient, are not reached (see the report).
+# treatment.txt adds the pharmacy and the deaths.
+# reception desk, receptionist, GP's office with its doctor.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+# A general diagnosis room (51,60)-(55,64), its door below it, a crash
+# trolley and a screen; opened. A second doctor.
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+142 48 1 13
+143 5 10044 13
+# An inflation room (68,65)-(71,68), its door on its left, an inflator;
+# opened. A third doctor.
+190 55 0 0
+191 53 17 17
+192 2 8388 0
+193 2 8775 0
+194 8 8775 0
+195 18 0 0
+196 26 8515 0
+197 3 0 0
+198 4 17 0
+199 7 8518 9
+200 1 0 0
+201 48 1 12
+202 5 10044 12
+# Policy (EV_SET_POLICY): send home at 0%, guess a cure from 10%.
+220 113 1 0
+221 113 2 10
+# A patient using the GP's chair (thing 34) is picked up.
+7911 68 34 0
+# Expect nav_failure 16 >= 10
+# Expect rand peep_stuck >= 1
+# Expect abandon_complex 45
+# Expect go_home 16 >= 10
+# Expect-not winlose

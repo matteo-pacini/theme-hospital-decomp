@@ -3,6 +3,9 @@
 # its doctor and the patient on it; he finds the room destroyed and goes
 # about his work. Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect machine_disaster
+# Expect explosion
+# Expect room_destroyed
 5 98 0 0
 6 37 11 1
 7 43 0 0

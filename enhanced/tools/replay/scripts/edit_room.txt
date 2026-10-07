@@ -2,6 +2,9 @@
 # and opened, then edited as a finished room (EV_INIT_EDIT_ROOM): its
 # inflator lifted (EV_PICK_UP_OBJECT both 1) and put back, and the room
 # opened again.
+# Expect cmd type=70
+# Expect cmd type=68
+# Expect open_room
 101 55 0 0
 102 32 5 0
 103 53 17 17

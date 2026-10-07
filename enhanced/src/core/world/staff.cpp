@@ -523,6 +523,7 @@ void change_surgeon_to_doc(World &world, uint16_t id);
 void staff_nav_failure(const Ctx &c, uint16_t id)
 {
     Thing &staff = c.world.things[id];
+    trace_event("staff_nav_failure %u", unsigned(id));
     if (staff.room == 0) {
         uint16_t room = room_at(c.world, uint16_t(staff.dest_x + (staff.dest_y << 7)));
         if (room && c.game_turn - 500 < c.world.rooms[room].created_turn) {
@@ -2104,6 +2105,7 @@ void staff_abandon_complex(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
     Thing &s = world.things[id];
+    trace_event("abandon_complex %u", unsigned(id));
     MapPos old_x = s.x;
     MapPos old_y = s.y;
     bool user = s.object && world.things[s.object].user == id;
@@ -2333,6 +2335,7 @@ void surgeon_waits(const Ctx &c, uint16_t id)
 // working state, releasing a surgeon's assistant waiting with them.
 void stop_waiting_for_patient(World &world, Thing &s)
 {
+    trace_event("stop_waiting");
     s.state = get_state(world.rooms[s.room].type, s);
     s.slave = 0;
     if (s.subtype == kStaffSurgeon) {

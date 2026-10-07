@@ -3,6 +3,9 @@
 # but the emergency offered at turn 6150 is never answered: its call
 # expires 20 days later (expire_playercalls) and no helicopter comes.
 # Compare up to turn 18000.
+# Expect emergency_offer
+# Expect expire_call
+# Expect-not emergency_accept
 5 98 0 0
 6 37 11 1
 7 43 0 0
