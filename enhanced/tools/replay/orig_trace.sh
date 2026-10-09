@@ -4,7 +4,9 @@
 # src/; the repository's sources are not touched), runs
 # `HOSPITAL.EXE -L<level> -Q` in DOSBox-X with no window or sound, and copies
 # the trace it writes, with its events, to OUT. TRACE_RAND=1 in the
-# environment also traces every draw from the random seed.
+# environment also traces every draw from the random seed. The original's view
+# rendering and screen copy are skipped (the trace does not depend on them)
+# unless TRACE_DRAW=1.
 #
 # Usage (from the repository root):
 #   enhanced/tools/replay/orig_trace.sh OUT TURNS [SCRIPT] [SKIP] [LEVEL]
@@ -101,6 +103,7 @@ c:
 set TRACE_TURNS=$turns
 set TRACE_SKIP=$skip
 set TRACE_RAND=${TRACE_RAND:-0}
+set TRACE_DRAW=${TRACE_DRAW:-0}
 
 HOSPITAL.EXE -L$level -Q
 exit

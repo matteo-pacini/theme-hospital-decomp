@@ -77,7 +77,9 @@ real interface (commands in `enhanced/src/app/drive.h`):
 DOSBox-X (its work folder is `$REPLAY_DIR`, default `build/replay`; use your
 own when running in parallel). `th_replay` runs the same script in the port,
 and `compare.py` diffs the two traces turn by turn, random draws included
-(`th_replay --rand`, `TRACE_RAND=1` on the original's side). The usual SKIP
+(`th_replay --rand`, `TRACE_RAND=1` on the original's side). The original
+skips rendering its view and copying the screen unless `TRACE_DRAW=1`; the
+trace cache keys on it. The usual SKIP
 list is empty: the computer hospitals (`computer_action`), rats
 (`manage_rats`) and disasters (`generate_disaster`) are on in every replay.
 `SKIP=computer_action` (th_replay `--skip`) still leaves the computer

@@ -14,9 +14,11 @@
 #
 # Environment:
 #   BUILD        the enhanced build directory (default build/enhanced)
-#   JOBS         scripts run at once (default 4)
+#   JOBS         scripts run at once (default 10, TH_REPLAY_SLOTS's)
 #   TURNS        the last turn for a script without "# Turns" (default 18300)
 #   RAND         1 also traces every random draw (default 1)
+#   TRACE_DRAW   1 also draws the original's view and copies its screen
+#                (default 0; passed to the original's side, part of the cache key)
 #   NO_CACHE     1 runs the original fresh (and refreshes the cache entry)
 #                instead of using a cached trace (default 0); the cached
 #                original trace is a valid reference unless the script, its
@@ -57,7 +59,7 @@ root=$(cd "$here/../../.." && pwd)
 # shellcheck source=lib.sh
 . "$here/lib.sh"
 BUILD=${BUILD:-build/enhanced}
-JOBS=${JOBS:-4}
+JOBS=${JOBS:-10}
 KEEP=${KEEP:-0}
 REPLAY_BASE=${REPLAY_BASE:-build/replay-all-$$}
 
@@ -131,7 +133,7 @@ run_script() {
   # The original side is cached (cached_orig_trace.sh) and runs in the
   # background so the watchdog can stop a fresh run if the trace it writes
   # stops growing (DOSBox hung, or never started).
-  REPLAY_DIR="$dir" TRACE_RAND="$RAND" "$here/cached_orig_trace.sh" "$o" "$t" "$f" "$SKIP" "$lvl" \
+  REPLAY_DIR="$dir" TRACE_RAND="$RAND" TRACE_DRAW="${TRACE_DRAW:-0}" "$here/cached_orig_trace.sh" "$o" "$t" "$f" "$SKIP" "$lvl" \
     >"$dir/orig.log" 2>&1 &
   opid=$!
   hung=0

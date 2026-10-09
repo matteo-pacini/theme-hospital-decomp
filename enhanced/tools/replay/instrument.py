@@ -15,7 +15,11 @@ mode holds the turns), as one does when a room first opens; leaves out
 process_mouse, so that the pointer, wherever DOSBox-X leaves it, sends no
 commands (th_replay has no mouse); and runs without
 the frame limit or the game speed's turn skipping, so that every frame is a
-turn.
+turn. Unless TRACE_DRAW=1 (environment) it also leaves out what only puts
+the view on the screen: draw_main_window (in engine.cpp's draw_it) and the
+frame loop's special_refresh / LbScreenSwap. No turn reads what they draw:
+the pointed thing, the panel, the help text and the map cursor, which can
+feed the simulation, are still computed.
 
 The events (E lines, listed in core/world/trace.h) are written by the
 functions EVENTS names, each at the same point as the engine's port. With
@@ -56,6 +60,7 @@ static u32 trace_events_len;
 static int trace_events_lost;
 static int trace_rand_on;
 extern "C" const char *trace_rand_caller = "?";
+extern "C" int trace_draw_on = 0;
 
 static void trace_line(int len)
 {
@@ -311,10 +316,12 @@ static void trace_open(void)
 {
     char *n = getenv("TRACE_TURNS");
     char *r = getenv("TRACE_RAND");
+    char *d = getenv("TRACE_DRAW");
 
     if (n)
         trace_limit = atoi(n);
     trace_rand_on = r && *r == '1';
+    trace_draw_on = d && *d == '1';
     script_load();
     trace_handle = LbFileOpen("TRACE.TXT", 0);
     trace_dump();
@@ -332,6 +339,17 @@ GAME_EDITS = [
     # No mouse: in a building mode the pointer's cell would send commands
     # every frame (EV_HOVER_BLUEPRINT, EV_TEMP_PLACE_DOOR at the pointer).
     ("""                process_mouse();\n""", ""),
+    # The frame's screen copy, run only with TRACE_DRAW=1.
+    ("""            special_refresh();
+        } else {""", """            if (trace_draw_on)
+                special_refresh();
+        } else {"""),
+    ("""            LbScreenSwap();
+        }
+        if (run_things""", """            if (trace_draw_on)
+                LbScreenSwap();
+        }
+        if (run_things"""),
     # The win or loss is detected in year_end, at the turn, so that its
     # events are in that turn's trace; do_year_end no longer repeats it (its
     # case 4 only restores the screen).
@@ -405,6 +423,15 @@ extern "C" int trace_skip(const char *name);"""),
     swap_year_end_packets();""", """    check_awards_won();
     check_game_over();
     swap_year_end_packets();"""),
+]
+
+# engine.cpp: the view's drawing, run only with TRACE_DRAW=1 (see the module
+# docstring).
+ENGINE_EDITS = [
+    ("""        move_windows();
+        draw_main_window();""", """        move_windows();
+        if (trace_draw_on)
+            draw_main_window();"""),
 ]
 
 # sim.cpp: the year's score, criteria, win/lose and quarterly events.
@@ -952,6 +979,7 @@ extern "C" void trace_event(const char *format, ...);
 extern "C" void trace_note(const char *label);
 extern "C" unsigned long trace_newrand(const char *caller);
 extern "C" unsigned long trace_normal_rand(const char *caller, unsigned long low, unsigned long high);
+extern "C" int trace_draw_on;
 '''
 
 
@@ -1045,6 +1073,9 @@ def instrument(tree):
                 fn = call.split("(")[0]
                 rep(f"{indent}{call}\n",
                     f'{indent}if (!trace_skip("{fn}"))\n{indent}    {call}\n{indent}trace_note("{fn} done");\n')
+        elif unit == "engine.cpp":
+            for old, new in ENGINE_EDITS:
+                rep(old, new)
         elif unit == "sim.cpp":
             for old, new in SIM_EDITS:
                 rep(old, new)

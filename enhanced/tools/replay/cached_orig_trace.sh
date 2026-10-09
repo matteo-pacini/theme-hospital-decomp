@@ -2,7 +2,8 @@
 # The original side of the replay check, with its trace cached: runs
 # orig_trace.sh only when no cached trace for the same instrumented
 # HOSPITAL.EXE and the same script, turn count, level, left-out calls and
-# random-draw option exists, and otherwise decompresses the cached trace.
+# random-draw and drawing options exists, and otherwise decompresses the
+# cached trace.
 #
 # The original's trace depends only on the instrumented executable, the
 # script's bytes, the turn count, the level, the left-out calls, the trace
@@ -24,7 +25,8 @@
 # CACHED_ONLY=1 never runs DOSBox and ignores NO_CACHE: without a cached
 # trace it prints "orig trace: no cache <key>" and exits 3, OUT unwritten; with
 # one it behaves as usual;
-# REPLAY_DIR, TRACE_RAND and TH_REPLAY_SLOTS are passed to orig_trace.sh.
+# REPLAY_DIR, TRACE_RAND, TRACE_DRAW and TH_REPLAY_SLOTS are passed to
+# orig_trace.sh.
 # Prints one "orig trace: cache hit/miss <key>" line for replay_all.sh.
 set -eu
 
@@ -34,7 +36,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 [ -d build/base ] || { echo "build/base is missing: build the decompilation first (ninja)" >&2; exit 1; }
 
 exe=$("$here/exe_cache_key.sh" "$root" "$here/instrument.py")
-key=$("$here/trace_key.sh" "$exe" "$turns" "$level" "$skip" "${TRACE_RAND:-0}" "$script")
+key=$("$here/trace_key.sh" "$exe" "$turns" "$level" "$skip" "${TRACE_RAND:-0}" "${TRACE_DRAW:-0}" "$script")
 cache=build/replay-cache/traces
 entry=$cache/$key
 lock=$cache/$key.lock

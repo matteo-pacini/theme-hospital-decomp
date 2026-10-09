@@ -318,7 +318,10 @@ core/world/trace.h); `th_replay` writes the same trace from this engine, and
 `tools/replay/compare.py` reports the first turn they differ: the first
 differing event, with those round it, before the state. `TRACE_RAND=1
 orig_trace.sh ...` and `th_replay --rand` also trace every draw from the
-random seed with the function that drew it. Whoever ports a function the
+random seed with the function that drew it. The instrumented original leaves
+out `draw_main_window` and the frame loop's screen copy (they only put the
+view on the screen, and no turn reads it), about a quarter of its run time,
+unless `TRACE_DRAW=1`. Whoever ports a function the
 game writes an event for, or adds an event, writes it on both sides, at the
 same point: in the port (`trace_event`) and in `tools/replay/instrument.py`'s
 EVENTS; a port named otherwise than the game's function names it in its
@@ -329,7 +332,7 @@ header (`# Expect <text> [<op> <n>]`: an event line whose text after `E `
 starts with `<text>` occurs `<op> <n>` times, `op` one of `>= == <=`, default
 `>= 1`; `# Expect-not <text>`: no such event), and prints one line per script
 and a summary; `check_expect.py` does the checking on both traces. It runs
-`JOBS` scripts at once (default 4) with the th_replay of `BUILD` (default
+`JOBS` scripts at once (default 10) with the th_replay of `BUILD` (default
 build/enhanced). `tools/replay/expect_candidates.py SCRIPT TRACE` lists,
 for each of a script's `# Expect` lines, the trace's events of the same
 shape (the same text, any numbers) with their numbers, to re-derive an
@@ -344,9 +347,9 @@ decompilation's sources, objects and tools and of instrument.py as a parsed
 syntax tree without docstrings, so editing its comments, docstrings or layout
 keeps the key while any change to its code, EVENTS tables or the C++ they
 insert changes it), the script file's bytes
-(not its path), the last turn, the level, the SKIP list, RAND, `orig_trace.sh`
-read without its comment-only and blank lines (everything else counts: the
-DOSBox configuration, command line, run folder setup and the text of its
+(not its path), the last turn, the level, the SKIP list, RAND, `TRACE_DRAW`,
+`orig_trace.sh` read without its comment-only and blank lines (everything
+else counts: the DOSBox configuration, command line, run folder setup and the text of its
 messages; a line after a backslash continuation, a multi-line string or an
 unrecognised heredoc form is kept as written) and the original's `HOSPITAL.CFG`,
 `MODEM.INI` and `DOS4GW.EXE`, and which dosbox-x runs it; the game data
@@ -374,7 +377,7 @@ the cache with a fake DOSBox. To fill it for every script in one go, run
 `enhanced/tools/replay/trace_cache.sh prefetch` (from any directory; the
 same SKIP, turns, RAND and watchdog as `replay_all.sh`, from `lib.sh`,
 so it fills exactly what `replay_all.sh` hits; `PREFETCH_JOBS`, default
-4). Entries with RAND on are about 0.5 MB each on average (up to 1.5 MB),
+10). Entries with RAND on are about 0.5 MB each on average (up to 1.5 MB),
 so the whole set is some 50-100 MB per executable key until `prune` drops
 old keys; at about a minute per script on the DOSBox slots, it is best
 left to run unattended. `NO_CACHE=1` forces a fresh run and refreshes the

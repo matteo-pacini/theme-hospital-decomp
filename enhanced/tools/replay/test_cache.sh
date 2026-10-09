@@ -103,7 +103,7 @@ cached "$tmp/out3" 301 "$tmp/script.txt" skipme 1 >/dev/null
 check "SAVE is empty at each run" "$(grep '^save:' "$FAKE_LOG" | sort -u)" "save: "
 
 # 4. The key covers the script's bytes, not its path.
-key() { "$rp/trace_key.sh" "$exekey" 100 1 skipme 0 "$@"; }
+key() { "$rp/trace_key.sh" "$exekey" 100 1 skipme 0 0 "$@"; }
 cp "$tmp/script.txt" "$tmp/copy.txt"
 k=$(key "$tmp/script.txt")
 check "key: same bytes, other path" "$(key "$tmp/copy.txt")" "$k"
@@ -119,10 +119,11 @@ printf 'LANGUAGE=FRE\nSOUND=0\n' >orig/HOSPITAL.CFG
 check "key: orig/HOSPITAL.CFG" "$r" differs
 printf 'LANGUAGE=FRE\nSOUND=1\n' >orig/HOSPITAL.CFG
 check "key: HOSPITAL.CFG restored" "$(key "$tmp/script.txt")" "$k"
-for v in "100 1 skipme 1" "100 2 skipme 0" "100 1 other 0" "101 1 skipme 0"; do
+for v in "100 1 skipme 1 0" "100 2 skipme 0 0" "100 1 other 0 0" "101 1 skipme 0 0" "100 1 skipme 0 1"; do
   # shellcheck disable=SC2086
-  [ "$("$rp/trace_key.sh" "$exekey" ${v% *} "${v##* }" "$tmp/script.txt")" != "$k" ] && r=differs || r=same
-  check "key: changed turns, level, skip or rand ($v)" "$r" differs
+  set -- $v
+  [ "$("$rp/trace_key.sh" "$exekey" "$@" "$tmp/script.txt")" != "$k" ] && r=differs || r=same
+  check "key: changed turns, level, skip, rand or draw ($v)" "$r" differs
 done
 
 # orig_trace.sh: what it feeds DOSBox is in the key, its comment-only and
@@ -293,7 +294,7 @@ check "cached-only hit returns the stored trace" "$r" same
 # A fresh run holding the key's lock has stored nothing yet; a cache-only
 # call neither waits for it nor misreads it, and a stored entry is a hit
 # for two readers at once, lock held or not.
-lockkey=$("$rp/trace_key.sh" "$exekey" 400 1 skipme 0 "$tmp/script.txt")
+lockkey=$("$rp/trace_key.sh" "$exekey" 400 1 skipme 0 0 "$tmp/script.txt")
 exec 7>"$traces/$lockkey.lock"
 flock 7
 (CACHED_ONLY=1 cached "$tmp/out8d" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8d.txt") &
@@ -302,7 +303,7 @@ wait
 exec 7>&-
 cmp -s "$tmp/out8d" "$tmp/out8a" && cmp -s "$tmp/out8e" "$tmp/out8a" && r=hits || r=lost
 check "cached-only: two readers at once, lock held, both hit" "$r" hits
-unheld=$("$rp/trace_key.sh" "$exekey" 410 1 skipme 0 "$tmp/script.txt")
+unheld=$("$rp/trace_key.sh" "$exekey" 410 1 skipme 0 0 "$tmp/script.txt")
 exec 7>"$traces/$unheld.lock"
 flock 7
 CACHED_ONLY=1 cached "$tmp/out8c" 410 "$tmp/script.txt" skipme 1 | grep -q 'no cache' && r=reported || r=waited
@@ -342,6 +343,10 @@ check "replay_all cached-only counts only the compared script" "$r" counted
 grep -q '^1 without a cached original.*zz_miss' "$tmp/ra.out" && r=counted || r=wrong
 check "replay_all cached-only counts the missing one" "$r" counted
 check "replay_all cached-only starts no DOSBox" "$(runs)" 0
+TRACE_DRAW=1 CACHED_ONLY=1 REPLAY_DIR="$tmp/prime" "$rp/cached_orig_trace.sh" "$tmp/draw.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null && r=0 || r=$?
+check "cache: a run with TRACE_DRAW=1 never hits the default entry" "$r" 3
+TRACE_DRAW=0 CACHED_ONLY=1 REPLAY_DIR="$tmp/prime" TRACE_RAND=1 "$rp/cached_orig_trace.sh" "$tmp/draw.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null && r=0 || r=$?
+check "cache: TRACE_DRAW=0 is the default entry" "$r" 0
 # Without CACHED_ONLY the same miss runs the original (a fresh run here).
 REPLAY_BASE="$tmp/ra2" "$rp/replay_all.sh" zz_miss >"$tmp/ra2.out" 2>&1 && r=exit0 || r=failed
 check "replay_all runs a script without cache when not cached-only" "$(runs)" 1

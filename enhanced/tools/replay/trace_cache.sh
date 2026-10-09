@@ -17,7 +17,7 @@
 #                                  turns/level/SKIP/RAND defaults and the
 #                                  watchdog as replay_all.sh (lib.sh), so a
 #                                  later replay_all.sh run is all cache hits.
-#                                  PREFETCH_JOBS scripts at once (default 4)
+#                                  PREFETCH_JOBS scripts at once (default 10)
 set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -92,7 +92,7 @@ case $cmd in
         scripts="$scripts $f"
       done
     fi
-    jobs=${PREFETCH_JOBS:-4}
+    jobs=${PREFETCH_JOBS:-10}
     tmp=$root/build/replay-prefetch-$$
     mkdir -p "$tmp"
     running=0
@@ -104,7 +104,7 @@ case $cmd in
         # Like replay_all.sh: the same arguments, and the same watchdog on
         # the original's run.
         cd "$root"
-        REPLAY_DIR="$d" TRACE_RAND=$RAND \
+        REPLAY_DIR="$d" TRACE_RAND=$RAND TRACE_DRAW="${TRACE_DRAW:-0}" \
           "$here/cached_orig_trace.sh" "$d/out.txt" "$(script_turns "$f")" "$f" "$SKIP" "$(script_level "$f")" \
           >"$d/orig.log" 2>&1 &
         opid=$!

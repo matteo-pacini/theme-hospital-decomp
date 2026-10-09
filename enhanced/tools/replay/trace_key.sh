@@ -2,17 +2,18 @@
 # Prints the trace cache key for one original-side replay: the instrumented
 # HOSPITAL.EXE's cache key (exe_cache_key.sh) and a hash of everything else
 # that changes the trace it writes — the script file's bytes, the last turn,
-# the level, the left-out calls, the random-draw option, orig_trace.sh (the
-# DOSBox configuration and the run folder it builds, read without its
-# comment-only and blank lines: `run_text` below), the original's
+# the level, the left-out calls, the random-draw and drawing options,
+# orig_trace.sh (the DOSBox configuration and the run folder it builds, read
+# without its comment-only and blank lines: `run_text` below), the original's
 # HOSPITAL.CFG, MODEM.INI and DOS4GW.EXE, and which dosbox-x runs it.
 # cached_orig_trace.sh names its entries with it. The game data folders
 # (orig/DATA, LEVELS, ...) are not hashed: they are the installed game.
 #
-# Usage (from the repository root): trace_key.sh EXE_KEY TURNS LEVEL SKIP RAND [SCRIPT]
+# Usage (from the repository root):
+#   trace_key.sh EXE_KEY TURNS LEVEL SKIP RAND DRAW [SCRIPT]
 set -eu
 
-exe=$1 turns=$2 level=$3 skip=$4 rand=$5 script=${6:-}
+exe=$1 turns=$2 level=$3 skip=$4 rand=$5 draw=$6 script=${7:-}
 here=$(cd "$(dirname "$0")" && pwd)
 
 # Hashes a file's bytes, not its name, so the key does not depend on the path.
@@ -99,7 +100,7 @@ dosbox=$(command -v dosbox-x || true)
 [ -z "$dosbox" ] || dosbox=$(readlink -f "$dosbox")
 
 rest=$(
-  printf 'turns=%s\nlevel=%s\nskip=%s\nrand=%s\n' "$turns" "$level" "$skip" "$rand"
+  printf 'turns=%s\nlevel=%s\nskip=%s\nrand=%s\ndraw=%s\n' "$turns" "$level" "$skip" "$rand" "$draw"
   if [ -n "$script" ]; then
     printf 'script=%s\n' "$(content "$script")"
   else

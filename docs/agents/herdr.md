@@ -115,8 +115,10 @@ For a session where a lead agent briefs worker agents in herdr panes
       herdr agent start <name> --kind claude --pane <id> -- \
         --model claude-sonnet-5-5 --effort medium
 
-  Send `/caveman` before the brief, and `/clear` before giving a worker an
-  unrelated task.
+  Send `/caveman` only right before dispatching work to a worker (it goes
+  with the brief, never to a worker left waiting). A worker with no work to
+  dispatch, just started or just finished, gets only `/clear`; `/clear` also
+  comes before giving a worker an unrelated task.
 - Brief with a common rules file and one file per worker: task, gates, report
   path.
 - Verify every handoff before accepting it (rerun its scripts and tests,
