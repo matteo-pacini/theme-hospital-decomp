@@ -53,6 +53,7 @@ struct HireFixture {
         // Game::start makes the first applicants, as the game does.
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        game->skipped_calls = th::kSkipComputerAction;
         seed = game->world.seed;
         market = game->staff_market;
         return true;
@@ -85,6 +86,7 @@ struct QueueFixture {
         settings.gbv.mayor_launch = 0xffff;
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        game->skipped_calls = th::kSkipComputerAction;
         th::start_queues(game->world, game->settings(), game->arrivals.hospitals[0], game->finance);
         return game->open;
     }

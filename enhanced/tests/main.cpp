@@ -62,6 +62,7 @@ void test_rats();
 
 // computer.cpp
 void test_computer_tables();
+void test_computer_ai();
 void test_computer_players(const char *dir);
 
 // ui.cpp
@@ -236,6 +237,7 @@ const Test kTests[] = {
     TEST(test_epidemic),
     TEST(test_rats),
     TEST(test_computer_tables),
+    TEST(test_computer_ai),
     TEST(test_queue_lists),
     TEST(test_sound_player),
     TEST(test_xmi_parse),

@@ -29,6 +29,14 @@ namespace th
 
 class GameData;
 
+// Game::skipped_calls' bits, named as the instrumented original's TRACE_SKIP
+// names the calls.
+constexpr uint8_t kSkipComputerAction = 1;
+
+// The bits for `names`, a list of such names separated by commas; false if
+// one is not known.
+bool parse_skipped_calls(std::string_view names, uint8_t &calls);
+
 // Turns a second at each of the game's speeds (vary_speed, src/utils.cpp).
 // The fastest, "and then some", runs three turns a frame at the game's 25
 // frames a second.
@@ -97,6 +105,9 @@ class Game
     // Turns played (the game's actual_game_turn, 1 at the start).
     uint32_t turn_count = 1;
     bool paused = false;
+    // The admin calls left out, the replay check's SKIP (kSkip*); not part of
+    // a saved game.
+    uint8_t skipped_calls = 0;
     // Turns until the hospital opens to patients; 0 once it is open.
     int opening_countdown = 0;
     // The level's countdown from the start (gbv OpenCountdown).

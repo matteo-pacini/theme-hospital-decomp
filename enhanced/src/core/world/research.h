@@ -36,6 +36,8 @@ constexpr uint8_t kAnnNewDrug = 6;
 constexpr uint8_t kAnnDrugImproved = 7;
 constexpr uint8_t kAnnObjectImproved = 8;
 constexpr uint8_t kAnnObjectAvailable = 9;
+// A computer player opened its hospital (computer_decision).
+constexpr uint8_t kAnnRivalOpened = 0xc;
 // gamevar.announce's kinds (ANN_STUCK 1 to ANN_DOCTOR_TO_CONSULTANT 0xd,
 // entry 0 unused).
 constexpr int kAnnounceKinds = 14;

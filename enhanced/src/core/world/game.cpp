@@ -20,6 +20,7 @@
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cstring>
@@ -307,6 +308,19 @@ void process_things(Game &g, std::vector<bool> &walkers, const PersonComplexes &
 
 } // namespace
 
+bool parse_skipped_calls(std::string_view names, uint8_t &calls)
+{
+    calls = 0;
+    for (size_t start = 0; start < names.size();) {
+        size_t end = std::min(names.find(',', start), names.size());
+        if (names.substr(start, end - start) != "computer_action")
+            return false;
+        calls |= kSkipComputerAction;
+        start = end + 1;
+    }
+    return true;
+}
+
 void Game::turn()
 {
     if (start_turn())
@@ -335,6 +349,8 @@ bool Game::start_turn()
             start_person_going(world, *anims_, *complexes_, id, turn_count);
         }
         rat_fest_control(*this);
+        if (!(skipped_calls & kSkipComputerAction))
+            computer_action(*this);
     }
     if (turn_count % kTurnsPerDay == 0)
         turn_daily_admin(*this);

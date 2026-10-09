@@ -9,6 +9,8 @@ namespace th
 {
 
 class LanguageText;
+struct ArrivalState;
+struct Game;
 struct World;
 
 // The computer players' hospitals, as the game's src/computer.cpp, src/comtable.cpp
@@ -251,5 +253,61 @@ void setup_computer_players(World &world, const Balance &settings, int level_num
 // computer names (text section 4: computer_names[ai_index]), unless
 // setup_computer_players named them already.
 void name_computer_players(std::array<RivalHospital, kHospitalCount> &rivals, const LanguageText &text);
+
+// ---- The AI (computer_ai.cpp) ----
+
+// What the AI reads and changes beside the rival itself: the draws' seed and
+// the advisor's announcements (world), whether the rival takes patients
+// (arrivals), the level's figures, the game turn (actual_game_turn) and the
+// land of the player (myhosp->area).
+struct AiContext {
+    World &world;
+    ArrivalState &arrivals;
+    const Balance &settings;
+    uint32_t turn;
+    uint16_t player_area;
+};
+
+// computer_action (0x4eb5c), from twice_daily_admin after rat_fest_control:
+// each rival whose next_action_turn has come carries out its pending action
+// or takes its next step (computer_decision). Not in the tutorial.
+void computer_action(Game &game);
+
+// computer_decision (0x4eebc): takes owner's next step in its script.
+void computer_decision(AiContext &ctx, uint8_t owner);
+
+// computer_recheck_actions (0x4ff24); always returns 0.
+uint8_t computer_recheck_actions(AiContext &ctx, uint8_t a, uint8_t owner);
+
+// computer_staff_levels (0x5010c), computer_object_levels (0x50c44),
+// computer_free_build (0x5090c), computer_maintain_loan (0x50aa8): return 1
+// if they set an action.
+uint8_t computer_staff_levels(AiContext &ctx, uint8_t owner);
+uint8_t computer_object_levels(AiContext &ctx, uint8_t owner);
+uint8_t computer_free_build(AiContext &ctx, uint8_t owner);
+uint8_t computer_maintain_loan(AiContext &ctx, uint8_t owner);
+
+// computer_choose_room (0x50360): returns the room type chosen, 0 for none.
+uint8_t computer_choose_room(AiContext &ctx, uint8_t order, uint8_t owner);
+
+// computer_loan (0x4fe78) and computer_buy_land (0x50de4): return 1 if done.
+uint8_t computer_loan(AiContext &ctx, int8_t amount, uint8_t owner);
+uint8_t computer_buy_land(AiContext &ctx, uint8_t owner);
+
+// make_a_note (0x50528), find_a_note (0x505d0), remove_a_note (0x50684) and
+// declass_a_note (0x506f4) on `rival`'s notes. make_a_note and find_a_note
+// return 1 on success.
+uint8_t make_a_note(RivalHospital &rival, uint8_t owner, uint16_t type, int16_t arg, int16_t count);
+uint8_t find_a_note(RivalHospital &rival, uint16_t type);
+void remove_a_note(RivalHospital &rival, uint8_t owner, uint16_t type);
+void declass_a_note(RivalHospital &rival, uint8_t owner, uint16_t type);
+
+// ---- Hiring and building (computer_staff.cpp) ----
+
+// computer_employ (0x4fa50), computer_build (0x4fc48) and
+// computer_place_object (0x4fd6c): return true if done.
+bool computer_employ(World &world, uint8_t type, uint16_t skills, uint8_t owner);
+bool computer_build(World &world, const Balance &settings, uint8_t type, uint8_t owner);
+bool computer_place_object(World &world, const Balance &settings, uint8_t obj, bool free, uint8_t owner);
 
 } // namespace th

@@ -66,6 +66,7 @@ struct FurnishFixture {
         if (!level)
             return false;
         game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        game->skipped_calls = th::kSkipComputerAction;
         th::init_object_ui(oui, gd.palette());
         return true;
     }
@@ -750,6 +751,7 @@ struct BuildFixture {
         if (!level)
             return false;
         game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        game->skipped_calls = th::kSkipComputerAction;
         th::init_object_ui(oui, gd.palette());
         room_cost = settings.rooms[kGp].cost;
         objects_cost = settings.objects[kGpDesk].start_cost + settings.objects[kCabinet].start_cost +
@@ -1445,6 +1447,7 @@ struct ScriptedGame {
         game = std::make_unique<th::Game>();
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, level_number, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        game->skipped_calls = th::kSkipComputerAction;
         th::add_static_shadows(game->world.map);
         th::start_advisor(game->advisor, false);
         th::start_hospital_settings(game->hospital, game->settings());

@@ -80,6 +80,7 @@ struct ResearchGame {
         game = std::make_unique<th::Game>();
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, level_number, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        game->skipped_calls = th::kSkipComputerAction;
         th::add_static_shadows(game->world.map);
         th::start_advisor(game->advisor, false);
         th::start_hospital_settings(game->hospital, game->settings());

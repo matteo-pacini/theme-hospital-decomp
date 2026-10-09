@@ -100,6 +100,7 @@ void test_arrivals_level1(const char *dir)
     auto game = std::make_unique<th::Game>();
     for (int run = 0; run < 2; run++) {
         game->start(*level, 1, settings, anims, gd.person_complexes(), gd.staff_complexes());
+        game->skipped_calls = th::kSkipComputerAction;
         const th::ArrivalState &state = game->arrivals;
         CHECK(state.visitors_per_month == 3 && state.peep_interval == 500); // popn[0]: month 0, change 3
         int ours = 0;

@@ -360,14 +360,16 @@ script's header comments say what it exercises, and its `# Expect` and
 `# Expect-not` lines check it on both traces; `# Level N` picks the level
 (th_replay `--level N`, orig_trace.sh's LEVEL) and `# Turns N` the last
 turn. A script is compared with the default SKIP, `computer_action` (rats
-and disasters stay on), by hand as:
+and disasters stay on), by hand as below; th_replay's `--skip` leaves the same
+call out of the port (`replay_all.sh` passes its SKIP to both sides, and an
+empty SKIP runs the computer hospitals on both):
 
     enhanced/tools/replay/orig_trace.sh orig.txt 18000 \
         enhanced/tools/replay/scripts/gp_office.txt \
         computer_action
     build/enhanced/th_replay \
         --script enhanced/tools/replay/scripts/gp_office.txt \
-        --turns 18000 --out enhanced.txt
+        --turns 18000 --skip computer_action --out enhanced.txt
     enhanced/tools/replay/compare.py orig.txt enhanced.txt
 
 `IGNORE_EVENTS` (comma-separated event kinds, default empty) makes
