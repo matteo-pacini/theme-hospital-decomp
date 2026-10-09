@@ -6,17 +6,17 @@
 # (cabinet) with a nurse, where the patient drinks the drug in the cabinet
 # (doctor_examines substates 190 and 191) and is cured (cure_illness,
 # illness 15).
-# Holding applicant 9 as the GP never completes the transparency diagnosis,
-# so no patient gets treatment 15; holding applicant 15 instead (from the
-# trace, it diagnoses illness 15 and the cabinet cures patient 18 at turn
-# 17460) restores the branch.
-# Expect cure 18 illness=15 == 1
+# Whether the transparency diagnosis completes depends on the doctors who see
+# the patients; with applicant 17 as the scanner room's doctor (from the
+# trace, it diagnoses illness 15 and the cabinet cures patient 35 at turn
+# 17451) the branch runs.
+# Expect cure 35 illness=15 == 1
 # Expect set_complex 7 action=540 == 1
 
 # Turns 18300
 # A reception desk (cell 5160) and receptionist (applicant 16); a handyman
 # (13) with his repair priority raised to 100; a GP's office (35,33)-(39,37)
-# with its door above it, desk, cabinet and chair, and a doctor (15) in the
+# with its door above it, desk, cabinet and chair, and applicant 15 in the
 # corridor.
 5 98 0 0
 6 37 11 1
@@ -92,11 +92,11 @@
 138 4 11 0
 139 7 5036 39
 140 1 0 0
-141 48 0 7
-142 5 5297 7
+151 48 0 7
+152 5 5297 7
 # A scanner room (41,33)-(45,37), its door above it, the scanner (cell 4652
 # facing 0), its console (4394 facing 0) and screen (4266 facing 1); opened;
-# its doctor (applicant 30) in the corridor. The GP sends patients there to
+# its doctor (applicant 17) in the corridor. The GP sends patients there to
 # be scanned.
 4100 55 0 0
 4101 53 13 13
@@ -111,8 +111,8 @@
 4110 7 4394 15
 4111 7 4266 272
 4112 1 0 0
-4120 48 1 33
-4121 5 5296 33
+4120 48 1 17
+4121 5 5296 17
 # Staff salaries raised every 1000 turns (EV_INCREASE_STAFF_SALARIES) so that
 # the doctors and the nurse stay content until the patients are cured.
 4000 90 100 0

@@ -4,8 +4,8 @@
 # psychiatry room (couch, screen and comfy chair) with a psychiatrist
 # (applicant 14, the doctor with the skill), which cures the patients
 # (cure_illness, illness 4).
-# The king complex arrives as patient 5, cured at turn 15771.
-# Expect cure 5 illness=4 == 1
+# The king complex arrives as patient 40, cured at turn 8772.
+# Expect cure 40 illness=4 == 1
 
 # Turns 18300
 # Desk: furnish the corridor, buy one, place it at cell 9771 facing 0.

@@ -41,9 +41,9 @@
 74 5 6046 14
 # A research room (14,34)-(18,38) laid out as research_default.txt's,
 # research concentrated on the blood machine (illness 37), all of it in
-# the specialisation; three researchers (15, 16 and 18), who come on the
-# job market in the second month: the blood machine is researched at turn
-# 11200, then upgraded.
+# the specialisation; two researchers, 17 hired at turn 4700 and 44 at turn
+# 7600 (each the only applicant with the research skill at the time): the
+# blood machine is researched at turn 12900.
 101 55 0 0
 102 53 28 28
 103 2 4366 0
@@ -63,25 +63,23 @@
 123 80 2 0
 124 80 3 0
 125 80 4 100
-4700 48 1 15
-4701 5 4494 15
-4702 48 1 16
-4703 5 4495 16
-4704 48 1 18
-4705 5 4496 18
-# A blood machine room (26,34)-(29,37), its door above it, the blood
-# machine (cell 4636 facing 1); opened; its doctor (applicant 32) in the
-# corridor. The GP sends patients there for a blood test.
-11300 55 0 0
-11301 53 15 15
-11302 2 4378 0
-11303 2 4765 0
-11304 8 4765 0
-11305 18 0 0
-11306 26 4251 0
-11307 3 0 0
-11308 4 15 0
-11309 7 4636 298
-11310 1 0 0
-11320 48 1 32
-11321 5 6047 32
+4700 48 1 17
+4701 5 4494 17
+7600 48 1 44
+7601 5 4495 44
+# A blood machine room (26,34)-(29,37), once it is researched, its door
+# above it, the blood machine (cell 4636 facing 1); opened; its doctor
+# (applicant 45) in the corridor. The GP sends patients there for a blood test.
+13000 55 0 0
+13001 53 15 15
+13002 2 4378 0
+13003 2 4765 0
+13004 8 4765 0
+13005 18 0 0
+13006 26 4251 0
+13007 3 0 0
+13008 4 15 0
+13009 7 4636 298
+13010 1 0 0
+13020 48 1 45
+13021 5 6047 45
