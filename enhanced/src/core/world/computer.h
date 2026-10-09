@@ -11,6 +11,7 @@ namespace th
 class LanguageText;
 struct ArrivalState;
 struct HospitalMarket;
+struct Thing;
 struct World;
 enum RepEvent : uint8_t;
 
@@ -295,5 +296,31 @@ void rival_market_share(World &world, const ArrivalState &arrivals);
 
 // year_end's year_start_balance and year_start_visitors for hospitals 1-3.
 void rival_year_start(World &world, const ArrivalState &arrivals);
+// ---- Hiring and building (computer_staff.cpp) ----
+
+// computer_employ (0x4fa50): hires for hospital `owner` the first job applicant
+// of staff kind `type` (Thing.subtype) with every skill bit of `skills` (0 for
+// any), paying 1.2 times their salary, and frees their thing. Returns false if
+// the first such applicant costs more than the balance, or there is none.
+bool computer_employ(World &world, uint8_t type, uint16_t skills, uint8_t owner);
+
+// computer_build (0x4fc48): builds a room of type `type` for hospital `owner`
+// in the abstract: pays its cost (the level's Balance::rooms) and counts it,
+// and buys each compulsory object that the balance still covers. Returns false
+// if the room costs more than the balance.
+bool computer_build(World &world, const Balance &settings, uint8_t type, uint8_t owner);
+
+// computer_place_object (0x4fd6c): buys object kind `obj` for hospital `owner`
+// at its own price, or for nothing if `free`. Returns false if it cannot pay.
+bool computer_place_object(World &world, uint8_t obj, bool free, uint8_t owner);
+
+// set_expertise_staff (0x4a2fc) for the computer player `rival` hiring `staff`:
+// the treatments their skills complete in rooms and with objects it has
+// counted (two surgeons for surgery; a ward for ward treatments).
+void set_expertise_staff(RivalHospital &rival, const Thing &staff);
+
+// set_expertise_room (0x4a520) for the computer player `rival` building a room
+// of type `type`: the treatments given there whose staff skills it has.
+void set_expertise_room(RivalHospital &rival, uint8_t type);
 
 } // namespace th

@@ -4271,8 +4271,6 @@ void set_applicant_expiry(Thing &t, uint32_t turn)
     }
 }
 
-namespace
-{
 // remove_staff_in_struct (0x2a130): deletes an applicant, taking them off the
 // job market's counts.
 void remove_staff_in_struct(World &world, Thing &staff)
@@ -4284,6 +4282,8 @@ void remove_staff_in_struct(World &world, Thing &staff)
     staff = Thing{};
 }
 
+namespace
+{
 // process_things' SS_BACK_TO_APPLICANTS: the member of staff is an applicant
 // again, counted in the job market.
 void back_to_applicants(World &world, uint16_t id, uint32_t game_turn)
