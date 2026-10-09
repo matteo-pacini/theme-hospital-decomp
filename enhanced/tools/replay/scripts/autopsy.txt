@@ -7,15 +7,15 @@
 # CH_TREAT_RESEARCH): each goes to the research room's queue
 # (send_person_for_research), the researcher calls it, and the autopsy gives
 # its illness research points and, with the staff content, one time in three
-# costs reputation (person_autopsied). Patient 9, at turn 6219 and again at
-# 7587 (the id is reused), is autopsied and the reputation falls; patient 21,
-# at turn 8046, is autopsied and it does not.
+# costs reputation (person_autopsied). Patient 21, at turn 10133, is
+# autopsied and the reputation does not fall; patient 9, at turn 10358, and
+# patient 28, at turn 10788, are autopsied and it falls.
 # Expect send_for_research >= 3
-# Expect autopsied 9 illness=32 amount=3300 unhappy=0
-# Expect autopsied 9 illness=16 amount=3300 unhappy=0
-# Expect autopsied 21 illness=16 amount=3300 unhappy=0
+# Expect autopsied 21 illness=19 amount=6600 unhappy=0
+# Expect autopsied 9 illness=18 amount=6600 unhappy=0
+# Expect autopsied 28 illness=13 amount=3300 unhappy=0
 # Expect rep 0 event=19 == 2
-# Expect research 4 illness=32 amount=3300
+# Expect research 4 illness=19 amount=6600
 # Turns 12000
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 5 98 0 0
@@ -61,13 +61,12 @@
 142 1 0 0
 143 48 1 25
 144 5 6970 25
-# Patient 9's call (id 2, made at turn 5904) answered from the popup and the
-# patient sent for an autopsy (CH_TREAT_RESEARCH).
-5950 10 4 2
-5951 125 2 9
-# Patient 9 again (the id reused; call 6, turn 7220), then patient 21 (call
-# 8, turn 7708).
-7270 10 4 6
-7271 125 2 9
-7760 10 4 8
-7761 125 2 21
+# Patient 21's call (id 7, made at turn 8131) answered from the popup and the
+# patient sent for an autopsy (CH_TREAT_RESEARCH); then patient 9 (call 11,
+# turn 9663) and patient 28 (call 16, turn 10408).
+8191 10 4 7
+8192 125 2 21
+9823 10 4 11
+9824 125 2 9
+10468 10 4 16
+10469 125 2 28

@@ -9,9 +9,13 @@
 # restorer, a console and a doctor. Once a baldness patient has arrived it is
 # made to guess its cure from its window (EV_FORCE_CURE), which sends it
 # straight to the hair restorer, which cures it (cure_illness, illness 10).
-# The first baldness patient of the player (owner=0) is patient 26 (peep
-# illness=10 at turn 8375; the earlier ones, at 4375, 11225 and 12225, went
-# to the computer players), so the force_cure is aimed at it two turns later.
+# The GP is baldness's only diagnosis room and leaves the diagnosis short of
+# complete, so the guess is right by the draw (best_guess_treatment, no
+# PF_WRONG_GUESS): the first baldness patient of the player (owner=0) is
+# patient 26 (peep illness=10 at turn 8375; the earlier ones went to the
+# computer players), and the force_cure at turn 9845,
+# after its visit to the GP (a guess aimed two turns after it arrived kills
+# it after the room), leaves it cured and alive.
 # Expect cmd type=137 == 1
 # Expect peep 26 illness=10 == 1
 # Expect use_object 26 obj=41 kind=25 == 1
@@ -64,9 +68,9 @@
 # The year ends early (EV_CHEAT_END_YEAR) before any patient has come, so
 # the second year, with its baldness patients, starts at once.
 155 137 0 0
-# The baldness patients made to guess their cure from their windows
-# (EV_FORCE_CURE) as they arrive, which sends them to the hair restorer.
-8377 134 26 0
+# The first baldness patient made to guess its cure from its window
+# (EV_FORCE_CURE), which sends it to the hair restorer.
+9845 134 26 0
 # Staff salaries raised every 2000 turns (EV_INCREASE_STAFF_SALARIES) so that
 # the doctors stay content into the second year.
 2000 90 100 0

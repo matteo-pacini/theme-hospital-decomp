@@ -1,16 +1,16 @@
 # Level 6: the autopsy machine picked up and put down. autopsy.txt's
-# hospital; at turn 7300 the machine (thing 45) is lifted
+# hospital; at turn 7600 the machine (thing 44) is lifted
 # (EV_PICK_UP_OBJECT -> remove_object_from_map, delete_object: no autopsy
 # machine is left, so the autopsy is no longer available). Patient 21,
-# awaiting a decision since turn 7158, is sent for an autopsy at turn 7401
+# awaiting a decision since turn 8131, is sent for an autopsy at turn 8182
 # (CH_TREAT_RESEARCH, which the game carries out without a check): in
 # go_for_treatment the hospital cannot give it (reputation_affected
 # REP_GO_FOR_TREATMENT) and the patient goes home. The machine is put back
-# at turn 8001 (cell 6460), the autopsy available again, and patient 48,
-# sent for one at turn 8101, is autopsied at turn 8427.
+# at turn 8300 (cell 6460), the autopsy available again, and patient 19,
+# sent for one at turn 8400, is autopsied at turn 8949.
 # Expect rep 44 event=2 == 1
 # Expect send_for_research == 1
-# Expect autopsied 48 illness=16 amount=3300 unhappy=0
+# Expect autopsied 19 illness=19 amount=6600 unhappy=0
 # Turns 10000
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 5 98 0 0
@@ -56,13 +56,13 @@
 142 1 0 0
 143 48 1 25
 144 5 6970 25
-# The machine lifted; patient 21's call (id 6, made at turn 7158) answered
+# The machine lifted; patient 21's call (id 7, made at turn 8131) answered
 # and the patient sent for an autopsy.
-7300 68 45 0
-7400 10 4 6
-7401 125 2 21
-# The machine put down again; patient 48 (call 12, made at turn 8009).
-8000 43 0 0
-8001 7 6460 55
-8100 10 4 12
-8101 125 2 48
+7600 68 44 0
+8181 10 4 7
+8182 125 2 21
+# The machine put down again; patient 19 (call 8, made at turn 8341).
+8300 43 0 0
+8301 7 6460 55
+8399 10 4 8
+8400 125 2 19

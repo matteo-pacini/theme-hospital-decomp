@@ -1,17 +1,17 @@
 # Level 6: autopsies, sent by the command EV_PATIENT_TO_RESEARCH (0x80,
 # which nothing in the game posts but which io.cpp's process_turn carries
-# out): autopsy.txt's hospital. Patients 21 and 32, awaiting a decision
-# since their calls (turns 7158 and 7479), are sent at turn 7500, both at
-# once: patient 21 queues at the research room and the researcher calls it
-# (autopsied at turn 7798); patient 32 fails to find its way (nav_failure),
-# goes home, comes back and is autopsied at turn 9716. Patient 48 is sent at
-# turn 8100 (autopsied at 8412).
+# out): autopsy.txt's hospital. Patients 21 and 19, awaiting a decision
+# since their calls (turns 8131 and 8337), are sent at turn 8398, both at
+# once: both queue at the research room and the researcher calls them
+# (autopsied at turns 9042 and 8863). Patient 9 is sent at turn 9205; it
+# fails to find its way (nav_failure), goes home, comes back and is
+# autopsied at turn 11130.
 # Expect send_for_research 21 room=7
-# Expect send_for_research 32 room=7
-# Expect send_for_research 48 room=7
-# Expect autopsied 21 illness=24 amount=3300 unhappy=0
-# Expect autopsied 32 illness=18 amount=6600 unhappy=0
-# Expect autopsied 48 illness=16 amount=3300 unhappy=0
+# Expect send_for_research 19 room=7
+# Expect send_for_research 9 room=7
+# Expect autopsied 21 illness=19 amount=6600 unhappy=0
+# Expect autopsied 19 illness=19 amount=6600 unhappy=0
+# Expect autopsied 9 illness=32 amount=3300 unhappy=0
 # Turns 12000
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 5 98 0 0
@@ -57,6 +57,6 @@
 142 1 0 0
 143 48 1 25
 144 5 6970 25
-7500 128 21 0
-7500 128 32 0
-8100 128 48 0
+8398 128 21 0
+8398 128 19 0
+9205 128 9 0
