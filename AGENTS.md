@@ -18,6 +18,9 @@ each do a brief in their own pane.
 - Leads talk to their workers, and to each other to coordinate, through
   herdr. Workers do not message or reply through herdr unless their own
   workspace's lead asks them to.
+- Before prompting any agent, check its pane's prompt cache: cold with a
+  large context means `/clear`, `/caveman`, then a self-contained prompt
+  (docs/agents/herdr.md, "Lead").
 - With `HERDR_ENV=1`, the lead and the workers also read
   `docs/agents/herdr.md`.
 
@@ -102,8 +105,17 @@ dosbox-x:
 - A script's header states what it exercises with `# Expect <text> [<op> <n>]`
   and `# Expect-not <text>`; when the generator moves its numbers,
   `expect_candidates.py SCRIPT TRACE` lists the events of the same shape.
-  Never weaken an Expect line to make it pass.
+  Never weaken an Expect line to make it pass. Common script traps (forced
+  cures, wrong headers, dead commands): docs/agents/herdr.md, "Workers".
 - Every script in `enhanced/tools/replay/scripts/` must agree to its turns.
+  A worker's gate is split: its own new or changed scripts with fresh
+  originals (`replay_all.sh NAME ...`), plus `CACHED_ONLY=1 replay_all.sh` over
+  all the others, which compares the port with cached originals only, never
+  starts DOSBox (seconds) and lists scripts without a cache entry as "no
+  cache" and then exits 3 (1 if anything disagreed), so it never reads as a
+  full pass. After a change to `instrument.py` or the decompilation every key
+  is new and nothing is cached: fresh originals are needed then. The lead
+  runs the full cold run once at integration.
 - Whoever ports a function adds its trace events on both sides:
   `trace_event` in the port, the `instrument.py` EVENTS entry, and a line in
   `trace.h`.

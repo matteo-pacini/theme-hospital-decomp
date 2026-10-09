@@ -138,7 +138,7 @@
 # Patient 8 is sent home on its way to a queue (state 36); patient 6, waiting
 # for a decision (state 68), is sent home; patient 7, with its doctor in the
 # GP's office (state 32), is sent home, and so is patient 40 (state 32);
-# patient 14, walking to a queue (state 36), guesses a cure.
+# patient 18 guesses a cure (a right guess: it is cured and lives).
 11300 116 8 0
 12550 116 6 0
 12700 116 7 0

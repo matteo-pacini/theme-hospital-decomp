@@ -52,12 +52,37 @@ For a session where a lead agent briefs worker agents in herdr panes
   narrow the task quietly or report done with items left out.
 - "It can't happen" needs proof: the original's code and the data, ideally a
   run of the instrumented original showing it. Otherwise write the scenario.
+- Replay gate: your own new or changed scripts with fresh originals, plus
+  `CACHED_ONLY=1 replay_all.sh` over all the others (AGENTS.md, "Replay
+  check"). It exits 3 when any script had no cache entry: run those fresh.
+  After a decompilation or `instrument.py` change nothing is cached, so run
+  fresh.
 - A replay that agrees proves nothing if nothing happened in it. Report the
   event counts that show each branch ran; check that each command in your
   scripts changes something in both traces.
 - Shared files take small edits on top of what is there now. Never write a
   whole file from an earlier copy or from memory, never revert or delete code
   or files you didn't write. Re-read before each edit.
+- Common traps, each caught in verification:
+  - `EV_FORCE_CURE` on a patient below full diagnosis is a wrong-guess kill
+    that still emits `cure` (`best_guess_treatment`, then
+    `setup_next_treatment` case 2). For a real cure, diagnose fully (GP,
+    diagnosis rooms) and add `Expect-not dies N`; label a wrong-guess script
+    as one.
+  - A script header must name the real staff member, room and cause: look the
+    thing id up in the trace (sub-type, room, turn) before writing it.
+  - An Expect line can pass for the wrong outcome (a kill also emits `cure`):
+    pair it with an `Expect-not` that the wrong outcome would trip.
+  - "The GP can't diagnose X" and "unreachable" need the code: guessing needs
+    the illness discovered, a full diagnosis does not.
+  - Commands past `# Turns`, or aimed at a freed or reused thing id, change
+    nothing: check each command's effect in both traces.
+  - A helper that draws random numbers passes the original function's name,
+    also in branches that look unreachable.
+  - Rendering: no scratch or mask colour (0xfe) in a path the original draws
+    straight to the screen; palette data can produce that value.
+  - Headers and comments go stale when ids or turns move: re-read them after
+    any retune.
 - No git commands. No broad `pkill`/`kill`: stop only processes you started.
 - Delete a named folder whole (`rm -rf build/replay-01`), never a glob
   (`rm -rf dir/*`): a glob after a `cd` is flagged as an unresolvable target
@@ -109,13 +134,21 @@ For a session where a lead agent briefs worker agents in herdr panes
   into its branch (through an integration worktree for a large batch), runs
   the combined check there and commits when the user asks.
 - Finish a batch with one combined check of the whole tree: every replay
-  script on both sides, every drive test, all gates. Then remove the batch's
+  script on both sides (the one full cold run, without `CACHED_ONLY`; workers
+  only ran theirs fresh), every drive test, all gates. Then remove the batch's
   traces, verification folders and stale `build/replay-*` folders, and check
   free space on `/` (`/tmp` lives there).
 - Wait for workers going idle or blocked (`herdr agent get`), not for their
   report files: they update reports while working.
 - When a worker passes about 70% of its context mid-task, have it write its
   notes to a file and continue after `/clear` from them.
+- Before prompting an agent (a brief, a fix round, a question, a resume; a
+  lead too), read its pane's status line: the prompt cache shows its time
+  left (`Cache: 🟢 mm:ss`, `🔥 HOT`) or that it has expired. A cold cache
+  makes the next prompt re-read the whole context at full price, so if it is
+  cold and the context holds much that the new work does not need, send
+  `/clear`, then `/caveman`, then a self-contained prompt (with the files to
+  read) instead. A warm cache keeps the context cheap: prompt it as it is.
 - Answer workers' permission dialogs only with the user's go-ahead. With
   it, the lead may run a watcher (a loop reading the workers' screens) that
   approves in-scope requests (the repository, `/tmp`, reads, build and replay

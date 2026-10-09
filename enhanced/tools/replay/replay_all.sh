@@ -25,6 +25,14 @@
 #                (default: a passing script's traces go as soon as they
 #                agree and its expectations hold; a failing script's two
 #                traces are kept, gzipped, with their paths printed)
+#   CACHED_ONLY  1 never starts DOSBox: each script is compared with its cached
+#                original trace, and one without a cache entry is listed as
+#                "no cache" (neither passed nor failed; not compared). The
+#                run then exits 3 (1 if anything failed), so it never reads
+#                as a full pass. Needs the keys to be current: after a
+#                decompilation or instrument.py change every key is new and
+#                nothing is cached, so fresh originals are needed.
+#                (default 0; overrides NO_CACHE)
 #   WATCHDOG     minutes without new original-side trace output before a
 #                fresh run is killed as hung and its script marked failed
 #                (default 5; 0 disables; cache hits never run DOSBox)
@@ -60,7 +68,9 @@ for kind in $(printf '%s' "$IGNORE_EVENTS" | tr ',' ' '); do
   ignore_flags="$ignore_flags --ignore-event $kind"
 done
 
-for tool in python3 dosbox-x gzip; do
+need="python3 dosbox-x gzip"
+[ "${CACHED_ONLY:-0}" = 1 ] && need="python3 gzip"
+for tool in $need; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "replay_all.sh: $tool is not on PATH (see the header)" >&2
     exit 2
@@ -129,9 +139,18 @@ run_script() {
   if [ "$hung" = 1 ]; then
     status=1
     line="$n (level $lvl, $t turns): original hung (no trace for ${WATCHDOG}m; killed; see $dir/orig.log)"
-  elif ! wait "$opid"; then
-    status=1
-    line="$n (level $lvl, $t turns): original run failed (see $dir/orig.log)"
+  else
+    wait "$opid"
+    ocode=$?
+    if [ "${CACHED_ONLY:-0}" = 1 ] && [ "$ocode" != 0 ] &&
+      grep -q "^orig trace: no cache" "$dir/orig.log" 2>/dev/null; then
+      printf '%s\n' "$n (level $lvl, $t turns): no cache (not compared)" >"$RESULTS/$n.line"
+      printf 'nocache\n' >"$RESULTS/$n.status"
+      return 0
+    elif [ "$ocode" != 0 ]; then
+      status=1
+      line="$n (level $lvl, $t turns): original run failed (see $dir/orig.log)"
+    fi
   fi
   if grep -q 'cache hit' "$dir/orig.log" 2>/dev/null; then src=cached; else src=fresh; fi
   printf '%s\n' "$src" >"$RESULTS/$n.src"
@@ -186,11 +205,19 @@ wait
 
 passed=0
 failed=0
+nocache=0
+nocache_list=
 cached=0
 fresh=0
 for f in $scripts; do
   n=$(basename "$f" .txt)
   [ -f "$RESULTS/$n.line" ] && printf '%s\n' "$(cat "$RESULTS/$n.line")"
+  if [ "$(cat "$RESULTS/$n.status" 2>/dev/null)" = nocache ]; then
+    nocache=$((nocache + 1))
+    nocache_list="$nocache_list $n"
+    rm -rf "${REPLAY_BASE:?}/$n"
+    continue
+  fi
   if [ "$(cat "$RESULTS/$n.src" 2>/dev/null)" = cached ]; then
     cached=$((cached + 1))
   else
@@ -209,4 +236,8 @@ rmdir "$REPLAY_BASE" 2>/dev/null
 echo "---"
 echo "$passed passed, $failed failed"
 echo "original trace: $cached from cache, $fresh fresh"
-[ "$failed" = 0 ]
+[ "$nocache" = 0 ] || echo "$nocache without a cached original, not compared (CACHED_ONLY=1):$nocache_list"
+[ "$failed" = 0 ] || exit 1
+# Exit 3: nothing disagreed, but part of the check did not run, so the gate
+# must not read as passed.
+[ "$nocache" = 0 ] || exit 3

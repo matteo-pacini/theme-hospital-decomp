@@ -119,9 +119,133 @@ printf 'LANGUAGE=FRE\nSOUND=0\n' >orig/HOSPITAL.CFG
 check "key: orig/HOSPITAL.CFG" "$r" differs
 printf 'LANGUAGE=FRE\nSOUND=1\n' >orig/HOSPITAL.CFG
 check "key: HOSPITAL.CFG restored" "$(key "$tmp/script.txt")" "$k"
-echo '# edit' >>"$rp/orig_trace.sh"
-[ "$(key "$tmp/script.txt")" != "$k" ] && r=differs || r=same
-check "key: orig_trace.sh" "$r" differs
+for v in "100 1 skipme 1" "100 2 skipme 0" "100 1 other 0" "101 1 skipme 0"; do
+  # shellcheck disable=SC2086
+  [ "$("$rp/trace_key.sh" "$exekey" ${v% *} "${v##* }" "$tmp/script.txt")" != "$k" ] && r=differs || r=same
+  check "key: changed turns, level, skip or rand ($v)" "$r" differs
+done
+
+# orig_trace.sh: what it feeds DOSBox is in the key, its comment-only and
+# blank lines are not.
+cp "$rp/orig_trace.sh" "$tmp/orig_trace.sh.bak"
+orig_variant()
+{
+  cp "$tmp/orig_trace.sh.bak" "$rp/orig_trace.sh"
+  "$@" "$rp/orig_trace.sh"
+}
+key_vs_k() { [ "$(key "$tmp/script.txt")" != "$k" ] && echo differs || echo same; }
+orig_variant sh -c 'printf "# a comment\n\n   # indented\n" >>"$1"' x
+check "key: orig_trace.sh comments and blank lines" "$(key_vs_k)" same
+orig_variant sed -i 's/build\/base is missing: build the decompilation first (ninja)/other wording/'
+check "key: orig_trace.sh error message wording is in the key" "$(key_vs_k)" differs
+orig_variant sed -i 's/^\(\[ -d build\/base \] || { echo \)"/\1"$(rm -rf $run\/SAVE)/'
+check "key: orig_trace.sh command substitution in a message" "$(key_vs_k)" differs
+orig_variant sed -i 's/^\(\[ -d build\/base \] || { echo "[^"]*"\) >&2/\1 >>"$conf"/'
+check "key: orig_trace.sh message redirected elsewhere" "$(key_vs_k)" differs
+orig_variant sed -i 's/^\(  dosbox-x -nopromptfolder -fastlaunch\) \\$/\1 \\ /'
+check "key: orig_trace.sh blank after a backslash" "$(key_vs_k)" differs
+orig_variant sed -i 's/^\(  dosbox-x -nopromptfolder -fastlaunch \\\)$/\1\n  # a comment/'
+check "key: orig_trace.sh comment line after a continuation" "$(key_vs_k)" differs
+orig_variant sed -i 's/^\(  dosbox-x -nopromptfolder -fastlaunch \\\)$/\1\n/'
+check "key: orig_trace.sh blank line after a continuation" "$(key_vs_k)" differs
+orig_variant sed -i 's/^\(root=\$PWD\)$/\1 /'
+check "key: orig_trace.sh trailing blank on a line" "$(key_vs_k)" differs
+# A comment-looking line inside a quoted string that spans lines is data.
+orig_variant sh -c 'printf "msg=\"one\n# two\n\"\n" >>"$1"' x
+k_str=$(key "$tmp/script.txt")
+orig_variant sh -c 'printf "msg=\"one\n# deux\n\"\n" >>"$1"' x
+[ "$(key "$tmp/script.txt")" != "$k_str" ] && r=differs || r=same
+check "key: orig_trace.sh comment-looking line in a multi-line string" "$r" differs
+# Heredoc forms: the body stays whatever the form; a form the key does not
+# understand keeps the rest of the file as written.
+for form in '\\EOF' "'EOF'" '"EOF"' '-EOF'; do
+  orig_variant sed -i "s/<<EOF\$/<<$form/"
+  kh=$(key "$tmp/script.txt")
+  sed -i 's/^pcspeaker=false$/#pcspeaker=false/' "$rp/orig_trace.sh"
+  [ "$(key "$tmp/script.txt")" != "$kh" ] && r=differs || r=same
+  check "key: orig_trace.sh heredoc <<$form keeps its body" "$r" differs
+done
+orig_variant sed -i 's/<<EOF$/<<$HEREDOC_WORD/'
+kh=$(key "$tmp/script.txt")
+printf '# trailing comment\n' >>"$rp/orig_trace.sh"
+[ "$(key "$tmp/script.txt")" != "$kh" ] && r=differs || r=same
+check "key: orig_trace.sh unknown heredoc form keeps the rest" "$r" differs
+# A heredoc that starts on a continuation line (after a backslash or inside a
+# multi-line string) keeps its body too: a comment-looking line in it counts.
+heredoc_key()
+{
+  cp "$tmp/orig_trace.sh.bak" "$rp/orig_trace.sh"
+  printf '%s\n%s\nEOF\n' "$1" "$2" >>"$rp/orig_trace.sh"
+  key "$tmp/script.txt"
+}
+for start in 'cat >/dev/null \' 'x="a
+b"; cat >/dev/null <<EOF'; do
+  case $start in *'\') start="$start
+  <<EOF" ;; esac
+  [ "$(heredoc_key "$start" '# A=1')" != "$(heredoc_key "$start" '# A=2')" ] && r=differs || r=same
+  check "key: orig_trace.sh heredoc after a continuation keeps its body" "$r" differs
+done
+orig_variant true
+orig_variant sed -i 's/^cycles=max$/cycles=auto/'
+check "key: orig_trace.sh dosbox.conf setting" "$(key_vs_k)" differs
+orig_variant sed -i 's/^set TRACE_SKIP=/set TRACE_SKIPPED=/'
+check "key: orig_trace.sh autoexec line" "$(key_vs_k)" differs
+orig_variant sed -i 's/^pcspeaker=false$/#pcspeaker=false/'
+check "key: orig_trace.sh comment-looking line inside the conf" "$(key_vs_k)" differs
+orig_variant sed -i 's/-fastlaunch/-fastlaunch -noautoexec/'
+check "key: orig_trace.sh dosbox command line" "$(key_vs_k)" differs
+orig_variant sed -i 's/ln -sfn/ln -sf/'
+check "key: orig_trace.sh run folder setup" "$(key_vs_k)" differs
+orig_variant sed -i 's/=ENG\//=FRE\//'
+check "key: orig_trace.sh language forced" "$(key_vs_k)" differs
+orig_variant true
+check "key: orig_trace.sh restored" "$(key_vs_k)" same
+
+# instrument.py: its code and the EVENTS text are in the key, its comments,
+# docstrings, blank lines and layout are not (needs python3; without it the
+# raw text is hashed and every edit changes the key).
+if command -v python3 >/dev/null 2>&1; then
+  cp "$rp/instrument.py" "$tmp/instrument.py.bak"
+  exe_key() { "$rp/exe_cache_key.sh" "$root" "$rp/instrument.py"; }
+  inst_variant()
+  {
+    cp "$tmp/instrument.py.bak" "$rp/instrument.py"
+    "$@" "$rp/instrument.py"
+  }
+  ek=$(exe_key)
+  check "exe key: unchanged" "$ek" "$exekey"
+  inst_variant sh -c 'printf "\n\n# a comment\n\n\n" >>"$1"; sed -i "s/^import sys\$/import sys  # trailing/" "$1"' x
+  check "exe key: instrument.py comments and blank lines" "$(exe_key)" "$ek"
+  inst_variant sed -i '1,/^"""/s/^"""\(.*\)$/"""Reworded: \1/'
+  check "exe key: instrument.py module docstring" "$(exe_key)" "$ek"
+  inst_variant sed -i 's/^import sys$/import sys\nimport  os/'
+  [ "$(exe_key)" != "$ek" ] && r=differs || r=same
+  check "exe key: instrument.py code" "$r" differs
+  inst_variant sed -i 's/"tutorial %u"/"tutorial2 %u"/'
+  [ "$(exe_key)" != "$ek" ] && r=differs || r=same
+  check "exe key: instrument.py EVENTS text" "$r" differs
+  inst_variant sed -i 's/^import sys$/import sys\n"""not a docstring: a statement"""\nx = 1/'
+  [ "$(exe_key)" != "$ek" ] && r=differs || r=same
+  check "exe key: instrument.py string statement after code" "$r" differs
+  # A coding comment changes how non-ASCII source is read, so it changes the key.
+  inst_variant sh -c 'printf "x = \"\303\251\"\n" >>"$1"' x
+  ek_utf=$(exe_key)
+  inst_variant sh -c 'printf "x = \"\303\251\"\n" >>"$1"; sed -i "1a # -*- coding: latin-1 -*-" "$1"' x
+  [ "$(exe_key)" != "$ek_utf" ] && r=differs || r=same
+  check "exe key: instrument.py coding comment" "$r" differs
+  cp "$tmp/instrument.py.bak" "$rp/instrument.py"
+  check "exe key: instrument.py restored" "$(exe_key)" "$ek"
+  # A syntax error stops the key instead of hashing nothing.
+  echo 'def (' >>"$rp/instrument.py"
+  exe_key >/dev/null 2>&1 && r=key || r=error
+  check "exe key: unparsable instrument.py is an error" "$r" error
+  cp "$tmp/instrument.py.bak" "$rp/instrument.py"
+fi
+
+# The key is the same wherever the tree lives (a worktree has its own path).
+cp -a "$root" "$tmp/repo-copy"
+check "exe key: same in another folder" "$("$tmp/repo-copy/enhanced/tools/replay/exe_cache_key.sh" "$tmp/repo-copy" "$tmp/repo-copy/enhanced/tools/replay/instrument.py")" "$exekey"
+rm -rf "$tmp/repo-copy"
 
 # 6. The language is forced to ENG whatever the original's config says.
 check "run uses LANGUAGE=ENG" "$(grep '^cfg:' "$FAKE_LOG" | sort -u)" "cfg: LANGUAGE=ENG"
@@ -146,5 +270,87 @@ if [ "${SLOW:-0}" = 1 ]; then
   kill -0 "$hung" 2>/dev/null && r=alive || r=dead
   check "watchdog: killed run is gone" "$r" dead
 fi
+
+# 8. CACHED_ONLY=1 never starts DOSBox: a miss is reported ("no cache", exit
+# 3, nothing written or stored), a hit is used, whatever NO_CACHE says.
+: >"$FAKE_LOG"
+n=$(entries)
+CACHED_ONLY=1 cached "$tmp/out8" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8.txt" && r=exit0 || r=$?
+check "cached-only miss exits 3" "$r" 3
+grep -q '^orig trace: no cache ' "$tmp/o8.txt" && r=reported || r=silent
+check "cached-only miss says 'no cache'" "$r" reported
+check "cached-only miss starts no DOSBox" "$(runs)" 0
+check "cached-only miss stores nothing" "$(entries)" "$n"
+[ -e "$tmp/out8" ] && r=written || r=absent
+check "cached-only miss writes no trace" "$r" absent
+cached "$tmp/out8a" 400 "$tmp/script.txt" skipme 1 >/dev/null
+: >"$FAKE_LOG"
+CACHED_ONLY=1 NO_CACHE=1 cached "$tmp/out8b" 400 "$tmp/script.txt" skipme 1 | grep -q 'cache hit' && r=hit || r=miss
+check "cached-only hit, even with NO_CACHE=1" "$r" hit
+check "cached-only hit starts no DOSBox" "$(runs)" 0
+cmp -s "$tmp/out8a" "$tmp/out8b" && r=same || r=differ
+check "cached-only hit returns the stored trace" "$r" same
+# A fresh run holding the key's lock has stored nothing yet; a cache-only
+# call neither waits for it nor misreads it, and a stored entry is a hit
+# for two readers at once, lock held or not.
+lockkey=$("$rp/trace_key.sh" "$exekey" 400 1 skipme 0 "$tmp/script.txt")
+exec 7>"$traces/$lockkey.lock"
+flock 7
+(CACHED_ONLY=1 cached "$tmp/out8d" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8d.txt") &
+(CACHED_ONLY=1 cached "$tmp/out8e" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8e.txt") &
+wait
+exec 7>&-
+cmp -s "$tmp/out8d" "$tmp/out8a" && cmp -s "$tmp/out8e" "$tmp/out8a" && r=hits || r=lost
+check "cached-only: two readers at once, lock held, both hit" "$r" hits
+unheld=$("$rp/trace_key.sh" "$exekey" 410 1 skipme 0 "$tmp/script.txt")
+exec 7>"$traces/$unheld.lock"
+flock 7
+CACHED_ONLY=1 cached "$tmp/out8c" 410 "$tmp/script.txt" skipme 1 | grep -q 'no cache' && r=reported || r=waited
+exec 7>&-
+check "cached-only does not wait for a key being run" "$r" reported
+
+# 9. replay_all.sh with CACHED_ONLY=1: a script with a cached original is
+# compared, one without is listed as "no cache" and does not fail the run,
+# and no DOSBox is started.
+mkdir -p "$root/build/enhanced"
+cat >"$root/build/enhanced/th_replay" <<'FAKE'
+#!/bin/sh
+while [ $# -gt 0 ]; do
+  case $1 in
+    --turns) turns=$2 ;;
+    --out) out=$2 ;;
+  esac
+  shift
+done
+printf 'T 1 seed=1\nT %s seed=2\n# end\n' "$turns" >"$out"
+FAKE
+chmod +x "$root/build/enhanced/th_replay"
+printf '# Turns 50\n0 1\n' >"$rp/scripts/zz_hit.txt"
+printf '# Turns 51\n0 1\n' >"$rp/scripts/zz_miss.txt"
+# Primed with replay_all.sh's defaults (lib.sh: SKIP empty, RAND=1), or the
+# key differs and zz_hit misses.
+TRACE_RAND=1 REPLAY_DIR="$tmp/prime" "$rp/cached_orig_trace.sh" "$tmp/prime.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null
+: >"$FAKE_LOG"
+CACHED_ONLY=1 REPLAY_BASE="$tmp/ra" "$rp/replay_all.sh" zz_hit zz_miss >"$tmp/ra.out" 2>&1 && r=0 || r=$?
+check "replay_all cached-only with a missing cache exits 3, not 0" "$r" 3
+grep -q '^zz_hit .*agree .*\[original cached\]' "$tmp/ra.out" && r=compared || r=missing
+check "replay_all cached-only compares the cached script" "$r" compared
+grep -q '^zz_miss .*no cache' "$tmp/ra.out" && r=listed || r=missing
+check "replay_all cached-only lists the script without cache" "$r" listed
+grep -q '^1 passed, 0 failed' "$tmp/ra.out" && r=counted || r=wrong
+check "replay_all cached-only counts only the compared script" "$r" counted
+grep -q '^1 without a cached original.*zz_miss' "$tmp/ra.out" && r=counted || r=wrong
+check "replay_all cached-only counts the missing one" "$r" counted
+check "replay_all cached-only starts no DOSBox" "$(runs)" 0
+# Without CACHED_ONLY the same miss runs the original (a fresh run here).
+REPLAY_BASE="$tmp/ra2" "$rp/replay_all.sh" zz_miss >"$tmp/ra2.out" 2>&1 && r=exit0 || r=failed
+check "replay_all runs a script without cache when not cached-only" "$(runs)" 1
+check "replay_all not cached-only passes it" "$r" exit0
+printf '# Turns 52\n0 1\n' >"$rp/scripts/zz_miss2.txt"
+CACHED_ONLY=1 REPLAY_BASE="$tmp/ra3" "$rp/replay_all.sh" zz_miss2 >"$tmp/ra3.out" 2>&1 && r=0 || r=$?
+check "replay_all cached-only with nothing cached exits 3" "$r" 3
+CACHED_ONLY=1 REPLAY_BASE="$tmp/ra4" "$rp/replay_all.sh" zz_hit >"$tmp/ra4.out" 2>&1 && r=0 || r=$?
+check "replay_all cached-only with everything cached exits 0" "$r" 0
+rm -f "$rp/scripts/zz_hit.txt" "$rp/scripts/zz_miss.txt" "$rp/scripts/zz_miss2.txt"
 
 if [ "$fails" = 0 ]; then echo "all cache tests passed"; else echo "$fails cache test(s) failed"; exit 1; fi

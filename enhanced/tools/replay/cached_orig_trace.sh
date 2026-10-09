@@ -21,6 +21,9 @@
 #   cached_orig_trace.sh OUT TURNS [SCRIPT] [SKIP] [LEVEL]
 #
 # Environment: NO_CACHE=1 runs the original fresh and refreshes the entry;
+# CACHED_ONLY=1 never runs DOSBox and ignores NO_CACHE: without a cached
+# trace it prints "orig trace: no cache <key>" and exits 3, OUT unwritten; with
+# one it behaves as usual;
 # REPLAY_DIR, TRACE_RAND and TH_REPLAY_SLOTS are passed to orig_trace.sh.
 # Prints one "orig trace: cache hit/miss <key>" line for replay_all.sh.
 set -eu
@@ -56,8 +59,13 @@ decompress()
 # One lock per key, like the executable cache, so two runs of the same
 # script never run DOSBox twice or write the entry at once. Held across the
 # fresh run too: a waiter finds the entry of the run it waited for.
-exec 9>"$lock"
-flock 9
+# A cache-only call takes no lock: an entry appears only by an atomic mv, so
+# it reads a whole entry or none, and a fresh run holding the lock has stored
+# nothing yet.
+if [ "${CACHED_ONLY:-0}" != 1 ]; then
+  exec 9>"$lock"
+  flock 9
+fi
 
 # The cache entry to read, or empty: zstd when it is present and available,
 # gzip otherwise (an entry written where zstd was missing). Looked up under
@@ -69,7 +77,12 @@ elif [ -f "$entry.gz" ]; then
   lookup=$entry.gz
 fi
 
-if [ "${NO_CACHE:-0}" != 1 ] && [ -n "$lookup" ]; then
+if [ "${CACHED_ONLY:-0}" = 1 ] && [ -z "$lookup" ]; then
+  echo "orig trace: no cache $key"
+  exit 3
+fi
+
+if { [ "${NO_CACHE:-0}" != 1 ] || [ "${CACHED_ONLY:-0}" = 1 ]; } && [ -n "$lookup" ]; then
   decompress "$lookup" "$out"
   echo "orig trace: cache hit $key ($(basename "$lookup"))"
   exit 0

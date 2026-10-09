@@ -340,9 +340,15 @@ side of past runs, so `replay_all.sh` runs DOSBox only for a script it
 has no entry for. Each entry is one script's trace, compressed with zstd
 when it is on PATH (gzip otherwise) and named by a key of everything that
 fixes the trace: the instrumented executable's cache key (a hash of the
-decompilation's sources, objects and instrument.py), the script file's bytes
+decompilation's sources, objects and tools and of instrument.py as a parsed
+syntax tree without docstrings, so editing its comments, docstrings or layout
+keeps the key while any change to its code, EVENTS tables or the C++ they
+insert changes it), the script file's bytes
 (not its path), the last turn, the level, the SKIP list, RAND, `orig_trace.sh`
-(the DOSBox configuration and run folder) and the original's `HOSPITAL.CFG`,
+read without its comment-only and blank lines (everything else counts: the
+DOSBox configuration, command line, run folder setup and the text of its
+messages; a line after a backslash continuation, a multi-line string or an
+unrecognised heredoc form is kept as written) and the original's `HOSPITAL.CFG`,
 `MODEM.INI` and `DOS4GW.EXE`, and which dosbox-x runs it; the game data
 folders are not hashed. An entry is stored only for a run that finished:
 the instrumented game ends its trace with a `# end` line (after the last
@@ -355,7 +361,15 @@ cache hit`. The cache is machine local and git-ignored, and each machine
 fills its own under its own executable key: any change to the key above (a
 new or edited script, other turns, level or SKIP, an edited `orig_trace.sh`
 or CFG, a decompilation or `instrument.py` change) misses only the affected
-entries and refreshes them. `enhanced/tools/replay/test_cache.sh` tests
+entries and refreshes them. `CACHED_ONLY=1 replay_all.sh [SCRIPT ...]`
+compares the port with cached originals only and never starts DOSBox, taking
+no lock: a script without an entry is listed as "no cache", neither passed
+nor failed, and the run exits 3 (1 if anything disagreed), so it never reads
+as a full pass. After a decompilation or `instrument.py` change every key is
+new, so nothing is cached and fresh originals are needed. The full run with
+fresh originals is the lead's at integration. A key edit that could change a
+trace must be kept in the key; when unsure, keep it, since a false hit is
+worse than a miss. `enhanced/tools/replay/test_cache.sh` tests
 the cache with a fake DOSBox. To fill it for every script in one go, run
 `enhanced/tools/replay/trace_cache.sh prefetch` (from any directory; the
 same SKIP, turns, RAND and watchdog as `replay_all.sh`, from `lib.sh`,
