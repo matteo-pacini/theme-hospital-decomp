@@ -14,11 +14,10 @@ namespace th
 // Patients arriving, as the game's src/peepmake.cpp, single player only.
 //
 // The game has four hospitals: the player's (0) and three computer players
-// whose patients never reach the map (process_computer_peep, src/computer.cpp,
-// which is not ported). Their patients are still made (drawing what the
-// game draws for them) and then dropped, but process_computer_peep's own
-// draws are missing, so the random generator leaves the game's once a rival
-// gets a patient. Emergency patients come by helicopter (create_a_peep).
+// whose patients never reach the map. Their patients are still made
+// (drawing what the game draws for them) and then seen to at once
+// (process_computer_peep, core/world/computer.h) and dropped. Emergency
+// patients come by helicopter (create_a_peep).
 
 // What who_owns_peep weighs for one hospital, per illness (the game's
 // allhosps[].rooms[]), and whether it takes patients. Hospital 0's is the
@@ -124,6 +123,16 @@ uint32_t old_normal_rand(uint32_t &seed, uint32_t low, uint32_t high,
 // non-visual one (16-35). `level_number` is the campaign level.
 uint8_t create_an_illness(uint32_t &seed, const ArrivalState &state, const Balance &settings, int level_number);
 
+// How who_owns_peep chose the owner, for the one thing about it a rival patient
+// shows (process_computer_peep's has_drinks).
+struct PeepOwnerPath {
+    // The choice was by the hospitals' bids.
+    bool bidding = false;
+    // The second bid in the sorted order, once the bids are added up, has a
+    // total or a hospital other than 0.
+    bool second_bid = false;
+};
+
 // who_owns_peep (0x70458): the hospital (0-3) that wins a new patient with
 // `illness` (2-35): in turn while game_month is below gbv.alloc_delay, else
 // one at random with odds of 1 in gbv.alloc_rand, else drawn by each
@@ -131,7 +140,9 @@ uint8_t create_an_illness(uint32_t &seed, const ArrivalState &state, const Balan
 // price against the most patients will pay (50-150%). The weighing first
 // updates each hospital's price (update_single_cure_cost). Returns -1 if the
 // winner does not take patients (hospital 0 when `hospital_open` is false).
-int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness, bool hospital_open);
+// `path`, if given, tells how the choice was made.
+int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness, bool hospital_open,
+                  PeepOwnerPath *path = nullptr);
 
 // transform_peep_who (0x16b30) for a patient: their kind changed by
 // kChangePersonWho row `change` (the old one kept in orig_subtype), if the
@@ -168,13 +179,14 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const PeepSetup &s
 // peep_interval turns (by `game_turn`, the game's actual_game_turn),
 // makes a patient with a random illness for the hospital that wins them.
 // Hospital 0's stands at one of its four entrances (World::entrances[0],
-// picked at random) and is returned, to be set going; a rival's is made and
-// dropped (as remove_thing, which also clears the list of cell (0, 0), the
+// picked at random) and is returned, to be set going; a rival's is made, seen
+// to (process_computer_peep, on day `day` of the month) and dropped (as
+// remove_thing, which also clears the list of cell (0, 0), the
 // position it never was put at). Returns 0 when no patient reaches the map.
 // Nothing comes on rat levels.
 // The game calls it from twice_daily_admin, on turns that are multiples of
 // 25, after the turn's three draws and before daily_admin and month_end.
 uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup, bool hospital_open,
-                       uint32_t game_turn);
+                       uint32_t game_turn, int day);
 
 } // namespace th

@@ -65,6 +65,7 @@ void test_computer_tables();
 void test_computer_players(const char *dir);
 void test_computer_money(const char *dir);
 void test_computer_staff(const char *dir);
+void test_computer_peep();
 
 // ui.cpp
 void test_menu_bar(const char *dir);
@@ -238,6 +239,7 @@ const Test kTests[] = {
     TEST(test_epidemic),
     TEST(test_rats),
     TEST(test_computer_tables),
+    TEST(test_computer_peep),
     TEST(test_queue_lists),
     TEST(test_sound_player),
     TEST(test_xmi_parse),

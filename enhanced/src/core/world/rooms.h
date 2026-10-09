@@ -295,6 +295,19 @@ bool treatment_machine_used(World &world, const AnimData &anims, uint8_t illness
 // (world.seed), set as its treatment; 0 (also set) if none.
 uint16_t find_possible_diagnosis(World &world, uint16_t id);
 
+// find_possible_diagnosis for a hospital that gives the treatments marked in
+// `cure_available` (a computer player's), drawing from `seed`.
+uint16_t find_possible_diagnosis(uint32_t &seed, Thing &patient, const std::array<uint8_t, 47> &cure_available);
+
+// add_treatment_to_history (0x3d7c0): `patient`'s treatment appended to the
+// last ten it has had.
+void add_treatment_to_history(Thing &patient);
+
+// diag_register (src/tables.cpp): the diagnosis progress diagnosis room
+// `treatment` adds for `illness`, negative when it sets them back; 0 for a
+// treatment below the diagnosis rooms.
+int16_t diag_register(uint8_t illness, uint8_t treatment);
+
 // force_peep_to_be_cured (0x194a0): patient `id`, by the player's order
 // (the patient window's guess cure), loses its status flags, leaves its
 // queue, is interrupted (interrupt_person) and sent on to the treatment for

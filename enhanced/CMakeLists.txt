@@ -83,6 +83,7 @@ add_library(th_core STATIC
   src/core/world/computer.cpp
   src/core/world/computer_month.cpp
   src/core/world/computer_staff.cpp
+  src/core/world/computer_peep.cpp
   src/core/world/counts.cpp
   src/core/world/debug_dump.cpp
   src/core/world/disaster.cpp
@@ -187,6 +188,7 @@ if (BUILD_TESTING)
     tests/computer.cpp
     tests/computer_month.cpp
     tests/computer_staff.cpp
+    tests/computer_peep.cpp
     tests/data.cpp
     tests/drive.cpp
     src/app/drive.cpp
