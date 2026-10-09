@@ -4,9 +4,11 @@
 # one place of the default SKIP list, turns and RAND, of the script header
 # lookups, and of the watchdog on the original's run.
 
-# The calls the engine does not port yet, left out on the original's side
-# (also the list in AGENTS.md's "Replay check"). SKIP set but empty skips nothing.
-SKIP=${SKIP-computer_action}
+# The calls left out on both sides, comma-separated (also the list in
+# AGENTS.md's "Replay check"): none by default, since every call is ported.
+# SKIP=computer_action leaves the computer players out; SKIP set but empty
+# skips nothing.
+SKIP=${SKIP-}
 # Event kinds compare.py leaves out on both sides (comma-separated): the ones
 # the original writes and the engine does not emit yet. Empty compares every
 # event.

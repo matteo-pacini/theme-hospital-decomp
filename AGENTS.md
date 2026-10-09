@@ -75,8 +75,10 @@ DOSBox-X (its work folder is `$REPLAY_DIR`, default `build/replay`; use your
 own when running in parallel). `th_replay` runs the same script in the port,
 and `compare.py` diffs the two traces turn by turn, random draws included
 (`th_replay --rand`, `TRACE_RAND=1` on the original's side). The usual SKIP
-list is `computer_action` only: rats (`manage_rats`) and disasters
-(`generate_disaster`) stay on in every replay. How each piece works, the
+list is empty: the computer hospitals (`computer_action`), rats
+(`manage_rats`) and disasters (`generate_disaster`) are on in every replay.
+`SKIP=computer_action` (th_replay `--skip`) still leaves the computer
+players out on both sides. How each piece works, the
 trace cache and the script format: enhanced/README.md.
 
 Run every script (or the ones named) with the decompilation built (`ninja`)

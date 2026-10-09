@@ -55,8 +55,19 @@ Milestone 3b, people:
 
 - patients arriving as the game makes them (create_a_peep, make_a_peep:
   illness, looks, needs, health, insurance, cash), with the game's random
-  draws in order; the rival hospitals' patients are made and dropped, but
-  the computer players' own draws are not ported yet;
+  draws in order; a rival hospital's patient is made, treated at once by
+  its computer player (process_computer_peep, with the game's has_drinks
+  quirk) and dropped;
+- the computer players (the three rival hospitals): their script of
+  decisions (computer_action, computer_decision, the notes, hiring, building
+  and buying objects, the recheck of hires), their monthly and yearly
+  figures (buckets, wages, value, score, the year-end charts and awards with
+  their real figures), all with the game's draws in order. The replay check
+  compares them through the events `computer_action`, `computer_decision`,
+  `rival_open`, `computer_employ`, `computer_build`, `computer_place_object`,
+  `computer_loan`, `computer_land`, `computer_note`, `computer_peep`,
+  `computer_bucket`, `computer_month` and `computer_year` (trace.h); the
+  `rival_*` scripts exercise them;
 - the patients' action sequences (DATA/P_COMP.LEX and the step table): with
   no reception desk, a patient goes home through an entrance, as in the game;
 - the game's path finding (wall following, its four-waypoint plans and its
@@ -359,22 +370,22 @@ and orig_trace.sh's SCRIPT; the EV_* numbers in include/enums.h). Each
 script's header comments say what it exercises, and its `# Expect` and
 `# Expect-not` lines check it on both traces; `# Level N` picks the level
 (th_replay `--level N`, orig_trace.sh's LEVEL) and `# Turns N` the last
-turn. A script is compared with the default SKIP, `computer_action` (rats
-and disasters stay on), by hand as below; th_replay's `--skip` leaves the same
-call out of the port (`replay_all.sh` passes its SKIP to both sides, and an
-empty SKIP runs the computer hospitals on both):
+turn. A script is compared with the default SKIP, empty (the computer
+hospitals, rats and disasters all run), by hand as below; th_replay's
+`--skip NAMES` leaves calls out of the port (`replay_all.sh` passes its SKIP
+to both sides; `SKIP=computer_action` runs without the computer hospitals):
 
     enhanced/tools/replay/orig_trace.sh orig.txt 18000 \
-        enhanced/tools/replay/scripts/gp_office.txt \
-        computer_action
+        enhanced/tools/replay/scripts/gp_office.txt
     build/enhanced/th_replay \
         --script enhanced/tools/replay/scripts/gp_office.txt \
-        --turns 18000 --skip computer_action --out enhanced.txt
+        --turns 18000 --out enhanced.txt
     enhanced/tools/replay/compare.py orig.txt enhanced.txt
 
 `IGNORE_EVENTS` (comma-separated event kinds, default empty) makes
 `replay_all.sh` leave those events out of the comparison on both sides, for
-events the original writes and the engine does not emit yet.
+events the original writes and the engine does not emit yet (none today:
+the engine emits every event).
 
 What the scripts leave unexercised: `tools/coverage.sh` (in the dev shell, GCC)
 builds th_replay with `-DTH_COVERAGE=ON` in build/coverage, runs every script
