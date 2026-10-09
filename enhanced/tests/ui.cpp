@@ -1758,7 +1758,7 @@ void test_queue_bar_names(const char *dir)
         th::UiLayer layer;
         layer.resize(th::kUiWidth, th::kUiHeight);
         layer.clear();
-        th::draw_queue_window(layer, q, ui, world, art, f.gd);
+        th::draw_queue_window(layer, q, ui, *f.game, art, f.gd);
         return layer.to_argb(f.gd.palette());
     };
     for (size_t i = 1; i < 4; i++)
