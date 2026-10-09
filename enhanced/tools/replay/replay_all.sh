@@ -34,7 +34,7 @@
 #   IGNORE_EVENTS  event kinds compare.py leaves out on both sides,
 #                comma-separated (default empty: every event is compared)
 #   SKIP         calls left out of the original's trace, comma-separated
-#                (default in lib.sh: the functions the engine does not port yet)
+#                (default in lib.sh: empty, every call is in the trace)
 #
 # Needs, on PATH: python3 (with the tools the decomp's dev shell has),
 # dosbox-x, wibo and the Watcom tools, and the decompilation built in

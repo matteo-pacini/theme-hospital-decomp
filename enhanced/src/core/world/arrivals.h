@@ -128,8 +128,9 @@ uint8_t create_an_illness(uint32_t &seed, const ArrivalState &state, const Balan
 struct PeepOwnerPath {
     // The choice was by the hospitals' bids.
     bool bidding = false;
-    // The second bid in the sorted order, once the bids are added up, has a
-    // total or a hospital other than 0.
+    // The four bytes of the bids that end up in has_drinks's slot are not all
+    // 0: byte 3 of the second bid's total, its hospital, and the low 16 bits
+    // of the third bid's total.
     bool second_bid = false;
 };
 

@@ -1,8 +1,9 @@
-# Level 6: epidemic_vaccinate.txt without its epidemic call, run to turn
-# 30700. The first roll (turn 10050) draws kind 3 with 10 or fewer pieces of
-# litter and is rejected; the second (20100) draws kind 3 with more and is accepted:
-# everyone feels sick (nausea, advice 0xd) for its timer,
-# with patients vomiting (litter of type 5), then it ends (advice 0xe).
+# Level 6: epidemic_vaccinate.txt without its epidemic call and with its
+# second GP doctor and nurse hired at other turns, run to turn 30700. The first
+# roll (turn 10050) draws kind 3 with no litter (count 0 at turn 10049) and
+# is rejected; the second (20100) draws kind 3 with 11 pieces (count at turn
+# 20099) and is accepted: the sick disaster ends at turn 20400, with patients
+# vomiting (litter of type 5). The third (30450) draws kind 2 and is rejected.
 # Turns 30700
 # Expect disaster_reject owner=0 kind=3
 # Expect disaster_start owner=0 kind=3
