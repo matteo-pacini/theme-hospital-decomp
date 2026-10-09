@@ -7,6 +7,10 @@
 # doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect choice
+# Expect playercall 1 type=8
+# Expect playercall 5 type=8
+# Expect playercall 6 type=8
+# Expect playercall 8 type=4
 # Expect diagnose
 # Expect go_home
 5 98 0 0
@@ -36,21 +40,21 @@
 # The doctor: hire applicant 11, place at cell 10044.
 114 48 1 11
 115 5 10044 11
-# Patient 10's diagnosis call (id 1, made at turn 6724) answered from the
+# Patient 3's diagnosis call (id 1, made at turn 5786) answered from the
 # patient (EV_ANSWER_PLAYERCALL 8 1) and the patient sent home
 # (CH_DIAG_SEND_HOME).
 7260 10 8 1
-7261 125 40 10
-# Patient 3's diagnosis call (id 4, turn 8289) answered and its illness
+7261 125 40 3
+# Patient 3's diagnosis call (id 5, turn 8588) answered and its illness
 # guessed (CH_DIAG_GUESS): with no treatment for it, a call about no
-# treatment (id 5) follows at once, answered from the first such call (arg 0)
+# treatment (id 8) follows at once, answered from the first such call (arg 0)
 # and the patient sent to the research department (CH_TREAT_RESEARCH, which
 # the fax offers only once autopsies can be done): with none, it goes home.
-8300 10 8 4
-8301 125 41 3
-8350 10 4 0
-8351 125 2 3
-# Patient 6's diagnosis call (id 6, turn 8775) answered and the patient asked
+8650 10 8 5
+8651 125 41 3
+8700 10 4 0
+8701 125 2 3
+# Patient 6's diagnosis call (id 6, turn 9603) answered and the patient asked
 # to wait for a diagnosis room (CH_DIAG_WAIT): it goes home 1500 turns on.
-8950 10 8 6
-8951 125 42 6
+9650 10 8 6
+9651 125 42 6

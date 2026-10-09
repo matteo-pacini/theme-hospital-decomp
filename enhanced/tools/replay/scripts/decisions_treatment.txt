@@ -10,6 +10,8 @@
 # and chair, opened, and a doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect choice
+# Expect playercall 2 type=4
+# Expect playercall 5 type=4
 # Expect go_home
 5 98 0 0
 6 37 11 1
@@ -55,12 +57,12 @@
 # A second doctor: hire applicant 13, place at cell 10044.
 142 48 1 13
 143 5 10044 13
-# Patient 10's call (id 2, made at turn 6899) answered from the patient
+# Patient 3's call (id 2, made at turn 7343) answered from the patient
 # (EV_ANSWER_PLAYERCALL 4 2) and the patient sent home (CH_TREAT_SEND_HOME).
-6960 10 4 2
-6961 125 0 10
-# Patient 15's call (id 4, turn 7198) answered from its popup (arg 0: the
+7400 10 4 2
+7401 125 0 3
+# Patient 39's call (id 5, turn 8165) answered from its popup (arg 0: the
 # first such call) and the patient asked to wait (CH_TREAT_WAIT): it goes
 # home 1500 turns on with no room.
-7250 10 4 0
-7251 125 1 15
+8250 10 4 0
+8251 125 1 39
