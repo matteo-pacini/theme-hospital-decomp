@@ -2,6 +2,7 @@
 # Turns 24700
 # diagnosed contagious patient: the epidemic call is taken and the
 # epidemic DECLARED (EV_CHOICE_RESULT CH_EPIDEMIC_DECLARE, 10).
+# Expect playercall 56 type=3
 # Expect epidemic_declare
 # Expect choice 10
 5 98 0 0
@@ -49,9 +50,9 @@
 # A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
 144 48 2 28
 145 5 6841 28
-# A second GP doctor, and the epidemic call (EV_ANSWER_PLAYERCALL 3)
-# answered, then declared.
-146 48 1 17
-147 5 6970 17
-24572 10 3 0
-24573 125 10 0
+# A second GP doctor (hired at 265), and the epidemic call (raised at 24177,
+# EV_ANSWER_PLAYERCALL 3) answered, then declared.
+265 48 1 17
+266 5 6970 17
+24217 10 3 0
+24218 125 10 0

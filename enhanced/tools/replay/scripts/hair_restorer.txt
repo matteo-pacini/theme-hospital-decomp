@@ -1,7 +1,7 @@
 # Level 8: a hair restorer curing baldness (illness 10). Baldness only
 # arrives from the twelfth month (game_month 12, FULL00.SAM
 # visuals_available[8]), i.e. the second year. The first year is ended early
-# (EV_CHEAT_END_YEAR at turn 150, before any patient has come, so the
+# (EV_CHEAT_END_YEAR at turn 155, before any patient has come, so the
 # reputation is intact and the year-end lose check passes); letting it run
 # its course loses the hospital at turn 18250, its untreated patients having
 # dragged the reputation under 200. A reception desk and receptionist, a
@@ -9,13 +9,14 @@
 # restorer, a console and a doctor. Once a baldness patient has arrived it is
 # made to guess its cure from its window (EV_FORCE_CURE), which sends it
 # straight to the hair restorer, which cures it (cure_illness, illness 10).
-# The first baldness patient is patient 8 (peep illness=10 at turn 12175), so
-# the force_cure is aimed at it two turns later.
+# The first baldness patient of the player (owner=0) is patient 26 (peep
+# illness=10 at turn 8375; the earlier ones, at 4375, 11225 and 12225, went
+# to the computer players), so the force_cure is aimed at it two turns later.
 # Expect cmd type=137 == 1
-# Expect peep 8 illness=10 == 1
-# Expect use_object 8 obj=41 kind=25 == 1
-# Expect done_treatment 8 staff=15 == 1
-# Expect cure 8 illness=10 == 1
+# Expect peep 26 illness=10 == 1
+# Expect use_object 26 obj=41 kind=25 == 1
+# Expect done_treatment 26 staff=14 == 1
+# Expect cure 26 illness=10 == 1
 # Expect rep 10 event=0 == 1
 # Expect-not winlose
 # Turns 14000
@@ -61,10 +62,10 @@
 113 5 6047 15
 # The year ends early (EV_CHEAT_END_YEAR) before any patient has come, so
 # the second year, with its baldness patients, starts at once.
-150 137 0 0
+155 137 0 0
 # The baldness patients made to guess their cure from their windows
 # (EV_FORCE_CURE) as they arrive, which sends them to the hair restorer.
-12177 134 8 0
+8377 134 26 0
 # Staff salaries raised every 2000 turns (EV_INCREASE_STAFF_SALARIES) so that
 # the doctors stay content into the second year.
 2000 90 100 0

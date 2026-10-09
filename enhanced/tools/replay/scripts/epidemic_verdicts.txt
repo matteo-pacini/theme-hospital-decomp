@@ -5,7 +5,7 @@
 # judges, one of the contagious patients is sent home (EV_PERSON_GO_HOME),
 # so the inspector finds only one left (verdict 1: fined 2000 * 1 * 2 =
 # 4000) rather than finding it out (verdict 2).
-# Expect playercall 56 type=3
+# Expect playercall 43 type=3
 # Expect epidemic_cover_up
 # Expect balance 30 amount=-4000
 # Expect-not rep 0 event=15
@@ -55,13 +55,13 @@
 144 48 2 28
 145 5 6841 28
 # A second GP doctor (applicant 20, cell 6840) hired late: a contagious
-# patient is diagnosed (the epidemic call is raised at 24169) with another of
+# patient is diagnosed (the epidemic call is raised at 24177) with another of
 # the same illness inside; the call is answered and covered up. The fax
 # opens only while contagious patients are inside, so the answer must come
 # after the call.
-5961 48 1 20
-5962 5 6840 20
-24209 10 3 0
-24210 125 11 0
-# Send contagious patient 12 home before the inspector judges.
-24211 116 12 0
+6124 48 1 20
+6125 5 6840 20
+24217 10 3 0
+24218 125 11 0
+# Send contagious patient 49 home before the inspector judges (turn 26523).
+24700 116 49 0

@@ -50,28 +50,6 @@ void pay(World &world, uint8_t type, int32_t amount)
                    BalanceChange{type, amount, 0, 0});
 }
 
-// inspector_pauses' verdict for `contagious` patients still inside: harsher
-// the more there are, 0 (always when none, rarely otherwise) paying
-// compensation; draws from world.seed as the game does.
-uint8_t inspector_verdict(World &world, uint32_t contagious)
-{
-    if (contagious == 0)
-        return 0;
-    if (contagious <= 2)
-        return old_newrand(world.seed, "inspector_pauses") % 5 == 0 ? 0 : 1;
-    if (contagious <= 5) {
-        if (old_newrand(world.seed, "inspector_pauses") % 20 == 0)
-            return 0;
-        return old_newrand(world.seed, "inspector_pauses") % 10 == 0 ? 1 : 2;
-    }
-    if (contagious < 10) {
-        if (old_newrand(world.seed, "inspector_pauses") % 50 == 0)
-            return 0;
-        return old_newrand(world.seed, "inspector_pauses") % 25 == 0 ? 1 : 2;
-    }
-    return old_newrand(world.seed, "inspector_pauses") % 50 == 0 ? 0 : 3;
-}
-
 // inspector_pauses' end: pays the compensation or fine, loses reputation
 // and sends the contagious (or every) patient home, by the verdict reached.
 void inspector_apply_verdict(World &world, uint8_t owner)
@@ -125,6 +103,28 @@ void inspector_pauses(World &world, const AnimData &anims, uint16_t id)
 }
 
 } // namespace
+
+// inspector_pauses' verdict for `contagious` patients still inside: harsher
+// the more there are, 0 (always when none, rarely otherwise) paying
+// compensation; draws from world.seed as the game does.
+uint8_t inspector_verdict(World &world, uint32_t contagious)
+{
+    if (contagious == 0)
+        return 0;
+    if (contagious <= 2)
+        return old_newrand(world.seed, "inspector_pauses") % 5 == 0 ? 0 : 1;
+    if (contagious <= 5) {
+        if (old_newrand(world.seed, "inspector_pauses") % 20 == 0)
+            return 0;
+        return old_newrand(world.seed, "inspector_pauses") % 10 == 0 ? 1 : 2;
+    }
+    if (contagious < 10) {
+        if (old_newrand(world.seed, "inspector_pauses") % 50 == 0)
+            return 0;
+        return old_newrand(world.seed, "inspector_pauses") % 25 == 0 ? 1 : 2;
+    }
+    return old_newrand(world.seed, "inspector_pauses") % 50 == 0 ? 0 : 3;
+}
 
 void alert_epidemic(World &world, uint8_t illness, uint8_t owner)
 {

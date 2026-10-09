@@ -1,15 +1,15 @@
 # Level 6: machine_saved.txt's worn cardiogram with no handyman until it is
-# about to give out: at turn 13350 a handyman is hired (applicant 51, the
-# pool's handyman then), takes the repair page and reaches the cardiogram
+# about to give out: at turn 14910 a handyman is hired (applicant 50, one of
+# the pool's handymen then), takes the repair page and reaches the cardiogram
 # room, where he waits for its doctor to leave so that he can close it for
 # the repair. Before the room is free the machine blows up (machine_disaster,
-# turn 13569): he and the doctor working there are sacked and the room is
+# turn 15215): he and the doctor working there are sacked and the room is
 # destroyed. Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 # Expect machine_smoke
 # Expect machine_disaster
-# Expect sack_staff 51 mode=2
-# Expect sack_staff 19 mode=2
+# Expect sack_staff 50 mode=2
+# Expect sack_staff 18 mode=2
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -52,6 +52,6 @@
 # A second doctor: hire applicant 19, place at cell 6970.
 142 48 1 19
 143 5 6970 19
-# The handyman hired (applicant 51, a handyman at this turn).
-13350 48 2 51
-13351 5 6841 51
+# The handyman hired (applicant 50, a handyman at this turn).
+14910 48 2 50
+14911 5 6841 50

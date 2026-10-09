@@ -2,9 +2,12 @@
 # watch: EV_OPEN_HOSPITAL (0x8b) at turn 100 instead of the level's 5000-turn
 # countdown, so the player's patients (peep owner=0) start arriving then.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
-# Opening at turn 100, 34 owner-0 patients arrive before turn 18300 (the
-# first at turn 500, the last at 17875).
-# Expect peep == 34
+# Opening at turn 100, 28 owner-0 patients arrive before turn 18300 (the
+# first at turn 500, the last at 18250) among the 115 of all four hospitals
+# (the computer players' are 36, 28 and 23, taken at once). The peep event
+# counts them all; the player's alone join the reception queue, 26 times.
+# Expect peep == 115
+# Expect join_queue == 26
 5 98 0 0
 6 37 11 1
 7 43 0 0

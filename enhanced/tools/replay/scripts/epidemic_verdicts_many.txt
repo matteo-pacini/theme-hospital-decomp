@@ -1,12 +1,12 @@
 # Level 6
 # Turns 27500
 # epidemic_vaccinate.txt's rooms and doctors with no patient queued for
-# vaccination: the epidemic is covered up with six contagious patients, so
-# the inspector's 6-9 bucket fines the hospital (verdict 2, fine 2000 * 6 *
-# 2 = 24000) and loses reputation.
-# Expect playercall 55 type=3
+# vaccination: the epidemic is covered up with three contagious patients
+# left at the inspection, so the inspector's 3-5 bucket fines the hospital
+# (verdict 2, fine 2000 * 3 * 2 = 12000) and loses reputation.
+# Expect playercall 60 type=3
 # Expect epidemic_cover_up
-# Expect balance 30 amount=-24000
+# Expect balance 30 amount=-12000
 # Expect rep 0 event=15
 5 98 0 0
 6 37 11 1
@@ -55,12 +55,12 @@
 145 5 6841 28
 # A second GP doctor (applicant 20, cell 6840) hired late and a nurse
 # (applicant 14, cell 6841): a contagious patient is diagnosed (the epidemic
-# call, type 3, is raised at 24404) with others of the same illness inside.
+# call, type 3, is raised at 23712) with others of the same illness inside.
 # The fax opens only while contagious patients are inside, so the answer
 # comes after the call.
-6080 48 1 20
-6081 5 6840 20
+5108 48 1 20
+5109 5 6840 20
 7575 48 0 14
 7576 5 6841 14
-24444 10 3 0
-24445 125 11 0
+23752 10 3 0
+23753 125 11 0

@@ -79,6 +79,13 @@ void expire_epidemic_cover_up(World &world);
 // contagious ones, clearing their contagion.
 void send_peeps_home(World &world, uint8_t all, uint8_t owner);
 
+// The health inspector's verdict (allhosps.inspection[0], from inspector_pauses
+// 0xa1ed4) for `contagious` patients still inside: 0 pays compensation (always
+// when there are none), 1 fines and sends the contagious home, 2 also costs
+// reputation, 3 costs reputation and sends everyone home; harsher the more
+// there are (1-2, 3-5, 6-9, 10 or more). Draws from world.seed as the game does.
+uint8_t inspector_verdict(World &world, uint32_t contagious);
+
 // clean_contagious_peep (0xa0ae8): cures patient `id` of contagion: zeroes
 // their contagion, clears PF_CONTAGIOUS, their place in the vaccination
 // queue and takes one off the contagious count. The status icons are not

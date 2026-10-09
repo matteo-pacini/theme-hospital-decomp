@@ -126,3 +126,58 @@ void test_epidemic()
     cover_up_status();
     vaccine_and_home();
 }
+
+namespace
+{
+
+// src/inspect.cpp's inspector_pauses verdict chain, transcribed, drawing
+// from `seed` with the same old_newrand.
+uint8_t reference_verdict(uint32_t &seed, uint32_t contagious)
+{
+    if (contagious == 0)
+        return 0;
+    if (contagious <= 2)
+        return th::old_newrand(seed) % 5 == 0 ? 0 : 1;
+    if (contagious <= 5) {
+        if (th::old_newrand(seed) % 20 == 0)
+            return 0;
+        return th::old_newrand(seed) % 10 == 0 ? 1 : 2;
+    }
+    if (contagious < 10) {
+        if (th::old_newrand(seed) % 50 == 0)
+            return 0;
+        return th::old_newrand(seed) % 25 == 0 ? 1 : 2;
+    }
+    return th::old_newrand(seed) % 50 == 0 ? 0 : 3;
+}
+
+} // namespace
+
+// inspector_verdict gives the verdict src/inspect.cpp does, with the same
+// draws, for every contagious count: none, 1-2, 3-5, 6-9 (no replay script
+// reaches them) and 10 or more, and every verdict of each bucket occurs.
+void test_inspector_verdict()
+{
+    std::array<std::array<int, 4>, 14> seen{};
+    auto world = std::make_unique<th::World>();
+    for (uint32_t contagious = 0; contagious <= 13; contagious++) {
+        for (uint32_t i = 1; i <= 6000; i++) {
+            world->seed = i * 2654435761u;
+            uint32_t reference_seed = world->seed;
+            const uint8_t expected = reference_verdict(reference_seed, contagious);
+            const uint8_t verdict = th::inspector_verdict(*world, contagious);
+            CHECK(verdict == expected);
+            CHECK(world->seed == reference_seed);
+            seen[contagious][verdict]++;
+        }
+    }
+    for (uint32_t c : {0u, 1u, 2u})
+        CHECK(seen[c][0] > 0 || c == 0);
+    CHECK(seen[0][0] == 6000);
+    CHECK(seen[2][0] > 0 && seen[2][1] > 0 && seen[2][2] == 0);
+    CHECK(seen[4][0] > 0 && seen[4][1] > 0 && seen[4][2] > 0);
+    for (uint32_t c : {6u, 8u, 9u})
+        CHECK(seen[c][0] > 0 && seen[c][1] > 0 && seen[c][2] > 0 && seen[c][3] == 0);
+    for (uint32_t c : {10u, 13u})
+        CHECK(seen[c][0] > 0 && seen[c][3] > 0 && seen[c][1] == 0 && seen[c][2] == 0);
+}
