@@ -1,0 +1,15 @@
+# Level 1: the status screen values the hospital it shows every frame and
+# writes the result back (src/overscr.cpp:119-121): a rival's hospital_value,
+# max_loan and win_progress, as they are valued once the screen has shown it.
+wait 60
+expect max_loan=15000 wage_bill=0 hospital_value=0
+key F8
+wait 30
+click 327 105            # ORAC's row
+wait 10
+click 327 130
+wait 10
+click 327 155            # COLOSSUS's row
+wait 10
+expect-not max_loan=15000 wage_bill=0 hospital_value=0
+expect hospital_value=43525

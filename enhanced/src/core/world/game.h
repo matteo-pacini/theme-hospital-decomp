@@ -199,6 +199,7 @@ class Game
     //                                 (Event::flags is not kept);
     //   @walker_add <cell>            add_walker;
     //   @walker_send <id> <cell>      send_walker;
+    //   @overview <hospital>          overview_frame;
     //   @cursor <cell>                update_placement, when it would look
     //                                 again (the pointer moved or a redraw);
     // and what the interface changes in place, outside commands, found by
@@ -237,6 +238,11 @@ class Game
     // was no free entry. Draws from the random generator, as making a
     // patient does. Recorded in command_log.
     uint16_t add_walker(int cell);
+    // One frame of the status screen showing `hospital` (src/overscr.cpp:119-121):
+    // calculate_value, evaluate_criteria and check_criteria_values on its win and
+    // lose rows, written back to the hospital and to the shared criteria rows.
+    // Recorded in command_log.
+    void overview_frame(uint8_t hospital);
     // Path finding tool: sends person `id` to `cell`. A patient on an action
     // sequence leaves it and only walks from then on. Recorded in
     // command_log.

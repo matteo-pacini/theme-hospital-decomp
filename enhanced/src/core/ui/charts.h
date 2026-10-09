@@ -140,6 +140,9 @@ struct ChartsResult {
     Event yes;
     Event no;
     int question = 0;
+    // The hospital the status screen is showing this frame, or -1: the caller
+    // runs Game::overview_frame for it.
+    int overview_hospital = -1;
 };
 
 // The charts' state and art: the game's display_mode DM_CHARTS with
