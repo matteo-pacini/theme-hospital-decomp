@@ -12,7 +12,12 @@ set -eu
 
 root=$1 instrument=$2
 cd "$root"
+# Only paths relative to ROOT and contents go into the hash, so a worktree
+# (whose build/base is a link to the main tree's) gets the main tree's key and
+# shares its caches: -H follows the build/base link, and instrument.py is
+# hashed from stdin, without its absolute path.
 {
-  find src include tools config build/base -type f ! -path '*/__pycache__/*' -print0 | sort -z | xargs -0 sha256sum
-  sha256sum configure.py "$instrument"
+  find -H src include tools config build/base -type f ! -path '*/__pycache__/*' -print0 | sort -z | xargs -0 sha256sum
+  sha256sum configure.py
+  sha256sum <"$instrument"
 } | sha256sum | cut -c1-16
