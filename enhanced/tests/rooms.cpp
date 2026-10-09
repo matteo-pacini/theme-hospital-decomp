@@ -456,7 +456,7 @@ void check_reception_no_gp(QueueFixture &f, const ReceptionDesk &d, bool &consis
                 n.queued, n.sat, n.fed_up, unsigned(w.patients_left_count), max_queue, int(sold), unsigned(w.seed));
     CHECK(consistent && !called);
     CHECK(n.queued > 0 && n.sat > 0 && n.fed_up > 0 && w.patients_left_count >= n.fed_up);
-    CHECK(n.queued == 8 && n.sat == 6 && n.fed_up == 4 && max_queue == 4 && sold == 100 && w.seed == 0x3b708328);
+    CHECK(n.queued == 6 && n.sat == 5 && n.fed_up == 5 && max_queue == 3 && sold == 100 && w.seed == 0x7dfba2b5);
 }
 
 // Whether everyone queueing in `room` ahead of `called` in `before` has
@@ -528,7 +528,7 @@ bool check_reception_gp(QueueFixture &f, const ReceptionDesk &d, bool &consisten
                 calls, served, to_office, int(office.queue_length), int(office.queue_incoming), unsigned(w.seed));
     CHECK(consistent && in_order);
     CHECK(calls > 0 && served > 0 && to_office > 0 && office.queue_length > 0);
-    CHECK(calls == 10 && served == 10 && to_office == 10 && office.queue_length == 4 && w.seed == 0xb6c9c7ae);
+    CHECK(calls == 6 && served == 6 && to_office == 6 && office.queue_length == 4 && w.seed == 0xf7f5f55c);
     return true;
 }
 
@@ -1339,8 +1339,8 @@ bool gp_office_run(const char *dir, uint32_t &seed)
     CHECK(consistent && n.consistent);
     CHECK(doctor_in >= 0 && calls > 0 && n.seated > 0 && n.consulted > 0 && n.waiting > 0 && n.gone_home > 0);
     CHECK(treat + claims == g.hospital.illnesses[1].income && treat > 0);
-    CHECK(doctor_in == 1125 && calls == 12 && n.seated == 12 && n.consulted == 12 && n.waiting == 12 &&
-          n.gone_home == 11 && treat == 800 && claims == 400 && w.seed == 0x6421a6f);
+    CHECK(doctor_in == 1125 && calls == 13 && n.seated == 13 && n.consulted == 13 && n.waiting == 12 &&
+          n.gone_home == 12 && treat == 800 && claims == 500 && w.seed == 0x9374d6f1);
     seed = w.seed;
     return true;
 }

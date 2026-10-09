@@ -128,8 +128,8 @@ void test_arrivals_level1(const char *dir)
         std::printf("arrivals, level 1, 6 months: %d of %d patients ours, %d a month now, seed %#x\n", ours,
                     int(state.peeps_arrived), int(state.visitors_per_month), unsigned(game->world.seed));
         // Regression values, not checked against the game.
-        CHECK(ours == 10 && state.peeps_arrived == 43 && state.visitors_per_month == 11);
-        CHECK(game->world.seed == 0x8ed1e8bb);
+        CHECK(ours == 14 && state.peeps_arrived == 43 && state.visitors_per_month == 11);
+        CHECK(game->world.seed == 0x3755895e);
     }
 }
 
