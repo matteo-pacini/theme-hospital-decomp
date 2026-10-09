@@ -1,6 +1,7 @@
 #include "core/world/game.h"
 
 #include "core/world/build.h"
+#include "core/world/computer.h"
 #include "core/world/counts.h"
 #include "core/world/disaster.h"
 #include "core/world/epidemic.h"
@@ -124,6 +125,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     start_queues(world, settings_, arrivals.hospitals[0], finance);
     // init_player's.
     calc_pricing_factor(arrivals.hospitals[0], settings_, world.cure_available);
+    start_rivals(world, settings_, balance);
     start_rooms_in_use(*this, complexes, staff_complexes);
     connect_world();
     start_research(world);
@@ -131,6 +133,9 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     world.emergency = {};
     world.emergency.heli_pad_tile = level.emergency_tile[0];
     disasters = {};
+    // After the insurers in the game, which draw nothing from the seed. The
+    // mouse position only enters the random pick of a missing player.
+    setup_computer_players(world, settings_, number, finance.area, 0, 0);
     setup_next_emergency(disasters, world, settings_, date);
     setup_next_quake(disasters, world, settings_, date);
     command_log.assign(1, std::format("# commands of level {}, build {:016x}", number, snapshot_build_id()));

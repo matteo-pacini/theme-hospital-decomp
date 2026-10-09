@@ -194,6 +194,10 @@ struct Balance {
         uint8_t speed = 0;
         uint8_t comfort = 0;
         uint8_t guess_at = 0;
+        // The script a computer player follows (kComStrategy); the level files do
+        // not set it.
+        uint8_t strategy = 1;
+        uint8_t unknown7 = 2;
         uint8_t playing = 0;
     };
     std::array<Computer, 20> computer{};

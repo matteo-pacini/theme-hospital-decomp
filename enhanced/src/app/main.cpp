@@ -968,6 +968,9 @@ void App::start_view(std::unique_ptr<LevelView> view, const Level &level, bool f
         setup_insurances(map_->game.world, ticks_ms());
     }
     charts_.hospital_names[0] = startup_.player_name();
+    name_computer_players(map_->game.world.rivals, data_->text());
+    for (size_t i = 1; i < charts_.hospital_names.size(); i++)
+        charts_.hospital_names[i] = map_->game.world.rivals[i].name.data();
     charts_.open = false;
     fax_.open = false;
     popups_ = {};
