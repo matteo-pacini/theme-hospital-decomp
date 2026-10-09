@@ -517,7 +517,7 @@ uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup
         // The game leaves has_drinks unset when the drinks machines are too few, and what it holds then is
         // true for a visual illness (up to kIllTransparency) and after bidding.
         bool stale_drinks = illness <= kIllTransparency || (path.bidding && path.second_bid);
-        process_computer_peep(world, state, setup.settings, rival, {uint8_t(owner), day, stale_drinks});
+        process_computer_peep(world, state, setup.settings, rival, {uint8_t(owner), day, setup.month, stale_drinks});
         trace_event("remove_thing %u type=%u", unsigned(rival), unsigned(world.things[rival].type));
         remove_node(world, rival);
 

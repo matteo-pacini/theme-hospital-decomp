@@ -50,7 +50,7 @@ struct PeepFixture {
 
     void visit(int day, bool stale_drinks)
     {
-        process_computer_peep(*world, state, settings, 1, {kOwner, day, stale_drinks});
+        process_computer_peep(*world, state, settings, 1, {kOwner, day, state.game_month % 12, stale_drinks});
     }
 };
 
@@ -130,6 +130,13 @@ void check_no_gp()
     g.state.game_month = 11 + 12;
     g.visit(28, false);
     CHECK(g.bucket(0).patients_done == 1 && g.bucket(11).patients_done == 0);
+
+    // The visit goes into the calendar month's bucket, which a cheat moving the date leaves ahead of
+    // othervar.game_month.
+    PeepFixture h(kBloatyHead, 300);
+    h.state.game_month = 3;
+    process_computer_peep(*h.world, h.state, h.settings, 1, {kOwner, 10, 11, false});
+    CHECK(h.bucket(11).patients_done == 1 && h.bucket(3).patients_done == 0);
 }
 
 // A GP who diagnoses at once: one spread draw, the GP's price, the diagnosis

@@ -160,6 +160,8 @@ struct PeepSetup {
     const Balance &settings;
     const AnimData &anims;
     int level_number;
+    // The calendar month (mycontrol->month), which a rival patient's visit starts in.
+    int month = 0;
 };
 
 // make_a_peep (0x70918): makes a patient of hospital `owner` with `illness`

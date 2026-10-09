@@ -16,10 +16,12 @@
 # Expect force_cure
 # Expect force_cure 10 == 1
 # Expect go_for_treatment 10 treatment=16 == 1
-# Expect force_cure 14 == 1
-# Expect go_for_treatment 14 treatment=2 == 1
+# Expect cure 10 illness=16 == 1
+# Expect force_cure 18 == 1
+# Expect go_for_treatment 18 treatment=32 == 1
+# Expect cure 18 illness=32 == 1
 # Expect-not dies 10
-# Expect-not dies 14
+# Expect-not dies 18
 # Expect go_home
 # Expect go_home 6 state=68 == 1
 # Expect go_home 8 state=48 == 1
@@ -141,4 +143,4 @@
 12550 116 6 0
 12700 116 7 0
 12780 116 40 0
-12900 134 14 0
+15700 134 18 0
