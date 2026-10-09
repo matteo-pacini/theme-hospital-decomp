@@ -870,6 +870,7 @@ void year_end_sim(Game &game)
     game.progress.year_start_deaths = game.finance.deaths;
     game.progress.year_start_staff = player_staff(game.world);
     game.finance.year_start_balance = game.balance;
+    rival_year_start(game.world, game.arrivals);
     game.finance.statement_balance = game.balance;
     create_chart_data(game);
     check_trophies_won(game);

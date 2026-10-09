@@ -51,33 +51,38 @@ int32_t reputation_affected_percent(RepEvent event, int32_t amount)
 
 } // namespace
 
+RepChange reputation_change(const HospitalMarket &hosp, uint8_t treatment, RepEvent event, int32_t amount)
+{
+    RepChange change;
+    switch (event) {
+    case kRepCured:
+    case kRepComputerDiagnosed:
+    case kRepIllnessFound:
+        change.delta = 1;
+        break;
+    case kRepDied:
+        change.delta = -1;
+        break;
+    case kRepCase:
+        change.count = 1;
+        break;
+    case kRepResearched:
+        change.delta = (treatment ? hosp.rep_events[treatment] : hosp.hospital_rep_events) * 5 / 100;
+        break;
+    default:
+        change.delta = hosp.hospital_rep_events * reputation_affected_percent(event, amount) / 100;
+        break;
+    }
+    return change;
+}
+
 void reputation_affected(World &world, uint8_t treatment, RepEvent event, int32_t amount)
 {
     trace_event("rep %u event=%d amount=%d", unsigned(treatment), int(event), int(amount));
     if (!world.market)
         return;
     HospitalMarket &hosp = *world.market;
-    int32_t delta = 0;
-    int32_t count = 0;
-    switch (event) {
-    case kRepCured:
-    case kRepComputerDiagnosed:
-    case kRepIllnessFound:
-        delta = 1;
-        break;
-    case kRepDied:
-        delta = -1;
-        break;
-    case kRepCase:
-        count = 1;
-        break;
-    case kRepResearched:
-        delta = (treatment ? hosp.rep_events[treatment] : hosp.hospital_rep_events) * 5 / 100;
-        break;
-    default:
-        delta = hosp.hospital_rep_events * reputation_affected_percent(event, amount) / 100;
-        break;
-    }
+    const auto [delta, count] = reputation_change(hosp, treatment, event, amount);
     if (treatment) {
         hosp.rep_points[treatment] += delta;
         hosp.rep_events[treatment] += count;
@@ -90,15 +95,18 @@ void reputation_affected(World &world, uint8_t treatment, RepEvent event, int32_
         update_single_cure_cost(world, treatment);
 }
 
-void evaluate_reputation(World &world, uint8_t treatment)
+void evaluate_reputation(HospitalMarket &hosp, uint8_t treatment)
 {
-    if (!world.market)
-        return;
-    HospitalMarket &hosp = *world.market;
     if (treatment)
         hosp.reputation[treatment] = evaluated(hosp.rep_points[treatment], hosp.rep_events[treatment]);
     else
         hosp.hospital_reputation = evaluated(hosp.hospital_rep_points, hosp.hospital_rep_events);
+}
+
+void evaluate_reputation(World &world, uint8_t treatment)
+{
+    if (world.market)
+        evaluate_reputation(*world.market, treatment);
 }
 
 void record_person_as_patient(World &world, uint16_t id)

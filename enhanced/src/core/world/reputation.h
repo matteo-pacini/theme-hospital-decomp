@@ -52,6 +52,20 @@ constexpr uint32_t kPfRecorded = 0x400000;
 // ported.
 void reputation_affected(World &world, uint8_t treatment, RepEvent event, int32_t amount = 0);
 
+// What reputation_affected adds for an event: points, and events counted.
+struct RepChange {
+    int32_t delta = 0;
+    int32_t count = 0;
+};
+
+// reputation_affected's switch (src/sim.cpp:58-123) on hospital `hosp`'s
+// totals: the points `event` adds, and the one event kRepCase counts.
+RepChange reputation_change(const HospitalMarket &hosp, uint8_t treatment, RepEvent event, int32_t amount);
+
+// evaluate_reputation (0x58730) for hospital `hosp`: as the hospital-0
+// version below, on any hospital's totals.
+void evaluate_reputation(HospitalMarket &hosp, uint8_t treatment);
+
 // evaluate_reputation (0x58730) for hospital 0: the reputation for
 // `treatment`, or the hospital's for 0, from its totals: points * 500 /
 // events, 0-1000; 500 with no events.

@@ -63,6 +63,7 @@ void test_rats();
 // computer.cpp
 void test_computer_tables();
 void test_computer_players(const char *dir);
+void test_computer_money(const char *dir);
 
 // ui.cpp
 void test_menu_bar(const char *dir);
@@ -256,6 +257,7 @@ const Test kTests[] = {
 const DataTest kDataTests[] = {
     TEST(test_game_data),
     TEST(test_computer_players),
+    TEST(test_computer_money),
     TEST(test_sound_bank),
     TEST(test_shadow_sprites),
     TEST(test_level_objects),

@@ -91,6 +91,10 @@ int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &setti
 // end (a `price_level` trace event).
 void calc_pricing_factor(HospitalMarket &hosp, const Balance &settings, const std::array<uint8_t, 47> &cure_available);
 
+// calc_pricing_factor's work without the trace event, for the computer
+// players' hospitals (the game traces player 0's only).
+void set_price_level(HospitalMarket &hosp, const Balance &settings, const std::array<uint8_t, 47> &cure_available);
+
 // update_single_cure_cost (0x143e0): moves hospital `hosp`'s price for
 // `treatment` (0-46) to its share (price_scale) of the most patients will
 // pay, if that moves it by 1% or more.

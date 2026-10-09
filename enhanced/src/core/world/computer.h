@@ -9,7 +9,10 @@ namespace th
 {
 
 class LanguageText;
+struct ArrivalState;
+struct HospitalMarket;
 struct World;
+enum RepEvent : uint8_t;
 
 // The computer players' hospitals, as the game's src/computer.cpp, src/comtable.cpp
 // and init_player (src/start.cpp) set and use them. A computer player has no
@@ -251,5 +254,46 @@ void setup_computer_players(World &world, const Balance &settings, int level_num
 // computer names (text section 4: computer_names[ai_index]), unless
 // setup_computer_players named them already.
 void name_computer_players(std::array<RivalHospital, kHospitalCount> &rivals, const LanguageText &text);
+
+// ---- Money and reputation (computer_month.cpp) ----
+
+// reputation_affected (0x58370) for a computer player: banks `event` in
+// `rival`.buckets[month % 12] (the treatment's entry too, unless `treatment`
+// is 0, the hospital as a whole) for get_computer_bucket to merge, and moves
+// the price for `treatment` at once (update_single_cure_cost on `market`,
+// the rival's HospitalMarket). `month` is the month the visit is simulated
+// in. The event's `amount` is 0: a computer player gets none that scale.
+// Emits no trace event.
+void rival_reputation_affected(RivalHospital &rival, HospitalMarket &market, const Balance &settings, uint8_t month,
+                               uint8_t treatment, RepEvent event);
+
+// get_computer_bucket (0x4f900): merges owner's bucket for the current month
+// (arrivals.game_month % 12) into its hospital, takes the visits done off
+// its patient load, re-evaluates its reputations, and empties the bucket.
+// Emits a computer_bucket trace event.
+void get_computer_bucket(World &world, ArrivalState &arrivals, uint8_t owner);
+
+// computer_day (0x4ea50): every fifth `day` of the month, get_computer_bucket
+// for each computer player.
+void computer_day(World &world, ArrivalState &arrivals, int day);
+
+// computer_month (0x4eae0): get_computer_bucket for each computer player, then
+// its wage bill leaves the balance (no cap). Emits a computer_month trace
+// event per player.
+void computer_month(World &world, ArrivalState &arrivals);
+
+// month_end (src/finance.cpp) for the computer players' hospitals: their
+// heating, loan interest (at towns[0]'s rate: their level is 0) and
+// overdraft interest, then their price level. `heating_price` is the
+// player's Finance::heating_price.
+void rival_month_end(World &world, ArrivalState &arrivals, const Balance &settings, int heating_price);
+
+// month_end's market shares for hospitals 1-3: each one's month_visitors as a
+// percent of the four hospitals', 0 when none had visitors. Run before the
+// visitors are cleared.
+void rival_market_share(World &world, const ArrivalState &arrivals);
+
+// year_end's year_start_balance and year_start_visitors for hospitals 1-3.
+void rival_year_start(World &world, const ArrivalState &arrivals);
 
 } // namespace th

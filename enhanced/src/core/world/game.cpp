@@ -166,6 +166,7 @@ namespace
 // the year end (which start_turn calls after month_end).
 void finish_month_market_share(Game &g)
 {
+    rival_market_share(g.world, g.arrivals);
     int32_t total = 0;
     for (const HospitalMarket &h : g.arrivals.hospitals)
         total += int32_t(h.month_visitors);
@@ -183,8 +184,10 @@ void turn_month_end(Game &g)
     month_end(
         g.finance, g.balance, g.world, settings, g.level_number(),
         {days_in_month(date.month), date.month, count_radiators(g.world, 0), g.reputation(), g.turn_count, &g.anims()});
-    finish_month_market_share(g);
     calc_pricing_factor(g.arrivals.hospitals[0], settings, g.world.cure_available);
+    rival_month_end(g.world, g.arrivals, settings, g.finance.heating_price);
+    computer_month(g.world, g.arrivals);
+    finish_month_market_share(g);
     calc_visitors_this_month(g.arrivals, settings);
     date.day = 1;
     date.month++;
@@ -213,6 +216,7 @@ void turn_daily_admin(Game &g)
     generate_quake(g);
     expire_playercalls(g.world);
     manage_rats(g.world, g.anims());
+    computer_day(g.world, g.arrivals, g.date.day);
     do_research(g.world);
     if (g.date.day > days_in_month(g.date.month))
         turn_month_end(g);

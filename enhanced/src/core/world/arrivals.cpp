@@ -171,7 +171,7 @@ int32_t max_price_for_treatment(const HospitalMarket &hosp, const Balance &setti
     return base > price ? base : price;
 }
 
-void calc_pricing_factor(HospitalMarket &hosp, const Balance &settings, const std::array<uint8_t, 47> &cure_available)
+void set_price_level(HospitalMarket &hosp, const Balance &settings, const std::array<uint8_t, 47> &cure_available)
 {
     uint32_t max_total = 0;
     int32_t price_total = 0;
@@ -184,6 +184,11 @@ void calc_pricing_factor(HospitalMarket &hosp, const Balance &settings, const st
     // Divided unsigned, as in the game.
     int32_t level = max_total > 0 ? int32_t(uint32_t(price_total * 100) / max_total) : 100;
     hosp.price_level = int16_t(std::clamp(level, 0, 300));
+}
+
+void calc_pricing_factor(HospitalMarket &hosp, const Balance &settings, const std::array<uint8_t, 47> &cure_available)
+{
+    set_price_level(hosp, settings, cure_available);
     trace_event("price_level %d", int(hosp.price_level));
 }
 
