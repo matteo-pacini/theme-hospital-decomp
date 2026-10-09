@@ -1,4 +1,4 @@
-# Level 1: toilets.txt with the player shooting at thing 15, which is a nurse
+# Level 1: toilets.txt with the player shooting at thing 9, which is a nurse
 # applicant and no rat (EV_SHOOT_RAT takes the thing it is given for a rat):
 # the shot that hits frees it with remove_thing, without taking it off the
 # job market's count of applicants (gamevar.applicants), which
@@ -7,7 +7,7 @@
 # gp_office.txt's commands up to the GP's office opened (turn 113).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect shoot_rat 0 killed=0
-# Expect shoot_rat 15 killed=1 powerup=0 shots=2 kills=0
+# Expect shoot_rat 9 killed=1 powerup=0 shots=2 kills=0
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -62,9 +62,9 @@
 166 7 9410 44
 167 7 10047 44
 170 79 10 0
-# Patient 19, on a toilet, sent home.
-8100 116 19 0
-# A shot that misses (no rat, no hit), then one at thing 15 (EV_SHOOT_RAT 106,
+# Patient 15, on a toilet, sent home.
+8230 116 15 0
+# A shot that misses (no rat, no hit), then one at thing 9 (EV_SHOOT_RAT 106,
 # value the thing, arg the powerup | hit << 8).
 14052 106 0 0
-14053 106 15 256
+14053 106 9 256
