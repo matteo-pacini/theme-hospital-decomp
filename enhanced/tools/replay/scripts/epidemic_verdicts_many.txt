@@ -1,12 +1,13 @@
 # Level 6
 # Turns 27500
 # epidemic_vaccinate.txt's rooms and doctors with no patient queued for
-# vaccination: the epidemic is covered up with three contagious patients
-# left at the inspection, so the inspector's 3-5 bucket fines the hospital
-# (verdict 2, fine 2000 * 3 * 2 = 12000) and loses reputation.
-# Expect playercall 60 type=3
+# vaccination, with the casebook prices lowered so that the player wins more
+# of the patients: the epidemic is covered up with seven contagious patients
+# left at the inspection, so the inspector's 6-9 bucket fines the hospital
+# (verdict 2, fine 2000 * 7 * 2 = 28000) and loses reputation.
+# Expect playercall 66 type=3
 # Expect epidemic_cover_up
-# Expect balance 30 amount=-12000
+# Expect balance 30 amount=-28000
 # Expect rep 0 event=15
 5 98 0 0
 6 37 11 1
@@ -53,14 +54,49 @@
 # A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
 144 48 2 28
 145 5 6841 28
+# The casebook prices of illnesses 2-35 lowered by 70%.
+3102 111 70 2
+3103 111 70 3
+3104 111 70 4
+3105 111 70 5
+3106 111 70 6
+3107 111 70 7
+3108 111 70 8
+3109 111 70 9
+3110 111 70 10
+3111 111 70 11
+3112 111 70 12
+3113 111 70 13
+3114 111 70 14
+3115 111 70 15
+3116 111 70 16
+3117 111 70 17
+3118 111 70 18
+3119 111 70 19
+3120 111 70 20
+3121 111 70 21
+3122 111 70 22
+3123 111 70 23
+3124 111 70 24
+3125 111 70 25
+3126 111 70 26
+3127 111 70 27
+3128 111 70 28
+3129 111 70 29
+3130 111 70 30
+3131 111 70 31
+3132 111 70 32
+3133 111 70 33
+3134 111 70 34
+3135 111 70 35
 # A second GP doctor (applicant 20, cell 6840) hired late and a nurse
 # (applicant 14, cell 6841): a contagious patient is diagnosed (the epidemic
-# call, type 3, is raised at 23712) with others of the same illness inside.
+# call, type 3, is raised at 23866) with others of the same illness inside.
 # The fax opens only while contagious patients are inside, so the answer
 # comes after the call.
 5108 48 1 20
 5109 5 6840 20
-7575 48 0 14
-7576 5 6841 14
-23752 10 3 0
-23753 125 11 0
+7136 48 0 14
+7137 5 6841 14
+23906 10 3 0
+23907 125 11 0
