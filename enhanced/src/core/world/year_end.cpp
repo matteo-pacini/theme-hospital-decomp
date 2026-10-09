@@ -31,13 +31,6 @@ constexpr Rating kRatings[] = {
     {150, 6200, 700}, {175, 6400, 700}, {200, 6500, 700}, {1000, 6500, 700},
 };
 
-// The rivals' figures the awards compare against (computer.cpp is not
-// ported): reputation 500, market share 25, the rest 0, and a hospital value
-// of reputation and the base alone (they own no land or objects).
-constexpr int32_t kRivalReputation = 500;
-constexpr int32_t kRivalMarketShare = 25;
-constexpr int32_t kRivalScore = 10000;
-
 // The player's staff (myhosp->staff_count): hospital 0's hired, not the
 // applicants.
 int player_staff(const World &world)
@@ -55,10 +48,36 @@ std::array<WinLoseRow, 10> &criterion_rows(Game &game, bool win)
     return win ? game.progress.win_criteria : game.progress.lose_criteria;
 }
 
-// The figure a criterion measures (check_criteria_values). owner is ignored:
-// only the player's figures are kept.
-int32_t criterion_value(Game &game, uint16_t criterion, bool win)
+// The figure a criterion measures (check_criteria_values) for a computer
+// player's hospital.
+int32_t rival_criterion_value(const Game &game, uint16_t criterion, bool win, uint8_t owner)
 {
+    const RivalHospital &rival = game.world.rivals[owner];
+    const HospitalMarket &market = game.arrivals.hospitals[owner];
+    switch (criterion) {
+    case 1:
+        return market.hospital_reputation;
+    case 2:
+        return win ? rival.balance - rival.loan : rival.balance;
+    case 3:
+        return market.visitors > 10 ? int32_t(market.diagnosed) * 100 / int32_t(market.visitors) : 0;
+    case 4:
+        return rival.cures;
+    case 5:
+        return market.visitors > 10 ? int32_t(rival.deaths) * 100 / int32_t(market.visitors) : 0;
+    case 6:
+        return rival.hospital_value;
+    default:
+        return 0;
+    }
+}
+
+// The figure a criterion measures (check_criteria_values) for the player
+// (owner 0) or a computer player.
+int32_t criterion_value(Game &game, uint16_t criterion, bool win, uint8_t owner)
+{
+    if (owner != 0)
+        return rival_criterion_value(game, criterion, win, owner);
     switch (criterion) {
     case 1:
         return game.reputation();
@@ -96,17 +115,21 @@ uint16_t safe_rand(Game &game)
     return uint16_t(game.progress.safe_seed);
 }
 
-// The other hospitals' value for award's statistic (general_award): all three
-// rivals share it.
-int32_t rival_award_value(const Game &game, int award)
+// Computer player `owner`'s value for award's statistic (general_award).
+int32_t rival_award_value(const Game &game, int owner, int award)
 {
+    const RivalHospital &rival = game.world.rivals[size_t(owner)];
     switch (award) {
     case 0:
-        return kRivalReputation;
+        return game.arrivals.hospitals[size_t(owner)].hospital_reputation;
+    case 1:
+        return rival.cures;
+    case 2:
+        return rival.deaths;
     case 3:
-        return kRivalMarketShare;
+        return rival.market_share;
     case 6:
-        return int32_t(game.progress.rival_area) * game.settings().gbv.land_cost_per_tile + 20000;
+        return rival.hospital_value;
     default:
         return 0;
     }
@@ -177,13 +200,13 @@ void set_trophy_value(Game &game, int trophy_no, int16_t value, uint8_t type)
 // below it, `total` the sum of those it beats.
 void award_against_rivals(const Game &game, int award, int32_t value, int32_t &total, bool &top, bool &bottom)
 {
-    const int32_t other = rival_award_value(game, award);
     const bool wide = rival_award_is_wide(award);
     total = 0;
     top = true;
     bottom = true;
-    for (int h = 0; h < 3; h++) {
-        bool beats = wide ? uint32_t(value) >= uint32_t(other) : uint16_t(value) >= uint16_t(other);
+    for (int h = 1; h < kHospitalCount; h++) {
+        const int32_t other = rival_award_value(game, h, award);
+        bool beats = wide ? uint32_t(value) >= uint32_t(other) : value >= other;
         if (!beats) {
             top = false;
         } else {
@@ -324,7 +347,6 @@ void start_year_end(Game &game)
     s.score = 10000;
     s.start_score = 10000;
     s.market_share = 25;
-    s.rival_area = game.finance.area;
     for (size_t i = 0; i < 10; i++) {
         const Balance::WinLose &w = game.settings().win_criteria[i];
         const Balance::WinLose &l = game.settings().lose_criteria[i];
@@ -366,7 +388,7 @@ uint32_t check_criteria_values(Game &game, bool win, uint8_t owner)
         if (r.criterion == 0)
             r.met = 1;
         else
-            val = criterion_value(game, r.criterion, win);
+            val = criterion_value(game, r.criterion, win, owner);
         if (r.max_min == 1 ? val >= r.value : val <= r.value)
             r.met = 1;
         int32_t range = r.value - r.base;
@@ -453,30 +475,55 @@ int32_t evaluate_criteria(Game &game, uint8_t owner)
             best_group = int32_t(group);
         }
     }
-    game.progress.win_progress = best;
-    game.progress.best_win_group = best_group;
+    if (owner == 0) {
+        game.progress.win_progress = best;
+        game.progress.best_win_group = best_group;
+    } else {
+        game.world.rivals[owner].win_progress = uint8_t(best);
+    }
     return best;
 }
 
 void calculate_score(Game &game, uint8_t owner)
 {
-    YearEnd &s = game.progress;
-    const int32_t score = evaluate_criteria(game, owner);
+    int32_t &score = owner == 0 ? game.progress.score : game.world.rivals[owner].score;
+    const int32_t start_score = owner == 0 ? game.progress.start_score : game.world.rivals[owner].start_score;
+    const int32_t progress = evaluate_criteria(game, owner);
     for (const Rating &r : kRatings) {
-        if (r.threshold == 0 || r.threshold < score)
+        if (r.threshold == 0 || r.threshold < progress)
             continue;
-        if (s.score > 1000000)
-            s.score += r.capped_growth * s.score / 10000;
-        else if (int32_t(game.settings().gbv.score_max_inc) * s.start_score / 100 < s.score)
-            s.score += r.capped_growth * s.score / 10000;
+        if (score > 1000000)
+            score += r.capped_growth * score / 10000;
+        else if (int32_t(game.settings().gbv.score_max_inc) * start_score / 100 < score)
+            score += r.capped_growth * score / 10000;
         else
-            s.score += r.growth * s.score / 10000;
+            score += r.growth * score / 10000;
         break;
     }
     if (owner == 0)
-        trace_event("score %d", int(s.score));
-    if (s.score > 200000000)
-        s.score = 200000000;
+        trace_event("score %d", int(score));
+    if (score > 200000000)
+        score = 200000000;
+}
+
+void calculate_value(RivalHospital &rival, int reputation, const Balance &settings)
+{
+    const int32_t rep_value = reputation / 50 * 1000;
+    const int32_t value = rival.area * settings.gbv.land_cost_per_tile + rival.object_value + rep_value + 10000;
+    rival.hospital_value = std::max(value, 0);
+    rival.max_loan = std::clamp(rival.hospital_value / 3 + 10000, 0, 100000);
+}
+
+void computer_year(Game &game)
+{
+    for (uint8_t owner = 1; owner < kHospitalCount; owner++) {
+        RivalHospital &rival = game.world.rivals[owner];
+        if (rival.player_type != 2)
+            continue;
+        calculate_value(rival, game.arrivals.hospitals[owner].hospital_reputation, game.settings());
+        calculate_score(game, owner);
+        trace_event("computer_year %u value=%d score=%d", unsigned(owner), int(rival.hospital_value), int(rival.score));
+    }
 }
 
 void check_win_status(Game &game)
@@ -564,12 +611,11 @@ ChartFigures chart_player(const Game &game)
             int32_t(game.arrivals.hospitals[0].visitors)};
 }
 
-// A rival's figures (computer_* is not ported): its starting cash, no loan,
-// no patients, score 10000 and a hospital value of the reputation and base
-// alone.
-ChartFigures chart_rival(const YearEnd &s, int32_t start_cash, int32_t land_cost)
+ChartFigures chart_rival(const Game &game, size_t owner)
 {
-    return {start_cash, 0, 0, 0, int32_t(s.rival_area) * land_cost + 20000, kRivalScore, 0, 0};
+    const RivalHospital &r = game.world.rivals[owner];
+    return {r.balance,        r.loan,  r.cures,       r.deaths,
+            r.hospital_value, r.score, r.staff_count, int32_t(game.arrivals.hospitals[owner].visitors)};
 }
 
 // Sorts each league table best first (table 4, the deaths, ascending).
@@ -587,10 +633,8 @@ void sort_charts(YearEnd &s)
 void create_chart_data(Game &game)
 {
     YearEnd &s = game.progress;
-    const Balance &settings = game.settings();
-    const int32_t start_cash = int32_t(settings.towns[size_t(game.level_number())].start_cash);
-    const ChartFigures player = chart_player(game);
-    const ChartFigures rival = chart_rival(s, start_cash, settings.gbv.land_cost_per_tile);
+    // The running claims total is not reset between hospitals; a computer
+    // player has none of its own.
     int32_t total = 0;
     if (game.world.hospital) {
         for (size_t j = 0; j < 3; j++)
@@ -598,7 +642,7 @@ void create_chart_data(Game &game)
                 total += game.world.hospital->insurance_claims[j][k];
     }
     for (size_t i = 0; i < 4; i++) {
-        const ChartFigures &f = i == 0 ? player : rival;
+        const ChartFigures f = i == 0 ? chart_player(game) : chart_rival(game, i);
         s.chart[0][i] = {f.balance - f.loan + total, uint8_t(i)};
         s.chart[1][i] = {f.score, uint8_t(i)};
         s.chart[3][i] = {f.cures, uint8_t(i)};
@@ -860,11 +904,15 @@ void year_end_sim(Game &game)
         game.finance.income_last_year += game.finance.history[kHistoryIncome][size_t(i)];
         game.finance.expenditure_last_year += game.finance.history[kHistoryExpenditure][size_t(i)];
     }
-    // computer_year (the rivals) is not ported.
+    computer_year(game);
     game.date.month = 0;
     if (++game.date.year > 999)
         game.date.year = 0;
     game.finance.entry_count = 0;
+    for (size_t i = 1; i < size_t(kHospitalCount); i++) {
+        game.world.rivals[i].year_start_balance = game.world.rivals[i].balance;
+        game.world.rivals[i].year_start_visitors = int32_t(game.arrivals.hospitals[i].visitors);
+    }
     game.progress.year_start_visitors = int32_t(game.arrivals.hospitals[0].visitors);
     game.progress.year_start_cures = game.finance.cures;
     game.progress.year_start_deaths = game.finance.deaths;

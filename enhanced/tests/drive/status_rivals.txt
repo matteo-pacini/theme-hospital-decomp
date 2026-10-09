@@ -1,0 +1,14 @@
+# Level 1: the status screen (F8) with the three computer hospitals' names in
+# its list and on the pie, their share of the patients in its title, and
+# the criteria bars of the hospital picked (display_peep_overview).
+wait 60
+key F8
+wait 30
+screenshot status
+click 327 105            # ORAC's row
+wait 10
+screenshot status_orac
+click 327 155            # COLOSSUS's row
+wait 10
+screenshot status_colossus
+expect rival 1 name=ORAC

@@ -654,9 +654,14 @@ void TownMap::draw_plot_under_mouse(const Game &game, const TownLand &land, cons
         } else {
             uint8_t owners = game.world.map[size_t(x + y * kMapSize)].owner_flags;
             values[1] = ": " + std::string(text_->at(TextSection::TownDetails, 3));
-            // allhosps[i].name: only the player's hospital is named here.
-            if (owners & 1)
-                values[1] = ": " + std::string(hospital_name);
+            // The first hospital owning the tile gives its name.
+            for (size_t i = 0; i < size_t(kHospitalCount); i++) {
+                if (!(owners & (1u << i)))
+                    continue;
+                values[1] =
+                    ": " + (i == 0 ? std::string(hospital_name) : std::string(game.world.rivals[i].name.data()));
+                break;
+            }
         }
     }
     for (size_t i = 0; i < kDetailValues.size(); i++)

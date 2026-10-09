@@ -59,6 +59,7 @@ add_library(th_core STATIC
   src/core/ui/buy_objects.cpp
   src/core/ui/fax.cpp
   src/core/ui/charts.cpp
+  src/core/ui/pie.cpp
   src/core/ui/helpmsg.cpp
   src/core/ui/helpmsg_callbacks.cpp
   src/core/ui/helpmsg_table.cpp

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/data/balance.h"
+#include "core/world/computer.h"
 #include "core/world/finance.h"
 
 #include <array>
@@ -117,9 +118,6 @@ struct YearEnd {
     AwardCounts award_counts;
     // The year-end league tables (chart[11][4]).
     std::array<std::array<ChartEntry, 4>, 11> chart{};
-    // The player's area when the level started, for the rivals' hospital
-    // value (which counts land even though they own none of their own).
-    uint16_t rival_area = 0;
     // The awards' text variants (a private saferand: the presentation's
     // safeseed is the app's).
     uint32_t safe_seed = 0x546b2;
@@ -144,23 +142,35 @@ void monthly_update_of_award_counts(Game &game, int month);
 // monthly arrays).
 void annual_update_of_award_counts(AwardCounts &counts);
 
-// check_criteria_values (0x591d4): measures the player's win (`win` true) or
-// lose criteria into state.win_criteria / state.lose_criteria, setting each
-// met, current and progress (0-200). Returns the highest group number.
+// check_criteria_values (0x591d4): measures hospital `owner`'s win (`win`
+// true) or lose criteria into state.win_criteria / state.lose_criteria (a
+// computer player's too, as the game does), setting each met, current and
+// progress (0-200). Returns the highest group number.
 uint32_t check_criteria_values(Game &game, bool win, uint8_t owner);
 
 // check_criteria (0x590e0): the first win (`win` true) or lose criterion
 // group whose conditions are all met, or 0.
 int32_t check_criteria(Game &game, bool win, uint8_t owner);
 
-// evaluate_criteria (0x594d0): the player's progress towards winning (the
-// best win group's percent, 100 = won). Stores it in state.win_progress and
-// state.best_win_group.
+// evaluate_criteria (0x594d0): hospital `owner`'s progress towards winning
+// (the best win group's percent, 100 = won). Stores it in state.win_progress
+// and state.best_win_group for the player, in the computer player's
+// win_progress otherwise.
 int32_t evaluate_criteria(Game &game, uint8_t owner);
 
-// calculate_score (0x588a8): grows the player's score by the rating table's
-// rate for their criteria progress, capped at 200000000.
+// calculate_score (0x588a8): grows hospital `owner`'s score by the rating
+// table's rate for its criteria progress, capped at 200000000.
 void calculate_score(Game &game, uint8_t owner);
+
+// calculate_value (0x52f7c) for a computer player: its land (area), objects
+// and `reputation`, and the base 10000, as hospital_value (not below 0), and
+// the loan limit max_loan a third of it plus 10000, within 0 to 100000. It
+// owns no rooms.
+void calculate_value(RivalHospital &rival, int reputation, const Balance &settings);
+
+// computer_year (0x4e9d8): at the year end, calculate_value and
+// calculate_score for each computer player.
+void computer_year(Game &game);
 
 // check_win_status (0x72c8c) on a statistics pass: re-evaluates the player's
 // criteria and stores the lose progress.

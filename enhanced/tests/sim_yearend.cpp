@@ -1,11 +1,13 @@
 #include "common.h"
 
+#include "core/data/level.h"
 #include "core/world/complex.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/object_tables.h"
 #include "core/world/year_end.h"
 
+#include <algorithm>
 #include <cstdint>
 
 // The year-end and win/lose simulation (core/world/year_end.cpp): the criteria
@@ -191,4 +193,115 @@ void test_yearend_object_value(const char *dir)
     game.finance.object_value = 1234;
     th::calculate_value(game.finance, game.world, game.settings(), game.reputation());
     CHECK(game.finance.hospital_value == without + 1234);
+}
+
+// The computer players' year end: their value, score and criteria, and the
+// league tables made from their figures.
+void test_yearend_rivals(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &game = *f.game;
+    const int32_t land = game.settings().gbv.land_cost_per_tile;
+
+    th::RivalHospital r;
+    r.area = 100;
+    r.object_value = 5000;
+    th::calculate_value(r, 500, game.settings());
+    CHECK(r.hospital_value == 100 * land + 5000 + 10 * 1000 + 10000);
+    CHECK(r.max_loan == std::clamp(r.hospital_value / 3 + 10000, 0, 100000));
+    r.object_value = -100000000;
+    th::calculate_value(r, 0, game.settings());
+    CHECK(r.hospital_value == 0 && r.max_loan == 10000);
+    r.object_value = 100000000;
+    th::calculate_value(r, 1000, game.settings());
+    CHECK(r.max_loan == 100000);
+
+    // A rival nobody has cured scores nothing and leaves the player's own
+    // progress as it was.
+    const int32_t player_score = game.progress.score;
+    const int32_t player_progress = game.progress.win_progress;
+    for (size_t i = 1; i < 4; i++) {
+        game.world.rivals[i].player_type = 2;
+        game.world.rivals[i].area = uint16_t(10 * i);
+        game.arrivals.hospitals[i].hospital_reputation = 500;
+    }
+    th::computer_year(game);
+    CHECK(game.world.rivals[2].hospital_value == 20 * land + 500 / 50 * 1000 + 10000);
+    CHECK(game.progress.score == player_score && game.progress.win_progress == player_progress);
+    CHECK(game.world.rivals[1].score >= 10000);
+
+    // One that meets every win criterion is at 100 and its score grows;
+    // another that is not a computer player is left alone.
+    th::RivalHospital &winner = game.world.rivals[3];
+    game.arrivals.hospitals[3].hospital_reputation = 1000;
+    game.arrivals.hospitals[3].visitors = 1000;
+    game.arrivals.hospitals[3].diagnosed = 1000;
+    winner.balance = 20000000;
+    winner.cures = 60000;
+    winner.object_value = 20000000;
+    const int32_t before = winner.score;
+    game.world.rivals[1].player_type = 0;
+    const int32_t idle = game.world.rivals[1].score;
+    th::computer_year(game);
+    CHECK(winner.win_progress >= 100);
+    CHECK(winner.score > before);
+    CHECK(game.world.rivals[1].score == idle);
+}
+
+// create_chart_data and the awards read each computer player's own figures.
+void test_yearend_rival_charts(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &game = *f.game;
+    for (size_t i = 1; i < 4; i++) {
+        game.world.rivals[i].cures = uint16_t(10 * i);
+        game.world.rivals[i].deaths = uint16_t(40 - 10 * i);
+        game.world.rivals[i].score = int32_t(1000 * i);
+        game.world.rivals[i].staff_count = uint16_t(i);
+        game.arrivals.hospitals[i].visitors = uint32_t(100 * i);
+    }
+    game.finance.cures = 15;
+    game.finance.deaths = 0;
+    th::create_chart_data(game);
+    // Cures best first: rival 3 (30), 2 (20), the player (15), rival 1 (10).
+    CHECK(game.progress.chart[3][0].hosp == 3 && game.progress.chart[3][1].hosp == 2);
+    CHECK(game.progress.chart[3][2].hosp == 0 && game.progress.chart[3][3].hosp == 1);
+    // Deaths fewest first: the player (0), rival 3 (10), 2 (20), 1 (30).
+    CHECK(game.progress.chart[4][0].hosp == 0 && game.progress.chart[4][3].hosp == 1);
+    CHECK(game.progress.chart[1][0].value == 3000 || game.progress.chart[1][0].value == game.progress.score);
+    CHECK(game.progress.chart[9][0].value == 300);
+
+    // The year end keeps each rival's balance and visitors as the new year's.
+    game.world.rivals[2].balance = 4242;
+    th::year_end_sim(game);
+    CHECK(game.world.rivals[2].year_start_balance == 4242);
+    CHECK(game.world.rivals[2].year_start_visitors == 200);
+}
+
+// No tile of any level, in the file or the starting map, has another
+// hospital's owner bit without the player's: the town map's detail panel, which
+// names the first owner, never names a computer player in single player.
+void test_level_rival_owner_cells(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    for (int n = 1; n <= 12; n++) {
+        auto level = gd.load_level(n, &error);
+        if (!level)
+            continue;
+        size_t rival_only = 0;
+        const auto map = th::build_start_map(*level);
+        for (const th::MapCell &c : map)
+            rival_only += (c.owner_flags & 0xf) > 1 && !(c.owner_flags & 1);
+        for (const th::MapCell &c : level->tiles)
+            rival_only += (c.owner_flags & 0xf) > 1 && !(c.owner_flags & 1);
+        CHECK(rival_only == 0);
+    }
 }
