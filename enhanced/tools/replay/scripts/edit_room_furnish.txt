@@ -7,7 +7,7 @@
 # Expect place_cursor ok=0 tile=8511 kind=9 dir=0
 # Expect place_cursor ok=1 tile=8640 kind=9 dir=0
 # Expect place_object 31 kind=9 tile=8640 dir=0
-# Expect place_object 32 kind=9 tile=8500 dir=0
+# Expect place_object 22 kind=9 tile=8500 dir=0
 # Expect open_room >= 2
 # The room: open the requester, start an inflation blueprint, drag it out
 # from cell 8382 to 8898 (the hover ends the drag), commit it.

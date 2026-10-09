@@ -7,7 +7,7 @@
 # a fourth doctor (applicant 14), is built early at 203-215; the status screen
 # (EV_OPEN_SCREEN 7) is opened at 13600 so calculate_value recomputes
 # hospital_value mid-year, and closed again. check_quarterly_game_over then
-# finds every criterion met (cures 13, diagnosed 63, value 71405) and offers
+# finds every criterion met (cures 13, diagnosed 64, value 70405) and offers
 # the win; try_bonus_level runs and grants no bonus (the rat counters do not
 # reach the level 1 threshold). Two more handymen (applicants 20 and 21) at
 # cell 10044 keep the cures at the target. The
@@ -126,6 +126,43 @@
 # The first doctor and the handyman ordered to rest.
 3000 94 11 0
 3001 94 19 0
+# The casebook prices of illnesses 2-35 lowered by 32% (EV_PRICE_DOWN) so
+# that the player wins more of the patients the computer hospitals bid for:
+# enough cures and diagnoses for the criteria by the third quarter.
+3102 111 32 2
+3103 111 32 3
+3104 111 32 4
+3105 111 32 5
+3106 111 32 6
+3107 111 32 7
+3108 111 32 8
+3109 111 32 9
+3110 111 32 10
+3111 111 32 11
+3112 111 32 12
+3113 111 32 13
+3114 111 32 14
+3115 111 32 15
+3116 111 32 16
+3117 111 32 17
+3118 111 32 18
+3119 111 32 19
+3120 111 32 20
+3121 111 32 21
+3122 111 32 22
+3123 111 32 23
+3124 111 32 24
+3125 111 32 25
+3126 111 32 26
+3127 111 32 27
+3128 111 32 28
+3129 111 32 29
+3130 111 32 30
+3131 111 32 31
+3132 111 32 32
+3133 111 32 33
+3134 111 32 34
+3135 111 32 35
 13400 55 0 0
 13401 53 17 17
 13402 2 7742 0

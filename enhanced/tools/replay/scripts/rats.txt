@@ -4,12 +4,13 @@
 # rat, no hit), then the same rat is hit and killed, floating its number
 # (NUMFX_NUMBER) over it, leaving its mess and counting the hospital's
 # rat_shots and rats_killed.
+# Turns 27000
 # gp_office.txt's commands up to the GP's office opened (turn 113).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect rathole
-# Expect rat 21 owner=0
+# Expect rat 20 owner=0
 # Expect shoot_rat 0 killed=0
-# Expect shoot_rat 21 killed=1 powerup=0 shots=2 kills=0
+# Expect shoot_rat 20 killed=1 powerup=0 shots=2 kills=0
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -46,8 +47,8 @@
 166 7 9410 44
 167 7 10047 44
 170 79 10 0
-# Rat 21 out of its hole (turn 11550): a shot that misses (no rat, no hit),
+# Rat 20 out of its hole (turn 25800): a shot that misses (no rat, no hit),
 # then the same rat hit (EV_SHOOT_RAT 106, value the rat, arg the powerup |
 # hit << 8).
-11560 106 0 0
-11561 106 21 256
+25810 106 0 0
+25811 106 20 256
