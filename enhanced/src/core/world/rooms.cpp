@@ -262,7 +262,8 @@ int32_t calc_ability(World &world, const Thing &staff)
     return staff.ability + random_adj + skill_adj + tired_adj + quack_adj + calc_room_value(world, staff.room);
 }
 
-// add_treatment_to_history (0x3d7c0).
+} // namespace
+
 void add_treatment_to_history(Thing &patient)
 {
     if (patient.treatment == 0)
@@ -280,6 +281,16 @@ void add_treatment_to_history(Thing &patient)
         patient.treatments[9] = patient.treatment;
     }
 }
+
+int16_t diag_register(uint8_t illness, uint8_t treatment)
+{
+    if (treatment < kFirstDiagnosis || illness >= kDiagRegister.size())
+        return 0;
+    return kDiagRegister[illness][size_t(treatment - kFirstDiagnosis) % 8];
+}
+
+namespace
+{
 
 // treatment_already_done (0x3d89c).
 bool treatment_already_done(const Thing &patient, uint8_t treatment)
@@ -1365,9 +1376,8 @@ bool treatment_machine_used(World &world, const AnimData &anims, uint8_t illness
     return false;
 }
 
-uint16_t find_possible_diagnosis(World &world, uint16_t id)
+uint16_t find_possible_diagnosis(uint32_t &seed, Thing &p, const std::array<uint8_t, 47> &cure_available)
 {
-    Thing &p = world.things[id];
     const PossibleDiag &diag = kPossibleDiagnoses[kExpertiseData[p.illness].diag_set % kPossibleDiagnoses.size()];
     uint16_t result = 0;
     p.treatment = 0;
@@ -1377,15 +1387,15 @@ uint16_t find_possible_diagnosis(World &world, uint16_t id)
     uint16_t count = 0;
     for (size_t i = 0; i < diag.count; i++) {
         uint8_t treatment = diag.treatments[i];
-        if (world.cure_available[treatment] == 1)
+        if (cure_available[treatment] == 1)
             list[count++] = treatment;
     }
     if (count == 0)
         return 0;
     for (int i = 0; i < 9; i++) {
-        uint16_t pick = uint16_t(old_newrand(world.seed) % count);
+        uint16_t pick = uint16_t(old_newrand(seed) % count);
         uint8_t treatment = list[pick];
-        if (world.cure_available[treatment] != 0) {
+        if (cure_available[treatment] != 0) {
             if (!treatment_already_done(p, treatment)) {
                 result = treatment;
                 break;
@@ -1398,6 +1408,11 @@ uint16_t find_possible_diagnosis(World &world, uint16_t id)
     }
     p.treatment = uint8_t(result);
     return result;
+}
+
+uint16_t find_possible_diagnosis(World &world, uint16_t id)
+{
+    return find_possible_diagnosis(world.seed, world.things[id], world.cure_available);
 }
 
 void change_health(World &world, const AnimData &anims, uint16_t id, int16_t amount, uint32_t game_turn)

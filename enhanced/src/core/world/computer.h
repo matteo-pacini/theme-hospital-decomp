@@ -9,6 +9,8 @@ namespace th
 {
 
 class LanguageText;
+struct ArrivalState;
+struct Thing;
 struct World;
 
 // The computer players' hospitals, as the game's src/computer.cpp, src/comtable.cpp
@@ -251,5 +253,35 @@ void setup_computer_players(World &world, const Balance &settings, int level_num
 // computer names (text section 4: computer_names[ai_index]), unless
 // setup_computer_players named them already.
 void name_computer_players(std::array<RivalHospital, kHospitalCount> &rivals, const LanguageText &text);
+
+// ---- Rival patients ----
+
+// What process_computer_peep needs of a patient's arrival besides the patient.
+struct RivalPeepVisit {
+    // The computer player (1-3) the patient came to.
+    uint8_t owner = 0;
+    // The day of the month (mycontrol->day): the visit's simulated clock starts there.
+    int day = 0;
+    // has_drinks, which the game leaves unset when the hospital has too few
+    // drinks machines, so that it holds what the stack slot did.
+    bool stale_drinks = false;
+};
+
+// process_computer_peep (0x4f15c): the whole visit of `patient` to computer
+// player `visit.owner`'s hospital at once: GP and diagnosis visits until the
+// patient is diagnosed, leaves or dies at random, or, with no diagnosis room
+// left, a guess if the diagnosis is far enough on; then the cure (or a death,
+// when a drug fails its effectiveness roll). The income, cures, deaths and
+// reputation changes go to the bucket of the simulated month, which moves on
+// as the visit takes time. Draws from World::seed as the game does.
+void process_computer_peep(World &world, ArrivalState &state, const Balance &settings, uint16_t patient,
+                           const RivalPeepVisit &visit);
+
+// computer_diag_progress (0x507c4): raises `patient`'s diagnosis by a visit
+// to the room of its treatment in a hospital with `rival`'s staff: their
+// average ability, a random spread (old_normal_rand, 2 draws from `seed`) and
+// the room's bonus for the illness. The hospital must have staff of the kind
+// the treatment needs.
+void computer_diag_progress(uint32_t &seed, const RivalHospital &rival, Thing &patient);
 
 } // namespace th

@@ -290,7 +290,7 @@ namespace
 // pay, and a roll weighted by the bids picks the winner. -1 when every bid is
 // 0.
 int who_owns_peep_by_bids(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness,
-                          std::source_location caller)
+                          std::source_location caller, PeepOwnerPath &path)
 {
     const Balance::Gbv &gbv = settings.gbv;
     std::array<PeepBid, 4> bids{};
@@ -312,6 +312,8 @@ int who_owns_peep_by_bids(uint32_t &seed, ArrivalState &state, const Balance &se
         total += bid.score;
         bid.score = total;
     }
+    path.bidding = true;
+    path.second_bid = bids[1].score != 0 || bids[1].player != 0;
     if (!total)
         return -1;
     int32_t roll = int32_t(old_newrand(seed, caller) % uint32_t(total));
@@ -415,8 +417,11 @@ uint16_t make_a_peep_free_thing(const World &world)
 
 } // namespace
 
-int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness, bool hospital_open)
+int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, uint8_t illness, bool hospital_open,
+                  PeepOwnerPath *path)
 {
+    PeepOwnerPath unused;
+    PeepOwnerPath &how = path ? *path : unused;
     const Balance::Gbv &gbv = settings.gbv;
     constexpr uint32_t players = 4;
     int owner = -1;
@@ -426,7 +431,7 @@ int who_owns_peep(uint32_t &seed, ArrivalState &state, const Balance &settings, 
     } else if (old_newrand(seed) % gbv.alloc_rand == 0) {
         owner = int(old_newrand(seed) % players);
     } else {
-        owner = who_owns_peep_by_bids(seed, state, settings, illness, std::source_location::current());
+        owner = who_owns_peep_by_bids(seed, state, settings, illness, std::source_location::current(), how);
         if (owner < 0)
             owner = int(old_newrand(seed) % players);
     }
@@ -483,7 +488,7 @@ uint16_t make_a_peep(World &world, const ArrivalState &state, const PeepSetup &s
 }
 
 uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup, bool hospital_open,
-                       uint32_t game_turn)
+                       uint32_t game_turn, int day)
 {
     if (kTownExtras[town_index(setup.level_number)].special_kind == 1)
         return 0;
@@ -493,7 +498,8 @@ uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup
     if (game_turn % uint32_t(state.peep_interval) >= 25)
         return 0;
     uint8_t illness = create_an_illness(world.seed, state, setup.settings, setup.level_number);
-    int owner = who_owns_peep(world.seed, state, setup.settings, illness, hospital_open);
+    PeepOwnerPath path;
+    int owner = who_owns_peep(world.seed, state, setup.settings, illness, hospital_open, &path);
     if (owner < 0)
         return 0;
     uint16_t id = 0;
@@ -501,7 +507,10 @@ uint16_t create_a_peep(World &world, ArrivalState &state, const PeepSetup &setup
         uint16_t door = world.rooms[world.entrances[0][old_newrand(world.seed) & 3]].door_tile;
         id = make_a_peep(world, state, setup, door, illness, 0);
     } else if (uint16_t rival = make_a_peep(world, state, setup, 0, illness, uint8_t(owner))) {
-        // process_computer_peep would treat them here.
+        // The game leaves has_drinks unset when the drinks machines are too few, and what it holds then is
+        // true for a visual illness (up to kIllTransparency) and after bidding.
+        bool stale_drinks = illness <= kIllTransparency || (path.bidding && path.second_bid);
+        process_computer_peep(world, state, setup.settings, rival, {uint8_t(owner), day, stale_drinks});
         trace_event("remove_thing %u type=%u", unsigned(rival), unsigned(world.things[rival].type));
         remove_node(world, rival);
 
