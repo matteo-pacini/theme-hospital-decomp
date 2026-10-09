@@ -1,0 +1,9 @@
+# Level 2
+# The computer hospitals alone on level 2, where a rival's patient load rises
+# above 5 (the chance formula of process_computer_peep: loads 6 and 7 occur
+# three times) and the rivals buy drinks machines (has_drinks set from the
+# machine count).
+# Expect computer_peep >= 90
+# Expect computer_peep 1 illness=13
+# Expect computer_bucket 1 >= 80
+# Expect computer_year 1 == 1

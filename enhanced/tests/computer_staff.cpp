@@ -215,6 +215,72 @@ void check_expertise_staff()
     CHECK(r.cure_available[kGp] == 1);
 }
 
+// The ward treatments (surgery): a computer player gets them when the ward's
+// own treatment becomes available, whether the theatre and the surgeons came
+// before it (set_expertise_ward) or a surgeon is hired with the theatre
+// built (set_expertise_staff waits for the ward).
+void check_expertise_ward()
+{
+    using namespace th;
+    constexpr size_t kSurgery = 14;
+    const ExpertiseInfo &surgery = kExpertiseData[kSurgery];
+    const ExpertiseInfo &ward = kExpertiseData[kIllDiagWard];
+    CHECK(surgery.needs_ward && (surgery.staff_mask & kSkillSurgeon));
+
+    RivalHospital early;
+    early.rooms[surgery.category] = 1;
+    early.surgeon_count = 2;
+    for (size_t j = 0; j < 9; j++)
+        early.staff_by_skill[j] = (surgery.staff_mask >> j) & 1;
+    set_expertise_room(early, surgery.category);
+    CHECK(early.cure_available[kSurgery] == 0);
+    early.rooms[ward.category] = 1;
+    early.staff_by_skill[2] = 1;
+    set_expertise_room(early, ward.category);
+    CHECK(early.cure_available[kIllDiagWard] == 1 && early.cure_available[kSurgery] == 1);
+
+    // Under two surgeons the ward does not bring surgery.
+    RivalHospital one;
+    one.rooms[surgery.category] = 1;
+    one.surgeon_count = 1;
+    for (size_t j = 0; j < 9; j++)
+        one.staff_by_skill[j] = (surgery.staff_mask >> j) & 1;
+    one.rooms[ward.category] = 1;
+    one.staff_by_skill[2] = 1;
+    set_expertise_room(one, ward.category);
+    CHECK(one.cure_available[kIllDiagWard] == 1 && one.cure_available[kSurgery] == 0);
+
+    Thing surgeon;
+    surgeon.skills = surgery.staff_mask;
+    RivalHospital hired;
+    hired.rooms[surgery.category] = 1;
+    hired.objects[surgery.kind] = 1;
+    hired.surgeon_count = 2;
+    set_expertise_staff(hired, surgeon);
+    CHECK(hired.cure_available[kSurgery] == 0);
+    hired.cure_available[kIllDiagWard] = 1;
+    set_expertise_staff(hired, surgeon);
+    CHECK(hired.cure_available[kSurgery] == 1);
+}
+
+// A pending loan action (type 4) runs computer_loan with its argument and
+// returns to deciding; the argument -1 "repays" by borrowing (docs/BUGS.md).
+void check_loan_action(th::Game &g)
+{
+    using namespace th;
+    for (size_t i = 2; i < g.world.rivals.size(); i++)
+        g.world.rivals[i].next_action_turn = 0xffffffffu;
+    RivalHospital &r = g.world.rivals[kRival];
+    r.next_action_turn = 0;
+    r.action = {4, -1, 0};
+    r.action_from_note = 0;
+    r.balance = 10000;
+    r.loan = 5000;
+    computer_action(g);
+    CHECK(r.balance == 15000 && r.loan == 10000 && r.action.type == 0);
+    CHECK(r.next_action_turn > 0);
+}
+
 // An applicant a computer player takes while the hire window shows it: the
 // window's next draw picks another one (req2: state != SS_APPLICANT), and a
 // late EV_MARK_EMPLOYING on the freed id only sets the state of a free slot
@@ -255,5 +321,7 @@ void test_computer_staff(const char *dir)
     check_build(g);
     check_expertise_room();
     check_expertise_staff();
+    check_expertise_ward();
     check_taken_applicant(g);
+    check_loan_action(g);
 }

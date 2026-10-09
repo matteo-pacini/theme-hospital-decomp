@@ -1,0 +1,66 @@
+# Level 1
+# Turns 36500
+# yearend_level1_two_years.txt's player (a GP's office, a general diagnosis room,
+# two doctors) across two year ends while the three computer hospitals run:
+# computer_year twice, the second year end's awards, charts and win check against
+# the rivals' grown figures (value, score, reputation, cures).
+# As yearend_level1.txt but across two year ends (18250 and 36500). The
+# hospital runs down and is lost at the second year end (reputation 121 of the
+# lose value 200), so the run ends at the decision turn 36500.
+# gp_office.txt's: a GP's office (62,65)-(66,69) with its door, desk, cabinet
+# and chair, opened, and a doctor (applicant 11) placed.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# A general diagnosis room (51,60)-(55,64), its door below it, a crash
+# trolley (cell 7860) and a screen (cell 8119), both facing 0; opened.
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+# A second doctor: hire applicant 13, place at cell 10044.
+142 48 1 13
+143 5 10044 13
+# Two year ends with rivals: 6 computer_year events, the player lost at the
+# second (reputation below the lose value), 236 rival patients in the two years.
+# Expect computer_year == 6
+# Expect computer_year 1 == 2
+# Expect computer_year 2 == 2
+# Expect computer_year 3 == 2
+# Expect computer_peep >= 200
+# Expect computer_month == 72
+# Expect score >= 2
+# Expect winlose lose

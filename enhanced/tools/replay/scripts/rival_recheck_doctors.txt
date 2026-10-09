@@ -1,0 +1,31 @@
+# Level 1
+# Turns 4500
+# The player hires all eight doctor applicants (11-18) and places them before
+# turn 25; the rivals' receptionist hires still succeed, but their doctor
+# hire (step 7) fails, so the recheck of step 9 (a=1) sets the hire again and
+# steps the script back until the month-end job market brings new applicants.
+# Without the player's hires owner 1 takes step 9 once (rival_strategy); here
+# it takes it 4 times, and the free-build notes' hires fail and are declassed.
+# Expect computer_decision 1 step=9 type=8 >= 4
+# Expect computer_decision 2 step=9 type=8 >= 2
+# Expect computer_decision 1 step=4 type=8 == 1
+# Expect computer_note 1 op=declass >= 4
+# Expect computer_note 2 op=declass
+# Expect computer_note 3 op=declass
+# Expect rival_open == 3
+5 48 1 11
+6 5 9796 11
+7 48 1 12
+8 5 9797 12
+9 48 1 13
+10 5 9798 13
+11 48 1 14
+12 5 9799 14
+13 48 1 15
+14 5 9800 15
+15 48 1 16
+16 5 9801 16
+17 48 1 17
+18 5 9802 17
+19 48 1 18
+20 5 9803 18

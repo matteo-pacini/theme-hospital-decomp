@@ -1,0 +1,61 @@
+# Level 1
+# Turns 18300
+# gp_prices.txt's player (a working GP's office and the casebook's price for
+# general practice moved, EV_PRICE_UP/EV_PRICE_DOWN) while the three computer
+# hospitals run: the player's price enters who_owns_peep's bidding (pct
+# against the casebook maximum) and the rivals' patients' own figures move
+# with theirs.
+# (illness 1) moved: EV_PRICE_UP (110) and EV_PRICE_DOWN (111) by the value
+# in percent, refused past 200% and 50%; the casebook opened
+# (EV_OPEN_SCREEN 51, update_cure_costs) and closed (EV_RETURN_FROM_SCREEN
+# 112) between.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# Once the hospital is open (turn 5001): up to 110%, then past 200% (kept
+# at 200%), then refused there.
+6000 110 10 1
+7000 110 95 1
+7001 110 5 1
+# The casebook opened and closed.
+8000 51 1 0
+8001 112 0 0
+# Down past 50% (kept at 50%), refused there, then up to 87%.
+9000 111 200 1
+9001 111 1 1
+11000 110 37 1
+# The player's price moves ride on a working GP; the rivals' patients and
+# buckets run on the same seed. 112 patients in the year (27 owner 0).
+# Expect peep >= 100
+# Expect computer_peep >= 70
+# Expect computer_bucket >= 240
+# Expect computer_month == 36
+# Expect computer_year == 3
+# Expect rival_open == 3
+# Expect balance 7 amount=87 arg=1
+# Expect balance 7 amount=50 arg=1

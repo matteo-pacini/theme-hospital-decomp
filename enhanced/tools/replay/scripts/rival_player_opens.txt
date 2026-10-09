@@ -1,0 +1,24 @@
+# Level 1
+# Turns 18300
+# The player opens its hospital at turn 100 (open_hospital.txt's reception desk,
+# receptionist and EV_OPEN_HOSPITAL) while the three computer hospitals run, so
+# who_owns_peep splits the visitors four ways: round robin for the first three
+# months, then random owner and bidding by reputation and price, and the
+# year-end awards compare the player with the rivals' real figures.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+100 139 0 0
+# The player and the three rivals all get patients (115 in the year: 28 owner
+# 0, 36, 28 and 23 for the rivals); 87 of them are treated at once by
+# process_computer_peep. The level is lost at the first year end (no doctor).
+# Expect peep >= 100
+# Expect computer_peep >= 70
+# Expect computer_bucket >= 240
+# Expect computer_month == 36
+# Expect computer_year == 3
+# Expect rival_open == 3
+# Expect winlose lose

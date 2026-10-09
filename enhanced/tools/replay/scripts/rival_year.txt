@@ -1,0 +1,20 @@
+# Level 1
+# The computer hospitals alone for a whole game year: rival patients
+# (process_computer_peep: who_owns_peep's round robin, random owner and
+# bidding, visual and non-visual illnesses, each result), the bucket merges
+# every fifth day and at month end (get_computer_bucket), the monthly wages
+# (computer_month) and the year end (computer_year). 81 rival patients come
+# in the year (results: 50 result=1, 2 result=2, 29 result=3).
+# Expect computer_peep 1 >= 20
+# Expect computer_peep 2 >= 15
+# Expect computer_peep 3 >= 20
+# Expect computer_peep >= 70
+# Expect computer_bucket 1 >= 80
+# Expect computer_bucket 2 >= 80
+# Expect computer_bucket 3 >= 80
+# Expect computer_month 1 == 12
+# Expect computer_month 2 == 12
+# Expect computer_month 3 == 12
+# Expect computer_year 1 == 1
+# Expect computer_year 2 == 1
+# Expect computer_year 3 == 1
