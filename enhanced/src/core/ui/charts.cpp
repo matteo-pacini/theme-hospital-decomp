@@ -6,10 +6,12 @@
 #include "core/render/panel.h"
 #include "core/render/text.h"
 #include "core/ui/helpmsg.h"
+#include "core/ui/pie.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
+#include "core/world/year_end.h"
 
 #include <algorithm>
 #include <cmath>
@@ -394,18 +396,6 @@ void draw_triangle(Surface &dst, Point p1, Point p2, Point p3, uint8_t colour)
         for (int x = std::max(int(std::ceil(lo)), 0); x <= std::min(int(std::floor(hi)), dst.width() - 1); x++)
             dst.row(y)[x] = colour;
     }
-}
-
-// lbSinTable (src/lib/bf1/gtrig.cpp): sines of 2048ths of a turn, 16.16
-// truncated, which it holds for a turn and a quarter so that cosines are
-// read at +0x200; and fixmul, the 16.16 product.
-int32_t sin_table(int i)
-{
-    return int32_t(std::sin(double(i) * 2 * std::numbers::pi / 2048) * 65536);
-}
-int32_t fixmul(int32_t a, int32_t b)
-{
-    return int32_t((int64_t(a) * b) >> 16);
 }
 
 // A full-screen picture: 640 x 480 palette indices and its VGA palette.
@@ -2247,10 +2237,26 @@ class Frame
             h.cures = fin.cures;
             h.deaths = fin.deaths;
         } else {
-            // The rivals are not simulated: as init_player leaves them.
-            h.balance = int32_t(bal.towns[size_t(game_.level_number()) % bal.towns.size()].start_cash);
+            // The game recalculates the shown hospital's value each frame; a copy does here.
+            RivalHospital rival = game_.world.rivals[size_t(hospital)];
+            h.reputation = game_.arrivals.hospitals[size_t(hospital)].hospital_reputation;
+            calculate_value(rival, h.reputation, bal);
+            h.balance = rival.balance;
+            h.loan = rival.loan;
+            h.value = rival.hospital_value;
+            h.cures = rival.cures;
+            h.deaths = rival.deaths;
         }
+        const HospitalMarket &market = game_.arrivals.hospitals[size_t(hospital)];
+        h.visitors = int(market.visitors);
+        h.diagnosed = int(market.diagnosed);
         return h;
+    }
+
+    // allhosps[hospital].market_share: the percent of the month's patients it took.
+    int market_share(size_t hospital) const
+    {
+        return hospital == 0 ? game_.progress.market_share : game_.world.rivals[hospital].market_share;
     }
 
     void display_peep_overview()
@@ -2317,8 +2323,8 @@ class Frame
         for (int i = 0; i < 4; i++)
             text(c_.value == i ? 0x25 : 0x24, kCoords[0x68 + i].x, kCoords[0x68 + i].y, c_.hospital_names[size_t(i)]);
         draw_overview_patients();
-        // Single player: each hospital's market share is 25%.
-        std::string share = format("%s (%d%%)", std::string(str(TextSection::Overview, 6)).c_str(), 25);
+        std::string share =
+            format("%s (%d%%)", std::string(str(TextSection::Overview, 6)).c_str(), market_share(size_t(c_.value)));
         text(0x26, kCoords[0x70].x, kCoords[0x70].y, conv_string(share, 0));
         text(0x26, kCoords[0x71].x, kCoords[0x71].y, str(TextSection::Overview, 7));
         display_overview_bars();
@@ -2402,48 +2408,41 @@ class Frame
         }
     }
 
-    // A pie slice (sector, src/pie.cpp): its angles in 2048ths of a turn,
-    // how far it is pulled out, and where its label goes.
-    struct PieSector {
-        int32_t start, end, pull_out;
-        SliceColours colours;
-        int text_x, text_y;
-    };
     static constexpr int kPieX = 0x1fa, kPieY = 0x78, kPieRx = 0x40, kPieRy = 0x1e, kPieH = 0x14;
-    static int pie_sin(int a) { return sin_table(a & 0x7ff); }
-    static int pie_cos(int a) { return sin_table((a & 0x7ff) + 0x200); }
 
-    // calculate_piechart and pie_render (src/pie.cpp): four equal slices
-    // (single player), the shown hospital's pulled out.
+    // calculate_piechart and pie_render (src/pie.cpp): a slice for each
+    // hospital's market share (single player), the shown hospital's pulled out.
     void draw_piechart()
     {
-        std::array<PieSector, 4> sectors = calculate_piechart();
-        // No slice spans more than half the pie with equal shares, so none
-        // is split as pie_render splits such a slice.
-        std::array<bool, 4> done{};
-        for (int j = 0; j < 4; j++) {
-            int best = -1;
-            for (int k = 0; k < 4; k++)
-                if (!done[size_t(k)] && (best == -1 || pie_behind(sectors[size_t(k)], sectors[size_t(best)])))
-                    best = k;
-            done[size_t(best)] = true;
-            sector_render(kPieX, kPieY, sectors[size_t(best)]);
-        }
+        std::array<PieSlice, 4> slices = calculate_piechart();
+        const PieGeometry geometry = {kPieX, kPieY, kPieRx, kPieRy, kSliceTextOffset};
+        for (const PieDraw &draw : pie_render_plan(slices, geometry))
+            sector_render(draw, kSlices[draw.slice]);
         for (size_t i = 0; i < 4; i++)
-            text(0x26, sectors[i].text_x, sectors[i].text_y, c_.hospital_names[i]);
+            text(0x26, slices[i].text_x, slices[i].text_y, c_.hospital_names[i]);
     }
 
     // calculate_piechart: the slices' angles, and their pull, eased towards
     // the shown hospital's.
-    std::array<PieSector, 4> calculate_piechart()
+    std::array<PieSlice, 4> calculate_piechart()
     {
-        std::array<PieSector, 4> sectors{};
+        std::array<PieSlice, 4> sectors{};
+        std::array<int, 4> share{};
+        int total = 0;
+        for (size_t i = 0; i < 4; i++) {
+            share[i] = market_share(i);
+            total += share[i];
+        }
         int prev = 0;
         for (size_t i = 0; i < 4; i++) {
             sectors[i].start = prev;
-            sectors[i].end = (prev + (25 << 11) / 100) & 0x7ff;
+            if (total == 0)
+                sectors[i].end = (prev + 0x200) & 0x7ff;
+            else if (share[i] == 100)
+                sectors[i].end = (prev + 0x7eb) & 0x7ff;
+            else
+                sectors[i].end = (prev + (share[i] << 11) / 100) & 0x7ff;
             prev = sectors[i].end;
-            sectors[i].colours = kSlices[i];
         }
         sectors[3].end = 0x7ff;
         for (size_t i = 0; i < 4; i++) {
@@ -2459,48 +2458,31 @@ class Frame
         return sectors;
     }
 
-    // pie_render's drawing order: whether slice `a` is drawn before `b`.
-    static bool pie_behind(const PieSector &a, const PieSector &b)
-    {
-        int as = pie_cos(a.start), ae = pie_cos(a.end);
-        int bs = pie_cos(b.start), be = pie_cos(b.end);
-        if (!(as > 0 || ae < 0))
-            return false;
-        if (!(ae > 0 || as < 0))
-            return true;
-        if (!(bs > 0 || be < 0))
-            return true;
-        if (!(be > 0 || bs < 0))
-            return false;
-        if ((as < 0 && bs > 0) || (as > 0 && bs < 0))
-            return false;
-        return -pie_sin(a.start) < -pie_sin(b.start);
-    }
-
-    // sector_render (src/pie.cpp): slice `sec` of the pie centred on
-    // (ccx, ccy), its label's place kept in it.
-    void sector_render(int ccx, int ccy, PieSector &sec)
+    // sector_render (src/pie.cpp): one sector of the pie, as `draw` plans it.
+    void sector_render(const PieDraw &draw, const SliceColours &c)
     {
         const int rx = kPieRx, ry = kPieRy, h = kPieH;
-        int start = sec.start, end = sec.end;
-        if (end < start)
-            end += 0x800;
-        int mid = (start + end) >> 1;
-        Point o = {ccx + (fixmul(pie_cos(mid), rx * sec.pull_out) >> 8),
-                   ccy - (fixmul(pie_sin(mid), ry * sec.pull_out) >> 8)};
+        const int start = draw.start;
+        const int end = draw.end < start ? draw.end + 0x800 : draw.end;
+        const int mid = (start + end) >> 1;
+        Point o = {draw.centre_x + (fixmul(pie_cos(mid), rx * draw.pull_out) >> 8),
+                   draw.centre_y - (fixmul(pie_sin(mid), ry * draw.pull_out) >> 8)};
         Point s = {o.x + fixmul(pie_cos(start), rx), o.y - fixmul(pie_sin(start), ry)};
         Point e = {o.x + fixmul(pie_cos(end), rx), o.y - fixmul(pie_sin(end), ry)};
-        int text_radius = kSliceTextOffset + sec.pull_out;
-        sec.text_x = ccx + (fixmul(pie_cos(mid), rx * text_radius) >> 8);
-        sec.text_y = ccy - (fixmul(pie_sin(mid), ry * text_radius) >> 8);
-        const SliceColours &c = sec.colours;
-        draw_triangle(dst_, o, s, {s.x, s.y + h}, c.side1);
-        draw_triangle(dst_, {s.x, s.y + h}, {o.x, o.y + h}, o, c.side1);
-        draw_triangle(dst_, o, {o.x, o.y + h}, e, c.side2);
-        draw_triangle(dst_, e, {o.x, o.y + h}, {e.x, e.y + h}, c.side2);
+        const int side_off = draw.side_off;
+        if (side_off != 1) {
+            draw_triangle(dst_, o, s, {s.x, s.y + h}, c.side1);
+            draw_triangle(dst_, {s.x, s.y + h}, {o.x, o.y + h}, o, c.side1);
+        }
+        if (side_off != 2) {
+            draw_triangle(dst_, o, {o.x, o.y + h}, e, c.side2);
+            draw_triangle(dst_, e, {o.x, o.y + h}, {e.x, e.y + h}, c.side2);
+        }
         sector_render_top(o, start, end, c);
-        sector_render_edges(o, s, pie_cos(start) >= 0, c.edge);
-        sector_render_edges(o, e, pie_cos(end) <= 0, c.edge);
+        if (side_off != 1)
+            sector_render_edges(o, s, pie_cos(start) >= 0, c.edge);
+        if (side_off != 2)
+            sector_render_edges(o, e, pie_cos(end) <= 0, c.edge);
     }
 
     // sector_render, the top and rim: in steps of about 50 from `start` to

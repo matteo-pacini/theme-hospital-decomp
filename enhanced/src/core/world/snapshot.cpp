@@ -43,7 +43,7 @@ static_assert(sizeof(Building) == 224, "Building changed: list its new fields in
 static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Balance) == 3816, "Balance changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp and bump kSaveFormat");
-static_assert(sizeof(Game) == 341848, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Game) == 341840, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 #endif
 
 class Writer

@@ -73,6 +73,8 @@ void test_menu_bar(const char *dir);
 void test_requester_art(const char *dir);
 void test_panel_buttons(const char *dir);
 void test_yes_no_requester(const char *dir);
+void test_queue_bar_names(const char *dir);
+void test_pie_render_plan();
 void test_main_menu_art(const char *dir);
 void test_startup_new_game(const char *dir);
 void test_startup_load_screen(const char *dir);
@@ -203,6 +205,9 @@ void test_winlose_letters(const char *dir);
 void test_yearend_criteria(const char *dir);
 void test_yearend_score(const char *dir);
 void test_yearend_year(const char *dir);
+void test_yearend_rivals(const char *dir);
+void test_level_rival_owner_cells(const char *dir);
+void test_yearend_rival_charts(const char *dir);
 void test_yearend_trophy_kept(const char *dir);
 void test_yearend_drinks_counted(const char *dir);
 void test_yearend_object_value(const char *dir);
@@ -257,6 +262,7 @@ const Test kTests[] = {
     TEST(test_help_requester_groups),
     TEST(test_help_panel_and_requester),
     TEST(test_hall_scores_table),
+    TEST(test_pie_render_plan),
 };
 
 const DataTest kDataTests[] = {
@@ -282,6 +288,7 @@ const DataTest kDataTests[] = {
     TEST(test_requester_art),
     TEST(test_panel_buttons),
     TEST(test_yes_no_requester),
+    TEST(test_queue_bar_names),
     TEST(test_applicants_level1),
     TEST(test_hire_receptionist),
     TEST(test_hire_requester_image),
@@ -377,6 +384,9 @@ const DataTest kDataTests[] = {
     TEST(test_yearend_criteria),
     TEST(test_yearend_score),
     TEST(test_yearend_year),
+    TEST(test_yearend_rivals),
+    TEST(test_level_rival_owner_cells),
+    TEST(test_yearend_rival_charts),
     TEST(test_yearend_trophy_kept),
     TEST(test_yearend_drinks_counted),
     TEST(test_yearend_object_value),

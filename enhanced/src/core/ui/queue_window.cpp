@@ -41,6 +41,8 @@ constexpr Point kBarRow = {30, 68};
 constexpr Rect kBarReception = {12, 12, 81, 54};
 constexpr Rect kBarHome = {95, 12, 81, 54};
 constexpr Rect kBarRefer = {12, 7, 164, 32};
+// r23: the hospital's name in a refer entry.
+constexpr Rect kBarReferName = {69, 11, 99, 13};
 
 // The queue window's buttons, counted from 1 in window 6
 // (hires_requester_buttons[0xa] to [0xc]): capacity down, capacity up and
@@ -184,7 +186,7 @@ void draw_queue_people(UiLayer &layer, const World &world, const GameData &data,
 
 // display_queue_bar (0x971f8): the right-click menu for the patient at
 // (qx, at.y): reception, home and one entry per other player.
-void draw_queue_bar(UiLayer &layer, const QueueWindow &q, const RequesterArt &art, Point at, int qx)
+void draw_queue_bar(UiLayer &layer, const QueueWindow &q, const RequesterArt &art, const World &world, Point at, int qx)
 {
     const SpriteSheet &sheet = art.sheet(kQueueWindow);
     int bx = qx - kBarOrigin.x, by = at.y + kBarOrigin.y;
@@ -195,13 +197,17 @@ void draw_queue_bar(UiLayer &layer, const QueueWindow &q, const RequesterArt &ar
     } else if (over(mx, my, {bx + kBarHome.x, by + kBarHome.y, kBarHome.w, kBarHome.h})) {
         layer.draw_sprite(bx + kBarHome.x, by + kBarHome.y, sheet.at(kBarHomeOnSprite));
     }
-    // The other players' refer entries (single player: the sprite alone).
+    // The other players' refer entries: a computer player's hospital each.
     int off = 0;
     int refer_h = sheet.at(kBarReferSprite).height;
     for (int i = 1; i < 4; i++) {
         layer.draw_sprite(bx, by + off + kBarRow.y, sheet.at(kBarReferSprite));
         if (over(mx, my, {bx + kBarRefer.x, by + off + kBarRow.y, kBarRefer.w, kBarRefer.h}))
             layer.draw_sprite(bx + kBarRefer.x, by + off + kBarRow.y, sheet.at(kBarReferOnSprite));
+        const Rect name = {bx + kBarReferName.x, by + off + kBarRow.y + kBarReferName.y, kBarReferName.w,
+                           kBarReferName.h};
+        layer.draw_text(art.font(), 0, 0, world.rivals[size_t(i)].name.data(),
+                        {{name.x, name.y, name.w}, name, kTextCentre});
         off += refer_h;
     }
     // The bar's bottom, one row less its own lift above the last refer entry.
@@ -466,7 +472,7 @@ void draw_queue_window(UiLayer &layer, const QueueWindow &q, const Interface &ui
     if (q.drag == 2 && q.pos) {
         int qx = queue_person_x(world, q.room, q.pos, at);
         if (qx)
-            draw_queue_bar(layer, q, art, at, qx);
+            draw_queue_bar(layer, q, art, world, at, qx);
     }
 }
 
