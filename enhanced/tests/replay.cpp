@@ -30,6 +30,15 @@
 #include <string_view>
 #include <vector>
 
+// The patients in the game.
+int count_patients(const th::Game &g)
+{
+    int patients = 0;
+    for (const th::Thing &t : g.world.things)
+        patients += t.type == th::kThingPatient;
+    return patients;
+}
+
 // With the game data: a snapshot of level 1 with a manned reception desk and
 // a GP's office with its doctor, saved 1500 turns in and loaded into a fresh
 // game, runs the next 3000 turns as the game it was taken from: the same
@@ -60,8 +69,9 @@ void test_snapshot_round_trip(const char *dir)
     CHECK(th::load_snapshot(*copy, bytes, f.gd, &error));
     if (!error.empty())
         std::fprintf(stderr, "%s\n", error.c_str());
+    copy->skipped_calls = g.skipped_calls;
     CHECK(copy->turn_count == g.turn_count && copy->level_number() == 1);
-    int differs = -1, patients = 0;
+    int differs = -1;
     for (int i = 0; i < 3000; i++) {
         g.turn();
         copy->turn();
@@ -70,8 +80,7 @@ void test_snapshot_round_trip(const char *dir)
         g.events.events.clear();
         copy->events.events.clear();
     }
-    for (const th::Thing &t : g.world.things)
-        patients += t.type == th::kThingPatient;
+    int patients = count_patients(g);
     std::printf("snapshot: %zu bytes, the copy agrees for 3000 turns (first difference %d), %d patients\n",
                 bytes.size(), differs, patients);
     CHECK(differs < 0 && patients > 0);
@@ -154,6 +163,7 @@ void test_save_slot_round_trip(const char *dir)
     th::SaveInfo info;
     CHECK(th::read_save_slot(path, *copy, f.gd, &info, &error));
     CHECK(info.level == 1 && info.balance_id == "FULL" && info.view_centre_x == 12 && info.view_centre_y == 34);
+    copy->skipped_calls = g.skipped_calls;
     CHECK(copy->turn_count == g.turn_count);
     int differs = -1, patients = 0;
     for (int i = 0; i < 2000; i++) {

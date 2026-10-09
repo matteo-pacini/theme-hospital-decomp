@@ -135,7 +135,7 @@ run_script() {
   fi
   if grep -q 'cache hit' "$dir/orig.log" 2>/dev/null; then src=cached; else src=fresh; fi
   printf '%s\n' "$src" >"$RESULTS/$n.src"
-  if [ "$status" = 0 ] && ! "$root/$BUILD/th_replay" --script "$f" --turns "$t" $rand_flag \
+  if [ "$status" = 0 ] && ! "$root/$BUILD/th_replay" --script "$f" --turns "$t" $rand_flag --skip "$SKIP" \
     --out "$e" --level "$lvl" >"$dir/enh.log" 2>&1; then
     status=1
     line="$n (level $lvl, $t turns): enhanced run failed (see $dir/enh.log)"

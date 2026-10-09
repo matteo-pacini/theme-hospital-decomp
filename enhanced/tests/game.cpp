@@ -40,6 +40,7 @@ void test_game_clock(const char *dir)
         return;
     auto game = std::make_unique<th::Game>();
     game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    game->skipped_calls = th::kSkipComputerAction;
     CHECK(game->balance == int(settings.towns[1].start_cash));
     CHECK(game->opening_countdown == settings.gbv.open_countdown && !game->open);
 
@@ -115,6 +116,7 @@ void test_open_hospital(const char *dir)
         return;
     th::Game game;
     game.start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    game.skipped_calls = th::kSkipComputerAction;
     CHECK(!game.open && game.opening_countdown == settings.gbv.open_countdown);
 
     game.event = {th::EV_OPEN_HOSPITAL};

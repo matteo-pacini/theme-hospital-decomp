@@ -894,7 +894,7 @@ bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &s
         return false;
     uint16_t situation = a.advice[size_t(id)].id;
     if (situation == 0x17 || situation == 0x18 || situation == 0x19 || situation == 0x1a || situation == 0x1b ||
-        situation == 0x79)
+        situation == 0x79 || situation == 0x86)
         return find_advice_announcement(a, in, situation);
     Situation s{a, in, *in.world, in.world->counts, count_staff(*in.world), safeseed};
     switch (situation) {
@@ -911,6 +911,19 @@ bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &s
         return advise_patients(s, situation) || advise_staff(s, situation) ||
                advise_litter_and_plants(s, id, situation) || advise_hospital(s, id, situation);
     }
+}
+
+// find_advice's case 0x86: the oldest computer player waiting to be said to
+// have opened its hospital, named, dropped once said.
+bool find_advice_rival_opened(Advisor &a, const AdvisorInputs &in)
+{
+    uint32_t value = in.world->announce[kAnnRivalOpened][0];
+    if (!value)
+        return false;
+    done_announcement(*in.world, kAnnRivalOpened);
+    say(a, in.text->at(TextSection::Advisor, 0x86), in.world->rivals[value % in.world->rivals.size()].name.data());
+    a.rewrap = true;
+    return true;
 }
 
 // find_advice's research announcements (0x17-0x1b, 0x79): the oldest value
@@ -942,6 +955,8 @@ bool find_advice_announcement(Advisor &a, const AdvisorInputs &in, uint16_t situ
         return once(kAnnObjectAvailable, 0x1b, TextSection::ObjectNames);
     case 0x79:
         return once(kAnnCategoryDone, 0x79, TextSection::ResearchNames);
+    case 0x86:
+        return find_advice_rival_opened(a, in);
     default:
         return false;
     }

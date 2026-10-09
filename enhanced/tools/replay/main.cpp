@@ -5,7 +5,7 @@
 // the game's state and render the view.
 //
 // Usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] [--astar] [--rand]
-//                  [--advisor]
+//                  [--skip NAME[,NAME]] [--advisor]
 //                  [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm [--camera X,Y] [--size WxH]]
 //   --data    the game data folder (default: the development folder)
 //   --level   the level to start (default 1); with --load, the snapshot's
@@ -22,6 +22,8 @@
 //   --astar   plan routes with A* rather than the game's wall following
 //             (from the level's start; a snapshot or command log keeps its own)
 //   --rand    also trace every draw from the random seed (`rand` events)
+//   --skip    calls left out, comma-separated, as the instrumented original's
+//             SKIP (orig_trace.sh): computer_action (default none)
 //   --advisor also run the advisor (core/world/advisor.h) in each turn,
 //             after its start, as the game's frame does, and note each advice
 //             it gives in the trace as a comment line "# advice <situation>"
@@ -69,10 +71,10 @@ namespace
 
 int usage()
 {
-    std::fprintf(stderr,
-                 "usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] "
-                 "[--astar] [--rand] [--advisor] [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm "
-                 "[--camera X,Y] [--size WxH]] [--save SAVE]\n");
+    std::fprintf(stderr, "usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] "
+                         "[--astar] [--rand] [--skip NAMES] [--advisor] [--out FILE] [--dump FILE [--focus CELL]] "
+                         "[--render OUT.png|OUT.ppm "
+                         "[--camera X,Y] [--size WxH]] [--save SAVE]\n");
     return 2;
 }
 
@@ -224,6 +226,7 @@ struct Options {
     const char *dump_path = nullptr;
     const char *render_path = nullptr;
     const char *save_path = nullptr;
+    const char *skip = "";
     int focus = -1;
     bool camera_given = false;
     th::Point camera{};
@@ -250,6 +253,8 @@ bool take_text_option(Options &o, const char *flag, const char *value)
         o.render_path = value;
     else if (!std::strcmp(flag, "--save"))
         o.save_path = value;
+    else if (!std::strcmp(flag, "--skip"))
+        o.skip = value;
     else
         return false;
     return true;
@@ -506,6 +511,10 @@ int main(int argc, char **argv)
     auto game = std::make_unique<th::Game>();
     if (o.load_path ? !load_from_snapshot(*game, o, data, script) : !start_level(*game, o, data))
         return 1;
+    if (!th::parse_skipped_calls(o.skip, game->skipped_calls)) {
+        std::fprintf(stderr, "--skip: only computer_action is known\n");
+        return usage();
+    }
     game->events.limit = 0;
     game->events.rand = o.rand;
     game->events.events.clear();
