@@ -556,8 +556,11 @@ EVENTS = {
     "peepmake.cpp": [
         (("before", "patient->known_illness = patient->illness;"), "create_a_peep",
          f'trace_event("emergency_peep %u", {ID.format("patient")});'),
-        ("exit", "make_a_peep",
-         'if (r) trace_event("peep %u illness=%u owner=%u pos=%u", (unsigned)(r - thing), (unsigned)illness, '
+        # Not a wrapper ("exit"): that would move make_a_peep's frame, and
+        # with it the stack slot process_computer_peep's has_drinks reads
+        # uninitialised (the same slot as make_a_peep's nchoices).
+        (("before", "return peep;"), "make_a_peep",
+         'trace_event("peep %u illness=%u owner=%u pos=%u", (unsigned)(peep - thing), (unsigned)illness, '
          '(unsigned)owner, (unsigned)pos);'),
     ],
     "utils.cpp": [
@@ -887,6 +890,54 @@ EVENTS = {
     ],
     "tutorial.cpp": [
         ("entry", "tutorial", 'trace_event("tutorial %u", (unsigned)advisor.tutorial_step);'),
+    ],
+    # The computer hospitals (owners 1-3), each event tagged with its owner.
+    "computer.cpp": [
+        (("before", "    }\n}"), "computer_action",
+         'trace_event("computer_action %u type=%u arg=%d count=%d next=%lu", (unsigned)i, (unsigned)hosp->action.type, '
+         '(int)hosp->action.arg, (int)hosp->action.count, (unsigned long)hosp->next_action_turn);'),
+        (("before", "action = com_strategy[step].type;"), "computer_decision",
+         'trace_event("computer_decision %u step=%d type=%u", (unsigned)owner, step, '
+         '(unsigned)com_strategy[step].type);'),
+        (("before", "announce_this(ANN_RIVAL_OPENED, owner);"), "computer_decision",
+         'trace_event("rival_open %u", (unsigned)owner);'),
+        (("before", "candidate->owner = owner;"), "computer_employ",
+         'trace_event("computer_employ %u thing=%u subtype=%u balance=%ld", (unsigned)owner, '
+         '(unsigned)(candidate - thing), (unsigned)candidate->subtype, (long)hosp->balance);'),
+        (("before", "return 1;"), "computer_build",
+         'trace_event("computer_build %u room=%u balance=%ld", (unsigned)owner, (unsigned)type, '
+         '(long)hosp->balance);'),
+        (("before", "return 1;"), "computer_place_object",
+         'trace_event("computer_place_object %u obj=%u balance=%ld", (unsigned)owner, (unsigned)obj, '
+         '(long)hosp->balance);'),
+        ("exit", "computer_loan",
+         'if (r) trace_event("computer_loan %u amount=%d balance=%ld loan=%ld", (unsigned)owner, (int)amount, '
+         '(long)allhosps[owner].balance, (long)allhosps[owner].loan);'),
+        (("before", "return 1;"), "computer_buy_land",
+         'trace_event("computer_land %u area=%u balance=%ld", (unsigned)owner, (unsigned)hosp->area, '
+         '(long)hosp->balance);'),
+        (("before", "return 1;"), "make_a_note",
+         'trace_event("computer_note %u op=make type=%u arg=%d count=%d", (unsigned)owner, '
+         '(unsigned)hosp->notes[i].type, (int)hosp->notes[i].arg, (int)hosp->notes[i].count);'),
+        (("before", "hosp->notes[i].type = 0;"), "remove_a_note",
+         'trace_event("computer_note %u op=remove type=%u arg=%d count=%d", (unsigned)owner, '
+         '(unsigned)hosp->notes[i].type, (int)hosp->notes[i].arg, (int)hosp->notes[i].count);'),
+        (("before", "break;"), "declass_a_note",
+         'trace_event("computer_note %u op=declass type=%u arg=%d count=%d", (unsigned)owner, '
+         '(unsigned)hosp->notes[i].type, (int)hosp->notes[i].arg, (int)hosp->notes[i].count);'),
+        (("before", "bucket->patients_done++;"), "process_computer_peep",
+         'trace_event("computer_peep %u illness=%d result=%d load=%ld", (unsigned)owner, illness, result, '
+         '(long)hosp->patient_load);'),
+        (("before", "memset(bucket, 0, 400);"), "get_computer_bucket",
+         'trace_event("computer_bucket %u balance=%ld cures=%ld deaths=%ld rep=%ld load=%ld", (unsigned)owner, '
+         '(long)hosp->balance, (long)hosp->cures, (long)hosp->deaths, (long)hosp->reputation, '
+         '(long)hosp->patient_load);'),
+        (("before", "            }\n        }\n    }\n}"), "computer_month",
+         'trace_event("computer_month %u balance=%ld wage_bill=%ld", (unsigned)i, (long)hosp->balance, '
+         '(long)hosp->wage_bill);'),
+        (("before", "            }\n        }\n    }\n}"), "computer_year",
+         'trace_event("computer_year %u value=%ld score=%ld", (unsigned)i, (long)hosp->hospital_value, '
+         '(long)hosp->score);'),
     ],
 }
 

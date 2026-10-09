@@ -31,6 +31,8 @@
 #   REPLAY_BASE  where the per-script replay folders and traces go
 #                (default build/replay-all-<pid>, so two runs at once do
 #                not clash; set it to share one)
+#   IGNORE_EVENTS  event kinds compare.py leaves out on both sides,
+#                comma-separated (default empty: every event is compared)
 #   SKIP         calls left out of the original's trace, comma-separated
 #                (default in lib.sh: the functions the engine does not port yet)
 #
@@ -53,6 +55,10 @@ REPLAY_BASE=${REPLAY_BASE:-build/replay-all-$$}
 
 rand_flag=
 [ "$RAND" = 1 ] && rand_flag=--rand
+ignore_flags=
+for kind in $(printf '%s' "$IGNORE_EVENTS" | tr ',' ' '); do
+  ignore_flags="$ignore_flags --ignore-event $kind"
+done
 
 for tool in python3 dosbox-x gzip; do
   command -v "$tool" >/dev/null 2>&1 || {
@@ -135,7 +141,7 @@ run_script() {
     line="$n (level $lvl, $t turns): enhanced run failed (see $dir/enh.log)"
   fi
   if [ "$status" = 0 ]; then
-    out=$(python3 "$here/compare.py" "$o" "$e" 2>&1) || {
+    out=$(python3 "$here/compare.py" "$o" "$e" $ignore_flags 2>&1) || {
       status=1
       line="$n (level $lvl, $t turns): $(printf '%s\n' "$out" | head -n 1)"
     }

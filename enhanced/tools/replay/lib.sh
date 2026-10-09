@@ -7,6 +7,10 @@
 # The calls the engine does not port yet, left out on the original's side
 # (also the list in AGENTS.md's "Replay check").
 SKIP=${SKIP:-computer_action}
+# Event kinds compare.py leaves out on both sides (comma-separated): the ones
+# the original writes and the engine does not emit yet. Empty compares every
+# event.
+IGNORE_EVENTS=${IGNORE_EVENTS:-}
 TURNS=${TURNS:-18300}
 RAND=${RAND:-1}
 WATCHDOG=${WATCHDOG:-5}

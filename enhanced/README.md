@@ -370,6 +370,10 @@ and disasters stay on), by hand as:
         --turns 18000 --out enhanced.txt
     enhanced/tools/replay/compare.py orig.txt enhanced.txt
 
+`IGNORE_EVENTS` (comma-separated event kinds, default empty) makes
+`replay_all.sh` leave those events out of the comparison on both sides, for
+events the original writes and the engine does not emit yet.
+
 What the scripts leave unexercised: `tools/coverage.sh` (in the dev shell, GCC)
 builds th_replay with `-DTH_COVERAGE=ON` in build/coverage, runs every script
 there and writes an HTML report and `summary.txt` to build/coverage/report/.

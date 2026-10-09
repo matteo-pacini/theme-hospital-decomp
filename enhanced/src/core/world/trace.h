@@ -333,6 +333,91 @@ void trace_rand(const char *function, uint32_t seed);
 //   tutorial <step>                        tutorial (src/tutorial.cpp),
 //                                          advisor.tutorial_step, at its
 //                                          entry, while the tutorial runs
+// The computer hospitals' (src/computer.cpp), owners 1-3, each tagged with
+// its owner; "fires" gives the point in the original's source:
+//   computer_action <owner> type=<n> arg=<n> count=<n> next=<turn>
+//                                          computer_action, for each rival
+//                                          that acts, after its pending
+//                                          action ran (the action's fields
+//                                          and next_action_turn as they
+//                                          stand). Fires: after the switch,
+//                                          computer.cpp:255, in the loop
+//   computer_decision <owner> step=<n> type=<n>  computer_decision, after its
+//                                          two draws: the com_strategy index
+//                                          it takes and that entry's type.
+//                                          Fires: before the switch,
+//                                          computer.cpp:282
+//   rival_open <owner>                     computer_decision, step type 10,
+//                                          as the hospital opens. Fires:
+//                                          computer.cpp:308, after
+//                                          hospital_open is set, before
+//                                          announce_this
+//   computer_employ <owner> thing=<id> subtype=<n> balance=<n>
+//                                          computer_employ, a hire: the
+//                                          applicant's id and kind, the
+//                                          balance after the pay, with the
+//                                          applicant's Thing still there.
+//                                          Fires: computer.cpp:564, after
+//                                          inc_staff_stats, the pay, the wage
+//                                          bill and the ability sum, before
+//                                          set_expertise_staff, insert_skill
+//                                          and remove_staff_in_struct (which
+//                                          frees the Thing)
+//   computer_build <owner> room=<n> balance=<n>  computer_build, a room built:
+//                                          the balance after the room and its
+//                                          compulsory objects (computer_place
+//                                          _object events come first).
+//                                          Fires: computer.cpp:600, before
+//                                          return 1
+//   computer_place_object <owner> obj=<n> balance=<n>  computer_place_object,
+//                                          an object bought (or free).
+//                                          Fires: computer.cpp:622, before
+//                                          return 1
+//   computer_loan <owner> amount=<n> balance=<n> loan=<n>  computer_loan,
+//                                          after a change was made. Fires: on
+//                                          either return 1, computer.cpp:641
+//                                          and :646
+//   computer_land <owner> area=<n> balance=<n>  computer_buy_land, after a
+//                                          purchase. Fires: computer.cpp:1053,
+//                                          before return 1
+//   computer_note <owner> op=<make, remove or declass> type=<n> arg=<n> count=<n>
+//                                          one event per call, as the
+//                                          original's calls run:
+//                                          make_a_note, the note stored
+//                                          (none if all 8 slots are used;
+//                                          fires computer.cpp:815);
+//                                          remove_a_note, the note found, as
+//                                          its type is cleared (none if
+//                                          absent; fires computer.cpp:852);
+//                                          declass_a_note, the note moved to
+//                                          its new slot (fires
+//                                          computer.cpp:874). A declass thus
+//                                          shows `remove` for the note it
+//                                          takes out (its own remove_a_note
+//                                          call) and then `declass`;
+//                                          find_a_note emits nothing
+//   computer_peep <owner> illness=<n> result=<n> load=<n>
+//                                          process_computer_peep, at its end:
+//                                          the result as the visit ended and
+//                                          the hospital's patient load.
+//                                          Fires: computer.cpp:496, before
+//                                          patients_done++
+//   computer_bucket <owner> balance=<n> cures=<n> deaths=<n> rep=<n> load=<n>
+//                                          get_computer_bucket, once the
+//                                          bucket is merged and the
+//                                          reputations evaluated, before it is
+//                                          cleared (rep: the hospital's, not
+//                                          a treatment's). Fires:
+//                                          computer.cpp:528, before the memset
+//   computer_month <owner> balance=<n> wage_bill=<n>  computer_month, per
+//                                          rival, after its wages left the
+//                                          balance (computer.cpp:180); after
+//                                          that rival's computer_bucket event
+//   computer_year <owner> value=<n> score=<n>  computer_year, per rival, after
+//                                          calculate_value and calculate_score
+//                                          (computer.cpp:140)
+// The `rep`, `balance`, `score`, `crit`, `area` and `price_level` events stay
+// player 0's: no rival path emits them.
 // Whoever ports one of these functions writes its event on both sides.
 std::string trace_turn(const Game &game, const EventLog *events = nullptr);
 
