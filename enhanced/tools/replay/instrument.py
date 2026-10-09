@@ -855,6 +855,12 @@ EVENTS = {
          'if (owner == 0) trace_event("category_exhausted %u", (unsigned)category);'),
         (("before", "staff_exit_room_check(doctor);"), "send_doctor_to_research",
          f'trace_event("send_to_research %u room=%u", {ID.format("doctor")}, (unsigned)id);'),
+        (("before", "room->queue_incoming++;"), "send_person_for_research",
+         f'trace_event("send_for_research %u room=%u", {ID.format("patient")}, (unsigned)(room - room_info));'),
+        (("before", "do_illness_research(patient->owner, patient->illness,"), "person_autopsied",
+         f'trace_event("autopsied %u illness=%u amount=%u unhappy=%d", {ID.format("patient")}, '
+         '(unsigned)patient->illness, (unsigned)(gbv.autopsy_rsch_percent * expertise[patient->illness].cost / 100), '
+         '(int)((staff_happiness << 8) / hosp->staff_count < 0x1900));'),
     ],
     "rschscrn.cpp": [
         ("entry", "alter_research",

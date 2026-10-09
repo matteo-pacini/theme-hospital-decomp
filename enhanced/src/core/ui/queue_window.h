@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/render/iso.h"
 #include "core/ui/layer.h"
 #include "core/ui/windows.h"
 #include "core/world/events.h"
@@ -65,10 +66,17 @@ void queue_window_event(QueueWindow &q, Interface &ui, const World &world, const
 // to Game::event, the sounds to World::building.
 void queue_window_input(QueueWindow &q, Interface &ui, Game &game, const QueueInputs &in);
 
+// display_queue_people's patient `id` standing at `at` (its feet): glowing
+// with radiation (draw_glow_frame), wobbling with the phase of game turn
+// `turn` with jellyitis (draw_wibble_frame), else drawn plain.
+void draw_queue_person(UiLayer &layer, const World &world, const GameData &data, uint16_t id, Point at, uint32_t turn);
+
 // req7_overdraw: the queue's labels (queue_text), its length, those on their
 // way, admitted and limit, the patients (with a gap around the selected one)
-// and, while the right button is held, the bar of what to do with one.
-void draw_queue_window(UiLayer &layer, const QueueWindow &q, const Interface &ui, const World &world,
+// and, while the right button is held, the bar of what to do with one. A
+// radiation patient glows and a jellyitis patient wobbles with the phase of
+// the game turn.
+void draw_queue_window(UiLayer &layer, const QueueWindow &q, const Interface &ui, const Game &game,
                        const RequesterArt &art, const GameData &data);
 
 } // namespace th

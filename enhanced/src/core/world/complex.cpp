@@ -1292,6 +1292,31 @@ void send_person_to_bed(const Run &r, uint16_t id)
     set_destination_coords(world, id, world.rooms[ward].door_tile);
 }
 
+// The end of go_for_treatment and send_person_for_research: patient `id` is
+// counted on its way to the queue of `room_id` (paging the staff the treatment
+// needs) and walks to its door.
+void go_to_queue(const Run &r, uint16_t id, uint16_t room_id)
+{
+    World &world = r.world;
+    Thing &p = world.things[id];
+    RoomInfo &room = world.rooms[room_id];
+    room.queue_incoming++;
+    page_staff_i_need(world, id, room_id);
+    p.dest_room = room_id;
+    play_patient_anim(r.anims, p, kAnimWalk);
+    p.state = kPsGotoQueue;
+    set_destination_coords(world, id, room.door_tile);
+}
+
+// send_person_for_research (0x6db78): patient `id` goes for its autopsy to the
+// research room get_expertise_dest picks.
+void send_person_for_research(const Run &r, uint16_t id)
+{
+    uint16_t room_id = get_expertise_dest(r.world, kIllAutopsy, r.world.things[id]);
+    trace_event("send_for_research %u room=%u", unsigned(id), unsigned(room_id));
+    go_to_queue(r, id, room_id);
+}
+
 // person_go_for_treatment (0x3d91c): the patient pays or not
 // (shall_peep_pay); without the treatment (or paying for it) it goes home
 // through the first entrance; with no room for it, it waits for a decision;
@@ -1299,7 +1324,8 @@ void send_person_to_bed(const Run &r, uint16_t id)
 // counted on its way there, paging the staff the treatment needs. A
 // treatment the hospital cannot give goes to reputation_affected
 // (kRepGoForTreatment: no points, but its price moves). A ward's diagnosis
-// goes to bed (send_person_to_bed); research is not handled.
+// goes to bed (send_person_to_bed); an autopsy to the research room
+// (send_person_for_research).
 void go_for_treatment(const Run &r, uint16_t id)
 {
     World &world = r.world;
@@ -1339,19 +1365,13 @@ void go_for_treatment(const Run &r, uint16_t id)
         send_person_to_bed(r, id);
         break;
     case kIllAutopsy:
+        send_person_for_research(r, id);
         break;
-    default: {
-        uint16_t room_id = world.cure_available[treatment] == 1 ? get_expertise_dest(world, treatment, p)
-                                                                : first_room(world, p.owner, category);
-        RoomInfo &room = world.rooms[room_id];
-        room.queue_incoming++;
-        page_staff_i_need(world, id, room_id);
-        p.dest_room = room_id;
-        play_patient_anim(r.anims, p, kAnimWalk);
-        p.state = kPsGotoQueue;
-        set_destination_coords(world, id, room.door_tile);
+    default:
+        go_to_queue(r, id,
+                    world.cure_available[treatment] == 1 ? get_expertise_dest(world, treatment, p)
+                                                         : first_room(world, p.owner, category));
         break;
-    }
     }
 }
 

@@ -1,0 +1,62 @@
+# Level 6: autopsies, sent by the command EV_PATIENT_TO_RESEARCH (0x80,
+# which nothing in the game posts but which io.cpp's process_turn carries
+# out): autopsy.txt's hospital. Patients 21 and 32, awaiting a decision
+# since their calls (turns 7158 and 7479), are sent at turn 7500, both at
+# once: patient 21 queues at the research room and the researcher calls it
+# (autopsied at turn 7798); patient 32 fails to find its way (nav_failure),
+# goes home, comes back and is autopsied at turn 9716. Patient 48 is sent at
+# turn 8100 (autopsied at 8412).
+# Expect send_for_research 21 room=7
+# Expect send_for_research 32 room=7
+# Expect send_for_research 48 room=7
+# Expect autopsied 21 illness=24 amount=3300 unhappy=0
+# Expect autopsied 32 illness=18 amount=6600 unhappy=0
+# Expect autopsied 48 illness=16 amount=3300 unhappy=0
+# Turns 12000
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair; opened; a consultant (applicant 17) in the corridor.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+114 48 1 17
+115 5 6969 17
+# A research room (58,48)-(62,52), its door above it, an autopsy machine, a
+# desk and a filing cabinet; opened; a researcher (applicant 25) in the
+# corridor; research concentrated on the cast remover (illness 9), all of it
+# in the specialisation.
+130 55 0 0
+131 53 28 28
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 28 0
+139 7 6460 55
+140 7 6459 1
+141 7 6461 2
+142 1 0 0
+143 48 1 25
+144 5 6970 25
+7500 128 21 0
+7500 128 32 0
+8100 128 48 0

@@ -3,8 +3,10 @@
 #include "core/data/gamedata.h"
 #include "core/render/panel.h"
 #include "core/world/arrivals.h"
+#include "core/world/build.h"
 #include "core/world/finance.h"
 #include "core/world/objects.h"
+#include "core/world/queue.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
@@ -84,6 +86,9 @@ constexpr uint16_t kCriterionValue = 6;
 
 // The game's OBJ_RECEPTION_DESK.
 constexpr uint8_t kObjectReceptionDesk = 11;
+
+// The level briefing's page that ends the tutorial (show_help_page(1, 0xf)).
+constexpr int kTutorialEndPage = 0xf;
 
 // The player has a reception (listhead.rooms[ROOM_RECEPTION], which placing
 // the first reception desk sets).
@@ -894,7 +899,7 @@ bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &s
         return false;
     uint16_t situation = a.advice[size_t(id)].id;
     if (situation == 0x17 || situation == 0x18 || situation == 0x19 || situation == 0x1a || situation == 0x1b ||
-        situation == 0x79)
+        situation == 0x79 || situation == 0x7a)
         return find_advice_announcement(a, in, situation);
     Situation s{a, in, *in.world, in.world->counts, count_staff(*in.world), safeseed};
     switch (situation) {
@@ -913,7 +918,7 @@ bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &s
     }
 }
 
-// find_advice's research announcements (0x17-0x1b, 0x79): the oldest value
+// find_advice's research announcements (0x17-0x1b, 0x79, 0x7a): the oldest value
 // waiting of the kind, named by its object, illness or research category,
 // dropped once said.
 bool find_advice_announcement(Advisor &a, const AdvisorInputs &in, uint16_t situation)
@@ -930,6 +935,12 @@ bool find_advice_announcement(Advisor &a, const AdvisorInputs &in, uint16_t situ
         return true;
     };
     switch (situation) {
+    case 0x7a:
+        if (!in.world->announce[kAnnAutopsyDiscovered % kAnnounceKinds][0])
+            return false;
+        done_announcement(*in.world, kAnnAutopsyDiscovered);
+        say(a, advisor_text(in, 0x7a));
+        return true;
     case 0x17:
         return once(kAnnObjectResearched, 0x17, TextSection::ObjectNames);
     case 0x18:
@@ -1058,6 +1069,13 @@ struct Tutorial {
     {
         a.tutorial_step = step;
         a.tutorial_highlight = 0;
+    }
+
+    // Messages to give again once the player is back at the step they belong to.
+    void forget(std::initializer_list<int> flags)
+    {
+        for (int flag : flags)
+            shown[size_t(flag)] = 0;
     }
 };
 
@@ -1327,14 +1345,13 @@ int tutorial_place_receptionist(Tutorial &t)
     return -1;
 }
 
-// tutorial step 0x20: open the room building. No GP's office can be built
-// yet. Steps 0x2b on (building it) and 0x1f on (hiring a doctor) are not
-// ported.
+// tutorial step 0x20: open the room building, once no GP's office exists.
 int tutorial_open_build_room(Tutorial &t)
 {
-    if (t.shown[3] == 2)
-        return -1;
-    if (t.last.type == EV_OPEN_BUILD_ROOM) {
+    if (t.shown[3] == 2 || t.world.room_of_type[kRoomGp]) {
+        t.shown[3] = 2;
+        t.go(0x1f);
+    } else if (t.last.type == EV_OPEN_BUILD_ROOM) {
         t.shown[3] = 2;
         t.go(0x2b);
     } else if (t.shown[3] == 0) {
@@ -1346,14 +1363,363 @@ int tutorial_open_build_room(Tutorial &t)
     return -1;
 }
 
-// tutorial (src/tutorial.cpp) to step 0x20, in high resolution, where the
-// hints about controls are help text (set_force_help, not ported) and the
-// advisor is hidden. Returns 1 when a message was just given, 0 when he is
-// to be hidden, -1 otherwise.
+// tutorial step 0x2b: choose the department of the GP's office.
+int tutorial_choose_department(Tutorial &t)
+{
+    if (t.last.type == EV_CANCEL_BUILD) {
+        t.forget({3, 14});
+        t.go(0x20);
+    } else if (t.shown[14] != 2) {
+        if (t.last.type != EV_REQ1_RESET_ROOMS || t.last.value != 3) {
+            if (t.shown[14] == 0) {
+                t.hint(8, 14);
+                return 0;
+            }
+        } else {
+            t.shown[14] = 2;
+            t.go(0x2c);
+        }
+    }
+    return -1;
+}
+
+// tutorial step 0x2c: choose the GP's office. The hint marks flag 14 shown,
+// not 15, as the game does, so it is given every turn.
+int tutorial_choose_gp_office(Tutorial &t)
+{
+    if (t.last.type == EV_CLOSE_REQUESTERS) {
+        t.forget({3, 14, 15});
+        t.go(0x20);
+    } else if (t.shown[15] != 2) {
+        if (t.last.type == EV_INIT_BLUEPRINT && t.last.value != kRoomGp) {
+            t.forget({3, 14, 15});
+            t.go(0x20);
+        } else if (t.last.type != EV_INIT_BLUEPRINT) {
+            if (t.shown[15] == 0) {
+                t.hint(0xb, 14);
+                return 0;
+            }
+        } else {
+            t.shown[15] = 2;
+            t.go(0x39);
+        }
+    }
+    return -1;
+}
+
+// tutorial step 0x39: drag the blueprint out.
+int tutorial_drag_blueprint(Tutorial &t)
+{
+    if (t.last.type == EV_CANCEL_BUILD) {
+        t.forget({3, 14, 15, 28});
+        t.go(0x20);
+    } else if (t.last.type != EV_MODIFY_BLUEPRINT) {
+        t.message(47);
+        t.shown[28] = 0;
+        return 1;
+    } else {
+        t.shown[28] = 2;
+        t.a.tutorial_step = 0x2f;
+        t.a.tutorial_highlight = 0;
+    }
+    return -1;
+}
+
+// tutorial step 0x2f: make the blueprint valid, in size and placement.
+int tutorial_valid_blueprint(Tutorial &t)
+{
+    uint8_t &flags = t.a.flags;
+    bool bad = flags & kAdvisorBadPlacement, small = flags & kAdvisorBlueprintSmall;
+    if (t.last.type == EV_CANCEL_BUILD) {
+        t.forget({3, 14, 15, 28, 18});
+        t.go(0x20);
+    } else if (small && bad) {
+        t.message(61);
+        t.shown[27] = 0;
+        flags &= uint8_t(~(kAdvisorBlueprintSmall | kAdvisorBadPlacement));
+        t.a.tutorial_highlight = 0;
+        return 1;
+    } else if (!small && !bad) {
+        t.message(52);
+        t.a.forced_advice_id = 0;
+        t.a.tutorial_highlight = 0;
+        return 1;
+    } else if (t.a.forced_advice_id == 4 || bad) {
+        t.message(51);
+        t.shown[18] = 0;
+        flags &= uint8_t(~kAdvisorBadPlacement);
+        t.a.tutorial_highlight = 0;
+        return 1;
+    } else {
+        t.shown[18] = 2;
+        t.go(0x38);
+        flags &= uint8_t(~(kAdvisorBlueprintSmall | kAdvisorBadPlacement));
+    }
+    return -1;
+}
+
+// tutorial step 0x38: accept the blueprint.
+int tutorial_accept_blueprint(Tutorial &t)
+{
+    uint8_t &flags = t.a.flags;
+    bool bad = flags & kAdvisorBadPlacement, small = flags & kAdvisorBlueprintSmall;
+    if (t.last.type == EV_CANCEL_BUILD) {
+        t.forget({3, 14, 15, 28, 18, 27, 19, 20, 21, 29});
+        t.go(0x20);
+    } else if (small && bad) {
+        t.message(61);
+        t.shown[27] = 0;
+        flags &= uint8_t(~(kAdvisorBlueprintSmall | kAdvisorBadPlacement));
+        t.a.tutorial_highlight = 0;
+        return 1;
+    } else if (small) {
+        t.message(52);
+        t.shown[27] = 0;
+        flags &= uint8_t(~(kAdvisorBlueprintSmall | kAdvisorBadPlacement));
+        t.a.tutorial_highlight = 0;
+        return 1;
+    } else if (t.a.forced_advice_id == 4 || bad) {
+        t.message(51);
+        t.shown[27] = 0;
+        flags &= uint8_t(~kAdvisorBadPlacement);
+        t.a.forced_advice_id = 0;
+        t.a.tutorial_highlight = 0;
+        return 1;
+    } else if (t.last.type != EV_COMMIT_BLUEPRINT) {
+        if (t.shown[27] == 0) {
+            t.message(56);
+            t.a.tutorial_highlight = kEditRoomConfirm;
+            t.shown[27] = 1;
+            flags &= uint8_t(~kAdvisorBadPlacement);
+            return 1;
+        }
+    } else {
+        t.shown[27] = 2;
+        t.go(0x30);
+    }
+    return -1;
+}
+
+// tutorial step 0x30: place the door.
+int tutorial_place_door(Tutorial &t)
+{
+    if (t.last.type == EV_EDIT_BLUEPRINT) {
+        t.forget({3, 14, 15, 28, 18, 27, 19});
+        t.go(0x38);
+    } else if (t.last.type == EV_PLACE_BP_DOOR && t.world.building.door_invalid) {
+        t.message(53);
+        t.shown[24] = 1;
+        return 1;
+    } else if (t.last.type != EV_PLACE_BP_DOOR) {
+        if (t.shown[19] == 0) {
+            t.message(48);
+            t.shown[19] = 1;
+            return 1;
+        }
+    } else {
+        t.shown[19] = 2;
+        t.go(0x31);
+    }
+    return -1;
+}
+
+// tutorial step 0x31: place the windows.
+int tutorial_place_windows(Tutorial &t)
+{
+    bool placed = t.last.type == EV_PLACE_BP_DOOR;
+    if (t.last.type == EV_EDIT_BLUEPRINT) {
+        t.forget({3, 14, 15, 28, 18, 27, 19, 20});
+        t.go(0x38);
+    } else if (placed && t.world.building.door_invalid) {
+        t.message(54);
+        t.shown[25] = 1;
+        return 1;
+    } else if (placed) {
+        t.message(49);
+        t.shown[20] = 1;
+        return 1;
+    } else if (t.last.type != EV_COMMIT_DOORS) {
+        if (t.shown[20] == 0) {
+            t.message(49);
+            t.a.tutorial_highlight = kEditRoomConfirm;
+            t.shown[20] = 1;
+            return 1;
+        }
+    } else {
+        t.shown[19] = 2;
+        t.go(0x32);
+        t.a.flags &= uint8_t(~kAdvisorBadPlacement);
+    }
+    return -1;
+}
+
+// tutorial step 0x32: place the objects the room needs.
+int tutorial_furnish_room(Tutorial &t)
+{
+    if (t.last.type == EV_EDIT_BLUEPRINT) {
+        t.forget({3, 14, 15, 28, 18, 27, 19, 20, 21});
+        t.go(0x38);
+    } else if (t.a.flags & kAdvisorBadPlacement) {
+        t.message(55);
+        t.a.flags &= uint8_t(~kAdvisorBadPlacement);
+        t.shown[21] = 0;
+        return 1;
+    } else if (!(t.a.flags & kAdvisorRoomFurnished)) {
+        if (t.shown[21] == 0) {
+            t.message(50);
+            t.shown[21] = 1;
+            return 1;
+        }
+    } else {
+        t.shown[29] = 0;
+        t.go(0x3a);
+    }
+    return -1;
+}
+
+// tutorial step 0x3a: open the room.
+int tutorial_open_room(Tutorial &t)
+{
+    if (t.last.type == EV_EDIT_BLUEPRINT) {
+        t.forget({3, 14, 15, 28, 18, 27, 19, 20, 21, 29});
+        t.go(0x38);
+    } else if (t.last.type != EV_OPEN_ROOM) {
+        if (t.shown[29] == 0) {
+            t.message(58);
+            t.a.tutorial_highlight = kEditRoomConfirm;
+            t.shown[29] = 1;
+            return 1;
+        }
+    } else {
+        t.shown[29] = 2;
+        t.go(0x1f);
+    }
+    return -1;
+}
+
+// tutorial step 0x1f: open the staff hiring, for a doctor. The tutorial ends
+// once the hospital has one.
+int tutorial_open_hire_doctor(Tutorial &t)
+{
+    if (t.shown[2] == 2 || count_staff(t.world).doctors != 0) {
+        t.shown[2] = 2;
+        t.a.tutorial_highlight = 0;
+        t.a.flags &= uint8_t(~kAdvisorTutorial);
+    } else if (t.last.type == EV_OPEN_HIRE_STAFF) {
+        t.shown[2] = 2;
+        t.go(0x23);
+    } else if (t.shown[2] == 0) {
+        t.message(31);
+        t.a.tutorial_highlight = 0x15;
+        t.shown[2] = 1;
+        return 1;
+    }
+    return -1;
+}
+
+// tutorial step 0x23: choose doctors.
+int tutorial_select_doctors(Tutorial &t)
+{
+    bool other = t.last.type == EV_CANCEL_BUILD || (t.last.type == EV_MARK_EMPLOYING && t.last.value != kStaffDoctor);
+    if (t.shown[6] == 2) {
+        t.go(0x2d);
+    } else if (other) {
+        t.forget({2, 6});
+        t.go(0x1f);
+    } else if (t.last.type != EV_HIRE_SELECT_KIND || t.last.value != kStaffDoctor) {
+        if (t.shown[6] == 0) {
+            t.hint(4, 6);
+            return 0;
+        }
+    } else {
+        t.shown[6] = 2;
+        t.go(0x2d);
+    }
+    return -1;
+}
+
+// tutorial step 0x2d: hire the doctor.
+int tutorial_hire_doctor(Tutorial &t)
+{
+    if (t.shown[16] == 2) {
+        t.go(0x27);
+    } else if (t.last.type == EV_CANCEL_BUILD) {
+        t.forget({2, 6, 16});
+        t.go(0x1f);
+    } else if (t.last.type == EV_HIRE_SELECT_KIND && t.last.value != kStaffDoctor) {
+        t.shown[6] = 0;
+        t.go(0x23);
+    } else if (t.last.type != EV_MARK_EMPLOYING) {
+        if (t.shown[16] == 0) {
+            t.hint(5, 16);
+            return 0;
+        }
+    } else {
+        t.shown[16] = 2;
+        t.go(0x27);
+    }
+    return -1;
+}
+
+// tutorial step 0x27: place the doctor. That ends the tutorial, with the
+// level's last help page.
+int tutorial_place_doctor(Tutorial &t)
+{
+    if (t.shown[10] == 2) {
+        t.a.tutorial_highlight = 0;
+        t.a.flags &= uint8_t(~kAdvisorTutorial);
+    } else if (t.last.type == EV_CANCEL_BUILD) {
+        t.forget({10, 2, 6, 16});
+        t.go(0x1f);
+    } else if (!t.in.staff_place_ok) {
+        t.message(59);
+        t.shown[10] = 0;
+        return 1;
+    } else if (count_staff(t.world).doctors == 0) {
+        if (t.shown[10] == 0) {
+            t.message(39);
+            t.shown[10] = 1;
+            return 1;
+        }
+    } else {
+        t.shown[10] = 2;
+        t.a.tutorial_highlight = 0;
+        t.a.flags &= uint8_t(~kAdvisorTutorial);
+        if (t.in.help_page)
+            *t.in.help_page = kTutorialEndPage;
+    }
+    return -1;
+}
+
+// The tutorial's steps (advisor.tutorial_step) and what runs them.
+struct TutorialStep {
+    uint8_t step;
+    int (*run)(Tutorial &);
+};
+
+constexpr std::array<TutorialStep, 24> kTutorialSteps = {{
+    {0x1d, tutorial_open_furnish_corridor}, {0x28, tutorial_buy_reception_desk}, {0x2a, tutorial_confirm_purchase},
+    {0x29, tutorial_place_reception_desk},  {0x1e, tutorial_open_hire_staff},    {0x21, tutorial_select_receptionists},
+    {0x25, tutorial_next_applicant},        {0x26, tutorial_previous_applicant}, {0x22, tutorial_hire_applicant},
+    {0x24, tutorial_place_receptionist},    {0x20, tutorial_open_build_room},    {0x2b, tutorial_choose_department},
+    {0x2c, tutorial_choose_gp_office},      {0x39, tutorial_drag_blueprint},     {0x2f, tutorial_valid_blueprint},
+    {0x38, tutorial_accept_blueprint},      {0x30, tutorial_place_door},         {0x31, tutorial_place_windows},
+    {0x32, tutorial_furnish_room},          {0x3a, tutorial_open_room},          {0x1f, tutorial_open_hire_doctor},
+    {0x23, tutorial_select_doctors},        {0x2d, tutorial_hire_doctor},        {0x27, tutorial_place_doctor},
+}};
+
+// tutorial (src/tutorial.cpp), in high resolution, where the hints about
+// controls are help text (set_force_help, not ported) and the advisor is
+// hidden. Returns 1 when a message was just given, 0 when he is to be
+// hidden, -1 otherwise.
 int tutorial(Advisor &a, const AdvisorInputs &in)
 {
     trace_event("tutorial %u", unsigned(a.tutorial_step));
-    const Event &last = in.last;
+    // process_turn leaves a deleted room or a cancelled room edit as EV_CANCEL_BUILD in
+    // old_packet (src/io.cpp:1478-1489).
+    Event last = in.last;
+    if (last.type == EV_DELETE_ROOM || last.type == EV_CANCEL_EDIT_ROOM)
+        last = {EV_CANCEL_BUILD, last.type == EV_DELETE_ROOM ? last.value : uint16_t(0), last.flags, last.arg};
     Tutorial t{a,
                in,
                *in.world,
@@ -1361,32 +1727,10 @@ int tutorial(Advisor &a, const AdvisorInputs &in)
                last,
                in.pending,
                last.type == EV_CANCEL_BUILD || (last.type == EV_MARK_EMPLOYING && last.value != kStaffReceptionist)};
-    switch (a.tutorial_step) {
-    case 0x1d:
-        return tutorial_open_furnish_corridor(t);
-    case 0x28:
-        return tutorial_buy_reception_desk(t);
-    case 0x2a:
-        return tutorial_confirm_purchase(t);
-    case 0x29:
-        return tutorial_place_reception_desk(t);
-    case 0x1e:
-        return tutorial_open_hire_staff(t);
-    case 0x21:
-        return tutorial_select_receptionists(t);
-    case 0x25:
-        return tutorial_next_applicant(t);
-    case 0x26:
-        return tutorial_previous_applicant(t);
-    case 0x22:
-        return tutorial_hire_applicant(t);
-    case 0x24:
-        return tutorial_place_receptionist(t);
-    case 0x20:
-        return tutorial_open_build_room(t);
-    default:
-        return -1;
-    }
+    for (const TutorialStep &step : kTutorialSteps)
+        if (step.step == a.tutorial_step)
+            return step.run(t);
+    return -1;
 }
 
 // advisor_character (src/advtext.cpp) without its drawing.
@@ -1545,6 +1889,8 @@ StaffCounts count_staff(const World &world)
         c.by_kind[t.subtype == kStaffSurgeon ? kStaffDoctor : t.subtype]++;
         if (t.skills & kSkillReceptionist)
             c.receptionists++;
+        if (t.skills & kSkillDoctor)
+            c.doctors++;
     }
     return c;
 }
@@ -1579,6 +1925,11 @@ void advisor_frame(Advisor &a, const AdvisorInputs &in, const AnimData &anims, u
 {
     a.drawn = false;
     a.bubble = false;
+    // What drawing the blueprint and setting the edit room requester leave in
+    // the flags, before the frame's advisor.
+    a.flags = blueprint_draw_flags(*in.world, a.flags);
+    a.flags = in.world->placing.furnished ? uint8_t(a.flags | kAdvisorRoomFurnished)
+                                          : uint8_t(a.flags & ~kAdvisorRoomFurnished);
     if (!a.enabled)
         return;
     if (in.object_place_ok) {

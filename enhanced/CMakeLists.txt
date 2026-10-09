@@ -51,6 +51,7 @@ add_library(th_core STATIC
   src/core/render/text.cpp
   src/core/render/blit.cpp
   src/core/render/frame.cpp
+  src/core/render/wibble.cpp
   src/core/render/iso.cpp
   src/core/render/panel.cpp
   src/core/render/shadows.cpp

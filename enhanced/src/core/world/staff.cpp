@@ -84,6 +84,7 @@ constexpr uint8_t kRoomXray = 16;
 constexpr uint8_t kRoomGeneralDiag = 27;
 constexpr uint8_t kRoomPharmacy = 11;
 constexpr uint8_t kRoomInflation = 17;
+constexpr uint8_t kRoomDnaFixer = 18;
 // Treatment rooms whose work is a diagnosis room's (kExaminations).
 constexpr uint8_t kRoomHairRestorer = 19;
 constexpr uint8_t kRoomSlackTongue = 20;
@@ -2474,8 +2475,7 @@ void doctor_works_at_desk(const Ctx &c, uint16_t id)
 // The examinations a doctor starts once the patient called has arrived
 // (doctor_waits_for_patient_to_arrive), by room type: the doctor's complex
 // (S_COMP.LEX) and the SS_DOCTOR_EXAMINES substate it leads to; complex 0
-// for rooms not ported (the operating theatre, research and the DNA
-// fixer).
+// for rooms not ported (the operating theatre).
 struct Examination {
     uint16_t complex;
     uint8_t substate;
@@ -2490,6 +2490,7 @@ constexpr std::array<Examination, kRoomTypes> kExaminations = [] {
     e[kRoomXray] = {0x276, 100};
     e[kRoomGeneralDiag] = {0x442, 110};
     e[kRoomInflation] = {0x1e0, 10};
+    e[kRoomDnaFixer] = {0x47e, 240};
     e[kRoomPharmacy] = {0x244, 180};
     e[kRoomHairRestorer] = {0x2bc, 120};
     e[kRoomSlackTongue] = {0x1cc, 130};
@@ -2497,6 +2498,7 @@ constexpr std::array<Examination, kRoomTypes> kExaminations = [] {
     e[kRoomElectrolysis] = {0x186, 160};
     e[kRoomJellyVat] = {0x19a, 170};
     e[kRoomDecontamination] = {0x28a, 210};
+    e[kRoomResearch] = {0x35c, 220};
     return e;
 }();
 
@@ -2677,6 +2679,25 @@ void doctor_waits_for_patient(const Ctx &c, uint16_t id)
     } else if (forget_about_my_slave(world, c.anims, c.person, id, kComplexCalledToRoom, c.game_turn)) {
         stop_waiting_for_patient(world, d);
     }
+}
+
+// doctor_examines's substate 220, an autopsy done: unless the autopsy
+// machine broke down (treatment_machine_used, for kIllAutopsy whatever the
+// patient's treatment), the doctor back to research (complex
+// kComplexBackToWork), free again, and the patient removed.
+void doctor_examines_autopsy_done(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    uint16_t pid = d.slave;
+    if (treatment_machine_used(world, c.anims, kIllAutopsy, cell_of(world.things[pid]), c.game_turn))
+        return;
+    d.next_state = kStaffDoctorResearches;
+    set_complex(world, id, kComplexBackToWork, 0);
+    process(c, id);
+    d.slave = 0;
+    world.rooms[d.room].staff_free = 1;
+    remove_person(world, c.anims, c.person, pid, c.game_turn);
 }
 
 // The examination over, unless its machine broke down
@@ -3006,7 +3027,67 @@ void doctor_examines_invisibility_drunk(const Ctx &c, uint16_t id)
     patient.state = kPsMerged;
 }
 
-// doctor_examines's pharmacy substates (180-206); the others do nothing.
+// The DNA fixer's: the animation column the patient steps into the machine
+// with, and the doctor's complex once the patient is fixed (S_COMP.LEX).
+constexpr size_t kAnimDnaStep = 0x79;
+constexpr uint16_t kComplexDnaFixed = 0x488;
+
+// full_draw_frame's frame_bounds.y for frame `frame` drawn for `p` with
+// nothing shown: the least y offset from the frame's origin of the elements
+// `p`'s layers pick, 999 if none.
+int frame_top(const AnimData &anims, uint16_t frame, const Thing &p)
+{
+    int top = 999;
+    for (size_t i = anims.frames[frame].list; i < anims.lists.size() && anims.lists[i] != kListEnd; i++) {
+        const AnimElement &e = anims.elements[anims.lists[i]];
+        if ((e.flags & 0xffb0) && p.layers[size_t((e.flags >> 4) & 0x1f) % p.layers.size()] != e.flags >> 9)
+            continue;
+        if (e.sprite != 0)
+            top = std::min(top, e.y - kElementBiasY);
+    }
+    return top;
+}
+
+// doctor_examines's substate 240: the patient steps into the DNA fixer (241),
+// PS_FILLS: its alien frame shown above the machine's split line and its
+// own kind's below, the line starting its first element's height under the
+// frame's top.
+void doctor_examines_dna_enter(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    Thing &patient = world.things[d.slave];
+    d.substate++;
+    patient.state = kPsFills;
+    Thing &obj = world.things[patient.object];
+    play_frame(patient, c.anims, kPatientAnimStarts[patient.subtype][kAnimDnaStep]);
+    patient_start_frame(c.anims, patient.orig_subtype, kAnimDnaStep, patient.facing, obj.aux_sprite, obj.aux_flip);
+    const AnimElement &first = c.anims.elements[c.anims.lists[c.anims.frames[patient.sprite].list]];
+    const size_t at = first.sprite / 6;
+    const int height = at < c.anims.sprite_heights.size() ? c.anims.sprite_heights[at] : 0;
+    obj.split_height = uint8_t(-height - frame_top(c.anims, patient.sprite, patient));
+}
+
+// doctor_examines's substate 241: the patient filled (PS_SLAVE_READY), cured
+// of its alien DNA and merged with the machine's animation; the doctor's
+// last complex, then the end of the treatment (230).
+void doctor_examines_dna_fixed(const Ctx &c, uint16_t id)
+{
+    World &world = c.world;
+    Thing &d = world.things[id];
+    Thing &patient = world.things[d.slave];
+    if (patient.state != kPsSlaveReady)
+        return;
+    patient.state = kPsMerged;
+    cure_illness(world, d.slave);
+    set_complex(world, id, kComplexDnaFixed, 0);
+    d.next_state = kStaffDoctorExamines;
+    process(c, id);
+    d.substate = 230;
+}
+
+// doctor_examines's pharmacy substates (180-206) and the DNA fixer's (the
+// patient steps in, 240, then is fixed, 241); the others do nothing.
 void doctor_examines_pharmacy(const Ctx &c, uint16_t id)
 {
     Thing &d = c.world.things[id];
@@ -3043,6 +3124,12 @@ void doctor_examines_pharmacy(const Ctx &c, uint16_t id)
         break;
     case 206:
         doctor_examines_invisibility_drunk(c, id);
+        break;
+    case 240:
+        doctor_examines_dna_enter(c, id);
+        break;
+    case 241:
+        doctor_examines_dna_fixed(c, id);
         break;
     default:
         break;
@@ -3119,7 +3206,9 @@ void doctor_examines_theatre_done(const Ctx &c, uint16_t id)
 // without a drug goes home; else the nurse gives the drug (181,
 // administer_drugs), first, for transparency (190, 191) and invisibility
 // (200-206), the patient drinking it in the cabinet, its looks changed
-// back. Research's (autopsies) and the DNA fixer's stages are not ported.
+// back; research (220), an autopsy done (doctor_examines_autopsy_done). In
+// the DNA fixer (240, 241) the patient steps into the machine and is cured of
+// alien DNA, merged.
 void doctor_examines(const Ctx &c, uint16_t id)
 {
     Thing &d = c.world.things[id];
@@ -3159,6 +3248,9 @@ void doctor_examines(const Ctx &c, uint16_t id)
     case 111:
         d.substate = 230;
         examine_with(c, id, kComplexGeneralDiagEnd);
+        break;
+    case 220:
+        doctor_examines_autopsy_done(c, id);
         break;
     case 10:
     case 50:

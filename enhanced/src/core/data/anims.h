@@ -47,6 +47,10 @@ class AnimData
     std::vector<AnimFrame> frames;
     std::vector<AnimElement> elements;
     std::vector<uint16_t> lists;
+    // The height of each VSPR-0 sprite, by sprite index (an element's sprite
+    // offset / 6); GameData::load fills it from the sprites. Empty when no
+    // sprites are loaded.
+    std::vector<uint8_t> sprite_heights;
 };
 
 } // namespace th

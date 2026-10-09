@@ -253,6 +253,17 @@ void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *
         draw_panel_figures(layer, state, figures, data);
 }
 
+void draw_panel_icon_pressed(UiLayer &layer, const PanelState &state, int index, const GameData &data)
+{
+    std::span<const PanelIconDef> icons = panel_icons(state.raised);
+    if (index < 0 || index >= int(icons.size()) || !icons[size_t(index)].pressed)
+        return;
+    const SpriteSheet &panel = data.panel();
+    Point at = panel_icon_at(data, state.raised, index);
+    layer.draw_sprite(at.x, kUiHeight - panel.at(icons[size_t(index)].sprite).height,
+                      panel.at(icons[size_t(index)].pressed));
+}
+
 void redraw_panel_left(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data)
 {
     const SpriteSheet &panel = data.panel();

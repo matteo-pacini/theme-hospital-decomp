@@ -3,10 +3,13 @@
 #include "core/data/anims.h"
 #include "core/data/balance.h"
 #include "core/data/level.h"
+#include "core/render/blit.h"
+#include "core/render/frame.h"
 #include "core/render/iso.h"
 #include "core/render/surface.h"
 #include "core/render/view.h"
 #include "core/ui/charts.h"
+#include "core/ui/queue_window.h"
 #include "core/world/arrivals.h"
 #include "core/world/complex.h"
 #include "core/world/finance.h"
@@ -585,4 +588,273 @@ void test_patient_dies_level1(const char *dir)
     w->things[id] = corpse;
     th::change_health(*w, anims, id, 100, 1);
     CHECK(w->things[id].health == 0);
+}
+
+namespace
+{
+
+bool same_surface(const th::Surface &x, const th::Surface &y)
+{
+    return std::equal(x.data(), x.data() + 640 * 480, y.data());
+}
+
+// A level 1 game run until its first patient, who walks, with the hospital
+// view drawn centred on them as it is with illness 2: the drawing tests change
+// the patient's illness and draw again.
+struct DrawnPatient {
+    th::GameData gd;
+    std::unique_ptr<th::Game> game;
+    uint16_t id = 0;
+    std::unique_ptr<CellView> view;
+    th::Surface plain, scratch;
+
+    // Whether the patient was found and the view made.
+    bool start(const char *dir)
+    {
+        std::string error;
+        bool loaded = gd.load(dir, &error);
+        auto level = gd.load_level(1, &error);
+        th::Balance settings;
+        CHECK(loaded && level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+        if (!loaded || !level)
+            return false;
+        settings.gbv.open_countdown = 0;
+        game = std::make_unique<th::Game>();
+        game->start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        for (int i = 0; i < 5000 && !id; i++) {
+            game->turn();
+            if (!game->new_patients.empty())
+                id = game->new_patients[0];
+        }
+        CHECK(id != 0);
+        if (!id)
+            return false;
+        th::Thing &p = patient();
+        p.state = th::kPsGotoDestination;
+        p.illness = 2;
+        view = std::make_unique<CellView>(gd, game->world, p.x.tile + p.y.tile * th::kMapSize);
+        plain = view->clean;
+        scratch = view->scratch;
+        return true;
+    }
+
+    th::Thing &patient() { return game->world.things[id]; }
+
+    // The view at game turn `turn`.
+    th::Surface draw(uint32_t turn)
+    {
+        th::Surface out;
+        out.resize(640, 480);
+        th::draw_world({out, view->view, view->camera, turn}, game->world, gd, nullptr, scratch);
+        return out;
+    }
+
+    // The view at turn 0 with illness `illness`, `object` the thing used.
+    th::Surface draw_with(uint8_t illness, uint16_t object)
+    {
+        patient().illness = illness;
+        patient().object = object;
+        return draw(0);
+    }
+
+    bool scratch_clean() const
+    {
+        return std::all_of(scratch.data(), scratch.data() + 640 * 480, [](uint8_t c) { return c == th::kMaskColour; });
+    }
+};
+
+} // namespace
+
+// A jellyitis patient walking is drawn wobbling (draw_wibble_frame): the
+// view differs from the plain drawing of the same patient, differs from one
+// turn's phase to the next and leaves the scratch surface clean; a patient
+// using an object is drawn plain.
+void test_wibble_drawn(const char *dir)
+{
+    DrawnPatient d;
+    if (!d.start(dir))
+        return;
+    th::Surface a = d.draw_with(12, 0), b = d.draw(8);
+    CHECK(!same_surface(a, d.plain) && !same_surface(b, d.plain) && !same_surface(a, b));
+    CHECK(d.scratch_clean());
+    d.patient().object = 1;
+    CHECK(same_surface(d.draw(0), d.draw(8)));
+}
+
+// A patient with radiation is drawn glowing (draw_glow_frame): its layered
+// elements blend with the glow colour of the turn (glow_path), whether it
+// walks or uses an object; the other illnesses are drawn as before.
+void test_glow_drawn(const char *dir)
+{
+    DrawnPatient d;
+    if (!d.start(dir))
+        return;
+    // glow_path (src/draw.cpp): the colour steps every second turn through
+    // eight values, from the patient's first two layer choices.
+    constexpr uint8_t kGlowPath[8] = {0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d};
+    const uint8_t *layers = d.patient().layers.data();
+    auto expected = [&](uint32_t turn) { return kGlowPath[((turn + layers[0] + layers[1]) >> 1) & 7]; };
+    for (uint32_t turn = 0; turn < 20; turn++)
+        CHECK(th::glow_colour(turn, layers) == expected(turn));
+    // Walking: drawn otherwise than plainly, and alike on the turns of one
+    // colour only.
+    d.patient().illness = 6;
+    std::vector<th::Surface> glowing;
+    for (uint32_t turn = 0; turn < 16; turn++)
+        glowing.push_back(d.draw(turn));
+    for (uint32_t i = 0; i < glowing.size(); i++) {
+        CHECK(!same_surface(glowing[i], d.plain));
+        for (uint32_t j = 0; j < i; j++)
+            CHECK(same_surface(glowing[i], glowing[j]) == (expected(i) == expected(j)));
+    }
+    CHECK(d.scratch_clean());
+    // Using an object glows as well: draw_glow_frame has no object test.
+    th::Surface plain_on_object = d.draw_with(2, 1);
+    CHECK(!same_surface(d.draw_with(6, 1), plain_on_object));
+    // The other illnesses are drawn as the plain patient is.
+    for (int illness : {1, 2, 3, 5, 7, 11, 13, 20, 35})
+        CHECK(same_surface(d.draw_with(uint8_t(illness), 0), d.plain));
+}
+
+namespace
+{
+
+// The pixels drawn onto a layer of 640 x 480 by the queue window's `id`.
+long queue_pixels(DrawnPatient &d, uint8_t illness, uint32_t turn)
+{
+    th::UiLayer layer;
+    layer.resize(640, 480);
+    layer.clear();
+    d.patient().illness = illness;
+    th::draw_queue_person(layer, d.game->world, d.gd, d.id, {300, 300}, turn);
+    std::vector<uint32_t> argb = layer.to_argb(d.gd.palette());
+    return std::count_if(argb.begin(), argb.end(), [](uint32_t c) { return (c >> 24) != 0; });
+}
+
+// What the queue window draws for `id` with `illness` at `turn`.
+std::vector<uint8_t> queue_image(DrawnPatient &d, uint8_t illness, uint32_t turn)
+{
+    th::UiLayer layer;
+    layer.resize(640, 480);
+    layer.clear();
+    d.patient().illness = illness;
+    th::draw_queue_person(layer, d.game->world, d.gd, d.id, {300, 300}, turn);
+    return {layer.pixels().data(), layer.pixels().data() + 640 * 480};
+}
+
+} // namespace
+
+// The queue window's patients: a patient with radiation glows with the
+// colour of the turn, one with jellyitis wobbles with the turn's phase (also
+// with no standing frame), the others are drawn as before; the glow draws
+// every pixel of the frame whatever colour it blends them to.
+void test_queue_person_drawn(const char *dir)
+{
+    DrawnPatient d;
+    if (!d.start(dir))
+        return;
+    auto plain = queue_image(d, 2, 0);
+    CHECK(std::any_of(plain.begin(), plain.end(), [](uint8_t c) { return c != 0; }));
+    CHECK(queue_image(d, 2, 5) == plain);
+    const uint8_t *layers = d.patient().layers.data();
+    auto glow0 = queue_image(d, 6, 0);
+    auto wibble0 = queue_image(d, 12, 0);
+    CHECK(glow0 != plain && wibble0 != plain);
+    for (uint32_t turn = 1; turn < 20; turn++)
+        CHECK((queue_image(d, 6, turn) == glow0) == (th::glow_colour(turn, layers) == th::glow_colour(0, layers)));
+    CHECK(queue_image(d, 12, 8) != wibble0 && queue_image(d, 12, 17) == wibble0);
+    // The same pixels are drawn in every colour of the glow, for every kind
+    // of patient and head.
+    int drawn_kinds = 0;
+    for (uint8_t subtype = 0; subtype < 15; subtype++) {
+        for (uint8_t head = 1; head <= 10; head++) {
+            d.patient().subtype = subtype;
+            d.patient().layers[0] = head;
+            const long pixels = queue_pixels(d, 6, 0);
+            drawn_kinds += pixels > 100;
+            for (uint32_t turn = 2; turn < 16; turn += 2)
+                CHECK(queue_pixels(d, 6, turn) == pixels);
+        }
+    }
+    CHECK(drawn_kinds > 100);
+}
+
+namespace
+{
+
+// A sprite containing pixels of colour `pixel` (4 or 174), drawn plainly in a
+// surface of the sprite's size plus a border of 1.
+struct GlowSprite {
+    th::Sprite sprite;
+    th::Surface plain;
+    int with_colour = 0;
+};
+
+// The first sprite from index `from` of `gd` that has pixels of colour `pixel`.
+bool find_glow_sprite(const th::GameData &gd, uint8_t pixel, size_t &from, GlowSprite &out)
+{
+    for (; from < gd.sprites().size(); from++) {
+        out.sprite = gd.sprites().at(from);
+        out.plain.resize(out.sprite.width + 2, out.sprite.height + 2);
+        out.plain.fill(th::kMaskColour);
+        th::draw_sprite(out.plain, 1, 1, out.sprite);
+        out.with_colour = 0;
+        for (int y = 0; y < out.plain.height(); y++)
+            for (int x = 0; x < out.plain.width(); x++)
+                out.with_colour += out.plain.row(y)[x] == pixel;
+        if (out.with_colour) {
+            from++;
+            return true;
+        }
+    }
+    return false;
+}
+
+// Draws `g` blended with glow colour 0 (kDrawGhostUnder) onto colours 0 and
+// 0x77: the same pixels are drawn on both, each pixel blends to ghost[pixel]
+// of the row 0, and those of colour `pixel` come out as the mask colour.
+void check_glow_sprite(GlowSprite &g, const uint8_t *ghost, uint8_t pixel)
+{
+    th::Surface on_zero, on_other;
+    for (auto [surface, base] : {std::pair{&on_zero, uint8_t(0x00)}, std::pair{&on_other, uint8_t(0x77)}}) {
+        surface->resize(g.plain.width(), g.plain.height());
+        surface->fill(base);
+        th::draw_sprite_glow(*surface, {1, 1}, g.sprite, th::kDrawGhostUnder, 0, ghost);
+    }
+    int masked = 0;
+    for (int y = 0; y < g.plain.height(); y++) {
+        for (int x = 0; x < g.plain.width(); x++) {
+            const uint8_t src = g.plain.row(y)[x], a = on_zero.row(y)[x], c = on_other.row(y)[x];
+            CHECK((src != th::kMaskColour) == (a != 0 || c != 0x77));
+            if (src == th::kMaskColour)
+                continue;
+            CHECK(a == ghost[0 << 8 | src] && c == a);
+            masked += src == pixel && a == th::kMaskColour;
+        }
+    }
+    CHECK(masked == g.with_colour);
+}
+
+} // namespace
+
+// draw_sprite_glow blends each pixel with the glow colour alone, as
+// sprite_draw_glow does: kDrawGhost takes ghost[pixel << 8 | glow],
+// kDrawGhostUnder ghost[glow << 8 | pixel], and what is under it never
+// matters, though some of the blends are 0xfe, the mask colour (with colour 0,
+// the blend of an untagged element: ghost[0 << 8 | 4] and ghost[0 << 8 | 174]).
+void test_sprite_glow(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    const uint8_t *ghost = gd.ghost().data();
+    int tested = 0;
+    for (uint8_t pixel : {uint8_t(4), uint8_t(174)}) {
+        CHECK(ghost[0 << 8 | pixel] == th::kMaskColour);
+        size_t from = 0;
+        GlowSprite g;
+        for (int n = 0; n < 2 && find_glow_sprite(gd, pixel, from, g); n++, tested++)
+            check_glow_sprite(g, ghost, pixel);
+    }
+    CHECK(tested > 0);
 }

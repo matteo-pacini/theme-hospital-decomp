@@ -73,8 +73,8 @@ void build_mouse(BuildUi &bui, Game &game, int cell, uint16_t pointed, const UiM
 // drawing (req10_overdraw): the instructions, the departments (the one
 // shown in the highlight font), and once one is chosen its rooms (the one
 // under the pointer highlighted), the selected room's main object and its
-// price with its compulsory objects'. The advisor's flashing hints are not
-// drawn.
+// price with its compulsory objects'. The tutorial's flashing hint is
+// drawn (Interface::flash).
 void draw_build_requester(UiLayer &layer, const Interface &ui, const BuildUi &bui, const Game &game,
                           const RequesterArt &art, const GameData &data);
 

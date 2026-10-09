@@ -2,6 +2,7 @@
 
 #include "core/data/palette.h"
 #include "core/data/sprites.h"
+#include "core/render/iso.h"
 #include "core/render/surface.h"
 
 namespace th
@@ -32,6 +33,12 @@ void draw_sprite_scaled(Surface &dst, Rect box, const Sprite &sprite, unsigned f
 // LbSpriteDrawOneColour), mirrored by kDrawFlipX and kDrawFlipY in `flags`,
 // clipped like draw_sprite.
 void draw_sprite_one_colour(Surface &dst, int x, int y, const Sprite &sprite, uint8_t colour, unsigned flags = 0);
+
+// As draw_sprite, but a see-through pixel mixes with the one colour `glow`
+// rather than with what is under it (sprite_draw_glow, src/spr_glow.cpp):
+// kDrawGhost takes ghost[pixel << 8 | glow], kDrawGhostUnder
+// ghost[glow << 8 | pixel].
+void draw_sprite_glow(Surface &dst, Point at, const Sprite &sprite, unsigned flags, uint8_t glow, const uint8_t *ghost);
 
 // Decodes `sprite` into 0xAARRGGBB pixels at `out` (rows `pitch` bytes
 // apart, at least width x height), transparent pixels as 0.

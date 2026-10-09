@@ -150,6 +150,26 @@ void draw_sprite_one_colour(Surface &dst, int x, int y, const Sprite &sprite, ui
     });
 }
 
+void draw_sprite_glow(Surface &dst, Point at, const Sprite &sprite, unsigned flags, uint8_t glow, const uint8_t *ghost)
+{
+    if (sprite.empty())
+        return;
+    const Rect &clip = dst.clip();
+    decode(sprite, [&](int row, int col, uint8_t colour) {
+        int dx = (flags & kDrawFlipX) ? at.x + sprite.width - 1 - col : at.x + col;
+        int dy = (flags & kDrawFlipY) ? at.y + sprite.height - 1 - row : at.y + row;
+        if (dx < clip.x || dx >= clip.x + clip.w || dy < clip.y || dy >= clip.y + clip.h)
+            return;
+        uint8_t &out = dst.row(dy)[dx];
+        if (ghost && (flags & kDrawGhost))
+            out = ghost[colour << 8 | glow];
+        else if (ghost && (flags & kDrawGhostUnder))
+            out = ghost[glow << 8 | colour];
+        else
+            out = colour;
+    });
+}
+
 void sprite_to_argb(const Sprite &sprite, const Palette &palette, uint32_t *out, int pitch)
 {
     if (sprite.empty())

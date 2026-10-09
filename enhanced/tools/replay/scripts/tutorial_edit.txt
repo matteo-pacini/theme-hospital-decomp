@@ -1,0 +1,63 @@
+# Level 1
+# Turns 160
+# The advisor's tutorial (see tutorial.txt): taking the room back to a
+# blueprint (EV_EDIT_BLUEPRINT) at each step that has it. The GP's office is
+# committed (0x38), and uncommitted and edited at the door (0x30), then again
+# at the windows (0x31), after the walls are built (0x32, with two objects
+# in) and when the room is furnished (0x3a); each time the tutorial goes
+# back to 0x38 and the office is committed, doored and furnished again, the
+# last time all the way to opening it.
+# Expect tutorial 56 >= 4
+# Expect tutorial 48 >= 4
+# Expect tutorial 49 >= 4
+# Expect tutorial 50 >= 4
+# Expect tutorial 58 >= 2
+# Expect tutorial 31
+# Expect delete_room >= 4
+# Expect open_room
+2 @tutorial 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 46 0 0
+11 47 3 0
+12 50 1 0
+13 50 0 0
+14 48 3 22
+15 5 9788 22
+16 55 0 0
+17 32 3 0
+18 53 7 7
+19 2 8254 0
+22 2 9026 0
+23 8 9026 0
+24 18 0 0
+26 19 0 0
+27 69 0 0
+28 18 0 0
+30 26 9152 0
+31 3 0 0
+33 19 0 0
+34 69 0 0
+35 18 0 0
+37 26 9152 0
+38 3 0 0
+40 4 7 0
+42 69 0 0
+43 18 0 0
+45 26 9152 0
+46 3 0 0
+48 4 7 0
+50 7 8640 1
+51 7 8386 2
+52 7 8641 6
+55 69 0 0
+56 18 0 0
+58 26 9152 0
+59 3 0 0
+61 4 7 0
+62 7 8640 1
+63 7 8386 2
+64 7 8641 6
+67 1 0 0

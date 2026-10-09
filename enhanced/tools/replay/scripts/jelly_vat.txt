@@ -1,0 +1,131 @@
+# Level 10: the jelly vat curing jellyitis (illness 12). A reception desk
+# (cell 11590) with its receptionist (applicant 26), a handyman (18), a GP's
+# office (64,82)-(68,86) with its door above it (cell 10434), a doctor (14)
+# and later two consultants (42 at turn 2504, 45 at turn 10626), and a research
+# room (72,82)-(76,86) with two researchers (13, 15) joined at turn 2500 by two
+# more (43, 44). The rooms keep a gap of one column between them: a GP's office
+# sharing a wall with the research room never gets its doctor to the desk (the
+# original does the same).
+# Jellyitis only arrives from the eighteenth month, so the months are ended
+# early (EV_CHEAT_END_MONTH, turns 200 to 2560) while the hospital is empty;
+# it is opened early (EV_OPEN_HOSPITAL, turn 2700) and the year ended early
+# (EV_CHEAT_END_YEAR, turn 5500, while the reputation is above the year-end
+# lose line) so that the next year end falls after the end of the script.
+# All research goes into the specialisation (EV_CONCENTRATE_RESEARCH, then
+# EV_ALTER_RESEARCH 4 at 100%) on jellyitis: the jelly moulder (object 47) is
+# researched at turn 9500, and the jelly vat room (78,82)-(82,86), its door
+# below it and the moulder (cell 10704), is built at turn 10600.
+# Jellyitis patient 10 arrives at turn 13075; the GP (45) diagnoses it at turn
+# 14486 (diagnose_patient: the diagnosis is complete, so its treatment is the
+# illness, no guess), it goes to the vat, the consultant 42 treats it and
+# it is cured at turn 14918 (cure_illness, illness 12, PF_CURED: no death).
+# Salaries are raised (EV_INCREASE_STAFF_SALARIES) now and then to keep the
+# staff in their jobs.
+# Jellyitis patient 5 arrives at turn 19800 and the GP's diagnosis stays short
+# (602 of the 1000 asked): no diagnosis room is left to try, so the patient
+# waits for the player's decision (a call, PS_WAITS_FOR_DECISION). The call is
+# answered at turn 21000 (EV_ANSWER_PLAYERCALL, then EV_CHOICE_RESULT
+# CH_DIAG_GUESS with the patient: best_guess_treatment, which here guesses
+# right), the patient goes to the vat and is cured at turn 21422.
+# Expect researched 47 illness=12 == 1
+# Expect diagnose 10 staff=45 >= 1
+# Expect done_treatment 10 staff=42 == 1
+# Expect cure 10 illness=12 == 1
+# Expect choice 41 arg=5 == 1
+# Expect cure 5 illness=12 == 1
+# Expect-not force_cure
+# Expect-not dies
+# Turns 22000
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 11590 11
+12 48 2 18
+13 5 11600 18
+19 48 3 26
+20 5 11718 26
+60 55 0 0
+61 53 7 7
+62 2 10560 0
+63 2 11076 0
+64 8 11076 0
+65 18 0 0
+66 26 10434 0
+67 3 0 0
+68 4 7 0
+69 7 10818 1
+70 7 10564 2
+71 7 10819 6
+72 1 0 0
+73 48 1 14
+74 5 11594 14
+100 55 0 0
+101 53 28 28
+102 2 10568 0
+103 2 11084 0
+104 8 11084 0
+105 18 0 0
+106 26 11210 0
+107 3 0 0
+108 4 28 0
+109 7 10952 55
+110 7 10956 257
+111 7 10572 258
+112 1 0 0
+113 48 1 13
+114 5 10697 13
+115 48 1 15
+116 5 10826 15
+130 114 12 0
+131 80 0 0
+132 80 1 0
+133 80 2 0
+134 80 3 0
+135 80 4 100
+200 101 0 0
+292 101 0 0
+384 101 0 0
+476 101 0 0
+568 101 0 0
+660 101 0 0
+752 101 0 0
+844 101 0 0
+936 101 0 0
+1028 101 0 0
+1120 101 0 0
+1212 101 0 0
+1304 101 0 0
+1396 101 0 0
+1488 101 0 0
+1580 101 0 0
+1672 101 0 0
+1764 101 0 0
+2380 101 0 0
+2470 101 0 0
+2500 48 1 43
+2501 5 10698 43
+2502 48 1 44
+2503 5 10825 44
+2504 48 1 42
+2505 5 11594 42
+2560 101 0 0
+2700 139 0 0
+3000 90 100 0
+5500 137 0 0
+6000 90 100 0
+9000 90 100 0
+10600 55 0 0
+10601 53 24 24
+10602 2 10574 0
+10603 2 11090 0
+10604 8 11090 0
+10605 18 0 0
+10606 26 11216 0
+10607 3 0 0
+10608 4 24 0
+10609 7 10704 47
+10610 1 0 0
+10626 48 1 45
+10627 5 11600 45
+21000 10 8 79
+21001 125 41 5

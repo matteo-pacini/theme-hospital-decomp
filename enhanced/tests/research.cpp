@@ -219,6 +219,38 @@ void test_research_contribution()
     CHECK(w.research.points == 0);
 }
 
+// person_autopsied: the patient's illness gains the autopsy percent of its
+// research cost; the reputation draw (one in three, two in three when the
+// staff's average happiness is under 25) announces the loss to the advisor.
+void test_person_autopsied()
+{
+    ResearchWorld r;
+    th::World &w = *r.world;
+    r.settings.gbv.autopsy_rsch_percent = 50;
+    r.settings.expertise[kIllSlackTongue].rsch_reqd = 10000;
+    th::Thing &patient = w.things[5];
+    patient.type = th::kThingPatient;
+    patient.illness = kIllSlackTongue;
+    th::Thing &doctor = w.things[6];
+    doctor.type = th::kThingStaff;
+    doctor.subtype = th::kStaffDoctor;
+    th::person_autopsied(w, 5);
+    CHECK(w.research.illness_research[kIllSlackTongue] == 5000);
+    for (uint16_t happiness : {uint16_t(100), uint16_t(0)}) {
+        doctor.happiness = happiness;
+        for (uint32_t seed = 1; seed <= 12; seed++) {
+            w.announce = {};
+            w.seed = seed;
+            uint32_t drawn = seed;
+            uint32_t draw = th::old_newrand(drawn, "person_autopsied") % 3;
+            w.seed = seed;
+            th::person_autopsied(w, 5);
+            bool bad = happiness == 0 ? draw != 0 : draw == 0;
+            CHECK((w.announce[th::kAnnAutopsyDiscovered][0] == 1) == bad);
+        }
+    }
+}
+
 // research_default.txt and research_concentrate.txt (level 3), run to the
 // turn the replay check agrees with the original to: researchers at work
 // (SS_DOCTOR_RESEARCHES) earn points; by default the slack tongue slicer,

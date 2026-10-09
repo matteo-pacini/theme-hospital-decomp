@@ -571,9 +571,9 @@ void set_start(Thing &t, const AnimData &anims, size_t start)
 
 // complex_success (0x423c8) for a member of staff: research done
 // (research_contribution: kinds 8, 10, 14 and 16 for 200, 400, 50 and 100
-// points), a rest on a sofa, at snooker or a video game (kinds 18, 20, 22)
-// and a use of their object (24, Thing.times_used). An autopsy (12) is not
-// ported.
+// points), a rest on a sofa, at snooker or a video game (kinds 18, 20, 22),
+// an autopsy of their patient (12, person_autopsied) and a use of their
+// object (24, Thing.times_used).
 void staff_success(World &world, Thing &s, uint16_t kind)
 {
     static const Balance statics;
@@ -584,6 +584,9 @@ void staff_success(World &world, Thing &s, uint16_t kind)
         break;
     case 10:
         research_contribution(world, s, 400);
+        break;
+    case 12:
+        person_autopsied(world, s.slave);
         break;
     case 14:
         research_contribution(world, s, 50);

@@ -1,0 +1,68 @@
+# Level 6: the autopsy machine picked up and put down. autopsy.txt's
+# hospital; at turn 7300 the machine (thing 45) is lifted
+# (EV_PICK_UP_OBJECT -> remove_object_from_map, delete_object: no autopsy
+# machine is left, so the autopsy is no longer available). Patient 21,
+# awaiting a decision since turn 7158, is sent for an autopsy at turn 7401
+# (CH_TREAT_RESEARCH, which the game carries out without a check): in
+# go_for_treatment the hospital cannot give it (reputation_affected
+# REP_GO_FOR_TREATMENT) and the patient goes home. The machine is put back
+# at turn 8001 (cell 6460), the autopsy available again, and patient 48,
+# sent for one at turn 8101, is autopsied at turn 8427.
+# Expect rep 44 event=2 == 1
+# Expect send_for_research == 1
+# Expect autopsied 48 illness=16 amount=3300 unhappy=0
+# Turns 10000
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair; opened; a consultant (applicant 17) in the corridor.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+114 48 1 17
+115 5 6969 17
+# A research room (58,48)-(62,52), its door above it, an autopsy machine, a
+# desk and a filing cabinet; opened; a researcher (applicant 25) in the
+# corridor; research concentrated on the cast remover (illness 9), all of it
+# in the specialisation.
+130 55 0 0
+131 53 28 28
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 28 0
+139 7 6460 55
+140 7 6459 1
+141 7 6461 2
+142 1 0 0
+143 48 1 25
+144 5 6970 25
+# The machine lifted; patient 21's call (id 6, made at turn 7158) answered
+# and the patient sent for an autopsy.
+7300 68 45 0
+7400 10 4 6
+7401 125 2 21
+# The machine put down again; patient 48 (call 12, made at turn 8009).
+8000 43 0 0
+8001 7 6460 55
+8100 10 4 12
+8101 125 2 48

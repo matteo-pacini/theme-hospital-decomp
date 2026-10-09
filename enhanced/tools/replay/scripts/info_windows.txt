@@ -13,6 +13,8 @@
 # Expect force_cure
 # Expect force_cure 47 == 1
 # Expect force_cure 9 == 1
+# Expect-not dies 47
+# Expect-not dies 9
 # Expect go_home
 # Expect go_home 10 state=68 == 1
 # Expect go_home 5 state=48 == 1

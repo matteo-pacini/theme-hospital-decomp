@@ -51,7 +51,9 @@ if [ ! -f "$exe" ]; then
   mkdir -p "$tree/build"
   rm -rf "$tree/src" "$tree/include" "$tree/tools" "$tree/config" "$tree/build/base"
   cp -a src include tools config configure.py "$tree/"
-  cp -a build/base "$tree/build/"
+  # -L: in a worktree build/base is a link to the main tree's; copying the
+  # link would compile the instrumented objects into the shared folder.
+  cp -aL build/base "$tree/build/"
   units=$(python3 "$here/instrument.py" "$tree")
   (
     cd "$tree"

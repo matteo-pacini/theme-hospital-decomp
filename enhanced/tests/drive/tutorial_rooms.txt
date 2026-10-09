@@ -1,0 +1,184 @@
+# The advisor's tutorial from the room building to its end, through the
+# interface: New Game with the tutorial on, the corridor furnished, a
+# reception desk bought and placed, a receptionist hired and placed (steps
+# 0x1d to 0x24); then the build room requester (0x2b), closed (the step
+# waits) and opened again; the GP's office chosen (0x2c, 0x39) and cancelled
+# (back to 0x20); a blueprint on the desk, too small and not placeable
+# (0x2f), cancelled again; a one-cell blueprint on free ground (too small),
+# dragged out to big enough (0x2f, 0x38), and committed; the door placed
+# (0x30), the windows skipped (0x31), the desk, cabinet and chair put in
+# (0x32), the room opened (0x3a); then staff hiring (0x1f), doctors (0x23),
+# the hire (0x2d) and the doctor held on land they cannot go (0x27) until put
+# in the room, which ends the tutorial with the level's last help page. Each
+# step's message and the panel or requester control it points at are the
+# advisor line of the state. The flashing of that control, one frame in ten,
+# is counted in the tutorial flash line (the panel icon, then the build room,
+# edit room and hire staff requesters' buttons); the counts are of frames, so
+# they change with the frames the script lets pass.
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+click 85 32
+wait 10
+key Space
+wait 160
+click 372 320            # First Game: Yes (the tutorial)
+wait 5
+click 372 395
+wait 10
+key Space
+wait 80
+click 320 240
+wait 20
+turns 20
+dump start
+expect tutorial flash: counter 0, drawn 8
+expect advisor: tutorial true, step 0x1d, highlight 0x13, message "Hello. First, your hospital needs a Reception Desk.
+click 268 453            # panel: furnish corridor
+wait 10
+click 502 85             # buy a reception desk
+wait 10
+click 400 293            # accept
+wait 10
+click-cell 62 74
+wait 20
+dump desk
+expect advisor: tutorial true, step 0x1e, highlight 0x15, message "You will also need a Receptionist
+click 348 453            # panel: hire staff
+wait 10
+click 224 293            # the receptionist kind
+wait 10
+click 413 323            # next applicant
+wait 10
+click 282 323            # previous applicant
+wait 10
+click 334 323            # hire
+wait 10
+click-cell 60 76         # place her
+wait 20
+dump receptionist
+expect advisor: tutorial true, step 0x20, highlight 0x12, message "To start diagnosing your patient's diseases you must build a GP's Office.
+# The build room requester, closed and opened again.
+click 228 453            # panel: build room
+wait 10
+dump build
+expect tutorial flash: counter 2, drawn 26
+expect advisor: tutorial true, step 0x2b, highlight 0x8, message ""
+click 383 312            # close: step 0x2b waits for the department
+wait 10
+dump closed
+expect advisor: tutorial true, step 0x2b, highlight 0x8, message ""
+click 228 453
+wait 10
+click 240 66             # Diagnosis
+wait 10
+dump department
+expect advisor: tutorial true, step 0x2c, highlight 0xb, message ""
+click 380 85             # the GP's office
+wait 10
+dump gp
+expect advisor: tutorial true, step 0x39, highlight 0x0, message "To build a GP's Office you must first decide how big
+# Cancelled (the requester's cross), then back to the blueprint.
+click 455 148
+wait 10
+dump cancelled
+expect advisor: tutorial true, step 0x20, highlight 0x12, message "To start diagnosing
+click 228 453
+wait 10
+click 240 66
+wait 10
+click 380 85
+wait 10
+# A one-cell blueprint on the reception desk: too small and not placeable
+# (0x2f stays), and the requester's cross goes back to 0x20 again.
+click-cell 62 74
+wait 10
+dump desk_blueprint
+expect advisor: tutorial true, step 0x2f, highlight 0x0, message "The Blueprint is too small and in an invalid place.
+click 455 148
+wait 10
+dump cancelled_again
+expect advisor: tutorial true, step 0x20, highlight 0x12, message "To start diagnosing
+click 228 453
+wait 10
+click 240 66
+wait 10
+click 380 85
+wait 10
+# A one-cell blueprint on free ground: too small.
+click-cell 58 66
+wait 10
+dump small
+expect advisor: tutorial true, step 0x38
+expect message "This room blueprint is red because it's too small.
+# Dragged out to (56,64)-(60,68): big enough, the confirm button flashes.
+cell 56 64
+wait 5
+down left
+wait 5
+cell 60 68
+wait 10
+up left
+wait 10
+dump big
+expect tutorial flash: counter 1, drawn 41
+expect advisor: tutorial true, step 0x38, highlight 0xc, message "The blueprint is now big enough.
+click 580 148            # confirm the blueprint
+wait 10
+dump committed
+expect advisor: tutorial true, step 0x30, highlight 0x0, message "Move the mouse around the blueprint walls
+click-cell 56 66         # the door
+wait 10
+dump door
+expect advisor: tutorial true, step 0x31, highlight 0xc, message "Place windows in the same way as the door.
+click 580 148            # no windows: confirm
+wait 30
+dump furnish
+expect advisor: tutorial true, step 0x32, highlight 0x0, message "Right-click to rotate room items
+click-cell 58 66         # the desk
+wait 10
+click-cell 60 64         # the cabinet
+wait 10
+click-cell 59 66         # the chair
+wait 10
+dump furnished
+expect advisor: tutorial true, step 0x3a, highlight 0xc, message "Left-click on the flashing icon to open your room
+click 580 148            # open the room
+wait 30
+key Escape               # close the room's first help page
+wait 10
+dump doctor
+expect advisor: tutorial true, step 0x1f, highlight 0x15, message "You need a Doctor to diagnose
+click 348 453            # panel: hire staff
+wait 10
+dump hire
+expect tutorial flash: counter 0, drawn 48
+expect advisor: tutorial true, step 0x23, highlight 0x4, message ""
+click 224 60             # the doctor kind
+wait 10
+dump kind
+expect advisor: tutorial true, step 0x2d, highlight 0x5, message ""
+click 334 323            # hire the shown applicant
+wait 10
+dump hired
+expect advisor: tutorial true, step 0x27, highlight 0x0, message "Hey! You can't put the Doctor there.
+click-cell 45 75         # public land: refused
+wait 10
+dump refused
+expect advisor: tutorial true, step 0x27
+expect message "Hey! You can't put the Doctor there.
+click-cell 59 67         # in the room: placed
+wait 20
+dump placed
+expect advisor: tutorial false
+expect help: page open
+expect last tooltip "Okay that's the basic mechanics of putting a hospital together.
+screenshot end

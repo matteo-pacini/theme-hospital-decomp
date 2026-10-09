@@ -145,6 +145,29 @@ struct RequesterInput {
     const UiMouse &mouse;
 };
 
+// The tutorial's flashing hint (othervar.flash_counter): the control the
+// advisor points at (advisor.tutorial_highlight) is drawn in its active look
+// for one frame in ten. Every drawer that can flash counts the frames it
+// draws, whether or not it has the control, and the count restarts at each
+// flash.
+struct TutorialFlash {
+    // advisor.flags' tutorial bit, which the requesters' drawers test.
+    bool tutorial = false;
+    uint16_t highlight = 0;
+    int counter = 0;
+    // The flashes drawn so far, for the state text.
+    int drawn = 0;
+
+    // One frame of a drawer: true when the control is to be drawn.
+    bool tick()
+    {
+        if (++counter % 10)
+            return false;
+        counter = 0;
+        return true;
+    }
+};
+
 // The game's window system (src/winproc.cpp, src/windraw.cpp) and requester
 // state (crequester), in 640 x 480 coordinates: at most two windows open,
 // the front one taking the mouse.
@@ -164,6 +187,9 @@ class Interface
     bool is_open(int window) const { return open_[0] == window || open_[1] == window; }
     int open_window_at(int i) const { return open_[size_t(i)]; }
     const Window &window(int window) const { return list_.at(size_t(window)); }
+    // The tutorial's flashing hint, set by the caller each frame and counted by the
+    // drawers (which take the interface as const).
+    TutorialFlash &flash() const { return flash_; }
     // Sets window `window`'s height, as a requester's drawing may (req14_overdraw
     // fits the edit room requester to its list): the mouse is on the window
     // within it.
@@ -208,6 +234,7 @@ class Interface
     void callback(int window, int button, InterfaceEvents &events);
 
     std::array<Window, kWindowListSize> list_;
+    mutable TutorialFlash flash_;
     std::array<int, 2> open_ = {-1, -1};
     Requester requester_ = Requester::None;
     Requester saved_requester_ = Requester::None;

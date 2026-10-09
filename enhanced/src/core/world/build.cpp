@@ -33,6 +33,7 @@ constexpr uint8_t kObjDoor = 3;
 constexpr uint8_t kObjReceptionDesk = 11;
 constexpr uint8_t kObjLitterBomb = 17;
 constexpr uint8_t kObjPlant = 45;
+constexpr uint8_t kObjAutoAutopsy = 55;
 constexpr uint8_t kObjGatesOfHell = 48;
 constexpr uint8_t kObjSwingDoor = 52;
 constexpr uint8_t kObjSwingDoor2 = 53;
@@ -250,28 +251,41 @@ template <typename Each> void for_each_person_in(const World &w, uint16_t room, 
     }
 }
 
-// is_tile_valid (src/blueprnt.cpp), without its advisor flags: only people
-// stand on `tile`, its object flags are clear and it is `owner`'s indoor
-// land.
-bool is_tile_valid(const World &w, int tile, int owner)
+// is_tile_valid (src/blueprnt.cpp): only people stand on `tile`, its object
+// flags are clear and it is `owner`'s indoor land. With `flags`
+// (advisor.flags), sets kAdvisorBadPlacement where the game does: for an
+// object that is not a person, and for land that is not `owner`'s indoors.
+bool is_tile_valid(const World &w, int tile, int owner, uint8_t *flags = nullptr)
 {
     if (!in_map(tile))
         return false;
     const MapCell &c = w.map[size_t(tile)];
     for (int id = c.first; id > 0; id = w.things[size_t(id)].cell_next) {
         const Thing &t = w.things[size_t(id)];
-        if (t.type != kThingPatient && t.type != kThingStaff)
+        if (t.type != kThingPatient && t.type != kThingStaff) {
+            if (flags)
+                *flags |= kAdvisorBadPlacement;
             return false;
+        }
     }
     if (c.flags & 7)
         return false;
-    return !(c.owner_flags & kCellOutdoor) && (c.owner_flags & (1 << owner));
+    if (!(c.owner_flags & kCellOutdoor) && (c.owner_flags & (1 << owner)))
+        return true;
+    if (flags)
+        *flags |= kAdvisorBadPlacement;
+    return false;
 }
 
-// is_valid_no_room (src/blueprnt.cpp).
-bool is_valid_no_room(const World &w, int tile)
+// is_valid_no_room (src/blueprnt.cpp); with `flags`, sets
+// kAdvisorBadPlacement for a tile in a room.
+bool is_valid_no_room(const World &w, int tile, uint8_t *flags = nullptr)
 {
-    return room_at(w, uint16_t(tile)) == 0;
+    if (room_at(w, uint16_t(tile)) == 0)
+        return true;
+    if (flags)
+        *flags |= kAdvisorBadPlacement;
+    return false;
 }
 
 // check_near_half_wall and is_tile_near_half_wall (src/blueprnt.cpp): a
@@ -303,12 +317,16 @@ bool is_tile_near_half_wall(const World &w, int x, int y, int x1, int y1)
     return false;
 }
 
-// is_room_size_valid (src/blueprnt.cpp), without its advisor flag.
-bool is_room_size_valid(const World &w, int x0, int y0, int x1, int y1)
+// is_room_size_valid (src/blueprnt.cpp); with `flags`, sets
+// kAdvisorBlueprintSmall for a blueprint too small and clears it otherwise.
+bool is_room_size_valid(const World &w, int x0, int y0, int x1, int y1, uint8_t *flags = nullptr)
 {
     const RoomTypeInfo &type = kRoomTypeInfo[w.building.build.room_type % kRoomTypes];
     uint16_t width = uint16_t(x1 - x0 + 1), height = uint16_t(y1 - y0 + 1);
-    return width >= type.min_width && height >= type.min_height;
+    bool ok = width >= type.min_width && height >= type.min_height;
+    if (flags)
+        *flags = ok ? uint8_t(*flags & ~kAdvisorBlueprintSmall) : uint8_t(*flags | kAdvisorBlueprintSmall);
+    return ok;
 }
 
 // is_valid_room (src/blueprnt.cpp): big enough for the room's type, on no
@@ -1362,7 +1380,8 @@ namespace
 {
 
 // delete_object (src/objects.cpp), as remove_object_from_map calls it: `obj`
-// out of the object list of `room` (if any) and of its kind.
+// out of the object list of `room` (if any) and of its kind; the autopsy
+// unavailable once the player has no autopsy machine left.
 void remove_object_from_map_delete_object(World &w, Thing &obj, uint16_t room)
 {
     if (room) {
@@ -1387,6 +1406,8 @@ void remove_object_from_map_delete_object(World &w, Thing &obj, uint16_t room)
             w.things[obj.type_obj_next].type_obj_prev = obj.type_obj_prev;
         obj.type_obj_prev = obj.type_obj_next = 0;
     }
+    if (obj.owner == kPlayer && w.first_of_kind[kObjAutoAutopsy] == 0)
+        w.cure_available[kIllAutopsy] = 0;
 }
 
 // adjust_big_cell_flag's test: thing `t` is a person using an object or an
@@ -1499,8 +1520,9 @@ void delete_room_walls_and_doors(World &w, const RoomInfo &room, uint16_t id, in
     }
 }
 
-// delete_room (src/build.cpp): the room's objects, its rat holes, the walls
-// it does not share and its doors off the map. Only the first thing on each
+// delete_room (src/build.cpp): the room's objects, then cell by cell (the
+// room and its walls) the walls it does not share, its doors and the rat
+// holes on them, off the map. Only the first thing on each
 // cell is looked at, as removing it ends the cell's list walk in the game.
 void delete_room(World &w, uint16_t r)
 {
@@ -1514,12 +1536,13 @@ void delete_room(World &w, uint16_t r)
                 if (w.things[size_t(t)].type == kThingObject)
                     remove_object(w, uint16_t(t), kPlayer);
             }
-            clear_cell_of_ratholes(w, room.owner, uint16_t((y << 7) + x));
         }
     }
     for (int y = y0; y < y0 + room.height + 1; y++)
-        for (int x = x0; x < x0 + room.width + 1; x++)
+        for (int x = x0; x < x0 + room.width + 1; x++) {
             delete_room_walls_and_doors(w, room, id, x, y);
+            clear_cell_of_ratholes(w, room.owner, uint16_t((y << 7) + x));
+        }
     add_shadows(w);
 }
 
@@ -1954,16 +1977,16 @@ uint16_t find_small_thing(const World &world, int tile)
     return uint16_t(-id);
 }
 
-bool blueprint_floor_invalid(const World &world, int x, int y)
+bool blueprint_floor_invalid(const World &world, int x, int y, uint8_t *flags)
 {
     const BuildState &b = world.building.build;
     int tile = cell_index(x, y);
-    return !(is_room_size_valid(world, b.x0, b.y0, b.x1, b.y1) && is_valid_no_room(world, tile) &&
-             is_tile_valid(world, tile, kPlayer)) ||
+    return !(is_room_size_valid(world, b.x0, b.y0, b.x1, b.y1, flags) && is_valid_no_room(world, tile, flags) &&
+             is_tile_valid(world, tile, kPlayer, flags)) ||
            is_tile_near_half_wall(world, x, y, b.x1, b.y1);
 }
 
-bool blueprint_outline_invalid(const World &world, int x, int y)
+bool blueprint_outline_invalid(const World &world, int x, int y, uint8_t *flags)
 {
     const BuildState &b = world.building.build;
     int tx = x, ty = y;
@@ -1981,9 +2004,27 @@ bool blueprint_outline_invalid(const World &world, int x, int y)
         }
     }
     int tile = cell_index(tx, ty);
-    return !(is_valid_no_room(world, tile) && is_tile_valid(world, tile, kPlayer) &&
-             is_room_size_valid(world, b.x0, b.y0, b.x1, b.y1)) ||
+    return !(is_valid_no_room(world, tile, flags) && is_tile_valid(world, tile, kPlayer, flags) &&
+             is_room_size_valid(world, b.x0, b.y0, b.x1, b.y1, flags)) ||
            is_tile_near_half_wall(world, x, y, b.x1, b.y1);
+}
+
+uint8_t blueprint_draw_flags(const World &world, uint8_t flags)
+{
+    const BuildState &b = world.building.build;
+    if (b.draw_mode != 1)
+        return flags;
+    for (int y = b.y0; y <= b.y1; y++)
+        for (int x = b.x0; x <= b.x1; x++)
+            blueprint_floor_invalid(world, x, y, &flags);
+    for (int y = b.y0; y <= b.y1 + 1; y++) {
+        for (int x = b.x0; x <= b.x1 + 1; x++) {
+            bool piece = y == b.y0 || (y == b.y1 + 1 ? x != b.x1 + 1 : x == b.x0 || x == b.x1 + 1);
+            if (piece)
+                blueprint_outline_invalid(world, x, y, &flags);
+        }
+    }
+    return flags;
 }
 
 namespace
@@ -2383,7 +2424,8 @@ void set_room_requester_mode_furnishing(World &world)
         p.arg |= 1u << kEditRoomPickUp;
     if (p.room_type == kRoomCorridor)
         return;
-    if (room_has_compulsory_objects(world, room)) {
+    p.furnished = room_has_compulsory_objects(world, room);
+    if (p.furnished) {
         p.arg = 0;
         p.hint = 0xe;
     } else {

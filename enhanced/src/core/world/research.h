@@ -30,6 +30,7 @@ constexpr uint8_t kRcSpecialisation = 4;
 
 // The advisor's announcements (gamevar.announce's kinds, the game's ANN_*)
 // research makes.
+constexpr uint8_t kAnnAutopsyDiscovered = 2;
 constexpr uint8_t kAnnCategoryDone = 3;
 constexpr uint8_t kAnnObjectResearched = 5;
 constexpr uint8_t kAnnNewDrug = 6;
@@ -149,5 +150,13 @@ uint16_t emptiest_research_room(const World &world, uint8_t owner);
 // rooms but `exclude` (among the first 30), drawn from world.seed; 0 if
 // none, without a draw.
 uint16_t find_rand_research_room(World &world, uint8_t owner, uint16_t exclude);
+
+// person_autopsied (0x6dfe8): patient `patient` autopsied. Its illness gains
+// gbv.autopsy_rsch_percent of its research cost (do_illness_research,
+// kRcSpecialisation). Then a draw from world.seed: hospital 0's reputation
+// falls (kRepAutopsy) and the advisor announces it (kAnnAutopsyDiscovered)
+// with a chance of 2 in 3 when its staff's average happiness (of the staff
+// not applicants, in 1/256ths) is under 25, else 1 in 3.
+void person_autopsied(World &world, uint16_t patient);
 
 } // namespace th

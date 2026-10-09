@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include "core/audio/sounds.h"
+#include "core/data/balance.h"
 #include "core/data/blocks.h"
 #include "core/data/gamedata.h"
 #include "core/data/level.h"
@@ -13,6 +15,8 @@
 #include "core/render/surface.h"
 #include "core/render/text.h"
 #include "core/render/view.h"
+#include "core/world/arrivals.h"
+#include "core/world/complex_tables.h"
 #include "core/world/object_tables.h"
 #include "core/world/world.h"
 
@@ -480,4 +484,96 @@ void test_text_layout()
     surf.fill(1);
     th::draw_text(surf, font, 0, 0, "A A", {{0, 0, 4}, {0, 0, 20, 4}, th::kTextWrap});
     CHECK(surf.row(0)[0] == 5 && surf.row(2)[0] == 5 && surf.row(0)[5] == 1);
+}
+
+namespace
+{
+
+// A level 12 world with a DNA fixer and an alien filling it (PS_FILLS), both
+// on one cell.
+struct FillingAlien {
+    std::unique_ptr<th::World> world = std::make_unique<th::World>();
+    uint16_t machine = 0;
+    uint16_t alien = 0;
+};
+
+FillingAlien make_filling_alien(const th::GameData &gd, const th::Level &level)
+{
+    FillingAlien f;
+    th::start_level(*f.world, level, gd.anims());
+    const th::Balance settings;
+    th::ArrivalState arrivals;
+    const int cell = 64 + 70 * th::kMapSize;
+    f.machine = th::place_object(*f.world, gd.anims(), {cell, 23, 0}, 0, true);
+    f.alien = th::make_a_peep(*f.world, arrivals, {settings, gd.anims(), 12}, uint16_t(cell), 8, 0);
+    if (!f.machine || !f.alien)
+        return f;
+    th::Thing &p = f.world->things[f.alien];
+    th::Thing &m = f.world->things[f.machine];
+    p.state = th::kPsFills;
+    p.object = f.machine;
+    const auto &starts = gd.anims().starts;
+    p.sprite = uint16_t(starts[th::kPatientAnimStarts[14][0x79] + p.facing].frame);
+    m.aux_sprite = uint16_t(starts[th::kPatientAnimStarts[p.orig_subtype][0x79] + p.facing].frame);
+    m.split_height = 20;
+    return f;
+}
+
+// Whether the thing picked at some point of the view round the alien is the
+// alien.
+bool alien_picked(const th::GameData &gd, const FillingAlien &f, th::Surface &dst, th::Surface &scratch, th::Rect view,
+                  th::Point camera)
+{
+    for (int dy = -40; dy <= 40; dy += 4) {
+        for (int dx = -24; dx <= 24; dx += 4) {
+            th::PointedThing pointed{{320 + dx, 240 + dy}, 0};
+            th::DrawnThings picking;
+            picking.pointed = &pointed;
+            th::draw_world({dst, view, camera, 0}, *f.world, gd, nullptr, scratch, picking);
+            if (pointed.thing == f.alien)
+                return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
+// An alien filling a DNA fixer (PS_FILLS, PK_ALIEN) is drawn with a looping
+// overlay that follows the game turn (three turns a loop), the machine's frame
+// sound is queued for the machine, and the thing picked at the overlay's box is
+// the alien.
+void test_alien_filling(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(12, &error);
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    FillingAlien f = make_filling_alien(gd, *level);
+    CHECK(f.machine != 0 && f.alien != 0);
+    if (!f.machine || !f.alien)
+        return;
+    CHECK(f.world->things[f.alien].subtype == 14);
+    th::Point at = th::thing_to_world(f.world->things[f.alien]);
+    th::Rect view{0, 0, 640, 480};
+    th::Point camera{at.x - 320, at.y - 240};
+    th::Surface shots[4], scratch;
+    scratch.resize(640, 480);
+    scratch.fill(th::kMaskColour);
+    std::vector<th::FrameSound> sounds;
+    for (uint32_t turn = 0; turn < 4; turn++) {
+        shots[turn].resize(640, 480);
+        sounds.clear();
+        th::DrawnThings drawn;
+        drawn.sounds = &sounds;
+        th::draw_world({shots[turn], view, camera, turn}, *f.world, gd, nullptr, scratch, drawn);
+    }
+    auto same = [&](int a, int b) { return std::equal(shots[a].data(), shots[a].data() + 640 * 480, shots[b].data()); };
+    CHECK(!same(0, 1) && !same(1, 2));
+    CHECK(same(0, 3));
+    CHECK(std::any_of(sounds.begin(), sounds.end(), [&](const th::FrameSound &s) { return s.thing == f.machine; }));
+    CHECK(alien_picked(gd, f, shots[0], scratch, view, camera));
 }

@@ -362,6 +362,20 @@ void draw_build_requester_preview(UiLayer &layer, const Window &win, int croom, 
     draw_layer_frame(layer, data, start.frame, {win.x + kPreview.x, win.y + kPreview.y}, start.flip != 0, scale);
 }
 
+// The flashing hint (req10_overdraw): the first department button (highlight
+// 8) or the first room's (0xb) in its active look, hires_requester_sprites
+// [0x2f] and [0x30].
+void draw_build_requester_flash(UiLayer &layer, const Window &win, const SpriteSheet &sheet, TutorialFlash &flash)
+{
+    constexpr int kDeptSprite = 0xd3, kRoomSprite = 0xdf;
+    if (!flash.tutorial || !flash.tick() || (flash.highlight != 8 && flash.highlight != 0xb))
+        return;
+    bool dept = flash.highlight == 8;
+    const WindowButton &b = win.buttons[size_t((dept ? kDeptButton : kRoomButton) - 1)];
+    layer.draw_sprite(win.x + b.x, win.y + b.y, sheet.at(size_t(dept ? kDeptSprite : kRoomSprite)));
+    flash.drawn++;
+}
+
 // The room choice: the instructions, the preview, the offered rooms and the
 // price.
 void draw_build_requester_rooms(UiLayer &layer, const Window &win, const BuildUi &bui, const Game &game,
@@ -394,6 +408,7 @@ void draw_build_requester(UiLayer &layer, const Interface &ui, const BuildUi &bu
     const Window &win = ui.window(kBuildWindow);
     const ObjectPlacing &p = game.world.placing;
     const LanguageText &text = data.text();
+    draw_build_requester_flash(layer, win, art.sheet(kBuildWindow), ui.flash());
     if (p.requester_mode == 1)
         put_text(layer, win, art.font(), kHelpText, text.at(TextSection::Req1Help, kChooseDeptText));
     else if (p.requester_mode == 4)

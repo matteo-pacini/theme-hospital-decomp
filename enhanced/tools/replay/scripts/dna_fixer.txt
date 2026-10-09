@@ -1,0 +1,48 @@
+# Level 12: the DNA fixer curing alien DNA (illness 8). Alien patients come
+# only in an emergency (the level's visuals weight for them is 0): the first
+# three emergencies of the level (illnesses 23, 2 and 27) are left unanswered,
+# their calls expire, and the fourth (turn 54400, 4 patients with alien DNA,
+# 75% to cure, $2500) is answered (EV_ANSWER_PLAYERCALL 2) and accepted
+# (EV_CHOICE_RESULT CH_EMERGENCY_ACCEPT) at turn 54450. A DNA fixer room
+# (58,67)-(62,71), its door above it at cell 8508, the DNA fixer (cell 8891
+# facing 0) and its console (cell 9021 facing 0); opened; its doctor
+# (applicant 21) in the corridor. No reception desk, so no ordinary patient
+# is admitted and the reputation stays whole to the year ends. The aliens go
+# to the DNA fixer, step into it one by one (PS_FILLS, twice as fast as
+# other patients), are cured (cure ... illness=8 at the end of the filling)
+# and billed, the helicopter leaves, the bonus is paid at the emergency's end.
+# Expect emergency_accept
+# Expect emergency_peep >= 4
+# Expect use_object 14 obj=39 kind=23 == 1
+# Expect use_object 15 obj=39 kind=23 == 1
+# Expect use_object 32 obj=39 kind=23 == 1
+# Expect use_object 33 obj=39 kind=23 == 1
+# Expect use_object 21 obj=40 kind=15 >= 4
+# Expect cure 14 illness=8 == 1
+# Expect cure 15 illness=8 == 1
+# Expect cure 32 illness=8 == 1
+# Expect cure 33 illness=8 == 1
+# Expect emergency_cure >= 4
+# Expect emergency_over cured=4
+# Expect-not emergency_dies
+# Expect-not winlose
+# Turns 57400
+# A DNA fixer room (58,67)-(62,71), its door above it, the DNA fixer and its
+# console; opened; its doctor (applicant 21) in the corridor.
+60 55 0 0
+61 53 18 18
+62 2 8634 0
+63 2 9150 0
+64 8 9150 0
+65 18 0 0
+66 26 8508 0
+67 3 0 0
+68 4 18 0
+69 7 8891 23
+70 7 9021 15
+71 1 0 0
+72 48 1 21
+73 5 8386 21
+# The fourth emergency's call answered and the emergency accepted.
+54450 10 2 0
+54451 125 31 0

@@ -1,0 +1,58 @@
+# The tutorial's flashing hint on the panel icon it points at (highlight
+# 0x13, furnish corridor): drawn pressed for one frame in ten and normal on
+# the next. Frames 8 to 10 after the level starts have the count reach ten (the
+# flash), restart it and go on; their screenshots (flash_8 to flash_10) show
+# the icon pressed in flash_9 only.
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+click 85 32
+wait 10
+key Space
+wait 160
+click 372 320            # First Game: Yes (the tutorial)
+wait 5
+click 372 395
+wait 10
+key Space
+wait 80
+click 320 240
+wait 20
+turns 20
+screenshot flash_0
+dump flash_0
+screenshot flash_1
+dump flash_1
+screenshot flash_2
+dump flash_2
+screenshot flash_3
+dump flash_3
+screenshot flash_4
+dump flash_4
+screenshot flash_5
+dump flash_5
+screenshot flash_6
+dump flash_6
+screenshot flash_7
+dump flash_7
+screenshot flash_8
+dump flash_8
+expect tutorial flash: counter 9, drawn 8
+screenshot flash_9
+dump flash_9
+expect tutorial flash: counter 0, drawn 9
+screenshot flash_10
+dump flash_10
+expect tutorial flash: counter 1, drawn 9
+screenshot flash_11
+dump flash_11
+screenshot flash_12
+dump flash_12

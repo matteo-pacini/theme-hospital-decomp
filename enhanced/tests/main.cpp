@@ -21,6 +21,7 @@ void test_static_shadows();
 void test_shadow_sprites(const char *dir);
 void test_level_objects(const char *dir);
 void test_draw_world(const char *dir);
+void test_alien_filling(const char *dir);
 void test_draw_order_stable(const char *dir);
 void test_panel_image(const char *dir);
 void test_text_layout();
@@ -53,6 +54,10 @@ void test_epidemic();
 void test_arrivals_level1(const char *dir);
 void test_patient_leaves_level1(const char *dir);
 void test_litter_drawn(const char *dir);
+void test_wibble_drawn(const char *dir);
+void test_glow_drawn(const char *dir);
+void test_sprite_glow(const char *dir);
+void test_queue_person_drawn(const char *dir);
 void test_litter_dropping_level1(const char *dir);
 void test_reputation_go_home(const char *dir);
 void test_patient_dies_level1(const char *dir);
@@ -136,6 +141,7 @@ void test_open_hospital(const char *dir);
 void test_finance_level1(const char *dir);
 void test_balance_roll(const char *dir);
 void test_advisor_tutorial(const char *dir);
+void test_advisor_tutorial_rooms(const char *dir);
 void test_advisor_advice(const char *dir);
 void test_advisor_counts(const char *dir);
 
@@ -175,6 +181,7 @@ void test_disasters_level1(const char *dir);
 void test_research_choices();
 void test_research_drugs();
 void test_research_contribution();
+void test_person_autopsied();
 void test_research_level3(const char *dir);
 
 // replay.cpp
@@ -240,6 +247,7 @@ const Test kTests[] = {
     TEST(test_research_choices),
     TEST(test_research_drugs),
     TEST(test_research_contribution),
+    TEST(test_person_autopsied),
     TEST(test_help_table),
     TEST(test_help_group_starts),
     TEST(test_help_timing),
@@ -254,6 +262,7 @@ const DataTest kDataTests[] = {
     TEST(test_shadow_sprites),
     TEST(test_level_objects),
     TEST(test_draw_world),
+    TEST(test_alien_filling),
     TEST(test_draw_order_stable),
     TEST(test_panel_image),
     TEST(test_game_clock),
@@ -281,10 +290,15 @@ const DataTest kDataTests[] = {
     TEST(test_finance_level1),
     TEST(test_balance_roll),
     TEST(test_advisor_tutorial),
+    TEST(test_advisor_tutorial_rooms),
     TEST(test_advisor_advice),
     TEST(test_advisor_counts),
     TEST(test_staff_at_work_level1),
     TEST(test_litter_drawn),
+    TEST(test_wibble_drawn),
+    TEST(test_glow_drawn),
+    TEST(test_sprite_glow),
+    TEST(test_queue_person_drawn),
     TEST(test_litter_dropping_level1),
     TEST(test_handyman_sweeps),
     TEST(test_handyman_waters),
