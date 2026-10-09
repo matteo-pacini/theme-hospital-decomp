@@ -50,6 +50,7 @@ void test_walk_level1(const char *dir);
 void test_create_an_illness();
 void test_set_complex();
 void test_epidemic();
+void test_inspector_verdict();
 void test_arrivals_level1(const char *dir);
 void test_patient_leaves_level1(const char *dir);
 void test_litter_drawn(const char *dir);
@@ -243,6 +244,7 @@ const Test kTests[] = {
     TEST(test_create_an_illness),
     TEST(test_set_complex),
     TEST(test_epidemic),
+    TEST(test_inspector_verdict),
     TEST(test_rats),
     TEST(test_computer_tables),
     TEST(test_computer_peep),
