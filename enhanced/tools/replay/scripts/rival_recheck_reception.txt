@@ -1,0 +1,33 @@
+# Level 1
+# Turns 4500
+# The player hires all eight receptionist applicants (22-29) and places them
+# before turn 25, when the three rivals first act. Their first step, employ a
+# receptionist, finds no applicant and fails (computer_employ returns 0), so
+# computer_recheck_actions with a=0 sets the hire again and steps the script
+# back (strategy_step--) until the month-end job market brings new
+# applicants; the recheck of step 9 (a=1) later sets hires again the same way.
+# Without the player's hires each rival rechecks once at step 4 and once at
+# step 9 (rival_strategy); here owner 1 does so 2 and 3 times, and no
+# receptionist hire succeeds before turn 1500.
+# Expect computer_decision 1 step=4 type=8 >= 2
+# Expect computer_decision 1 step=9 type=8 >= 3
+# Expect computer_decision 2 step=4 type=8 >= 2
+# Expect computer_decision 3 step=4 type=8 >= 2
+# Expect computer_note 3 op=declass
+# Expect rival_open == 3
+5 48 3 22
+6 5 9788 22
+7 48 3 23
+8 5 9789 23
+9 48 3 24
+10 5 9790 24
+11 48 3 25
+12 5 9791 25
+13 48 3 26
+14 5 9792 26
+15 48 3 27
+16 5 9793 27
+17 48 3 28
+18 5 9794 28
+19 48 3 29
+20 5 9795 29

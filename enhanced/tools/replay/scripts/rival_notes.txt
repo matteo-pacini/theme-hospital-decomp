@@ -1,0 +1,13 @@
+# Level 4
+# Turns 6000
+# The computer hospitals alone on level 4, where the doctors the free-build
+# notes ask for (note type 1, skills mask 64) are not always among the
+# applicants: computer_employ from a note fails, declass_a_note moves the
+# note behind the others (a remove event, then a declass event), and a later
+# hire removes the note.
+# Expect computer_note 1 op=declass >= 2
+# Expect computer_note 2 op=declass >= 3
+# Expect computer_note 3 op=declass >= 2
+# Expect computer_note 2 op=make type=1
+# Expect computer_note 2 op=remove type=1 >= 3
+# Expect-not computer_note 1 op=make type=4

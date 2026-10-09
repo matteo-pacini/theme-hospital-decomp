@@ -209,6 +209,39 @@ void check_loan_and_land()
     CHECK(computer_buy_land(ctx, 1) == 0);
 }
 
+// who_owns_peep's bidding with every hospital's reputation for the illness at
+// 0: no bid, so no roll against the total and the owner is a draw % 4.
+void check_no_bids()
+{
+    using namespace th;
+    constexpr uint8_t kIllness = 16;
+    Balance settings;
+    settings.gbv.alloc_delay = 0;
+    settings.gbv.alloc_rand = 255;
+    settings.gbv.alloc_ind_rep = 2;
+    settings.expertise[kIllness].start_price = 1000;
+    ArrivalState state;
+    state.game_month = 12;
+    for (HospitalMarket &h : state.hospitals) {
+        h.open = true;
+        h.reputation[kIllness] = 0;
+        h.price[kIllness] = 1000;
+        h.price_scale[kIllness] = 10000;
+    }
+    uint32_t seed = 0x1234567;
+    for (;; seed++) {
+        uint32_t probe = seed;
+        if (old_newrand(probe) % 255 != 0)
+            break;
+    }
+    uint32_t expected = seed;
+    old_newrand(expected);
+    int owner = int(old_newrand(expected) % 4);
+    PeepOwnerPath path;
+    CHECK(who_owns_peep(seed, state, settings, kIllness, true, &path) == owner);
+    CHECK(seed == expected && path.bidding);
+}
+
 } // namespace
 
 void test_computer_ai()
@@ -218,4 +251,5 @@ void test_computer_ai()
     check_recheck();
     check_levels();
     check_loan_and_land();
+    check_no_bids();
 }
