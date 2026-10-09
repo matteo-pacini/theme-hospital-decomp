@@ -1,7 +1,8 @@
 # Level 6: cardiogram.txt with a second GP doctor and, past year 2, a
-# Turns 27000
+# Turns 27800
 # diagnosed contagious patient: the epidemic is COVERED UP and the
 # inspector finds none left, so the hospital is compensated (verdict 0).
+# Expect playercall 52 type=3
 # Expect choice 11
 # Expect-not rep 0 event=15
 # Expect balance 31
@@ -50,8 +51,12 @@
 # A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
 144 48 2 28
 145 5 6841 28
-# A second GP doctor; the epidemic call answered and covered up.
-146 48 1 17
-147 5 6970 17
-24572 10 3 0
-24573 125 11 0
+# A second GP doctor (applicant 20, cell 6840) hired late: a contagious
+# patient is diagnosed (the epidemic call, type 3, is raised at 25441); the
+# call is answered and covered up long after, at 26200, so the inspector
+# (27656) finds none left. The fax opens only while contagious patients are
+# inside, so the answer must come after the call.
+5088 48 1 20
+5089 5 6840 20
+26200 10 3 0
+26201 125 11 0
