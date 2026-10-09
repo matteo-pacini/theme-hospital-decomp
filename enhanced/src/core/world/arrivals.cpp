@@ -318,7 +318,9 @@ int who_owns_peep_by_bids(uint32_t &seed, ArrivalState &state, const Balance &se
         bid.score = total;
     }
     path.bidding = true;
-    path.second_bid = bids[1].score != 0 || bids[1].player != 0;
+    // The game's 5-byte bids overlap the caller's has_drinks slot: byte 3 of bids[1].score, bids[1].player and
+    // the low 16 bits of bids[2].score.
+    path.second_bid = (uint32_t(bids[1].score) >> 24) != 0 || bids[1].player != 0 || (bids[2].score & 0xffff) != 0;
     if (!total)
         return -1;
     int32_t roll = int32_t(old_newrand(seed, caller) % uint32_t(total));
