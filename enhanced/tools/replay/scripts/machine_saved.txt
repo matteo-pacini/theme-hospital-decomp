@@ -1,9 +1,9 @@
 # Level 6: cardiogram.txt without its handyman until the cardiogram is worn
 # out: at turn 11420, smoking, a handyman is called for it
 # (EV_THINGPAGE_REQUEST, the machine window's), and at turn 13800 one is
-# hired (applicant 38, the handyman at this turn, placed at cell
+# hired (applicant 58, the handyman at this turn, placed at cell
 # 6841). The handyman repairs it at turn 14412, before it breaks down
-# (without him it explodes at turn 14044). Compare up to turn 18000.
+# (without him it explodes at turn 15092). Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 # Expect repair_request
 # Expect repaired
@@ -51,7 +51,7 @@
 142 48 1 19
 143 5 6970 19
 # The call for a handyman once the machine smokes, then the handyman hired
-# (applicant 38, the handyman at this turn).
+# (applicant 58, the handyman at this turn).
 11420 118 45 0
-13800 48 2 38
-13801 5 6841 38
+13800 48 2 58
+13801 5 6841 58
