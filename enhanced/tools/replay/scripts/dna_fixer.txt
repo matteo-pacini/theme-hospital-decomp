@@ -1,9 +1,9 @@
 # Level 12: the DNA fixer curing alien DNA (illness 8). Alien patients come
 # only in an emergency (the level's visuals weight for them is 0): the first
 # three emergencies of the level (illnesses 23, 2 and 27) are left unanswered,
-# their calls expire, and the fourth (turn 54400, 4 patients with alien DNA,
+# their calls expire, and the fourth (turn 60250, 5 patients with alien DNA,
 # 75% to cure, $2500) is answered (EV_ANSWER_PLAYERCALL 2) and accepted
-# (EV_CHOICE_RESULT CH_EMERGENCY_ACCEPT) at turn 54450. A DNA fixer room
+# (EV_CHOICE_RESULT CH_EMERGENCY_ACCEPT) at turn 60300. A DNA fixer room
 # (58,67)-(62,71), its door above it at cell 8508, the DNA fixer (cell 8891
 # facing 0) and its console (cell 9021 facing 0); opened; its doctor
 # (applicant 21) in the corridor. No reception desk, so no ordinary patient
@@ -13,20 +13,22 @@
 # and billed, the helicopter leaves, the bonus is paid at the emergency's end.
 # Expect emergency_accept
 # Expect emergency_peep >= 4
-# Expect use_object 14 obj=39 kind=23 == 1
-# Expect use_object 15 obj=39 kind=23 == 1
-# Expect use_object 32 obj=39 kind=23 == 1
-# Expect use_object 33 obj=39 kind=23 == 1
-# Expect use_object 21 obj=40 kind=15 >= 4
-# Expect cure 14 illness=8 == 1
-# Expect cure 15 illness=8 == 1
-# Expect cure 32 illness=8 == 1
-# Expect cure 33 illness=8 == 1
-# Expect emergency_cure >= 4
-# Expect emergency_over cured=4
+# Expect use_object 16 obj=39 kind=23 == 1
+# Expect use_object 19 obj=39 kind=23 == 1
+# Expect use_object 22 obj=39 kind=23 == 1
+# Expect use_object 24 obj=39 kind=23 == 1
+# Expect use_object 36 obj=39 kind=23 == 1
+# Expect use_object 21 obj=40 kind=15 >= 5
+# Expect cure 16 illness=8 == 1
+# Expect cure 19 illness=8 == 1
+# Expect cure 22 illness=8 == 1
+# Expect cure 24 illness=8 == 1
+# Expect cure 36 illness=8 == 1
+# Expect emergency_cure >= 5
+# Expect emergency_over cured=5
 # Expect-not emergency_dies
 # Expect-not winlose
-# Turns 57400
+# Turns 63500
 # A DNA fixer room (58,67)-(62,71), its door above it, the DNA fixer and its
 # console; opened; its doctor (applicant 21) in the corridor.
 60 55 0 0
@@ -44,5 +46,5 @@
 72 48 1 21
 73 5 8386 21
 # The fourth emergency's call answered and the emergency accepted.
-54450 10 2 0
-54451 125 31 0
+60300 10 2 0
+60301 125 31 0

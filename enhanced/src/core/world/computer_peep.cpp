@@ -247,7 +247,7 @@ void process_computer_peep(World &world, ArrivalState &state, const Balance &set
 {
     RivalHospital &rival = world.rivals[visit.owner];
     Thing &patient = world.things[patient_id];
-    int month = state.game_month % 12;
+    int month = visit.month % 12;
     rival.patient_load++;
     bool drinks = rival.objects[kObjDrinksMachine] * 10 > rival.patient_load;
     Visit v{world,

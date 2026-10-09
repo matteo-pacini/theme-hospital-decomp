@@ -348,8 +348,8 @@ bool Game::start_turn()
         twice_daily_admin_emergency(world);
         if (epidemic_status(world, 0))
             generate_inspector(world, *anims_, 0);
-        if (uint16_t id =
-                create_a_peep(world, arrivals, {settings_, *anims_, level_number_}, open, turn_count, date.day)) {
+        if (uint16_t id = create_a_peep(world, arrivals, {settings_, *anims_, level_number_, date.month}, open,
+                                        turn_count, date.day)) {
             new_patients.push_back(id);
             start_person_going(world, *anims_, *complexes_, id, turn_count);
         }

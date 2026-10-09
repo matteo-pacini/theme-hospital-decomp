@@ -3,27 +3,29 @@
 # after the shower is researched none came in 18200 turns, so the year is
 # ended twice (EV_CHEAT_END_YEAR, turns 11455 and 11700). ultrascan.txt's
 # hospital (reception, handyman, GP's office and research room, three
-# researchers in the second month) with research concentrated on the
-# decontamination shower (illness 6; item 54 researched at turn 11450); then
+# researchers hired as the job market offers them (the rivals take the
+# applicants in between: 17, 44 and 46 at turns 4700, 6100 and 7700) with
+# research concentrated on the decontamination shower (illness 6; item 54
+# researched at turn 11350); then
 # a decontamination room (26,34)-(30,38), its door above it, a shower (cell
 # 4637 facing 0) and a console (cell 4636 facing 3); opened; a doctor
-# (applicant 47, skills 16) in the corridor.
-# The first radiation patient is patient 7 (peep illness=6 at turn 14775).
+# (applicant 21, skills 16) in the corridor.
+# The first radiation patient is patient 23 (peep illness=6 at turn 13300).
 # It is made to guess its cure from its window (EV_FORCE_CURE) at diagnosis
 # 0: best_guess_treatment sets PF_WRONG_GUESS, so it is sent to the
 # decontamination room, whose doctor works the console while the patient
 # showers, and the cure there is a wrong-guess kill: `cure` is traced, then
 # the patient is killed (ICON_KILLED, change_health -1000) and dies as it
-# leaves the room (dies 7 at turn 15510, in the original too).
+# leaves the room (dies 23 at turn 14051, in the original too).
 # decontamination_cured.txt has the real cure.
 # Expect cmd type=137 == 2
-# Expect peep 7 illness=6 == 1
+# Expect peep 23 illness=6 owner=0 == 1
 # Expect researched 54 illness=6 == 1
-# Expect treat 47 patient=7 room=8 == 1
-# Expect use_object 47 obj=19 kind=15 == 1
-# Expect use_object 7 obj=12 kind=54 == 1
-# Expect cure 7 illness=6 == 1
-# Expect dies 7 == 1
+# Expect treat 21 patient=23 room=8 == 1
+# Expect use_object 21 obj=45 kind=15 == 1
+# Expect use_object 23 obj=15 kind=54 == 1
+# Expect cure 23 illness=6 == 1
+# Expect dies 23 == 1
 # Turns 18200
 5 98 0 0
 6 37 11 1
@@ -79,12 +81,12 @@
 123 80 2 0
 124 80 3 0
 125 80 4 100
-4700 48 1 15
-4701 5 4494 15
-4702 48 1 16
-4703 5 4495 16
-4704 48 1 18
-4705 5 4496 18
+4700 48 1 17
+4701 5 4494 17
+6100 48 1 44
+6101 5 4495 44
+7700 48 1 46
+7701 5 4496 46
 11455 137 0 0
 11500 55 0 0
 11501 53 30 30
@@ -98,7 +100,7 @@
 11560 7 4637 54
 11561 7 4636 783
 11562 1 0 0
-11570 48 1 47
-11571 5 6047 47
+11570 48 1 21
+11571 5 6047 21
 11700 137 0 0
-14777 134 7 0
+13302 134 23 0

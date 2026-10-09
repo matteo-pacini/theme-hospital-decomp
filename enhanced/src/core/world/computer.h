@@ -331,6 +331,9 @@ struct RivalPeepVisit {
     uint8_t owner = 0;
     // The day of the month (mycontrol->day): the visit's simulated clock starts there.
     int day = 0;
+    // The calendar month (mycontrol->month) the visit starts in; it can differ from the month of
+    // othervar.game_month after a cheat moves the date.
+    int month = 0;
     // has_drinks, which the game leaves unset when the hospital has too few
     // drinks machines, so that it holds what the stack slot did.
     bool stale_drinks = false;
