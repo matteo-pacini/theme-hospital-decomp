@@ -1,0 +1,120 @@
+# Level 1
+# Turns 18250
+# win_level1.txt's hospital (10+ cures, reputation about 640 at the first year
+# end) with the commands from turn 220 to 17000 delayed by 1107 turns, which
+# shifts the draws so that a computer hospital ends the year with a
+# reputation of 689, above the player's. The reputation award (general_award:
+# the player is above the 600 threshold) is then given at its plain value
+# (2000, not doubled or tripled), the branch where a rival at least ties the
+# player; win_level1.txt itself beats all three rivals (doubled award).
+# The rooms built just before the year end are those of win_level1.txt.
+# Expect balance 34 amount=2000 == 1
+# Expect-not balance 34 amount=4000
+# Expect-not balance 34 amount=6000
+# Expect computer_year == 3
+# Expect winlose win
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+142 48 1 13
+143 5 10044 13
+160 55 0 0
+161 53 11 11
+162 2 7737 0
+163 2 8124 0
+164 8 8124 0
+165 18 0 0
+166 26 8250 0
+167 3 0 0
+168 4 11 0
+169 7 7740 39
+170 1 0 0
+171 48 0 3
+172 5 10044 3
+190 55 0 0
+191 53 17 17
+192 2 8388 0
+193 2 8775 0
+194 8 8775 0
+195 18 0 0
+196 26 8515 0
+197 3 0 0
+198 4 17 0
+199 7 8518 9
+200 1 0 0
+201 48 1 12
+202 5 10044 12
+203 48 1 15
+204 5 10044 15
+205 48 1 16
+206 5 10044 16
+1327 113 1 0
+1328 113 2 90
+1367 48 2 19
+1368 5 10044 19
+1377 113 4 50
+4107 94 11 0
+4108 94 19 0
+17900 55 0 0
+17901 53 17 17
+17902 2 7748 0
+17903 2 8135 0
+17904 8 8135 0
+17905 18 0 0
+17906 26 7875 0
+17907 3 0 0
+17908 4 17 0
+17909 7 7878 9
+17910 1 0 0
+17912 55 0 0
+17913 53 17 17
+17914 2 8393 0
+17915 2 8780 0
+17916 8 8780 0
+17917 18 0 0
+17918 26 8520 0
+17919 3 0 0
+17920 4 17 0
+17921 7 8523 9
+17922 1 0 0
+17924 55 0 0
+17925 53 17 17
+17926 2 7753 0
+17927 2 8140 0
+17928 8 8140 0
+17929 18 0 0
+17930 26 7880 0
+17931 3 0 0
+17932 4 17 0
+17933 7 7883 9
+17934 1 0 0
