@@ -80,6 +80,7 @@ add_library(th_core STATIC
   src/core/world/arrivals.cpp
   src/core/world/build.cpp
   src/core/world/complex.cpp
+  src/core/world/computer.cpp
   src/core/world/counts.cpp
   src/core/world/debug_dump.cpp
   src/core/world/disaster.cpp
@@ -121,6 +122,7 @@ set(TH_SNAPSHOT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/advisor.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/arrivals.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/build.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/computer.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/emergency.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/events.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/fax_screen.h
@@ -180,6 +182,7 @@ if (BUILD_TESTING)
     tests/main.cpp
     tests/common.cpp
     tests/audio.cpp
+    tests/computer.cpp
     tests/data.cpp
     tests/drive.cpp
     src/app/drive.cpp

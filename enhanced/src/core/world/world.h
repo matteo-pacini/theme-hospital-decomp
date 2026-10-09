@@ -4,6 +4,7 @@
 #include "core/data/level.h"
 #include "core/render/iso.h"
 #include "core/world/build.h"
+#include "core/world/computer.h"
 #include "core/world/object_tables.h"
 #include "core/world/objects.h"
 #include "core/world/research.h"
@@ -879,6 +880,9 @@ struct World {
     // gamevar.announce, ANN_* kinds): up to four values each, oldest first,
     // 0 past the last (announce_this).
     std::array<std::array<uint32_t, 4>, kAnnounceKinds> announce{};
+    // The computer players' hospitals (core/world/computer.h), by owner;
+    // [0] is the player's and unused.
+    std::array<RivalHospital, kHospitalCount> rivals{};
     // What rooms in use read and change outside the world, set by
     // start_rooms_in_use (core/world/rooms.h): the player's policy, prices'
     // statistics and insurance claims, the accounts, the balance, the date

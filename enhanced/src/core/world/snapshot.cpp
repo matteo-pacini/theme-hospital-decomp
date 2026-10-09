@@ -29,8 +29,8 @@ template <typename... T> constexpr uint64_t layout_hash()
     return h;
 }
 constexpr uint64_t kLayoutHash =
-    layout_hash<Thing, RoomInfo, MapCell, ObjectPlacing, BuildState, Finance, Advice, ArrivalState, TownLand,
-                HospitalSettings, StaffMarket, Disasters, Event, Date, World::Pager, World::PlayerCall,
+    layout_hash<Thing, RoomInfo, MapCell, ObjectPlacing, BuildState, Finance, Advice, ArrivalState, RivalHospital,
+                TownLand, HospitalSettings, StaffMarket, Disasters, Event, Date, World::Pager, World::PlayerCall,
                 World::ThingPager, World::Emergency, World::Epidemic, PanelPopups, AdCounts, Game::ChoiceScreen,
                 Game::FaxScreen, Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd, void *, bool, int>();
 
@@ -38,12 +38,12 @@ constexpr uint64_t kLayoutHash =
 // as a whole must each be listed below; on the build the code is written on,
 // these sizes catch one added without being listed.
 #if defined(__GLIBCXX__) && defined(__x86_64__)
-static_assert(sizeof(World) == 139816, "World changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(World) == 163640, "World changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Building) == 224, "Building changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp and bump kSaveFormat");
-static_assert(sizeof(Balance) == 3776, "Balance changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Balance) == 3816, "Balance changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp and bump kSaveFormat");
-static_assert(sizeof(Game) == 317984, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Game) == 341848, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 #endif
 
 class Writer
@@ -237,6 +237,14 @@ template <typename IO, typename W> void world_disaster_fields(IO &io, W &w)
     io(w.heating_broken);
 }
 
+// World's research, the advisor's announcements and the computer players.
+template <typename IO, typename W> void world_research_fields(IO &io, W &w)
+{
+    io(w.research);
+    io(w.announce);
+    io(w.rivals);
+}
+
 template <typename IO, typename W> void world_fields(IO &io, W &w)
 {
     io(w.map);
@@ -287,8 +295,7 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.epidemic);
     world_sound_fields(io, w);
     world_disaster_fields(io, w);
-    io(w.research);
-    io(w.announce);
+    world_research_fields(io, w);
 }
 
 template <typename IO, typename A> void advisor_fields(IO &io, A &a)

@@ -646,6 +646,109 @@ void dump_hospital(std::string &out, const HospitalMarket &h, int id)
     out += '\n';
 }
 
+void dump_rival_ai(std::string &out, const RivalHospital &r)
+{
+    F(r, player_type);
+    F(r, ai_index);
+    F(r, strategy);
+    F(r, strategy_step);
+    F(r, recheck_step);
+    F(r, next_action_turn);
+    F(r, action.type);
+    F(r, action.arg);
+    F(r, action.count);
+    F(r, action_from_note);
+    out += " notes=";
+    for (const ComputerStrategy &n : r.notes)
+        out += std::format("{}/{}/{};", n.type, n.arg, n.count);
+}
+
+void dump_rival_money(std::string &out, const RivalHospital &r)
+{
+    F(r, balance);
+    F(r, loan);
+    F(r, max_loan);
+    F(r, wage_bill);
+    F(r, hospital_value);
+    F(r, object_value);
+    F(r, year_start_balance);
+    F(r, year_start_visitors);
+    F(r, score);
+    F(r, start_score);
+    F(r, market_share);
+    F(r, win_progress);
+    F(r, area);
+}
+
+void dump_rival_counts(std::string &out, const RivalHospital &r)
+{
+    F(r, patient_load);
+    F(r, rooms_built);
+    F(r, cures);
+    F(r, deaths);
+    F(r, staff_count);
+    F(r, surgeon_count);
+    F(r, extinguisher_count);
+    F(r, radiator_count);
+    F(r, amenity_count);
+    F(r, leisure_count);
+    F(r, object_count);
+    F(r, machine_count);
+    F(r, heating_level);
+    L(r, staff_by_kind);
+    L(r, staff_ability_sum);
+    L(r, staff_by_skill);
+    L(r, rooms);
+    L(r, objects);
+}
+
+void dump_rival_treatments(std::string &out, const RivalHospital &r)
+{
+    L(r, cure_available);
+    L(r, discovered);
+    L(r, drug_effectiveness);
+    L(r, drug_cost);
+    out += " object_stats=";
+    for (const RivalObjectStats &s : r.object_stats)
+        out += std::format("{}/{},", s.cost, s.count);
+}
+
+void dump_rival_buckets(std::string &out, const RivalHospital &r, int id)
+{
+    for (size_t m = 0; m < r.buckets.size(); m++) {
+        const ComputerBucket &b = r.buckets[m];
+        out += std::format("rival {} bucket {}", id, m);
+        F(b, income);
+        F(b, rep_points);
+        F(b, rep_events);
+        F(b, cures);
+        F(b, deaths);
+        F(b, patients_done);
+        L(b, room_rep_points);
+        L(b, room_rep_events);
+        out += '\n';
+    }
+}
+
+void dump_rival(std::string &out, const RivalHospital &r, int id)
+{
+    out += std::format("rival {} name={}", id, r.name.data());
+    dump_rival_ai(out, r);
+    dump_rival_money(out, r);
+    dump_rival_counts(out, r);
+    dump_rival_treatments(out, r);
+    out += '\n';
+    dump_rival_buckets(out, r, id);
+}
+
+void dump_game_hospitals(std::string &out, const Game &game)
+{
+    for (size_t i = 0; i < game.arrivals.hospitals.size(); i++)
+        dump_hospital(out, game.arrivals.hospitals[i], int(i));
+    for (size_t i = 1; i < game.world.rivals.size(); i++)
+        dump_rival(out, game.world.rivals[i], int(i));
+}
+
 void dump_game_progress(std::string &out, const Game &game)
 {
     const YearEnd &p = game.progress;
@@ -1081,8 +1184,7 @@ std::string dump_game(const Game &game, int focus, int radius)
                        w.path_finder == PathFinder::AStar ? "A*" : "original");
     dump_game_finance(out, game);
     dump_game_progress(out, game);
-    for (size_t i = 0; i < game.arrivals.hospitals.size(); i++)
-        dump_hospital(out, game.arrivals.hospitals[i], int(i));
+    dump_game_hospitals(out, game);
     dump_game_world(out, w);
     dump_game_counts(out, w);
     out += std::format("choice_screen type={} subject={} timeout={}\n", game.choice_screen.type,
