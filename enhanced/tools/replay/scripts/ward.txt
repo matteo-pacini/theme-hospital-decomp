@@ -3,7 +3,7 @@
 # and chair, opened, and a doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect next_treatment 10 staff=0
-# Expect use_object 3 obj=38 kind=1
+# Expect use_object 3 obj=37 kind=1
 5 98 0 0
 6 37 11 1
 7 43 0 0
