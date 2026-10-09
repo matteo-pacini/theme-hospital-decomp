@@ -1,32 +1,34 @@
 # Level 8: an electrolysis room curing hairyitis (illness 3) after a full
 # diagnosis. ultrascan.txt's hospital (reception, handyman, GP's office and
-# research room, three researchers) with research concentrated on the X-ray
-# (illness 39, researched at turn 8250) and then, from turn 8260, on the
-# electrolysis machine (illness 3, researched at turn 17800). An X-ray room
-# (32,40)-(37,45) with its X-ray (cell 5539) and screen (cell 5285) is built
-# at turn 8300 with a doctor (applicant 31, who also works in the GP's
-# office); the electrolysis room (26,34)-(30,38), its door above it, the
-# electrolysis machine (cell 4637 facing 0) and a console (cell 4764 facing
-# 2), with applicant 45 (a nurse), is built at turn 12000. Doctor 31 works the
-# room when paged. Hairyitis arrives from the twelfth month (game_month 12,
-# FULL00.SAM visuals_available[1]), so the year is ended early
-# (EV_CHEAT_END_YEAR at turn 12100). The policy guesses cures from 10%, but
-# no patient is made to guess: patients 53 (turn 17950) and 23 (turn 19200) are
-# sent by the GP to the X-ray (go_for_treatment treatment=39), back to the GP,
-# whose second consultation completes the diagnosis, and then to the
+# research room) with research concentrated on the X-ray (illness 39,
+# researched at turn 8250) and then, from turn 8260, on the electrolysis
+# machine (illness 3, researched at turn 15450). The rivals take most of the
+# researchers on the job market, so the research room gets the ones that come
+# up: applicant 17 (hired at turn 3000) and applicants 23 and 46 (turn 7650).
+# An X-ray room (32,40)-(37,45) with its X-ray (cell 5539) and screen (cell
+# 5285) is built at turn 8300 with a doctor (applicant 27, who also works in
+# the GP's office); the electrolysis room (26,34)-(30,38), its door above it,
+# the electrolysis machine (cell 4637 facing 0) and a console (cell 4764
+# facing 2), with applicant 21 (a nurse), is built from turn 12052. Doctor 27
+# works the room when paged. Hairyitis arrives from the twelfth month
+# (game_month 12, FULL00.SAM visuals_available[1]), so the year is ended early
+# (EV_CHEAT_END_YEAR at turn 12106). The policy guesses cures from 10%, but
+# no patient is made to guess: patients 13 (turn 13500) and 16 (turn 16375)
+# are sent by the GP to the X-ray (go_for_treatment treatment=39), back to the
+# GP, whose second consultation completes the diagnosis, and then to the
 # electrolysis room (treatment=3), where the machine is used and they are
 # cured (cure_illness, illness 3). Fully diagnosed, they are not killed by a
 # wrong guess.
 # Expect researched 27 illness=39 == 1
 # Expect researched 46 illness=3 == 1
-# Expect go_for_treatment 53 treatment=39 >= 1
-# Expect use_object 53 obj=33 kind=46 == 1
-# Expect cure 53 illness=3 == 1
-# Expect cure 23 illness=3 == 1
-# Expect-not dies 53
-# Expect-not dies 23
+# Expect go_for_treatment 16 treatment=39 >= 1
+# Expect use_object 16 obj=18 kind=46 == 1
+# Expect cure 16 illness=3 == 1
+# Expect cure 13 illness=3 == 1
+# Expect-not dies 16
+# Expect-not dies 13
 # Expect-not winlose
-# Turns 25000
+# Turns 21000
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -84,14 +86,14 @@
 130 113 1 0
 131 113 2 10
 2000 90 100 0
+3000 48 1 17
+3001 5 4494 17
 4000 90 100 0
-4700 48 1 15
-4701 5 4494 15
-4702 48 1 16
-4703 5 4495 16
-4704 48 1 18
-4705 5 4496 18
 6000 90 100 0
+7650 48 1 23
+7651 5 4495 23
+7652 48 1 46
+7653 5 4496 46
 8000 90 100 0
 8260 114 3 0
 8300 55 0 0
@@ -106,25 +108,25 @@
 8309 7 5539 27
 8310 7 5285 28
 8311 1 0 0
-8330 48 1 31
-8331 5 6050 31
+8330 48 1 27
+8331 5 6050 27
 10000 90 100 0
-12000 55 0 0
-12000 90 100 0
-12001 53 23 23
-12002 2 4378 0
-12003 2 4894 0
-12004 8 4894 0
-12005 18 0 0
-12006 26 4251 0
-12007 3 0 0
-12008 4 23 0
-12060 7 4637 46
-12061 7 4764 527
-12062 1 0 0
-12070 48 1 45
-12071 5 6047 45
-12100 137 0 0
+12052 55 0 0
+12052 90 100 0
+12053 53 23 23
+12054 2 4378 0
+12055 2 4894 0
+12056 8 4894 0
+12057 18 0 0
+12058 26 4251 0
+12059 3 0 0
+12060 4 23 0
+12106 137 0 0
+12112 7 4637 46
+12113 7 4764 527
+12114 1 0 0
+12122 48 1 21
+12123 5 6047 21
 14000 90 100 0
 16000 90 100 0
 18000 90 100 0

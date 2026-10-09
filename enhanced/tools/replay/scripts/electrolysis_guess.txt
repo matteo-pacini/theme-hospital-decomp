@@ -5,18 +5,19 @@
 # it to the electrolysis room. The guess is wrong (best_guess_treatment,
 # PF_WRONG_GUESS: the diagnosis is partial): the machine is used and the
 # cure_illness event is traced, but the patient leaves the room to die
-# (dies 17, turn 16635). The policy guesses cures from 10%. The first
-# hairyitis patient is patient 17 (turn 15850); the research room, researchers
-# and electrolysis room are as electrolysis.txt's, the research all on
-# the electrolysis machine, researched at turn 12150.
+# (dies 24, turn 13636). The policy guesses cures from 10%. The first
+# hairyitis patient is patient 24 (turn 12800); the research room, researchers
+# (applicant 17 hired at turn 3000, 23 and 46 at turn 7650) and electrolysis
+# room are as electrolysis.txt's, the research all on the electrolysis
+# machine, researched at turn 12000.
 # Expect cmd type=134 == 1
 # Expect researched 46 illness=3 == 1
-# Expect peep 17 illness=3 == 1
-# Expect use_object 17 obj=49 kind=46 == 1
-# Expect cure 17 illness=3 == 1
-# Expect dies 17 == 1
+# Expect peep 24 illness=3 == 1
+# Expect use_object 24 obj=20 kind=46 == 1
+# Expect cure 24 illness=3 == 1
+# Expect dies 24 == 1
 # Expect-not winlose
-# Turns 17000
+# Turns 13700
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -74,15 +75,13 @@
 130 113 1 0
 131 113 2 10
 2000 90 100 0
+3000 48 1 17
+3001 5 4494 17
 4000 90 100 0
-4700 48 1 15
-4701 5 4494 15
-4702 48 1 16
-4703 5 4495 16
-4704 48 1 18
-4705 5 4496 18
-6000 90 100 0
-8000 90 100 0
+7650 48 1 23
+7651 5 4495 23
+7652 48 1 46
+7653 5 4496 46
 10000 90 100 0
 12000 55 0 0
 12000 90 100 0
@@ -97,11 +96,11 @@
 12060 7 4637 46
 12061 7 4764 527
 12062 1 0 0
-12070 48 1 45
-12071 5 6047 45
+12070 48 1 21
+12071 5 6047 21
 12100 137 0 0
+12802 134 24 0
 14000 90 100 0
-15852 134 17 0
 16000 90 100 0
 18000 90 100 0
 20000 90 100 0
