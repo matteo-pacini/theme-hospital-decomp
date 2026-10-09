@@ -11,14 +11,14 @@
 # Expect handyman_values
 # Expect handyman_values 20 litter=0 plants=0 repair=100 == 1
 # Expect force_cure
-# Expect force_cure 47 == 1
-# Expect force_cure 9 == 1
+# Expect force_cure 10 == 1
+# Expect force_cure 14 == 1
 # Expect go_home
-# Expect go_home 10 state=68 == 1
-# Expect go_home 5 state=48 == 1
-# Expect go_home 6 state=32 == 1
+# Expect go_home 6 state=68 == 1
+# Expect go_home 8 state=48 == 1
 # Expect go_home 7 state=32 == 1
-# Expect use_object 12 obj=41 kind=9 == 1
+# Expect go_home 40 state=32 == 1
+# Expect use_object 12 obj=39 kind=9 == 1
 # Expect drugs
 5 98 0 0
 6 37 11 1
@@ -105,10 +105,8 @@
 240 115 20 29
 241 115 20 29
 242 115 20 31
-# Send home patient 10, waiting for a decision (state 68); patient 47, on its
-# way to a queue, guesses a cure.
-7350 116 10 0
-7420 134 47 0
+# Patient 10, on its way to a queue (state 36), guesses a cure.
+7100 134 10 0
 # Repairs up 12 times running, to 100 (from 94 the others drop to 0); then
 # litter and plants up.
 9000 115 20 31
@@ -125,13 +123,14 @@
 9011 115 20 31
 9500 115 20 29
 9501 115 20 30
-# Patient 21 is sent home on its way to a queue; patient 6, with its doctor
-# in the GP's office (state 32), is sent home; patient 9, walking to a queue
-# (state 36), guesses a cure; patient 7, with its doctor (state 32), is sent
-# home; then patient 5, at the pharmacy cabinet (energises, state 48), is
-# sent home.
-11100 116 21 0
+# Patient 8, at the pharmacy cabinet (energises, state 48), is sent home.
+9900 116 8 0
+# Patient 8 is sent home on its way to a queue (state 36); patient 6, waiting
+# for a decision (state 68), is sent home; patient 7, with its doctor in the
+# GP's office (state 32), is sent home, and so is patient 40 (state 32);
+# patient 14, walking to a queue (state 36), guesses a cure.
+11300 116 8 0
 12550 116 6 0
-12560 134 9 0
 12700 116 7 0
-13700 116 5 0
+12780 116 40 0
+12900 134 14 0

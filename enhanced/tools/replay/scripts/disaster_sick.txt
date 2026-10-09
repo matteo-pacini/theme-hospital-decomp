@@ -1,6 +1,6 @@
-# Level 6: epidemic_vaccinate.txt run on to turn 30700. The
-# first roll (turn 10050) draws kind 3 with 10 or fewer pieces of litter and
-# is rejected; the second (20100) draws kind 3 with more and is accepted:
+# Level 6: epidemic_vaccinate.txt without its epidemic call, run to turn
+# 30700. The first roll (turn 10050) draws kind 3 with 10 or fewer pieces of
+# litter and is rejected; the second (20100) draws kind 3 with more and is accepted:
 # everyone feels sick (nausea, advice 0xd) for its timer,
 # with patients vomiting (litter of type 5), then it ends (advice 0xe).
 # Turns 30700
@@ -53,15 +53,9 @@
 144 48 2 28
 145 5 6841 28
 # A second GP doctor (applicant 20, cell 6840) hired late and a nurse
-# (applicant 14, cell 6841): a contagious patient is diagnosed (the epidemic
-# call, type 3, is raised at 24404) with others of the same illness inside.
-# The fax opens only while contagious patients are inside, so the answer
-# comes after the call.
+# (applicant 14, cell 6841), whose hiring turn sets the draws of the first
+# two disaster rolls.
 6080 48 1 20
 6081 5 6840 20
-7575 48 0 14
-7576 5 6841 14
-24444 10 3 0
-24445 125 11 0
-# Contagious patient 51 queued for vaccination.
-24446 130 51 0
+7514 48 0 14
+7515 5 6841 14

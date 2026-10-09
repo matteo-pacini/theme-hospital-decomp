@@ -13,8 +13,8 @@
 # Expect place_cursor ok=1 tile=7859 kind=8 dir=3
 # Expect place_object 31 kind=1 tile=8640 dir=0
 # Expect place_object 34 kind=4 tile=9534 dir=0
-# Expect place_object 35 kind=44 tile=8383 dir=0
-# Expect place_object 39 kind=8 tile=7731 dir=1
+# Expect place_object 22 kind=44 tile=8383 dir=0
+# Expect place_object 38 kind=8 tile=7731 dir=1
 # Expect commit_doors >= 2
 # Expect open_room >= 2
 # The office: open the requester, start a GP's blueprint, drag it out from

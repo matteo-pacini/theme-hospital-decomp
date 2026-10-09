@@ -1,7 +1,8 @@
 # Level 8: the ultrascan researched, built and in use: blood_machine.txt's
 # hospital (reception, handyman, GP's office and research room, three
-# researchers in the second month) with research concentrated on the
-# ultrascan (illness 40) instead.
+# researchers, hired as the job market offers them: the rivals take the
+# applicants in between) with research concentrated on the ultrascan
+# (illness 40) instead.
 # Expect researched 22 illness=40
 5 98 0 0
 6 37 11 1
@@ -57,13 +58,14 @@
 123 80 2 0
 124 80 3 0
 125 80 4 100
-4700 48 1 15
-4701 5 4494 15
-4702 48 1 16
-4703 5 4495 16
-4704 48 1 18
-4705 5 4496 18
-# The ultrascan, researched at turn 11950: a room (26,34)-(29,37), its door
+# The researchers: applicants 17, 44 and 46.
+4700 48 1 17
+4701 5 4494 17
+6100 48 1 44
+6101 5 4495 44
+7700 48 1 46
+7701 5 4496 46
+# The ultrascan, researched at turn 11350: a room (26,34)-(29,37), its door
 # above it; the room waits for the people on its floor to leave before it
 # is furnished (commit_doors); the ultrascan (cell 4508 facing 1); opened;
 # its doctor (applicant 32) in the corridor. The GP sends patients there.

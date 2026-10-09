@@ -1,4 +1,4 @@
-# Level 1: five corridor radiators and no handyman, so the random disaster
+# Level 1: two corridor radiators and no handyman, so the random disaster
 # at turn 10050 (generate_disaster, gbv.disaster_launch days in) is the
 # heating failing hot: the advisor warns (forced advice 0xa), heating_level
 # jumps to 10 with heating_broken set, the town map shows the full heat bar,
@@ -6,45 +6,21 @@
 # the advisor's second message (0xc) when the timer runs out. The extra
 # radiators draw the daily randoms so the roll picks kind 2.
 wait 60
-click 268 453            # panel: furnish corridor
+click 268 453
 wait 10
-click 328 166            # buy a radiator (the fifth entry)
+click 328 166
 wait 10
-click 400 300            # accept, and start placing
+click 400 300
 wait 10
-click-cell 60 68         # place it in the corridor
+click-cell 60 68
 wait 20
-click 268 453            # furnish again for the second radiator
+click 268 453
 wait 10
 click 328 166
 wait 10
 click 400 300
 wait 10
 click-cell 60 69
-wait 20
-click 268 453
-wait 10
-click 328 166
-wait 10
-click 400 300
-wait 10
-click-cell 60 67
-wait 20
-click 268 453
-wait 10
-click 328 166
-wait 10
-click 400 300
-wait 10
-click-cell 60 66
-wait 20
-click 268 453
-wait 10
-click 328 166
-wait 10
-click 400 300
-wait 10
-click-cell 60 65
 wait 20
 key 5                    # the fastest speed
 wait 5

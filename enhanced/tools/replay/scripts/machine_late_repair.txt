@@ -1,17 +1,17 @@
 # Level 6: machine_saved.txt's worn cardiogram, the handyman hired at turn
-# 13900 (applicant 51, the pool's handyman then): he takes the repair page
+# 15051 (applicant 30, the pool's handyman then): he takes the repair page
 # (set_complex action=150, the cardiogram door at cell 6069) and sets off, but
-# the machine blows up at turn 13981 before he arrives; he then reaches the
-# wrecked room (room_move 51 from=0 to=7 at turn 13992, the second
-# pager_arrival 51) and goes about his work. No repair can happen: the
+# the machine blows up at turn 15092 before he arrives; he then reaches the
+# wrecked room (room_move 30 from=0 to=7 at turn 15103, the second
+# pager_arrival 30) and goes about his work. No repair can happen: the
 # machine is destroyed first. Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 # Expect machine_disaster
 # Expect explosion
 # Expect room_destroyed
-# Expect set_complex 51 action=150
-# Expect pager_arrival 51 == 2
-# Expect room_move 51 from=0 to=7
+# Expect set_complex 30 action=150
+# Expect pager_arrival 30 == 2
+# Expect room_move 30 from=0 to=7
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -54,6 +54,6 @@
 # A second doctor: hire applicant 19, place at cell 6970.
 142 48 1 19
 143 5 6970 19
-# The handyman hired (applicant 51, a handyman at this turn) on his way.
-13900 48 2 51
-13901 5 6841 51
+# The handyman hired (applicant 30, a handyman at this turn) on his way.
+15051 48 2 30
+15052 5 6841 30
