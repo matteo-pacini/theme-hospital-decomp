@@ -2237,7 +2237,8 @@ class Frame
             h.cures = fin.cures;
             h.deaths = fin.deaths;
         } else {
-            // The game recalculates the shown hospital's value each frame; a copy does here.
+            // Game::overview_frame writes the shown hospital's value back each frame; a copy
+            // gives the same figures here.
             RivalHospital rival = game_.world.rivals[size_t(hospital)];
             h.reputation = game_.arrivals.hospitals[size_t(hospital)].hospital_reputation;
             calculate_value(rival, h.reputation, bal);
@@ -2272,6 +2273,7 @@ class Frame
         case 1:
             copy_screen();
             process_overview_panel();
+            r_.overview_hospital = c_.value;
             draw_overview_screen();
             draw_piechart();
             break;

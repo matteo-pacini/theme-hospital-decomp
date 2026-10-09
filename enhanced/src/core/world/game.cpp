@@ -496,6 +496,20 @@ void Game::send_walker(uint16_t id, int cell)
     set_destination_coords(world, id, cell);
 }
 
+void Game::overview_frame(uint8_t hospital)
+{
+    log_inputs();
+    log_line(std::format("@overview {}", int(hospital)));
+    if (hospital >= kHospitalCount)
+        return;
+    if (hospital == 0)
+        calculate_value(finance, world, settings(), reputation());
+    else
+        calculate_value(world.rivals[hospital], arrivals.hospitals[hospital].hospital_reputation, settings());
+    evaluate_criteria(*this, hospital);
+    check_criteria_values(*this, false, hospital);
+}
+
 void Game::update_placement(int cell)
 {
     ObjectPlacing &p = world.placing;
@@ -648,6 +662,13 @@ bool Game::replay_input(std::string_view line, std::string *error)
         if (!id || !cell)
             return replay_input_fail(line, error, "bad walker or cell");
         send_walker(uint16_t(*id), int(*cell));
+        return true;
+    }
+    if (name == "@overview") {
+        auto hospital = replay_input_value(in, 0, kHospitalCount - 1);
+        if (!hospital)
+            return replay_input_fail(line, error, "bad hospital");
+        overview_frame(uint8_t(*hospital));
         return true;
     }
     if (name == "@paused" || name == "@tutorial" || name == "@path_finder" || name == "@build_mouse")

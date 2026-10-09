@@ -2126,6 +2126,8 @@ void App::charts_step(int out_w, int out_h)
         sounds_.play_sound(kSourceCrowd, kSfxResearch);
     if (r.research_stop)
         sounds_.stop_sample(kSourceCrowd, kSfxResearch);
+    if (r.overview_hospital >= 0)
+        game.overview_frame(uint8_t(r.overview_hospital));
     if (r.event.type)
         game.event = r.event;
     last_event_ = game.event;
