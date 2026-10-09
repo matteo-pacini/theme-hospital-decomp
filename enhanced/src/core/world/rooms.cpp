@@ -681,8 +681,11 @@ void set_expertise_room(World &world, uint16_t room_id)
 void set_expertise_staff(World &world, uint16_t id)
 {
     const Thing &staff = world.things[id];
-    if (staff.owner != 0)
+    if (staff.owner != 0) {
+        if (staff.owner < world.rivals.size())
+            set_expertise_staff(world.rivals[staff.owner], staff);
         return;
+    }
     bool ward = world.cure_available[kIllDiagWard] == 1;
     for (size_t i = 1; i < 0x2f; i++) {
         if (world.cure_available[i] != 0)

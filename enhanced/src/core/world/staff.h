@@ -126,6 +126,10 @@ uint32_t normal_staffrand(uint32_t &seed, uint32_t low, uint32_t high);
 // anyone's).
 int count_applicants(const World &world, uint8_t kind);
 
+// remove_staff_in_struct (0x2a130): deletes the applicant `staff`, taking them
+// off the job market's counts and freeing the thing.
+void remove_staff_in_struct(World &world, Thing &staff);
+
 // create_job_market (0x29ad0), at a level's start and each month's end
 // (`game_month` the months since the level began): takes the settings'
 // staff_levels entry of that month, if any, into `market` (reseeding it),
