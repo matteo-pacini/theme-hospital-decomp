@@ -163,7 +163,9 @@ bool computer_employ(World &world, uint8_t type, uint16_t skills, uint8_t owner)
     const RivalHospital &rival = world.rivals[owner];
     for (size_t id = 1; id < world.things.size(); id++) {
         const Thing &c = world.things[id];
-        if (c.type != kThingStaff || c.state != kStaffApplicant || id == world.held_staff || c.subtype != type)
+        // An applicant being placed is kStaffHeld, which stands in for the
+        // game's exclusion of gamevar.held_staff.
+        if (c.type != kThingStaff || c.state != kStaffApplicant || c.subtype != type)
             continue;
         if (skills & ~c.skills & ((1 << kSkillBits) - 1))
             continue;

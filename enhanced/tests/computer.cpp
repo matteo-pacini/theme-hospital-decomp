@@ -155,7 +155,7 @@ void check_random_fill()
     CHECK(world->rivals[2].strategy == b.computer[expected[0]].strategy);
     CHECK(world->rivals[2].strategy_step == 1);
     CHECK(world->seed == seed);
-    CHECK(world->rivals[3].area == 3);
+    CHECK(world->rivals[1].area == 3 && world->rivals[2].area == 0 && world->rivals[3].area == 0);
 
     // Every entry playing: the first three take the hospitals and the rest are
     // not drawn for.

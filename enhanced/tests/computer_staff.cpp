@@ -87,13 +87,13 @@ void check_hire_refusals(th::Game &g)
     CHECK(next != 0);
     CHECK(!computer_employ(w, kStaffDoctor, uint16_t(~w.things[next].skills & 0x1ff), kRival));
     CHECK(!computer_employ(w, 7, 0, kRival));
-    // The held applicant is not taken, the next one is.
-    w.held_staff = next;
+    // The applicant being placed is not taken, the next one is.
+    w.things[next].state = kStaffHeld;
     uint16_t other = applicant(w, kStaffDoctor, next);
     CHECK(computer_employ(w, kStaffDoctor, 0, kRival));
     CHECK(w.things[next].type == kThingStaff);
     CHECK(other == 0 || w.things[other].type == kThingFree);
-    w.held_staff = 0;
+    w.things[next].state = kStaffApplicant;
 }
 
 // Buying pays the rival's own price and counts the object by its category;

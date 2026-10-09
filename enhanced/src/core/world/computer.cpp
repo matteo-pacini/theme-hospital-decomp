@@ -31,13 +31,12 @@ void set_name(RivalHospital &rival, std::string_view text)
 
 // Makes hospital `rival` the computer player `index` and starts its script
 // (the common end of both loops in setup_computer_players).
-void assign_player(RivalHospital &rival, const Balance &settings, uint8_t index, uint16_t area)
+void assign_player(RivalHospital &rival, const Balance &settings, uint8_t index)
 {
     rival.player_type = 2;
     rival.ai_index = index;
     rival.strategy = settings.computer[index].strategy;
     rival.strategy_step = int16_t(find_strategy_start(rival.strategy));
-    rival.area = area;
 }
 
 // setup_computer_players' first loop: each computer player marked as playing
@@ -52,7 +51,8 @@ size_t setup_computer_players_playing(std::array<RivalHospital, kHospitalCount> 
             continue;
         for (k = 1; k < rivals.size(); k++) {
             if (rivals[k].player_type == 0) {
-                assign_player(rivals[k], settings, j, area);
+                assign_player(rivals[k], settings, j);
+                rivals[k].area = area;
                 used[j] = true;
                 break;
             }
@@ -64,15 +64,16 @@ size_t setup_computer_players_playing(std::array<RivalHospital, kHospitalCount> 
 }
 
 // setup_computer_players' second loop for hospital `rival`: a random unused
-// computer player, tried up to kRandomTries times.
-void setup_computer_players_random(World &world, RivalHospital &rival, const Balance &settings, uint16_t area,
-                                   uint32_t mouse_sum, std::array<bool, kComputerPlayers> &used)
+// computer player, tried up to kRandomTries times. Unlike the first loop it
+// leaves the hospital's area alone.
+void setup_computer_players_random(World &world, RivalHospital &rival, const Balance &settings, uint32_t mouse_sum,
+                                   std::array<bool, kComputerPlayers> &used)
 {
     rival.player_type = 2;
     set_name(rival, "DEF 64");
     uint8_t j = 0;
     for (int i = 0; i < kRandomTries; i++) {
-        j = uint8_t((mouse_sum + old_newrand(world.seed)) % kComputerPlayers);
+        j = uint8_t((mouse_sum + old_newrand(world.seed, "setup_computer_players")) % kComputerPlayers);
         rival.ai_index = j;
         if (!used[j]) {
             rival.name = {};
@@ -80,7 +81,7 @@ void setup_computer_players_random(World &world, RivalHospital &rival, const Bal
             break;
         }
     }
-    assign_player(rival, settings, j, area);
+    assign_player(rival, settings, j);
 }
 
 } // namespace
@@ -136,7 +137,7 @@ void setup_computer_players(World &world, const Balance &settings, int level_num
     const uint32_t mouse_sum = uint32_t(mouse_x) + uint32_t(mouse_y);
     for (; k < world.rivals.size(); k++)
         if (world.rivals[k].player_type == 0)
-            setup_computer_players_random(world, world.rivals[k], settings, area, mouse_sum, used);
+            setup_computer_players_random(world, world.rivals[k], settings, mouse_sum, used);
 }
 
 void name_computer_players(std::array<RivalHospital, kHospitalCount> &rivals, const LanguageText &text)
