@@ -1,0 +1,128 @@
+# Level 8: electrolysis.txt's hospital with its electrolysis room taken away
+# before any hairyitis patient reaches it. Nobody is in the room (its staff
+# list is empty at turn 19999; the nurse 45 hired for it wanders elsewhere), and
+# at turn 20000 it is taken back to a blueprint and abandoned (as
+# room_delete.txt does: EV_INIT_EDIT_ROOM, EV_EDIT_BLUEPRINT, EV_DELETE_ROOM
+# -> delete_room 9, delete_blueprint_room); the room has a rat hole on its
+# wall row (tile 5020), which delete_room removes (rathole_remove 5020).
+# Patient 53, fully diagnosed (X-ray, then the GP) although the cure is
+# researched, has no room that treats it: a call is made about it (playercall
+# 53 type=4, turn 22111) and it goes home (go_home 53 state=68, turn 22176).
+# It is not cured and not killed. A room deleted with staff still in it is
+# not covered: see docs/BUGS.md, delete_blueprint_room.
+# Expect delete_room 9 == 1
+# Expect delete_blueprint_room == 1
+# Expect rathole_remove 5020 == 1
+# Expect playercall 53 type=4 == 1
+# Expect go_home 53 state=68 >= 1
+# Expect-not cure 53 illness=3
+# Expect-not dies 53
+# Expect-not winlose
+# Turns 23000
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 5785 11
+10 48 3 28
+11 5 6044 28
+12 48 2 20
+13 5 6045 20
+20 115 20 31
+21 115 20 31
+22 115 20 31
+23 115 20 31
+24 115 20 31
+25 115 20 31
+26 115 20 31
+27 115 20 31
+28 115 20 31
+29 115 20 31
+30 115 20 31
+31 115 20 31
+60 55 0 0
+61 53 7 7
+62 2 4372 0
+63 2 4888 0
+64 8 4888 0
+65 18 0 0
+66 26 4246 0
+67 3 0 0
+68 4 7 0
+69 7 4630 1
+70 7 4376 2
+71 7 4631 6
+72 1 0 0
+73 48 1 14
+74 5 6046 14
+101 55 0 0
+102 53 28 28
+103 2 4366 0
+104 2 4882 0
+105 8 4882 0
+106 18 0 0
+107 26 4240 0
+108 3 0 0
+109 4 28 0
+110 7 4750 55
+111 7 4754 257
+112 7 4370 258
+113 1 0 0
+120 114 39 0
+121 80 0 0
+122 80 1 0
+123 80 2 0
+124 80 3 0
+125 80 4 100
+130 113 1 0
+131 113 2 10
+2000 90 100 0
+4000 90 100 0
+4700 48 1 15
+4701 5 4494 15
+4702 48 1 16
+4703 5 4495 16
+4704 48 1 18
+4705 5 4496 18
+6000 90 100 0
+8000 90 100 0
+8260 114 3 0
+8300 55 0 0
+8301 53 16 16
+8302 2 5152 0
+8303 2 5797 0
+8304 8 5797 0
+8305 18 0 0
+8306 26 5026 0
+8307 3 0 0
+8308 4 16 0
+8309 7 5539 27
+8310 7 5285 28
+8311 1 0 0
+8330 48 1 31
+8331 5 6050 31
+10000 90 100 0
+12000 55 0 0
+12000 90 100 0
+12001 53 23 23
+12002 2 4378 0
+12003 2 4894 0
+12004 8 4894 0
+12005 18 0 0
+12006 26 4251 0
+12007 3 0 0
+12008 4 23 0
+12060 7 4637 46
+12061 7 4764 527
+12062 1 0 0
+12070 48 1 45
+12071 5 6047 45
+12100 137 0 0
+14000 90 100 0
+16000 90 100 0
+18000 90 100 0
+20000 90 100 0
+20000 70 9 0
+20001 69 0 0
+20002 121 0 0
+22000 90 100 0
+24000 90 100 0

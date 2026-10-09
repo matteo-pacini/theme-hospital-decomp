@@ -431,6 +431,30 @@ void draw_hire_staff_kind(UiLayer &layer, const Window &win, const SpriteSheet &
     }
 }
 
+// The flashing hint (req2_overdraw): the highlighted button of the staff
+// kinds, previous and next applicant and hire drawn lit, with the sprite
+// (hires_requester_sprites[0x31] to [0x35]) of its active look.
+void draw_hire_staff_flash(UiLayer &layer, const Window &win, const SpriteSheet &sheet, TutorialFlash &flash)
+{
+    struct Hint {
+        uint16_t highlight;
+        int button, sprite;
+    };
+    static constexpr Hint kHints[] = {{3, kReceptionistButton, kReceptionistLit},
+                                      {5, kHireButton, 0x113},
+                                      {6, kPreviousButton, 0x111},
+                                      {7, kNextButton, 0x117},
+                                      {4, kDoctorButton, kDoctorLit}};
+    if (!flash.tutorial || !flash.tick())
+        return;
+    for (const Hint &h : kHints)
+        if (h.highlight == flash.highlight) {
+            const WindowButton &b = win.buttons[size_t(h.button - 1)];
+            layer.draw_sprite(win.x + b.x, win.y + b.y, sheet.at(size_t(h.sprite)));
+            flash.drawn++;
+        }
+}
+
 // The number of applicants of each kind.
 void draw_hire_staff_counts(UiLayer &layer, const Window &win, const HireStaffArt &hire_art, const World &world)
 {
@@ -522,6 +546,7 @@ void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const
     if (hire.shown && hire.mode == 2)
         draw_hire_staff_kind(layer, win, window_art.art.sheet(kHireWindow), hire.kind);
     draw_hire_staff_counts(layer, win, window_art.hire_art, world);
+    draw_hire_staff_flash(layer, win, window_art.art.sheet(kHireWindow), ui.flash());
     if (hire.mode != 2 || !hire.shown) {
         layer.fill({win.x + kBlankBox.x, win.y + kBlankBox.y, kBlankBox.w, kBlankBox.h}, kBoxColour);
         return;

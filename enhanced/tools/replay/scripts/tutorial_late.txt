@@ -1,0 +1,42 @@
+# Level 1
+# Turns 200
+# The advisor's tutorial (see tutorial.txt) started late, on a hospital that
+# has a reception, a receptionist, a GP's office and a doctor
+# (gp_office.txt): the steps go by on the commands they wait for to 0x20,
+# which finds the GP's office, and 0x1f, which finds the doctor and ends
+# the tutorial.
+# Expect tutorial 29
+# Expect tutorial 32
+# Expect tutorial 31
+# Expect-not tutorial 35
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+120 @tutorial 1
+121 98 0 0
+122 37 11 1
+123 43 0 0

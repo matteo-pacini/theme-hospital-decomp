@@ -102,6 +102,9 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error, std::o
         return false;
     }
     ghost_ = std::move(*ghost);
+    anims_.sprite_heights.clear();
+    for (size_t i = 0; i < sprites_.size(); i++)
+        anims_.sprite_heights.push_back(uint8_t(sprites_.at(i).height));
     if (!load_person_complexes(dir, person_complexes_, error))
         return false;
     if (!load_staff_complexes(dir, staff_complexes_, error))

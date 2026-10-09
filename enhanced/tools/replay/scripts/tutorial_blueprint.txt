@@ -1,0 +1,73 @@
+# Level 1
+# Turns 120
+# The advisor's tutorial (see tutorial.txt) from the room building (0x2b) to
+# the blueprint committed (0x30), by the commands the steps wait for and the
+# ones that send them back. Department 4 is not the GP's office's: 0x2b
+# waits; department 3 goes on to 0x2c, where another department changes
+# nothing, a general diagnosis room sends it back to 0x20 and so does
+# closing the requester; the GP's office goes on to the blueprint (0x39) and
+# cancelling there back to 0x20. A one-cell blueprint on the reception desk
+# is too small and not placeable (both flags, 0x2f stays) and cancelling
+# goes back; a blueprint over the desk and big enough is only unplaceable
+# (0x2f stays); one placeable and big enough waits at 0x2f; and a one-cell
+# blueprint on free land is only too small, which moves on to 0x38. There a
+# blueprint too small and over the desk, one over the desk, and one placeable
+# keep the step, until the placeable one is committed (0x30).
+# Expect tutorial 43 >= 6
+# Expect tutorial 44 >= 6
+# Expect tutorial 57 >= 4
+# Expect tutorial 47 >= 20
+# Expect tutorial 56 >= 12
+# Expect tutorial 48
+# Expect commit_blueprint
+# Expect-not tutorial 49
+2 @tutorial 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 46 0 0
+11 47 3 0
+12 50 1 0
+13 50 0 0
+14 48 3 22
+15 5 9788 22
+16 55 0 0
+17 32 4 0
+18 32 3 0
+19 32 5 0
+20 53 8 8
+21 55 0 0
+22 32 3 0
+23 38 0 0
+24 55 0 0
+25 32 3 0
+26 53 7 7
+27 121 0 0
+28 55 0 0
+29 32 3 0
+30 53 7 7
+31 2 9534 0
+41 56 0 0
+42 55 0 0
+43 32 3 0
+44 53 7 7
+45 2 8382 0
+46 2 9666 0
+50 8 9666 0
+51 2 9666 0
+52 2 8898 0
+56 56 0 0
+57 55 0 0
+58 32 3 0
+59 53 7 7
+60 2 8382 0
+63 2 8898 0
+64 2 9666 0
+65 2 8898 0
+66 8 8898 0
+67 2 9534 0
+71 8 9534 0
+72 2 8382 0
+73 2 8898 0
+74 18 0 0

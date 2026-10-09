@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <memory>
 #include <string>
@@ -397,6 +398,244 @@ void test_advisor_tutorial(const char *dir)
 namespace
 {
 
+// The tutorial from `step` with its messages unshown: where the step's own
+// message, hint (empty message) and highlight are.
+void tutorial_at(AdvisorFixture &a, uint8_t step)
+{
+    a.advisor.tutorial_step = step;
+    a.advisor.tutorial_shown = {};
+    a.advisor.tutorial_highlight = 0;
+    a.advisor.text.clear();
+}
+
+// The command `e` carried out, as the next frame's `last`.
+void tutorial_command(AdvisorFixture &a, th::Event e)
+{
+    a.in.pending = e;
+    a.frame();
+    a.frame();
+}
+
+// The step's message, if `text` is not null, and the highlight; the step's
+// hint when the message is empty.
+void check_tutorial_message(AdvisorFixture &a, const char *what, int text, uint16_t highlight)
+{
+    a.frame();
+    const th::LanguageText &lang = a.f.gd.text();
+    bool ok = text ? a.advisor.text == lang.advisor(text) : a.advisor.text.empty();
+    ok = ok && a.advisor.tutorial_highlight == highlight;
+    if (!ok)
+        std::fprintf(stderr, "tutorial: %s\n", what);
+    CHECK(ok);
+}
+
+// The flags drawing a blueprint leaves: too small alone on the hospital's
+// land, too small and placeable nowhere off it, only the latter once big
+// enough, and none for no blueprint.
+void check_blueprint_flags(AdvisorFixture &a)
+{
+    th::Advisor &adv = a.advisor;
+    th::BuildState &b = a.f.game->world.building.build;
+    auto flags_for = [&](int x0, int y0, int x1, int y1) {
+        b = {};
+        b.room_type = th::kRoomGp;
+        b.draw_mode = 1;
+        b.x0 = uint8_t(x0), b.y0 = uint8_t(y0), b.x1 = uint8_t(x1), b.y1 = uint8_t(y1);
+        adv.flags = th::kAdvisorTutorial;
+        a.frame();
+        return adv.flags & (th::kAdvisorBlueprintSmall | th::kAdvisorBadPlacement);
+    };
+    CHECK(flags_for(62, 65, 62, 65) == th::kAdvisorBlueprintSmall);
+    // A block of 5 x 5 cells with nothing on them that are not the hospital's.
+    int x = 0, y = 0;
+    for (int c = 0; c < th::kMapCells - 5 * th::kMapSize - 5 && !x; c++) {
+        bool block = true;
+        for (int i = 0; i < 25; i++) {
+            const th::MapCell &m = a.f.game->world.map[size_t(c + i % 5 + i / 5 * th::kMapSize)];
+            block = block && !m.first && !(m.flags & 7) && ((m.owner_flags & th::kCellOutdoor) || !(m.owner_flags & 1));
+        }
+        if (block)
+            x = c % th::kMapSize, y = c / th::kMapSize;
+    }
+    CHECK(x > 0 && x + 4 < th::kMapSize);
+    CHECK(flags_for(x, y, x, y) == (th::kAdvisorBlueprintSmall | th::kAdvisorBadPlacement));
+    CHECK(flags_for(x, y, x + 4, y + 4) == th::kAdvisorBadPlacement);
+    CHECK(flags_for(62, 65, 66, 69) == 0);
+    b.draw_mode = 0;
+    adv.flags = th::kAdvisorTutorial | th::kAdvisorBlueprintSmall;
+    a.frame();
+    CHECK(adv.flags & th::kAdvisorBlueprintSmall);
+    b = {};
+}
+
+// Steps 0x20 to 0x3a: choosing and building the GP's office.
+void check_tutorial_gp_office(AdvisorFixture &a)
+{
+    th::Advisor &adv = a.advisor;
+    th::World &world = a.f.game->world;
+    tutorial_at(a, 0x20);
+    check_tutorial_message(a, "0x20 asks for the room building", 32, 0x12);
+    tutorial_command(a, {th::EV_OPEN_BUILD_ROOM});
+    CHECK(adv.tutorial_step == 0x2b);
+    check_tutorial_message(a, "0x2b points at the department", 0, 8);
+    tutorial_command(a, {th::EV_REQ1_RESET_ROOMS, 4});
+    CHECK(adv.tutorial_step == 0x2b);
+    tutorial_command(a, {th::EV_REQ1_RESET_ROOMS, 3});
+    CHECK(adv.tutorial_step == 0x2c);
+    // The hint is marked shown as flag 14, not 15, so it comes every turn.
+    check_tutorial_message(a, "0x2c points at the room", 0, 0xb);
+    adv.tutorial_highlight = 0;
+    check_tutorial_message(a, "0x2c's hint comes again", 0, 0xb);
+    tutorial_command(a, {th::EV_INIT_BLUEPRINT, 8});
+    CHECK(adv.tutorial_step == 0x20 && adv.tutorial_shown[14] == 0);
+    tutorial_at(a, 0x2c);
+    tutorial_command(a, {th::EV_CLOSE_REQUESTERS});
+    CHECK(adv.tutorial_step == 0x20);
+    tutorial_at(a, 0x2c);
+    tutorial_command(a, {th::EV_INIT_BLUEPRINT, th::kRoomGp});
+    CHECK(adv.tutorial_step == 0x39);
+    check_tutorial_message(a, "0x39 asks for the blueprint dragged out", 47, 0);
+    tutorial_command(a, {th::EV_CANCEL_BUILD});
+    CHECK(adv.tutorial_step == 0x20);
+    // A room built already, or the step done: on to the doctor.
+    world.room_of_type[th::kRoomGp] = 1;
+    a.frame();
+    CHECK(adv.tutorial_step == 0x1f && adv.tutorial_shown[3] == 2);
+    world.room_of_type[th::kRoomGp] = 0;
+}
+
+// Steps 0x2f and 0x38: the flags the drawn blueprint leaves, and the
+// messages they give.
+void check_tutorial_blueprint(AdvisorFixture &a)
+{
+    th::Advisor &adv = a.advisor;
+    tutorial_at(a, 0x39);
+    tutorial_command(a, {th::EV_MODIFY_BLUEPRINT});
+    CHECK(adv.tutorial_step == 0x2f);
+    // Too small and not placeable, then neither, then not placeable alone.
+    adv.flags = th::kAdvisorTutorial | th::kAdvisorBlueprintSmall | th::kAdvisorBadPlacement;
+    check_tutorial_message(a, "0x2f: too small and invalid", 61, 0);
+    CHECK(adv.tutorial_step == 0x2f && !(adv.flags & (th::kAdvisorBlueprintSmall | th::kAdvisorBadPlacement)));
+    adv.flags = th::kAdvisorTutorial;
+    check_tutorial_message(a, "0x2f: nothing wrong", 52, 0);
+    adv.flags = th::kAdvisorTutorial | th::kAdvisorBadPlacement;
+    check_tutorial_message(a, "0x2f: invalid", 51, 0);
+    CHECK(adv.tutorial_step == 0x2f);
+    // Too small alone moves on, to waiting for the commit.
+    adv.flags = th::kAdvisorTutorial | th::kAdvisorBlueprintSmall;
+    a.frame();
+    CHECK(adv.tutorial_step == 0x38);
+    adv.flags = th::kAdvisorTutorial | th::kAdvisorBlueprintSmall;
+    check_tutorial_message(a, "0x38: too small", 52, 0);
+    adv.flags = th::kAdvisorTutorial;
+    check_tutorial_message(a, "0x38 asks for the commit", 56, 0x0c);
+    tutorial_command(a, {th::EV_COMMIT_BLUEPRINT});
+    CHECK(adv.tutorial_step == 0x30);
+}
+
+// Steps 0x30 to 0x3a: the door, the windows, the objects and opening.
+void check_tutorial_room(AdvisorFixture &a)
+{
+    th::Advisor &adv = a.advisor;
+    th::World &world = a.f.game->world;
+    tutorial_at(a, 0x30);
+    check_tutorial_message(a, "0x30 asks for the door", 48, 0);
+    world.building.door_invalid = true;
+    tutorial_command(a, {th::EV_PLACE_BP_DOOR});
+    CHECK(adv.tutorial_step == 0x30);
+    check_tutorial_message(a, "0x30: the door does not fit", 53, 0);
+    world.building.door_invalid = false;
+    tutorial_command(a, {th::EV_PLACE_BP_DOOR});
+    CHECK(adv.tutorial_step == 0x31);
+    check_tutorial_message(a, "0x31 asks for windows", 49, 0x0c);
+    world.building.door_invalid = true;
+    tutorial_command(a, {th::EV_PLACE_BP_DOOR});
+    check_tutorial_message(a, "0x31: the window does not fit", 54, 0x0c);
+    tutorial_command(a, {th::EV_EDIT_BLUEPRINT});
+    CHECK(adv.tutorial_step == 0x38);
+    world.building.door_invalid = false;
+    tutorial_at(a, 0x31);
+    tutorial_command(a, {th::EV_COMMIT_DOORS});
+    CHECK(adv.tutorial_step == 0x32);
+    check_tutorial_message(a, "0x32 asks for the objects", 50, 0);
+    adv.flags |= th::kAdvisorBadPlacement;
+    check_tutorial_message(a, "0x32: the object does not fit", 55, 0);
+    CHECK(!(adv.flags & th::kAdvisorBadPlacement));
+    // The room's requester sets the flag that the room has what it needs.
+    world.placing.furnished = true;
+    a.frame();
+    CHECK(adv.tutorial_step == 0x3a && (adv.flags & th::kAdvisorRoomFurnished));
+    check_tutorial_message(a, "0x3a asks to open the room", 58, 0x0c);
+    tutorial_command(a, {th::EV_EDIT_BLUEPRINT});
+    CHECK(adv.tutorial_step == 0x38);
+    tutorial_at(a, 0x3a);
+    tutorial_command(a, {th::EV_OPEN_ROOM});
+    CHECK(adv.tutorial_step == 0x1f);
+}
+
+// Steps 0x1f to 0x27: the doctor, which ends the tutorial.
+void check_tutorial_doctor(AdvisorFixture &a)
+{
+    th::Advisor &adv = a.advisor;
+    int help_page = -1;
+    a.in.help_page = &help_page;
+    tutorial_at(a, 0x1f);
+    check_tutorial_message(a, "0x1f asks for the staff hiring", 31, 0x15);
+    tutorial_command(a, {th::EV_OPEN_HIRE_STAFF});
+    CHECK(adv.tutorial_step == 0x23);
+    check_tutorial_message(a, "0x23 points at the doctors", 0, 4);
+    tutorial_command(a, {th::EV_HIRE_SELECT_KIND, th::kStaffNurse});
+    CHECK(adv.tutorial_step == 0x23);
+    tutorial_command(a, {th::EV_MARK_EMPLOYING, th::kStaffNurse});
+    CHECK(adv.tutorial_step == 0x1f && adv.tutorial_shown[2] == 0);
+    tutorial_at(a, 0x23);
+    tutorial_command(a, {th::EV_HIRE_SELECT_KIND, th::kStaffDoctor});
+    CHECK(adv.tutorial_step == 0x2d);
+    check_tutorial_message(a, "0x2d points at the hire button", 0, 5);
+    tutorial_command(a, {th::EV_HIRE_SELECT_KIND, th::kStaffNurse});
+    CHECK(adv.tutorial_step == 0x23);
+    tutorial_at(a, 0x2d);
+    tutorial_command(a, {th::EV_MARK_EMPLOYING, th::kStaffDoctor});
+    CHECK(adv.tutorial_step == 0x27);
+    // Held where the doctor may not be put down, then where they may.
+    a.in.staff_place_ok = false;
+    check_tutorial_message(a, "0x27: not there", 59, 0);
+    a.in.staff_place_ok = true;
+    adv.tutorial_shown[10] = 0;
+    check_tutorial_message(a, "0x27 asks for the doctor placed", 39, 0);
+    tutorial_command(a, {th::EV_CANCEL_BUILD});
+    CHECK(adv.tutorial_step == 0x1f);
+    // Once a doctor works for the hospital the tutorial is over.
+    th::Thing &doctor = a.f.game->world.things[3];
+    doctor = {};
+    doctor.type = th::kThingStaff;
+    doctor.subtype = th::kStaffDoctor;
+    doctor.skills = th::kSkillDoctor;
+    doctor.owner = 0;
+    doctor.state = th::kStaffWanders;
+    tutorial_at(a, 0x27);
+    a.frame();
+    CHECK(!(adv.flags & th::kAdvisorTutorial) && help_page == 0xf);
+}
+
+} // namespace
+
+void test_advisor_tutorial_rooms(const char *dir)
+{
+    AdvisorFixture a;
+    CHECK(a.start(dir, true));
+    if (!a.f.level)
+        return;
+    check_tutorial_gp_office(a);
+    check_blueprint_flags(a);
+    check_tutorial_blueprint(a);
+    check_tutorial_room(a);
+    check_tutorial_doctor(a);
+}
+
+namespace
+{
+
 // A right click on the bubble sends him away; the advice is not given
 // again soon.
 void check_advice_dismissed(AdvisorFixture &a)
@@ -624,6 +863,10 @@ void check_advice_announcements(AdvisorFixture &a)
     CHECK(first_advice(a, calm, &said) == 0x79);
     CHECK(said.find(names(th::TextSection::ResearchNames, 2)) != std::string::npos);
     CHECK(w.announce[th::kAnnCategoryDone][0] == 0);
+
+    w.announce[th::kAnnAutopsyDiscovered][0] = 1;
+    CHECK(first_advice(a, calm, &said) == 0x7a);
+    CHECK(said == text.advisor(0x7a) && w.announce[th::kAnnAutopsyDiscovered][0] == 0);
 }
 
 // The advice about the plants' condition: a middling one with one handyman

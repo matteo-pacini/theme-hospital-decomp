@@ -4,6 +4,7 @@
 #include "core/render/blit.h"
 
 #include <algorithm>
+#include <array>
 #include <climits>
 
 namespace th
@@ -115,13 +116,21 @@ void draw_element(const ElementContext &c, const AnimElement &e, Bounds &b)
     int ex = e.x - kElementBiasX;
     int ey = e.y - kElementBiasY;
     unsigned f = (e.flags & 0xf) | c.options.flags;
+    // draw_glow_frame: the elements tagged with a layer blend with the glow,
+    // the others with colour 0 if their own flags say so.
+    const bool layered = (e.flags & 0xfff0) != 0;
+    const uint8_t glow = layered && c.options.glow >= 0 ? uint8_t(c.options.glow) : uint8_t(0);
+    if (layered && c.options.glow >= 0)
+        f |= kDrawGhost;
     if (c.options.scale != 0x10000)
         draw_element_scaled(c.dst, {c.at, {ex, ey}, c.flip, c.options.scale}, s, f, c.data.ghost().data());
     if (c.flip) {
         f ^= kDrawFlipX;
         ex = -ex - s.width;
     }
-    if (c.options.scale == 0x10000)
+    if (c.options.scale == 0x10000 && c.options.glow >= 0)
+        draw_sprite_glow(c.dst, {c.at.x + ex, c.at.y + ey}, s, f, glow, c.data.ghost().data());
+    else if (c.options.scale == 0x10000)
         draw_sprite(c.dst, c.at.x + ex, c.at.y + ey, s, f, c.data.ghost().data());
     b.grow(ex, ey, s.width, s.height);
 }
@@ -173,6 +182,12 @@ Rect draw_frame(Surface &dst, Point at, uint32_t frame_id, bool flip, const Game
     if (b.empty())
         return {};
     return {x + b.left, y + b.top, frame.width, frame.height + icon_extra};
+}
+
+uint8_t glow_colour(uint32_t turn, const uint8_t *layers)
+{
+    static constexpr std::array<uint8_t, 8> kGlowPath = {0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d};
+    return kGlowPath[((turn + layers[0] + layers[1]) >> 1) & 7];
 }
 
 } // namespace th

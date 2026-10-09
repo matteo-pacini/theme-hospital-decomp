@@ -18,6 +18,8 @@
 # Expect go_for_treatment 10 treatment=16 == 1
 # Expect force_cure 14 == 1
 # Expect go_for_treatment 14 treatment=2 == 1
+# Expect-not dies 10
+# Expect-not dies 14
 # Expect go_home
 # Expect go_home 6 state=68 == 1
 # Expect go_home 8 state=48 == 1

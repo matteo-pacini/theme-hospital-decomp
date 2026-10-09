@@ -137,7 +137,7 @@ Event place_staff_click(HireStaff &hire, const World &world, int cell);
 // with a kind chosen, the shown applicant's name, wage, face, doctor
 // qualifications (covered for other kinds), ability gauge and reference;
 // otherwise a blank panel. Moves on to the next applicant if the shown one
-// was taken. The advisor's flashing hints are not drawn.
+// was taken. The tutorial's flashing hint is drawn (Interface::flash).
 void draw_hire_staff(UiLayer &layer, HireStaff &hire, const Interface &ui, const WindowArt &window_art,
                      const World &world);
 

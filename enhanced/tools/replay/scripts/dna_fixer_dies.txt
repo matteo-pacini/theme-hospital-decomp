@@ -1,0 +1,30 @@
+# Level 12: the DNA fixer's alien patients dying untreated. dna_fixer.txt's
+# room, DNA fixer and console but no doctor: the first three emergencies are
+# left to expire, the fourth (turn 59700, 4 patients with alien DNA) is
+# accepted at turn 59750. The aliens queue at the DNA fixer's door where no
+# one treats them; when the emergency's time is up they lose their health
+# and die as aliens (summon_reaper, the abduction death of treat.cpp), which
+# counts as a cure of their illness (cure ... illness=8).
+# Expect emergency_accept
+# Expect emergency_peep >= 4
+# Expect emergency_dies >= 4
+# Expect summon_reaper >= 3
+# Expect dead 26 substate=47 == 1
+# Expect cure 21 illness=8 == 1
+# Expect-not emergency_cure
+# Expect-not winlose
+# Turns 65000
+60 55 0 0
+61 53 18 18
+62 2 8634 0
+63 2 9150 0
+64 8 9150 0
+65 18 0 0
+66 26 8508 0
+67 3 0 0
+68 4 18 0
+69 7 8891 23
+70 7 9021 15
+71 1 0 0
+59750 10 2 0
+59751 125 31 0

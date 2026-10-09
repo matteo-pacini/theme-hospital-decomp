@@ -2,6 +2,8 @@
 
 #include "core/data/gamedata.h"
 #include "core/render/frame.h"
+#include "core/render/view.h"
+#include "core/render/wibble.h"
 #include "core/ui/buy_objects.h"
 #include "core/world/build.h"
 #include "core/world/complex_tables.h"
@@ -10,6 +12,7 @@
 #include "core/world/world.h"
 
 #include <string>
+#include <utility>
 
 namespace th
 {
@@ -151,6 +154,61 @@ uint8_t over_queue_person(const World &world, uint16_t room, uint8_t sel, Point 
     return 0;
 }
 
+// What display_queue_people draws a patient with: a frame at the patient's
+// feet, in a scratch surface whose drawn pixels go onto the layer.
+constexpr Point kScratchOrigin = {100, 150};
+constexpr int kScratchSize = 200;
+
+// Puts the pixels of a drawing onto the layer, its origin at `at`: those
+// `pixel(x, y)` gives a colour for, not a negative number.
+template <typename Pixel> void copy_drawn(UiLayer &layer, Point at, Pixel &&pixel)
+{
+    for (int y = 0; y < kScratchSize; y++) {
+        for (int x = 0; x < kScratchSize; x++) {
+            int lx = at.x - kScratchOrigin.x + x, ly = at.y - kScratchOrigin.y + y;
+            if (pixel(x, y) < 0 || lx < 0 || lx >= layer.width() || ly < 0 || ly >= layer.height())
+                continue;
+            layer.pixels().row(ly)[lx] = uint8_t(pixel(x, y));
+            layer.mark({lx, ly, 1, 1});
+        }
+    }
+}
+
+// draw_wibble_frame for a jellyitis patient standing at `at`: draw_wibble
+// leaves out the pixels of colour kMaskColour, as the game does.
+void draw_queue_wibble(UiLayer &layer, const GameData &data, const Thing &p, AnimStart start, Point at, uint32_t turn)
+{
+    Surface scratch;
+    scratch.resize(kScratchSize, kScratchSize);
+    scratch.fill(kMaskColour);
+    Surface buffer = make_wibble_buffer();
+    draw_wibble_frame(scratch, buffer, {kScratchOrigin, start.frame, start.flip != 0, turn}, data,
+                      {.layers = p.layers.data()});
+    copy_drawn(layer, at, [&](int x, int y) { return scratch.row(y)[x] == kMaskColour ? -1 : scratch.row(y)[x]; });
+}
+
+// draw_glow_frame for a patient with radiation standing at `at`. The game
+// draws every pixel of the frame, and a glow can blend to colour 0xfe, so the
+// frame is drawn twice, on 0xfe and on another colour (the blend does not read
+// what is under it): a pixel is drawn where either differs from its base.
+void draw_queue_glow(UiLayer &layer, const GameData &data, const Thing &p, AnimStart start, Point at, uint32_t turn)
+{
+    constexpr uint8_t kOtherBase = kMaskColour - 1;
+    FrameOptions options = {.layers = p.layers.data(), .glow = glow_colour(turn, p.layers.data())};
+    if (p.icon_id > 0)
+        options.icon = p.icon_frame;
+    Surface on_mask, on_other;
+    for (auto [surface, base] : {std::pair{&on_mask, kMaskColour}, std::pair{&on_other, kOtherBase}}) {
+        surface->resize(kScratchSize, kScratchSize);
+        surface->fill(base);
+        draw_frame(*surface, kScratchOrigin, start.frame, start.flip != 0, data, options);
+    }
+    copy_drawn(layer, at, [&](int x, int y) {
+        const int a = on_mask.row(y)[x], b = on_other.row(y)[x];
+        return a != kMaskColour ? a : b != kOtherBase ? b : -1;
+    });
+}
+
 // draw_queue_patient: patient `id` standing at (px, py) (its feet).
 void draw_queue_patient(UiLayer &layer, const World &world, const GameData &data, uint16_t id, int px, int py)
 {
@@ -162,10 +220,11 @@ void draw_queue_patient(UiLayer &layer, const World &world, const GameData &data
 
 // display_queue_people (0x96c34): room `room`'s queue in the window at `at`,
 // a gap around position `sel`.
-void draw_queue_people(UiLayer &layer, const World &world, const GameData &data, uint16_t room, uint8_t sel, Point at)
+void draw_queue_people(UiLayer &layer, const World &world, const GameData &data, const QueueWindow &q, Point at,
+                       uint32_t turn)
 {
-    uint16_t size = queue_size(world, room);
-    const RoomInfo &info = world.rooms[room % kRoomCount];
+    uint16_t size = queue_size(world, q.room);
+    const RoomInfo &info = world.rooms[q.room % kRoomCount];
     uint16_t id = info.queue_head;
     if (!size || !id)
         return;
@@ -174,10 +233,10 @@ void draw_queue_people(UiLayer &layer, const World &world, const GameData &data,
     int py = at.y + kQueueAt.y;
     for (uint16_t position = 1; id; position++) {
         const Thing &p = world.things[id];
-        if (position == sel)
+        if (position == q.pos)
             px += kUiWidth / kGapDivisor;
-        draw_queue_patient(layer, world, data, id, px, py);
-        if (position == sel)
+        draw_queue_person(layer, world, data, id, {px, py}, turn);
+        if (position == q.pos)
             px += kUiWidth / kGapDivisor;
         px += step;
         id = p.queue_next;
@@ -388,6 +447,19 @@ void queue_window_input_door(QueueWindow &q, const RoomInfo &room, const QueueIn
 
 } // namespace
 
+void draw_queue_person(UiLayer &layer, const World &world, const GameData &data, uint16_t id, Point at, uint32_t turn)
+{
+    constexpr uint8_t kIllSeriousRadiation = 6, kIllJellyitis = 12;
+    const Thing &p = world.things[id];
+    AnimStart start = patient_stand(data, p.subtype);
+    if (p.illness == kIllSeriousRadiation)
+        draw_queue_glow(layer, data, p, start, at, turn);
+    else if (p.illness == kIllJellyitis)
+        draw_queue_wibble(layer, data, p, start, at, turn);
+    else
+        draw_queue_patient(layer, world, data, id, at.x, at.y);
+}
+
 void queue_window_event(QueueWindow &q, Interface &ui, const World &world, const Event &event)
 {
     switch (event.type) {
@@ -446,9 +518,10 @@ void queue_window_input(QueueWindow &q, Interface &ui, Game &game, const QueueIn
     q.left_was_down = left;
 }
 
-void draw_queue_window(UiLayer &layer, const QueueWindow &q, const Interface &ui, const World &world,
+void draw_queue_window(UiLayer &layer, const QueueWindow &q, const Interface &ui, const Game &game,
                        const RequesterArt &art, const GameData &data)
 {
+    const World &world = game.world;
     if (!ui.is_open(kQueueWindow) || q.room >= world.rooms.size())
         return;
     const RoomInfo &room = world.rooms[q.room % kRoomCount];
@@ -466,7 +539,7 @@ void draw_queue_window(UiLayer &layer, const QueueWindow &q, const Interface &ui
     put(kLabel[6], std::to_string(room.patients_seen));
     put(kLabel[7], std::to_string(room.queue_capacity));
 
-    draw_queue_people(layer, world, data, q.room, q.pos, at);
+    draw_queue_people(layer, world, data, q, at, game.turn_count);
     if (q.drag == 1 && q.pos)
         draw_queue_patient(layer, world, data, get_real_person_from_room(world, q.room, q.pos), q.mouse_x, q.mouse_y);
     if (q.drag == 2 && q.pos) {

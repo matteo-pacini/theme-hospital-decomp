@@ -1,0 +1,58 @@
+# Level 1
+# Turns 200
+# The advisor's tutorial (see tutorial.txt) started late, on a hospital that
+# has a reception, a receptionist and a GP's office (gp_office.txt) but no
+# doctor: the first steps go by on the commands they wait for, and 0x1e and
+# 0x20 move on at once (a receptionist and a GP's office exist). Then the
+# doctor: staff hiring opened (0x1f); a handyman hired instead of a doctor
+# goes back to 0x1f; choosing nurses keeps 0x23 and doctors moves to 0x2d;
+# choosing nurses there goes back to 0x23, and cancelling to 0x1f; a doctor
+# hired (0x2d) and cancelled (0x27) goes back to 0x1f, and a doctor placed
+# ends the tutorial.
+# Expect tutorial 30
+# Expect tutorial 32
+# Expect tutorial 31 >= 6
+# Expect tutorial 35 >= 6
+# Expect tutorial 45 >= 4
+# Expect tutorial 39 >= 2
+# Expect place_staff >= 2
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+120 @tutorial 1
+121 98 0 0
+122 37 11 1
+123 43 0 0
+130 46 0 0
+131 48 2 20
+132 56 0 0
+133 46 0 0
+134 47 0 0
+135 47 1 0
+136 47 0 0
+137 47 1 0
+138 56 0 0
+139 46 0 0
+140 47 1 0
+141 48 1 11
+142 56 0 0
+143 46 0 0
+144 47 1 0
+145 48 1 11
+146 5 10044 11

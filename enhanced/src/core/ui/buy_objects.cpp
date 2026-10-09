@@ -341,6 +341,34 @@ void draw_edit_room(UiLayer &layer, const Window &win, const ObjectUi &oui, cons
     });
 }
 
+// The flashing hint of req11_overdraw: the accept button (highlight 9) or
+// the first entry's (0xa) in its active look, hires_requester_sprites[0x13]
+// and [0x12].
+void draw_buy_objects_flash(UiLayer &layer, const Window &win, const SpriteSheet &sheet, TutorialFlash &flash)
+{
+    constexpr int kAcceptSprite = 0xee, kEntrySprite = 0xf1;
+    if (!flash.tutorial || !flash.tick() || (flash.highlight != 9 && flash.highlight != 0xa))
+        return;
+    bool accept = flash.highlight == 9;
+    const WindowButton &b = win.buttons[size_t((accept ? kBuyAccept : kBuyEntry) - 1)];
+    layer.draw_sprite(win.x + b.x, win.y + b.y, sheet.at(size_t(accept ? kAcceptSprite : kEntrySprite)));
+    flash.drawn++;
+}
+
+// The flashing hint of req14_overdraw, drawn before the disabled buttons
+// (which cover it): the button the highlight (9 to 12) names, in its sprite
+// of hires_requester_sprites[0x18] to [0x1b].
+void draw_edit_room_flash(UiLayer &layer, const Window &win, const SpriteSheet &sheet, TutorialFlash &flash)
+{
+    constexpr std::array<int, 4> kFlashSprite = {0x74, 0x76, 0x78, 0x7a};
+    int k = int(flash.highlight) - kEditRoomCancel;
+    if (!flash.tutorial || !flash.tick() || k < 0 || k >= int(kFlashSprite.size()))
+        return;
+    const WindowButton &b = win.buttons[size_t(kEditRoomCancel + k - 1)];
+    layer.draw_sprite(win.x + b.x, win.y + b.y, sheet.at(size_t(kFlashSprite[size_t(k)])));
+    flash.drawn++;
+}
+
 } // namespace
 
 void draw_layer_frame(UiLayer &layer, const GameData &data, uint32_t frame, Point at, bool flip, int scale)
@@ -552,10 +580,14 @@ bool object_escape(Game &game)
 void draw_object_requesters(UiLayer &layer, const Interface &ui, const ObjectUi &oui, const Game &game,
                             const RequesterArt &art, const GameData &data)
 {
-    if (window_open(ui, kBuyWindow))
+    if (window_open(ui, kBuyWindow)) {
+        draw_buy_objects_flash(layer, ui.window(kBuyWindow), art.sheet(kBuyWindow), ui.flash());
         draw_buy_objects(layer, ui.window(kBuyWindow), oui, game, art, data);
-    if (window_open(ui, kEditWindow))
+    }
+    if (window_open(ui, kEditWindow)) {
+        draw_edit_room_flash(layer, ui.window(kEditWindow), art.sheet(kEditWindow), ui.flash());
         draw_edit_room(layer, ui.window(kEditWindow), oui, game, art, data);
+    }
 }
 
 void draw_placement(Surface &dst, Rect view, Point camera, const ObjectPlacing &p, const ObjectUi &oui,

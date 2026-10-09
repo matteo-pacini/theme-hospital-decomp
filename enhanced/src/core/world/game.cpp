@@ -436,10 +436,11 @@ void Game::carry_out(const Event &e)
         return;
     }
     // process_turn's EV_CHEAT_END_YEAR (src/io.cpp): December, two days
-    // before its end.
-    if (e.type == EV_CHEAT_END_YEAR) {
-        date.month = 11;
-        date.day = days_in_month(date.month) - 2;
+    // before its end; EV_CHEAT_END_MONTH: the current month's last day.
+    if (e.type == EV_CHEAT_END_YEAR || e.type == EV_CHEAT_END_MONTH) {
+        if (e.type == EV_CHEAT_END_YEAR)
+            date.month = 11;
+        date.day = days_in_month(date.month) - (e.type == EV_CHEAT_END_YEAR ? 2 : 1);
         return;
     }
     // The win/lose screen's decline button (winlose.cpp): the offered win is

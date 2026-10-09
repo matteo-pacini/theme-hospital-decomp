@@ -159,9 +159,15 @@ Milestone 4 so far, the game's interface:
   month; what is researched offered in the build and buy requesters; the
   research screen's bars; the advisor's announcements spoken; drugs
   improved again and again once researched. The slack tongue slicer, the
-  hair restorer and the fracture clinic cure; the electrolysis, jelly vat
-  and decontamination rooms work as the slicer's but are not checked
-  against the game yet;
+  hair restorer, fracture clinic and electrolysis cures (hairyitis patients
+  treated, waiting for a doctor, and left with no room); the jelly vat and
+  decontamination rooms work as the slicer's but are not checked against
+  the game yet;
+- autopsies: a patient with no treatment sent to the research room (the fax's
+  button, EV_PATIENT_TO_RESEARCH), its queue, the researcher calling it, the
+  autopsy giving its illness research points and, by the staff's mood, costing
+  reputation with the advisor's remark, the autopsy gone with the last
+  machine;
 - the operating theatre: two surgeons taking turns at its screen, its
   operating table, lamp, sinks and X-ray viewer, the operation itself, and
   the ward and diagnosis its patients need;
@@ -190,15 +196,16 @@ Milestone 4 so far, the game's interface:
   (sooner with enough handymen), the player's heating ignored meanwhile,
   everyone feeling sick when there is litter, a disaster refused when the
   hospital cannot have it, and the advisor's messages;
-- the tutorial: the advisor's steps from furnishing the corridor to opening
-  the room building (from step 0x2b on not yet);
+- the tutorial: the advisor's steps from furnishing the corridor to the
+  doctor placed, which ends it, with the flashing of the panel icon or
+  requester button each step points at;
 - the year end: the hall of fame, the charts, the awards and trophies and
   the year's score; winning or losing at the year end, and a win offered at
   a quarter's end and declined;
 - saving and loading: File > Save and Load, the quick save and load (Alt+S,
   Alt+L), the Continue slot written on quitting, and the load game screen.
 
-Not yet: autopsies and the DNA fixer.
+Not yet: the DNA fixer.
 Route planning defaults to A*; the game's wall following stays selectable
 in the tools window.
 

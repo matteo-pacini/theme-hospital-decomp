@@ -320,7 +320,10 @@ void force_peep_to_be_cured(World &world, const AnimData &anims, uint16_t id, ui
 //   turned away for its illness, going home (person_go_home) and marked
 //   kPfSentHome; a contagious one also ends its epidemic's cover-up
 //   (World::Epidemic::timer 0);
-// - EV_FORCE_CURE: force_peep_to_be_cured on patient `value`.
+// - EV_FORCE_CURE: force_peep_to_be_cured on patient `value`;
+// - EV_PATIENT_TO_RESEARCH: patient `value` goes for an autopsy (treatment
+//   kIllAutopsy, state kPsGoForTreatment, no longer awaiting a decision);
+//   nothing in the game sends it.
 // The game checks nothing more; the window offers them only when it may.
 // Returns false for other commands.
 bool apply_patient_event(Game &game, const Event &event);

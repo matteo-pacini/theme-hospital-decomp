@@ -1,0 +1,72 @@
+# Level 6: autopsies with the staff unhappy. autopsy.txt's hospital and, at
+# turn 13650, the receptionist (thing 33) sacked: the doctor of the GP's
+# office (thing 17) and the researcher have no happiness left by then
+# (tired and cold: no radiators), so the staff's average is under 25 and
+# person_autopsied's reputation draw is two in three, not one. Patients 14
+# and 12, awaiting a decision since their calls (turns 13289 and 13147), are
+# sent for an autopsy at turns 13751 and 13801 (CH_TREAT_RESEARCH) and are
+# autopsied at turns 14069 and 14287.
+# Expect autopsied 14 illness=15 amount=3300 unhappy=1
+# Expect autopsied 12 illness=15 amount=3300 unhappy=1
+# Expect rep 0 event=19 == 4
+# Turns 16000
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair; opened; a consultant (applicant 17) in the corridor.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+114 48 1 17
+115 5 6969 17
+# A research room (58,48)-(62,52), its door above it, an autopsy machine, a
+# desk and a filing cabinet; opened; a researcher (applicant 25) in the
+# corridor; research concentrated on the cast remover (illness 9), all of it
+# in the specialisation.
+130 55 0 0
+131 53 28 28
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 28 0
+139 7 6460 55
+140 7 6459 1
+141 7 6461 2
+142 1 0 0
+143 48 1 25
+144 5 6970 25
+# Patient 9's call (id 2, made at turn 5904) answered from the popup and the
+# patient sent for an autopsy (CH_TREAT_RESEARCH), as autopsy.txt does: the
+# researcher is kept at work.
+5950 10 4 2
+5951 125 2 9
+7270 10 4 6
+7271 125 2 9
+7760 10 4 8
+7761 125 2 21
+# The receptionist sacked (EV_SACK_STAFF, mode 0); patients 14 and 12 sent
+# for an autopsy (call 34 made at turn 13289, call 33 at 13147).
+13650 71 33 0
+13750 10 4 34
+13751 125 2 14
+13800 10 4 33
+13801 125 2 12

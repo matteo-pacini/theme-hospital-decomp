@@ -5,9 +5,9 @@
 # corridor furnishing (0x1d), buy a reception desk (0x28), confirm it
 # (0x2a), place it (0x29), open staff hiring (0x1e), choose receptionists
 # (0x21), look at the next (0x25) and the previous (0x26) applicant, hire
-# one (0x22) and place her (0x24), then open the room building (0x20); step
-# 0x2b on is not ported. Each command is the one the step waits for, and
-# the tutorial's step each turn is traced on both sides.
+# one (0x22) and place her (0x24), then open the room building (0x20); the
+# tutorial_*.txt scripts go on from step 0x2b. Each command is the one the
+# step waits for, and the tutorial's step each turn is traced on both sides.
 # Expect tutorial 29
 # Expect tutorial 40
 # Expect tutorial 42

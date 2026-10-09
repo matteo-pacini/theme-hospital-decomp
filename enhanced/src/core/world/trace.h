@@ -318,6 +318,14 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          hospital 0's
 //   send_to_research <doctor> room=<n>     send_doctor_to_research, a room
 //                                          found
+//   send_for_research <patient> room=<n>   send_person_for_research, the room
+//                                          get_expertise_dest picked
+//   autopsied <patient> illness=<n> amount=<n> unhappy=<0|1>
+//                                          person_autopsied: the patient's
+//                                          illness and the points it gives,
+//                                          and whether the staff's average
+//                                          happiness is under 25, before
+//                                          the draw
 //   send_to_training <doctor> room=<n>     send_doctor_to_training, a room
 //                                          found
 //   training <consultant> kind=<n>         training_done, at its start

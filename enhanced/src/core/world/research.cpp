@@ -2,7 +2,9 @@
 
 #include "core/data/balance.h"
 #include "core/ui/charts.h"
+#include "core/world/advisor.h"
 #include "core/world/game.h"
+#include "core/world/reputation.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
@@ -474,6 +476,30 @@ uint16_t find_rand_research_room(World &world, uint8_t owner, uint16_t exclude)
     if (count == 0)
         return 0;
     return list[old_newrand(world.seed) % count];
+}
+
+void person_autopsied(World &world, uint16_t patient)
+{
+    const Thing &p = world.things[patient];
+    int32_t staff_happiness = 0;
+    for (const Thing &t : world.things)
+        if (t.type == kThingStaff && t.state != kStaffApplicant && t.owner == p.owner)
+            staff_happiness += int16_t(t.happiness);
+    uint32_t amount = settings_of(world).gbv.autopsy_rsch_percent * expertise_cost(world, p.illness) / 100;
+    bool unhappy = (staff_happiness << 8) / int32_t(count_staff(world).total) < 0x1900;
+    trace_event("autopsied %u illness=%u amount=%u unhappy=%d", unsigned(patient), unsigned(p.illness),
+                unsigned(amount), int(unhappy));
+    do_illness_research(world, p.illness, amount, kRcSpecialisation);
+    bool bad;
+    if (unhappy)
+        bad = old_newrand(world.seed) % 3 != 0;
+    else
+        bad = old_newrand(world.seed) % 3 == 0;
+    if (bad) {
+        reputation_affected(world, 0, kRepAutopsy);
+        if (p.owner == kPlayer)
+            announce_this(world, kAnnAutopsyDiscovered, 1);
+    }
 }
 
 } // namespace th

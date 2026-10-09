@@ -1,0 +1,73 @@
+# Level 6: autopsies, sent by the fax. A reception desk and receptionist, a
+# GP's office with a consultant (applicant 17), and a research room with the
+# autopsy machine and a researcher (applicant 25), as fracture_clinic.txt
+# builds them, without its fracture clinic and its research. Three patients
+# with no treatment (their calls type 4, answered from the popup,
+# EV_ANSWER_PLAYERCALL) are sent for an autopsy (EV_CHOICE_RESULT
+# CH_TREAT_RESEARCH): each goes to the research room's queue
+# (send_person_for_research), the researcher calls it, and the autopsy gives
+# its illness research points and, with the staff content, one time in three
+# costs reputation (person_autopsied). Patient 9, at turn 6219 and again at
+# 7587 (the id is reused), is autopsied and the reputation falls; patient 21,
+# at turn 8046, is autopsied and it does not.
+# Expect send_for_research >= 3
+# Expect autopsied 9 illness=32 amount=3300 unhappy=0
+# Expect autopsied 9 illness=16 amount=3300 unhappy=0
+# Expect autopsied 21 illness=16 amount=3300 unhappy=0
+# Expect rep 0 event=19 == 2
+# Expect research 4 illness=32 amount=3300
+# Turns 12000
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair; opened; a consultant (applicant 17) in the corridor.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+114 48 1 17
+115 5 6969 17
+# A research room (58,48)-(62,52), its door above it, an autopsy machine, a
+# desk and a filing cabinet; opened; a researcher (applicant 25) in the
+# corridor; research concentrated on the cast remover (illness 9), all of it
+# in the specialisation.
+130 55 0 0
+131 53 28 28
+132 2 6202 0
+133 2 6718 0
+134 8 6718 0
+135 18 0 0
+136 26 6076 0
+137 3 0 0
+138 4 28 0
+139 7 6460 55
+140 7 6459 1
+141 7 6461 2
+142 1 0 0
+143 48 1 25
+144 5 6970 25
+# Patient 9's call (id 2, made at turn 5904) answered from the popup and the
+# patient sent for an autopsy (CH_TREAT_RESEARCH).
+5950 10 4 2
+5951 125 2 9
+# Patient 9 again (the id reused; call 6, turn 7220), then patient 21 (call
+# 8, turn 7708).
+7270 10 4 6
+7271 125 2 9
+7760 10 4 8
+7761 125 2 21

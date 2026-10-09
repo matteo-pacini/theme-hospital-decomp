@@ -189,7 +189,7 @@ bool render(const th::Game &game, const th::GameData &data, const std::string &p
     view.fill(0);
     scratch.resize(width, height);
     scratch.fill(th::kMaskColour);
-    th::draw_world({view, {0, 0, width, height}, camera}, game.world, data, &shadows, scratch);
+    th::draw_world({view, {0, 0, width, height}, camera, game.turn_count}, game.world, data, &shadows, scratch);
     std::vector<uint8_t> rgb;
     rgb.reserve(size_t(width) * size_t(height) * 3);
     for (size_t i = 0; i < size_t(width) * size_t(height); i++) {
@@ -346,7 +346,7 @@ bool start_level(th::Game &game, const Options &o, const th::GameData &data)
 // comment line. `last` and `pending` are the commands carried out last and
 // at this turn, for the tutorial's steps.
 void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out, const th::Event &last,
-                 const th::Event &pending)
+                 const th::Event &pending, bool cursor_moved)
 {
     th::AdvisorInputs in;
     in.game_turn = game.turn_count;
@@ -365,6 +365,11 @@ void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out, const
     // The tutorial's placement steps read the pointer's cell, which a script
     // does not move; a held member of staff is always placeable here.
     in.staff_place_ok = true;
+    // The instrumented original draws the object cursor, setting or clearing
+    // the advisor's bad placement flag, only where a script moves it (@cursor;
+    // instrument.py removes process_mouse).
+    if (cursor_moved && game.world.placing.placing)
+        in.object_place_ok = game.world.placing.ok;
     std::array<uint8_t, th::kAdviceCount> given{};
     for (size_t i = 0; i < given.size(); i++)
         given[i] = game.advisor.advice[i].times_given;
@@ -410,6 +415,15 @@ bool apply_script_commands(th::Game &game, const Options &o, const std::vector<S
     return true;
 }
 
+// Whether the script moves the object cursor (@cursor) at turn `turn`.
+bool script_moves_cursor(const std::vector<ScriptLine> &script, uint32_t turn)
+{
+    for (const ScriptLine &line : script)
+        if (line.turn == turn && line.input.rfind("@cursor", 0) == 0)
+            return true;
+    return false;
+}
+
 // Runs turns up to `last_turn`, carrying out the script's commands between
 // them and tracing each to `out` (when not null). False, reported on
 // standard error, when a command cannot be carried out.
@@ -434,7 +448,7 @@ bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &
             // The original carries a scripted command out at the end of the
             // frame before the one it is for, so the advisor of turn N sees
             // it as the last command, with none pending.
-            run_advisor(game, data, out, command, {});
+            run_advisor(game, data, out, command, {}, script_moves_cursor(script, game.turn_count));
             game.run_things();
         }
         if (out)

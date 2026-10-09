@@ -279,6 +279,23 @@ instead of the tile being recoloured, and for the east wall uses `x` left
 over from the previous loop. No effect: the test looks for a thing of type
 3, and every thing type (`THING_*`) is even.
 
+### delete_blueprint_room (src/blueprnt.cpp)
+
+**Bug** · `0x483c4`
+
+It wipes the room's `RoomInfo` with `memset` while staff may still be in the
+room. Their `room` pointer then names a zeroed entry, so the check in
+`doctor_in_machine_room` (`0x3b2c4`) for a room being edited
+(`being_edited` or `RS_EDITED`) no longer fires and no one is evacuated. The
+stroll that follows takes `which_room` of the tile (the zeroed entry) and
+computes `old_newrand() % cur_room->height` and `% cur_room->width`
+(`src/doctor.cpp` lines 399-400): a division by zero (the instrumented original's trace ends at that turn). No
+effect in practice: the interface only deletes empty rooms
+(`init_edit_room` puts a room with anyone inside in the waiting state until
+`is_room_empty` holds, `src/build.cpp` lines 1665-1673 and 2381). A replay
+script that deletes a room while its doctor is inside ends both the original's trace and
+the port at the same turn, so none does.
+
 ### rle_decompress (src/rle.cpp)
 
 **Bug** · `0xbbf10`

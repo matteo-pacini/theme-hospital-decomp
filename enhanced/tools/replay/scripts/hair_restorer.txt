@@ -17,6 +17,7 @@
 # Expect use_object 26 obj=41 kind=25 == 1
 # Expect done_treatment 26 staff=14 == 1
 # Expect cure 26 illness=10 == 1
+# Expect-not dies 26
 # Expect rep 10 event=0 == 1
 # Expect-not winlose
 # Turns 14000

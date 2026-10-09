@@ -7,6 +7,7 @@
 #include "core/render/frame.h"
 #include "core/render/shadows.h"
 #include "core/render/text.h"
+#include "core/render/wibble.h"
 #include "core/world/complex.h"
 #include "core/world/reaper.h"
 #include "core/world/staff.h"
@@ -29,6 +30,12 @@ constexpr int kBuckets = 32;
 
 // OS_IN_USE (include/enums.h): an object someone is using.
 constexpr uint8_t kObjectInUse = 4;
+
+// ILL_JELLYITIS: the illness whose patients mapwho_person draws wobbling.
+constexpr uint8_t kIllJellyitis = 12;
+
+// ILL_SERIOUS_RADIATION: the illness whose patients mapwho_person draws glowing.
+constexpr uint8_t kIllSeriousRadiation = 6;
 
 long floor_div(long a, long b)
 {
@@ -328,6 +335,9 @@ struct CellDrawing {
     DrawnThings drawn;
     bool pixbuf = false;
     Surface *energise = nullptr;
+    uint32_t game_turn = 0;
+    // The 180x180 buffer draw_wibble_frame works in.
+    Surface *wibble = nullptr;
 };
 
 // The frames draw_cell_things has drawn so far: their box (the game's
@@ -421,10 +431,9 @@ void draw_numfx(CellFrames &frames, const GameData &data, const Thing &t, int x,
 }
 
 // Whether draw_cell_things draws thing `t`. mapwho_object (objects and
-// doors), mapwho_person (draw_special_id_frame, draw_split_frame and
-// draw_energise_frame), mapwho_reaper, mapwho_bang (explosion debris) and
-// mapwho_numfx are drawn; a patient glowing (radiation) or wobbling
-// (jellyitis) is not yet.
+// doors), mapwho_person (draw_special_id_frame, draw_split_frame,
+// draw_energise_frame and draw_wibble_frame), mapwho_reaper, mapwho_bang
+// (explosion debris) and mapwho_numfx are drawn.
 bool cell_thing_drawn(const Thing &t)
 {
     if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff &&
@@ -444,14 +453,42 @@ bool cell_thing_drawn(const Thing &t)
              (t.state == 42 || t.state == kStaffApplicant || t.state == kStaffBackToApplicants));
 }
 
-// draw_split_frame (src/draw.cpp): the patient `t` using machine `obj`, its
-// own frame above the machine's split line and the machine's aux_sprite
-// below it, so that it appears inside the machine. Grows `frames` and returns
-// the box of the patient's frame and the machine's.
-Rect draw_split_frames(CellFrames &frames, const Thing &t, const Thing &obj, Point at, const FrameOptions &opts)
+// The patient kind of an alien (PK_ALIEN), and the animation starts of the
+// overlay drawn at the machine's split line over one, by whether it faces 0,
+// the game turn's remainder of 3 added.
+constexpr uint8_t kPatientAlien = 0xe;
+constexpr size_t kAlienOverlayFacingZero = 0x787;
+constexpr size_t kAlienOverlayOther = 0x784;
+
+// draw_split_frame (src/draw.cpp): the patient `t` using machine `obj_id`,
+// its own frame above the machine's split line and the machine's aux_sprite
+// below it, so that it appears inside the machine. An alien has the machine's
+// own frame drawn first (its sound queued for the machine, as
+// draw_special_id_frame plays it) and, last, a looping overlay at the split
+// line. Grows `frames` and returns the box of the patient's frame and the
+// machine's, or an alien's overlay's: the game's frame_bounds as the last
+// draw leaves them, the hit box.
+Rect draw_split_frames(CellFrames &frames, const CellDrawing &drawing, const Thing &t, uint16_t obj_id, Point at,
+                       const FrameOptions &opts)
 {
     Surface &dst = frames.dst;
+    const Thing &obj = drawing.world.things[obj_id];
     Rect saved = dst.clip();
+    const bool alien = t.subtype == kPatientAlien;
+    if (alien) {
+        Rect machine_sprites;
+        FrameOptions machine = {.layers = obj.layers.data(), .extent = &machine_sprites};
+        if (obj.icon_id > 0) {
+            machine.icon = obj.icon_frame;
+            machine.icon_over_frame = true;
+        }
+        grow(frames.bounds, draw_frame(dst, at, obj.sprite, obj.flip != 0, frames.data, machine));
+        if (frames.extent)
+            grow(*frames.extent, machine_sprites);
+        if (std::vector<FrameSound> *sounds = drawing.drawn.sounds;
+            sounds && obj.sprite < frames.data.anims().frames.size())
+            sounds->push_back({obj_id, frames.data.anims().frames[obj.sprite].sound, false, at.x, at.y});
+    }
     const int split = at.y - int(obj.split_height);
     FrameOptions person = opts;
     person.icon = 0;
@@ -467,9 +504,18 @@ Rect draw_split_frames(CellFrames &frames, const Thing &t, const Thing &obj, Poi
                          {.layers = opts.layers, .extent = &aux_sprites}));
     dst.set_clip(saved);
     grow(person_sprites, aux_sprites);
+    grow(frames.bounds, box);
+    const size_t start = (t.facing == 0 ? kAlienOverlayFacingZero : kAlienOverlayOther) + drawing.game_turn % 3;
+    if (alien && start < frames.data.anims().starts.size()) {
+        const AnimStart &overlay = frames.data.anims().starts[start];
+        Rect overlay_sprites;
+        box =
+            draw_frame(dst, {at.x, split}, overlay.frame, overlay.flip != 0, frames.data, {.extent = &overlay_sprites});
+        grow(frames.bounds, box);
+        grow(person_sprites, overlay_sprites);
+    }
     if (frames.extent)
         grow(*frames.extent, person_sprites);
-    grow(frames.bounds, box);
     return box;
 }
 
@@ -530,11 +576,47 @@ Rect draw_energise_frames(CellFrames &frames, Surface &pixbuf, const Thing &t, c
     return box;
 }
 
+// The patient states in which mapwho_person draws a patient glowing,
+// wobbling or highlighted rather than split or energised.
+constexpr std::array<uint8_t, 26> kPlainPersonStates = {0x04, 0x06, 0x08, 0x0c, 0x10, 0x12, 0x14, 0x16, 0x18,
+                                                        0x1a, 0x1c, 0x20, 0x22, 0x24, 0x26, 0x2a, 0x2c, 0x32,
+                                                        0x36, 0x38, 0x3a, 0x3c, 0x40, 0x44, 0x46, 0xf0};
+
+bool plain_person_state(const Thing &t)
+{
+    return t.type == kThingPatient &&
+           std::find(kPlainPersonStates.begin(), kPlainPersonStates.end(), t.state) != kPlainPersonStates.end();
+}
+
 // Whether a thing's own frame was drawn, and its box.
 struct ThingFrame {
     Rect box;
     bool drawn = false;
 };
+
+// mapwho_person's glowing and wobbling patients: a patient with radiation in
+// a plain state is drawn glowing (draw_glow_frame); one with jellyitis not
+// using an object, drawn to the screen rather than the pixbuf, wobbling
+// (draw_wibble_frame). Returns whether `t` is one, with its frame in `frame`.
+bool draw_glowing_or_wobbling(CellFrames &frames, const CellDrawing &drawing, const Thing &t, Point at,
+                              const FrameOptions &opts, ThingFrame &frame)
+{
+    if (!plain_person_state(t))
+        return false;
+    if (t.illness == kIllSeriousRadiation) {
+        FrameOptions glowing = opts;
+        glowing.glow = glow_colour(drawing.game_turn, t.layers.data());
+        frame.box = draw_frame(frames.dst, at, t.sprite, t.flip != 0, frames.data, glowing);
+    } else if (t.illness == kIllJellyitis && drawing.wibble && !drawing.pixbuf && t.object == 0) {
+        frame.box = draw_wibble_frame(frames.dst, *drawing.wibble, {at, t.sprite, t.flip != 0, drawing.game_turn},
+                                      frames.data, opts);
+    } else {
+        return false;
+    }
+    grow(frames.bounds, frame.box);
+    frame.drawn = true;
+    return true;
+}
 
 // Draws a thing's own frame as mapwho_person/mapwho_object do: a filling
 // patient split around its machine, an energising patient, or the thing's
@@ -546,7 +628,7 @@ ThingFrame draw_thing_frame(CellFrames &frames, const CellDrawing &drawing, cons
     if (t.type == kThingPatient && t.state == kPsFills) {
         // draw_split_frame; with no object it draws nothing.
         if (obj) {
-            frame.box = draw_split_frames(frames, t, *obj, at, opts);
+            frame.box = draw_split_frames(frames, drawing, t, t.object, at, opts);
             frame.drawn = true;
         }
     } else if (t.type == kThingPatient && t.state == kPsEnergises) {
@@ -560,6 +642,8 @@ ThingFrame draw_thing_frame(CellFrames &frames, const CellDrawing &drawing, cons
             frame.box = draw_energise_frames(frames, *drawing.energise, t, *obj, at, opts);
             frame.drawn = true;
         }
+    } else if (draw_glowing_or_wobbling(frames, drawing, t, at, opts, frame)) {
+        // Drawn.
     } else if (!((t.type == kThingObject || t.type == kThingDoor) && t.state == kObjectInUse)) {
         // mapwho_object draws an object's own frame only when it is not in
         // use; while one is, its user's animation carries it.
@@ -700,6 +784,9 @@ class WorldDrawing
     {
         pixbuf_.resize(0x40, 0x40);
         drawing_.energise = &pixbuf_;
+        drawing_.game_turn = target.game_turn;
+        wibble_ = make_wibble_buffer();
+        drawing_.wibble = &wibble_;
     }
 
     void floors() const
@@ -889,6 +976,7 @@ class WorldDrawing
     // The 64x64 buffer draw_energise_frame works in, and the game's covers
     // table, reset for each line.
     Surface pixbuf_;
+    Surface wibble_;
     mutable CoverTable covers_;
 };
 

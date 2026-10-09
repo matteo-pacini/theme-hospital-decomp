@@ -97,7 +97,7 @@ bool object_escape(Game &game);
 // in the highlight font) and the edit room requester's (req14_overdraw: the
 // disabled buttons, the room's name, the instructions, the list of what is
 // left to place with the selection boxed), for those that are open. The
-// advisor's flashing hints are not drawn.
+// tutorial's flashing hint is drawn (Interface::flash).
 void draw_object_requesters(UiLayer &layer, const Interface &ui, const ObjectUi &oui, const Game &game,
                             const RequesterArt &art, const GameData &data);
 

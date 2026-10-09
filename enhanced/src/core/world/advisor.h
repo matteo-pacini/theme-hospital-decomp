@@ -45,6 +45,7 @@ struct StaffCounts {
     int total = 0;
     std::array<int, 5> by_kind{};
     int receptionists = 0; // staff_by_skill[0]
+    int doctors = 0;       // staff_by_skill[4]
 };
 
 // count_staff: hospital 0's members of staff that are not applicants.
@@ -52,9 +53,16 @@ StaffCounts count_staff(const World &world);
 
 // Advisor::flags bits (advisor.flags).
 constexpr uint8_t kAdvisorTutorial = 0x1;
-// The object being placed may not go where it is (set while the object
-// cursor is drawn).
+// The object being placed, or a tile of the blueprint drawn, may not go where
+// it is (set while the object cursor or the blueprint is drawn; the cursor and
+// the tutorial's messages clear it).
 constexpr uint8_t kAdvisorBadPlacement = 0x2;
+// The blueprint drawn is smaller than its room needs (set and cleared where
+// the blueprint is drawn).
+constexpr uint8_t kAdvisorBlueprintSmall = 0x4;
+// The room being furnished has all it needs (set and cleared where the edit
+// room requester sets its buttons).
+constexpr uint8_t kAdvisorRoomFurnished = 0x10;
 
 // Advisor::event_flags bits (advisor.event_flags): what happened since the
 // advice about it was last given.
@@ -108,7 +116,7 @@ struct Advisor {
     // kAdvisorTutorial and kAdvisorBadPlacement.
     uint8_t flags = 0;
     // The panel icon or requester control the tutorial points at, 0 for
-    // none (not drawn yet).
+    // none (TutorialFlash draws it flashing).
     uint16_t tutorial_highlight = 0;
     // The wrapped message's lines (1-3; 0 before it is wrapped) and the
     // middle pieces its bubble has beyond kAdvisorMinSegments.
@@ -185,6 +193,9 @@ struct AdvisorInputs {
     Event last;
     bool staff_place_ok = false;
     std::optional<bool> object_place_ok;
+    // Where the tutorial's last step puts the help page it opens (the level
+    // briefing's page number), -1 for none; null if the caller shows none.
+    int *help_page = nullptr;
 };
 
 // Sets the advisor up for a new level, as setup_new_level (reset_advisor
@@ -235,9 +246,14 @@ void start_advisor(Advisor &advisor, bool tutorial);
 // Advice about the warmth and the litter plays an announcement, put in
 // AdvisorInputs::ambient for the caller.
 //
-// The tutorial is ported to the "build a GP's office" message (steps 0x1d
-// to 0x24 and 0x20): the reception desk and the receptionist. Its hints that
-// the game shows only as help text in high resolution leave him hidden.
+// The tutorial is ported to its end (steps 0x1d to 0x3a: the reception desk,
+// the receptionist and the GP's office; 0x1f to 0x27: the doctor, which turns
+// the tutorial off and asks for the level's last help page through
+// AdvisorInputs::help_page). Its hints that the game shows only as help text
+// in high resolution leave him hidden. The flags the blueprint's drawing and
+// the edit room requester leave (kAdvisorBadPlacement,
+// kAdvisorBlueprintSmall, kAdvisorRoomFurnished) are worked out from the
+// world at the start of each frame.
 void advisor_frame(Advisor &advisor, const AdvisorInputs &in, const AnimData &anims, uint32_t &safeseed);
 
 // monthly_update_of_adivsor_counts (src/advisor.cpp), at month end: the

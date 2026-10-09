@@ -89,6 +89,9 @@ struct ObjectPlacing {
     // The edit room requester's instructions (othervar.edit_room_hint, a
     // misc_text index).
     uint8_t hint = 0;
+    // Whether the room furnished had all its compulsory objects when the edit
+    // room requester last set its buttons (advisor.flags' 0x10).
+    bool furnished = false;
     // pmenu.disabled as these commands set it: the menu bar is off while the
     // buy objects requester is up.
     bool menu_disabled = false;

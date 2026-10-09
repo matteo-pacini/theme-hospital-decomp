@@ -317,8 +317,14 @@ uint16_t find_small_thing(const World &world, int tile);
 // draw_blueprint_area's tests (src/blueprnt.cpp) for the player's blueprint:
 // whether floor cell (x, y) is drawn as invalid, and whether the outline
 // piece on cell (x, y) (corners from (x0, y0) to (x1 + 1, y1 + 1)) is.
-bool blueprint_floor_invalid(const World &world, int x, int y);
-bool blueprint_outline_invalid(const World &world, int x, int y);
+bool blueprint_floor_invalid(const World &world, int x, int y, uint8_t *flags = nullptr);
+bool blueprint_outline_invalid(const World &world, int x, int y, uint8_t *flags = nullptr);
+// With `flags` (advisor.flags), the tests also set and clear kAdvisorBadPlacement
+// and kAdvisorBlueprintSmall as the game does when it draws the blueprint.
+// blueprint_draw_flags returns `flags` as drawing the whole blueprint (every
+// floor cell, then every outline piece) leaves it, unchanged when none is
+// drawn (BuildState::draw_mode not 1).
+uint8_t blueprint_draw_flags(const World &world, uint8_t flags);
 
 // The game's object placing in a room (src/build.cpp), for update_placement
 // (core/world/objects.h): place_object_restrict_to_room moves `pos` so that

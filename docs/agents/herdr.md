@@ -24,6 +24,13 @@ For a session where a lead agent briefs worker agents in herdr panes
       herdr worktree create --branch <tag> --base <branch> \
         --path ../theme-hospital-decomp-wt/<tag> --label <tag>
 
+- Set a tagged workspace up completely before any brief, in this order: the
+  worktree (above) and its links (below); the tabs and panes of "Lead"'s
+  layout in the new workspace (`herdr tab rename`, `herdr tab create
+  --workspace`, `herdr pane split --cwd <worktree>`; there is no `jq`, so
+  take the pane ids from the JSON with `grep`); each pane labelled; then
+  `th-lead-<tag>` and its workers started in their panes. Only then brief
+  the new lead, which briefs its workers.
 - Every worktree, a lead's or a worker's, links `orig`, `build/base`,
   `build/slots` and `build/replay-cache` to the main tree's, never copies:
   the slots cap DOSBox and driven runs for the whole machine, and the caches
@@ -52,6 +59,9 @@ For a session where a lead agent briefs worker agents in herdr panes
   whole file from an earlier copy or from memory, never revert or delete code
   or files you didn't write. Re-read before each edit.
 - No git commands. No broad `pkill`/`kill`: stop only processes you started.
+- Delete a named folder whole (`rm -rf build/replay-01`), never a glob
+  (`rm -rf dir/*`): a glob after a `cd` is flagged as an unresolvable target
+  and blocks you on a permission dialog that is then denied.
 - Use your own build folder, `REPLAY_DIR` and temp folder, as the brief names
   them.
 - Don't use herdr to message the lead or other agents unless the lead asks
@@ -90,13 +100,14 @@ For a session where a lead agent briefs worker agents in herdr panes
   without the evidence the Workers rules ask for. The lead makes the final
   decision.
 - Per task, decide whether each worker gets its own git worktree
-  (`theme-hospital-decomp-wt/<name>`, branch `<branch>/<name>`, linked as in
-  "Workspaces and worktrees") or works in the lead's tree with its own
-  build folder and `REPLAY_DIR`: its own worktree when workers would edit
-  the same files, the shared tree for small, separate tasks. Workers never
-  commit; the lead merges verified worktrees into its branch (through an
-  integration worktree for a large batch), runs the combined check there
-  and commits when the user asks.
+  (`theme-hospital-decomp-wt/<name>`, branch `<batch>/<name>` in the main
+  workspace, `<tag>-NN` in a tagged one: git refuses `<tag>/NN` next to a
+  branch `<tag>`; linked as in "Workspaces and worktrees") or works in the
+  lead's tree with its own build folder and `REPLAY_DIR`: its own worktree
+  when workers would edit the same files, the shared tree for small,
+  separate tasks. Workers never commit; the lead merges verified worktrees
+  into its branch (through an integration worktree for a large batch), runs
+  the combined check there and commits when the user asks.
 - Finish a batch with one combined check of the whole tree: every replay
   script on both sides, every drive test, all gates. Then remove the batch's
   traces, verification folders and stale `build/replay-*` folders, and check

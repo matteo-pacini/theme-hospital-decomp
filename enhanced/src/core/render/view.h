@@ -28,6 +28,9 @@ struct ViewTarget {
     Surface &dst;
     Rect view;
     Point camera;
+    // The game turn (actual_game_turn), which the aliens' animation, the glow of
+    // a patient with radiation and the wobble of one with jellyitis follow.
+    uint32_t game_turn = 0;
 };
 
 // What draw_world reports of the things it draws, each if given: in

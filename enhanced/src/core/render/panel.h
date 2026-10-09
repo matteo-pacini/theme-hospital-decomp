@@ -161,6 +161,11 @@ PanelAction panel_frame(PanelState &state, const UiMouse &mouse, const GameData 
 // counts one changed column).
 void draw_panel_ui(UiLayer &layer, const PanelState &state, const PanelFigures *figures, const GameData &data);
 
+// panel_flash's drawing (src/panel.cpp), when it is due: icon `index` of the
+// raised or normal set (the tutorial's highlight less 0x10) drawn pressed,
+// over the panel. Nothing for an icon without a pressed look.
+void draw_panel_icon_pressed(UiLayer &layer, const PanelState &state, int index, const GameData &data);
+
 // draw_popup_icons' redraw of the panel's left end (src/panel.cpp): its
 // first two icons, unpressed, and with `figures` the balance, date and
 // reputation, as draw_panel_ui draws them.

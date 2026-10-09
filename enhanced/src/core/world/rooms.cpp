@@ -1517,6 +1517,15 @@ void force_peep_to_be_cured(World &world, const AnimData &anims, uint16_t id, ui
 namespace
 {
 
+// EV_CHOICE_RESULT kChoiceTreatResearch and EV_PATIENT_TO_RESEARCH: the
+// patient goes for an autopsy.
+void send_for_autopsy(Thing &p)
+{
+    p.treatment = kIllAutopsy;
+    p.person_flags &= ~kPfAwaitingDecision;
+    p.state = kPsGoForTreatment;
+}
+
 // apply_call_event's EV_CHOICE_RESULT for patient `id` awaiting a decision.
 void apply_call_event_decision(Game &game, uint16_t id, uint16_t choice)
 {
@@ -1538,9 +1547,7 @@ void apply_call_event_decision(Game &game, uint16_t id, uint16_t choice)
         p.timer = int16_t(game.turn_count);
         break;
     case kChoiceTreatResearch:
-        p.treatment = kIllAutopsy;
-        p.person_flags &= ~kPfAwaitingDecision;
-        p.state = kPsGoForTreatment;
+        send_for_autopsy(p);
         break;
     case kChoiceDiagGuess:
         p.person_flags &= ~kPfAwaitingDecision;
@@ -1623,6 +1630,10 @@ bool apply_patient_event(Game &game, const Event &event)
     case EV_QUEUE_PERSON_GO_RECEPTION:
         queue_person_go_reception(world, game.anims(), person_complexes_of(world), event.value, event.arg,
                                   game.turn_count);
+        return true;
+    case EV_PATIENT_TO_RESEARCH:
+        if (event.value < world.things.size())
+            send_for_autopsy(world.things[event.value]);
         return true;
     case EV_QUEUE_PERSON_TO_NEW_QUEUE:
         queue_person_to_new_queue(world, game.anims(), person_complexes_of(world), event.value, event.arg,

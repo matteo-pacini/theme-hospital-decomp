@@ -196,8 +196,8 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
             level->scratch.resize(surface.width(), surface.height());
             level->scratch.fill(kMaskColour);
         }
-        draw_world({surface, {0, 0, surface.width(), surface.height()}, camera}, level->game.world, data,
-                   shadows ? level->shadows.get() : nullptr, level->scratch, drawn);
+        draw_world({surface, {0, 0, surface.width(), surface.height()}, camera, level->game.turn_count},
+                   level->game.world, data, shadows ? level->shadows.get() : nullptr, level->scratch, drawn);
     }
 }
 
@@ -501,6 +501,7 @@ class App : public DriveHost
     void interface_advisor(Game &game, const UiMouse &mouse, bool input, bool paused);
     void interface_command(Game &game, const InfoWindowResult &info);
     void interface_draw(Game *game, int ox, int oy, int scale);
+    void flash_tutorial(const Game *game);
     // The help tooltip of the screen open this frame (src/helpmsg.cpp): the
     // group depends on the front requester.
     void interface_help();
@@ -1599,12 +1600,16 @@ void App::interface_advisor(Game &game, const UiMouse &mouse, bool input, bool p
     in.text = &data_->text();
     uint8_t ambient = 0;
     in.ambient = &ambient;
+    int help_page = -1;
+    in.help_page = &help_page;
     in.pending = game.event;
     in.last = last_event_;
     in.staff_place_ok = hire_.place_ok;
     if (game.world.placing.placing)
         in.object_place_ok = game.world.placing.ok;
     advisor_frame(game.advisor, in, game.anims(), sounds_.safeseed);
+    if (help_page >= 0)
+        help_.set_page(-1, -1, level_briefing(data_->text(), help_page));
     if (ambient)
         sounds_.play_ambient(ambient, has_receptionist(game.world), paused);
     last_event_ = game.event;
@@ -1636,6 +1641,20 @@ void App::interface_command(Game &game, const InfoWindowResult &info)
 
 // Draws the panel, the advisor and the requesters into the interface's
 // canvas, and the canvas at (ox, oy) of the window at `scale`.
+// The tutorial's flashing hint, as panel_flash and the requesters' drawers
+// have it (the panel's is for highlights 0x10 to 0x1b whether or not the
+// tutorial is on, and comes first in a frame).
+void App::flash_tutorial(const Game *game)
+{
+    TutorialFlash &flash = interface_.flash();
+    flash.tutorial = game && (game->advisor.flags & kAdvisorTutorial);
+    flash.highlight = game ? game->advisor.tutorial_highlight : 0;
+    if (game && flash.highlight >= 0x10 && flash.highlight <= 0x1b && flash.tick()) {
+        draw_panel_icon_pressed(ui_, panel_state_, flash.highlight - 0x10, *data_);
+        flash.drawn++;
+    }
+}
+
 void App::interface_draw(Game *game, int ox, int oy, int scale)
 {
     ui_.clear();
@@ -1652,6 +1671,7 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
             figures.opening_countdown = 0;
     }
     draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
+    flash_tutorial(game);
     if (map_ && game)
         draw_panel_bar(*game);
     if (map_) {
@@ -1668,7 +1688,7 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
         draw_info_windows(ui_, info_, interface_, {requester_art_, hire_art_, data_->text()}, game->world,
                           object_ui_.red);
     if (game)
-        draw_queue_window(ui_, queue_, interface_, game->world, requester_art_, *data_);
+        draw_queue_window(ui_, queue_, interface_, *game, requester_art_, *data_);
     if (interface_.requester() == Requester::Jukebox)
         draw_jukebox(ui_, interface_, requester_art_, music_);
     if (game) {
@@ -1840,7 +1860,7 @@ void App::draw_info_view(Game &game)
         info_scratch_.fill(kMaskColour);
     }
     info_view_.fill(0);
-    draw_world({info_view_, {0, 0, view_box.w, view_box.h}, view_camera}, game.world, *data_,
+    draw_world({info_view_, {0, 0, view_box.w, view_box.h}, view_camera, game.turn_count}, game.world, *data_,
                shadows_ ? map_->shadows.get() : nullptr, info_scratch_);
     Surface &px = ui_.pixels();
     for (int y = 0; y < view_box.h; y++)
@@ -2667,6 +2687,12 @@ std::string App::debug_state_hospital(const Game &g) const
                      int(g.world.building.mouse));
     s += std::format("date: year {} month {} day {}, turn {}\n", g.date.year, g.date.month, g.date.day, g.turn_count);
     s += std::format("open: {}, opening countdown {}\n", g.open, g.opening_countdown);
+    s += std::format("tutorial flash: counter {}, drawn {}\n", interface_.flash().counter, interface_.flash().drawn);
+    std::string message = g.advisor.text;
+    std::ranges::replace(message, '\n', ' ');
+    s += std::format("advisor: tutorial {}, step {:#x}, highlight {:#x}, message \"{}\"\n",
+                     (g.advisor.flags & kAdvisorTutorial) != 0, g.advisor.tutorial_step, g.advisor.tutorial_highlight,
+                     message);
     s += std::format("balance: {}, reputation {}\n", g.balance, g.arrivals.hospitals[0].hospital_reputation);
     s += std::format("last command: type={} value={} flags={} arg={}\n", last_event_.type, last_event_.value,
                      last_event_.flags, last_event_.arg);

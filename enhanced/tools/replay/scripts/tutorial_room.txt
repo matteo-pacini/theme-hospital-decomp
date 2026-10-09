@@ -1,0 +1,76 @@
+# Level 1
+# Turns 2500
+# The advisor's tutorial (see tutorial.txt) from the room building to its
+# end: a general diagnosis room built first, so that the GP's office, south
+# of it, shares its wall with it. The GP's office is chosen (0x2b, 0x2c; the
+# other room's blueprint sent the step back to 0x20), its blueprint dragged
+# (0x39, 0x2f) and committed (0x38), its door refused on the shared wall and
+# placed (0x30), a window refused where the door is and placed (0x31), the
+# walls built (0x32), the desk, cabinet and chair put in with the cursor
+# once on a cell the cabinet cannot go (0x32's placement flag), the room
+# opened (0x3a), then the doctor: staff hiring opened (0x1f), doctors chosen
+# (0x23), hired (0x2d) and placed (0x27), which ends the tutorial. The
+# hospital then runs for the rest of the 2500 turns without it.
+# Expect tutorial 43
+# Expect tutorial 44
+# Expect tutorial 57
+# Expect tutorial 47
+# Expect tutorial 56
+# Expect tutorial 48 >= 5
+# Expect tutorial 49 >= 5
+# Expect tutorial 50 >= 5
+# Expect tutorial 58
+# Expect tutorial 31
+# Expect tutorial 35
+# Expect tutorial 45
+# Expect tutorial 39
+# Expect door_invalid >= 2
+# Expect open_room
+# Expect place_staff
+2 @tutorial 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 46 0 0
+11 47 3 0
+12 50 1 0
+13 50 0 0
+14 48 3 22
+15 5 9788 22
+16 55 0 0
+17 32 3 0
+18 53 8 8
+19 2 7358 0
+20 2 8130 0
+21 8 8130 0
+22 18 0 0
+23 26 7360 0
+24 3 0 0
+25 4 8 0
+26 55 0 0
+27 32 3 0
+28 53 7 7
+29 2 8254 0
+32 2 9026 0
+33 8 9026 0
+34 18 0 0
+36 26 8256 0
+37 3 0 0
+38 26 9152 0
+39 3 0 0
+40 26 9152 0
+41 3 0 0
+42 26 8510 0
+43 3 0 0
+44 4 7 0
+45 7 8640 1
+46 @cursor 9534
+47 @cursor 8386
+48 7 8386 2
+49 7 8641 6
+52 1 0 0
+54 46 0 0
+55 47 1 0
+56 48 1 11
+57 5 10044 11

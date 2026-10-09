@@ -1137,6 +1137,7 @@ void dump_game_building(std::string &out, const World &w)
     F(p, requester_mode);
     F(p, item);
     F(p, arg);
+    F(p, furnished);
     L(p, offered);
     L(p, buy_count);
     out += '\n';
