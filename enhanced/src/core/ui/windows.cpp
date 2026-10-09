@@ -320,8 +320,10 @@ InterfaceEvents Interface::frame(const UiMouse &mouse, bool escape)
     events.mouse_on_window = mouse_was_on_window_;
 
     // req13_cancel_check.
-    if (modal_ && requester_ == Requester::YesNo && (escape || (mouse.right_pressed && !mouse_was_on_window_)))
+    if (modal_ && requester_ == Requester::YesNo && (escape || (mouse.right_pressed && !mouse_was_on_window_))) {
         events.yes_no = YesNoAnswer::No;
+        events.yes_no_cancel = true;
+    }
     if (events.yes_no == YesNoAnswer::No)
         close_yes_no(true);
     return events;

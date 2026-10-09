@@ -333,7 +333,64 @@ void check_objects_drawn(const th::GameData &gd, th::ShadowSprites &shadows, con
     }
 }
 
+constexpr int kStableViewWidth = 1024, kStableViewHeight = 480;
+
+// Renders `world` at camera `camera` and at `camera` moved `step` pixels
+// right, and reports whether the second is the first shifted by `step`: the
+// same cells are drawn in the same order however the view is positioned, as
+// the game's covers table orders a whole line of its 640-wide view.
+bool stable_when_moved(const th::GameData &gd, const th::World &world, th::ShadowSprites &shadows, th::Point camera,
+                       int step)
+{
+    th::Rect view{0, 0, kStableViewWidth, kStableViewHeight};
+    th::Surface a, b, scratch;
+    a.resize(view.w, view.h);
+    b.resize(view.w, view.h);
+    scratch.resize(view.w, view.h);
+    scratch.fill(th::kMaskColour);
+    th::draw_world({a, view, camera}, world, gd, &shadows, scratch);
+    th::draw_world({b, view, {camera.x + step, camera.y}}, world, gd, &shadows, scratch);
+    for (int y = 0; y < view.h; y++)
+        for (int x = 0; x + step < view.w; x++)
+            if (a.row(y)[x + step] != b.row(y)[x])
+                return false;
+    return true;
+}
+
 } // namespace
+
+// A view wider than the original's 640 pixels holds more cells per scan line
+// than the game's covers table; moving the camera must not change how the
+// things in it are ordered (the same view, shifted). Multi-cell objects (a
+// block of desks; adjust_big_cell_flag) exercise the table: neighbouring big
+// cells must be ordered the same at any camera position.
+void test_draw_order_stable(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    auto world = std::make_unique<th::World>();
+    th::start_level(*world, *level, gd.anims());
+    th::ShadowSprites shadows(gd.blocks(), gd.ghost());
+    th::add_static_shadows(world->map);
+    int start = level->camera_start[0];
+    int c0 = start % th::kMapSize, r0 = start / th::kMapSize;
+    for (int dr = -3; dr <= 3; dr++)
+        for (int dc = -3; dc <= 3; dc++)
+            if (c0 + dc >= 0 && c0 + dc < th::kMapSize && r0 + dr >= 0 && r0 + dr < th::kMapSize)
+                th::place_object(*world, gd.anims(), {(c0 + dc) + (r0 + dr) * th::kMapSize, 1, 0}, 0, true);
+    th::Point centre = th::cell_to_world(c0, r0);
+    for (int camy = -64; camy <= 64; camy += 64)
+        for (int camx = -160; camx <= 160; camx += 32)
+            for (int step : {32, 64})
+                CHECK(stable_when_moved(
+                    gd, *world, shadows,
+                    {centre.x - kStableViewWidth / 2 + camx, centre.y - kStableViewHeight / 2 + camy}, step));
+}
 
 // Each level's starting objects show up in the view, and the masked drawing
 // leaves its scratch surface blank.

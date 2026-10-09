@@ -85,6 +85,7 @@ add_library(th_core STATIC
   src/core/world/disaster.cpp
   src/core/world/emergency.cpp
   src/core/world/epidemic.cpp
+  src/core/world/fax_screen.cpp
   src/core/world/finance.cpp
   src/core/world/game.cpp
   src/core/world/icons.cpp
@@ -95,11 +96,13 @@ add_library(th_core STATIC
   src/core/world/popups.cpp
   src/core/world/quake.cpp
   src/core/world/queue.cpp
+  src/core/world/rats.cpp
   src/core/world/reaper.cpp
   src/core/world/reception.cpp
   src/core/world/reputation.cpp
   src/core/world/research.cpp
   src/core/world/rooms.cpp
+  src/core/world/savegame.cpp
   src/core/world/snapshot.cpp
   src/core/world/staff.cpp
   src/core/world/staff_complex.cpp
@@ -120,10 +123,12 @@ set(TH_SNAPSHOT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/build.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/emergency.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/events.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/fax_screen.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/finance.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/game.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/object_tables.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/objects.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/rats.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/research.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/snapshot.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/world/staff.h
@@ -187,6 +192,7 @@ if (BUILD_TESTING)
     tests/nav.cpp
     tests/panel_info.cpp
     tests/patients.cpp
+    tests/rats.cpp
     tests/render.cpp
     tests/replay.cpp
     tests/research.cpp

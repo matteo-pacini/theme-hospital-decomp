@@ -12,8 +12,6 @@
 # the report's patient 26 was in at cell 65,63. The patients also queue and
 # enter the pharmacy one at a time, so one waits (with the invisible, illness
 # 5, patients among them) while another is cured inside.
-# Compare up to turn 18000: the year's end awards (from turn 18250) are not
-# ported.
 # Expect drugs
 # Expect cure
 # Expect go_for_treatment

@@ -14,12 +14,14 @@
 // render.cpp
 void test_blit_clips_and_skips();
 void test_drive_script();
+void test_drive_quick_report();
 void test_req_format();
 void test_iso_round_trip();
 void test_static_shadows();
 void test_shadow_sprites(const char *dir);
 void test_level_objects(const char *dir);
 void test_draw_world(const char *dir);
+void test_draw_order_stable(const char *dir);
 void test_panel_image(const char *dir);
 void test_text_layout();
 
@@ -55,6 +57,9 @@ void test_litter_dropping_level1(const char *dir);
 void test_reputation_go_home(const char *dir);
 void test_patient_dies_level1(const char *dir);
 
+// rats.cpp
+void test_rats();
+
 // ui.cpp
 void test_menu_bar(const char *dir);
 void test_requester_art(const char *dir);
@@ -62,6 +67,7 @@ void test_panel_buttons(const char *dir);
 void test_yes_no_requester(const char *dir);
 void test_main_menu_art(const char *dir);
 void test_startup_new_game(const char *dir);
+void test_startup_load_screen(const char *dir);
 void test_town_map(const char *dir);
 void test_jukebox(const char *dir);
 void test_charts(const char *dir);
@@ -121,9 +127,11 @@ void test_pick_up_staff(const char *dir);
 void test_sack_doctor(const char *dir);
 void test_staff_notice_runs_out(const char *dir);
 void test_adjust_handyman_values();
+void test_applicant_expiry();
 
 // game.cpp
 void test_game_clock(const char *dir);
+void test_fax_palette(const char *dir);
 void test_open_hospital(const char *dir);
 void test_finance_level1(const char *dir);
 void test_balance_roll(const char *dir);
@@ -161,6 +169,7 @@ void test_machine_explodes_level6(const char *dir);
 void test_machine_saved_level6(const char *dir);
 void test_machine_replace_level6(const char *dir);
 void test_do_earthquake_level6(const char *dir);
+void test_disasters_level1(const char *dir);
 
 // research.cpp
 void test_research_choices();
@@ -171,6 +180,9 @@ void test_research_level3(const char *dir);
 // replay.cpp
 void test_snapshot_round_trip(const char *dir);
 void test_snapshot_refused(const char *dir);
+void test_save_slot_round_trip(const char *dir);
+void test_save_slot_scripts(const char *dir);
+void test_save_slot_refused(const char *dir);
 void test_command_log_replay(const char *dir);
 
 // yearend.cpp
@@ -205,6 +217,7 @@ struct DataTest {
 const Test kTests[] = {
     TEST(test_blit_clips_and_skips),
     TEST(test_drive_script),
+    TEST(test_drive_quick_report),
     TEST(test_req_format),
     TEST(test_iso_round_trip),
     TEST(test_rnc_rejects_garbage),
@@ -217,10 +230,12 @@ const Test kTests[] = {
     TEST(test_create_an_illness),
     TEST(test_set_complex),
     TEST(test_epidemic),
+    TEST(test_rats),
     TEST(test_queue_lists),
     TEST(test_sound_player),
     TEST(test_xmi_parse),
     TEST(test_adjust_handyman_values),
+    TEST(test_applicant_expiry),
     TEST(test_nearest_room_info),
     TEST(test_research_choices),
     TEST(test_research_drugs),
@@ -239,8 +254,10 @@ const DataTest kDataTests[] = {
     TEST(test_shadow_sprites),
     TEST(test_level_objects),
     TEST(test_draw_world),
+    TEST(test_draw_order_stable),
     TEST(test_panel_image),
     TEST(test_game_clock),
+    TEST(test_fax_palette),
     TEST(test_open_hospital),
     TEST(test_language_and_fonts),
     TEST(test_balance),
@@ -258,6 +275,7 @@ const DataTest kDataTests[] = {
     TEST(test_smacker_intro),
     TEST(test_main_menu_art),
     TEST(test_startup_new_game),
+    TEST(test_startup_load_screen),
     TEST(test_music),
     TEST(test_announcer),
     TEST(test_finance_level1),
@@ -284,6 +302,9 @@ const DataTest kDataTests[] = {
     TEST(test_blueprint_cleared_level1),
     TEST(test_snapshot_round_trip),
     TEST(test_snapshot_refused),
+    TEST(test_save_slot_round_trip),
+    TEST(test_save_slot_scripts),
+    TEST(test_save_slot_refused),
     TEST(test_command_log_replay),
     TEST(test_research_level3),
     TEST(test_pick_up_staff),
@@ -311,6 +332,7 @@ const DataTest kDataTests[] = {
     TEST(test_machine_saved_level6),
     TEST(test_machine_replace_level6),
     TEST(test_do_earthquake_level6),
+    TEST(test_disasters_level1),
     TEST(test_help_tooltip_text),
     TEST(test_help_text_ids),
     TEST(test_help_box_clamped),

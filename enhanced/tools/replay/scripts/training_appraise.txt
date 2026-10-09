@@ -5,7 +5,7 @@
 # 20) and a junior doctor (applicant 22), the policy's rest at 50. The doctor
 # and the junior gain ability from the lectures, resting and returning, and
 # at a month's end the doctor is promoted to a consultant (appraise_staff).
-# Runs past the year's end (18250), whose awards are not ported.
+# Runs past the year's end (18250).
 # Expect appraise
 # Expect training
 # Expect take_a_break

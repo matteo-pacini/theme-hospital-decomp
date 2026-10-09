@@ -5,8 +5,8 @@
 # the machine taken off, its walls marked), the doctor in it is killed and
 # the patient on it dies, the room is destroyed and its queue (four
 # patients) sent back to the GP. The machine window's replace is then sent
-# for the machine gone (its thing free again): the game charges the price
-# of object kind 0, -99. Compare up to turn 18000.
+# for the machine gone (its thing an applicant by now, owner 0x63): the game
+# charges the thing's owner, not the player. Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 # Expect machine_smoke
 # Expect replace_machine

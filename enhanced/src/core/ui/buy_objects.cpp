@@ -22,6 +22,16 @@ namespace
 constexpr int kBuyWindow = int(Requester::BuyObjects);
 constexpr int kEditWindow = int(Requester::EditRoom);
 
+// SFX_* (include/enums.h).
+constexpr uint8_t kSfxWrong2 = 0x08;
+constexpr uint8_t kSfxSwoosh = 0x22;
+constexpr uint8_t kSfxYesX = 0x41;
+constexpr uint8_t kSfxNo4 = 0x42;
+constexpr uint8_t kSfxSelectX = 0x43;
+constexpr uint8_t kSfxHighlight5 = 0x44;
+constexpr uint8_t kSfxAddItemJ = 0x5b;
+constexpr uint8_t kSfxDeleteItemJ = 0x5c;
+
 // The buy objects requester's buttons, counted from 1 in its window
 // (hires_requester_buttons[0x2f] to [0x4e], src/reqbut.cpp): accept, the
 // ten entries (a left click buys, a right one sells), cancel, then each
@@ -198,21 +208,34 @@ int64_t cost_of_all_selected(const ObjectPlacing &p, const World &world)
 }
 
 // clicked_buy_objects (src/req11.cpp): `buy` or sell back `amount` of the
-// selected kind if entry `entry` is listed. The game plays SFX_WRONG2 for
-// what it refuses; there are no sounds yet.
+// selected kind if entry `entry` is listed, with its sound (SFX_ADDITEMJ,
+// SFX_DELITEMJ, or SFX_WRONG2 for what it refuses).
 void clicked_buy_objects(Game &game, int entry, bool buy, bool shift, bool ctrl)
 {
     ObjectPlacing &p = game.world.placing;
+    std::vector<uint8_t> &sounds = game.world.building.sounds;
     int amount = ctrl ? 10 : shift ? 5 : 1;
     int obj = p.item;
-    if (!p.offered[size_t(entry)] || obj >= kObjectKinds)
+    if (!p.offered[size_t(entry)]) {
+        // An empty entry only plays the error sound.
+        sounds.push_back(kSfxWrong2);
+        return;
+    }
+    if (obj >= kObjectKinds)
         return;
     if (buy) {
         int64_t cost = cost_of_all_selected(p, game.world) + int64_t(object_cost(game.world, obj)) * amount;
-        if (game.balance > 0 && cost <= game.balance)
+        if (game.balance > 0 && cost <= game.balance) {
             game.event = {EV_BUY_OBJECT, uint16_t(obj), 0, uint16_t(amount)};
+            sounds.push_back(p.buy_count[size_t(obj)] + amount < 0x63 ? kSfxAddItemJ : kSfxWrong2);
+        } else {
+            sounds.push_back(kSfxWrong2);
+        }
     } else if (p.buy_count[size_t(obj)] >= amount) {
         game.event = {EV_SELL_OBJECT, uint16_t(obj), 0, uint16_t(amount)};
+        sounds.push_back(kSfxDeleteItemJ);
+    } else {
+        sounds.push_back(kSfxWrong2);
     }
 }
 
@@ -368,22 +391,27 @@ void sync_object_requesters(Interface &ui, const Game &game)
 namespace
 {
 
-// The buy requester's entry under the pointer becomes the item it offers.
-void object_requesters_buy_hover(const Interface &ui, ObjectUi &oui, ObjectPlacing &p, const UiMouse &mouse)
+// The buy requester's entry under the pointer becomes the item it offers,
+// with the beep on a change (req11_overdraw's hilight).
+void object_requesters_buy_hover(const Interface &ui, ObjectUi &oui, ObjectPlacing &p, const UiMouse &mouse,
+                                 std::vector<uint8_t> &sounds)
 {
     const Window &win = ui.window(kBuyWindow);
     for (int i = 0; i < kEntries && p.offered[size_t(i)]; i++) {
         if (over(mouse.x, mouse.y, win.x + kEntryBox.x, win.y + kEntryBox.y + kEntryStep * i, kEntryBox.w,
                  kEntryBox.h)) {
             oui.hovered_entry = i;
+            if (p.item != p.offered[size_t(i)])
+                sounds.push_back(kSfxHighlight5);
             p.item = p.offered[size_t(i)];
         }
     }
 }
 
 // The edit room requester's object list: the row under the pointer, picking
-// one up, and the window's height.
-void object_requesters_edit_list(Interface &ui, ObjectUi &oui, ObjectPlacing &p, const UiMouse &mouse)
+// one up, the beep on a change and the window's height.
+void object_requesters_edit_list(Interface &ui, ObjectUi &oui, ObjectPlacing &p, const UiMouse &mouse,
+                                 std::vector<uint8_t> &sounds)
 {
     const Window &win = ui.window(kEditWindow);
     int top = win.y + kListOrigin.y, rows = 0;
@@ -394,12 +422,20 @@ void object_requesters_edit_list(Interface &ui, ObjectUi &oui, ObjectPlacing &p,
             if (mouse.x >= win.x + kRowBox.x && mouse.x < win.x + kRowBox.x + kRowBox.w && mouse.y >= by + kRowName.y &&
                 mouse.y < by + kRowBox.y + kRowBox.h) {
                 oui.highlighted = obj;
+                if (oui.last_highlight != obj)
+                    sounds.push_back(kSfxHighlight5);
+                oui.last_highlight = obj;
                 if (mouse.left_held || mouse.left_pressed)
                     selected = obj;
             }
         });
-        if (selected >= 0)
+        if (selected >= 0) {
+            if (p.arg3 != selected)
+                sounds.push_back(kSfxSelectX);
             select_object_to_place(p, selected);
+        }
+        if (oui.highlighted < 0)
+            oui.last_highlight = -1;
         p.buy_kind_count = uint8_t(rows);
     }
     // The game sets the height to the list's end on the screen, not
@@ -410,6 +446,7 @@ void object_requesters_edit_list(Interface &ui, ObjectUi &oui, ObjectPlacing &p,
 void object_requesters_buy_button(Game &game, int i, bool old_left, UiModifiers keys)
 {
     ObjectPlacing &p = game.world.placing;
+    std::vector<uint8_t> &sounds = game.world.building.sounds;
     if (i >= kBuyEntry && i < kBuyEntry + kEntries) {
         clicked_buy_objects(game, i - kBuyEntry, old_left, keys.shift, keys.ctrl);
     } else if (i >= kBuyPlus && i < kBuyPlus + kEntries) {
@@ -417,17 +454,21 @@ void object_requesters_buy_button(Game &game, int i, bool old_left, UiModifiers 
     } else if (i >= kBuyMinus && i < kBuyMinus + kEntries) {
         clicked_buy_objects(game, i - kBuyMinus, false, keys.shift, keys.ctrl);
     } else if (i == kBuyAccept) {
-        // Furnishing a room (arg3), back to placing with what was bought.
+        // Furnishing a room (arg3), back to placing with what was bought;
+        // SFX_YESX always (req11.cpp:46).
         if (p.arg == 1)
             game.event = {EV_PLACE_NEXT_OBJECT, 0, 0, 0};
         else if (p.arg3)
             game.event = {EV_BACK_TO_PLACE_OBJECT, 0, 0, 0};
+        sounds.push_back(kSfxYesX);
     } else if (i == kBuyCancel && p.arg3) {
         game.event = {EV_BACK_TO_PLACE_OBJECT, 1, 0, 0};
+        sounds.push_back(kSfxNo4);
     } else if (i == kBuyCancel) {
         for (int k = 0; k < kObjectKinds - 1; k++)
             p.buy_count[size_t(k)] = 0;
         game.event = {EV_CANCEL_BUY_OBJECTS, 0, 0, 0};
+        sounds.push_back(kSfxNo4);
     }
 }
 
@@ -437,18 +478,21 @@ void object_requesters_input(Interface &ui, ObjectUi &oui, Game &game, const Int
                              const UiMouse &mouse, UiModifiers keys)
 {
     ObjectPlacing &p = game.world.placing;
+    std::vector<uint8_t> &sounds = game.world.building.sounds;
     oui.hovered_entry = -1;
     oui.highlighted = -1;
     if (window_open(ui, kBuyWindow))
-        object_requesters_buy_hover(ui, oui, p, mouse);
+        object_requesters_buy_hover(ui, oui, p, mouse, sounds);
     if (window_open(ui, kEditWindow))
-        object_requesters_edit_list(ui, oui, p, mouse);
+        object_requesters_edit_list(ui, oui, p, mouse, sounds);
     if (events.triggered_window == kBuyWindow)
         object_requesters_buy_button(game, events.triggered_button, events.old_left, keys);
     // Buy more, pick up and confirm are disabled in the corridor.
     if (events.triggered_window == kEditWindow && events.triggered_button == kEditRoomCancel &&
-        !(p.arg & (1u << kEditRoomCancel)))
+        !(p.arg & (1u << kEditRoomCancel))) {
         object_escape(game);
+        sounds.push_back(kSfxNo4);
+    }
 }
 
 void placement_mouse(ObjectUi &oui, Game &game, int cell, const UiMouse &mouse, bool on_map)
@@ -468,8 +512,8 @@ void placement_mouse(ObjectUi &oui, Game &game, int cell, const UiMouse &mouse, 
     if (cell < 0 || cell >= kMapCells)
         return;
     // Objects hugging a room's wall turn with the wall instead (mode 1).
-    if (mouse.right_pressed && p.mode != 1)
-        change_placing_angle(p, -1);
+    if (mouse.right_pressed && p.mode != 1 && change_placing_angle(p, -1))
+        game.world.building.sounds.push_back(kSfxSwoosh);
     game.update_placement(cell);
     oui.cursor_shown = true;
     if (mouse.left_pressed && p.ok)

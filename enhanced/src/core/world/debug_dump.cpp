@@ -333,6 +333,9 @@ void dump_thing_object(Inspection &out, const Thing &t)
     F(t, aux_param);
     F(t, remove_after_anim);
     F(t, lecture_started);
+    F(t, rat_dx);
+    F(t, rat_dy);
+    F(t, rat_ticks);
 }
 
 void dump_thing_helicopter(Inspection &out, const Thing &t)
@@ -457,7 +460,7 @@ void dump_thing_staff(Inspection &out, const World &w, const Thing &t)
     F(t, surgeon_training);
     F(t, psych_training);
     F(t, research_training);
-    F(t, hire_expiry);
+    out.text("hire_expiry", std::format("{}", applicant_expiry(t)));
     F(t, hire_time);
     F(t, work_delay);
     F(t, female);
@@ -502,6 +505,8 @@ const char *dump_thing_kind(const Thing &t)
         return "object";
     case kThingReaper:
         return "reaper";
+    case kThingRat:
+        return "rat";
     case kThingHelicopter:
         return "helicopter";
     case kThingShadow:
@@ -566,6 +571,13 @@ void dump_thing_body(Inspection &out, const World &w, const Thing &t)
         out.section("numfx");
         out.number("numfx_type", t.numfx_type);
         F(t, numfx_amount);
+        return;
+    }
+    if (t.type == kThingRat) {
+        out.section("rat");
+        F(t, rat_dx);
+        F(t, rat_dy);
+        F(t, rat_ticks);
         return;
     }
     if (t.type == kThingInspector) {
@@ -649,6 +661,8 @@ void dump_game_progress(std::string &out, const Game &game)
     F(p, year_start_deaths);
     F(p, year_start_staff);
     F(p, prev_year_deaths);
+    F(p, rat_shots);
+    F(p, rats_killed);
     F(p, level_won);
     F(p, win_declined);
     F(p, winlose_result);
@@ -760,6 +774,21 @@ void dump_game_popups(std::string &out, const World &w)
     out += '\n';
 }
 
+// dump_game_world's rat holes and rat game state.
+void dump_game_rats(std::string &out, const World &w)
+{
+    F(w, rats.hole_count);
+    F(w, rats.last_litter_tile);
+    F(w, rats.next_rat_layer);
+    F(w, rats.near_margin);
+    F(w, rats.hit_margin);
+    F(w, rats.powerup_shots);
+    F(w, rats.fest_level);
+    F(w, rats.fest_kills_mark);
+    F(w, rats.fest_powerup);
+    F(w, rats.fest_rats);
+}
+
 void dump_game_world(std::string &out, const World &w)
 {
     out += "world:";
@@ -785,12 +814,19 @@ void dump_game_world(std::string &out, const World &w)
     F(w, idle_nurses);
     F(w, next_call_id);
     F(w, litter_count);
+    dump_game_rats(out, w);
     F(w, mishaps);
     F(w, machine_exploded);
+    F(w, disaster_counter);
+    F(w, disaster_kind);
+    F(w, disaster_timer);
+    F(w, saved_heating);
+    F(w, heating_broken);
     L(w, machine_sounds);
     L(w, machine_announcements);
     L(w, epidemic_sounds);
     L(w, treatment_sounds);
+    L(w, rat_sounds);
     L(w, cure_available);
     L(w, ins_control);
     L(w, room_of_type);
@@ -1021,6 +1057,16 @@ void dump_game_map(std::string &out, const World &w, int focus, int radius)
     }
 }
 
+// dump_game's fax screen (Game::fax_screen) and the palette it brings.
+void dump_game_fax(std::string &out, const Game &game)
+{
+    const Game::FaxScreen &fax = game.fax_screen;
+    out += std::format("fax_screen open={} state={:#x} timeout={} backup_open={} backup_timeout={} fade={} since={} "
+                       "pointer={} fax_pointer={} fax_key={} fax_palette={}\n",
+                       fax.open, fax.state, fax.timeout, fax.backup_open, fax.backup_timeout, fax.fade, fax.since,
+                       fax.pointer, game.fax_pointer, game.fax_key, game.world.fax_palette);
+}
+
 } // namespace
 
 std::string dump_game(const Game &game, int focus, int radius)
@@ -1041,6 +1087,7 @@ std::string dump_game(const Game &game, int focus, int radius)
     dump_game_counts(out, w);
     out += std::format("choice_screen type={} subject={} timeout={}\n", game.choice_screen.type,
                        game.choice_screen.subject, game.choice_screen.timeout);
+    dump_game_fax(out, game);
     dump_game_disasters(out, game.disasters);
     dump_game_emergency(out, w);
     dump_game_research(out, game);

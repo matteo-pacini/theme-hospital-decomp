@@ -28,6 +28,9 @@ struct ObjectUi {
     // The kind in the edit room requester's list under the pointer
     // (hilighted_object), -1 for none.
     int highlighted = -1;
+    // The edit room requester's list entry highlighted last frame
+    // (hilighted_object), the beep on a change compared with it; -1 for none.
+    int last_highlight = -1;
     // The object being placed is drawn this frame: the pointer is on the
     // map (draw_object_cursor runs only then).
     bool cursor_shown = false;

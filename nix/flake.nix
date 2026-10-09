@@ -79,20 +79,20 @@
         };
 
         # The 32-bit runtime libraries from the Watcom C/C++ 10.5 and 10.6
-        # CDs (as archived by WinWorld), which several runtime units are built
-        # from (see docs/MATCHING.md). Only LIB386 is kept from each image.
+        # CDs (the CD images archived on archive.org), which several runtime
+        # units are built from (see docs/MATCHING.md). Only LIB386 is kept from
+        # each image.
         watcom-10_5-libs = final.stdenvNoCC.mkDerivation {
           pname = "watcom-libs";
           version = "10.5";
           src = final.fetchurl {
-            name = "watcom-cpp-10.5.7z";
-            url = "https://dl.winworldpc.com/Watcom%20CPP%2010.5%20(ISO).7z";
-            hash = "sha256-V6DZ72PlHJqe5ENmT1TkZYkBn8Q7iCmXopD+8Qdtpnc=";
+            name = "watcom-cpp-10.5.iso";
+            url = "https://archive.org/download/Watcom_C_10.5/Watcom_C++_10.5.iso";
+            hash = "sha256-59gnW3HwXHgraZGDZcdwcWvej1agj83GL+I9xD2Ai5s=";
           };
           nativeBuildInputs = [ final.p7zip ];
           unpackPhase = ''
-            7z x $src >/dev/null
-            7z x "Watcom CPP 10.5 (ISO)/Watcom_C++_10.5.iso" -oiso LIB386 BINW/WSTUB.EXE >/dev/null
+            7z x $src -oiso LIB386 BINW/WSTUB.EXE >/dev/null
           '';
           # BINW/WSTUB.EXE: the DOS/4GW stub wlink put in front of HOSPITAL.EXE.
           installPhase = "mkdir -p $out/binw && cp -r iso/LIB386/. $out/ && cp iso/BINW/WSTUB.EXE $out/binw/wstub.exe";
@@ -102,14 +102,13 @@
           pname = "watcom-libs";
           version = "10.6";
           src = final.fetchurl {
-            name = "watcom-cpp-10.6.7z";
-            url = "https://dl.winworldpc.com/Watcom%20CPP%2010.6.7z";
-            hash = "sha256-dDCcz1CPAVxGyf9HoWkVwVWjsTEDc1BEjsCIzkq0R0I=";
+            name = "watcom-cpp-10.6.iso";
+            url = "https://archive.org/download/Watcom_C_10.6/Watcom_C++_10.6.iso";
+            hash = "sha256-GN2YrpyNiD4taAv55O2hxL94N2xfBeBxtV5XpmGa7PI=";
           };
           nativeBuildInputs = [ final.p7zip ];
           unpackPhase = ''
-            7z x $src >/dev/null
-            7z x "Watcom CPP 10.6/watcom10.6.iso" -oiso LIB386 >/dev/null
+            7z x $src -oiso LIB386 >/dev/null
           '';
           installPhase = "mkdir -p $out && cp -r iso/LIB386/. $out/";
         };
@@ -207,6 +206,8 @@
                 jq
                 innoextract
                 clang-tools # clang-format for src/ and include/ (.clang-format)
+                dosbox-x # the replay check runs the original in it
+                zstd # compresses its cached traces
               ]);
           }
           // watcomEnv

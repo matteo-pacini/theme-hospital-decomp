@@ -2,8 +2,7 @@
 # reception, then toilets with two toilets and a sink, and a warm corridor
 # with a drinks machine: patients with a full bladder leave the queue for the
 # toilets, use a toilet and (illnesses from 16 on) the sink, and go back. A
-# patient using a toilet is sent home (EV_PERSON_GO_HOME). Compare up to turn
-# 18000: the year's end awards (from turn 18250) are not ported.
+# patient using a toilet is sent home (EV_PERSON_GO_HOME).
 # gp_office.txt's commands up to the GP's office opened (turn 113).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect to_toilets
@@ -64,4 +63,4 @@
 167 7 10047 44
 170 79 10 0
 # Patient 19, on a toilet, sent home.
-8100 116 19 0
+7169 116 19 0

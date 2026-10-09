@@ -31,6 +31,7 @@ constexpr uint8_t kThingPatient = 2;
 constexpr uint8_t kThingStaff = 4;
 constexpr uint8_t kThingObject = 6;
 constexpr uint8_t kThingReaper = 0xa;
+constexpr uint8_t kThingRat = 0xc;
 constexpr uint8_t kThingDebris = 0xe;
 constexpr uint8_t kThingHelicopter = 0x10;
 constexpr uint8_t kThingNumfx = 0x12;
@@ -242,8 +243,6 @@ struct Thing {
     uint8_t orders = 0;
     uint32_t resign_time = 0;
     uint8_t resign_count = 0;
-    // Applicants: they withdraw once the game turn passes this; 0 once hired.
-    uint32_t hire_expiry = 0;
     // Staff: the game turn they were hired, kept in 16 bits as the game does.
     int16_t hire_time = 0;
     uint8_t work_delay = 0;
@@ -386,6 +385,13 @@ struct Thing {
     uint8_t next_flip = 0;
     uint8_t reaper_next_state = 0;
 
+    // Rats (rats.cpp)
+    // A rat's step: how far it moves each turn (1/65536 cell) across and down,
+    // and the turns left on its current leg.
+    int32_t rat_dx = 0;
+    int32_t rat_dy = 0;
+    int32_t rat_ticks = 0;
+
     // Emergencies (emergency.cpp)
     // Helicopters (kThingHelicopter): their height above their cell, falling
     // by `speed` a turn as they land and rising as they leave, and their
@@ -486,6 +492,7 @@ enum class PathFinder : uint8_t { AStar, Original };
 // Queues (queue.cpp)
 struct Balance;
 struct HospitalMarket;
+struct StaffMarket;
 struct Finance;
 class Game;
 
@@ -552,6 +559,19 @@ struct AdCounts {
     uint8_t last_quake_size = 0;
 };
 
+// Rat state values (the game's RAT_*, include/enums.h).
+constexpr uint8_t kRatScurries = 2;
+constexpr uint8_t kRatArrives = 4;
+constexpr uint8_t kRatLeaves = 6;
+
+// A player's rat hole (the game's RatHole): the cell and the side of the
+// building its wall is on (0 north, 1 east, 2 south, 3 west), which decides
+// how a rat appears and leaves.
+struct RatHole {
+    uint16_t tile = 0;
+    uint8_t side = 0;
+};
+
 struct World {
     std::array<MapCell, kMapCells> map{};
     std::vector<Thing> things = std::vector<Thing>(kThingCount);
@@ -584,6 +604,11 @@ struct World {
     // (ArrivalState::hospitals[0]) and its finances.
     const Balance *settings = nullptr;
     HospitalMarket *market = nullptr;
+    // The job market the applicants are counted in (Game::staff_market).
+    StaffMarket *staff_market = nullptr;
+    // The fax picture's palette is the one the game has loaded, so its colours
+    // (colour_red, colour_dark_blue) are the current ones; see FaxScreen.
+    bool fax_palette = false;
     const Finance *finance = nullptr;
     // The turn's random distances (othervar.queue_near_dist, 0-5, and
     // object_near_dist, 1-4; draw_turn_randoms): how near their queue's cell
@@ -707,6 +732,26 @@ struct World {
     // Hospital 0's litter on the map (allhosps[0].litter_count).
     uint16_t litter_count = 0;
 
+    // Rats (rats.cpp): hospital 0's rat holes (allhosps[0].ratholes and
+    // rathole_count), the cell of its last litter (last_litter_tile), and
+    // the rat game's state (othervar.next_rat_layer, rat_near_margin,
+    // rat_hit_margin, rat_powerup_shots and gamevar.rat_fest_*).
+    struct Rats {
+        static constexpr int kMaxHoles = 0x28;
+        std::array<RatHole, kMaxHoles> holes{};
+        uint8_t hole_count = 0;
+        uint16_t last_litter_tile = 0;
+        uint8_t next_rat_layer = 0;
+        uint16_t near_margin = 0x10;
+        uint16_t hit_margin = 4;
+        uint8_t powerup_shots = 0;
+        uint8_t fest_level = 0;
+        uint16_t fest_kills_mark = 0;
+        uint8_t fest_powerup = 0;
+        uint32_t fest_rats = 0;
+    };
+    Rats rats;
+
     // Emergencies (emergency.cpp)
     // Hospital 0's emergency taken on (allhosps[0]'s emergency fields).
     struct Emergency {
@@ -773,6 +818,20 @@ struct World {
     std::vector<uint8_t> machine_sounds;
     std::vector<uint8_t> machine_announcements;
 
+    // Random disasters (disaster.cpp)
+    // Hospital 0's disaster (allhosps[0]'s disaster fields): the kind running
+    // (0 none, 1 heating cold, 2 heating hot, 3 sickness), the days counted
+    // since the last one (drawn from world.seed once past
+    // gbv.disaster_launch), the days left of the one running, the
+    // heating level it saved before breaking it, and whether the heating is
+    // broken (so the player's set heating is ignored, src/io.cpp's
+    // EV_SET_HEATING).
+    uint16_t disaster_counter = 0;
+    uint8_t disaster_kind = 0;
+    int8_t disaster_timer = 0;
+    uint8_t saved_heating = 0;
+    bool heating_broken = false;
+
     // Epidemics (epidemic.cpp)
     // Hospital 0's epidemic (allhosps[0]'s epidemic fields): the illness it
     // is of and the fine declaring it would cost, how many patients the last
@@ -808,6 +867,10 @@ struct World {
     // played and cleared them: the cheer of a cure and the boo of a death
     // (administer_drugs and setup_next_treatment).
     std::vector<uint8_t> treatment_sounds;
+
+    // The player's shots at rats' sound effects (SFX_*) made since the
+    // interface last played and cleared them (shoot_rat).
+    std::vector<uint8_t> rat_sounds;
 
     // Research (research.cpp)
     // Hospital 0's research and object figures (core/world/research.h).
@@ -909,11 +972,26 @@ uint16_t place_object(World &world, const AnimData &anims, ObjectAt object, int 
 // (at a level's start, where the cost is 0 in the game too).
 void add_object_value(World &world, int kind, int sign);
 
-// The game's NUMFX_MONEY and the hospital palette's colours setup_colors
-// finds for color.black and color.red (LbPaletteFindColour).
+// The game's NUMFX_NUMBER and NUMFX_MONEY and the colours setup_colors finds
+// (LbPaletteFindColour) for color.black, color.red and color.dark_blue in the
+// hospital palette and in the fax picture's (World::fax_palette).
+constexpr uint8_t kNumfxNumber = 0;
 constexpr uint8_t kNumfxMoney = 3;
 constexpr uint8_t kColourBlack = 0;
 constexpr uint8_t kColourRed = 12;
+constexpr uint8_t kColourDarkBlue = 245;
+constexpr uint8_t kFaxColourRed = 243;
+constexpr uint8_t kFaxColourDarkBlue = 16;
+
+// color.red and color.dark_blue now (color.black is 0 in both palettes).
+inline uint8_t colour_red(const World &world)
+{
+    return world.fax_palette ? kFaxColourRed : kColourRed;
+}
+inline uint8_t colour_dark_blue(const World &world)
+{
+    return world.fax_palette ? kFaxColourDarkBlue : kColourDarkBlue;
+}
 
 // create_numfx (0x9d480): a floating number of `type` showing `value` on
 // `tile` in palette colour `colour`, drawn `height` pixels up plus 0-15 at

@@ -10,9 +10,11 @@
 #include "core/ui/layer.h"
 #include "core/world/advisor.h"
 #include "core/world/events.h"
+#include "core/world/fax_screen.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/research.h"
+#include "core/world/rooms.h"
 #include "core/world/staff.h"
 #include "core/world/world.h"
 
@@ -45,7 +47,9 @@ void test_game_clock(const char *dir)
     for (int i = 0; i < 49; i++)
         game->turn();
     CHECK(game->date.day == 2 && game->date.month == 0); // turn 50
-    for (int i = 0; i < 3 * 49; i++)
+    // Three draws a turn, plus manage_rats' three at the day boundary the
+    // 49th call crosses.
+    for (int i = 0; i < 3 * 49 + 3; i++)
         th::old_newrand(seed);
     CHECK(seed == game->world.seed);
 
@@ -61,6 +65,40 @@ void test_game_clock(const char *dir)
     uint32_t turns = game->turn_count;
     game->turn();
     CHECK(game->turn_count == turns);
+}
+
+// A fax with a timeout changes the colours the game finds (World::fax_palette)
+// from the turn after it is shown (display_choice's 0x5a) until the turn after
+// it closes itself: 400 turns past the first turn the pointer is still, then
+// one more turn to take it down. An answer closes it at once.
+void test_fax_palette(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &g = *f.game;
+    const uint32_t opened = g.turn_count;
+    th::fax_open(g, 400);
+    uint32_t on = 0, off = 0;
+    for (int i = 0; i < 420; i++) {
+        bool before = g.world.fax_palette;
+        g.turn();
+        if (g.world.fax_palette != before)
+            (before ? off : on) = g.turn_count;
+    }
+    CHECK(on == opened + 2 && off == opened + 405);
+    CHECK(th::colour_red(g.world) == th::kColourRed && th::colour_dark_blue(g.world) == th::kColourDarkBlue);
+
+    // Answered with a button: the next turn has the hospital's colours back.
+    th::fax_open(g, 400);
+    g.turn();
+    g.turn();
+    CHECK(g.world.fax_palette && th::colour_red(g.world) == th::kFaxColourRed);
+    g.event = {uint8_t(th::EV_CHOICE_RESULT), th::kChoiceTreatWait, 0, 0};
+    g.process_turn();
+    g.turn();
+    CHECK(!g.world.fax_palette && !g.fax_screen.open);
 }
 
 // The panel's watch, clicked while the countdown runs: process_turn's

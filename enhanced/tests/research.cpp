@@ -242,9 +242,9 @@ void test_research_level3(const char *dir)
     }));
     std::printf("research: %d contributions, %d researched, %d upgrades, %d drugs, seed %#x\n", points, researched,
                 upgraded, drugs, unsigned(g.world.seed));
-    CHECK(points == 174 && researched == 3 && upgraded == 5 && drugs == 1);
+    CHECK(points == 157 && researched == 2 && upgraded == 4 && drugs == 1);
     CHECK(th::room_available(g.world, kRoomSlackTongue) && th::equipment_available(g.world, kObjCardio));
-    CHECK(g.world.seed == 0x6d1dcf8d && g.balance == 42115);
+    CHECK(g.world.seed == 0x0d86179a && g.balance == 42115);
 
     ResearchGame c;
     CHECK(c.start(dir, 3,

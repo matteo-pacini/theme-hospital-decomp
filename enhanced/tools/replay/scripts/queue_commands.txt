@@ -5,8 +5,8 @@
 # front), EV_QUEUE_PERSON_GO_HOME and EV_QUEUE_PERSON_GO_RECEPTION (a
 # non-head patient leaves) and EV_QUEUE_PERSON_TO_NEW_QUEUE (the head patient
 # sent to the GP's office). Compare up to turn 18300.
-# Expect join_queue 36 room=6 == 1
-# Expect go_home 36 == 1
+# Expect join_queue 38 room=6 == 1
+# Expect go_home 38 == 1
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -26,8 +26,11 @@
 111 7 8386 2
 112 7 8641 6
 113 1 0 0
-# At turn 10000 the reception (room 5) holds its patients; the head is 36.
-10000 9 6 36
+# At turn 10000 the reception (room 5) holds its patients, in queue order
+# 38, 6, 7, 8, 11, 4, 5 (from the trace); the head 38 is sent to the GP's
+# office, and the queue window's commands act on queue position 2 (1-based,
+# a non-head patient) of the queue that is left, one command per turn.
+10000 9 6 38
 10001 61 5 2
 10002 60 5 2
 10003 81 5 2

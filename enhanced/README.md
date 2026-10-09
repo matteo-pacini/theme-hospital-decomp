@@ -20,8 +20,8 @@ Milestone 1, the map at any resolution:
   indexed view the size of the window, then scaled by a whole number for
   sharp pixels;
 - the bottom panel at native size, centred;
-- scrolling (arrow keys or WASD, the window edges, middle or right drag) and
-  zoom (mouse wheel; automatic keeps at least 480 lines);
+- scrolling (the arrow keys or numpad 8/2/4/6, the window edges, middle or
+  right drag) and zoom (mouse wheel; automatic keeps at least 480 lines);
 - a tools window (F12) with the UI scale.
 
 Milestone 2, the level as it starts:
@@ -43,9 +43,9 @@ Milestone 3a, time passing:
 
 - the level settings (LEVELS/*.SAM, the FULL set) read as the game reads
   them;
-- the game turn: game speeds (keys 1-5 until the menu bar exists, P to
-  pause), the date (a day every 50 turns), the opening countdown, the
-  per-turn random draws, and objects' animations;
+- the game turn: game speeds (keys 1-5, P to pause), the date (a day every
+  50 turns), the opening countdown, the per-turn random draws, and objects'
+  animations;
 - the panel's balance, date and reputation marker, and the opening
   countdown's watch, in the game's fonts and language (HOSPITAL.CFG's, or
   `--language N`: 0 English, 1 French, 2 German, 3 Italian, 4 Spanish,
@@ -88,12 +88,12 @@ Milestone 4 so far, the game's interface:
 - the GP's office and the diagnosis rooms in use: the GP sending patients
   on to diagnosis, the doctors' work in general diagnosis, the cardiogram,
   the scanner, ultrascan, blood machine and X-ray (these four once
-  researched) and psychiatry (which
-  also cures), the ward's nurse putting patients to bed, the fees, the
-  machines' wear and the handymen's repairs;
+  researched) and psychiatry (which also cures, the king complex among
+  others), the ward's nurse putting patients to bed, the fees, the machines'
+  wear and the handymen's repairs;
 - the pharmacy (drugs, and the cabinet for invisibility and transparency)
   and inflation: patients cured and going home cured, or not; patients
-  dying, floating away or taken by the grim reaper into the gates of hell.
+  dying, floating away or taken by the grim reaper into the gates of hell;
 - staff rooms and toilets: tired staff (past the policy's "rest at", or
   ordered to rest) going for a break to the nearest staff room and resting
   there on its sofa, at pool or the video game until no longer tired, then
@@ -130,7 +130,7 @@ Milestone 4 so far, the game's interface:
   long waits, too few or too many doctors and nurses, worn machines, litter,
   plants, benches, the first death and cure, deaths near the level's limit,
   the rooms open, a room just opened, a treatment not paid for, a doctor
-  cracked up.
+  cracked up;
 - machines wearing out and blowing up: their smoke drawn and their warning
   sounds and announcements from three quarters of their strength, a
   breakdown likelier the more worn past it; the explosion's debris flying
@@ -138,8 +138,7 @@ Milestone 4 so far, the game's interface:
   cracked walls left), the staff in it killed and its patients dying, the
   room destroyed and its queue sent elsewhere, the reputation lost; and the
   machine window's commands, replace (EV_REPLACE_MACHINE 0x8a) and call a
-  handyman (EV_THINGPAGE_REQUEST 0x76).
-
+  handyman (EV_THINGPAGE_REQUEST 0x76);
 - research: researchers at work in the research room (the computer, the
   atom analyser, desks and cabinets), their points, back to research after
   a break; the daily spending by the policy's allocation and the
@@ -147,11 +146,11 @@ Milestone 4 so far, the game's interface:
   better drugs and machine upgrades (stronger, cheaper machines), a
   category running out and closing; objects becoming available in their
   month; what is researched offered in the build and buy requesters; the
-  research screen's bars; the advisor's announcements spoken. The slack
-  tongue slicer cures; the hair restorer, fracture
-  clinic, electrolysis, jelly vat and decontamination rooms work as the
-  slicer's but are not checked against the game yet.
-
+  research screen's bars; the advisor's announcements spoken; drugs
+  improved again and again once researched. The slack tongue slicer, the
+  hair restorer and the fracture clinic cure; the electrolysis, jelly vat
+  and decontamination rooms work as the slicer's but are not checked
+  against the game yet;
 - the operating theatre: two surgeons taking turns at its screen, its
   operating table, lamp, sinks and X-ray viewer, the operation itself, and
   the ward and diagnosis its patients need;
@@ -171,7 +170,22 @@ Milestone 4 so far, the game's interface:
 - the staff's pay-raise demands (raised and bonused, or refused), the status
   icons over people and machines, the panel's information bar under the
   pointer, plants wilting, watering and dying with the handyman's priorities,
-  and the panel watch's open-hospital button.
+  and the panel watch's open-hospital button;
+- calls that time out: a doctor's or nurse's patient who cannot reach the
+  room called again, then given up and sent on;
+- rats: rat holes made by the litter, rats coming out of them, and shooting
+  them (a miss, a hit and the rat killed, its number floating over it);
+- disasters: the heating failing cold or hot until its timer runs out
+  (sooner with enough handymen), the player's heating ignored meanwhile,
+  everyone feeling sick when there is litter, a disaster refused when the
+  hospital cannot have it, and the advisor's messages;
+- the tutorial: the advisor's steps from furnishing the corridor to opening
+  the room building (from step 0x2b on not yet);
+- the year end: the hall of fame, the charts, the awards and trophies and
+  the year's score; winning or losing at the year end, and a win offered at
+  a quarter's end and declined;
+- saving and loading: File > Save and Load, the quick save and load (Alt+S,
+  Alt+L), the Continue slot written on quitting, and the load game screen.
 
 Not yet: autopsies and the DNA fixer.
 Route planning defaults to A*; the game's wall following stays selectable
@@ -202,10 +216,14 @@ From the repository root, with Nix:
 or by hand (CMake 3.24+, a C++20 compiler; SDL3 is used from the system if
 found, otherwise fetched, and Dear ImGui is always fetched):
 
-    nix develop path:./nix#enhanced
+    env -u LD_LIBRARY_PATH nix develop path:./nix#enhanced
+    unset LD_LIBRARY_PATH
     cmake -S enhanced -B build/enhanced -G Ninja
     cmake --build build/enhanced
     build/enhanced/th_enhanced
+
+`LD_LIBRARY_PATH` is unset outside the shell and again in it: a host's,
+pointing at libraries built against a newer glibc, breaks linking.
 
 Tests: `ctest --test-dir build/enhanced`. The tests that need the game data
 read it from the development folder and are skipped without it.
@@ -218,7 +236,16 @@ of clicks, keys and waits, with screenshots, state dumps and expectations,
 on a driven clock so that a run repeats exactly; `--control` takes the same
 commands on stdin, answering each on stdout (src/app/drive.h).
 `--visible` shows the window while it runs. The scripts in tests/drive are
-interface tests: `tools/drive_tests.sh` runs them.
+interface tests: `tools/drive_tests.sh` runs them (all, or the ones named)
+from the repository root with the build in `DRIVE_BUILD` (default
+build/enhanced), its output in build/drive-tests/. A script's header picks
+how it starts: `# Level N` the level (default 1), `# NoLevel` the start-up
+screens instead, `# Size WxH` the window size (default 1280x720; the menu
+bar is only at the top in the game's 640x480 layout) and `# Seed DIR` saves
+copied from DIR into the run's save folder first. `type TEXT` types into a
+focused text field, `key [MOD+]NAME` holds Shift, Ctrl or Alt, and
+`screenshot-ui` captures after the ImGui layer (the tools and the quick
+report's note box).
 
 The tools window (F12) has a debug report: Save report
 writes `debug-reports/<time>/` under the folder the game was started from,
@@ -229,11 +256,18 @@ around the mouse, and the turn in the replay trace format; `dump_game`,
 core/world/debug_dump.h), `note.txt` (the text typed in the tool),
 `snapshot.bin` (the whole game state, core/world/snapshot.h) and
 `commands.txt` (every command and other input since the level started,
-`Game::command_log`), for review.
+`Game::command_log`), for review. F10 does the same at once, on any screen:
+it pauses the game, captures the frame already shown (without the note box)
+and its state, and shows a note box (Enter saves, Shift+Enter adds a line,
+Escape discards); Shift+F10 saves at once with an empty note.
+`TH_DEBUG_REPORT_DIR` picks another folder for the reports.
 
-To reproduce a report (with a build of the same snapshot id: a hash of the
-snapshotted structures' headers and code, ignoring comments; another build
-refuses the snapshot, and the byte lines of commands.txt):
+A snapshot loads only in a build with the same snapshot id
+(`snapshot_build_id`: a hash of the snapshotted structures' headers and the
+snapshot code, comments ignored, and of the sizes of what is copied as raw
+bytes). commands.txt's `@placing`, `@build` and `@hospital` lines are raw
+bytes too, so th_replay refuses a command log holding them from another
+build. To reproduce a report with the build that saved it:
 
     th_replay --load debug-reports/X/snapshot.bin --turns +N \
         --dump dump.txt --focus CELL --render view.png --camera X,Y
@@ -243,12 +277,19 @@ end state (the map around CELL) and the hospital view as the game draws it
 (`--camera` from state.txt's camera line, `--size WxH`; a `.ppm` name writes
 a PPM). `--script FILE` adds commands, its turns counted from the
 snapshot's. `th_replay --script debug-reports/X/commands.txt --turns T`
-plays the level again from its start up to turn T instead.
+plays the level again from its start up to turn T instead. `--save SAVE`
+writes the end state as a saved game that the game's Load reads (its
+slots are `<player name>.h<slot>` in the save folder; a save checks the
+layout hash, not the snapshot id, so ordinary source edits keep it
+loadable). `--astar` plans routes with A* rather than the game's wall
+following, from the level's start (a snapshot or command log keeps its own
+choice); the replay check needs wall following, the default.
 
 With `--advisor`, th_replay also runs the advisor in each turn, as the
 game's frame does, and notes each advice given as a comment line
-(`# advice <situation>`), which the instrumented original writes too:
-compare.py ignores them; they can be compared on their own.
+(`# advice <situation>`), which the instrumented original writes too,
+followed by the seed. compare.py ignores them; to compare them, diff the
+two traces' `grep -o '^# advice [0-9]*'`.
 
 Replay check against the original: `tools/replay/orig_trace.sh` relinks an
 instrumented HOSPITAL.EXE from the decompilation and runs it in DOSBox-X
@@ -269,116 +310,63 @@ both sides, checks that each agrees and satisfies the `# Expect` lines in its
 header (`# Expect <text> [<op> <n>]`: an event line whose text after `E `
 starts with `<text>` occurs `<op> <n>` times, `op` one of `>= == <=`, default
 `>= 1`; `# Expect-not <text>`: no such event), and prints one line per script
-and a summary; `check_expect.py` does the checking on both traces.
-The player's commands checked so far are in `tools/replay/scripts/`
-(`reception.txt`: a reception desk and receptionist; `gp_office.txt`: a
-GP's office and its doctor too; `pick_up_staff.txt`: the GP's office with
-the receptionist and the doctor picked up, re-placed and dropped;
-`gp_prices.txt`: the GP's office with general practice's price moved up
-and down in the casebook; `sack_staff.txt`: the GP's office with its doctor
-sacked during a consultation; `general_diag.txt`, `psychiatry.txt` and
-`ward.txt`: the GP's office and a diagnosis room with its doctor or nurse;
-`cardiogram.txt`, on level 6, where the cardiogram can be built: its own
-GP's office, the cardiogram room, its doctor and a handyman to repair it;
-`th_replay --level 6` and orig_trace.sh's LEVEL 6 for that one;
-`treatment.txt`: general_diag.txt with a pharmacy and its nurse, an
-inflation room and its doctor, and a policy guessing cures early, so that
-patients are cured and die; `info_windows.txt`: treatment.txt with a
-handyman whose priorities are changed and patients sent home and made to
-guess a cure from their windows; `staff_room.txt`: ward.txt with a staff
-room, a handyman and a second receptionist, the policy's "rest at" low
-and then raised, staff picked up and ordered out of their break, and the
-receptionist ordered to rest; `staff_room_full.txt`: treatment.txt with a
-staff room holding a sofa alone and many tired staff at once;
-`staff_room_none.txt`: tired and ordered rests with no staff room;
-`toilets.txt`: patients waiting at the reception of a GP's office with no
-doctor, in a warm corridor with a drinks machine, using toilets and a sink,
-one sent home on the toilet; `toilets_busy.txt`: the same with one toilet;
-`toilets_none.txt`: no toilets, patients wetting themselves; on level 6,
-whose first emergency is offered at turn 6150: `emergency_accept.txt`,
-accepted with an inflation room and its doctor, all patients cured and the
-bonus paid; `emergency_refuse.txt`, refused; `emergency_ignore.txt`, left
-to expire; `emergency_untreatable.txt`, accepted with no inflation room,
-its patients going home, the reputation falling and the result call
-answered; `emergency_fail.txt`, accepted with an inflation room but no
-doctor, its patients dying when the time is up; on level 1, the fax's
-answers to patients' calls: `decisions_diagnosis.txt`, gp_office.txt's
-patients whose diagnosis is given up, one sent home, one guessed (then,
-with no treatment for it, sent to the research department) and one asked
-to wait; `decisions_treatment.txt`, general_diag.txt's patients with no
-treatment, one sent home and one asked to wait; `advisor_staff.txt`,
-gp_office.txt with five more doctors and five nurses, idle, the advisor's
-advice about them; and cardiogram.txt without
-its handyman, the cardiogram wearing out: `machine_explode.txt`, its
-doctor picked up for a while so that patients queue, until it blows up,
-killing its doctor and patient and sending its queue back to the GP, then
-replaced when gone; `machine_saved.txt`, worn past its strength, a
-handyman called and hired who repairs it just in time;
-`machine_replace.txt`, replaced while the handyman hired is on his way;
-`machine_late_repair.txt`, blowing up while he is on his way;
-`machine_handyman_killed.txt`, blowing up with him in the room; on level
-3, where a research room can be built from the start, research:
-`research_default.txt`, a research room and two researchers with the
-default allocation, new machines, a drug and upgrades researched;
-`research_concentrate.txt`, all of it concentrated on the X-ray;
-`research_alloc.txt`, the allocation changed as research goes on, a
-category running out and closing, opened again; `research_break.txt`,
-researchers resting in a staff room and going back to research, ordered
-out, picked up and ordered to rest; `research_none.txt`, a doctor without
-the skill leaving the research room; and the rooms research makes
-available, built once researched and in use: `xray.txt` (level 3, its
-doctor picked up and put back to work), `slack_tongue.txt` (level 3,
-curing), `scanner.txt` (level 4), `blood_machine.txt` and `ultrascan.txt`
-(level 8), and the training room: `training.txt` (level 6, a consultant and a
-doctor, a bookcase and a skeleton, the lectures, the doctor's rests and
-returns to training), `training_walk.txt` (level 6, three doctors and one
-lecture chair, so one walks the room at random), `training_leave.txt` (level
-6, a second consultant into the held room, leave-room orders and the room
-edited under the consultant), `training_two_rooms.txt` (level 6, two training
-rooms, the breaks and returns choosing between them), `training_surgeon.txt`
-and `training_psych.txt` (level 6, the surgeon, then the researcher and
-psychiatrist skills gained from lectures) and `training_junior.txt` (level 3,
-a junior promoted to doctor at a month's end) and `training_appraise.txt`
-(level 6, a doctor and a junior trained until, at a month's end, the doctor
-is promoted to consultant)); and the VIPs' visits and earthquakes:
-`vip_accept.txt`, `vip_refuse.txt`, `vip_ignore.txt` (level 1,
-`reception.txt`'s desk with the
-first offer answered accept or refuse, or left to expire, the visit run to
-its end and its report answered), `vip_tour.txt` (level 1, `gp_office.txt`'s
-room toured), `vip_verdict14.txt` (level 1, the desk lifted before the VIP
-arrives) and `quake_basic.txt` (level 7, its scheduled earthquake); editing a
-room and picking up objects: `edit_room.txt` (level 1, an inflation room
-edited, its inflator lifted and put back), `edit_room_cancel.txt`,
-`edit_room_occupied.txt` and `edit_room_research.txt` (a room edited while
-someone is in it), `pick_object.txt` (a corridor bench lifted and dropped)
-and `pick_up_desk.txt` (the reception desk in use); building and deleting
-rooms: `room_delete.txt` (level 1, a furnished office with patients queued
-taken back to a blueprint and abandoned, half its price refunded),
-`blueprint_drag.txt` (level 1, a blueprint dragged by a corner, an edge and
-its middle, a too-small commit refused, a door refused on a wall shared with
-another room, and a commit cut off from the entrance) and
-`blueprint_over_people.txt` (level 1, a blueprint drawn over a queue, sending
-the patients off its floor); the queue window:
-`queue_commands.txt`; the staff's pay-raise demands: `staff_demand.txt`
-(raised and bonused) and `staff_demand_refuse.txt` (refused); the
-open-hospital button: `open_hospital.txt`; the plants: `plant_wilt.txt`,
-`plant_watered.txt`, `plant_dead_watered.txt`, `plant_room.txt`,
-`plant_interrupt.txt`, `plant_priorities.txt`, `plant_removed.txt` and
-`plant_advisor.txt`; the operating theatre: `theatre.txt`,
-`theatre_surgery.txt` (a surgery end to end) and `theatre_skill.txt` (the
-surgeon skill gate); on level 6, past year 2, epidemics:
-`epidemic_declare.txt`, `epidemic_coverup_pass.txt`,
-`epidemic_coverup_fail.txt`, `epidemic_inspector.txt` and
-`epidemic_vaccinate.txt`; and the year's ends: `win_level1.txt` and
-`lose_reputation.txt` (level 1 won and lost at the first year end) and
-`yearend_level1.txt` and `yearend_level1_two_years.txt` (its hall, awards,
-trophies and score); compared with SKIP
-`computer_action,manage_rats,generate_disaster`:
+and a summary; `check_expect.py` does the checking on both traces. It runs
+`JOBS` scripts at once (default 4) with the th_replay of `BUILD` (default
+build/enhanced). `tools/replay/expect_candidates.py SCRIPT TRACE` lists,
+for each of a script's `# Expect` lines, the trace's events of the same
+shape (the same text, any numbers) with their numbers, to re-derive an
+Expect line whose numbers drift with the generator.
+
+Original trace cache. `build/replay-cache/traces/` holds the original
+side of past runs, so `replay_all.sh` runs DOSBox only for a script it
+has no entry for. Each entry is one script's trace, compressed with zstd
+when it is on PATH (gzip otherwise) and named by a key of everything that
+fixes the trace: the instrumented executable's cache key (a hash of the
+decompilation's sources, objects and instrument.py), the script file's bytes
+(not its path), the last turn, the level, the SKIP list, RAND, `orig_trace.sh`
+(the DOSBox configuration and run folder) and the original's `HOSPITAL.CFG`,
+`MODEM.INI` and `DOS4GW.EXE`, and which dosbox-x runs it; the game data
+folders are not hashed. An entry is stored only for a run that finished:
+the instrumented game ends its trace with a `# end` line (after the last
+turn, or at a win or loss), and a trace without it is refused, though DOSBox
+exits 0. `orig_trace.sh` clears the run's `SAVE` first, so the original's
+once-only advisor flags never leak between runs. `replay_all.sh` and
+`orig_trace.sh`'s cached wrapper (`cached_orig_trace.sh`, which replay_all.sh
+calls) consult it; a hit is decompressed in a moment and prints `orig trace:
+cache hit`. The cache is machine local and git-ignored, and each machine
+fills its own under its own executable key: any change to the key above (a
+new or edited script, other turns, level or SKIP, an edited `orig_trace.sh`
+or CFG, a decompilation or `instrument.py` change) misses only the affected
+entries and refreshes them. `enhanced/tools/replay/test_cache.sh` tests
+the cache with a fake DOSBox. To fill it for every script in one go, run
+`enhanced/tools/replay/trace_cache.sh prefetch` (from any directory; the
+same SKIP, turns, RAND and watchdog as `replay_all.sh`, from `lib.sh`,
+so it fills exactly what `replay_all.sh` hits; `PREFETCH_JOBS`, default
+4). Entries with RAND on are about 0.5 MB each on average (up to 1.5 MB),
+so the whole set is some 50-100 MB per executable key until `prune` drops
+old keys; at about a minute per script on the DOSBox slots, it is best
+left to run unattended. `NO_CACHE=1` forces a fresh run and refreshes the
+entry; use it only when the cache is suspected stale, not to check a port
+change, since a cached original trace is the reference while the executable
+key is unchanged. `trace_cache.sh status` prints the entry count, size,
+current key and stale count; `trace_cache.sh prune` removes entries whose
+executable key is no longer current, and `prune DAYS` also removes entries
+older than DAYS days. Never edit or hand-place cache files.
+
+The player's commands checked so far are the scripts in
+`tools/replay/scripts/`, lines of `turn type value arg` (th_replay --script
+and orig_trace.sh's SCRIPT; the EV_* numbers in include/enums.h). Each
+script's header comments say what it exercises, and its `# Expect` and
+`# Expect-not` lines check it on both traces; `# Level N` picks the level
+(th_replay `--level N`, orig_trace.sh's LEVEL) and `# Turns N` the last
+turn. A script is compared with the default SKIP, `computer_action` (rats
+and disasters stay on), by hand as:
 
     enhanced/tools/replay/orig_trace.sh orig.txt 18000 \
         enhanced/tools/replay/scripts/gp_office.txt \
-        computer_action,manage_rats,generate_disaster
-    th_replay --script enhanced/tools/replay/scripts/gp_office.txt \
+        computer_action
+    build/enhanced/th_replay \
+        --script enhanced/tools/replay/scripts/gp_office.txt \
         --turns 18000 --out enhanced.txt
     enhanced/tools/replay/compare.py orig.txt enhanced.txt
 
@@ -386,13 +374,30 @@ What the scripts leave unexercised: `tools/coverage.sh` (in the dev shell, GCC)
 builds th_replay with `-DTH_COVERAGE=ON` in build/coverage, runs every script
 there and writes an HTML report and `summary.txt` to build/coverage/report/.
 
+## Bugs in the original
+
+`init_edit_room`'s `u8` overflow for an empty room is in
+[docs/BUGS.md](../docs/BUGS.md); the port uses an `int`, so a script that
+opens a room before `commit_doors` has finished cannot agree
+(`tools/replay/scripts/win_level1.txt` waits for it).
 
 ## Layout
 
-    src/core/data/    file formats: RNC, sprites, palette, levels, the data folder
+    src/core/data/    file formats: RNC, sprites, palette, levels, text, Smacker,
+                      the data folder
     src/core/render/  indexed surface, sprites, frames, shadows, the hospital view, panel
     src/core/world/   the map and its things, level start, the turn, arrivals, action
                       sequences, path finding
-    src/app/          SDL3 window and input, data-folder search, settings, ImGui tools
+    src/core/audio/   the sound bank's effects and the XMI music
+    src/core/ui/      the game's screens and windows: menus, requesters, charts,
+                      fax, town map, help, year end, win and lose
+    src/app/          SDL3 window and input, data-folder search, settings, driving
+    src/app/ui/       ImGui: the tools window, debug report, path finding tool
+                      and the missing-data screen
+    src/app/audio/    mixes the sounds and music onto the audio device
     tests/            ctest tests
+    tests/drive/      driven interface tests (tools/drive_tests.sh)
     tools/replay/     the replay check against the original
+    tools/help/       check_table.py: the help hotspot table against the original
+    tools/            drive_tests.sh, coverage.sh, tidy.sh (clang-tidy) and slot.sh
+                      (shared slots for DOSBox and driven runs)

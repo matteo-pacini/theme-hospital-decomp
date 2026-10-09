@@ -703,7 +703,7 @@ void award_cleanliness(AwardsContext &c)
     const auto &t = trophies(c.game);
     if (f.area == 0)
         return;
-    int32_t a = (int32_t(c.game.world.litter_count) << 14) / f.area;
+    int32_t a = (int32_t(c.game.world.litter_count + c.game.world.rats.hole_count * 2) << 14) / f.area;
     if ((int32_t(t.cleanliness_award) << 14) / 100 > a)
         set_award_value(c.game, 8, 1, 0, t.cleanliness_bonus, 1);
     else if (0x4000 / t.cleanliness_poor < a)
@@ -785,12 +785,19 @@ void trophy_deaths(AwardsContext &c)
 
 void trophy_rat_kills(AwardsContext &c)
 {
-    (void)c; // rats are not ported.
+    const auto &t = trophies(c.game);
+    if (int32_t(c.game.progress.award_counts.rats_killed) > t.rat_kills_absolute)
+        set_trophy_value(c.game, 5, t.rat_kills_absolute_bonus, 1);
 }
 
 void trophy_rat_pct(AwardsContext &c)
 {
-    (void)c;
+    const auto &t = trophies(c.game);
+    const int32_t killed = c.game.progress.award_counts.rats_killed;
+    const int32_t shots = c.game.progress.award_counts.rat_shots;
+    if (shots > 0 && killed > t.rat_kills_absolute / 2 &&
+        (uint32_t(killed) << 8) / uint32_t(shots) > (uint32_t(t.rat_kills_percentage) << 8) / 100)
+        set_trophy_value(c.game, 6, t.rat_kills_percentage_bonus, 2);
 }
 
 void trophy_plants(AwardsContext &c)

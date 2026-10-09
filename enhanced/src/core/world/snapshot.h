@@ -28,8 +28,15 @@ class GameData;
 
 // The build's id: a hash of the snapshotted structures' headers and the
 // snapshot code (without comments), and of the sizes of what is copied as
-// raw bytes.
+// raw bytes. A debug report's snapshot and th_replay --load are tied to the
+// build that wrote them.
 uint64_t snapshot_build_id();
+
+// The hash of the sizes of what a snapshot copies as raw bytes, the part of
+// the build id that a save file checks instead of the source hash: a save
+// stays loadable across ordinary source edits (new methods, trace events)
+// that do not change the saved layout.
+uint64_t snapshot_layout_hash();
 
 // Writes the snapshot of `game` into `out` (replacing what it held). Returns
 // false if `game` was never started.
@@ -42,5 +49,11 @@ bool save_snapshot(const Game &game, std::vector<uint8_t> &out);
 // load; then `game` is unchanged unless the snapshot was cut short, which
 // leaves it to be started or loaded again.
 bool load_snapshot(Game &game, std::span<const uint8_t> data, const GameData &gamedata, std::string *error = nullptr);
+
+// As load_snapshot but without the build-id check: the payload of a save file
+// whose own header (savegame.h) already matched the saved layout. The magic
+// and the payload's length are still checked.
+bool load_snapshot_payload(Game &game, std::span<const uint8_t> data, const GameData &gamedata,
+                           std::string *error = nullptr);
 
 } // namespace th

@@ -2,8 +2,7 @@
 # and its doctor, and a policy that guesses cures early, so that patients
 # are cured (by drugs, in the pharmacy's cabinet, and inflated) and die
 # (their drug failing on a wrong guess), floating away or taken by the grim
-# reaper. Compare up to turn 18000: the year's end awards (from turn 18250)
-# are not ported.
+# reaper.
 # gp_office.txt's: a GP's office (62,65)-(66,69) with its door, desk, cabinet
 # and chair, opened, and a doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
@@ -52,9 +51,10 @@
 139 7 7860 20
 140 7 8119 16
 141 1 0 0
-# A second doctor: hire applicant 13, place at cell 10044.
-142 48 1 13
-143 5 10044 13
+# A second doctor: hire applicant 18 (low ability, so a death that floats
+# away and one taken by the grim reaper both occur), place at cell 10044.
+142 48 1 18
+143 5 10044 18
 # A pharmacy (57,60)-(60,63), its door below it, a pharmacy cabinet (cell
 # 7740 facing 0); opened. A nurse: hire applicant 3, place at cell 10044.
 160 55 0 0

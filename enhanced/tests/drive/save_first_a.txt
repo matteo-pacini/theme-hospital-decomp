@@ -1,0 +1,35 @@
+# A producer for save_first_b.txt: a fresh run starts a level, scrolls the
+# view (the pointer at the window's right edge) and Alt+S quick saves it to
+# slot 0. The consumer continues that save as the first load of a fresh run,
+# so the restored view must be the saved one and not a half screen off (the
+# view surface is 0x0 then).
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+click 85 32
+wait 10
+key Space
+wait 160
+click 372 395
+wait 10
+key Space
+wait 80
+click 320 240
+wait 20
+turns 20
+move 635 240
+wait 80
+move 320 240
+wait 5
+key Alt+s
+wait 5
+dump producer

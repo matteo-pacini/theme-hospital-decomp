@@ -1,5 +1,6 @@
 #include "app/drive.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <ctime>
@@ -65,6 +66,47 @@ std::string rest_of(const std::string &line, const std::string &word)
     std::string rest = line.substr(at + word.size());
     size_t first = rest.find_first_not_of(" \t");
     return first == std::string::npos ? std::string() : rest.substr(first);
+}
+
+// "Shift+Ctrl+NAME" -> the DriveMod bits and the bare key NAME.
+uint16_t key_mods(std::string word, std::string &name)
+{
+    uint16_t mods = 0;
+    for (size_t plus; (plus = word.find('+')) != std::string::npos;) {
+        std::string mod = word.substr(0, plus);
+        if (mod == "Shift")
+            mods |= kDriveModShift;
+        else if (mod == "Ctrl")
+            mods |= kDriveModCtrl;
+        else if (mod == "Alt")
+            mods |= kDriveModAlt;
+        else
+            break;
+        word.erase(0, plus + 1);
+    }
+    name = std::move(word);
+    return mods;
+}
+
+bool read_file(const std::filesystem::path &path, std::string &out)
+{
+    std::ifstream file(path, std::ios::binary);
+    if (!file)
+        return false;
+    std::ostringstream text;
+    text << file.rdbuf();
+    out = text.str();
+    return true;
+}
+
+// Whether the two files hold the same bytes.
+bool same_file(const std::filesystem::path &a, const std::filesystem::path &b)
+{
+    std::ifstream fa(a, std::ios::binary), fb(b, std::ios::binary);
+    if (!fa || !fb)
+        return false;
+    return std::equal(std::istreambuf_iterator<char>(fa), std::istreambuf_iterator<char>(),
+                      std::istreambuf_iterator<char>(fb), std::istreambuf_iterator<char>());
 }
 
 // Takes the first free slot of `dir`, writing `info` into it; the open file
@@ -248,6 +290,13 @@ int Driver::run(DriveHost &host, const Command &c)
         reply((ok ? "ok " : "fail ") + c.line, !ok);
         return 0;
     }
+    if (verb == "type") {
+        bool ok = host.drive_text(rest_of(c.line, verb));
+        if (!ok)
+            failures_++;
+        reply((ok ? "ok " : "fail ") + c.line, !ok);
+        return 0;
+    }
     return run_output(host, c);
 }
 
@@ -264,7 +313,7 @@ int Driver::run_pointer(DriveHost &host, const Command &c)
     else if (verb == "thing")
         ok = number(c.words, 1, a) && host.drive_move_thing(uint16_t(a));
     else if (verb == "_keyup")
-        ok = host.drive_key(c.words.at(1), false);
+        ok = host.drive_key(c.words.at(1), false, 0);
     else
         host.drive_button(button_named(c.words, 1), verb == "down" || verb == "_down");
     if (verb == "_down")
@@ -285,9 +334,14 @@ int Driver::run_click(DriveHost &host, const Command &c)
     bool ok = false;
     size_t button_at = 3;
     if (verb == "key") {
-        ok = c.words.size() > 1 && host.drive_key(c.words[1], true);
+        std::string name;
+        uint16_t mods = 0;
+        if (c.words.size() > 1) {
+            mods = key_mods(c.words[1], name);
+            ok = !name.empty() && host.drive_key(name, true, mods);
+        }
         if (ok)
-            pending_.push_front({"_keyup " + c.words[1], {"_keyup", c.words[1]}});
+            pending_.push_front({"_keyup " + name, {"_keyup", name}});
     } else {
         if (verb == "click")
             ok = number(c.words, 1, a) && number(c.words, 2, b) && host.drive_move_screen(a, b);
@@ -314,14 +368,42 @@ int Driver::run_click(DriveHost &host, const Command &c)
     return verb == "key" ? kHoldFrames : 1;
 }
 
+// The expect-report commands: the last report's note or screenshot.
+bool Driver::run_report(DriveHost &host, const Command &c, const std::string &text)
+{
+    const std::string &verb = c.words[0];
+    bool note = verb == "expect-report" || verb == "expect-report-none";
+    bool shot = verb == "expect-report-shot";
+    if (!note && !shot)
+        return false;
+    std::string dir = host.drive_report_dir();
+    bool ok = false;
+    std::string body;
+    if (shot)
+        ok = !text.empty() && !dir.empty() &&
+             same_file(std::filesystem::path(dir) / "screenshot.png", out_ / (text + ".png"));
+    else if (verb == "expect-report-none")
+        ok = dir.empty();
+    else
+        ok = !dir.empty() && read_file(std::filesystem::path(dir) / "note.txt", body) &&
+             body.find(text) != std::string::npos;
+    if (!ok)
+        failures_++;
+    reply((ok ? "ok " : "fail ") + c.line, !ok);
+    return true;
+}
+
 // Screenshots, state dumps, expectations and messages.
 int Driver::run_output(DriveHost &host, const Command &c)
 {
     const std::string &verb = c.words[0];
     std::string text = rest_of(c.line, verb);
-    if (verb == "screenshot" && !text.empty()) {
+    if ((verb == "screenshot" || verb == "screenshot-ui") && !text.empty()) {
         std::filesystem::path path = out_ / (text + ".png");
-        host.drive_screenshot(path);
+        if (verb == "screenshot")
+            host.drive_screenshot(path);
+        else
+            host.drive_screenshot_ui(path);
         defer(path.string());
         return 1;
     }
@@ -331,6 +413,8 @@ int Driver::run_output(DriveHost &host, const Command &c)
         reply(path.string());
         return 0;
     }
+    if (run_report(host, c, text))
+        return 0;
     if ((verb == "expect" || verb == "expect-not") && !text.empty()) {
         bool found = host.drive_state().find(text) != std::string::npos;
         bool ok = found == (verb == "expect");

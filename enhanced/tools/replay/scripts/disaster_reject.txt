@@ -1,0 +1,7 @@
+# Level 1: no radiators, so the first random disaster drawn is rejected
+# (generate_disaster): the hospital cannot have a heating disaster and has
+# no litter for the sick feeling, so nothing starts. Compare up to turn
+# 18000.
+# Expect disaster_roll owner=0 kind=2
+# Expect disaster_reject owner=0 kind=2
+# Expect-not disaster_start

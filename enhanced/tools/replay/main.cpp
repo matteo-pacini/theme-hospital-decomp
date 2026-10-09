@@ -45,6 +45,7 @@
 #include "core/ui/charts.h"
 #include "core/world/debug_dump.h"
 #include "core/world/game.h"
+#include "core/world/savegame.h"
 #include "core/world/snapshot.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
@@ -71,7 +72,7 @@ int usage()
     std::fprintf(stderr,
                  "usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] "
                  "[--astar] [--rand] [--advisor] [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm "
-                 "[--camera X,Y] [--size WxH]]\n");
+                 "[--camera X,Y] [--size WxH]] [--save SAVE]\n");
     return 2;
 }
 
@@ -222,6 +223,7 @@ struct Options {
     const char *load_path = nullptr;
     const char *dump_path = nullptr;
     const char *render_path = nullptr;
+    const char *save_path = nullptr;
     int focus = -1;
     bool camera_given = false;
     th::Point camera{};
@@ -246,6 +248,8 @@ bool take_text_option(Options &o, const char *flag, const char *value)
         o.dump_path = value;
     else if (!std::strcmp(flag, "--render"))
         o.render_path = value;
+    else if (!std::strcmp(flag, "--save"))
+        o.save_path = value;
     else
         return false;
     return true;
@@ -447,6 +451,20 @@ int write_results(const th::Game &game, Options &o, const th::GameData &data)
     if (o.dump_path && !(std::ofstream(o.dump_path) << th::dump_game(game, o.focus))) {
         std::perror(o.dump_path);
         return 1;
+    }
+    if (o.save_path) {
+        std::string error;
+        th::SaveInfo info;
+        info.balance_id = th::kDefaultBalanceId;
+        auto level = data.load_level(o.level_number, &error);
+        int start = level ? level->camera_start[0] : 0;
+        th::Point centre = th::cell_to_world(start % th::kMapSize, start / th::kMapSize);
+        info.view_centre_x = centre.x;
+        info.view_centre_y = centre.y;
+        if (!th::write_save_slot(o.save_path, game, info, &error)) {
+            std::fprintf(stderr, "%s: %s\n", o.save_path, error.c_str());
+            return 1;
+        }
     }
     if (!o.render_path)
         return 0;

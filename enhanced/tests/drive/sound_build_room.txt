@@ -1,0 +1,33 @@
+# Level 1: building a room. Confirming the blueprint and the doors plays
+# SFX_YESX (0x41), and placing the door on the wall SFX_BUILDCLK (0x1e).
+wait 60
+click 228 453            # panel: build room
+wait 10
+click 240 130            # Clinics
+wait 10
+click 380 85             # the room (Inflation, kind 17)
+wait 10
+cell 56 64
+wait 5
+down left
+wait 5
+cell 60 68
+wait 10
+up left
+wait 10
+dump blueprint
+expect build mouse 1
+click 580 148            # confirm the blueprint: SFX_YESX
+wait 10
+dump committed
+expect build mouse 2
+expect 0x41=3;
+click-cell 56 66         # the door on the wall
+wait 10
+dump door
+expect 0x1e=1;
+click 580 148            # no windows: confirm the doors, SFX_YESX
+wait 30
+dump doors
+expect 0x41=4;
+expect placing: object true

@@ -33,10 +33,13 @@ struct ViewTarget {
 // What draw_world reports of the things it draws, each if given: in
 // `sounds`, every thing's frame drawn with its sound (0 for none), for
 // SoundPlayer::frames_drawn; in `pointed`, the thing under its `at`
-// (PointedThing).
+// (PointedThing); in `near_rat`, whether a rat's near box (its frame within
+// World::Rats::near_margin) holds `pointed->at` without its hit box
+// (within hit_margin) doing so (othervar.near_rat).
 struct DrawnThings {
     std::vector<FrameSound> *sounds = nullptr;
     PointedThing *pointed = nullptr;
+    bool *near_rat = nullptr;
 };
 
 // Draws the hospital view into `target`, as the game's

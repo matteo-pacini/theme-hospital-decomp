@@ -45,6 +45,9 @@ constexpr uint8_t kPointerStaff = 0x10;
 constexpr uint8_t kPointerMachine = 0x11;
 constexpr uint8_t kPointerPatient = 0x12;
 constexpr uint8_t kPointerQueue = 0x13;
+// The rat pointers (PTR_RAT_NEAR, PTR_RAT_AIM): near a rat and aimed at one.
+constexpr uint8_t kPointerRatNear = 0x0a;
+constexpr uint8_t kPointerRatAim = 0x0b;
 // MM_MOVE_QUEUE_PERSON's pointer, PTR_MOVE_QUEUE_PERSON.
 constexpr uint8_t kPointerMoveQueuePerson = 0x0f;
 // The epidemic's vaccination pointer: the tool, over a patient it can
@@ -85,8 +88,10 @@ MapHover map_hover(const World &world, uint16_t pointed);
 // 8, for a decision: 4). For the player's machine, EV_OPEN_THING_WINDOW (the
 // machine window). EV_NONE for the rest: a receptionist at her desk (the
 // queue window) opens a window that is not ported; poaching another player's
-// staff needs network games.
-Event map_left_click(World &world, const MapHover &hover, Interface &ui, int cell = -1);
+// staff needs network games. A rat under the pointer (kThingRat) gives
+// EV_SHOOT_RAT, argb[1] 1: a hit. With `near_rat` (othervar.near_rat) and
+// nothing under the pointer, a shot at nothing (argb[1] 0: a miss).
+Event map_left_click(World &world, const MapHover &hover, Interface &ui, int cell = -1, bool near_rat = false);
 
 // The windows' part of command `event` (process_turn, src/io.cpp), before
 // Game::process_turn: EV_OPEN_THING_WINDOW opens the window for the player's

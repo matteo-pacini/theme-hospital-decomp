@@ -3,6 +3,10 @@
 # priority is raised to 100 (EV_ADJUST_HANDYMAN_VALUES); a GP's office
 # (50,69)-(54,73) with its door above it, desk, cabinet and chair, and a
 # doctor (15) in the corridor.
+# The handyman, on staff from turn 13, repairs the X-ray at turn 8969; he is
+# sacked at turn 9500 (EV_SACK_STAFF) so that the X-ray wears out and
+# explodes at turn 14539. Left on staff he repairs it again at 10670 and it
+# never reaches machine_disaster by 18300.
 # Expect research_points
 # Expect researched
 # Expect treat
@@ -88,6 +92,9 @@
 6711 1 0 0
 6720 48 1 17
 6721 5 9910 17
+# The handyman sacked (mode 2, at once) once he has repaired the X-ray, so
+# that it is left to wear out and explode at turn 14539.
+9500 71 21 2
 # The X-ray's doctor picked up and put down in the corridor: paged, he goes
 # back and the X-ray stays in use.
 12000 104 17 0

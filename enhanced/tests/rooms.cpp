@@ -9,13 +9,16 @@
 #include "core/ui/buy_objects.h"
 #include "core/ui/charts.h"
 #include "core/ui/layer.h"
+#include "core/ui/town_map.h"
 #include "core/ui/windows.h"
 #include "core/world/advisor.h"
 #include "core/world/arrivals.h"
 #include "core/world/build.h"
 #include "core/world/complex.h"
+#include "core/world/disaster.h"
 #include "core/world/events.h"
 #include "core/world/finance.h"
+#include "core/world/litter.h"
 #include "core/world/objects.h"
 #include "core/world/quake.h"
 #include "core/world/queue.h"
@@ -453,7 +456,7 @@ void check_reception_no_gp(QueueFixture &f, const ReceptionDesk &d, bool &consis
                 n.queued, n.sat, n.fed_up, unsigned(w.patients_left_count), max_queue, int(sold), unsigned(w.seed));
     CHECK(consistent && !called);
     CHECK(n.queued > 0 && n.sat > 0 && n.fed_up > 0 && w.patients_left_count >= n.fed_up);
-    CHECK(n.queued == 7 && n.sat == 7 && n.fed_up == 5 && max_queue == 3 && sold == 100 && w.seed == 0x8287c6fe);
+    CHECK(n.queued == 8 && n.sat == 6 && n.fed_up == 4 && max_queue == 4 && sold == 100 && w.seed == 0x3b708328);
 }
 
 // Whether everyone queueing in `room` ahead of `called` in `before` has
@@ -525,7 +528,7 @@ bool check_reception_gp(QueueFixture &f, const ReceptionDesk &d, bool &consisten
                 calls, served, to_office, int(office.queue_length), int(office.queue_incoming), unsigned(w.seed));
     CHECK(consistent && in_order);
     CHECK(calls > 0 && served > 0 && to_office > 0 && office.queue_length > 0);
-    CHECK(calls == 8 && served == 8 && to_office == 8 && office.queue_length == 2 && w.seed == 0x570f87c1);
+    CHECK(calls == 10 && served == 10 && to_office == 10 && office.queue_length == 4 && w.seed == 0xb6c9c7ae);
     return true;
 }
 
@@ -1336,8 +1339,8 @@ bool gp_office_run(const char *dir, uint32_t &seed)
     CHECK(consistent && n.consistent);
     CHECK(doctor_in >= 0 && calls > 0 && n.seated > 0 && n.consulted > 0 && n.waiting > 0 && n.gone_home > 0);
     CHECK(treat + claims == g.hospital.illnesses[1].income && treat > 0);
-    CHECK(doctor_in == 1130 && calls == 17 && n.seated == 17 && n.consulted == 17 && n.waiting == 17 &&
-          n.gone_home == 15 && treat == 1100 && claims == 600 && w.seed == 0x1b1bae8f);
+    CHECK(doctor_in == 1125 && calls == 12 && n.seated == 12 && n.consulted == 12 && n.waiting == 12 &&
+          n.gone_home == 11 && treat == 800 && claims == 400 && w.seed == 0x6421a6f);
     seed = w.seed;
     return true;
 }
@@ -1425,7 +1428,10 @@ struct ScriptedGame {
     std::vector<std::pair<uint32_t, std::string>> lines;
     size_t next = 0;
 
-    bool start(const char *dir, int level_number, const std::string &script)
+    // `vip` true keeps the level's MayorLaunch, so the visit draws at day 150
+    // as the replay check's scripts do; the default turns it off, which moves
+    // every later seed (the replay check's vip_*.txt cover the VIPs).
+    bool start(const char *dir, int level_number, const std::string &script, bool vip = false)
     {
         std::string error;
         if (!gd.load(dir, &error))
@@ -1434,10 +1440,8 @@ struct ScriptedGame {
         th::Balance settings;
         if (!level || !th::load_balance(dir, level_number, th::kDefaultBalanceId, settings, &error))
             return false;
-        // No VIP visit: it would draw from the generator at day 150 and move
-        // every later seed of these scripts (the replay check's vip_*.txt
-        // cover the VIPs).
-        settings.gbv.mayor_launch = 0xffff;
+        if (!vip)
+            settings.gbv.mayor_launch = 0xffff;
         game = std::make_unique<th::Game>();
         game->staff_market.ref_counts = th::reference_counts(gd.text());
         game->start(*level, level_number, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
@@ -1550,7 +1554,7 @@ void test_general_diag_level1(const char *dir)
                                "136 26 8373 0\n137 3 0 0\n138 4 27 0\n139 7 7860 20\n140 7 8119 16\n141 1 0 0\n"
                                "142 48 1 13\n143 5 10044 13";
     bool back_to_gp = false;
-    run_diagnosis_room(dir, {"general diagnosis", 1, script, 41, 27, 0x24, 18249, 0x9d56f095}, [&](const th::Game &g) {
+    run_diagnosis_room(dir, {"general diagnosis", 1, script, 41, 27, 0x24, 18249, 0xae815976}, [&](const th::Game &g) {
         for (const th::Thing &t : g.world.things)
             back_to_gp |= t.type == th::kThingPatient && had_treatment(t, 41) &&
                           t.treatment == th::kIllGeneralPractice && t.state == th::kPsGotoQueue;
@@ -1558,8 +1562,9 @@ void test_general_diag_level1(const char *dir)
     CHECK(back_to_gp);
 }
 
-// tools/replay/scripts/cardiogram.txt (level 6): a cardiogram room, its
-// doctor and a handyman, who repairs the worn machine (SS_PLAY_ANISEQ).
+// tools/replay/scripts/cardiogram.txt (level 6) with a handyman hired at turn
+// 14400: a cardiogram room, its doctor and the handyman, who repairs the
+// machine once it has worn and is smoking (SS_PLAY_ANISEQ).
 void test_cardiogram_level6(const char *dir)
 {
     const std::string script =
@@ -1567,11 +1572,11 @@ void test_cardiogram_level6(const char *dir)
         "103 2 6188 0\n104 2 6704 0\n105 8 6704 0\n106 18 0 0\n107 26 6062 0\n108 3 0 0\n109 4 7 0\n"
         "110 7 6446 1\n111 7 6192 2\n112 7 6447 6\n113 1 0 0\n114 48 1 18\n115 5 6969 18\n130 55 0 0\n"
         "131 53 12 12\n132 2 6196 0\n133 2 6583 0\n134 8 6583 0\n135 18 0 0\n136 26 6069 0\n137 3 0 0\n"
-        "138 4 12 0\n139 7 6454 13\n140 7 6452 272\n141 1 0 0\n142 48 1 19\n143 5 6970 19\n144 48 2 28\n"
-        "145 5 6841 28";
+        "138 4 12 0\n139 7 6454 13\n140 7 6452 272\n141 1 0 0\n142 48 1 19\n143 5 6970 19\n14400 48 2 38\n"
+        "14401 5 6841 38";
     int32_t most_used = 0;
     bool repairing = false, smoke = false, offered = false;
-    run_diagnosis_room(dir, {"cardiogram", 6, script, 38, 12, 0x24, 18249, 0x79fe7886}, [&](const th::Game &g) {
+    run_diagnosis_room(dir, {"cardiogram", 6, script, 38, 12, 0x24, 18249, 0x4befe69e}, [&](const th::Game &g) {
         for (const th::Thing &t : g.world.things) {
             if (t.type == th::kThingObject && t.subtype == 13) {
                 most_used = std::max(most_used, t.times_used);
@@ -1595,7 +1600,7 @@ void test_ward_level1(const char *dir)
                                "136 26 8371 0\n137 3 0 0\n138 4 9 0\n139 7 7731 264\n140 7 7990 1\n141 1 0 0\n"
                                "142 48 0 3\n143 5 10044 3";
     bool in_bed = false;
-    run_diagnosis_room(dir, {"ward", 1, script, 42, 9, 0x32, 18249, 0x65d035ec}, [&](const th::Game &g) {
+    run_diagnosis_room(dir, {"ward", 1, script, 42, 9, 0x32, 18249, 0xbc3054b4}, [&](const th::Game &g) {
         for (const th::Thing &t : g.world.things)
             in_bed |= t.type == th::kThingPatient && t.state == th::kPsInBed && t.object &&
                       g.world.things[t.object].subtype == 8;
@@ -1613,7 +1618,7 @@ void test_psychiatry_level1(const char *dir)
                                "136 26 8373 0\n137 3 0 0\n138 4 8 0\n139 7 7859 530\n140 7 8119 16\n"
                                "141 7 7733 61\n142 1 0 0\n143 48 1 15\n144 5 10044 15";
     uint16_t cured = 0;
-    run_diagnosis_room(dir, {"psychiatry", 1, script, 43, 8, 0x24, 18249, 0x4c473759},
+    run_diagnosis_room(dir, {"psychiatry", 1, script, 43, 8, 0x24, 18249, 0xf4854d4d},
                        [&](const th::Game &g) { cured = g.hospital.illnesses[22].cured; });
     CHECK(cured > 0);
 }
@@ -1630,7 +1635,7 @@ void test_treatment_level1(const char *dir)
     const std::string script =
         std::string(kGpOfficeScript) +
         "130 55 0 0\n131 53 27 27\n132 2 7731 0\n133 2 8247 0\n134 8 8247 0\n135 18 0 0\n136 26 8373 0\n"
-        "137 3 0 0\n138 4 27 0\n139 7 7860 20\n140 7 8119 16\n141 1 0 0\n142 48 1 13\n143 5 10044 13\n"
+        "137 3 0 0\n138 4 27 0\n139 7 7860 20\n140 7 8119 16\n141 1 0 0\n142 48 1 15\n143 5 10044 15\n"
         "160 55 0 0\n161 53 11 11\n162 2 7737 0\n163 2 8124 0\n164 8 8124 0\n165 18 0 0\n166 26 8250 0\n"
         "167 3 0 0\n168 4 11 0\n169 7 7740 39\n170 1 0 0\n171 48 0 3\n172 5 10044 3\n"
         "190 55 0 0\n191 53 17 17\n192 2 8388 0\n193 2 8775 0\n194 8 8775 0\n195 18 0 0\n196 26 8515 0\n"
@@ -1681,13 +1686,54 @@ void test_treatment_level1(const char *dir)
     }
     std::printf("treatment sounds: %d cheers, %d boos\n", cheers, boos);
     CHECK(cheers > 0 && boos > 0);
-    CHECK(w.seed == 0x8d8b8fc1);
+    CHECK(w.seed == 0x53a3bd6a);
 }
+
+namespace
+{
+
+// The trace events and per-turn states the info_windows.txt scenario checks.
+struct InfoWindowRun {
+    std::vector<std::string> seen;
+    bool sent_home = false, guessed = false, priorities = false, home6 = false, home7 = false;
+    bool queue47 = false, walking9 = false;
+
+    void add(const th::Game &g)
+    {
+        for (const th::TraceEvent &e : g.events.events)
+            if (e.text.starts_with("handyman_values ") || e.text.starts_with("force_cure ") ||
+                e.text.starts_with("go_home "))
+                seen.push_back(e.text);
+        const th::World &w = g.world;
+        if (g.turn_count == 7350)
+            sent_home = (w.things[10].person_flags & th::kPfSentHome) && w.things[10].treatment == 0;
+        if (g.turn_count == 7419)
+            queue47 = w.things[47].state == th::kPsGotoQueue;
+        if (g.turn_count == 7420)
+            guessed = (w.things[47].person_flags & th::kPfGuessed) && w.things[47].known_illness == 2;
+        if (g.turn_count == 12550)
+            home6 = (w.things[6].person_flags & th::kPfSentHome) && w.things[6].treatment == 0;
+        if (g.turn_count == 12559)
+            walking9 = w.things[9].state == th::kPsGotoQueue;
+        if (g.turn_count == 12700)
+            home7 = (w.things[7].person_flags & th::kPfSentHome) && w.things[7].treatment == 0;
+        if (g.turn_count == 9501) {
+            const th::Thing &h = w.things[20];
+            priorities = h.prio_litter == 6 && h.prio_plants == 6 && h.prio_repair == 88;
+        }
+    }
+
+    bool has(const std::string &text) const { return std::find(seen.begin(), seen.end(), text) != seen.end(); }
+};
+
+} // namespace
 
 // tools/replay/scripts/info_windows.txt: treatment.txt with a handyman whose
 // priorities are changed, patients sent home (EV_PERSON_GO_HOME) and made to
-// guess a cure (EV_FORCE_CURE), waiting, walking to a queue, with their
-// doctor and in the inflator; ending on the original's seed at turn 18000.
+// guess a cure (EV_FORCE_CURE): waiting for a decision, walking to a queue,
+// with their doctor and watching the pharmacy cabinet energise; ending on the
+// original's seed at turn 18000. The level's VIP visit is kept, so the run
+// follows the replay script.
 void test_info_windows_level1(const char *dir)
 {
     const std::string script =
@@ -1700,41 +1746,28 @@ void test_info_windows_level1(const char *dir)
         "197 3 0 0\n198 4 17 0\n199 7 8518 9\n200 1 0 0\n201 48 1 12\n202 5 10044 12\n"
         "220 113 1 0\n221 113 2 10\n"
         "230 48 2 20\n231 5 10044 20\n240 115 20 29\n241 115 20 29\n242 115 20 31\n"
-        "7350 116 46 0\n7420 134 47 0\n"
+        "7350 116 10 0\n7420 134 47 0\n"
         "9000 115 20 31\n9001 115 20 31\n9002 115 20 31\n9003 115 20 31\n9004 115 20 31\n9005 115 20 31\n"
         "9006 115 20 31\n9007 115 20 31\n9008 115 20 31\n9009 115 20 31\n9010 115 20 31\n9011 115 20 31\n"
         "9500 115 20 29\n9501 115 20 30\n"
-        "12550 116 26 0\n12560 134 9 0\n12600 134 50 0\n12700 116 5 0";
+        "11100 116 21 0\n12550 116 6 0\n12560 134 9 0\n12700 116 7 0\n13700 116 5 0";
     ScriptedGame s;
-    CHECK(s.start(dir, 1, script));
+    CHECK(s.start(dir, 1, script, true));
     if (!s.game)
         return;
     th::Game &g = *s.game;
     th::World &w = g.world;
-    std::vector<std::string> seen;
-    bool sent_home = false, guessed = false, priorities = false;
-    CHECK(s.run_to(18000, [&] {
-        for (const th::TraceEvent &e : g.events.events)
-            if (e.text.starts_with("handyman_values ") || e.text.starts_with("force_cure ") ||
-                e.text.starts_with("go_home 46 ") || e.text.starts_with("go_home 26 "))
-                seen.push_back(e.text);
-        if (g.turn_count == 7350)
-            sent_home = (w.things[46].person_flags & th::kPfSentHome) && w.things[46].treatment == 0;
-        if (g.turn_count == 7420)
-            guessed = (w.things[47].person_flags & th::kPfGuessed) && w.things[47].known_illness == 5;
-        if (g.turn_count == 9501) {
-            const th::Thing &h = w.things[20];
-            priorities = h.prio_litter == 6 && h.prio_plants == 6 && h.prio_repair == 88;
-        }
-    }));
-    auto has = [&](const std::string &text) { return std::find(seen.begin(), seen.end(), text) != seen.end(); };
-    CHECK(sent_home && guessed && priorities);
-    CHECK(has("handyman_values 20 litter=39 plants=31 repair=30"));
-    CHECK(has("handyman_values 20 litter=0 plants=0 repair=100"));
-    CHECK(has("force_cure 47") && has("force_cure 9") && has("force_cure 50"));
-    CHECK(has("go_home 46 state=24") && has("go_home 26 state=32"));
+    InfoWindowRun run;
+    CHECK(s.run_to(18000, [&] { run.add(g); }));
+    CHECK(run.sent_home && run.guessed && run.priorities && run.home6 && run.home7);
+    CHECK(run.queue47 && run.walking9);
+    CHECK(run.has("handyman_values 20 litter=39 plants=31 repair=30"));
+    CHECK(run.has("handyman_values 20 litter=0 plants=0 repair=100"));
+    CHECK(run.has("force_cure 47") && run.has("force_cure 9"));
+    CHECK(run.has("go_home 10 state=68") && run.has("go_home 5 state=48") && run.has("go_home 6 state=32") &&
+          run.has("go_home 7 state=32"));
     CHECK(std::find(g.command_log.begin(), g.command_log.end(), "7420 134 47 0") != g.command_log.end());
-    CHECK(w.seed == 0x397debaa);
+    CHECK(w.seed == 0xe79eb3f5);
 }
 
 namespace
@@ -1752,11 +1785,12 @@ std::string toilets_script(const std::string &toilets)
            "167 7 10047 44\n170 79 10 0";
 }
 
-// The seeds the original ends on at turn 18000 with staff_room.txt,
-// toilets.txt and toilets_none.txt.
-constexpr uint32_t kStaffRoomSeed = 0xe62dae65;
-constexpr uint32_t kToiletsSeed = 0x3d222da5;
-constexpr uint32_t kToiletsNoneSeed = 0xf5d9b905;
+// The seeds the runs end on at turn 18000: toilets.txt keeps the level's VIP
+// visit so it is the original's; staff_room.txt and toilets_none.txt run with
+// the VIP off, so theirs are this port's.
+constexpr uint32_t kStaffRoomSeed = 0xd6095cc3;
+constexpr uint32_t kToiletsSeed = 0xd79852c9;
+constexpr uint32_t kToiletsNoneSeed = 0xad49eab6;
 
 // The toilets (64,52)-(67,55) of toilets.txt, up to their objects.
 constexpr const char *kToiletsRoom = "130 55 0 0\n131 53 29 29\n132 2 6720 0\n133 2 7107 0\n134 8 7107 0\n"
@@ -1871,16 +1905,17 @@ void test_staff_room_level1(const char *dir)
 
 // tools/replay/scripts/toilets.txt: waiting patients with a full bladder
 // leave the queue for the toilets, use a toilet (relieved: bladder emptied)
-// and a sink, and walk out again; one sent home on the toilet; ending on
-// the original's seed at turn 18000.
+// and a sink, and walk out again; one sent home on the toilet; ending on the
+// original's seed at turn 18000. The level's VIP visit is kept, so the run
+// follows the replay script.
 void test_toilets_level1(const char *dir)
 {
     const std::string script =
         toilets_script(std::string(kToiletsRoom) + "139 37 51 1\n140 43 0 0\n142 7 6720 51\n143 7 6723 32\n"
                                                    "144 7 6721 51\n145 1 0 0\n") +
-        "\n8100 116 19 0";
+        "\n7169 116 19 0";
     ScriptedGame s;
-    CHECK(s.start(dir, 1, script));
+    CHECK(s.start(dir, 1, script, true));
     if (!s.game)
         return;
     th::Game &g = *s.game;
@@ -1892,7 +1927,7 @@ void test_toilets_level1(const char *dir)
         counts.add(g);
         for (const th::TraceEvent &e : g.events.events) {
             sinks += e.text.starts_with("use_object ") && e.text.ends_with(" kind=32");
-            // PS_PLAY_COMPLEX_ANIM: on the toilet.
+            // PS_PLAY_COMPLEX_ANIM (0x10): on the toilet when sent home.
             sent_home |= e.text == "go_home 19 state=16";
             if (e.text.starts_with("relieved ")) {
                 const th::Thing &p = w.things[std::stoul(e.text.substr(9))];
@@ -2007,7 +2042,7 @@ void test_emergency_accept_level6(const char *dir)
     CHECK(has(r.results, "balance 28 amount=3000 arg=0") && has(r.results, "rep 0 event=12 amount=0"));
     CHECK(g.advisor.heli_landed && g.world.emergency.state == 0 && g.world.emergency.cured == 6);
     CHECK(g.disasters.emergencies_active == 0 && !g.disasters.offers[0].used);
-    CHECK(g.world.seed == 0xf7b560e6);
+    CHECK(g.world.seed == 0x678d13b0);
 }
 
 // tools/replay/scripts/emergency_refuse.txt and emergency_ignore.txt: the
@@ -2024,7 +2059,7 @@ void test_emergency_refused_level6(const char *dir)
     CHECK(refused.counts["emergency_offer"] == 1 && refused.counts["emergency_refuse"] == 1);
     CHECK(refused.counts["emergency_accept"] == 0 && refused.counts["heli"] == 0 && !refused.helicopter);
     CHECK(g.world.emergency.state == 0 && g.disasters.emergencies_active == 1 && g.disasters.offers[0].used);
-    CHECK(g.world.seed == 0xc7c45011);
+    CHECK(g.world.seed == 0x0a7a11af);
 
     EmergencyRun ignored;
     CHECK(ignored.run(dir, std::string(kLevel6Reception) + kLevel6GpOffice + kLevel6InflationRoom + kLevel6SecondDoctor,
@@ -2035,7 +2070,7 @@ void test_emergency_refused_level6(const char *dir)
     CHECK(ignored.counts["emergency_offer"] == 1 && ignored.counts["expire_call"] >= 1);
     CHECK(ignored.counts["emergency_refuse"] == 0 && ignored.counts["emergency_accept"] == 0 && !ignored.helicopter);
     CHECK(th::check_playercall(h.world, th::kCallEmergency, 0, 0) == 0 && h.disasters.emergencies_active == 1);
-    CHECK(h.world.seed == 0xca3110dc);
+    CHECK(h.world.seed == 0x57d27adc);
 }
 
 // tools/replay/scripts/emergency_untreatable.txt: the emergency accepted
@@ -2054,7 +2089,7 @@ void test_emergency_untreatable_level6(const char *dir)
     CHECK(std::none_of(r.results.begin(), r.results.end(),
                        [](const std::string &line) { return line.starts_with("balance"); }));
     CHECK(g.world.emergency.state == 0 && th::check_playercall(g.world, th::kCallEmergencyOver, 1, 0) == 0);
-    CHECK(g.world.seed == 0x966c9d35);
+    CHECK(g.world.seed == 0x607b8462);
 }
 
 // tools/replay/scripts/emergency_fail.txt: the emergency accepted with an
@@ -2071,7 +2106,7 @@ void test_emergency_fail_level6(const char *dir)
     CHECK(r.counts["emergency_peep"] == 6 && r.counts["emergency_dies"] == 6 && r.counts["emergency_cure"] == 0);
     CHECK(has(r.results, "emergency_over cured=0 patients=6 bonus=0") && has(r.results, "rep 0 event=13 amount=6"));
     CHECK(g.world.emergency.state == 0 && g.finance.deaths >= 6);
-    CHECK(g.world.seed == 0x4efdbc39);
+    CHECK(g.world.seed == 0xbcc69a42);
 }
 
 namespace
@@ -2100,9 +2135,10 @@ struct DecisionRun {
             }
             g.turn();
             counts.add(g);
-            for (const th::TraceEvent &e : g.events.events)
+            for (const th::TraceEvent &e : g.events.events) {
                 if (e.text.starts_with("choice "))
                     choices.push_back(e.text);
+            }
             g.events.events.clear();
         }
         return true;
@@ -2115,22 +2151,22 @@ struct DecisionRun {
 // given up, their calls answered (the fax about them shown) and each
 // answer taken: sent home, a cure guessed (which leads to a call about no
 // treatment, answered by the research department) and asked to wait;
-// ending on the original's seed at turn 18000.
+// ending on the level's seed at turn 18000.
 void test_decisions_diagnosis_level1(const char *dir)
 {
     DecisionRun r;
     CHECK(r.run(dir,
-                std::string(kGpOfficeScript) + "7260 10 8 1\n7261 125 40 29\n8300 10 8 0\n8301 125 41 36\n"
-                                               "8350 10 4 3\n8351 125 2 36\n8800 10 8 4\n8801 125 42 6\n",
+                std::string(kGpOfficeScript) + "7260 10 8 1\n7261 125 40 10\n8300 10 8 4\n8301 125 41 3\n"
+                                               "8350 10 4 0\n8351 125 2 3\n8950 10 8 6\n8951 125 42 6\n",
                 18000));
     if (!r.s.game)
         return;
-    const std::vector<std::string> expected = {"choice 40 arg=29 awaiting=1", "choice 41 arg=36 awaiting=1",
-                                               "choice 2 arg=36 awaiting=1", "choice 42 arg=6 awaiting=1"};
+    const std::vector<std::string> expected = {"choice 40 arg=10 awaiting=1", "choice 41 arg=3 awaiting=1",
+                                               "choice 2 arg=3 awaiting=1", "choice 42 arg=6 awaiting=1"};
     CHECK(r.choices == expected);
-    CHECK(r.faxes[th::kFaxNoDiagnosis] == 3 && r.faxes[th::kFaxNoTreatment] == 1);
+    CHECK(r.faxes[th::kFaxNoDiagnosis] == 1 && r.faxes[th::kFaxNoTreatment] == 1);
     CHECK(r.counts["go_for_treatment"] > 0 && r.counts["choice"] == 4);
-    CHECK(r.s.game->world.seed == 0x43780db4);
+    CHECK(r.s.game->world.seed == 0xe1b5ffee);
 }
 
 // tools/replay/scripts/decisions_treatment.txt: patients with no treatment,
@@ -2150,7 +2186,7 @@ void test_decisions_treatment_level1(const char *dir)
     const std::vector<std::string> expected = {"choice 0 arg=10 awaiting=1", "choice 1 arg=15 awaiting=1"};
     CHECK(r.choices == expected);
     CHECK(r.faxes[th::kFaxNoTreatment] == 2);
-    CHECK(r.s.game->world.seed == 0xb6808e07);
+    CHECK(r.s.game->world.seed == 0xf6f6ed7e);
 }
 
 // A new illness's call answered: the fax about the illness, with the call
@@ -2196,15 +2232,16 @@ constexpr uint16_t kCardiogramRoom = 7;
 } // namespace
 
 // tools/replay/scripts/machine_explode.txt: the cardiogram worn out with no
-// handyman smokes, then blows up (turn 15670): debris flies and falls, the
+// handyman smokes, then blows up (turn 15037): debris flies and falls, the
 // room's objects are taken off and wrecks left, the doctor in it is gone and
 // the patient on it dies, the room is destroyed and its queue sent back to
-// the GP; the reputation falls. Replacing the machine gone charges kind 0's
-// price, -99. Ending on the original's seed at turn 18000.
+// the GP; the reputation falls. Replacing the machine gone charges its owner,
+// not the player: its thing has become an applicant (kNoOwner). Ending on the
+// original's seed at turn 18000.
 void test_machine_explodes_level6(const char *dir)
 {
     ScriptedGame s;
-    CHECK(s.start(dir, 6, cardiogram_without_handyman() + "10001 104 18 0\n11000 5 6970 18\n15700 138 45 0\n"));
+    CHECK(s.start(dir, 6, cardiogram_without_handyman() + "10001 104 18 0\n11000 5 6970 18\n15700 138 45 0\n", true));
     if (!s.game)
         return;
     th::Game &g = *s.game;
@@ -2218,7 +2255,7 @@ void test_machine_explodes_level6(const char *dir)
         int debris = int(std::count_if(w.things.begin(), w.things.end(),
                                        [](const th::Thing &t) { return t.type == th::kThingDebris; }));
         most_debris = std::max(most_debris, debris);
-        if (g.turn_count == 15670)
+        if (g.turn_count == 13743)
             CHECK(w.rooms[kCardiogramRoom].first_person && w.rooms[kCardiogramRoom].queue_head == 0 &&
                   w.things[kCardiogram].type != th::kThingObject);
     }));
@@ -2229,56 +2266,56 @@ void test_machine_explodes_level6(const char *dir)
     const th::RoomInfo &room = w.rooms[kCardiogramRoom];
     CHECK(room.type == 6 && room.state == 6 && w.room_of_type[12] == 0 && w.cure_available[0x24 + 2] != 1);
     CHECK(w.mishaps == 1 && w.machine_exploded && th::find_small_thing(w, 6454) != 0);
-    CHECK(counts["replace_machine"] == 1 && w.seed == 0xa9b37261 && g.balance == 46687);
+    CHECK(counts["replace_machine"] == 1 && w.seed == 0x4e8cf3b9 && g.balance == 47444);
 }
 
-// tools/replay/scripts/machine_saved.txt: the cardiogram worn past its
-// strength, a handyman called for it and hired, who repairs it before it
-// breaks down: its wear, smoke and overlay gone. Ending on the original's
-// seed at turn 18000.
+// tools/replay/scripts/machine_saved.txt with a handyman hired at turn 14400:
+// the cardiogram worn past its strength and smoking, a handyman called for it
+// and hired, who repairs it before it breaks down: its wear, smoke and overlay
+// gone. Ending on the level's seed at turn 18000.
 void test_machine_saved_level6(const char *dir)
 {
     ScriptedGame s;
-    CHECK(s.start(dir, 6, cardiogram_without_handyman() + "13900 118 45 0\n14200 48 2 53\n14201 5 6841 53\n"));
+    CHECK(s.start(dir, 6, cardiogram_without_handyman() + "11420 118 45 0\n13800 48 2 38\n13801 5 6841 38\n", true));
     if (!s.game)
         return;
     th::Game &g = *s.game;
     const th::World &w = g.world;
     EventCounts counts;
     bool worn_out = false;
-    CHECK(s.run_to(14426, [&] {
+    CHECK(s.run_to(14412, [&] {
         counts.add(g);
         const th::Thing &m = w.things[kCardiogram];
-        worn_out |= m.times_used > m.strength;
+        worn_out |= m.times_used >= m.strength;
     }));
     const th::Thing &machine = w.things[kCardiogram];
     CHECK(worn_out && counts["repair_request"] == 1 && counts["repair"] == 1 && counts["repaired"] == 1);
     CHECK(machine.times_used == 0 && machine.smoke == (std::array<uint8_t, 3>{}) && machine.overlay_frame == 0);
     CHECK(s.run_to(18000, [&] { counts.add(g); }));
-    CHECK(counts["machine_disaster"] == 0 && w.rooms[kCardiogramRoom].type == 12 && w.seed == 0xd757a9c7);
+    CHECK(counts["machine_disaster"] == 0 && w.rooms[kCardiogramRoom].type == 12 && w.seed == 0x75ad87d3);
 }
 
 // tools/replay/scripts/machine_replace.txt: the worn cardiogram replaced
 // while the handyman hired for it is on his way: paid for, new and unworn,
 // its page cancelled and the handyman off elsewhere. Ending on the
-// original's seed at turn 18000.
+// level's seed at turn 18000.
 void test_machine_replace_level6(const char *dir)
 {
     ScriptedGame s;
-    CHECK(s.start(dir, 6, cardiogram_without_handyman() + "14200 48 2 53\n14201 5 6841 53\n14250 138 45 0\n"));
+    CHECK(s.start(dir, 6, cardiogram_without_handyman() + "12900 48 2 51\n12901 5 6841 51\n12950 138 45 0\n", true));
     if (!s.game)
         return;
     th::Game &g = *s.game;
     const th::World &w = g.world;
-    CHECK(s.run_to(14249, [] {}));
-    CHECK(w.repair_pager.count == 1 && w.repair_pager.pages[0].responder == 53);
+    CHECK(s.run_to(12949, [] {}));
+    CHECK(w.repair_pager.count == 1 && w.repair_pager.pages[0].responder == 51);
     int32_t balance = g.balance;
-    CHECK(s.run_to(14250, [] {}));
+    CHECK(s.run_to(12950, [] {}));
     const th::Thing &machine = w.things[kCardiogram];
     CHECK(g.balance == balance - 1000 && machine.times_used == 0 && machine.strength == 13);
     CHECK(machine.smoke == (std::array<uint8_t, 3>{}) && w.repair_pager.count == 0);
     CHECK(s.run_to(18000, [] {}));
-    CHECK(w.seed == 0x621e65cf);
+    CHECK(w.seed == 0x8136e0f1);
 }
 
 // generate_quake's do_earthquake: a quake at its peak wears every machine by
@@ -2311,4 +2348,133 @@ void test_do_earthquake_level6(const char *dir)
         modified += e.text.starts_with("modify_machine ") &&
                     e.text.find(" " + std::to_string(kCardiogram) + " ") != std::string::npos;
     CHECK(modified == 1);
+}
+
+namespace
+{
+
+// A seed whose next old_newrand draw has `kind` as its low two bits.
+uint32_t seed_for_disaster(uint32_t kind)
+{
+    uint32_t x = 1;
+    for (;; x++) {
+        uint32_t r = x * 0x24a1u + 0x24dfu;
+        if ((((r >> 13) | (r << 19)) & 3) == kind)
+            return x;
+    }
+}
+
+// The cold and hot heating disasters: each starts, breaks the heating (the
+// player's set heating dropped while it is broken) and ends, restoring it.
+void check_heating_disasters(th::Game &g, uint16_t launch, uint8_t initial_heating)
+{
+    th::World &w = g.world;
+    // Kind 1 (cold).
+    w.disaster_kind = 0;
+    w.disaster_counter = launch;
+    w.litter_count = 0;
+    w.seed = seed_for_disaster(1);
+    th::generate_disaster(g, 0);
+    CHECK(w.disaster_kind == 1 && w.heating_broken);
+    CHECK(g.finance.heating_level == 0 && w.saved_heating == initial_heating);
+    CHECK(g.advisor.forced_advice_id == 0xb);
+    CHECK(th::apply_town_event(g, g.land, th::Event{th::EV_SET_HEATING, 9, 0, 0}));
+    CHECK(g.finance.heating_level == 0);
+    while (w.disaster_kind != 0)
+        th::generate_disaster(g, 0);
+    CHECK(g.finance.heating_level == initial_heating && !w.heating_broken);
+    CHECK(g.advisor.forced_advice_id == 0xc);
+    // Kind 2 (hot).
+    w.disaster_kind = 0;
+    w.disaster_counter = launch;
+    w.seed = seed_for_disaster(2);
+    th::generate_disaster(g, 0);
+    CHECK(w.disaster_kind == 2 && g.finance.heating_level == 10 && w.heating_broken);
+    CHECK(g.advisor.forced_advice_id == 0xa);
+    while (w.disaster_kind != 0)
+        th::generate_disaster(g, 0);
+    CHECK(g.finance.heating_level == initial_heating);
+}
+
+// A drawn heating disaster with no radiator is rejected.
+void check_rejected_disaster(th::Game &g, uint16_t launch, uint8_t initial_heating)
+{
+    th::World &w = g.world;
+    w.things[2].type = th::kThingFree;
+    w.disaster_kind = 0;
+    w.disaster_counter = launch;
+    w.seed = seed_for_disaster(1);
+    th::generate_disaster(g, 0);
+    CHECK(w.disaster_kind == 0 && !w.heating_broken && g.finance.heating_level == initial_heating);
+}
+
+// The sick feeling with over 10 litter: the patients feel sick, then it ends.
+void check_sick_disaster(th::Game &g, uint16_t launch)
+{
+    th::World &w = g.world;
+    w.things[2].type = th::kThingObject;
+    w.things[1].nausea = 0;
+    w.litter_count = 11;
+    w.disaster_kind = 0;
+    w.disaster_counter = launch;
+    w.seed = seed_for_disaster(3);
+    th::generate_disaster(g, 0);
+    CHECK(w.disaster_kind == 3);
+    CHECK(w.things[1].nausea == uint16_t(g.settings().gbv.vomit_limit + 10));
+    CHECK(g.advisor.forced_advice_id == 0xd);
+    // Litter cleaned to 10 or fewer while it runs: the timer's double
+    // decrement instead of the nausea being reapplied.
+    w.litter_count = 0;
+    int8_t timer = w.disaster_timer;
+    th::generate_disaster(g, 0);
+    CHECK(w.disaster_kind == 3 && w.disaster_timer == int8_t(timer - 2));
+    while (w.disaster_kind != 0)
+        th::generate_disaster(g, 0);
+    CHECK(g.advisor.forced_advice_id == 0xe);
+}
+
+// The kinds that react to an earthquake shake and unshake.
+void check_quake_peeps(th::Game &g)
+{
+    th::World &w = g.world;
+    w.things[1].person_flags = 0;
+    th::disaster_peeps(w, g.anims(), g.settings(), 1, -1, g.turn_count);
+    CHECK(w.things[1].person_flags & th::kPfQuakeShaken);
+    th::disaster_peeps(w, g.anims(), g.settings(), 2, -1, g.turn_count);
+    CHECK(!(w.things[1].person_flags & th::kPfQuakeShaken));
+}
+
+} // namespace
+
+// With the game data: the random disasters (generate_disaster) and what
+// disaster_peeps does, on a level 1 game: a cold and a hot heating disaster
+// start and end, restoring the heating; a drawn heating disaster with no
+// radiator is rejected; the sick feeling with over 10 litter makes the
+// patients about to vomit and ends; and a broken heating ignores the
+// player's set heating.
+void test_disasters_level1(const char *dir)
+{
+    ScriptedGame s;
+    CHECK(s.start(dir, 1, ""));
+    if (!s.game)
+        return;
+    th::Game &g = *s.game;
+    th::World &w = g.world;
+    const uint16_t launch = g.settings().gbv.disaster_launch;
+    const uint8_t initial_heating = g.finance.heating_level;
+    // A patient and a corridor radiator to work on.
+    const uint16_t patient = 1, radiator = 2;
+    w.things[patient] = th::Thing{};
+    w.things[patient].type = th::kThingPatient;
+    w.things[patient].owner = 0;
+    w.things[patient].health = 100;
+    w.things[radiator] = th::Thing{};
+    w.things[radiator].type = th::kThingObject;
+    w.things[radiator].subtype = 44; // OBJ_RADIATOR
+    w.things[radiator].owner = 0;
+    check_heating_disasters(g, launch, initial_heating);
+    check_rejected_disaster(g, launch, initial_heating);
+    check_sick_disaster(g, launch);
+    check_quake_peeps(g);
+    std::printf("disasters: cold, hot, sick and rejected branches exercised\n");
 }

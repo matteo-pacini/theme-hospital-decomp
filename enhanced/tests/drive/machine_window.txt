@@ -9,25 +9,25 @@ click 240 130            # Clinics
 wait 10
 click 380 85             # the room (Inflation, kind 17)
 wait 10
-cell 58 66
+cell 56 64
 wait 5
 down left
 wait 5
-cell 62 70
+cell 60 68
 wait 10
 up left
 wait 10
 click 580 148            # confirm the blueprint
 wait 10
-click-cell 58 68         # the door
+click-cell 56 66         # the door
 wait 10
 click 580 148            # no windows: confirm
 wait 30
-click-cell 60 67
+click-cell 58 65
 wait 10
 click 505 189            # the object in the list
 wait 10
-click-cell 59 69
+click-cell 57 67
 wait 10
 click 580 148            # confirm the room
 wait 30

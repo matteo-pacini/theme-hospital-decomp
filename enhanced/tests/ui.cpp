@@ -29,12 +29,18 @@
 #include "core/world/mayor.h"
 #include "core/world/popups.h"
 #include "core/world/rooms.h"
+#include "core/world/savegame.h"
+#include "core/world/snapshot.h"
 #include "core/world/staff.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -483,9 +489,89 @@ void test_startup_new_game(const char *dir)
     CHECK(d.r.level == 1 && d.r.balance_id == "FULL" && !d.r.tutorial);
     auto sounds = s.take_sounds();
     CHECK(std::count(sounds.begin(), sounds.end(), uint8_t(0x08)) == 1); // SFX_WRONG2 for Continue
+    // Opening the preferences' glass boxes plays SFX_ZOOM_OPEN.
+    CHECK(std::count(sounds.begin(), sounds.end(), uint8_t(0x9c)) >= 1);
 
     auto page = th::level_briefing(text, 1);
     CHECK(!page.empty());
+}
+
+namespace
+{
+
+// A real save of level 1's start, so the load screen and a load see a whole
+// game and its format.
+bool write_test_save(const char *dir, const std::filesystem::path &path)
+{
+    th::GameData gd;
+    std::string error;
+    th::Balance settings;
+    auto level = gd.load(dir, &error) ? gd.load_level(1, &error) : std::nullopt;
+    if (!level || !th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error))
+        return false;
+    th::Game game;
+    game.staff_market.ref_counts = th::reference_counts(gd.text());
+    game.start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    return th::write_save_slot(path, game, th::SaveInfo{0, std::string(th::kDefaultBalanceId), false, 0, 0}, &error);
+}
+
+} // namespace
+
+// The main menu's Load entry and the load game screen (src/loadscr.cpp):
+// with a save in the continue slot the main menu's Continue loads it, and
+// the Load entry opens the screen, whose used slot loads when chosen and
+// whose Back returns to the menu.
+void test_startup_load_screen(const char *dir)
+{
+    th::LanguageText text;
+    CHECK(th::load_language(dir, 0, text));
+    std::filesystem::path save_dir = std::filesystem::path("build") / "ui-test-save";
+    std::error_code ec;
+    std::filesystem::remove_all(save_dir, ec);
+    std::filesystem::path slot = th::save_slot_path(save_dir, "A", 0);
+    CHECK(write_test_save(dir, slot));
+    CHECK(th::save_slot_compatible(slot) && th::save_slot_level(slot) == 1);
+
+    th::Startup s;
+    if (!s.load(dir, text, 0))
+        return;
+    s.set_save_dir(save_dir);
+    StartupDriver d{s, {}};
+    reach_main_menu(d);
+    const th::UiMouse still = startup_still();
+    const th::StartupKey space{th::StartupKey::Space, 0};
+
+    // Load is the diamond's right quarter; its closing movie, then the
+    // screen's panels open.
+    d.run(startup_click(0x73, 0x3a), {}, 2);
+    CHECK(d.r.kind == th::StartupResult::Kind::Running);
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu2);
+    d.run(still, {space}, 5);
+    for (int i = 0; i < 60 && s.screen() != th::StartupScreen::LoadGame; i++)
+        d.run(still, {}, 1);
+    CHECK(s.screen() == th::StartupScreen::LoadGame);
+    CHECK(s.surface().width() == 640 && s.surface().height() == 480);
+
+    // The panels open over the 800 ms delay and, type by type, seven zoom
+    // steps.
+    d.run(still, {}, 60);
+    CHECK(s.load_ready());
+
+    // The used slot 0 loads (the first slot button, kLoadGlass[2]).
+    d.run(startup_click(319, 85), {}, 3);
+    CHECK(d.r.kind == th::StartupResult::Kind::LoadGame && d.r.slot == 0);
+
+    // A load the caller refused: the load game screen stays up (loadscr's
+    // state 1 failure), and its result is spent so the frame does not hand it
+    // out again; the Continue failure returns to the main menu.
+    s.load_failed(true);
+    CHECK(s.screen() == th::StartupScreen::LoadGame);
+    s.load_failed(false);
+    CHECK(s.screen() != th::StartupScreen::LoadGame && s.screen() != th::StartupScreen::Done);
+    d.r = th::StartupResult{};
+    d.run(still);
+    CHECK(d.r.kind == th::StartupResult::Kind::Running);
+    std::filesystem::remove_all(save_dir, ec);
 }
 
 namespace
@@ -1248,6 +1334,31 @@ void check_window_follows_person(InfoFixture &t)
     CHECK(t.ui.window_count() == 0);
 }
 
+// Hovering a rat gives the aim pointer; a click fires at it (a hit). With
+// nothing under the pointer but a rat near (othervar.near_rat), a click
+// fires a miss; without near_rat it does nothing (src/mouse.cpp MM_NORMAL,
+// src/io.cpp EV_SHOOT_RAT).
+void check_rat_click(InfoFixture &t)
+{
+    th::World &w = t.world();
+    uint16_t rat = 0;
+    for (uint16_t id = 1; id < w.things.size() && !rat; id++)
+        if (w.things[id].type == th::kThingFree)
+            rat = id;
+    CHECK(rat != 0);
+    th::Thing &r = w.things[rat];
+    r.type = th::kThingRat;
+    r.owner = 0;
+    th::MapHover h = th::map_hover(w, rat);
+    CHECK(h.hit && h.thing == rat && h.pointer == th::kPointerRatAim);
+    th::Event e = th::map_left_click(w, h, t.ui);
+    CHECK(e.type == th::EV_SHOOT_RAT && e.value == rat && e.arg == 0x0100);
+    e = th::map_left_click(w, th::MapHover{}, t.ui, -1, true);
+    CHECK(e.type == th::EV_SHOOT_RAT && e.value == 0 && e.arg == 0);
+    CHECK(th::map_left_click(w, th::MapHover{}, t.ui, -1, false).type == th::EV_NONE);
+    r.type = th::kThingFree;
+}
+
 } // namespace
 
 // The patient, staff and handyman windows (src/req3.cpp, src/req4.cpp):
@@ -1266,6 +1377,7 @@ void test_info_windows(const char *dir)
     check_staff_window(*t);
     check_handyman_window(*t);
     check_window_follows_person(*t);
+    check_rat_click(*t);
 }
 
 namespace
@@ -1561,6 +1673,37 @@ void check_fax_vip(th::Fax &fax, th::Game &g, uint32_t &safeseed)
 
 } // namespace
 
+// The palette index nearest to the 6-bit colour (r, g, b) in `palette`,
+// as LbPaletteFindColour finds it (the first of equals, which suffices here).
+uint8_t find_colour(const th::Palette &palette, int r, int g, int b)
+{
+    auto at = [&](int i, int shift) { return int((palette[size_t(i)] >> shift) & 0xff) >> 2; };
+    auto dist = [&](int i) {
+        int dr = r - at(i, 16), dg = g - at(i, 8), db = b - at(i, 0);
+        return dr * dr + dg * dg + db * db;
+    };
+    int best = 0;
+    for (int i = 1; i < 256; i++)
+        if (dist(i) < dist(best))
+            best = i;
+    return uint8_t(best);
+}
+
+// The colours the game finds in the hospital's palette and in the fax
+// picture's (setup_colors: red 0x3f,0,0 and dark blue 0,0,0x10) are the ones
+// colour_red and colour_dark_blue name.
+void check_fax_colours(const th::Fax &fax, const th::Palette &hospital)
+{
+    th::World world;
+    CHECK(find_colour(hospital, 0x3f, 0, 0) == th::colour_red(world));
+    CHECK(find_colour(hospital, 0, 0, 0x10) == th::colour_dark_blue(world));
+    CHECK(find_colour(hospital, 0, 0, 0) == th::kColourBlack);
+    world.fax_palette = true;
+    CHECK(find_colour(fax.palette, 0x3f, 0, 0) == th::colour_red(world));
+    CHECK(find_colour(fax.palette, 0, 0, 0x10) == th::colour_dark_blue(world));
+    CHECK(find_colour(fax.palette, 0, 0, 0) == th::kColourBlack);
+}
+
 // The fax for each kind of call: its message and buttons, each button's
 // answer as the game sends it, the buttons the game refuses, closing it,
 // and the keypad.
@@ -1579,6 +1722,7 @@ void test_fax(const char *dir)
     for (uint16_t i = 1; i < g.world.things.size() && !patient; i++)
         if (g.world.things[i].type == th::kThingFree)
             patient = i;
+    check_fax_colours(fax, f.gd.palette());
     check_fax_emergency(fax, g, safeseed, f.gd.text());
     check_fax_vip(fax, g, safeseed);
     check_fax_patient(fax, g, safeseed, patient);

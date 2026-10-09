@@ -6,11 +6,13 @@
 #include "core/render/blit.h"
 #include "core/render/text.h"
 #include "core/ui/helpmsg.h"
+#include "core/world/savegame.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
+#include <format>
 #include <initializer_list>
 
 namespace th
@@ -27,6 +29,10 @@ enum class Startup::State {
     NameDone,
     MenuEnter,
     Menu,
+    LoadEnter,
+    LoadDelay,
+    LoadZoom,
+    LoadEntry,
     PrefsEnter,
     PrefsDelay,
     PrefsZoom,
@@ -117,6 +123,26 @@ constexpr std::array<GlassBox, 9> kPrefsGlass = {{
     {441, 138, 474, 171, 3, true, 7, 0, 0},
 }};
 constexpr std::array<GlassBox, 1> kNameGlass = {{{90, 422, 549, 466, -1, false, 7, 0, 1}}};
+
+// Glass screen 12 (display bit 0x2000, the load game screen): the two panels
+// and the nine save-slot buttons (hiresglass, src/scoords.cpp).
+constexpr std::array<GlassBox, 11> kLoadGlass = {{
+    {189, 31, 450, 449, 0, false, 7, 0, 0},
+    {214, 56, 425, 403, 1, false, 7, 0, 0},
+    {226, 69, 413, 102, 2, true, 7, 0, 1},
+    {226, 105, 413, 138, 2, true, 7, 0, 1},
+    {226, 141, 413, 174, 2, true, 7, 0, 1},
+    {226, 177, 413, 210, 2, true, 7, 0, 1},
+    {226, 213, 413, 246, 2, true, 7, 0, 1},
+    {226, 249, 413, 282, 2, true, 7, 0, 1},
+    {226, 285, 413, 318, 2, true, 7, 0, 1},
+    {226, 321, 413, 354, 2, true, 7, 0, 1},
+    {226, 357, 413, 390, 2, true, 7, 0, 1},
+}};
+// The load screen's slot buttons and its Back button: slots 0 to 8 (the
+// ninth button calls process_loadgame_buttons(9), which goes back).
+constexpr int kLoadScreenSlots = 9;
+constexpr Point kLoadBackButton = {595, 435};
 
 // The preferences' buttons, screenbuttons 0xa0 to 0xa7 (src/scoords.cpp),
 // corners (x, y) and (x1, y1): tutorial on and off, accept, cancel (drawn
@@ -464,9 +490,28 @@ void Startup::tick(const UiMouse &mouse, std::span<const StartupKey> keys)
     case State::MenuEnter:
         enter_menu();
         break;
+    default:
+        // The main menu on, after the name screen.
+        tick_menu(mouse, keys);
+        break;
+    }
+}
+
+// The start-up screens from the main menu on: the menu, the load game
+// screen, the preferences, the level's area movie and its briefing, and the
+// quit. tick's, apart for its length.
+void Startup::tick_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
+{
+    switch (state_) {
     case State::Menu:
         screen_ = StartupScreen::MainMenu;
         main_menu(mouse, keys);
+        break;
+    case State::LoadEnter:
+    case State::LoadDelay:
+    case State::LoadZoom:
+    case State::LoadEntry:
+        load_tick(mouse, keys);
         break;
     case State::PrefsEnter:
         enter_preferences();
@@ -489,6 +534,8 @@ void Startup::tick(const UiMouse &mouse, std::span<const StartupKey> keys)
         finish_quit();
         break;
     case State::Done:
+        break;
+    default:
         break;
     }
 }
@@ -530,11 +577,24 @@ void Startup::enter_name()
 void Startup::enter_menu()
 {
     // MMS_ENTER, MMS_UNLOAD_GAME and MMS_SHOW_MENU: the menu's picture, then
-    // its opening movie.
+    // its opening movie. A result the caller was given (a started level or a
+    // load) is spent; without this the frame would hand it out again.
+    result_ = {};
     show(main_menu_);
     screen_ = StartupScreen::MainMenu;
     menu_state_ = kHoverContinue;
     play_movie(kMovieMainMenu1, State::Menu);
+}
+
+void Startup::load_failed(bool from_load_screen)
+{
+    result_ = {};
+    if (from_load_screen) {
+        screen_ = StartupScreen::LoadGame;
+        state_ = State::LoadEntry;
+    } else {
+        enter_menu();
+    }
 }
 
 void Startup::enter_area()
@@ -721,11 +781,27 @@ void Startup::main_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
     case kQuit:
         play_movie(kMovieMainMenu2, State::Quit);
         return;
-    case kContinue: // save_game_valid(99) fails: there are no saves yet
-    case kLoadGame: // not ported
-    case kNetwork:  // not ported
+    case kLoadGame:
+        // MMS_LOAD_GAME: the closing movie, then the load game screen.
+        play_movie(kMovieMainMenu2, State::LoadEnter);
+        return;
+    case kContinue:
+        // MMS_CONTINUE: the Continue slot (0x63), or the wrong sound without
+        // one (save_game_valid).
+        if (load_slot_used(kContinueSlot)) {
+            result_ = {};
+            result_.kind = StartupResult::Kind::LoadGame;
+            result_.slot = kContinueSlot;
+            screen_ = StartupScreen::Done;
+            state_ = State::Done;
+        } else {
+            menu_state_ = kHoverContinue;
+            sound(kSfxWrong2);
+        }
+        return;
+    case kNetwork: // not ported: the original opens network select
+        // The original plays no sound for it.
         menu_state_ = kHoverContinue;
-        sound(kSfxWrong2);
         return;
     default:
         break;
@@ -781,6 +857,132 @@ void Startup::main_menu_help(const UiMouse &mouse)
     help_->draw(surface_, palette_);
     help_->set_main_menu(false);
     help_->box().screen_pic_loaded = false;
+}
+
+// The load game screen's states, one per tick.
+void Startup::load_tick(const UiMouse &mouse, std::span<const StartupKey> keys)
+{
+    switch (state_) {
+    case State::LoadEnter:
+        enter_load();
+        break;
+    case State::LoadDelay:
+        zoom_after_delay(prefs_, 0x2000, State::LoadZoom);
+        break;
+    default:
+        load_screen(mouse, keys);
+        break;
+    }
+}
+
+// loadscr's state 0: the load game screen over PREF01V, then its panels
+// open (init_zoom_boxes(0x2000)).
+void Startup::enter_load()
+{
+    screen_ = StartupScreen::LoadGame;
+    calculate_grey(prefs_);
+    load_selected_ = 0xfa;
+    timer_ = kDelay800ms;
+    state_ = State::LoadDelay;
+}
+
+// Whether slot `slot` holds a save readable by this build: its file exists
+// and starts with this build's snapshot header (loadscr's LbFileLengthRnc
+// check and save_game_valid).
+bool Startup::load_slot_used(int slot) const
+{
+    if (save_dir_.empty())
+        return false;
+    return save_slot_level(save_slot_path(save_dir_, name_, slot)) >= 0;
+}
+
+// loadscr's states 3 and 4: the zooming panel, then its slot buttons.
+void Startup::load_screen(const UiMouse &mouse, std::span<const StartupKey> keys)
+{
+    if (state_ == State::LoadZoom) {
+        if (current_display_ == desired_display_)
+            state_ = State::LoadEntry;
+        draw_zoom_boxes();
+        return;
+    }
+    // State 4: process_keys_load_game (Escape goes back) and the buttons.
+    for (const StartupKey &k : keys) {
+        if (k.code == StartupKey::Escape) {
+            sound(kSfxNo);
+            state_ = State::MenuEnter;
+            return;
+        }
+    }
+    show(prefs_);
+    draw_zoom_boxes();
+    draw_load_screen(mouse);
+    if (current_display_ & 0x2000)
+        draw_load_buttons(mouse);
+}
+
+// loadscr's display_loadgame_screen: each slot's label on its button, the
+// slot's number when it holds a save and the empty text otherwise.
+void Startup::draw_load_screen(const UiMouse &mouse)
+{
+    std::string_view used = text_->at(TextSection::Load, 0);
+    std::string_view empty = text_->at(TextSection::Load, 1);
+    for (int slot = 0; slot < kLoadScreenSlots; slot++) {
+        const GlassBox &b = kLoadGlass[size_t(2 + slot)];
+        std::string label = load_slot_used(slot) ? std::format("{} {}", used, slot) : std::string(empty);
+        bool held = (mouse.left_held || mouse.left_released) &&
+                    over(mouse.x, mouse.y, b.x, b.y, b.x1 - b.x + 1, b.y1 - b.y + 1);
+        bool down = held;
+        const Font &font = fonts_[down ? kFontGlassHi : kFontGlass];
+        int w = b.x1 - b.x + 1;
+        int x = ((w - text_width(font, label)) >> 1) + (down ? 1 : 0);
+        int y = ((b.y1 + b.y + 1 - font.glyph('A').height) >> 1) + (down ? 1 : 0);
+        draw_text(surface_, font, x, y, label, {{b.x, 0, w}, {0, 0, surface_.width(), surface_.height()}});
+    }
+}
+
+// process_mouse_load_game: the Back button and the slot buttons, highlighted
+// under the mouse, taking a release.
+void Startup::draw_load_buttons(const UiMouse &mouse)
+{
+    const Sprite &back = prefs_sprites_.at(2);
+    draw_sprite(surface_, kLoadBackButton.x, kLoadBackButton.y, back);
+    State next = state_;
+    load_button(mouse, kLoadScreenSlots, true, next);
+    for (int slot = 0; slot < kLoadScreenSlots; slot++)
+        load_button(mouse, slot, false, next);
+    state_ = next;
+}
+
+// loadscr's process_loadgame_buttons: slot 9 goes back, another loads the
+// save if it is valid. `next` receives the state to go on to.
+void Startup::load_button(const UiMouse &mouse, int slot, bool back, State &next)
+{
+    Rect r;
+    if (back) {
+        const Sprite &s = prefs_sprites_.at(2);
+        r = {kLoadBackButton.x, kLoadBackButton.y, s.width, s.height};
+    } else {
+        const GlassBox &b = kLoadGlass[size_t(2 + slot)];
+        r = {b.x, b.y, b.x1 - b.x + 1, b.y1 - b.y + 1};
+    }
+    bool full = current_display_ & 0x2000;
+    if (mouse.left_released && full && over(mouse.x, mouse.y, r.x, r.y, r.w, r.h)) {
+        sound(kSfxYes);
+        if (back) {
+            next = State::MenuEnter;
+        } else if (load_slot_used(slot)) {
+            result_ = {};
+            result_.kind = StartupResult::Kind::LoadGame;
+            result_.slot = slot;
+            screen_ = StartupScreen::Done;
+            next = State::Done;
+        }
+        return;
+    }
+    if (full && over(mouse.x, mouse.y, r.x, r.y, r.w, r.h) && load_selected_ != slot) {
+        sound(kSfxHighlight);
+        load_selected_ = slot;
+    }
 }
 
 void Startup::preferences(const UiMouse &mouse, std::span<const StartupKey> keys)
@@ -929,11 +1131,13 @@ void Startup::init_zoom_boxes(int mask)
 {
     current_display_ = desired_display_ = 0;
     zoom_ = {};
-    for (int bit = 1; bit <= 2; bit <<= 1) {
+    for (int bit : {1, 2, 0x2000}) {
         if (!(mask & bit))
             continue;
         // add_glass_frame and add_glass_box.
-        std::span<const GlassBox> frames = bit == 1 ? std::span<const GlassBox>(kPrefsGlass) : kNameGlass;
+        std::span<const GlassBox> frames = bit == 1   ? std::span<const GlassBox>(kPrefsGlass)
+                                           : bit == 2 ? std::span<const GlassBox>(kNameGlass)
+                                                      : std::span<const GlassBox>(kLoadGlass);
         for (const GlassBox &g : frames) {
             auto slot = std::find_if(zoom_.begin(), zoom_.end(), [](const ZoomBox &z) { return !z.active; });
             if (slot == zoom_.end())
@@ -1042,16 +1246,28 @@ bool Startup::draw_zoom_boxes()
     int lo = 0, hi = 0;
     bool incomplete = false;
     zoom_levels(lo, hi, incomplete);
-    bool result = false;
+    bool opening = false, closing = false;
     for (ZoomBox &z : zoom_) {
         if (!z.active || z.type > lo)
             continue;
         if (z.id & desired_display_)
-            result |= open_zoom_box(z, hi, incomplete);
+            opening |= open_zoom_box(z, hi, incomplete);
         else
-            result |= close_zoom_box(z, hi);
+            closing |= close_zoom_box(z, hi);
     }
-    return result;
+    if (opening && !zoom_open_sound_) {
+        zoom_open_sound_ = true;
+        sound(0x9c); // SFX_ZOOM_OPEN
+    } else if (!opening) {
+        zoom_open_sound_ = false;
+    }
+    if (closing && !zoom_close_sound_) {
+        zoom_close_sound_ = true;
+        sound(0x9e); // SFX_ZOOM_CLOSE
+    } else if (!closing) {
+        zoom_close_sound_ = false;
+    }
+    return opening || closing;
 }
 
 void Startup::draw_box(const ZoomBox &z)

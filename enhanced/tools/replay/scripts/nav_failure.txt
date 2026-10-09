@@ -2,10 +2,11 @@
 # with the policy guessing cures. A cured patient leaving the inflation room
 # cannot find its way out: person_nav_failure -> PS_STUCK -> stuck (peep_stuck
 # draws random directions) -> go_home fed up. The GP's chair (object 34) is
-# also picked up at turn 7911 while a patient uses it, so
-# patient_abandon_complex runs. This covers only the PS_STUCK branch of the
-# nav failure: the reaper's, and the ones for a room built in the last 500
-# turns or a queueing/entertaining patient, are not reached (see the report).
+# also picked up at turn 7911; patient 40 abandons its complex (turn 9646,
+# see the note at the command).
+# This covers only the PS_STUCK branch of the nav failure: the reaper's, and
+# the ones for a room built in the last 500 turns or a queueing/entertaining
+# patient, are not reached (see the report).
 # treatment.txt adds the pharmacy and the deaths.
 # reception desk, receptionist, GP's office with its doctor.
 5 98 0 0
@@ -63,10 +64,12 @@
 # Policy (EV_SET_POLICY): send home at 0%, guess a cure from 10%.
 220 113 1 0
 221 113 2 10
-# A patient using the GP's chair (thing 34) is picked up.
+# The GP's chair (object 34) is picked up at turn 7911. The stuck patient is
+# 14 (nav_failure, go_home state=60) and the one that abandons its complex is
+# 40 (turn 9646), so the Expects name them.
 7911 68 34 0
-# Expect nav_failure 16 >= 10
+# Expect nav_failure 14 >= 10
 # Expect rand peep_stuck >= 1
-# Expect abandon_complex 45
-# Expect go_home 16 >= 10
+# Expect abandon_complex 40
+# Expect go_home 14 >= 10
 # Expect-not winlose

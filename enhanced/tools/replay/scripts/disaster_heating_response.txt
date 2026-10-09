@@ -1,0 +1,32 @@
+# Level 1: one corridor radiator and no handyman; the first random disaster
+# is kind 1 (the heating fails cold). While it runs the player sets the
+# heating (EV_SET_HEATING 10), which is ignored while it is broken, and hires
+# a handyman (applicant 20, at cell 10044), whose eight-to-a-radiator ratio
+# makes the disaster's timer fall faster: it ends at turn 10550, earlier than
+# disaster_cold.txt's 11350 (no handyman) and
+# disaster_heating_one_decrement.txt's 10750 (a handyman but six radiators,
+# so only one of the two decrements fires). The six drinks machines after the
+# radiator draw the daily randoms so the first disaster_roll (turn 10050)
+# picks kind 1. Compare up to turn 18000.
+# Expect disaster_start owner=0 kind=1
+# Expect place_staff 20 tile=10044
+# Expect disaster_end owner=0 kind=1
+5 98 0 0
+6 37 44 1
+7 43 0 0
+8 7 9534 44
+6 37 7 1
+8 7 9535 7
+6 37 7 1
+8 7 9536 7
+6 37 7 1
+8 7 9537 7
+6 37 7 1
+8 7 9538 7
+6 37 7 1
+8 7 9539 7
+6 37 7 1
+8 7 9276 7
+10100 79 10 0
+10100 48 2 20
+10101 5 10044 20

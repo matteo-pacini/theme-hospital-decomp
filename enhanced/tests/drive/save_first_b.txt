@@ -1,0 +1,33 @@
+# The first load of a fresh run: it continues save_first_a.txt's quick save
+# (slot 0, seeded from the producer's run) through the load game screen. The
+# view surface is still 0x0 then, so the camera must equal the saved one
+# (save_first_a.txt's "camera:" line), not half a screen off.
+# Size 640x480
+# NoLevel
+# Seed build/drive-tests/save_first_a/save
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+dump mainmenu
+expect screen: start-up screen 3
+screenshot main_menu
+click 113 60
+wait 10
+key Space
+wait 160
+dump loadscreen
+expect screen: start-up screen 4
+screenshot load_screen
+click 319 85
+wait 120
+dump continued
+expect screen: hospital
+expect date: year 0 month 0 day 3
+expect camera: 427,1952

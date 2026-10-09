@@ -1,0 +1,75 @@
+# Level 6: the arrow keys scroll the view, as the game's move_windows does
+# (src/cakewin.cpp). move_windows runs once a game frame, which
+# limit_framerate caps at 40 ms, so the view steps at that fixed rate
+# whatever the display's refresh rate: each held key accelerates the view's
+# velocity, which moves it and then decays. Twenty taps of Right and then
+# forty of Down each carry the camera 304 pixels, the camera line recording
+# the whole-pixel steps at that rate.
+wait 60
+dump start
+expect camera: -864,1544
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+key Right
+dump right
+expect camera: -560,1544
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+key Down
+dump down
+expect camera: -560,1848
+quit

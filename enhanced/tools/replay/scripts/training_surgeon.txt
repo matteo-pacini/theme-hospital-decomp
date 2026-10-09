@@ -2,8 +2,11 @@
 # Turns 40000
 # A training room with a projector, two lecture chairs, a bookcase and a
 # skeleton, and a staff room; a consultant (applicant 17, a surgeon) and a
-# doctor (18) in the training room, the policy's rest at 50. The doctor gains
-# the surgeon skill from the lectures (a training_done promotion, skill 32).
+# doctor (18) in the training room. With the rest threshold at 50 the doctor
+# grows its ability past the consultant promotion before the lectures finish,
+# is appraised at 128 and leaves without skill 32; raising the threshold to
+# 200 lets the doctor gain the surgeon skill (a training_done promotion at
+# turn 12887, skill 32).
 # Expect promoted 18 skill=32
 101 55 0 0
 102 53 22 22
@@ -35,4 +38,4 @@
 138 4 25 0
 139 7 6331 19
 140 1 0 0
-200 113 4 50
+200 113 4 200

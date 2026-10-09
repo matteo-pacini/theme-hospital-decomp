@@ -6,6 +6,7 @@
 #include "core/ui/info_windows.h"
 #include "core/ui/layer.h"
 #include "core/ui/panel_info.h"
+#include "core/world/build.h"
 #include "core/world/world.h"
 
 #include <cstdint>
@@ -24,6 +25,47 @@ bool line_drawn(const std::vector<uint32_t> &argb, th::Point origin, int line)
             if (argb[size_t(y) * th::kUiWidth + size_t(x)])
                 return true;
     return false;
+}
+
+bool bar_drawn(const std::vector<uint32_t> &argb, th::Point origin)
+{
+    return line_drawn(argb, origin, 0) || line_drawn(argb, origin, 1) || line_drawn(argb, origin, 2);
+}
+
+// One thing of each remaining kind's information: each draws on the bar when
+// the panel is normal and nothing once the raised set covers it.
+void check_kinds_suppressed(th::Game &game, const th::GameData &gd, th::UiLayer &layer, const th::Font &font,
+                            th::Point origin)
+{
+    auto add = [&](th::Thing t) {
+        uint16_t id = uint16_t(game.world.things.size());
+        game.world.things.push_back(t);
+        return id;
+    };
+    th::Thing staff;
+    staff.type = th::kThingStaff;
+    staff.subtype = th::kStaffDoctor;
+    th::Thing patient;
+    patient.type = th::kThingPatient;
+    patient.illness = 1;
+    game.world.rooms[1].type = 3;
+    game.world.rooms[1].queue_length = 2;
+    th::Thing door;
+    door.type = th::kThingDoor;
+    door.room_id = 1;
+    th::Thing bench;
+    bench.type = th::kThingObject;
+    bench.subtype = 4;
+    bench.times_used = 3;
+    const std::pair<uint8_t, uint16_t> kinds[] = {{1, add(staff)}, {2, add(patient)}, {4, add(door)}, {6, add(bench)}};
+    for (const auto &[info, thing] : kinds) {
+        layer.clear();
+        CHECK(th::draw_panel_info({layer, th::panel_top(gd), font}, info, thing, game, gd) == info);
+        check(bar_drawn(layer.to_argb(gd.palette()), origin), __FILE__, __LINE__, "kind drawn");
+        layer.clear();
+        CHECK(th::draw_panel_info({layer, th::panel_top(gd), font, true}, info, thing, game, gd) == 0);
+        check(!bar_drawn(layer.to_argb(gd.palette()), origin), __FILE__, __LINE__, "kind suppressed");
+    }
 }
 
 } // namespace
@@ -57,12 +99,19 @@ void test_panel_info(const char *dir)
     th::UiLayer layer;
     layer.resize(th::kUiWidth, th::kUiHeight);
     layer.clear();
-    th::draw_panel_info({layer, th::panel_top(gd), font}, 3, id, *f.game, gd);
+    CHECK(th::draw_panel_info({layer, th::panel_top(gd), font}, 3, id, *f.game, gd) == 3);
     std::vector<uint32_t> argb = layer.to_argb(gd.palette());
     CHECK(line_drawn(argb, origin, 0));
 
     // The machine's uses and strength go on the third line (hires).
     CHECK(line_drawn(argb, origin, 2));
+
+    // With the panel's raised icon set shown the bar is not drawn at all.
+    layer.clear();
+    CHECK(th::draw_panel_info({layer, th::panel_top(gd), font, true}, 3, id, *f.game, gd) == 0);
+    argb = layer.to_argb(gd.palette());
+    CHECK(!line_drawn(argb, origin, 0));
+    CHECK(!line_drawn(argb, origin, 2));
 
     // A VIP shows panel info 5 and the mayor's lines.
     th::Thing mayor;
@@ -76,4 +125,6 @@ void test_panel_info(const char *dir)
     th::draw_panel_info({layer, th::panel_top(gd), font}, 5, mid, *f.game, gd);
     argb = layer.to_argb(gd.palette());
     CHECK(line_drawn(argb, origin, 0));
+
+    check_kinds_suppressed(*f.game, gd, layer, font, origin);
 }

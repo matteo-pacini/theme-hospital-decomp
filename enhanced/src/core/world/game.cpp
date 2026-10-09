@@ -4,12 +4,14 @@
 #include "core/world/counts.h"
 #include "core/world/disaster.h"
 #include "core/world/epidemic.h"
+#include "core/world/fax_screen.h"
 #include "core/world/icons.h"
 #include "core/world/mayor.h"
 #include "core/world/nav.h"
 #include "core/world/objects.h"
 #include "core/world/quake.h"
 #include "core/world/queue.h"
+#include "core/world/rats.h"
 #include "core/world/reaper.h"
 #include "core/world/research.h"
 #include "core/world/rooms.h"
@@ -108,6 +110,8 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     staff_market.ref_counts = refs;
     create_job_market(world, staff_market, settings, 0, 1);
     date = {};
+    fax_screen = {};
+    world.fax_palette = false;
     turn_count = 1;
     paused = false;
     opening_countdown = open_countdown;
@@ -137,6 +141,7 @@ void Game::connect_world()
 {
     world.settings = &settings_;
     world.market = &arrivals.hospitals[0];
+    world.staff_market = &staff_market;
     world.finance = &finance;
     world.hospital = &hospital;
     world.ledger = &finance;
@@ -199,8 +204,10 @@ void turn_daily_admin(Game &g)
     try_to_generate_emergency(g);
     generate_mayors(g);
     daily_admin_emergency(g);
+    generate_disaster(g, 0);
     generate_quake(g);
     expire_playercalls(g.world);
+    manage_rats(g.world, g.anims());
     do_research(g.world);
     if (g.date.day > days_in_month(g.date.month))
         turn_month_end(g);
@@ -250,6 +257,8 @@ void turn_thing(Game &g, std::vector<bool> &walkers, const PersonComplexes &comp
         door_turn(world, anims, uint16_t(i), turn_count);
     } else if (t.type == kThingNumfx) {
         numfx_ages(world, uint16_t(i));
+    } else if (t.type == kThingRat) {
+        rat_turn(world, anims, uint16_t(i));
     } else if (t.type == kThingReaper) {
         reaper_turn(world, anims, uint16_t(i), turn_count);
     } else if (t.type == kThingHelicopter) {
@@ -306,6 +315,7 @@ bool Game::start_turn()
         return false;
     turn_count++;
     EventScope scope(&events, turn_count);
+    fax_fade(*this);
     draw_turn_randoms(world);
     world.idle_nurses = 0;
 
@@ -319,6 +329,7 @@ bool Game::start_turn()
             new_patients.push_back(id);
             start_person_going(world, *anims_, *complexes_, id, turn_count);
         }
+        rat_fest_control(*this);
     }
     if (turn_count % kTurnsPerDay == 0)
         turn_daily_admin(*this);
@@ -359,6 +370,7 @@ void Game::run_things()
         advisor.heli_landed = true;
     advisor.event_flags |= std::exchange(world.advisor_events, 0);
     build_turn(*this);
+    fax_frame(*this);
     remember_inputs();
 }
 
@@ -369,7 +381,10 @@ void Game::process_turn()
     event = {};
     if (e.type != EV_NONE)
         log_line(std::format("{} {} {}", unsigned(e.type), e.value, e.arg));
+    fax_event(*this, e);
     carry_out(e);
+    if (choice_screen.type)
+        fax_open(*this, choice_screen.timeout);
     advisor.event_flags |= std::exchange(world.advisor_events, 0);
     remember_inputs();
 }
@@ -394,11 +409,24 @@ void Game::carry_out(const Event &e)
         open = true;
         return;
     }
+    // process_turn's EV_CHEAT_END_YEAR (src/io.cpp): December, two days
+    // before its end.
+    if (e.type == EV_CHEAT_END_YEAR) {
+        date.month = 11;
+        date.day = days_in_month(date.month) - 2;
+        return;
+    }
     // The win/lose screen's decline button (winlose.cpp): the offered win is
     // refused and the game carries on. The replay sends it as EV_DECLINE_WIN.
     if (e.type == EV_DECLINE_WIN) {
         progress.win_declined = 1;
         progress.bonus_level = 0;
+        return;
+    }
+    // process_turn's EV_SHOOT_RAT (src/io.cpp): argb[0] is the rat game's
+    // weapon, argb[1] whether the shot hit a rat.
+    if (e.type == EV_SHOOT_RAT) {
+        shoot_rat(*this, e.value, uint8_t(e.arg & 0xff), uint8_t(e.arg >> 8));
         return;
     }
 

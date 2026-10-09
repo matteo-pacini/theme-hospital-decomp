@@ -1,0 +1,109 @@
+# The start-up screens' saved games, from the intro: the main menu's New Game,
+# the in-game File > Save > Game 1 and the Alt+S quick save, File > Quit (which
+# writes the Continue slot 0x63 and returns to the main menu), the main menu's
+# Continue loading it, the Load game screen loading a slot (src/loadscr.cpp),
+# and Alt+L quick loading. Screenshots of the menu, the save submenu, the
+# saved message and the load screen. The menu bar is only at the top in the
+# game's 640x480 layout.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+dump mainmenu
+expect screen: start-up screen 3
+screenshot main_menu
+# New Game: the default difficulty and tutorial, then the level.
+click 85 32
+wait 10
+key Space
+wait 160
+click 372 395
+wait 10
+key Space
+wait 80
+click 320 240
+wait 20
+turns 20
+dump ingame
+expect screen: hospital
+# File > Save > Game 1.
+move 10 3
+down
+wait 2
+move 50 35
+wait 2
+move 150 35
+wait 2
+screenshot save_submenu
+up
+wait 2
+dump message
+expect panel message: "Game Saved Okay"
+screenshot saved_message
+wait 13
+dump saved
+expect save slots: 1
+# Alt+S quick save to slot 0.
+key Alt+s
+wait 15
+turns 100
+dump advanced
+# File > Quit > Yes: the Continue slot is written and the main menu returns.
+move 10 3
+down
+wait 2
+move 50 63
+wait 2
+up
+wait 5
+click 373 281
+wait 20
+key Space
+wait 60
+dump backmenu
+expect screen: start-up screen 3
+# The Load game screen, then its slot 0 (the Alt+S save).
+click 113 60
+wait 10
+key Space
+wait 160
+dump loadscreen
+expect screen: start-up screen 4
+screenshot load_screen
+click 319 85
+wait 120
+dump loadedslot
+expect date: year 0 month 0 day 2, turn 82
+# The view the save was taken with (window and scroll_y, data.cpp:22-23).
+expect camera: -736,1952
+# Alt+L quick loads slot 0.
+key Alt+l
+wait 60
+dump quickloaded
+expect date: year 0 month 0 day 2, turn 62
+# File > Quit > Yes again, then the main menu's Continue loads its slot.
+move 10 3
+down
+wait 2
+move 50 63
+wait 2
+up
+wait 5
+click 373 281
+wait 20
+key Space
+wait 60
+dump menu2
+expect screen: start-up screen 3
+click 58 60
+wait 140
+dump continued
+expect screen: hospital

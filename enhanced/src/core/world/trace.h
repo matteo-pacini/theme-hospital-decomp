@@ -157,6 +157,12 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          in SS_BACK_TO_APPLICANTS
 //   litter <tile> type=<n> owner=<n>       place_litter
 //   unlitter <tile> owner=<n>              remove_litter
+//   rathole <tile> owner=<n> side=<n>      try_create_rathole, a hole added
+//   rathole_remove <tile> owner=<n>        remove_rathole
+//   rat <id> owner=<n> from=<tile> to=<tile>  make_a_rat, a rat sent out
+//   shoot_rat <rat> killed=<0 or 1> powerup=<n> shots=<n> kills=<n>
+//                                          process_turn's EV_SHOOT_RAT (shots
+//                                          and kills the year's award counts)
 //   plant_thirsty <plant> priority=<n>     plant_ages, at a wilting stage
 //   plant_dead <plant>                     plant_ages, once 40 past dead
 //   watered <handyman> plant=<n> health=<n>  handyman_works, a plant watered,
@@ -248,6 +254,10 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          (a fax answered), awaiting 1 if
 //                                          thing arg is a patient awaiting
 //                                          a decision (PF_AWAITING_DECISION)
+//   palette fax=<0 or 1> red=<n> black=<n> dark_blue=<n>  setup_colors, when the
+//                                          colours change between the hospital's
+//                                          palette and the fax picture's (the
+//                                          fax shown, or closed)
 //   counts patients=<n> impatience=<n> waiting=<n> happy=<n> refresh=<n>
 //          warm=<n> bladder=<n> staff=<n> tired=<sum>,<per kind 0-3>
 //          happy=<n> warm=<n> idle=<per kind 0-4> machines=<n>
@@ -270,6 +280,15 @@ void trace_rand(const char *function, uint32_t seed);
 //   room_destroyed <room> mishaps=<n>      machine_disaster, the room
 //                                          destroyed, before its queue is
 //                                          sent on (mishaps hospital 0's)
+//   disaster_roll owner=<n> kind=<n>       generate_disaster, the kind drawn
+//                                          (0 none, 1 heating cold, 2 heating
+//                                          hot, 3 sickness)
+//   disaster_start owner=<n> kind=<n>      generate_disaster, a drawn
+//                                          disaster starting
+//   disaster_reject owner=<n> kind=<n>     generate_disaster, a drawn
+//                                          disaster rejected, so not started
+//   disaster_end owner=<n> kind=<n>        generate_disaster, a running
+//                                          disaster ending
 //   replace_machine <id> used=<n> strength=<n>  replace_machine
 //   repair_request <id>                    process_turn's EV_THINGPAGE_REQUEST
 //   repair <handyman> machine=<id>         handyman_works, the repair

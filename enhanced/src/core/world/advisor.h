@@ -64,6 +64,9 @@ constexpr uint32_t kAdvisorEventCall = 0x4;
 // A patient of the player's cured, or dead (set by Game::turn).
 constexpr uint32_t kAdvisorEventCure = 0x40;
 constexpr uint32_t kAdvisorEventDeath = 0x80;
+// The game's event flag 0x100, tested by the rat-hole advice; nothing sets
+// it, so that branch never runs.
+constexpr uint32_t kAdvisorEvent0x100 = 0x100;
 
 // The game's speech bubble limits in high resolution
 // (resvars.advisor_min_segments, advisor_max_segments): the middle pieces

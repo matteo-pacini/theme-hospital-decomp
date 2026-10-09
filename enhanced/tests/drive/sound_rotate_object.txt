@@ -1,0 +1,20 @@
+# Level 1: rotating an object being placed with a right click plays
+# SFX_SWOOSH (0x22) and the placement that follows SFX_PLACE_R (0x46).
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy a bench
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+dump placing
+expect-not 0x22=
+click-cell 60 68 right   # turn it to its next facing
+wait 10
+dump rotated
+expect 0x22=1;
+click-cell 60 68         # place it
+wait 20
+dump placed
+expect 0x46=1;
+expect placing: object false

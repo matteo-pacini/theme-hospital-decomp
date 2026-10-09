@@ -4,8 +4,22 @@
 `enhanced/` is a C++20 port of it (SDL3, ImGui for dev tools only), ported
 function by function with the same RNG draw order. Read `enhanced/README.md`.
 
-When `HERDR_ENV=1` and you lead or work in a multi-agent herdr session, also
-read `docs/agents/herdr.md`.
+## Multi-agent work (herdr)
+Multi-agent work runs under herdr by default: one lead orchestrates, workers
+each do a brief in their own pane.
+- Before any herdr operation (panes, starting agents, messaging, reading
+  their screens), run `herdr --skill` and follow what it prints.
+- The lead is Claude Code on `claude-opus-5-5`, medium effort (high for a
+  hard task); workers are `claude-sonnet-5-5`, medium effort.
+- The default is the main workspace: `th-lead` on the repository's
+  checked-out branch, workers `th-agent-NN`. A big unrelated task can get its
+  own herdr worktree workspace (`th-lead-<tag>`, `th-agent-NN-<tag>`), to be
+  merged back when done; if unclear, ask the user which.
+- Leads talk to their workers, and to each other to coordinate, through
+  herdr. Workers do not message or reply through herdr unless their own
+  workspace's lead asks them to.
+- With `HERDR_ENV=1`, the lead and the workers also read
+  `docs/agents/herdr.md`.
 
 ## Git
 - Enhanced work lives on branch `enhanced` only, never on master.
@@ -51,39 +65,43 @@ real interface (commands in `enhanced/src/app/drive.h`):
   read. `--visible` shows the window, `--size WxH` sets it (default
   1280x720).
 - Explore with screenshots to find coordinates, then keep the script as a
-  test in `enhanced/tests/drive/` (`# Level N` in its header);
-  `enhanced/tools/drive_tests.sh` runs them all. Fix interface bugs with one
-  of these first, failing.
+  test in `enhanced/tests/drive/`; `enhanced/tools/drive_tests.sh` runs
+  them all and lists the header lines (`# Level N`, `# NoLevel`, `# Size`,
+  `# Seed`). Fix interface bugs with one of these first, failing.
 
 ## Replay check
 `enhanced/tools/replay/orig_trace.sh` runs an instrumented original headless in
 DOSBox-X (its work folder is `$REPLAY_DIR`, default `build/replay`; use your
 own when running in parallel). `th_replay` runs the same script in the port,
 and `compare.py` diffs the two traces turn by turn, random draws included
-(`--rand`). The usual SKIP list is
-`computer_action,manage_rats,generate_disaster`.
+(`th_replay --rand`, `TRACE_RAND=1` on the original's side). The usual SKIP
+list is `computer_action` only: rats (`manage_rats`) and disasters
+(`generate_disaster`) stay on in every replay. How each piece works, the
+trace cache and the script format: enhanced/README.md.
 
-- `enhanced/tools/replay/replay_all.sh [SCRIPT ...]` runs every script (or
-  the ones named) on both sides, compares them and checks their `# Expect`
-  lines, printing one line per script and a summary and exiting non-zero on
-  any disagreement or failed expectation. It reads each script's `# Turns N`
-  (else `TURNS`, 18300) and `# Level N`, and is the one place the SKIP list
-  above lives (`SKIP` overrides it). It puts its per-script `REPLAY_DIR`s and
-  traces under `build/replay-all-<pid>` (one base per run, so two runs do not
-  clash; set `REPLAY_BASE` to share one), deletes a script's traces once they
-  agree and its expectations hold, keeps a failing pair gzipped with its path
-  printed, and removes the passing `REPLAY_DIR`s at the end; `KEEP=1` keeps
-  everything for debugging, and a `WATCHDOG` (minutes, default 5) kills a run
-  whose original trace stops growing once it holds a slot, marking it failed.
+Run every script (or the ones named) with the decompilation built (`ninja`)
+and `build/enhanced` built; the decompilation's dev shell has python3 and
+dosbox-x:
+
+    env -u LD_LIBRARY_PATH nix develop path:./nix -c sh -c \
+      'unset LD_LIBRARY_PATH; enhanced/tools/replay/replay_all.sh [SCRIPT ...]'
+
+- `replay_all.sh` compares both sides and checks each script's `# Expect`
+  lines, prints one line per script and a summary, and exits non-zero on any
+  disagreement or failed expectation. It runs each script to its `# Turns N`
+  (else 18300) on its `# Level N`; the defaults (SKIP, TURNS, RAND, the
+  watchdog) live in `lib.sh`. It keeps a failing pair gzipped with its path
+  printed and deletes the rest. Its settings (`BUILD`, `JOBS`, `KEEP`,
+  `WATCHDOG`, `REPLAY_BASE`, ...) are listed at the top of the script.
+- The original's traces are cached locally, so DOSBox runs only for a new or
+  changed script, setting or decompilation. A cached trace is the reference:
+  don't force fresh runs (`NO_CACHE=1` only when the cache is suspected
+  stale), and never edit or hand-place its files.
 - A script's header states what it exercises with `# Expect <text> [<op> <n>]`
-  (an event line whose text after `E ` starts with `<text>` occurs `<op> <n>`
-  times, `op` one of `>= == <=`, default `>= 1`) and `# Expect-not <text>`
-  (no such event). `check_expect.py` checks them on both traces.
-
-- The scripts in `enhanced/tools/replay/scripts/` are lines of
-  `turn event value arg`, with `# Level N` in the header. All of them must
-  agree to turn 18000. The year end (18250) differs until year-end awards are
-  ported.
+  and `# Expect-not <text>`; when the generator moves its numbers,
+  `expect_candidates.py SCRIPT TRACE` lists the events of the same shape.
+  Never weaken an Expect line to make it pass.
+- Every script in `enhanced/tools/replay/scripts/` must agree to its turns.
 - Whoever ports a function adds its trace events on both sides:
   `trace_event` in the port, the `instrument.py` EVENTS entry, and a line in
   `trace.h`.
@@ -93,17 +111,13 @@ and `compare.py` diffs the two traces turn by turn, random draws included
 - Player actions go through `Game::process_turn`, so they land in
   `Game::command_log` and scripts can drive them on both sides.
 - Cover every branch with its own script, and report event counts.
-- `enhanced/tools/coverage.sh` runs every script in a coverage build (engine
-  side only) and writes build/coverage/report/ (index.html, summary.txt):
-  what no script reaches yet.
+  `enhanced/tools/coverage.sh` shows what no script reaches yet.
 - New World, Game or Thing fields go in `core/world/debug_dump.cpp` and
   `core/world/snapshot.cpp`; size `static_assert`s enforce the snapshot.
-- The original keeps once-only advisor flags in `run/SAVE/HORZA.HDT`. Clear
-  SAVE before comparing `# advice` lines.
 
 ## Sharing the machine
 Several agents can run at once:
-- DOSBox runs in one of `TH_REPLAY_SLOTS` (default 4) shared slots; a run
+- DOSBox runs in one of `TH_REPLAY_SLOTS` (default 10) shared slots; a run
   waits for a free one. `enhanced/tools/slot.sh --status replay` shows who
   holds them. Never kill another agent's DOSBox.
 - The instrumented `HOSPITAL.EXE` is cached in `build/replay-cache`, keyed by
@@ -125,12 +139,12 @@ Several agents can run at once:
   `build/slots` and anything still in use by someone else.
 
 ## Debugging
-F12 opens the tools window:
-- Inspect: pick a person or object and see its fields live, with states named.
-- Path finding.
-- Debug report: saves `debug-reports/<time>/` with a screenshot,
-  `state.txt`, a note, `snapshot.bin` and `commands.txt`. Load the snapshot
-  with `th_replay --load` to reproduce what the user saw.
+The user files bugs as debug reports (F12's Debug report tab, or F10):
+`debug-reports/<time>/` holds a screenshot, `state.txt`, the note,
+`snapshot.bin` and `commands.txt`. Load the snapshot with
+`build/enhanced/th_replay --load` to reproduce what the user saw. F12's
+Inspect shows a person's or object's fields live, with states named.
+Details: enhanced/README.md.
 
 ## Style
 Match the surrounding code, keep diffs minimal, and write comments about the

@@ -148,6 +148,37 @@ class Game
     };
     ChoiceScreen choice_screen;
 
+    // The fax screen as far as the colours go (core/world/fax_screen.h): the
+    // game keeps display_mode DM_CHOICE and the fax picture's palette while a
+    // fax is up, and setup_colors finds color.red and the rest in it.
+    struct FaxScreen {
+        // The fax is up (display_mode is DM_CHOICE), display_choice's state
+        // (choice.state: 0x5a showing it, 0x5b up, 0x5c closing) and the turns
+        // without the pointer moving after which it may close itself
+        // (choice_time_out).
+        bool open = false;
+        uint8_t state = 0;
+        int16_t timeout = 0;
+        // The screen shown when this one closes (choice_backup): another fax,
+        // with its timeout, or the game.
+        bool backup_open = false;
+        int16_t backup_timeout = 0;
+        // othervar.fade_palette: the palette to take on at the end of the
+        // frame, 0 for none, 1 the hospital's, 2 the fax picture's.
+        uint8_t fade = 0;
+        // The turn the pointer last moved (choice_actual_game_turn) and where
+        // (choice_mouse_position, x + y).
+        uint32_t since = 0;
+        int32_t pointer = 0;
+    };
+    FaxScreen fax_screen;
+    // The pointer's x + y (lbDisplay.mmouse_x + mmouse_y) and whether Escape
+    // or Space was pressed since the last turn, which the interface sets while
+    // a fax is up. The pointer starts off the corner, as the game's does when
+    // a script plays it.
+    int32_t fax_pointer = 1;
+    bool fax_key = false;
+
     // What the player and the interface did since the level started, a line
     // each, for th_replay's --script (tools/replay/main.cpp): "<turn> <rest>",
     // the rest carried out by replay_input before turn <turn> runs, in order.
@@ -210,6 +241,8 @@ class Game
   private:
     friend bool save_snapshot(const Game &game, std::vector<uint8_t> &out);
     friend bool load_snapshot(Game &game, std::span<const uint8_t> data, const GameData &gamedata, std::string *error);
+    friend bool load_snapshot_impl(Game &game, std::span<const uint8_t> data, const GameData &gamedata,
+                                   bool check_build, std::string *error);
 
     // What command_log compares to find the interface's changes.
     struct LoggedInputs {

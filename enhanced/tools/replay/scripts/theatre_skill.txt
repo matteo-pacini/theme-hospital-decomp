@@ -30,9 +30,12 @@
 111 7 6192 2
 112 7 6447 6
 113 1 0 0
-# Its doctor: hire applicant 18, place at cell 6969.
+# Its doctor: hire applicant 18, place at cell 5934 (the cell just above the
+# office door; from the trace, the corridor cell 6969 leaves both doctors
+# stuck, while this placement lets the theatre send 19 out (get_state) and
+# then work at the desk).
 114 48 1 18
-115 5 6969 18
+115 5 5934 18
 # The operating theatre (50,48)-(59,53), its door above it; opened.
 130 55 0 0
 131 53 10 10

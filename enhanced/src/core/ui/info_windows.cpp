@@ -514,6 +514,8 @@ MapHover map_hover_thing(const World &world, uint16_t id, const Thing &hovered)
         return {true, id, kPointerStaff, 1};
     if (hovered.type == kThingMayor || hovered.type == kThingInspector)
         return {true, id, kPointerKeep, 5};
+    if (hovered.type == kThingRat)
+        return {true, id, kPointerRatAim, 6};
     if (hovered.type == kThingDoor && kRoomHasQueue[world.rooms[hovered.room_id % kRoomCount].type % kRoomTypes])
         return {true, id, kPointerQueue, 4};
     return {};
@@ -610,17 +612,23 @@ Event map_left_click_door(World &world, const Thing &t, int cell)
     return {EV_OPEN_QUEUE_WINDOW, t.room_id, 0, uint16_t((t.y.tile << 7) + t.x.tile)};
 }
 
-Event map_left_click(World &world, const MapHover &hover, Interface &ui, int cell)
+Event map_left_click(World &world, const MapHover &hover, Interface &ui, int cell, bool near_rat)
 {
     const Thing *t = thing_at(world, hover.thing);
     if (!hover.hit || !t || t->owner != 0)
-        return {};
+        // A rat near the pointer but not aimed at: a shot at nothing (a
+        // miss), as process_mouse's MM_NORMAL.
+        return !hover.hit && near_rat ? Event{EV_SHOOT_RAT, 0, 0, 0} : Event{};
     if (t->type == kThingStaff)
         return map_left_click_staff(world, *t, hover, ui);
     if (t->type == kThingPatient)
         return map_left_click_patient(*t, hover, ui);
     if (t->type == kThingObject)
         return map_left_click_object(world, *t, hover, ui);
+    if (t->type == kThingRat)
+        // The player shoots the rat aimed at (argb[1] 1: a hit); the rat
+        // game's weapon is argb[0], 0 outside it.
+        return {EV_SHOOT_RAT, hover.thing, 0, 0x0100};
     if (t->type == kThingDoor)
         return map_left_click_door(world, *t, cell);
     return {};
@@ -823,12 +831,14 @@ void machine_window_clicks(InfoWindows &info, InfoWindowResult &r, const World &
     if (click.left && over(mouse.x, mouse.y, click.at, click.view))
         r.centre_on = id;
     if (click.right_click && over(mouse.x, mouse.y, click.at, click.view)) {
+        // SFX_CAMCLICK always, even when the next machine is the shown one
+        // (req5.cpp:130).
         uint16_t next = find_next_thing(world, id, kThingObject, -1, -1, click.scroll);
-        if (next < world.things.size() && next != id) {
+        if (next < world.things.size()) {
             info.machine = next;
             r.centre_on = next;
-            r.sounds.push_back(kSfxCamClick);
         }
+        r.sounds.push_back(kSfxCamClick);
     }
 }
 

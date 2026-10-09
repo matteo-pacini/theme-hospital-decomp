@@ -81,7 +81,7 @@ bool applicant_ok(const th::Thing &t, const HireFixture &f)
 {
     const th::Balance::Gbv &gbv = f.settings.gbv;
     bool valid = t.state == th::kStaffApplicant && t.owner == th::kNoOwner && t.cell_next == 0 && t.cell_prev == 0;
-    valid &= t.hire_expiry >= 1 + 2500 && t.hire_expiry < 1 + 5000;
+    valid &= th::applicant_expiry(t) >= 1 + 2500 && th::applicant_expiry(t) < 1 + 5000;
     valid &= t.initial >= 'A' && t.initial <= 'Z' && t.surname_a < 33 && t.surname_b < 26;
     valid &= t.ref_general < f.market.ref_counts[0] && t.ref_good < f.market.ref_counts[1] &&
              t.ref_bad < f.market.ref_counts[2];
@@ -194,7 +194,7 @@ bool place_receptionist(HireFixture &f, th::HireStaff &hire, th::Interface &ui, 
     CHECK(!hire.placing());
     CHECK(s.type == th::kThingStaff && s.owner == 0 && s.state == th::kStaffReceptionistFindsReception);
     CHECK(s.x.tile + s.y.tile * th::kMapSize == cell && s.x.frac == 0x80 && s.y.frac == 0x80);
-    CHECK(s.hire_expiry == 0 && s.hire_time == int16_t(f.game->turn_count) && s.speed != 0);
+    CHECK(th::applicant_expiry(s) == 0 && s.hire_time == int16_t(f.game->turn_count) && s.speed != 0);
     CHECK(f.game->balance == balance - salary * 12 / 10);
     CHECK(th::count_applicants(w, th::kStaffReceptionist) == 7);
     bool listed = false;
@@ -234,7 +234,7 @@ void test_hire_receptionist(const char *dir)
     CHECK(!hire.placing() && w.things[nurse].state == th::kStaffApplicant && ui.window_count() == 0);
 
     // An applicant withdraws once past their expiry.
-    uint32_t expiry = w.things[nurse].hire_expiry;
+    uint32_t expiry = th::applicant_expiry(w.things[nurse]);
     th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), f.gd.staff_complexes(), nurse, expiry);
     CHECK(w.things[nurse].type == th::kThingStaff);
     th::staff_turn(w, f.gd.anims(), f.gd.person_complexes(), f.gd.staff_complexes(), nurse, expiry + 1);
@@ -759,7 +759,7 @@ void check_sacked_doctor_leaves(QueueFixture &f, uint16_t doctor)
     std::printf("sacked doctor: back to the applicants after %d turns, seed %#x\n", turns, unsigned(w.seed));
     CHECK(left_office && d.state == th::kStaffApplicant && d.x.tile + d.y.tile * th::kMapSize == entrance);
     CHECK(!on_map(w, doctor) && cell_lists_consistent(w) && d.hire_time == int16_t(g.turn_count));
-    CHECK(d.owner == th::kNoOwner && d.hire_expiry == 0);
+    CHECK(d.owner == th::kNoOwner && th::applicant_expiry(d) == 0);
     f.turn();
     CHECK(d.type == th::kThingFree);
 }
@@ -897,4 +897,34 @@ void test_adjust_handyman_values()
     h.repair_count = 9;
     th::adjust_handyman_values(*w, 3, 15);
     CHECK(h.prio_litter == 6 && h.prio_plants == 0 && h.prio_repair == 94 && h.repair_count == 0);
+}
+
+// applicant_expiry/set_applicant_expiry (staff.cpp): the game's u32 at
+// Thing+0x94, whose high half is work_target2 for a handyman and crazy with
+// surgeon_training for a doctor (include/hosp.h). A sacked handyman or doctor
+// keeps whatever those bytes held, so the expiry they are withdrawn at is the
+// game's; the two kinds never use each other's fields.
+void test_applicant_expiry()
+{
+    th::Thing handyman;
+    handyman.type = th::kThingStaff;
+    handyman.subtype = th::kStaffHandyman;
+    handyman.work_target = 0x002a;
+    handyman.work_target2 = 0x1234;
+    CHECK(th::applicant_expiry(handyman) == 0x1234002au);
+
+    th::Thing doctor;
+    doctor.type = th::kThingStaff;
+    doctor.subtype = th::kStaffDoctor;
+    doctor.work_target = 0x002a;
+    doctor.crazy = 0x56;
+    doctor.surgeon_training = 0x78;
+    CHECK(th::applicant_expiry(doctor) == 0x7856002au);
+
+    th::set_applicant_expiry(handyman, 0x000ab0cd);
+    CHECK(handyman.work_target == 0xb0cd && handyman.work_target2 == 0x000a);
+    CHECK(th::applicant_expiry(handyman) == 0x000ab0cdu);
+    th::set_applicant_expiry(doctor, 0x000ab0cd);
+    CHECK(doctor.work_target == 0xb0cd && doctor.crazy == 0x0a && doctor.surgeon_training == 0x00);
+    CHECK(th::applicant_expiry(doctor) == 0x000ab0cdu);
 }

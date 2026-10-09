@@ -1,0 +1,27 @@
+# Level 1: the F10 quick debug report from a paused game. F10 pauses, the
+# note box appears, typing and Enter write the report; the report's
+# screenshot is the frozen frame from before the box (compared with
+# `before`), the note is written, and the pause is left as it was.
+wait 60
+key p
+wait 5
+expect paused true
+screenshot before
+key F10
+wait 5
+expect quick report: open
+expect paused true
+screenshot-ui box
+type hello quick report
+wait 2
+key Return
+wait 2
+screenshot-ui toast
+wait 5
+expect quick report: closed
+expect paused true
+expect-report hello quick report
+expect-report-shot before
+key p
+wait 5
+expect paused false

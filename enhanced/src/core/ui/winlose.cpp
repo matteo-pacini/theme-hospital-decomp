@@ -15,7 +15,6 @@ namespace
 {
 
 constexpr uint8_t kSfxWinLoseType = 0xee;
-constexpr uint8_t kSfxNo4 = 0x42;
 
 // ScreenCoords 0xcf and 0xd0 and ScreenBox 0xae (src/scoords.cpp).
 constexpr Point kAccept = {390, 400};
@@ -227,7 +226,6 @@ void WinLoseScreen::lose_frame(const UiMouse &mouse, WinLoseResult &result, cons
     bool over_accept = over(kAccept.x, kAccept.y, accept.width, accept.height, mouse);
     draw_sprite(surface_, kAccept.x, kAccept.y, sprites_.at(over_accept ? 2 : 1));
     if (mouse.left_released && over_accept) {
-        result.sounds.push_back(kSfxNo4);
         open_ = false;
         result.closed = true;
     }

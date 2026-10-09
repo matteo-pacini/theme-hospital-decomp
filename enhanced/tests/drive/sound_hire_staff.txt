@@ -1,0 +1,20 @@
+# Level 1: the hire staff requester's buttons and placing the applicant. The
+# doctor kind button plays SFX_SELECTX (0x43), hire SFX_YESX (0x41) once the
+# charge is affordable, and putting the applicant down SFX_PLAC_ST2 (0x07).
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+dump kind
+expect 0x43=2;
+click 334 323            # hire the shown applicant
+wait 10
+dump hired
+expect 0x41=1;
+expect staff 11 type=4(staff) subtype=1(doctor) state=68(held)
+click-cell 60 68         # place the doctor
+wait 20
+dump placed
+expect 0x07=1;
+expect staff 11 type=4(staff) subtype=1(doctor) state=52(wanders)

@@ -57,8 +57,8 @@ void create_explosion(World &world, const AnimData &anims, uint16_t tile, uint16
 void process_bang(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn);
 
 // replace_machine (0x3a3e0): machine `id` replaced by a new one for its
-// kind's price (object_cost) if the balance is positive and covers it: its
-// strength that of a new one (object_strength), no wear or
+// kind's price (object_cost) if the balance is positive and covers it (charged
+// only if the thing's owner is hospital 0): its strength that of a new one (object_strength), no wear or
 // smoke, the handyman on his way to repair it called off (interrupt_staff)
 // and its repair page cancelled.
 void replace_machine(Game &game, uint16_t id);
@@ -68,5 +68,27 @@ void replace_machine(Game &game, uint16_t id);
 // handyman paged at once, priority 0xff, to repair thing event.value; its
 // icon is not ported). Returns whether the event was one of them.
 bool apply_machine_event(Game &game, const Event &event);
+
+// disaster_peeps (0x75ed0): applies `mode` to every patient of hospital
+// `owner` (-1 for all): 0 makes them about to vomit (nausea at
+// gbv.vomit_limit + 10), 1 and 2 set and clear PF_QUAKE_SHAKEN for the kinds
+// whose abilities allow it, 3 kills them (change_health by all their
+// health). Earthquake's scaring (modes 1 and 2) and the sickness disaster
+// (mode 0) share it.
+void disaster_peeps(World &world, const AnimData &anims, const Balance &settings, uint8_t mode, int8_t owner,
+                    uint32_t game_turn);
+
+// generate_disaster (0x75b54): runs hospital `owner`'s random disaster
+// (World::disaster_kind). Every gbv.disaster_launch days a new one may
+// start (a draw from world.seed, low two bits: 0 nothing, 1 cold, 2 hot,
+// 3 sick), so 1 or 2 the
+// heating fails cold or hot (heating_level 0 or 10) when the hospital has
+// radiators and fewer than one handyman per 8 of them, 3 everyone feels
+// sick (nausea) while it has over 10 pieces of litter. A running one counts
+// down (faster for the heating with more handymen) and then ends,
+// restoring the heating and giving the advisor a forced message at start
+// and end. The port only has the single local hospital's fields, so `owner`
+// is 0.
+void generate_disaster(Game &game, uint8_t owner);
 
 } // namespace th

@@ -6,13 +6,17 @@
 # (cabinet) with a nurse, where the patient drinks the drug in the cabinet
 # (doctor_examines substates 190 and 191) and is cured (cure_illness,
 # illness 15).
-# Expect cure 32 illness=15 == 1
+# Holding applicant 9 as the GP never completes the transparency diagnosis,
+# so no patient gets treatment 15; holding applicant 15 instead (from the
+# trace, it diagnoses illness 15 and the cabinet cures patient 18 at turn
+# 17460) restores the branch.
+# Expect cure 18 illness=15 == 1
 # Expect set_complex 7 action=540 == 1
 
 # Turns 18300
 # A reception desk (cell 5160) and receptionist (applicant 16); a handyman
 # (13) with his repair priority raised to 100; a GP's office (35,33)-(39,37)
-# with its door above it, desk, cabinet and chair, and a doctor (9) in the
+# with its door above it, desk, cabinet and chair, and a doctor (15) in the
 # corridor.
 5 98 0 0
 6 37 11 1
@@ -47,8 +51,8 @@
 70 7 4263 2
 71 7 4518 6
 72 1 0 0
-73 48 1 9
-74 5 5295 9
+73 48 1 15
+74 5 5295 15
 # A research room (29,33)-(33,37), two researchers (10 and 12), research
 # concentrated on the scanner (illness 36), all of it in the specialisation:
 # the scanner is researched at turn 4000.

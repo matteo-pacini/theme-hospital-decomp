@@ -123,9 +123,13 @@ struct ChartsResult {
     // The player's command, for Game::event (none if type is EV_NONE).
     Event event;
     // The sound effects played (play_sound; SFX_* of include/enums.h), in
-    // order. The research screen's bubbling (SFX_RESEARCH on its own
-    // source, stopped when it closes) is among them, once.
+    // order.
     std::vector<uint8_t> sounds;
+    // The research screen's bubbling (SFX_RESEARCH): started on its own
+    // source and stopped when it closes (src/rschscrn.cpp:39/50), so it
+    // loops while the screen is up.
+    bool research_sound = false;
+    bool research_stop = false;
     // The bank manager's town map hotspot was clicked (key T: display_mode
     // DM_TOWN_MAP).
     bool town_map = false;

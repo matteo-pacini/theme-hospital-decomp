@@ -800,6 +800,26 @@ bool advise_cures_target(Situation &s)
     return found;
 }
 
+// find_advice's rat holes (0x8a, 0x8b): the hole advice (0x8b) once, and the
+// unraised event's (0x8a; see kAdvisorEvent0x100), which the game may
+// overwrite with the hole advice.
+bool advise_ratholes(Situation &s)
+{
+    if (!s.a.given[6] && (s.a.event_flags & kAdvisorEvent0x100)) {
+        say(s.a, s.situation(7));
+        s.a.given[6] = 1;
+        s.a.event_flags &= ~kAdvisorEvent0x100;
+        if (!(!s.a.given[4] && s.world.rats.hole_count > 0))
+            return true;
+    }
+    if (!s.a.given[4] && s.world.rats.hole_count > 0) {
+        say(s.a, s.situation(5));
+        s.a.given[4] = 1;
+        return true;
+    }
+    return false;
+}
+
 // find_advice's first death (0x47) and cure (0x52), each once; the rooms
 // open (0x6b, between 3 and 6); a treatment the patients will not pay for
 // (0x75, advisor.event_flags 2); deaths near the level's limit (0x41); the
@@ -856,6 +876,9 @@ bool advise_hospital(Situation &s, int id, uint16_t situation)
         s.a.given[8] = 1;
         s.a.event_flags &= ~kAdvisorEventCall;
         return true;
+    case 0x8a:
+    case 0x8b:
+        return advise_ratholes(s);
     default:
         return false;
     }

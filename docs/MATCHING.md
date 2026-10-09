@@ -11,11 +11,10 @@ and comparing against the original.
   matched the demo byte for byte in 9 of 10 functions tested (11.0 matched
   2), which confirms both the compiler family and that the decompiled
   source is faithful to the original.
-- Compiler: Watcom C++ (`wpp386`) 10.5 or later; "register choice" near-misses
-  that predate the `-ot` discovery were recompiled and most now match. 10.0a is ruled out (it loads
-  signed chars with `movsx` where the game uses a dword load and `sar`); 10.5,
-  10.5a and 10.6 generate identical code for everything tested. The project
-  uses 10.6.
+- Compiler: Watcom C++ (`wpp386`) 10.5 or later. 10.0a is ruled out (it
+  loads signed chars with `movsx` where the game uses a dword load and
+  `sar`); 10.5, 10.5a and 10.6 generate identical code for everything
+  tested. The project uses 10.6.
 - Part of the C runtime was built with 10.0a: the printf and stdio modules
   (`fprtf`, `fputs`, `prtf`, `tzset`) match only under it, since 10.6 keeps
   a dead byte store and a `setne` mask that 10.0a does not. A
@@ -26,11 +25,11 @@ and comparing against the original.
   turns optimisation off again, but the "optimise for time" preference set by
   the earlier `-ot` survives and decides register allocation (the value of a
   store in `eax`, a scaled index built with `lea` into a fresh register).
-  With `-d2` alone the allocator prefers the opposite registers. `-d2` both disables optimisation
-  and keeps dead loads such as the value of a discarded `i++`, which the game
-  has. `-zm` puts each function in its own segment; the linker then aligns
-  every function to 4 bytes, padding with `nop`, `mov eax,eax` or
-  `lea eax,[eax+0]`.
+  With `-d2` alone the allocator prefers the opposite registers. `-d2` both
+  disables optimisation and keeps dead loads such as the value of a
+  discarded `i++`, which the game has. `-zm` puts each function in its own
+  segment; the linker then aligns every function to 4 bytes, padding with
+  `nop`, `mov eax,eax` or `lea eax,[eax+0]`.
 - The game is C++: `wcc386` (C) generates different code for the same source.
 - Default calling convention is Watcom register: arguments in `eax`, `edx`,
   `ebx`, `ecx`, then the stack (callee pops, `ret N`). Varargs functions take
@@ -118,9 +117,9 @@ and comparing against the original.
   if/else, and one local reused for another of its type) with a beam
   search scored by objdiff, and prints the best as a diff. From ailss's
   earlier source, `--kinds reuse,decls` finds `_SS_build_amplitude_tables`'
-  fix in about a minute. It rediscovers, for
-  example, the fixes for `item_upgraded` and `can_i_get_to` from their
-  earlier source; review `types` results, which can change behaviour.
+  fix in about a minute. It rediscovers, for example, the fixes for
+  `item_upgraded` and `can_i_get_to` from their earlier source; review
+  `types` results, which can change behaviour.
 
 ## Idioms
 
@@ -501,72 +500,170 @@ predates the tool and uses a separate file instead.
 
 - `_Scale10V` (0xfcad8), `src/lib/clib/scale10v.s`: FDIV checks without
   `pushfd`/`popfd` (C in `scale.c`).
-- `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`: temporaries' registers (98.8%): the `S->EVNT_ptr += len` tails load `len` into edx (ours ebx), the time-signature case keeps `q` in eax and loads `t` into edx (ours reloads `q`), the sysex and note-on paths swap ebx/edx, and the queue-overflow exit rematerialises 0 into esi before `AIL_stop_sequence` (ours ecx after it)
-- `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`: the delta-buffer test reads the byte into bl and copies the pointer to eax (`mov bl,[edi]; mov eax,edi; cmp bl,1`), and `pitch * row` is multiplied in a fresh register
-- `SMACKSOUNDONOFF` (0xe9a20), `src/lib/smk/smackinp.standin.s`: the target keeps `behind` in ebp, spills the `sounds[]` cursor (frame 0xc, ours 8) and loads `LowSoundOnAddr` into a register before testing it
-- `gotoframe_` (0xeab30), `src/lib/smk/smackinp.standin.s`: the reset branch stores f448/f444 before f440 with `f43c` kept in eax, and the readframe tail loads `FrameNum` into edx and `f3c8` into eax (`[eax+edx*4]`, ours the reverse)
-- `SMACKCOLORREMAP` (0xe85b0), `src/lib/smk/smackinp.standin.s`: stack slots of the palette loop locals (e.g. `[esp+0x110]` vs `[esp+0x114]`) and the registers that follow
-- `SMACKTOBUFFERRECT` (0xe8190), `src/lib/smk/smackinp.standin.s`: `NewPalette` is loaded into eax so its `return 0` threads to the shared epilogue (ours edi and a separate return), and `&smk->f3f8` is computed into ecx before left/top are loaded (ours edx, later)
-- `setuptheframe_` (0xea7a0), `src/lib/smk/smackinp.standin.s`: the inlined readframe loads `FrameNum` before `f3c8` (result in the base register), and in the palette loop the target keeps c in cl, src in edx and dst in ebp
-- `soundnext_` (0xe94c0), `src/lib/smk/smackinp.standin.s`: the target spills `silence` (frame 0x1c, ours 0x18) and keeps the inlined nexttrack's mask in edx
-- `SMACKTOSCREEN` (0xe8ab0), `src/lib/smk/smackinp.standin.s`: register allocation throughout (66%): the target keeps pitch in edi, stride in esi and height/p in ebp and spills prevbuf; ours spills p and one more local
-- `SMACKOPEN` (0xe9c80), `src/lib/smk/smackinp.standin.s`: spill slots of largest/start/handle/left/fps/nextsize, the inlined readframe's `FrameNum`/`f3c8` load order, and the inlined nexttrack's mask/index registers (eax/dl, ours edx/al)
-- `W?RecPkt$:IPXHandler$n(pn$IPXPacket$$pn$__3ljac5NETSOCKET$$pn$3$)l` (0xd48f0), `src/lib/bf2/dosipx.standin.s`
+- `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`: temporaries'
+  registers (98.8%): the `S->EVNT_ptr += len` tails load `len` into edx (ours
+  ebx), the time-signature case keeps `q` in eax and loads `t` into edx (ours
+  reloads `q`), the sysex and note-on paths swap ebx/edx, and the
+  queue-overflow exit rematerialises 0 into esi before `AIL_stop_sequence`
+  (ours ecx after it)
+- `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`: the
+  delta-buffer test reads the byte into bl and copies the pointer to eax
+  (`mov bl,[edi]; mov eax,edi; cmp bl,1`), and `pitch * row` is multiplied in
+  a fresh register
+- `SMACKSOUNDONOFF` (0xe9a20), `src/lib/smk/smackinp.standin.s`: the target
+  keeps `behind` in ebp, spills the `sounds[]` cursor (frame 0xc, ours 8) and
+  loads `LowSoundOnAddr` into a register before testing it
+- `gotoframe_` (0xeab30), `src/lib/smk/smackinp.standin.s`: the reset branch
+  stores f448/f444 before f440 with `f43c` kept in eax, and the readframe tail
+  loads `FrameNum` into edx and `f3c8` into eax (`[eax+edx*4]`, ours the
+  reverse)
+- `SMACKCOLORREMAP` (0xe85b0), `src/lib/smk/smackinp.standin.s`: stack slots
+  of the palette loop locals (e.g. `[esp+0x110]` vs `[esp+0x114]`) and the
+  registers that follow
+- `SMACKTOBUFFERRECT` (0xe8190), `src/lib/smk/smackinp.standin.s`:
+  `NewPalette` is loaded into eax so its `return 0` threads to the shared
+  epilogue (ours edi and a separate return), and `&smk->f3f8` is computed into
+  ecx before left/top are loaded (ours edx, later)
+- `setuptheframe_` (0xea7a0), `src/lib/smk/smackinp.standin.s`: the inlined
+  readframe loads `FrameNum` before `f3c8` (result in the base register), and
+  in the palette loop the target keeps c in cl, src in edx and dst in ebp
+- `soundnext_` (0xe94c0), `src/lib/smk/smackinp.standin.s`: the target spills
+  `silence` (frame 0x1c, ours 0x18) and keeps the inlined nexttrack's mask in
+  edx
+- `SMACKTOSCREEN` (0xe8ab0), `src/lib/smk/smackinp.standin.s`: register
+  allocation throughout (66%): the target keeps pitch in edi, stride in esi
+  and height/p in ebp and spills prevbuf; ours spills p and one more local
+- `SMACKOPEN` (0xe9c80), `src/lib/smk/smackinp.standin.s`: spill slots of
+  largest/start/handle/left/fps/nextsize, the inlined readframe's
+  `FrameNum`/`f3c8` load order, and the inlined nexttrack's mask/index
+  registers (eax/dl, ours edx/al)
+- `W?RecPkt$:IPXHandler$n(pn$IPXPacket$$pn$__3ljac5NETSOCKET$$pn$3$)l`
+  (0xd48f0), `src/lib/bf2/dosipx.standin.s`
 - `W?SetupVector$:IPXHandler$n()l` (0xd422c), `src/lib/bf2/dosipx.standin.s`
-- `W?Send$:IPXHandler$n(pn$__3ljac5NETSOCKET$$pn$2$pnucl)v` (0xd4634), `src/lib/bf2/dosipx.standin.s`
+- `W?Send$:IPXHandler$n(pn$__3ljac5NETSOCKET$$pn$2$pnucl)v` (0xd4634),
+  `src/lib/bf2/dosipx.standin.s`
 - `W?Init$:IPXHandler$n()l` (0xd35a0), `src/lib/bf2/dosipx.standin.s`
-- `W?$dt:SerialHandler$n()_` (0xf534c), `src/lib/bf2/dosser.standin.s`: the entry also covers SerialHandler::Init's body, where the size _serial_handler_code_end - _serial_handler_code is computed in other registers
+- `W?$dt:SerialHandler$n()_` (0xf534c), `src/lib/bf2/dosser.standin.s`: the
+  entry also covers SerialHandler::Init's body, where the size
+  _serial_handler_code_end - _serial_handler_code is computed in other
+  registers
 - `W?ReadByte$:SerialHandler$n(l)l` (0xf5714), `src/lib/bf2/dosser.standin.s`
-- `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4), `src/lib/bf2/dosser.standin.s`
-- `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v` (0xdc440), `src/lib/bf2/ipxsp.standin.s`
-- `W?BroadcastSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$)$TbError$$` (0xd9480), `src/lib/bf2/ipxsp.standin.s`
-- `W?EnumerateAndAddPlayers$:IPXServiceProvider$n(pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd8e34), `src/lib/bf2/ipxsp.standin.s`
-- `W?AddPlayerToSession$:IPXServiceProvider$n(pn$__35ct5sCLIENTJOINPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd852c), `src/lib/bf2/ipxsp.standin.s`
-- `W?Enumerate$:IPXServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd6668), `src/lib/bf2/ipxsp.standin.s`
-- `W?ProcessDataMessage$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)ul` (0xdbb58), `src/lib/bf2/ipxsp.standin.s`
-- `W?CheckForSystemMessages$:IPXServiceProvider$n()ul` (0xdac14), `src/lib/bf2/ipxsp.standin.s`
-- `W?ResponsedToSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xda35c), `src/lib/bf2/ipxsp.standin.s`
-- `W?RemoveAbortedPlayer$:IPXServiceProvider$n()$TbError$$` (0xd9a98), `src/lib/bf2/ipxsp.standin.s`
-- `W?Enumerate$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd6e2c), `src/lib/bf2/ipxsp.standin.s`
-- `W?Start$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xd59ec), `src/lib/bf2/ipxsp.standin.s`
-- `W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$` (0xee77c), `src/lib/bf2/modemsp.standin.s`
-- `W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xeea58), `src/lib/bf2/modemsp.standin.s`
-- `W?TwoPlayerCallback$n(ulululpnv)pnv` (0xd309c), `src/lib/bf2/netint2.standin.s`: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
-- `W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$` (0xed6c8), `src/lib/bf2/serialsp.standin.s`
-- `W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul` (0xedf24), `src/lib/bf2/serialsp.standin.s`
-- `W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul` (0xee050), `src/lib/bf2/serialsp.standin.s`
-- `W?EnumeratePlayersForSessionRunning$:ServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd2af8), `src/lib/bf2/sp.standin.s`
-- `W?CheckForDeletedHost$:ServiceProvider$n(pnuc)$TbError$$` (0xd1cc8), `src/lib/bf2/sp.standin.s`
-- `W?Receive$:ServiceProvider$n(ul)$TbError$$` (0xd1e24), `src/lib/bf2/sp.standin.s`
-- `LbDataLoadAll_` (0xbce44), `src/lib/bf1/gdata.standin.s`: the slots of `files` and `ret` are swapped. Any extra local declared first gives the target's order (the size sort then puts `files` second), but it also takes a slot, so the original has one more name in the first chunk that never needs memory
-- `LbDataLoad_` (0xbcd18), `src/lib/bf1/gdata.standin.s`: register choice (target loads operands into registers before compares: ebx for `SLength` in the `LbFileLoadAt` compare, esi in the `SEnd` sum) and the second branch's failed allocation jumps to the first branch's `return -100` block. `do { } while (0);` around the `LbFileLoadAt` `if` alone reproduces the ebx compare (89.55%); no form found for the rest
-- `LbSpriteDrawRemap_` (0xcbe20), `src/lib/bf1/gspr_rmp.standin.s`: 12 byte-local slots permuted. The demo's line table puts the function at lines 16-499 with declarations on lines 17-24, so our source's structure (about 400 lines) is not the original's
-- `LbTextDraw_` (0xc889c), `src/lib/bf1/gtext.standin.s`: the register that zeroes `count` differs per line-break tail, so the tails are merged differently; jump table placement. The target zeroes in ebx in consecutive tails, which lets them cross-jump; ours takes a different register in each tail. No single statement swap or truth-test form changes this
-- `W?LbNetwork_CompleteExchange$n(pnv)$TbError$$` (0xc0640), `src/lib/bf1/opt/netint.standin.s`
-- `W?CompleteMultiPlayerExchange$n(pnv)$TbError$$` (0xc08e4), `src/lib/bf1/opt/netint.standin.s`
-- `W?LbNetwork_Exchange$n(pnv)$TbError$$` (0xc0b74), `src/lib/bf1/opt/netint.standin.s`
-- `W?HostDataCollection$n()$TbError$$` (0xc11b8), `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
-- `W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$` (0xc197c), `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
-- `W?LbNetwork_Send$n(ulpnvul)$TbError$$` (0xcaac0), `src/lib/bf1/opt/netint3.standin.s`: stack slots of buf, len and msg, and register choice in the data loop
-- `W?LbNetwork_Receive$n(ulpnvul)ul` (0xcade4), `src/lib/bf1/opt/netint3.standin.s`: block layout (the target places the RTS handling of the first loop after the request loop's first test) and register choice (len stays in ebp)
-- `InitSound_` (0xdc970), `src/lib/bf2/init_sou.standin.s`: `MaxNumberOfSamples - 1` for `end_sample_id` is computed in ebx, not edx
-- `W?load_music_bank$n(luc)uc` (0xf09c0), `src/lib/bf2/load_mus.standin.s`: the `tab_offset` seek and the `tab_size` read compute `head[bank]`'s offset into the argument register (edx, ebx) where ours uses eax, so `file` moves into eax earlier
-- `W?load_sound_bank$n(luc)uc` (0xf0280), `src/lib/bf2/load_sou.standin.s`: the same for the `data_size` read (ebx)
-- `LoadSounds_` (0xeff70), `src/lib/bf2/load_sou.standin.s`: bank-offset multiply uses eax instead of ecx, and the `xor eax,eax` for `number` comes before the `CurrentSoundBank` load. The flags (`-3`/`-4`/`-5`, `-oe`, `-oa`/`-or`/`-ol`, 10.0a), statement swaps, declaration orders, local types, `BankHead` field signedness and the `n` variable's scope all leave these four sound functions as they are
+- `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4),
+  `src/lib/bf2/dosser.standin.s`
+- `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v`
+  (0xdc440), `src/lib/bf2/ipxsp.standin.s`
+-
+  `W?BroadcastSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$)$TbError$$`
+  (0xd9480), `src/lib/bf2/ipxsp.standin.s`
+-
+  `W?EnumerateAndAddPlayers$:IPXServiceProvider$n(pn$__3ljac5NETSOCKET$$)$TbError$$`
+  (0xd8e34), `src/lib/bf2/ipxsp.standin.s`
+-
+  `W?AddPlayerToSession$:IPXServiceProvider$n(pn$__35ct5sCLIENTJOINPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$`
+  (0xd852c), `src/lib/bf2/ipxsp.standin.s`
+-
+  `W?Enumerate$:IPXServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$`
+  (0xd6668), `src/lib/bf2/ipxsp.standin.s`
+- `W?ProcessDataMessage$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)ul`
+  (0xdbb58), `src/lib/bf2/ipxsp.standin.s`
+- `W?CheckForSystemMessages$:IPXServiceProvider$n()ul` (0xdac14),
+  `src/lib/bf2/ipxsp.standin.s`
+-
+  `W?ResponsedToSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$pn$__3ljac5NETSOCKET$$)$TbError$$`
+  (0xda35c), `src/lib/bf2/ipxsp.standin.s`
+- `W?RemoveAbortedPlayer$:IPXServiceProvider$n()$TbError$$` (0xd9a98),
+  `src/lib/bf2/ipxsp.standin.s`
+-
+  `W?Enumerate$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$`
+  (0xd6e2c), `src/lib/bf2/ipxsp.standin.s`
+-
+  `W?Start$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$`
+  (0xd59ec), `src/lib/bf2/ipxsp.standin.s`
+- `W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$` (0xee77c),
+  `src/lib/bf2/modemsp.standin.s`
+- `W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$`
+  (0xeea58), `src/lib/bf2/modemsp.standin.s`
+- `W?TwoPlayerCallback$n(ulululpnv)pnv` (0xd309c),
+  `src/lib/bf2/netint2.standin.s`: sequenceNumber cached in eax instead of ebx
+  (size stays live in eax in the target)
+- `W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$` (0xed6c8),
+  `src/lib/bf2/serialsp.standin.s`
+- `W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul` (0xedf24),
+  `src/lib/bf2/serialsp.standin.s`
+- `W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul` (0xee050),
+  `src/lib/bf2/serialsp.standin.s`
+-
+  `W?EnumeratePlayersForSessionRunning$:ServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$`
+  (0xd2af8), `src/lib/bf2/sp.standin.s`
+- `W?CheckForDeletedHost$:ServiceProvider$n(pnuc)$TbError$$` (0xd1cc8),
+  `src/lib/bf2/sp.standin.s`
+- `W?Receive$:ServiceProvider$n(ul)$TbError$$` (0xd1e24),
+  `src/lib/bf2/sp.standin.s`
+- `LbDataLoadAll_` (0xbce44), `src/lib/bf1/gdata.standin.s`: the slots of
+  `files` and `ret` are swapped. Any extra local declared first gives the
+  target's order (the size sort then puts `files` second), but it also takes a
+  slot, so the original has one more name in the first chunk that never needs
+  memory
+- `LbDataLoad_` (0xbcd18), `src/lib/bf1/gdata.standin.s`: register choice
+  (target loads operands into registers before compares: ebx for `SLength` in
+  the `LbFileLoadAt` compare, esi in the `SEnd` sum) and the second branch's
+  failed allocation jumps to the first branch's `return -100` block.
+  `do { } while (0);` around the `LbFileLoadAt` `if` alone reproduces the ebx
+  compare (89.55%); no form found for the rest
+- `LbSpriteDrawRemap_` (0xcbe20), `src/lib/bf1/gspr_rmp.standin.s`: 12
+  byte-local slots permuted. The demo's line table puts the function at lines
+  16-499 with declarations on lines 17-24, so our source's structure (about
+  400 lines) is not the original's
+- `LbTextDraw_` (0xc889c), `src/lib/bf1/gtext.standin.s`: the register that
+  zeroes `count` differs per line-break tail, so the tails are merged
+  differently; jump table placement. The target zeroes in ebx in consecutive
+  tails, which lets them cross-jump; ours takes a different register in each
+  tail. No single statement swap or truth-test form changes this
+- `W?LbNetwork_CompleteExchange$n(pnv)$TbError$$` (0xc0640),
+  `src/lib/bf1/opt/netint.standin.s`
+- `W?CompleteMultiPlayerExchange$n(pnv)$TbError$$` (0xc08e4),
+  `src/lib/bf1/opt/netint.standin.s`
+- `W?LbNetwork_Exchange$n(pnv)$TbError$$` (0xc0b74),
+  `src/lib/bf1/opt/netint.standin.s`
+- `W?HostDataCollection$n()$TbError$$` (0xc11b8),
+  `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
+- `W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$` (0xc197c),
+  `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
+- `W?LbNetwork_Send$n(ulpnvul)$TbError$$` (0xcaac0),
+  `src/lib/bf1/opt/netint3.standin.s`: stack slots of buf, len and msg, and
+  register choice in the data loop
+- `W?LbNetwork_Receive$n(ulpnvul)ul` (0xcade4),
+  `src/lib/bf1/opt/netint3.standin.s`: block layout (the target places the RTS
+  handling of the first loop after the request loop's first test) and register
+  choice (len stays in ebp)
+- `InitSound_` (0xdc970), `src/lib/bf2/init_sou.standin.s`:
+  `MaxNumberOfSamples - 1` for `end_sample_id` is computed in ebx, not edx
+- `W?load_music_bank$n(luc)uc` (0xf09c0), `src/lib/bf2/load_mus.standin.s`:
+  the `tab_offset` seek and the `tab_size` read compute `head[bank]`'s offset
+  into the argument register (edx, ebx) where ours uses eax, so `file` moves
+  into eax earlier
+- `W?load_sound_bank$n(luc)uc` (0xf0280), `src/lib/bf2/load_sou.standin.s`:
+  the same for the `data_size` read (ebx)
+- `LoadSounds_` (0xeff70), `src/lib/bf2/load_sou.standin.s`: bank-offset
+  multiply uses eax instead of ecx, and the `xor eax,eax` for `number` comes
+  before the `CurrentSoundBank` load. The flags (`-3`/`-4`/`-5`, `-oe`,
+  `-oa`/`-or`/`-ol`, 10.0a), statement swaps, declaration orders, local types,
+  `BankHead` field signedness and the `n` variable's scope all leave these
+  four sound functions as they are
 
 ## Watcom library modules
 
 Most of the runtime is Watcom's own library code (`CLIB3R.LIB`,
 `MATH387R.LIB`, `PLIB3R.LIB`), mostly 10.6's but with some 10.5 modules
-(`prtf`). The flake downloads the `LIB386` of both CDs from WinWorld's
-archive and provides them as `$WATCOM_LIBS_10_6` and `$WATCOM_LIBS_10_5`. A
+(`prtf`). The flake downloads the `LIB386` of both CDs from their archive.org
+ISOs and provides them as `$WATCOM_LIBS_10_6` and `$WATCOM_LIBS_10_5`. A
 unit whose C does not reproduce its module is built from the library
 instead: its `config/cflags.txt` entry names compiler `lib` (`lib@10.5` for
 the 10.5 CD), the library under `LIB386` and the module, and `tools/cc.py`
-takes that
-module's object (and relocates its calls to its own functions, which the
-library resolved). The C stays as documentation. They count as matched, not
-as decompiled; the list is the `lib` block at the top of `config/cflags.txt`.
+takes that module's object (and relocates its calls to its own functions,
+which the library resolved). The C stays as documentation. They count as
+matched, not as decompiled; the list is the `lib` block in
+`config/cflags.txt`, after the Bullfrog library rules.
 
 `tools/libunit.py SOURCE LIBRARY MODULE [VERSION]` checks a module against
 the EXE before switching a unit: code bytes, where each relocation lands,

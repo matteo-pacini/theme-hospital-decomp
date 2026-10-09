@@ -1,0 +1,24 @@
+# Level 1: furnishing sounds: buying a bench plays SFX_ADDITEMJ (0x5b), the
+# accept button SFX_YESX (0x41); a placement the game refuses plays nothing,
+# a good one SFX_PLACE_R (0x46).
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy a bench (the second entry)
+wait 10
+dump bought
+expect 0x5b=1;
+click 400 300            # accept, and start placing
+wait 10
+dump accept
+expect 0x41=1;
+expect placing: object true
+click-cell 45 75         # public land: refused
+wait 10
+dump refused
+expect-not 0x46=
+click-cell 60 68         # the hospital's land: placed
+wait 20
+dump placed
+expect 0x46=1;
+expect placing: object false

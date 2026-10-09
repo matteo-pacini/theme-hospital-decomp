@@ -1,0 +1,53 @@
+# Level 1: toilets.txt without the toilets, as toilets_none.txt (patients wet
+# themselves and the hospital fills with litter), with the player shooting a
+# rat: the litter makes rat holes, a rat comes out of one, a shot misses (no
+# rat, no hit), then the same rat is hit and killed, floating its number
+# (NUMFX_NUMBER) over it, leaving its mess and counting the hospital's
+# rat_shots and rats_killed.
+# gp_office.txt's commands up to the GP's office opened (turn 113).
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect rathole
+# Expect rat 21 owner=0
+# Expect shoot_rat 0 killed=0
+# Expect shoot_rat 21 killed=1 powerup=0 shots=2 kills=0
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# Furnish the corridor: a drinks machine (cell 9658) and three radiators
+# (9276, 9410, 10047) round the reception desk; the heating at its highest
+# (EV_SET_HEATING 10), so that waiting patients are thirsty and drink.
+160 98 0 0
+161 37 7 1
+162 37 44 3
+163 43 0 0
+164 7 9658 7
+165 7 9276 44
+166 7 9410 44
+167 7 10047 44
+170 79 10 0
+# Rat 21 out of its hole (turn 11550): a shot that misses (no rat, no hit),
+# then the same rat hit (EV_SHOOT_RAT 106, value the rat, arg the powerup |
+# hit << 8).
+11560 106 0 0
+11561 106 21 256

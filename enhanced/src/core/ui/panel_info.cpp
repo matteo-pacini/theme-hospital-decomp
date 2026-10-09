@@ -316,10 +316,17 @@ void mayor_info(InfoBar &b, const World &world, const GameData &data, uint16_t t
 
 } // namespace
 
-void draw_panel_info(const PanelInfoView &view, uint8_t info, uint16_t thing, const Game &game, const GameData &data)
+// display_panel_special_info: the message on the bar's first line.
+void draw_panel_message(const PanelInfoView &view, std::string_view message, const GameData &data)
 {
-    if (!info || thing == 0 || thing >= game.world.things.size())
-        return;
+    InfoBar b{view.layer, view.font, data.text(), data.palette(), panel_icon_at(data, false, 7), 0};
+    info_line(b, message, 1);
+}
+
+uint8_t draw_panel_info(const PanelInfoView &view, uint8_t info, uint16_t thing, const Game &game, const GameData &data)
+{
+    if (!info || thing == 0 || thing >= game.world.things.size() || view.raised)
+        return 0;
     // The text window's origin is panel icon 7's top-left (the game's
     // panel->x/y); the panel is not raised while the pointer is on the map.
     InfoBar b{view.layer, view.font, data.text(), data.palette(), panel_icon_at(data, false, 7), 0};
@@ -345,6 +352,7 @@ void draw_panel_info(const PanelInfoView &view, uint8_t info, uint16_t thing, co
     default:
         break;
     }
+    return info;
 }
 
 } // namespace th

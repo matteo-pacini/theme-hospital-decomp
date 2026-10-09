@@ -418,6 +418,7 @@ void SoundPlayer::play_sound(uint32_t source, int sfx, int x, int y, int screen_
     int volume = sfx_volume_, pan = 0x40;
     if (x != -1 && y != -1)
         place(x, screen_width, sfx_volume_, volume, pan);
+    played_[size_t(sfx)]++;
     play_sample(source, sample, {volume, pan, pitch, d.loop}, d.play_type);
 }
 

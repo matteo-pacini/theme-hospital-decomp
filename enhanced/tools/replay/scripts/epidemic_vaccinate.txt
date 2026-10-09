@@ -5,6 +5,8 @@
 # which the nurse carries out (kTxVaccination).
 # Expect cmd type=130
 # Expect epidemic_cover_up
+# Expect playercall 55 type=3
+# Expect balance 29
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -50,12 +52,16 @@
 # A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
 144 48 2 28
 145 5 6841 28
-# A second GP doctor and a nurse; the call answered, covered up, and a
-# contagious patient queued for vaccination.
-146 48 1 17
-147 5 6970 17
-148 48 0 14
-149 5 6841 14
-24759 10 3 0
-24760 125 11 0
-24761 130 31 0
+# A second GP doctor (applicant 20, cell 6840) hired late and a nurse
+# (applicant 14, cell 6841): a contagious patient is diagnosed (the epidemic
+# call, type 3, is raised at 24404) with others of the same illness inside.
+# The fax opens only while contagious patients are inside, so the answer
+# comes after the call.
+6080 48 1 20
+6081 5 6840 20
+7575 48 0 14
+7576 5 6841 14
+24444 10 3 0
+24445 125 11 0
+# Contagious patient 51 queued for vaccination.
+24446 130 51 0

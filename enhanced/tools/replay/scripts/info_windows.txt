@@ -1,15 +1,24 @@
 # Level 1: treatment.txt, with a handyman whose priorities are changed in his
 # window (EV_ADJUST_HANDYMAN_VALUES, arg the button: 29 litter, 30 plants,
 # 31 repairs), and patients sent home (EV_PERSON_GO_HOME) and made to guess a
-# cure (EV_FORCE_CURE) from their windows, waiting, walking to a queue and
-# in a room with their doctor. Compare up to turn 18000: the year's end
-# awards (from turn 18250) are not ported.
+# cure (EV_FORCE_CURE) from their windows: waiting for a decision, walking to
+# a queue, in a room with their doctor, and in a treatment-machine state (the
+# pharmacy cabinet's energises). The inflator is also used (doctor 12, object
+# 41).
 # gp_office.txt's: a GP's office (62,65)-(66,69) with its door, desk, cabinet
 # and chair, opened, and a doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect handyman_values
+# Expect handyman_values 20 litter=0 plants=0 repair=100 == 1
 # Expect force_cure
+# Expect force_cure 47 == 1
+# Expect force_cure 9 == 1
 # Expect go_home
+# Expect go_home 10 state=68 == 1
+# Expect go_home 5 state=48 == 1
+# Expect go_home 6 state=32 == 1
+# Expect go_home 7 state=32 == 1
+# Expect use_object 12 obj=41 kind=9 == 1
 # Expect drugs
 5 98 0 0
 6 37 11 1
@@ -96,9 +105,9 @@
 240 115 20 29
 241 115 20 29
 242 115 20 31
-# Send home patient 46, waiting; patient 47, on its way to a queue, guesses
-# a cure.
-7350 116 46 0
+# Send home patient 10, waiting for a decision (state 68); patient 47, on its
+# way to a queue, guesses a cure.
+7350 116 10 0
 7420 134 47 0
 # Repairs up 12 times running, to 100 (from 94 the others drop to 0); then
 # litter and plants up.
@@ -116,10 +125,13 @@
 9011 115 20 31
 9500 115 20 29
 9501 115 20 30
-# Patient 26, in the GP's office with its doctor, sent home; 9, in the
-# inflator, guesses a cure; then 50, walking to a queue, guesses one and 5,
-# waiting, is sent home.
-12550 116 26 0
-12560 134 21 0
-12600 134 50 0
-12700 116 5 0
+# Patient 21 is sent home on its way to a queue; patient 6, with its doctor
+# in the GP's office (state 32), is sent home; patient 9, walking to a queue
+# (state 36), guesses a cure; patient 7, with its doctor (state 32), is sent
+# home; then patient 5, at the pharmacy cabinet (energises, state 48), is
+# sent home.
+11100 116 21 0
+12550 116 6 0
+12560 134 9 0
+12700 116 7 0
+13700 116 5 0

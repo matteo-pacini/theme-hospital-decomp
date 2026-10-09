@@ -31,7 +31,6 @@ constexpr uint8_t kSfxWrong2 = 0x08;
 constexpr uint8_t kSfxNo4 = 0x42;
 constexpr uint8_t kSfxSelectX = 0x43;
 constexpr uint8_t kSfxHighlight5 = 0x44;
-constexpr uint8_t kSfxResearch = 0x75;
 constexpr uint8_t kSfxPageTurn2 = 0xa8;
 constexpr uint8_t kSfxBonusAll2 = 0xb4;
 constexpr uint8_t kSfxBonus2 = 0xb8;
@@ -1144,12 +1143,13 @@ class Frame
             load_pic();
             c_.state = 1;
             c_.value = 0;
-            sound(kSfxResearch);
+            r_.research_sound = true;
             break;
         case 1:
             copy_screen();
             break;
         case 2:
+            r_.research_stop = true;
             return_from_screen();
             break;
         }

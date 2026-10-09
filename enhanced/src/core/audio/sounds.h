@@ -37,6 +37,7 @@ enum : uint8_t {
     kSfxNo4 = 0x42,         // SFX_NO4
     kSfxSelectX = 0x43,     // SFX_SELECTX: a click acted on
     kSfxHighlight5 = 0x44,  // SFX_HLIGHT5: a menu item under the mouse
+    kSfxResearch = 0x75,    // SFX_RESEARCH: the research screen's bubbling
     kSfxPickup = 0x99,      // SFX_PICKUP: a member of staff picked up
     kSfxSack = 0xaa,        // SFX_SACK: a member of staff sacked
     kSfxStaffDemand = 0x9a, // SFX_STAFF_DEMAND: a member of staff's demand opens
@@ -236,6 +237,11 @@ class SoundPlayer
     // advancing them; voices that end are freed.
     void mix(float *out, int frames, int rate);
 
+    // How often play_sound has played each sound effect (SFX_*, kSfxCount
+    // entries) since the player was made: the debug state text lists the
+    // nonzero ones so tests can see a sound was played.
+    const std::array<uint32_t, kSfxCount> &played_counts() const { return played_; }
+
     // The presentation's random generator (saferand's safeseed). The game
     // seeds it with the simulation's seed when a level starts.
     uint32_t safeseed = 0x546b2;
@@ -266,6 +272,7 @@ class SoundPlayer
     int sfx_volume_ = kMaxVolume;
     std::array<Voice, kVoices> voices_{};
     std::array<uint8_t, kThingCount> last_sound_{};
+    std::array<uint32_t, kSfxCount> played_{};
     int visible_people_ = 0;
     int crowd_volume_ = 0;
     int clock_volume_ = 0;

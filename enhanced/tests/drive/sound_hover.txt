@@ -1,0 +1,15 @@
+# Level 1: the buy objects list's hover beeps (SFX_HLIGHT5 0x44) when the
+# entry under the pointer changes.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+dump opened
+expect-not 0x44=
+move 328 119             # over the third entry
+wait 10
+dump hover
+expect 0x44=1;
+move 328 100             # over the second entry
+wait 10
+dump hover2
+expect 0x44=2;

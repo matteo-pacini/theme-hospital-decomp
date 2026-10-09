@@ -1,0 +1,20 @@
+# Level 6: a scroll that would take the view's centre out of the level's
+# scroll area stops the view dead on both axes (src/cakewin.cpp's move_windows
+# through check_if_point_beyond_scroll_limit). The pointer held in the
+# top-right corner scrolls up and right together, a diagonal the view's whole
+# unclamped point is tested with: it stops at the area's edge and the row
+# stays put. A per-axis test (each axis moved on its own) would instead slide
+# the camera along the edge, here to 499,1162.
+# Size 640x480
+wait 60
+dump start
+expect camera: -544,1664
+move 639 0               # the top-right corner: up and right at once
+wait 400
+dump limit
+expect camera: 475,1154
+move 320 120             # back to the centre: no more scrolling
+wait 60
+dump held
+expect camera: 475,1154
+quit

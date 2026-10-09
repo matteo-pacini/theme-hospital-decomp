@@ -87,8 +87,11 @@ uint16_t alter_applicant(const World &world, bool forward, uint16_t cur, uint16_
 // EV_HIRE_NEXT_APPLICANT when there is another applicant; hire
 // EV_MARK_EMPLOYING when a kind is chosen and the balance is positive and
 // covers the wage; close the command of hire_staff_cancel. Otherwise (and
-// for clicks the game refuses with a sound) EV_NONE.
-Event hire_staff_click(const HireStaff &hire, const InterfaceEvents &events, const Game &game);
+// for clicks the game refuses with a sound) EV_NONE. With `sounds`, the
+// sounds the click plays (SFX_SELECTX, SFX_PAGETUR2, SFX_YESX, SFX_WRONG2,
+// SFX_NO4) are appended to it.
+Event hire_staff_click(const HireStaff &hire, const InterfaceEvents &events, const Game &game,
+                       std::vector<uint8_t> *sounds = nullptr);
 
 // setup_abort_all_requesters (0x1b1f8) while hiring or placing: Escape, a
 // right click on the map while placing, or the requester's close button.

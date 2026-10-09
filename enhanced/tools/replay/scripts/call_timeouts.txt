@@ -47,10 +47,14 @@
 141 1 0 0
 142 48 0 3
 143 5 10044 3
-# The GP's office door and the ward's doors are picked up.
-7000 68 31 0
-7000 68 36 1
-# Expect call_person_again 11 action=40 == 5
+# The GP's office door and the ward's doors are picked up. The GP doctor's
+# patient is 40 (its call at turn 6819) and the ward nurse's is 10 (its call
+# at 6584); the ward door (36) is dropped at 6585, right after that call, and
+# the GP door (31) at 6700, before patient 40 reaches it at 6801, so both
+# calls time out. The GP doctor's call_retries draw is 4.
+6585 68 36 1
+6700 68 31 0
+# Expect call_person_again 11 action=40 == 4
 # Expect call_person_again 3 action=40 >= 4
 # Expect stop_waiting
 # Expect start_going >= 2

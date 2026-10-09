@@ -340,7 +340,7 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
         if (int16_t(w.warmth) > 60)
             w.warmth = 60;
         w.cash -= 20;
-        create_numfx(world, kNumfxMoney, 20, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
+        create_numfx(world, kNumfxMoney, 20, uint16_t(w.x.tile + (w.y.tile << 7)), colour_red(world), 0x40);
         if (world.game)
             world.game->progress.award_counts.cans_of_coke++;
         if (w.owner == 0)
@@ -349,7 +349,7 @@ void complex_success(World &world, uint16_t id, uint16_t kind)
     case 4:
         w.happiness++;
         w.cash -= 10;
-        create_numfx(world, kNumfxMoney, 10, uint16_t(w.x.tile + (w.y.tile << 7)), kColourRed, 0x40);
+        create_numfx(world, kNumfxMoney, 10, uint16_t(w.x.tile + (w.y.tile << 7)), colour_red(world), 0x40);
         if (w.owner == 0)
             world.jukebox_income += 10;
         break;

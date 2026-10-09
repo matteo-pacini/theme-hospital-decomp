@@ -1,0 +1,38 @@
+# Level 1: the edit room requester's object list with more than one row (a
+# GP's office). Moving over a row beeps (SFX_HLIGHT5 0x44) and clicking one
+# selects it to place next (SFX_SELECTX 0x43).
+wait 60
+click 228 453            # panel: build room
+wait 10
+click 240 70             # Diagnostic
+wait 10
+click 380 87             # GP's Office
+wait 10
+cell 56 64
+wait 5
+down left
+wait 5
+cell 60 68
+wait 10
+up left
+wait 10
+click 580 148            # confirm the blueprint
+wait 10
+click-cell 56 66         # the door
+wait 10
+click 580 148            # confirm the doors
+wait 30
+dump doors
+expect 0x44=1;
+move 505 189             # over the first row: SFX_HLIGHT5
+wait 10
+dump h0
+expect 0x44=2;
+move 505 218             # over the second row: SFX_HLIGHT5
+wait 10
+dump h1
+expect 0x44=3;
+click 505 218            # select it: SFX_SELECTX
+wait 10
+dump c1
+expect 0x43=3;

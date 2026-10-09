@@ -1,0 +1,19 @@
+# Level 1: a panel button. A good click plays SFX_SELECTX (0x43); one the
+# game refuses while a member of staff is being placed plays SFX_WRONG2
+# (0x08) and does nothing.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+dump kind
+expect 0x43=2;
+click 334 323            # hire the applicant: now placing
+wait 10
+dump held
+expect staff 11 type=4(staff) subtype=1(doctor) state=68(held)
+click 228 453            # panel: build room, refused while placing
+wait 10
+dump refused
+expect 0x08=1;
+expect staff 11 type=4(staff) subtype=1(doctor) state=68(held)

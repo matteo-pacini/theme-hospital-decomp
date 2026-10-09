@@ -9,7 +9,7 @@ click 334 323            # hire the shown applicant
 wait 10
 dump held
 expect staff 11 type=4(staff) subtype=1(doctor) state=68(held)
-click-cell 45 66         # public land: refused
+click-cell 45 75         # public land: refused
 wait 10
 dump refused
 expect staff 11 type=4(staff) subtype=1(doctor) state=68(held)

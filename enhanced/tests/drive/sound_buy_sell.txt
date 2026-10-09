@@ -1,0 +1,18 @@
+# Level 1: the buy objects requester's list. Buying an entry plays
+# SFX_ADDITEMJ (0x5b), selling it back with a right click SFX_DELITEMJ
+# (0x5c), and an entry with nothing on the list SFX_WRONG2 (0x08).
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy a bench (a left click buys)
+wait 10
+dump bought
+expect 0x5b=1;
+click 328 100 right      # sell it back
+wait 10
+dump sold
+expect 0x5c=1;
+click 328 100 right      # nothing left to sell
+wait 10
+dump empty
+expect 0x08=1;

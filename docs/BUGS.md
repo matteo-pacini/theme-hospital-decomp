@@ -401,6 +401,17 @@ in work, and the comparison may be deliberate.
 
 ## Memory & data layout
 
+### init_edit_room (src/build.cpp)
+
+**Bug** · `0x27920`
+
+It computes the room's far corner as `x + width - 1` in a `u8`. For an
+empty room (width 0, as before `commit_doors` has finished) that underflows
+to 0xFF, so `mark_blueprint_on_map` writes past the map into the thing table
+and creates ghost things. The port computes it in an `int`, so a replay
+that opens a room that early cannot agree
+(`enhanced/tools/replay/scripts/win_level1.txt` waits for it).
+
 ### read_level_number (src/io.cpp)
 
 **Bug** · `0x229b0`

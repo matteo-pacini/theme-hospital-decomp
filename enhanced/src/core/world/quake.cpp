@@ -38,20 +38,6 @@ constexpr std::array<std::array<int8_t, 2>, 16> kEarthquakeTable = {{
 // Object states (OS_*): a wreck taken off the map.
 constexpr uint8_t kObjectRemoved = 0x12;
 
-// What mode 1 and 2 of disaster_peeps do to a patient whose kind allows it
-// (abilities[][5], 1 for the first two kinds).
-void disaster_peeps(World &world, uint8_t mode)
-{
-    for (Thing &p : world.things) {
-        if (p.type != kThingPatient || (p.subtype != 0 && p.subtype != 1))
-            continue;
-        if (mode == 1)
-            p.person_flags |= kPfQuakeShaken;
-        else if (mode == 2)
-            p.person_flags &= ~kPfQuakeShaken;
-    }
-}
-
 // shake_screen (0xa30f0): moves the view by dx, dy unless that would pass
 // the scroll limit. The port keeps the displacement in World::shake_x/y,
 // which the interface adds to its camera; its scroll limit is not applied.
@@ -163,7 +149,7 @@ void generate_quake(Game &game)
             d.quake_ramp = 1;
             d.quake_phase = 3;
             d.quake_timer = game.turn_count + 200;
-            disaster_peeps(world, 1);
+            disaster_peeps(world, game.anims(), game.settings(), 1, -1, game.turn_count);
             world.machine_announcements.push_back(uint8_t(quake_saferand(d) % 3 + 0xab));
         }
         break;
@@ -176,7 +162,7 @@ void generate_quake(Game &game)
         break;
     case 4:
         if ((d.quake_ramp == -1 && d.quake_amplitude < 2) || game.turn_count > d.quake_timer) {
-            disaster_peeps(world, 2);
+            disaster_peeps(world, game.anims(), game.settings(), 2, -1, game.turn_count);
             d.quake_phase = 0;
             setup_next_quake(d, world, game.settings(), game.date);
         }

@@ -2,8 +2,10 @@
 
 #include "common.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -38,15 +40,27 @@ class FakeHost : public th::DriveHost
     {
         calls.push_back(std::format("{} button {} {}", frame, button, down ? "down" : "up"));
     }
-    bool drive_key(std::string_view name, bool down) override
+    bool drive_key(std::string_view name, bool down, uint16_t mods) override
     {
-        calls.push_back(std::format("{} key {} {}", frame, name, down ? "down" : "up"));
+        calls.push_back(std::format("{} key {} {} {}", frame, name, down ? "down" : "up", mods));
         return name != "Nonsense";
     }
+    bool drive_text(std::string_view text) override
+    {
+        calls.push_back(std::format("{} type {}", frame, text));
+        return true;
+    }
     void drive_screenshot(const std::filesystem::path &) override { calls.push_back(std::format("{} shot", frame)); }
+    void drive_screenshot_ui(const std::filesystem::path &) override
+    {
+        calls.push_back(std::format("{} shot-ui", frame));
+    }
     std::string drive_state() const override { return state; }
+    std::string drive_report_dir() const override { return report_dir; }
     int64_t drive_turn() const override { return turn; }
     bool drive_staff_demand(uint16_t id) override { return id != 0; }
+
+    std::string report_dir;
 };
 
 // Runs the driver to its end, one frame per call that asks for one; the
@@ -77,12 +91,44 @@ void test_drive_script()
     d.end_input();
     FakeHost host;
     int frames = run_to_end(d, host);
-    std::vector<std::string> want = {"2 move 10,20",     "3 button 1 down", "7 button 1 up",        "9 key Escape down",
-                                     "13 key Escape up", "21 move 700,10",  "21 key Nonsense down", "21 shot"};
+    std::vector<std::string> want = {
+        "2 move 10,20",       "3 button 1 down", "7 button 1 up",          "9 key Escape down 0",
+        "13 key Escape up 0", "21 move 700,10",  "21 key Nonsense down 0", "21 shot"};
     CHECK(host.calls == want);
     // The failed expectation, the click off the screen and the unknown key;
     // quit stops before the last wait.
     CHECK(d.failures() == 3);
     CHECK(frames == 22);
     CHECK(d.finished());
+}
+
+// The commands the quick report needs: a key with modifiers, typed text, a
+// screenshot after ImGui, and the report checks.
+void test_drive_quick_report()
+{
+    std::filesystem::path out = std::filesystem::temp_directory_path() / "th_drive_quick";
+    std::filesystem::remove_all(out);
+    std::filesystem::create_directories(out);
+    th::Driver d(out, false);
+    for (const char *line : {"key Shift+F10", "type hello world", "screenshot-ui box", "expect-report hello",
+                             "expect-report-shot shot", "expect-report-none", "quit"})
+        d.add_line(line);
+    d.end_input();
+    FakeHost host;
+    host.report_dir = (out / "report").string();
+    std::filesystem::create_directories(host.report_dir);
+    std::ofstream(std::filesystem::path(host.report_dir) / "note.txt") << "a hello b\n";
+    std::ofstream(std::filesystem::path(host.report_dir) / "screenshot.png", std::ios::binary) << "PNGDATA";
+    std::ofstream(out / "shot.png", std::ios::binary) << "PNGDATA";
+    run_to_end(d, host);
+    auto has = [&](const char *text) {
+        return std::any_of(host.calls.begin(), host.calls.end(),
+                           [text](const std::string &call) { return call.find(text) != std::string::npos; });
+    };
+    CHECK(has("key F10 down 1"));
+    CHECK(has("key F10 up 0"));
+    CHECK(has("type hello world"));
+    CHECK(has("shot-ui"));
+    // expect-report and expect-report-shot pass; expect-report-none fails.
+    CHECK(d.failures() == 1);
 }

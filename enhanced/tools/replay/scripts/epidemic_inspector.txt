@@ -3,6 +3,7 @@
 # diagnosed contagious patient: the epidemic is covered up, the health
 # inspector visits and judges it, and its result call is answered
 # (EV_ANSWER_PLAYERCALL 5, subject 3).
+# Expect playercall 50 type=3
 # Expect choice 11
 # Expect rep 0 event=15
 # Expect get_playercall 0 type=5
@@ -51,10 +52,14 @@
 # A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
 144 48 2 28
 145 5 6841 28
-# A second GP doctor; the call answered, covered up, and the inspector
-# result call answered.
-146 48 1 20
-147 5 6840 20
-24819 10 3 0
-24820 125 11 0
-26691 10 5 0
+# A second GP doctor (applicant 20, cell 6840) hired late: a contagious
+# patient is diagnosed (the epidemic call is raised at 24568) with others of
+# the same illness inside; the call is answered and covered up, and the
+# inspector's result call (raised at 25565) answered. The fax opens only
+# while contagious patients are inside, so the answer must come after the
+# call.
+6080 48 1 20
+6081 5 6840 20
+24608 10 3 0
+24609 125 11 0
+25566 10 5 0

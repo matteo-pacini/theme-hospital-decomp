@@ -1,16 +1,26 @@
 # Level 1
 # Turns 18250
 # Wins level 1 at the first year end (18250): staff_room_none.txt's hospital
-# (10 cures, 44% diagnosed, reputation 641, balance 26923) with the policy's
+# (10 cures, 56% diagnosed, reputation 666, balance 26914) with the policy's
 # guess-a-cure threshold left at its default 90 (staff_room_none sets it to
 # 10, which guesses patients before their illness is found and leaves the
-# diagnosed criterion at 34%, below the 40% level 1 needs), plus four more
-# inflation rooms (62,60), (68,60), (73,60) and (73,65) built just before the
-# year end, taking hospital_value to 68405 (>= 55000). The rooms are built
-# late so they do not disturb the year's patient flow. The win is detected by
-# check_game_over at 18250 (winlose_result 1, next_level_offer 16350) and
-# calls try_bonus_level, which grants no bonus level here: that needs the rat
-# counters (rats are not ported) or the fax cheat's debug.force_bonus_level.
+# diagnosed criterion at 34%, below the 40% level 1 needs), two more doctors
+# (applicants 15 and 16) at cell 10044, plus three more inflation rooms
+# (68,60), (73,60) and (73,65) built just before the year end, taking
+# hospital_value to 65405 (>= 55000). The rooms are built late so they do not
+# disturb the year's patient flow, and each opens only after its floor is
+# clear (commit_doors finished): the original's init_edit_room computes
+# x + width - 1 in u8, which underflows to 0xFF for an empty room, so opening
+# a room while commit_doors still waits (build.room reset to 0) makes the
+# original's mark_blueprint_on_map write past the map into the thing table and
+# grow ghost things; the port does it safely, so the two can never agree
+# there. A fourth site (62,60) is left out for that reason: a patient stands
+# on its floor, so its commit_doors never finishes.
+# The win is detected by check_game_over at
+# 18250 (winlose_result 1, next_level_offer 16050) and calls try_bonus_level,
+# which grants no bonus level here: the rat counters do not reach the level 1
+# threshold. The two extra doctors keep the year's cures and diagnosed share
+# at the level's targets.
 # Based on treatment.txt, then a handyman, the policy sending staff for a
 # rest from tiredness 50 and a doctor and the handyman ordered to rest
 # (EV_ORDER_REST), with no staff room. gp_office.txt's rooms: a GP's office,
@@ -93,6 +103,13 @@
 200 1 0 0
 201 48 1 12
 202 5 10044 12
+# Two more doctors (applicants 15 and 16) keep the year's diagnosis and cure
+# counts at the level 1 targets; the numbers and the cell 10044 corridor are
+# the ones the doctors at 142 and 201 use.
+203 48 1 15
+204 5 10044 15
+205 48 1 16
+206 5 10044 16
 # Policy (EV_SET_POLICY): send home at 0%, keep the default guess-a-cure
 # threshold of 90% so patients are diagnosed rather than guessed early.
 220 113 1 0
@@ -105,47 +122,42 @@
 # The first doctor and the handyman ordered to rest.
 3000 94 11 0
 3001 94 19 0
+# Three more inflation rooms, built just before the year end so they do not
+# disturb the year's patient flow. A fourth site (62,60) is left out: a
+# patient stands on its floor, so its commit_doors never finishes, and
+# opening it would make the original's init_edit_room build an empty room and
+# underflow (see the header). The remaining three floors clear, so each opens
+# safely, and their value still passes level 1's hospital_value criterion.
 17900 55 0 0
 17901 53 17 17
-17902 2 7742 0
-17903 2 8130 0
-17904 8 8130 0
+17902 2 7748 0
+17903 2 8135 0
+17904 8 8135 0
 17905 18 0 0
-17906 26 7869 0
+17906 26 7875 0
 17907 3 0 0
 17908 4 17 0
-17909 7 7873 9
+17909 7 7878 9
 17910 1 0 0
 17912 55 0 0
 17913 53 17 17
-17914 2 7748 0
-17915 2 8135 0
-17916 8 8135 0
+17914 2 8393 0
+17915 2 8780 0
+17916 8 8780 0
 17917 18 0 0
-17918 26 7875 0
+17918 26 8520 0
 17919 3 0 0
 17920 4 17 0
-17921 7 7878 9
+17921 7 8523 9
 17922 1 0 0
 17924 55 0 0
 17925 53 17 17
-17926 2 8393 0
-17927 2 8780 0
-17928 8 8780 0
+17926 2 7753 0
+17927 2 8140 0
+17928 8 8140 0
 17929 18 0 0
-17930 26 8520 0
+17930 26 7880 0
 17931 3 0 0
 17932 4 17 0
-17933 7 8523 9
+17933 7 7883 9
 17934 1 0 0
-17936 55 0 0
-17937 53 17 17
-17938 2 7753 0
-17939 2 8140 0
-17940 8 8140 0
-17941 18 0 0
-17942 26 7880 0
-17943 3 0 0
-17944 4 17 0
-17945 7 7883 9
-17946 1 0 0

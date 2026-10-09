@@ -32,18 +32,18 @@ constexpr uint64_t kLayoutHash =
     layout_hash<Thing, RoomInfo, MapCell, ObjectPlacing, BuildState, Finance, Advice, ArrivalState, TownLand,
                 HospitalSettings, StaffMarket, Disasters, Event, Date, World::Pager, World::PlayerCall,
                 World::ThingPager, World::Emergency, World::Epidemic, PanelPopups, AdCounts, Game::ChoiceScreen,
-                Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd, void *, bool, int>();
+                Game::FaxScreen, Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd, void *, bool, int>();
 
 // Fields of World, Game and the structures they hold that are not copied
 // as a whole must each be listed below; on the build the code is written on,
 // these sizes catch one added without being listed.
 #if defined(__GLIBCXX__) && defined(__x86_64__)
-static_assert(sizeof(World) == 139584, "World changed: list its new fields in snapshot.cpp");
-static_assert(sizeof(Building) == 224, "Building changed: list its new fields in snapshot.cpp");
-static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp");
-static_assert(sizeof(Balance) == 3776, "Balance changed: list its new fields in snapshot.cpp");
-static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp");
-static_assert(sizeof(Game) == 317712, "Game changed: list its new fields in snapshot.cpp");
+static_assert(sizeof(World) == 139816, "World changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Building) == 224, "Building changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Balance) == 3776, "Balance changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Game) == 317984, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 #endif
 
 class Writer
@@ -222,6 +222,19 @@ template <typename IO, typename W> void world_sound_fields(IO &io, W &w)
     io(w.treatment_sounds);
     io(w.machine_sounds);
     io(w.machine_announcements);
+    io(w.rat_sounds);
+}
+
+// World's mishaps and the random disaster's state (World::disaster_*).
+template <typename IO, typename W> void world_disaster_fields(IO &io, W &w)
+{
+    io(w.mishaps);
+    io(w.machine_exploded);
+    io(w.disaster_counter);
+    io(w.disaster_kind);
+    io(w.disaster_timer);
+    io(w.saved_heating);
+    io(w.heating_broken);
 }
 
 template <typename IO, typename W> void world_fields(IO &io, W &w)
@@ -253,6 +266,7 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.drinks_income);
     io(w.jukebox_income);
     io(w.held_staff);
+    io(w.fax_palette);
     io(w.held_staff_tile);
     io(w.idle_nurses);
     building_fields(io, w.building);
@@ -265,14 +279,14 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.popups);
     io(w.counts);
     io(w.litter_count);
+    io(w.rats);
     io(w.repair_pager);
     io(w.plant_pager);
     io(w.emergency);
     io(w.mayor);
     io(w.epidemic);
     world_sound_fields(io, w);
-    io(w.mishaps);
-    io(w.machine_exploded);
+    world_disaster_fields(io, w);
     io(w.research);
     io(w.announce);
 }
@@ -328,6 +342,9 @@ template <typename IO, typename G> void game_fields(IO &io, G &g)
     io(g.disasters);
     io(g.event);
     io(g.choice_screen);
+    io(g.fax_screen);
+    io(g.fax_pointer);
+    io(g.fax_key);
     io(g.command_log);
     io(g.events.enabled);
     io(g.events.rand);
@@ -341,6 +358,11 @@ template <typename IO, typename G> void game_fields(IO &io, G &g)
 uint64_t snapshot_build_id()
 {
     return TH_SNAPSHOT_SOURCE_HASH ^ kLayoutHash;
+}
+
+uint64_t snapshot_layout_hash()
+{
+    return kLayoutHash;
 }
 
 bool save_snapshot(const Game &game, std::vector<uint8_t> &out)
@@ -360,7 +382,11 @@ bool save_snapshot(const Game &game, std::vector<uint8_t> &out)
     return true;
 }
 
-bool load_snapshot(Game &game, std::span<const uint8_t> data, const GameData &gamedata, std::string *error)
+// The snapshot's payload, with or without the build id check: a save file
+// checks its own format and layout (savegame.h) and so loads a payload of
+// the same layout written by another build.
+bool load_snapshot_impl(Game &game, std::span<const uint8_t> data, const GameData &gamedata, bool check_build,
+                        std::string *error)
 {
     auto fail = [&](std::string why) {
         if (error)
@@ -376,7 +402,7 @@ bool load_snapshot(Game &game, std::span<const uint8_t> data, const GameData &ga
     r(level_number);
     if (!r.ok() || magic != kMagic)
         return fail("not a snapshot");
-    if (build != snapshot_build_id())
+    if (check_build && build != snapshot_build_id())
         return fail(std::format("snapshot of build {:016x}, this is build {:016x}: load it with the build that "
                                 "wrote it",
                                 build, snapshot_build_id()));
@@ -400,6 +426,16 @@ bool load_snapshot(Game &game, std::span<const uint8_t> data, const GameData &ga
     game.staff_complexes_ = &gamedata.staff_complexes();
     game.connect_world();
     return true;
+}
+
+bool load_snapshot(Game &game, std::span<const uint8_t> data, const GameData &gamedata, std::string *error)
+{
+    return load_snapshot_impl(game, data, gamedata, true, error);
+}
+
+bool load_snapshot_payload(Game &game, std::span<const uint8_t> data, const GameData &gamedata, std::string *error)
+{
+    return load_snapshot_impl(game, data, gamedata, false, error);
 }
 
 } // namespace th

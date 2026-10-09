@@ -394,7 +394,8 @@ bool apply_town_event(Game &game, TownLand &land, const Event &event)
         buy_land(game, land, event.value);
         return true;
     case EV_SET_HEATING:
-        game.finance.heating_level = uint8_t(event.value);
+        if (!game.world.heating_broken)
+            game.finance.heating_level = uint8_t(event.value);
         return true;
     default:
         return false;

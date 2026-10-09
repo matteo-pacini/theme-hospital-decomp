@@ -123,8 +123,12 @@ struct InterfaceEvents {
     // then shows the normal pointer and process_mouse ignores the buttons,
     // so the panel and the map must not act on them.
     bool mouse_on_window = false;
-    // The yes/no requester's answer this frame.
+    // The yes/no requester's answer this frame. `yes_no_cancel` is set when
+    // it came from Escape or a right click outside the window
+    // (req13_cancel_check) rather than the No button: the game plays no
+    // sound for that path.
     YesNoAnswer yes_no = YesNoAnswer::None;
+    bool yes_no_cancel = false;
     // The button whose callback ran (debug.last_button counts from 1 in the
     // window's list), in window `triggered_window`; -1 if none.
     int triggered_window = -1;

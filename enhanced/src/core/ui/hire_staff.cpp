@@ -20,6 +20,13 @@ namespace
 
 constexpr int kHireWindow = int(Requester::HireStaff);
 
+// SFX_* (include/enums.h) req2 plays.
+constexpr uint8_t kSfxWrong2 = 0x08;
+constexpr uint8_t kSfxYesX = 0x41;
+constexpr uint8_t kSfxNo4 = 0x42;
+constexpr uint8_t kSfxSelectX = 0x43;
+constexpr uint8_t kSfxPageTurn2 = 0xa8;
+
 // hires_requester_buttons[2-9] (src/reqbut.cpp): the hire staff
 // requester's buttons, counted from 1 in its list.
 constexpr int kDoctorButton = 0x26;
@@ -215,42 +222,96 @@ uint16_t alter_applicant(const World &world, bool forward, uint16_t cur, uint16_
     return cur;
 }
 
-Event hire_staff_click(const HireStaff &hire, const InterfaceEvents &events, const Game &game)
+namespace
+{
+
+// req2's kind button sound: SFX_SELECTX unless the kind is already shown.
+uint8_t hire_kind_sfx(const HireStaff &hire, int kind)
+{
+    return hire.mode == 2 && hire.kind == kind ? 0 : kSfxSelectX;
+}
+
+// req2's hire button: EV_MARK_EMPLOYING and SFX_YESX if affordable, else
+// nothing and SFX_WRONG2.
+Event hire_hire_button(const HireStaff &hire, const Game &game, std::vector<uint8_t> &sounds)
+{
+    const World &world = game.world;
+    if (hire.shown && hire.mode == 2 && hire.shown < world.things.size()) {
+        int32_t salary = world.things[hire.shown].salary;
+        if (game.balance >= salary && game.balance > 0) {
+            sounds.push_back(kSfxYesX);
+            return {EV_MARK_EMPLOYING, hire.kind, 0, hire.shown};
+        }
+    }
+    sounds.push_back(kSfxWrong2);
+    return {};
+}
+
+// req2's page arrows: EV_HIRE_NEXT_APPLICANT and SFX_PAGETUR2 when there is
+// another applicant that way, else nothing and SFX_WRONG2.
+Event hire_arrow_button(const HireStaff &hire, const World &world, bool forward, std::vector<uint8_t> &sounds)
+{
+    if (hire.shown) {
+        uint16_t id = alter_applicant(world, forward, hire.shown, hire.kind);
+        if (id && id != hire.shown) {
+            sounds.push_back(kSfxPageTurn2);
+            return {EV_HIRE_NEXT_APPLICANT, uint16_t(forward)};
+        }
+    }
+    sounds.push_back(kSfxWrong2);
+    return {};
+}
+
+} // namespace
+
+Event hire_staff_click(const HireStaff &hire, const InterfaceEvents &events, const Game &game,
+                       std::vector<uint8_t> *sounds)
 {
     Event e;
     if (events.triggered_window != kHireWindow)
         return e;
+    std::vector<uint8_t> out;
     const World &world = game.world;
     switch (events.triggered_button) {
     case kDoctorButton:
-        return {EV_HIRE_SELECT_KIND, kStaffDoctor};
+        if (uint8_t sfx = hire_kind_sfx(hire, kStaffDoctor))
+            out.push_back(sfx);
+        e = {EV_HIRE_SELECT_KIND, kStaffDoctor};
+        break;
     case kNurseButton:
-        return {EV_HIRE_SELECT_KIND, kStaffNurse};
+        if (uint8_t sfx = hire_kind_sfx(hire, kStaffNurse))
+            out.push_back(sfx);
+        e = {EV_HIRE_SELECT_KIND, kStaffNurse};
+        break;
     case kReceptionistButton:
-        return {EV_HIRE_SELECT_KIND, kStaffReceptionist};
+        if (uint8_t sfx = hire_kind_sfx(hire, kStaffReceptionist))
+            out.push_back(sfx);
+        e = {EV_HIRE_SELECT_KIND, kStaffReceptionist};
+        break;
     case kHandymanButton:
-        return {EV_HIRE_SELECT_KIND, kStaffHandyman};
+        if (uint8_t sfx = hire_kind_sfx(hire, kStaffHandyman))
+            out.push_back(sfx);
+        e = {EV_HIRE_SELECT_KIND, kStaffHandyman};
+        break;
     case kHireButton:
-        if (hire.shown && hire.mode == 2 && hire.shown < world.things.size()) {
-            int32_t salary = world.things[hire.shown].salary;
-            if (game.balance >= salary && game.balance > 0)
-                e = {EV_MARK_EMPLOYING, hire.kind, 0, hire.shown};
-        }
-        return e;
+        e = hire_hire_button(hire, game, out);
+        break;
     case kPreviousButton:
+        e = hire_arrow_button(hire, world, false, out);
+        break;
     case kNextButton:
-        if (hire.shown) {
-            bool forward = events.triggered_button == kNextButton;
-            uint16_t id = alter_applicant(world, forward, hire.shown, hire.kind);
-            if (id && id != hire.shown)
-                e = {EV_HIRE_NEXT_APPLICANT, uint16_t(forward)};
-        }
-        return e;
+        e = hire_arrow_button(hire, world, true, out);
+        break;
     case kCloseButton:
-        return hire_staff_cancel(hire);
+        out.push_back(kSfxNo4);
+        e = hire_staff_cancel(hire);
+        break;
     default:
-        return e;
+        break;
     }
+    if (sounds)
+        sounds->insert(sounds->end(), out.begin(), out.end());
+    return e;
 }
 
 Event hire_staff_cancel(const HireStaff &hire)

@@ -1,0 +1,22 @@
+# Level 1: as panel_info_raised.txt, for a corridor bench (panel info kind 6,
+# the special objects' use display). The bench is hovered and then the pointer
+# moves onto the panel: no bench text is left drawn over the raised buttons.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy a bench (the second entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the bench
+wait 20
+thing 30                 # the pointer onto the bench
+wait 10
+dump bench
+expect panel info: kind 6, thing 30, shown true
+screenshot bench
+move 580 460             # onto the panel
+wait 10
+dump bench_panel
+expect panel info: kind 6, thing 30, shown false
+screenshot bench_raised

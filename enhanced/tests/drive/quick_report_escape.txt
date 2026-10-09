@@ -1,0 +1,17 @@
+# Level 1: F10 from a running game, then Escape. The box takes the keys and
+# the mouse while it is up, Escape discards it, nothing is written and the
+# game is left running.
+wait 60
+expect paused false
+key F10
+wait 5
+expect quick report: open
+expect paused true
+screenshot-ui box_escape
+type discarded note
+wait 2
+key Escape
+wait 5
+expect quick report: closed
+expect paused false
+expect-report-none

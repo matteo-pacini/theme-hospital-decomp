@@ -1,0 +1,24 @@
+# NoLevel: the F10 quick debug report works on the start-up screens too. The
+# game is driven from the intro to the main menu, where F10 shows the note
+# box and Enter writes the report (with no map, so no snapshot or commands).
+wait 3
+key Space
+wait 3
+click 5 5
+wait 90
+key a
+key Return
+wait 10
+key Space
+wait 10
+expect startup screen: 3
+key F10
+wait 5
+expect quick report: open
+screenshot-ui box
+type menu note
+wait 2
+key Return
+wait 5
+expect quick report: closed
+expect-report menu note

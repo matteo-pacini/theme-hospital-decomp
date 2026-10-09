@@ -1,0 +1,17 @@
+# Level 1: the hire staff requester's page arrows. With a kind chosen and
+# another applicant that way, an arrow plays SFX_PAGETUR2 (0xa8).
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+dump kind
+expect 0x43=2;
+click 396 327            # next applicant
+wait 10
+dump next
+expect 0xa8=1;
+click 277 327            # previous applicant
+wait 10
+dump prev
+expect 0xa8=2;

@@ -1,0 +1,25 @@
+# Level 1: six corridor radiators and no handyman, so the day-201 kind-1
+# heating disaster starts; a handyman hired just after it starts leaves the
+# radiator count (6) between handymen * 5 (5) and handymen * 8 (8), so only
+# the first of the two handyman timer decrements fires. It ends at turn
+# 10750: later than disaster_heating_response.txt (one radiator, both
+# decrements, 10550) and earlier than disaster_cold.txt (no handyman, 11350).
+# The one drinks machine after the radiators draws the daily randoms so the
+# first disaster_roll (turn 10050) picks kind 1.
+# Expect disaster_roll owner=0 kind=1
+# Expect disaster_start owner=0 kind=1
+# Expect disaster_end owner=0 kind=1
+# Expect place_staff 20 tile=10044
+5 98 0 0
+6 37 44 1
+7 43 0 0
+8 7 9534 44
+8 7 9535 44
+8 7 9536 44
+8 7 9537 44
+8 7 9538 44
+8 7 9539 44
+6 37 7 1
+8 7 9276 7
+10100 48 2 20
+10101 5 10044 20

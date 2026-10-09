@@ -1,0 +1,44 @@
+# Level 1: as panel_info_raised.txt, for a machine (panel info kind 3). An
+# inflation room is built and the inflator hovered, then the pointer moves
+# onto the panel: no machine text is left drawn over the raised buttons.
+wait 60
+click 228 453            # panel: build room
+wait 10
+click 240 130            # Clinics
+wait 10
+click 380 85             # the room (Inflation, kind 17)
+wait 10
+cell 56 64
+wait 5
+down left
+wait 5
+cell 60 68
+wait 10
+up left
+wait 10
+click 580 148            # confirm the blueprint
+wait 10
+click-cell 56 66         # the door
+wait 10
+click 580 148            # no windows: confirm
+wait 30
+click-cell 58 65
+wait 10
+click 505 189            # the object in the list
+wait 10
+click-cell 57 67
+wait 10
+click 580 148            # confirm the room
+wait 30
+key Escape               # close the room's first help page
+wait 10
+thing 31                 # the pointer onto the machine
+wait 10
+dump machine
+expect panel info: kind 3, thing 31, shown true
+screenshot machine
+move 580 460             # onto the panel
+wait 10
+dump machine_panel
+expect panel info: kind 3, thing 31, shown false
+screenshot machine_raised

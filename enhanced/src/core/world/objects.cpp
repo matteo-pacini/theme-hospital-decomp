@@ -29,6 +29,10 @@ constexpr uint8_t kPsWaitsForDecision = 0x44;
 // The local player; the engine has no other.
 constexpr int kPlayer = 0;
 
+// SFX_PLAC_ST2's object sibling, SFX_PLACE_R (include/enums.h): an object
+// put down.
+constexpr uint8_t kSfxPlaceR = 0x46;
+
 // ROOM_DESTROYED (include/enums.h).
 constexpr uint8_t kRoomDestroyed = 6;
 
@@ -415,8 +419,10 @@ bool apply_object_event(Game &game, const Event &event)
         p.menu_disabled = false;
         return true;
     case EV_PLACE_OBJECT:
-        if (player_place_object(game, event.value, event.arg & 0xff, event.arg >> 8))
+        if (player_place_object(game, event.value, event.arg & 0xff, event.arg >> 8)) {
             object_placed(p);
+            game.world.building.sounds.push_back(kSfxPlaceR);
+        }
         return true;
     case EV_CANCEL_BUILD:
         clear_build_objects(p);

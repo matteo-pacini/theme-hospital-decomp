@@ -1,0 +1,17 @@
+# Level 1: the F10 quick report on a full-screen chart. F10 pauses the game
+# behind it and the box appears over the chart; Escape leaves the chart open.
+wait 60
+key F1
+wait 10
+expect screen: chart 0
+key F10
+wait 5
+expect quick report: open
+expect paused true
+screenshot-ui box
+key Escape
+wait 5
+expect quick report: closed
+expect screen: chart 0
+expect paused false
+expect-report-none

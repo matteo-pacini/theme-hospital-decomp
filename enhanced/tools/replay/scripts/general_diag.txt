@@ -2,7 +2,10 @@
 # gp_office.txt's: a GP's office (62,65)-(66,69) with its door, desk, cabinet
 # and chair, opened, and a doctor (applicant 11) placed.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
-# Expect use_object 13 obj=36 kind=20
+# The general diagnosis room's crash trolley is object 36, used by doctor 11
+# (from turn 6425), and its screen object 37, used by patient 6 (from turn
+# 9315): this trace's ids.
+# Expect use_object 11 obj=36 kind=20
 # Expect use_object 6 obj=37 kind=16
 5 98 0 0
 6 37 11 1

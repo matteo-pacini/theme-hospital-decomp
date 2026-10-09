@@ -10,6 +10,7 @@
 #include "core/world/nav.h"
 #include "core/world/objects.h"
 #include "core/world/queue.h"
+#include "core/world/rats.h"
 #include "core/world/reception.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
@@ -50,6 +51,7 @@ constexpr uint8_t kSfxBuildClick = 0x1e;
 constexpr uint8_t kSfxSwoosh = 0x22;
 constexpr uint8_t kSfxYesX = 0x41;
 constexpr uint8_t kSfxDeBuild = 0x97;
+constexpr uint8_t kSfxPickUpSmall = 0xba;
 
 // PTR_* (include/enums.h): the pointers modify_blueprint shows.
 constexpr uint8_t kPtrResizeRoom = 3;
@@ -428,15 +430,8 @@ void mark_blueprint_on_map(World &w, int x0, int y0, int x1, int y1, bool overla
     }
 }
 
-// cleanse_area (src/rats.cpp): rat holes are not ported, so only the
-// litter on the cells goes.
-void cleanse_area(World &w, int owner, int x, int y, int width, int height)
-{
-    for (int tx = x; tx < x + width; tx++)
-        for (int ty = y; ty < y + height; ty++)
-            if (in_map(cell_index(tx, ty)) && (w.map[size_t(cell_index(tx, ty))].litter_shadow & 0xf))
-                remove_litter(w, uint16_t(ty * 128 + tx), uint8_t(owner));
-}
+// cleanse_area (src/rats.cpp) is in rats.cpp: it removes the rat holes and
+// the litter on the box of cells.
 
 // Room under the build state.
 RoomInfo &built_room(World &w)
@@ -1504,10 +1499,9 @@ void delete_room_walls_and_doors(World &w, const RoomInfo &room, uint16_t id, in
     }
 }
 
-// delete_room (src/build.cpp) without the rat holes, not ported: the room's
-// objects, the walls it does not share and its doors off the map. Only the
-// first thing on each cell is looked at, as removing it ends the cell's
-// list walk in the game.
+// delete_room (src/build.cpp): the room's objects, its rat holes, the walls
+// it does not share and its doors off the map. Only the first thing on each
+// cell is looked at, as removing it ends the cell's list walk in the game.
 void delete_room(World &w, uint16_t r)
 {
     trace_event("delete_room %u", unsigned(r));
@@ -1520,6 +1514,7 @@ void delete_room(World &w, uint16_t r)
                 if (w.things[size_t(t)].type == kThingObject)
                     remove_object(w, uint16_t(t), kPlayer);
             }
+            clear_cell_of_ratholes(w, room.owner, uint16_t((y << 7) + x));
         }
     }
     for (int y = y0; y < y0 + room.height + 1; y++)
@@ -2634,6 +2629,7 @@ bool apply_build_event(Game &game, const Event &event)
         return true;
     case EV_PICK_UP_OBJECT:
         apply_build_event_pick_up_object(game, event);
+        play(w, kSfxPickUpSmall);
         return true;
     case EV_SETUP_PLACE_OBJECT_REQUESTER:
         apply_build_event_setup_place_object(game);

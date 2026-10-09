@@ -35,6 +35,17 @@ struct InspectTool {
     bool picking = false; // the next click on the view picks the thing
 };
 
+// What the F10 quick report's note box asked for this frame.
+enum class QuickNoteAction { None, Save, Discard };
+
+// The F10 quick report's note box: a text field, focused on the first frame
+// (`focus` is cleared once set). Enter saves, Shift+Enter adds a new line and
+// Escape discards.
+QuickNoteAction draw_quick_report_note(std::array<char, 4096> &note, bool &focus);
+
+// A short confirmation message, drawn over everything else.
+void draw_toast(const std::string &text);
+
 // State of the tools window (F12).
 struct ToolsState {
     bool open = false;

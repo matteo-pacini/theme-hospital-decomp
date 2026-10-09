@@ -1,0 +1,16 @@
+# Level 1: Shift+F10 writes the report at once, with no note box and an
+# empty note, and leaves the pause as it was.
+wait 60
+key p
+wait 5
+expect paused true
+screenshot immediate
+key Shift+F10
+wait 5
+expect quick report: closed
+expect paused true
+expect-report
+expect-report-shot immediate
+key p
+wait 5
+expect paused false

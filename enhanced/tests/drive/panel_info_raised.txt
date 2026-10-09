@@ -1,0 +1,24 @@
+# Level 1: the panel's information bar is not drawn while the panel's raised
+# icon set is shown (update_panel only fills the bar while othervar's
+# panel_icon_set is 1). A hired doctor (kind 1) is hovered, then the pointer
+# moves onto the panel: the raised buttons cover the bar, no stale text is
+# left on top of them.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 60 68         # place the doctor
+wait 20
+thing 11                 # the pointer onto the doctor
+wait 10
+dump staff
+expect panel info: kind 1, thing 11, shown true
+screenshot staff
+move 580 460             # onto the panel
+wait 10
+dump staff_panel
+expect panel info: kind 1, thing 11, shown false
+screenshot staff_raised

@@ -1,6 +1,7 @@
 #include "core/world/disaster.h"
 
 #include "core/data/blocks.h"
+#include "core/world/arrivals.h"
 #include "core/world/build.h"
 #include "core/world/complex.h"
 #include "core/world/complex_tables.h"
@@ -8,6 +9,7 @@
 #include "core/world/finance.h"
 #include "core/world/game.h"
 #include "core/world/icons.h"
+#include "core/world/litter.h"
 #include "core/world/nav.h"
 #include "core/world/queue.h"
 #include "core/world/reaper.h"
@@ -266,6 +268,24 @@ void restart_entire_queue(World &world, const AnimData &anims, uint16_t room_id,
     }
 }
 
+// allhosps.staff_by_kind[STAFF_HANDYMAN]: hospital `owner`'s hired
+// handymen (applicants do not count).
+int count_handymen(const World &world, uint8_t owner)
+{
+    int n = 0;
+    for (const Thing &t : world.things)
+        if (t.type == kThingStaff && t.owner == owner && t.state != kStaffApplicant && t.subtype == kStaffHandyman)
+            n++;
+    return n;
+}
+
+// abilities[][5] (src/tables.cpp): 1 for the first two patient kinds only,
+// the ones an earthquake shakes.
+bool reacts_to_quake(uint8_t subtype)
+{
+    return subtype == 0 || subtype == 1;
+}
+
 // modify_machine's smoke, from 75% of its strength: the machine's
 // announcement (the player's), then a puff shown at random (a draw from
 // world.seed) or, from 85% with one shown, the warning sound and, from 95%,
@@ -302,6 +322,116 @@ void modify_machine_smoke(World &world, const AnimData &anims, uint16_t id)
 }
 
 } // namespace
+
+void disaster_peeps(World &world, const AnimData &anims, const Balance &settings, uint8_t mode, int8_t owner,
+                    uint32_t game_turn)
+{
+    for (size_t i = 1; i < world.things.size(); i++) {
+        Thing &p = world.things[i];
+        if (p.type != kThingPatient || (int8_t(p.owner) != owner && owner != -1))
+            continue;
+        if (mode == 0)
+            p.nausea = uint16_t(settings.gbv.vomit_limit + 10);
+        else if (mode == 1 && reacts_to_quake(p.subtype))
+            p.person_flags |= kPfQuakeShaken;
+        else if (mode == 2 && reacts_to_quake(p.subtype))
+            p.person_flags &= ~kPfQuakeShaken;
+        else if (mode == 3)
+            change_health(world, anims, uint16_t(i), int16_t(-p.health), game_turn);
+    }
+}
+
+// generate_disaster's start of disaster `kind` (src/disaster.cpp's cases 1-3
+// of the inner switch): 1 cold or 2 hot, saving the heating and breaking it,
+// or 3 the sick feeling. `have_radiators` and `handymen` are the caller's
+// counts. Returns whether it started; the timer draw is the caller's, so
+// that it is named generate_disaster.
+bool start_disaster(Game &game, uint8_t owner, uint8_t kind, bool have_radiators, int handymen)
+{
+    World &world = game.world;
+    switch (kind) {
+    case 1:
+        if (have_radiators && handymen * 8 < count_radiators(world, owner)) {
+            trace_event("disaster_start owner=%u kind=%u", unsigned(owner), unsigned(world.disaster_kind));
+            world.saved_heating = game.finance.heating_level;
+            game.finance.heating_level = 0;
+            world.heating_broken = true;
+            game.advisor.forced_advice_id = 0xb;
+            return true;
+        }
+        break;
+    case 2:
+        if (have_radiators && handymen * 8 < count_radiators(world, owner)) {
+            trace_event("disaster_start owner=%u kind=%u", unsigned(owner), unsigned(world.disaster_kind));
+            world.saved_heating = game.finance.heating_level;
+            game.finance.heating_level = 0xa;
+            world.heating_broken = true;
+            game.advisor.forced_advice_id = 0xa;
+            return true;
+        }
+        break;
+    default:
+        if (world.litter_count > 10) {
+            trace_event("disaster_start owner=%u kind=%u", unsigned(owner), unsigned(world.disaster_kind));
+            disaster_peeps(world, game.anims(), game.settings(), 0, int8_t(owner), game.turn_count);
+            game.advisor.forced_advice_id = 0xd;
+            return true;
+        }
+        break;
+    }
+    trace_event("disaster_reject owner=%u kind=%u", unsigned(owner), unsigned(world.disaster_kind));
+    world.disaster_kind = 0;
+    return false;
+}
+
+void generate_disaster(Game &game, uint8_t owner)
+{
+    World &world = game.world;
+    const Balance &settings = game.settings();
+    switch (world.disaster_kind) {
+    case 0:
+        world.disaster_counter++;
+        if (world.disaster_counter > settings.gbv.disaster_launch) {
+            world.disaster_counter = 0;
+            world.disaster_kind = uint8_t(old_newrand(world.seed) & 3);
+            trace_event("disaster_roll owner=%u kind=%u", unsigned(owner), unsigned(world.disaster_kind));
+            if (world.disaster_kind == 0)
+                break;
+            int radiators = count_radiators(world, owner);
+            if (start_disaster(game, owner, world.disaster_kind, radiators != 0, count_handymen(world, owner)))
+                world.disaster_timer = world.disaster_kind == 3 ? int8_t(old_normal_rand(world.seed, 5, 10))
+                                                                : int8_t(old_normal_rand(world.seed, 10, 0x1e));
+        }
+        break;
+    case 1:
+    case 2:
+        if (count_handymen(world, owner) * 8 > count_radiators(world, owner))
+            world.disaster_timer--;
+        if (count_handymen(world, owner) * 5 > count_radiators(world, owner))
+            world.disaster_timer--;
+        world.disaster_timer--;
+        if (world.disaster_timer <= 0) {
+            trace_event("disaster_end owner=%u kind=%u", unsigned(owner), unsigned(world.disaster_kind));
+            world.disaster_kind = 0;
+            game.finance.heating_level = world.saved_heating;
+            world.heating_broken = false;
+            game.advisor.forced_advice_id = 0xc;
+        }
+        break;
+    default:
+        if (world.litter_count > 10)
+            disaster_peeps(world, game.anims(), settings, 0, int8_t(owner), game.turn_count);
+        else
+            world.disaster_timer--;
+        world.disaster_timer--;
+        if (world.disaster_timer <= 0) {
+            trace_event("disaster_end owner=%u kind=%u", unsigned(owner), unsigned(world.disaster_kind));
+            world.disaster_kind = 0;
+            game.advisor.forced_advice_id = 0xe;
+        }
+        break;
+    }
+}
 
 bool modify_machine(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn)
 {
@@ -406,7 +536,10 @@ void replace_machine(Game &game, uint16_t id)
         world.building.sounds.push_back(kSfxNo4);
         return;
     }
-    change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxReplacementMachine, -cost});
+    // The charge goes to the thing's owner: a destroyed machine's thing may
+    // have become an applicant (owner kNoOwner), whose hospital is not ours.
+    if (machine.owner == 0)
+        change_balance(game.finance, game.balance, game.date.day, game.date.month, {kTxReplacementMachine, -cost});
     machine.strength = object_strength(world, machine.subtype);
     machine.times_used = 0;
     machine.overlay_frame = 0;

@@ -194,4 +194,43 @@ void draw_tools(ToolsState &state, const World *world)
     ImGui::End();
 }
 
+QuickNoteAction draw_quick_report_note(std::array<char, 4096> &note, bool &focus)
+{
+    QuickNoteAction action = QuickNoteAction::None;
+    const ImGuiViewport *vp = ImGui::GetMainViewport();
+    ImVec2 size(460.0f, 150.0f);
+    ImVec2 pos(vp->WorkPos.x + (vp->WorkSize.x - size.x) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - size.y) * 0.5f);
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Appearing);
+    ImGui::Begin("Quick debug report", nullptr,
+                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoSavedSettings);
+    ImGui::TextUnformatted("Enter saves the report, Shift+Enter adds a line, Esc discards.");
+    if (focus)
+        ImGui::SetKeyboardFocusHere();
+    if (ImGui::InputTextMultiline("##note", note.data(), note.size(), ImVec2(-FLT_MIN, 60.0f),
+                                  ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine))
+        action = QuickNoteAction::Save;
+    if (ImGui::IsItemActive())
+        focus = false;
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+        action = QuickNoteAction::Discard;
+    ImGui::End();
+    return action;
+}
+
+void draw_toast(const std::string &text)
+{
+    if (text.empty())
+        return;
+    const ImGuiViewport *vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x, vp->WorkPos.y + vp->WorkSize.y - 64.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.85f);
+    ImGui::Begin("##toast", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings |
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::End();
+}
+
 } // namespace th

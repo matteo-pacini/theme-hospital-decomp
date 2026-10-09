@@ -71,6 +71,15 @@ constexpr uint8_t kStaffPlayAniseq = 0x50;
 // Thing.owner of applicants and of staff who left: no hospital's.
 constexpr uint8_t kNoOwner = 0x63;
 
+// Applicants: the game turn they leave the list. The game keeps this as the
+// u32 at Thing+0x94 and shares those bytes with work_target, work_target2,
+// crazy and surgeon_training, so a sacked handyman or doctor keeps the game's
+// huge expiry; the port derives it from those fields (work_target2's bytes are
+// crazy and surgeon_training's for a doctor). Setting it writes the bytes
+// back (0 clears them, as hiring does).
+uint32_t applicant_expiry(const Thing &t);
+void set_applicant_expiry(Thing &t, uint32_t turn);
+
 // The job market (the game's gamevar fields of create_job_market): the
 // staff random generator and this month's wanted applicants and doctor
 // skill odds. Reset it when a level starts, as the game clears gamevar.
@@ -81,6 +90,12 @@ struct StaffMarket {
     // Per kind (nurse, doctor, handyman, receptionist), the applicants
     // wanted.
     std::array<uint16_t, 4> wanted{};
+    // Per kind, the applicants the game believes it has (gamevar.applicants):
+    // counted as they are made, hired and sent back, so a thing freed any
+    // other way (a shot rat index landing on an applicant) leaves it too
+    // high. applicant_count is their total (gamevar.applicant_count).
+    std::array<uint16_t, 4> applicants{};
+    uint16_t applicant_count = 0;
     // 1 in n new doctors is a psychiatrist, surgeon, researcher, consultant,
     // or (if not a consultant) junior; 0 for none.
     uint8_t shrink_rate = 0;
@@ -106,7 +121,7 @@ uint16_t staffrand(uint32_t &seed);
 // (high - low) / 2 + 1.
 uint32_t normal_staffrand(uint32_t &seed, uint32_t low, uint32_t high);
 
-// The applicants of staff kind `kind` (gamevar.applicants[kind]): those
+// The applicants of staff kind `kind` as the world holds them: those
 // listed (state kStaffApplicant) and those being hired (kStaffHeld, not yet
 // anyone's).
 int count_applicants(const World &world, uint8_t kind);

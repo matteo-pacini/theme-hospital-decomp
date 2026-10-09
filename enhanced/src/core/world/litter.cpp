@@ -117,25 +117,37 @@ void add_nausea(Thing &p, int amount)
         p.nausea = 0;
 }
 
+// The warmth where person `p` stands (check_warmth): a room's radiators
+// spread over its area, or in the corridor the nearby corridor radiators by
+// distance and the heating setting; 0 with the heating off.
+uint16_t standing_warmth(const World &world, const Thing &p, uint16_t heat)
+{
+    if (!heat)
+        return 0;
+    if (uint16_t room = which_room(world, cell_of(p))) {
+        const RoomInfo &r = world.rooms[room];
+        return uint16_t(r.radiators * 1250 / (r.width * r.height));
+    }
+    uint16_t warmth = 0;
+    for (uint16_t id = first_of_kind(world, p.owner, kObjRadiator); id; id = world.things[id].type_obj_next) {
+        const Thing &radiator = world.things[id];
+        if (radiator.room_id)
+            continue;
+        auto dx = uint16_t(std::abs(p.x.tile - radiator.x.tile));
+        auto dy = uint16_t(std::abs(p.y.tile - radiator.y.tile));
+        if (dx > 8 || dy > 8)
+            continue;
+        if (auto dist = uint16_t(dx + dy))
+            warmth = uint16_t(warmth + heat / dist);
+    }
+    return warmth;
+}
+
 } // namespace
 
 void check_warmth(const World &world, Thing &p, int heating_level)
 {
-    uint16_t warmth = 0;
-    auto heat = uint16_t(heating_level * 10);
-    if (heat && !which_room(world, cell_of(p))) {
-        for (uint16_t id = first_of_kind(world, p.owner, kObjRadiator); id; id = world.things[id].type_obj_next) {
-            const Thing &radiator = world.things[id];
-            if (radiator.room_id)
-                continue;
-            auto dx = uint16_t(std::abs(p.x.tile - radiator.x.tile));
-            auto dy = uint16_t(std::abs(p.y.tile - radiator.y.tile));
-            if (dx > 8 || dy > 8)
-                continue;
-            if (auto dist = uint16_t(dx + dy))
-                warmth = uint16_t(warmth + heat / dist);
-        }
-    }
+    uint16_t warmth = standing_warmth(world, p, uint16_t(heating_level * 10));
     if (warmth > int16_t(p.warmth))
         p.warmth++;
     else if (warmth < int16_t(p.warmth))
@@ -293,8 +305,11 @@ void place_litter(World &world, uint16_t tile, uint8_t owner, uint8_t kind)
     uint8_t cur = m.litter_shadow & 0xf;
     if (cur == 0 && owner == 0)
         world.litter_count++;
-    if (cur == 0 || ((kind == kLitterVomit || kind == 4) && !(cur == 7 || cur == 8)))
+    if (cur == 0 || ((kind == kLitterVomit || kind == 4) && !(cur == 7 || cur == 8))) {
         m.litter_shadow = uint8_t((m.litter_shadow & 0xf0) | kind);
+        if (owner == 0)
+            world.rats.last_litter_tile = tile;
+    }
 }
 
 void remove_litter(World &world, uint16_t tile, uint8_t owner)

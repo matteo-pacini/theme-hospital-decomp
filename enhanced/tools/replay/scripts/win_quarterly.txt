@@ -7,8 +7,10 @@
 # a fourth doctor (applicant 14), is built early at 203-215; the status screen
 # (EV_OPEN_SCREEN 7) is opened at 13600 so calculate_value recomputes
 # hospital_value mid-year, and closed again. check_quarterly_game_over then
-# finds every criterion met (cures 12, diagnosed 52, value 69405) and offers
-# the win; try_bonus_level runs and grants no bonus (rats are not ported). The
+# finds every criterion met (cures 13, diagnosed 63, value 71405) and offers
+# the win; try_bonus_level runs and grants no bonus (the rat counters do not
+# reach the level 1 threshold). Two more handymen (applicants 20 and 21) at
+# cell 10044 keep the cures at the target. The
 # win/lose screen's decline is carried by EV_DECLINE_WIN (0x8f) at 13651: the
 # instrumented original restores display_mode and both sides carry on.
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
@@ -112,6 +114,13 @@
 # A handyman (applicant 19), at cell 10044.
 260 48 2 19
 261 5 10044 19
+# Two more handymen (applicants 20 and 21) keep the wards clean enough that
+# the cures reach level 1's target by the third quarter; the cell 10044
+# corridor is the one handyman 19 uses.
+262 48 2 20
+263 5 10044 20
+264 48 2 21
+265 5 10044 21
 # Policy: staff rest at tiredness 50.
 270 113 4 50
 # The first doctor and the handyman ordered to rest.

@@ -32,6 +32,9 @@ namespace
 // allocate_thing's reserve for new staff (place_staff_in_struct).
 constexpr size_t kStaffReserve = 0x19;
 
+// SFX_PLAC_ST2 (include/enums.h): a member of staff put down.
+constexpr uint8_t kSfxPlaceStaff = 0x07;
+
 // staff[kind].layer5_count (src/tables.cpp): the layer-5 variants an
 // applicant picks from, 0 for none.
 constexpr std::array<uint8_t, 5> kLayer5Count = {0, 2, 1, 0, 1};
@@ -4018,11 +4021,13 @@ uint16_t place_staff_in_struct(World &world, StaffMarket &market, const Balance 
         s.layers[layer] = uint8_t(staffrand(seed) & 3);
     if (kind == kStaffNurse || kind == kStaffReceptionist)
         s.layers[5] = 1;
-    s.hire_expiry = game_turn + 2500 + staffrand(seed) % 2500;
+    set_applicant_expiry(s, game_turn + 2500 + staffrand(seed) % 2500);
     s.work_delay = uint8_t(normal_staffrand(seed, 1, 10));
     s.happiness = 100;
     s.warmth = 50;
     s.state = kStaffApplicant;
+    market.applicant_count++;
+    market.applicants[kind]++;
 
     uint32_t ability_min = 30, ability_max = 1000;
     switch (kind) {
@@ -4071,8 +4076,7 @@ void create_job_market(World &world, StaffMarket &market, const Balance &setting
             break;
     }
     for (uint8_t kind = 0; kind <= 3; kind++) {
-        int have = count_applicants(world, kind);
-        for (int j = have; j < market.wanted[kind]; j++)
+        for (int j = market.applicants[kind]; j < market.wanted[kind]; j++)
             place_staff_in_struct(world, market, settings, kind, 0, game_turn);
     }
 }
@@ -4118,9 +4122,13 @@ void place_staff_on_map_hire(World &world, uint16_t id, uint32_t game_turn)
     s.orders = 0;
     s.discontent = 0;
     clear_peep_icon(s);
-    s.hire_expiry = 0;
+    set_applicant_expiry(s, 0);
     s.hire_time = int16_t(game_turn);
     set_expertise_staff(world, id);
+    if (world.staff_market) {
+        world.staff_market->applicant_count--;
+        world.staff_market->applicants[s.subtype]--;
+    }
 }
 } // namespace
 
@@ -4241,6 +4249,57 @@ void staff_turn_receptionist(const Ctx &c, uint16_t id)
 }
 } // namespace
 
+uint32_t applicant_expiry(const Thing &t)
+{
+    // Thing+0x96-0x97 is work_target2 for a handyman and crazy with
+    // surgeon_training for a doctor (include/hosp.h); neither kind uses the
+    // other's fields, so the union's bytes are whichever applies.
+    uint32_t high = t.type == kThingStaff && t.subtype == kStaffHandyman
+                        ? t.work_target2
+                        : uint32_t(t.crazy) | (uint32_t(t.surgeon_training) << 8);
+    return uint32_t(t.work_target) | (high << 16);
+}
+
+void set_applicant_expiry(Thing &t, uint32_t turn)
+{
+    t.work_target = uint16_t(turn);
+    if (t.type == kThingStaff && t.subtype == kStaffHandyman) {
+        t.work_target2 = uint16_t(turn >> 16);
+    } else {
+        t.crazy = uint8_t(turn >> 16);
+        t.surgeon_training = uint8_t(turn >> 24);
+    }
+}
+
+namespace
+{
+// remove_staff_in_struct (0x2a130): deletes an applicant, taking them off the
+// job market's counts.
+void remove_staff_in_struct(World &world, Thing &staff)
+{
+    if (world.staff_market) {
+        world.staff_market->applicants[staff.subtype]--;
+        world.staff_market->applicant_count--;
+    }
+    staff = Thing{};
+}
+
+// process_things' SS_BACK_TO_APPLICANTS: the member of staff is an applicant
+// again, counted in the job market.
+void back_to_applicants(World &world, uint16_t id, uint32_t game_turn)
+{
+    Thing &s = world.things[id];
+    trace_event("back_to_applicants %u", unsigned(id));
+    remove_node(world, id);
+    s.state = kStaffApplicant;
+    s.hire_time = int16_t(game_turn);
+    if (world.staff_market) {
+        world.staff_market->applicants[s.subtype]++;
+        world.staff_market->applicant_count++;
+    }
+}
+} // namespace
+
 void staff_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                 const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn)
 {
@@ -4251,9 +4310,8 @@ void staff_turn(World &world, const AnimData &anims, const PersonComplexes &pers
         return;
     switch (s.state) {
     case kStaffApplicant:
-        // remove_staff_in_struct.
-        if (game_turn > s.hire_expiry)
-            s = Thing{};
+        if (game_turn > applicant_expiry(s))
+            remove_staff_in_struct(world, s);
         break;
     case kStaffInCorridor:
         staff_in_corridor(s, anims);
@@ -4289,10 +4347,7 @@ void staff_turn(World &world, const AnimData &anims, const PersonComplexes &pers
         peep_bp_goto_turn(world, anims, id, game_turn);
         break;
     case kStaffBackToApplicants:
-        trace_event("back_to_applicants %u", unsigned(id));
-        remove_node(world, id);
-        s.state = kStaffApplicant;
-        s.hire_time = int16_t(game_turn);
+        back_to_applicants(world, id, game_turn);
         break;
     case kStaffNurseVaccinates:
         nurse_vaccinates(world, anims, person_complexes, staff_complexes, id, game_turn);
@@ -4384,10 +4439,12 @@ void apply_staff_event_place(Game &game, const Event &event)
     const Thing &s = world.things[event.arg];
     // A picked-up member of staff is placed again for nothing.
     bool hiring = world.held_staff == 0;
-    if (place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, event.value, event.arg, false) &&
-        hiring)
-        change_balance(game.finance, game.balance, game.date.day, game.date.month,
-                       {kTxHireStaff, -(s.salary * 12) / 10});
+    if (place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, event.value, event.arg, false)) {
+        world.building.sounds.push_back(kSfxPlaceStaff);
+        if (hiring)
+            change_balance(game.finance, game.balance, game.date.day, game.date.month,
+                           {kTxHireStaff, -(s.salary * 12) / 10});
+    }
 }
 
 // apply_staff_event's EV_PICK_UP_STAFF: member of staff event.value held

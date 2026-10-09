@@ -1128,7 +1128,7 @@ void pay_for_treatment_claim_insurance(World &world, const Thing &p, int32_t fee
                 month = 0;
             world.hospital->insurance_claims[i][size_t(month)] += fee;
         }
-        create_numfx(world, kNumfxMoney, int16_t(fee), uint16_t(p.x.tile + (p.y.tile << 7)), kColourRed, 0x40);
+        create_numfx(world, kNumfxMoney, int16_t(fee), uint16_t(p.x.tile + (p.y.tile << 7)), colour_red(world), 0x40);
         break;
     }
 }

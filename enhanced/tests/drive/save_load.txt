@@ -1,0 +1,72 @@
+# Level 1: the saved games through the File menu. File > Save > Game 1
+# (pulldown_save, src/menu.cpp) writes a save and ticks the slot; saving the
+# same slot again asks before overwriting (yesno_text[3], req13) and Cancel
+# leaves the save, Yes overwrites it; File > Load > Game 1 (pulldown_load)
+# brings the saved turn back. The menu bar is only at the top in the game's
+# 640x480 layout, so the window is that size.
+# Size 640x480
+wait 60
+# File > Save > Game 1.
+move 10 3
+down
+wait 2
+move 50 35
+wait 2
+move 150 35
+wait 2
+screenshot save_menu
+up
+wait 2
+dump message
+expect panel message: "Game Saved Okay"
+wait 3
+dump saved
+expect save slots: 1
+# File > Save > Game 1 again: the overwrite requester, cancelled.
+move 10 3
+down
+wait 2
+move 50 35
+wait 2
+move 150 35
+wait 2
+up
+wait 5
+dump overwrite
+expect requester 4, modal true
+screenshot overwrite_req
+click 282 281            # req13: No
+wait 5
+dump cancelled
+expect modal false
+# Again, accepted: the slot is overwritten.
+move 10 3
+down
+wait 2
+move 50 35
+wait 2
+move 150 35
+wait 2
+up
+wait 5
+dump accept_prompt
+expect requester 4, modal true
+click 373 281            # req13: Yes
+wait 5
+dump overwritten
+expect modal false
+# Run on, then File > Load > Game 1: the saved turn comes back.
+turns 30
+dump ahead
+expect date: year 0 month 0 day 2, turn 74
+move 10 3
+down
+wait 2
+move 50 21
+wait 2
+move 150 21
+wait 2
+up
+wait 8
+dump loaded
+expect date: year 0 month 0 day 1, turn 45

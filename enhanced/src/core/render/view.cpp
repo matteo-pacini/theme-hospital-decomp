@@ -111,11 +111,20 @@ constexpr uint8_t kCellBig = 0x20;
 // The game's covers table (record_covering_cell, src/engine.cpp): which scan
 // cell covers each position. It is a flat byte table of stride 4, as the
 // original's `s8 covers[][4]`, so column 4 of a row aliases column 0 of the
-// next; only its first 0x38 bytes are reset per line, as the original's
-// memset(covers, 0xff, 0x38), so the rest carries over.
+// next. The original's is 0x38 bytes, 14 rows, holding one line of its
+// 640-wide view; its `idx <= 14` bound reads a 15th row past that table, which
+// the port treats as empty. A wider view's line holds more cells, so the table
+// is sized per line here: one row per cell, plus one for the footprint offsets
+// past its end (check_obscuring_column's (x - y) / 2 is -1..1 for a footprint
+// point the table accepts).
 struct CoverTable {
-    std::array<int8_t, 64> cell{};
-    void reset() { std::fill(cell.begin(), cell.begin() + 0x38, int8_t(-1)); }
+    std::vector<int8_t> cell;
+    int rows = 0;
+    void reset(int n)
+    {
+        rows = n + 1;
+        cell.assign(size_t(rows + 1) * 4, int8_t(-1));
+    }
     int8_t &at(int idx, int col) { return cell[size_t(idx) * 4 + size_t(col)]; }
 
     // check_obscuring_column: the scan cell already covering (x, y) relative
@@ -124,7 +133,7 @@ struct CoverTable {
     {
         int idx = row + (x - y >= 0 ? (x - y) / 2 : (x - y - 1) / 2);
         int col = -(x + y);
-        if (idx < 0 || idx > 14 || col < 0 || col > 4)
+        if (idx < 0 || idx >= rows || col < 0 || col > 4)
             return -1;
         for (; col >= 0; col += -2) {
             int8_t v = cell[size_t(idx) * 4 + size_t(col)];
@@ -147,7 +156,7 @@ struct CoverTable {
         }
         int idx = row + (x - y >= 0 ? (x - y) / 2 : (x - y - 1) / 2);
         int col = -(x + y);
-        if (idx < 0 || idx > 14 || col < 0 || col > 4)
+        if (idx < 0 || idx >= rows || col < 0 || col > 4)
             return -1;
         int8_t v = check(row, x, y + 1);
         if (v < 0)
@@ -290,7 +299,7 @@ AnimStart anim_start(const GameData &data, uint32_t anim)
 // always, objects and doors in the states mapwho_object draws whole.
 bool pointed_testable(const Thing &t)
 {
-    if (t.type == kThingPatient || t.type == kThingStaff)
+    if (t.type == kThingPatient || t.type == kThingStaff || t.type == kThingRat)
         return true;
     switch (t.state) {
     case 0x02: // OS_STATIC
@@ -419,8 +428,8 @@ void draw_numfx(CellFrames &frames, const GameData &data, const Thing &t, int x,
 bool cell_thing_drawn(const Thing &t)
 {
     if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff &&
-        t.type != kThingReaper && t.type != kThingDebris && t.type != kThingHelicopter && t.type != kThingShadow &&
-        t.type != kThingMayor && t.type != kThingNumfx)
+        t.type != kThingReaper && t.type != kThingRat && t.type != kThingDebris && t.type != kThingHelicopter &&
+        t.type != kThingShadow && t.type != kThingMayor && t.type != kThingNumfx)
         return false;
     // mapwho_person draws no patient gone, merged into a member of staff's
     // animation or gone into the gates of hell; mapwho_reaper no reaper being
@@ -632,9 +641,21 @@ void finish_cell_thing(CellFrames &frames, const CellDrawing &drawing, const Thi
             grow(*frames.extent, overlay_sprites);
     }
     PointedThing *pointed = drawing.drawn.pointed;
-    if (pointed && pointed_testable(t) && frame.box.x < pointed->at.x && frame.box.x + frame.box.w > pointed->at.x &&
-        frame.box.y < pointed->at.y && frame.box.y + frame.box.h > pointed->at.y)
+    // mapwho_rat: a rat's hit box is its frame within World::Rats::hit_margin
+    // and its near box within near_margin; the near box without the hit one
+    // sets othervar.near_rat.
+    int margin = t.type == kThingRat ? drawing.world.rats.hit_margin : 0;
+    bool in_box = pointed && frame.box.x - margin < pointed->at.x &&
+                  frame.box.x + frame.box.w + margin > pointed->at.x && frame.box.y - margin < pointed->at.y &&
+                  frame.box.y + frame.box.h + margin > pointed->at.y;
+    if (in_box && pointed_testable(t)) {
         pointed->thing = uint16_t(id);
+    } else if (t.type == kThingRat && drawing.drawn.near_rat) {
+        int near = drawing.world.rats.near_margin;
+        if (frame.box.x - near < pointed->at.x && frame.box.x + frame.box.w + near > pointed->at.x &&
+            frame.box.y - near < pointed->at.y && frame.box.y + frame.box.h + near > pointed->at.y)
+            *drawing.drawn.near_rat = true;
+    }
     if (std::vector<FrameSound> *sounds = drawing.drawn.sounds;
         frame.drawn && sounds && t.sprite < data.anims().frames.size())
         sounds->push_back({uint16_t(id), data.anims().frames[t.sprite].sound,
@@ -738,10 +759,9 @@ class WorldDrawing
     };
 
     // do_mapwho's order for the cells of `line` from `col0` to `col1`
-    // (draw_all_sprites_on_wscreen_selectively_using_pix_buffer). The port
-    // scans the whole view, so its line can hold more cells than the game's
-    // fixed 14-cell covers window; positions past it are not ordered against
-    // each other, as in the game.
+    // (draw_all_sprites_on_wscreen_selectively_using_pix_buffer). The covers
+    // table is sized to the line, so every cell is ordered against the ones
+    // before it.
     LineOrder order_line(int col0, int col1, int line) const
     {
         const int n = col1 - col0 + 1;
@@ -751,7 +771,7 @@ class WorldDrawing
         order.behind.assign(size_t(n), -1);
         order.front.assign(size_t(n), -1);
         order.next.assign(size_t(n), -1);
-        covers_.reset();
+        covers_.reset(n);
         int tail = -1;
         for (int i = 0; i < n; i++) {
             int col = col0 + i, row = line - col;
@@ -867,7 +887,7 @@ class WorldDrawing
     const ShadowSprites *shadows_;
     Surface &scratch_;
     // The 64x64 buffer draw_energise_frame works in, and the game's covers
-    // table (which persists across lines, as the original's global does).
+    // table, reset for each line.
     Surface pixbuf_;
     mutable CoverTable covers_;
 };

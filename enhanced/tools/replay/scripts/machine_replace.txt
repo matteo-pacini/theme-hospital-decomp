@@ -1,7 +1,8 @@
 # Level 6: machine_saved.txt's worn cardiogram, without the call: the
-# handyman hired at turn 14200 takes its repair page, and on his way there
-# the machine is replaced (EV_REPLACE_MACHINE, $1000): new, unworn, its
-# page cancelled and the handyman called off. Compare up to turn 18000.
+# handyman hired at turn 12900 (applicant 51, the handyman at this turn)
+# takes its repair page, and on his way there the machine is replaced
+# (EV_REPLACE_MACHINE, $1000): new, unworn, its page cancelled and the
+# handyman called off. Compare up to turn 18000.
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 # Expect replace_machine
 5 98 0 0
@@ -46,7 +47,8 @@
 # A second doctor: hire applicant 19, place at cell 6970.
 142 48 1 19
 143 5 6970 19
-# The handyman hired, then the cardiogram replaced.
-14200 48 2 53
-14201 5 6841 53
-14250 138 45 0
+# The handyman hired (applicant 51, a handyman at this turn), then the
+# cardiogram replaced.
+12900 48 2 51
+12901 5 6841 51
+12950 138 45 0

@@ -46,6 +46,8 @@
 # A second doctor: hire applicant 19, place at cell 6970.
 142 48 1 19
 143 5 6970 19
-# A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
-144 48 2 28
-145 5 6841 28
+# A handyman to repair the cardiogram: hire applicant 28 and place him at
+# cell 6841 at turn 6000, so he is still on staff when the cardiogram first
+# wears out (hired at turn 144 he resigns before it does, turn ~10796).
+6000 48 2 28
+6001 5 6841 28

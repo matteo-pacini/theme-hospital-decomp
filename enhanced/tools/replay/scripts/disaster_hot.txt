@@ -1,0 +1,16 @@
+# Level 6: one corridor radiator and no handyman, so the first random
+# disaster is kind 2: the heating fails hot (heating_level 10,
+# heating_broken) and comes back when its timer runs out. The player sets
+# the heating while it is broken (EV_SET_HEATING 1) and it is ignored.
+# Compare up to turn 18000. The one drinks machine after the radiator draws
+# the daily randoms so the first disaster_roll (turn 10050) picks kind 2.
+# Expect disaster_roll owner=0 kind=2
+# Expect disaster_start owner=0 kind=2
+# Expect disaster_end owner=0 kind=2
+5 98 0 0
+6 37 44 1
+7 43 0 0
+8 7 7481 44
+6 37 7 1
+8 7 7482 7
+10100 79 1 0

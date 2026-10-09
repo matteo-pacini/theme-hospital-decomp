@@ -12,7 +12,7 @@
 #     TURNS   the last turn to run
 #     SCRIPT  the player's commands, as th_replay --script reads them
 #     SKIP    calls of daily_admin/twice_daily_admin to leave out, separated
-#             by commas (e.g. computer_action,manage_rats), to compare past
+#             by commas (e.g. computer_action), to compare past
 #             functions the engine does not port
 #     LEVEL   default 1
 #
@@ -25,7 +25,7 @@
 # The instrumented HOSPITAL.EXE is cached in build/replay-cache under a hash
 # of everything it is built from, so it is only rebuilt when the sources,
 # objects or instrument.py change; one run builds it while others wait.
-# DOSBox runs in one of TH_REPLAY_SLOTS (default 4) slots shared by every
+# DOSBox runs in one of TH_REPLAY_SLOTS (default 10) slots shared by every
 # caller (enhanced/tools/slot.sh; `slot.sh --status replay` lists them).
 set -eu
 
@@ -33,17 +33,14 @@ out=$1 turns=$2 script=${3:-} skip=${4:-} level=${5:-1}
 root=$PWD
 here=$(cd "$(dirname "$0")" && pwd)
 work=${REPLAY_DIR:-build/replay}
+case $work in /*) ;; *) work=$root/$work ;; esac
 tree=$work/tree
 run=$work/run
 [ -d build/base ] || { echo "build/base is missing: build the decompilation first (ninja)" >&2; exit 1; }
 
-# Everything the instrumented executable is built from.
-key=$(
-  {
-    find src include tools config build/base -type f ! -path '*/__pycache__/*' -print0 | sort -z | xargs -0 sha256sum
-    sha256sum configure.py "$here/instrument.py"
-  } | sha256sum | cut -c1-16
-)
+# Everything the instrumented executable is built from (exe_cache_key.sh,
+# shared with the trace cache).
+key=$("$here/exe_cache_key.sh" "$root" "$here/instrument.py")
 cache=build/replay-cache
 exe=$cache/$key/HOSPITAL.EXE
 mkdir -p "$cache"
@@ -70,6 +67,9 @@ if [ ! -f "$exe" ]; then
 fi
 exec 8>&-
 
+# A fresh SAVE: the game keeps once-only advisor flags there (HORZA.HDT), so a
+# run must not see the last one's.
+rm -rf "$run/SAVE"
 mkdir -p "$run/SAVE"
 for f in ANIMS DATA DATAM INTRO LEVELS QDATA QDATAM SOUND DOS4GW.EXE MODEM.INI; do
   [ -e "orig/$f" ] && ln -sfn "$root/orig/$f" "$run/$f"
@@ -94,7 +94,7 @@ sbtype=none
 [speaker]
 pcspeaker=false
 [autoexec]
-mount c "$root/$run"
+mount c "$run"
 c:
 set TRACE_TURNS=$turns
 set TRACE_SKIP=$skip
@@ -104,7 +104,7 @@ HOSPITAL.EXE -L$level -Q
 exit
 EOF
 TH_SLOT_INFO="$work ${script:-no script} level $level to turn $turns" \
-  SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$here/../slot.sh" replay "${TH_REPLAY_SLOTS:-4}" \
+  SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$here/../slot.sh" replay "${TH_REPLAY_SLOTS:-10}" \
   dosbox-x -nopromptfolder -fastlaunch \
-  -set "dosbox quit warning=false" -conf "$root/$conf" > "$work/dosbox.log" 2>&1
+  -set "dosbox quit warning=false" -conf "$conf" > "$work/dosbox.log" 2>&1
 cp "$run/TRACE.TXT" "$out"

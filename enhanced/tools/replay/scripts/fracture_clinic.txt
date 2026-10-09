@@ -5,9 +5,12 @@
 # available, then the fracture clinic with its cast remover and a nurse. The
 # consultant diagnoses the broken bones and sends the patients to the clinic,
 # which cures them (cure_illness, illness 9).
-# Expect cure 18 illness=9 == 1
+# No illness-9 patient arrives before turn 18300; the first is patient 11,
+# cured at turn 22093, so the run is extended to 26800 and expects that
+# patient.
+# Expect cure 11 illness=9 == 1
 
-# Turns 18300
+# Turns 26800
 # Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
 5 98 0 0
 6 37 11 1

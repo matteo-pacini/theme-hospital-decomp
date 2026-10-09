@@ -2,9 +2,11 @@
 # Turns 40000
 # A training room with a projector, two lecture chairs, a bookcase and a
 # skeleton, and a staff room; a consultant (applicant 25, a psychiatrist and
-# researcher) and a doctor (18) in the training room, the policy's rest at
-# 50. The doctor gains the researcher and psychiatrist skills from the
-# lectures (training_done promotions, skills 256 then 64).
+# researcher) and a doctor (18) in the training room. With the rest threshold
+# at 50 the consultant takes breaks and only skill 256 is reached by turn
+# 40000; raising the threshold to 200 keeps it in the room, so the doctor
+# gains the researcher and psychiatrist skills (training_done promotions at
+# turns 13003 and 18537, skills 256 then 64).
 # Expect promoted 18 skill=64
 # Expect promoted 18 skill=256
 101 55 0 0
@@ -37,4 +39,4 @@
 138 4 25 0
 139 7 6331 19
 140 1 0 0
-200 113 4 50
+200 113 4 200

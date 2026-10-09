@@ -41,6 +41,7 @@ enum class StartupScreen {
     Title,       // TITLE01V, waiting for a click or key; the attract movies play after a while
     Name,        // the player's name typed over the title
     MainMenu,    // MAIN01M, 320 x 200
+    LoadGame,    // PREF01V with the save slots' list (src/loadscr.cpp)
     Preferences, // PREF01V: difficulty and tutorial
     Briefing,    // the level's area movie's last frame, waiting for a click
     Done,        // a level was started or the game quit
@@ -48,7 +49,7 @@ enum class StartupScreen {
 
 // What a frame of the start-up screens asks the caller to do.
 struct StartupResult {
-    enum class Kind { Running, StartLevel, Quit };
+    enum class Kind { Running, StartLevel, LoadGame, Quit };
     Kind kind = Kind::Running;
     // StartLevel: the level, its balance id (the balance file prefix chosen
     // in the preferences: "EASY", "FULL" or "HARD", as the files are named)
@@ -56,6 +57,9 @@ struct StartupResult {
     int level = 0;
     std::string balance_id;
     bool tutorial = false;
+    // LoadGame: the save slot to load (loadscr's choice, or the Continue slot
+    // 0x63 when the main menu's Continue was chosen).
+    int slot = 0;
 };
 
 // The game's start-up flow, from the intro to a level's start, as game()
@@ -93,6 +97,15 @@ class Startup
     // that ended (the losing letter), showing its opening movie.
     void return_to_main_menu() { enter_menu(); }
 
+    // A load the caller refused: the load game screen stays up
+    // (from_load_screen, loadscr state 1's failure), or the main menu returns
+    // (mainmenu MMS_CONTINUE_FAILED).
+    void load_failed(bool from_load_screen);
+
+    // The folder the saved games live in; the load screen lists its
+    // "<player name>.h<slot>" files. Empty lists none.
+    void set_save_dir(const std::filesystem::path &dir) { save_dir_ = dir; }
+
     // The help system and context the main menu's tooltip is drawn from (the
     // caller owns both; the context's mouse is the one frame gets).
     void set_help(HelpSystem &system, HelpContext &context)
@@ -102,6 +115,8 @@ class Startup
     }
 
     StartupScreen screen() const { return screen_; }
+    // Whether the load screen's panels are fully open (its buttons work).
+    bool load_ready() const { return (current_display_ & 0x2000) != 0; }
     // The movie playing (a MovieIndex), -1 if none.
     int movie() const { return movie_index_; }
 
@@ -149,6 +164,8 @@ class Startup
                              Picture &out, std::string *error);
 
     void tick(const UiMouse &mouse, std::span<const StartupKey> keys);
+    // tick from the main menu on (its, apart for tick's length).
+    void tick_menu(const UiMouse &mouse, std::span<const StartupKey> keys);
     void attract(const UiMouse &mouse, std::span<const StartupKey> keys);
     void enter_title();
     void enter_name();
@@ -167,6 +184,16 @@ class Startup
     // tri_test's help: the hovered main-menu entry's tooltip, drawn over the
     // menu from help_, help_ctx_.
     void main_menu_help(const UiMouse &mouse);
+    // The load game screen: draw_load_game's states 0, 3 and 4 (draw_loadscr).
+    void enter_load();
+    void load_tick(const UiMouse &mouse, std::span<const StartupKey> keys);
+    void load_screen(const UiMouse &mouse, std::span<const StartupKey> keys);
+    void draw_load_screen(const UiMouse &mouse);
+    // The load screen's slot buttons and their labels (screen_buttons 0x95).
+    void draw_load_buttons(const UiMouse &mouse);
+    void load_button(const UiMouse &mouse, int slot, bool back, State &next);
+    // Whether slot `slot` holds a save readable by this build.
+    bool load_slot_used(int slot) const;
     void name_screen(std::span<const StartupKey> keys);
     void preferences(const UiMouse &mouse, std::span<const StartupKey> keys);
     void draw_new_prefs_screen(const UiMouse &mouse, bool several);
@@ -222,6 +249,10 @@ class Startup
 
     int menu_state_ = 0; // mainmenu.state
     std::string name_;
+    std::filesystem::path save_dir_;
+    // The load game screen's slot under the mouse and the one last chosen
+    // (loadgame.value).
+    int load_selected_ = 0xfa;
     std::vector<std::string> balance_files_;
     size_t balance_ = 0;
     std::string balance_name_;
@@ -232,6 +263,9 @@ class Startup
 
     std::array<ZoomBox, 46> zoom_{};
     int current_display_ = 0, desired_display_ = 0;
+    // The zoom boxes' opening and closing sounds are playing
+    // (playing_open_sound, playing_close_sound, src/glass.cpp).
+    bool zoom_open_sound_ = false, zoom_close_sound_ = false;
     BoxColours colours_;
     StartupResult result_;
     // The help system and context the main menu's tooltip is drawn from,

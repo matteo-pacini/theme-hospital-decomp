@@ -651,6 +651,10 @@ FaxResult fax_frame(Fax &fax, const UiMouse &mouse, const FaxKeys &keys, double 
     m.left_pressed |= lp;
     m.left_released |= lr;
     fax.pending_escape |= keys.escape;
+    // The game's own screen state for the colours (core/world/fax_screen.h)
+    // closes by the same pointer and keys.
+    game.fax_pointer = m.x + m.y;
+    game.fax_key |= keys.escape;
     fax.frame_time += seconds;
     // The first frame runs at once: it shows the fax.
     if (fax.frame_time < kGameFrame && fax.state != kFaxDraw)

@@ -1,0 +1,23 @@
+# Level 1: picking an object up with a right click plays SFX_PICKUPSM
+# (0xba); putting it down again plays SFX_PLACE_R (0x46) a second time.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy a bench
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place it
+wait 20
+dump placed
+expect 0x46=1;
+click-thing 30 right     # pick it up again
+wait 20
+dump picked
+expect 0xba=1;
+expect placing: object true
+click-cell 60 68         # put it back down
+wait 20
+dump dropped
+expect 0x46=2;
+expect placing: object false

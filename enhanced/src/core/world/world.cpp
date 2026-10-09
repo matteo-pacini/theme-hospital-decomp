@@ -7,6 +7,7 @@
 #include "core/world/game.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
+#include "core/world/rats.h"
 #include "core/world/trace.h"
 
 #include <algorithm>
@@ -128,8 +129,8 @@ void mark_object_shape(World &w, int tile, int kind, int dir, bool cleanse)
         if (!c)
             continue;
         c->flags |= use ? 2 : 1;
-        if (cleanse && (c->litter_shadow & 0xf))
-            remove_litter(w, uint16_t(tile + p), mark_object_shape_litter_owner(*c));
+        if (cleanse)
+            cleanse_area(w, mark_object_shape_litter_owner(*c), (tile + p) % kMapSize, (tile + p) / kMapSize, 1, 1);
     }
     for (int16_t u : shape.use_offsets)
         if (MapCell *c = cell_at(w, tile + u))
@@ -462,6 +463,11 @@ void start_level(World &world, const Level &level, const AnimData &anims, uint32
     world.plants = 0;
     world.thirsty_plants = 0;
     world.plant_health_sum = 0;
+    world.disaster_counter = 0;
+    world.disaster_kind = 0;
+    world.disaster_timer = 0;
+    world.saved_heating = 0;
+    world.heating_broken = false;
     world.seed = seed;
     build_start_map(world.map, level, [&](int cell) {
         world.map[size_t(cell)].first = level.tiles[size_t(cell)].first;

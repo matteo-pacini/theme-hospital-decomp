@@ -376,8 +376,12 @@ GAME_EDITS = [
      """    if (0 && now - gamecounts.last_turn_clock < 1000 / myplayer.game_speed_s && othervar.turbo_key == 0 &&"""),
     ("""done:
     AIL_end_sequence(GetSongHandle());""", """done:
-    if (trace_handle != -1)
+    if (trace_handle != -1) {
+        // "# end" marks a run that left the loop by itself (the last turn,
+        // or a win or loss); a trace without it was cut short.
+        trace_line(sprintf(trace_buf, "# end\\n"));
         LbFileClose(trace_handle);
+    }
     AIL_end_sequence(GetSongHandle());"""),
 ]
 
@@ -557,6 +561,12 @@ EVENTS = {
          '(unsigned)owner, (unsigned)pos);'),
     ],
     "utils.cpp": [
+        (("before", "color.salmon = LbPaletteFindColour(current_palette, 0x3f, 0x1e, 0x1e);"), "setup_colors",
+         # Only the hospital's palette (red 12) and the fax picture's (243): the
+         # year-end screens' palettes are other ones.
+         'static int fax_palette = 0; if ((color.red == 12 || color.red == 243) && (color.red == 243) != fax_palette) { '
+         'fax_palette = color.red == 243; trace_event("palette fax=%d red=%d black=%d dark_blue=%d", fax_palette, '
+         '(int)color.red, (int)color.black, (int)color.dark_blue); }'),
         ("entry", "remove_thing",
          f'trace_event("remove_thing %u type=%u", {ID.format("target")}, (unsigned)target->type);'),
     ],
@@ -641,6 +651,10 @@ EVENTS = {
          'trace_event("epidemic_declare");'),
         (("before", "count_and_flag_contagious_peeps(allhosps[i].epidemic_illness, 1, i);"), "process_turn",
          'trace_event("epidemic_cover_up");'),
+        (("before", "if (player_events[i].argb[1]) {"), "process_turn",
+         'trace_event("shoot_rat %u killed=%u powerup=%u shots=%u kills=%u", (unsigned)(rat - thing), '
+         '(unsigned)player_events[i].argb[1], (unsigned)player_events[i].argb[0], '
+         '(unsigned)award_counts.rat_shots, (unsigned)award_counts.rats_killed);'),
     ],
     "req4.cpp": [
         (("before", "handyman->litter_count = 0;"), "adjust_handyman_values",
@@ -749,6 +763,31 @@ EVENTS = {
         ("entry", "create_explosion", 'trace_event("explosion tile=%u anim=%u", (unsigned)tile, (unsigned)anim);'),
         (("before", "cx = tile % 128;"), "blast_effect",
          'trace_event("blast tile=%u radius=%d", (unsigned)tile, (int)radius);'),
+        # generate_disaster: the kind drawn, the disasters started, rejected
+        # and ended, at the points the port traces them (core/world/disaster.cpp).
+        (("before", "            switch (hosp->disaster_kind) {"), "generate_disaster",
+         'trace_event("disaster_roll owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "advisor.forced_advice_id = 0xb;"), "generate_disaster",
+         'trace_event("disaster_start owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "advisor.forced_advice_id = 0xa;"), "generate_disaster",
+         'trace_event("disaster_start owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "advisor.forced_advice_id = 0xd;"), "generate_disaster",
+         'trace_event("disaster_start owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "hosp->disaster_kind = 0;\n                }\n                break;\n            case 2:"),
+         "generate_disaster",
+         'trace_event("disaster_reject owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "hosp->disaster_kind = 0;\n                }\n                break;\n            case 3:"),
+         "generate_disaster",
+         'trace_event("disaster_reject owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "hosp->disaster_kind = 0;\n                }\n                break;\n            }\n        }\n"
+                    "        break;\n    case 1:"),
+         "generate_disaster",
+         'trace_event("disaster_reject owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "hosp->disaster_kind = 0;\n            hosp->heating_level = hosp->saved_heating;"),
+         "generate_disaster",
+         'trace_event("disaster_end owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
+        (("before", "hosp->disaster_kind = 0;\n            advisor.forced_advice_id = 0xe;"), "generate_disaster",
+         'trace_event("disaster_end owner=%u kind=%u", (unsigned)owner, (unsigned)hosp->disaster_kind);'),
     ],
     "blueprnt.cpp": [
         ("entry", "commit_blueprint", 'if (owner == 0) trace_event("commit_blueprint");'),
@@ -836,6 +875,13 @@ EVENTS = {
          'trace_event("promoted %u skill=%u", (unsigned)(student - thing), 256);'),
     ],
     "rats.cpp": [
+        (("before", "    if (side == 0) {"), "try_create_rathole",
+         'trace_event("rathole %u owner=%u side=%u", (unsigned)tile, (unsigned)owner, (unsigned)side);'),
+        ("entry", "remove_rathole",
+         'trace_event("rathole_remove %u owner=%u", (unsigned)allhosps[owner].ratholes[idx].tile, (unsigned)owner);'),
+        (("before", "insert_node(rat, rat->x, rat->y);"), "make_a_rat",
+         'trace_event("rat %u owner=%u from=%u to=%u", (unsigned)(rat - thing), (unsigned)owner, '
+         '(unsigned)allhosps[owner].ratholes[from].tile, (unsigned)allhosps[owner].ratholes[to].tile);'),
         (("before", "    }\n}"), "try_bonus_level",
          'trace_event("bonus_level %u", (unsigned)othervar.bonus_level);'),
     ],

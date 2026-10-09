@@ -41,6 +41,7 @@
 #include "core/world/game.h"
 #include "core/world/icons.h"
 #include "core/world/rooms.h"
+#include "core/world/savegame.h"
 #include "core/world/snapshot.h"
 #include "core/world/vaccine.h"
 
@@ -55,6 +56,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <deque>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -74,8 +76,37 @@ namespace
 // The view never shows less than the original's 640x480; automatic zoom
 // picks the largest integer scale that keeps at least this many lines.
 constexpr int kMinViewHeight = 480;
-constexpr int kEdgeScrollMargin = 8;   // pixels from the window edge
-constexpr float kScrollSpeed = 900.0f; // view pixels per second
+constexpr int kEdgeScrollMargin = 8; // pixels from the window edge
+// The scroll keys' bits (move_windows' scroll.up/down/left/right) and the
+// velocity they add each frame (x moves twice as fast as y, as the game's
+// 2:1 tiles do).
+constexpr uint8_t kScrollUp = 1, kScrollDown = 2, kScrollLeft = 4, kScrollRight = 8;
+constexpr int32_t kScrollAccelX = 0x80000, kScrollAccelY = 0x40000;
+constexpr int32_t kScrollDecay = 0xcd; // the velocity's per-frame decay, * 0xcd >> 8
+// move_windows runs once a game frame, which limit_framerate caps at 40 ms.
+constexpr double kGameFrame = 0.04;
+
+// The scroll bit an arrow or numpad key asks for, or 0 (src/keyboard.cpp's
+// KC_UP/KC_NUMPAD8 and so on).
+uint8_t scroll_key_bit(SDL_Keycode key)
+{
+    switch (key) {
+    case SDLK_UP:
+    case SDLK_KP_8:
+        return kScrollUp;
+    case SDLK_DOWN:
+    case SDLK_KP_2:
+        return kScrollDown;
+    case SDLK_LEFT:
+    case SDLK_KP_4:
+        return kScrollLeft;
+    case SDLK_RIGHT:
+    case SDLK_KP_6:
+        return kScrollRight;
+    default:
+        return 0;
+    }
+}
 // The in-game pointers drawn: the default one and those hovering on the map
 // shows (core/ui/info_windows.h), all with their hotspot at the top-left
 // corner.
@@ -104,6 +135,39 @@ struct LevelView {
     Game game;
     std::unique_ptr<ShadowSprites> shadows;
     Surface scratch;
+};
+
+// A debug report's contents, held in memory between the capture (at F10 or
+// the F12 button) and the write (when the note box is answered).
+struct DebugCapture {
+    SDL_Surface *shot = nullptr;
+    std::string shot_error;
+    std::string state;
+    std::vector<uint8_t> snapshot;
+    bool has_snapshot = false;
+    std::string snapshot_error;
+    std::string commands;
+};
+
+// The F10 quick report: the capture held while its note box is up.
+struct QuickReport {
+    bool armed = false;     // F10 pressed: capture at the frame's start
+    bool open = false;      // the note box is up
+    bool immediate = false; // Shift+F10: write at once, with no box
+    bool focus = false;     // focus the note box's text field
+    bool have_pause = false;
+    bool restore_paused = false;
+    DebugCapture capture;
+    std::array<char, 4096> note{};
+    std::string last_report; // the folder of the last report written
+    std::string toast;
+    uint32_t toast_until = 0;
+};
+
+// What write_debug_report did.
+struct DebugReportResult {
+    std::string message;
+    std::filesystem::path dir;
 };
 
 // Starts level `number` with its settings (the balance set `balance_id`:
@@ -311,17 +375,52 @@ class App : public DriveHost
     bool drive_move_cell(int col, int row) override;
     bool drive_move_thing(uint16_t id) override;
     void drive_button(int button, bool down) override;
-    bool drive_key(std::string_view name, bool down) override;
+    bool drive_key(std::string_view name, bool down, uint16_t mods = 0) override;
+    bool drive_text(std::string_view text) override;
     void drive_screenshot(const std::filesystem::path &path) override;
+    void drive_screenshot_ui(const std::filesystem::path &path) override;
     std::string drive_state() const override;
+    std::string drive_report_dir() const override;
     int64_t drive_turn() const override;
     bool drive_staff_demand(uint16_t id) override;
 
     bool try_load_data(const std::filesystem::path &dir);
     void load_level(int number);
+    // Takes over `view` as the level in play and resets the interface round
+    // it. `fresh` starts the advisor, the hospital settings and the insurers
+    // as a level's start does; a loaded save has them already.
+    void start_view(std::unique_ptr<LevelView> view, const Level &level, bool fresh);
+    // The save slot path for the player's name and the current save folder.
+    std::filesystem::path save_path(int slot) const;
+    // What a save of the game in play continues with: the balance id, the
+    // tutorial and the view's camera (the level is the game's).
+    SaveInfo current_save() const;
+    // Marks which File > Save/Load slots hold a save (check_save_games).
+    void refresh_save_slots();
+    // Whether the game may be saved now (check_okay_to_save): in the normal
+    // mouse mode with nothing being built, placed or edited.
+    bool can_save(const Game &game) const;
+    // Saves the game to `slot` (save_game) or loads `slot` over a level
+    // (load_game); both show the panel message the original shows (0x18
+    // saved, 0x19 cannot save, 0x1c load failed). perform_load returns
+    // whether it loaded.
+    void perform_save(int slot);
+    bool perform_load(int slot);
+    // display_panel_special_info: the misc_text message `id` on the panel's
+    // information bar for `frames` frames (the timer is one a frame).
+    void show_panel_message(uint8_t id, int frames);
+    void draw_panel_special_info();
+    void draw_panel_bar(const Game &game);
+    // Saves the Continue slot when the game returns to the main menu
+    // (quit_game 1: save_game(0x63)).
+    void save_continue_slot();
     void handle_event(const SDL_Event &e);
     void key_down(const SDL_KeyboardEvent &key);
+    void key_up(const SDL_KeyboardEvent &key);
     void game_key(const SDL_KeyboardEvent &key);
+    // Alt+S quick saves and Alt+L quick loads debug_save_slot; true when
+    // `key` was one of them (keyboard.cpp's KC_S and KC_L).
+    bool quick_save_load_key(const SDL_KeyboardEvent &key);
     // The speed keys 1-5: true when `key` is one and the speed was set.
     bool game_speed_key(const SDL_KeyboardEvent &key);
     void open_chart_key(int chart);
@@ -332,14 +431,25 @@ class App : public DriveHost
     UiMouse ui_mouse(int ox, int oy, int scale) const;
     void menu_step(int out_w, int scale);
     void perform(const MenuEvent &event);
+    // File > Save and File > Load (pulldown_save and pulldown_load),
+    // perform's, apart for their length.
+    void perform_save_load(const MenuEvent &event);
     void play_menu_sound(MenuSound sound);
     void open_menu_screen(int chart);
     void update(float dt);
     void run_turns(float dt);
-    void key_scroll(float dt);
-    void edge_scroll(float dt);
-    void apply_scroll();
+    // move_windows (src/cakewin.cpp): moves the view by the scroll direction
+    // `dir` (the arrow keys' bits, 1 up, 2 down, 4 left, 8 right, plus the
+    // window edge), accelerating while held and stopping at the scroll limit.
+    void scroll_step(uint8_t dir);
+    // The scroll direction this frame: the held keys, the pointer's window
+    // edge replacing them (process_mouse's flags), an open pulldown ignoring
+    // both (io.cpp), and opposite keys cancelling (process_game_keys).
+    uint8_t scroll_direction();
     void render();
+    // Reads the render target back and saves it as a PNG (a driven run's
+    // screenshot).
+    void save_drive_screenshot(const std::filesystem::path &path);
     // The frame of what takes the whole window, if anything: the start-up
     // screens, the fax, a chart or the town map. False when it is the
     // hospital's.
@@ -352,9 +462,16 @@ class App : public DriveHost
     int zoom() const;
     int ui_scale() const;
     void make_ui_textures();
+    // Frees the textures, cursors and surfaces the app owns.
+    void destroy_textures();
     void interface_step(int out_w, int out_h, int scale);
     bool interface_escape(Game *game);
     InfoWindowResult interface_requesters(Game &game, const InterfaceEvents &events, const UiMouse &mouse);
+    // The jukebox, hire staff and staff demand requesters' clicks, split from
+    // interface_requesters.
+    void interface_jukebox_input(Game &game, const InterfaceEvents &events, const UiMouse &mouse);
+    void interface_hire_input(Game &game, const InterfaceEvents &events);
+    void interface_staff_demand_input(Game &game, const InterfaceEvents &events);
     void interface_yes_no(Game *game, const InterfaceEvents &events);
     void interface_panel_action(Game &game, PanelAction action, bool placing);
     // The panel's edit room button (panel_l_button): toggles the edit-room
@@ -365,12 +482,19 @@ class App : public DriveHost
     // modes, picking up or cancelling. Returns the command, EV_NONE for none.
     Event interface_map_right(Game &game, bool placing);
     void interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing);
+    // The watch button's highlight sound (draw_emergency's othervar.watch_hovered):
+    // played once on entering it, when the button is drawn (epidemic, or the
+    // opening countdown past the tutorial flag).
+    void interface_watch_hover(Game &game, const UiMouse &mouse);
     // The watch's buttons over the panel (process_left_button): the epidemic's
     // vaccination button and the opening countdown's open-now button. True
     // when one took the left click.
     bool interface_watch_buttons(Game &game, const UiMouse &mouse);
     // The pointer and left click of interface_map_hover for what it is over.
     void interface_map_hover_click(Game &game, const UiMouse &mouse, const MapHover &hover);
+    // interface_map_hover's near rat: the near pointer and a miss on a click;
+    // true if it handled it.
+    bool interface_near_rat(Game &game, const UiMouse &mouse, const MapHover &hover);
     // After interface_map_hover while the queue window is open: its panel
     // information, the drag pointer and the door hotspot's scroll (req7_overdraw).
     void queue_window_after_frame(Game &game);
@@ -401,14 +525,35 @@ class App : public DriveHost
     bool help_page_open() const { return help_.box().style == 2 && !help_.box().msg.empty(); }
     void draw_info_view(Game &game);
     void ask_quit();
+    void ask_restart();
     void draw_pointer(int scale, uint8_t sprite = kPointerDefault);
     void startup_step(int out_w, int out_h);
+    // Carries out what the start-up screens chose (startup_step's result).
+    void startup_result(const StartupResult &r);
     // The debug report tool's save: the window as drawn so far, the state
     // (debug_state) and the note, in a new folder under debug-reports/.
     void save_debug_report();
+    // The F10 quick report: pause at the press, capture the frame and state
+    // into memory, and either write at once (Shift+F10) or show the note box.
+    void quick_report_key(SDL_Keymod mods);
+    void quick_report_step();
+    // The note box and the save confirmation of the F10 quick report.
+    void draw_quick_report();
+    void capture_debug_report(DebugCapture &capture);
+    // Writes a held capture to a new debug-reports/<time>/ folder.
+    DebugReportResult write_debug_report(const std::string &note, DebugCapture &capture);
+    void finish_quick_report(const std::string &note);
+    void discard_quick_report();
+    void restore_quick_pause();
+    // Where a report goes: debug-reports/ under the folder the game was
+    // started from, or TH_DEBUG_REPORT_DIR when set (the drive tests).
+    std::filesystem::path report_base() const;
     std::string debug_state() const;
     // What fills the window this frame, for debug_state.
     std::string screen_name() const;
+    // debug_state's hospital lines: the level, saves, camera, panel, date,
+    // money, the last command and the sounds played.
+    std::string debug_state_hospital(const Game &g) const;
     // debug_state's fax icons and open fax.
     std::string debug_state_calls(const Game &g) const;
     void open_town_map();
@@ -468,8 +613,18 @@ class App : public DriveHost
     // (othervar.panel_info and panel_thing).
     uint8_t panel_info_ = 0;
     uint16_t panel_thing_ = 0;
+    // The bar's kind as the last frame drew it, 0 when the raised panel
+    // covered it (draw_panel_info's return).
+    uint8_t panel_info_drawn_ = 0;
     // othervar.panel_info_timer: frames the bar stays once the pointer leaves.
     int panel_info_timer_ = 0;
+    // othervar.watch_hovered: the pointer is over the watch button, so the
+    // highlight sound plays once on entering it.
+    bool watch_hovered_ = false;
+    // othervar.panel_message and panel_message_time: the special message on
+    // the panel's information bar (display_panel_special_info).
+    std::string panel_message_;
+    int panel_message_time_ = 0;
     BuildUi build_ui_;
     Jukebox jukebox_;
     // The help system (tooltips and room help pages), its text font (cache
@@ -507,6 +662,9 @@ class App : public DriveHost
     uint16_t heli_seen_ = 0;
     // The thing under the pointer as the view was drawn this frame.
     PointedThing pointed_;
+    // othervar.near_rat: the pointer is in a rat's near box but not its hit
+    // box. Reset before each draw, set by draw_world.
+    bool near_rat_ = false;
     // The start-up screens (intro, menus, the level's area movie), shown
     // until they start a level; skipped with --level.
     Startup startup_;
@@ -528,6 +686,11 @@ class App : public DriveHost
     // asks before one (othervar.yes_type and no_type); EV_NONE otherwise.
     Event yes_event_;
     Event no_event_;
+    // The slot File > Save is overwriting, waiting for the yes/no answer
+    // (pulldown_save's EV_CLOSE_SAVE_YES_NO); 0 for none.
+    int pending_save_slot_ = 0;
+    // The slot Alt+S and Alt+L use (debug.save_slot).
+    int debug_save_slot_ = 0;
     // The pointers of kPointersDrawn, by number.
     struct PointerTexture {
         SDL_Texture *texture = nullptr;
@@ -549,6 +712,10 @@ class App : public DriveHost
     DataSearch search_;
     std::string data_error_;
     std::filesystem::path hiscore_path_;
+    // The folder the saved games live in, and which File > Save/Load slots
+    // hold one ([0] is slot 1).
+    std::filesystem::path save_dir_;
+    std::array<bool, kMenuSlots + 1> save_slots_{};
     FolderPick pick_;
     std::unique_ptr<GameData> data_;
 
@@ -558,9 +725,16 @@ class App : public DriveHost
     Surface surface_;
     Point camera_;                                         // map pixel position of the view's top-left
     uint16_t scroll_min_ = 0, scroll_max_ = kMapCells - 1; // the level's scroll area, as cells
-    float scroll_x_ = 0, scroll_y_ = 0;                    // sub-pixel scroll carried between frames
-    double turn_clock_ = 0;                                // turns due but not yet run
+    // The scroll keys held (move_windows' scroll.*), and the view's velocity
+    // in 1/65536 pixel a frame with the fraction carried between frames.
+    uint8_t scroll_held_ = 0;
+    int32_t scroll_vel_x_ = 0, scroll_vel_y_ = 0;
+    int32_t scroll_frac_x_ = 0, scroll_frac_y_ = 0;
+    double scroll_frame_time_ = 0;      // real time accrued towards the next move_windows frame
+    float scroll_x_ = 0, scroll_y_ = 0; // the mouse drag's sub-pixel pixels, carried between frames
+    double turn_clock_ = 0;             // turns due but not yet run
     ToolsState tools_;
+    QuickReport quick_;
     // The game's menu bar, drawn into its own layer across the top of the
     // window at the UI scale.
     MenuBar menu_;
@@ -617,6 +791,10 @@ class App : public DriveHost
     int drive_w_ = 1280, drive_h_ = 720;
     uint64_t drive_ns_ = 0;
     std::filesystem::path drive_shot_;
+    std::filesystem::path drive_shot_ui_;
+    // The text of the `type` commands waiting to be polled: SDL keeps the
+    // pointer, so the strings outlive SDL_PushEvent until the next poll.
+    std::deque<std::string> drive_texts_;
     // The full-screen screen drawn last (draw_fitted): where, its size and
     // the frame, for driven clicks in its 640 x 480 coordinates.
     struct {
@@ -713,6 +891,14 @@ bool App::try_load_data(const std::filesystem::path &dir)
     data_ = std::move(data);
     load_ui_art(dir);
     data_error_.clear();
+    // The saved games: in the user's preferences folder, or under a driven
+    // run's output folder, which is removed between runs, so tests start
+    // with no saves.
+    if (driver_)
+        save_dir_ = drive_out_ / "save";
+    else
+        save_dir_ = settings_.path().empty() ? std::filesystem::path("save") : settings_.path().parent_path() / "save";
+    startup_.set_save_dir(save_dir_);
     // The start-up screens choose the level, unless --level did.
     if (!level_from_cli_ && startup_.load(dir, data_->text(), data_->language(), &error))
         in_startup_ = true;
@@ -763,13 +949,24 @@ void App::load_level(int number)
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
     }
-    level_ = number;
-    map_ = std::move(map);
+    start_view(std::move(map), *level, true);
+}
+
+// Takes over `view` as the level in play and resets the interface round it.
+// A loaded save has the advisor, the hospital settings and the insurers in
+// the snapshot already, so `fresh` skips their level-start setup. `level` is
+// the level file, for its camera start and scroll area.
+void App::start_view(std::unique_ptr<LevelView> view, const Level &level, bool fresh)
+{
+    level_ = view->game.level_number();
+    map_ = std::move(view);
     close_irequesters(interface_);
     info_ = {};
-    start_advisor(map_->game.advisor, tutorial_);
-    start_hospital_settings(map_->game.hospital, map_->game.settings());
-    setup_insurances(map_->game.world, ticks_ms());
+    if (fresh) {
+        start_advisor(map_->game.advisor, tutorial_);
+        start_hospital_settings(map_->game.hospital, map_->game.settings());
+        setup_insurances(map_->game.world, ticks_ms());
+    }
     charts_.hospital_names[0] = startup_.player_name();
     charts_.open = false;
     fax_.open = false;
@@ -781,6 +978,10 @@ void App::load_level(int number)
     winlose_.close();
     winlose_showing_ = false;
     winlose_movie_index_ = -1;
+    // A message from the screen before this game (e.g. a load failure) is not
+    // shown on the new level.
+    panel_message_.clear();
+    panel_message_time_ = 0;
     last_year_ = map_->game.date.year;
     panel_state_.shown_balance = map_->game.balance;
     sounds_.safeseed = kLevelStartSeed;
@@ -788,11 +989,127 @@ void App::load_level(int number)
     music_.start_level(ticks_ms());
     sounds_.init_ambients();
     // Centre the view on the player's starting cell, as load_level does.
-    int start = level->camera_start[0];
-    scroll_min_ = level->scroll_min;
-    scroll_max_ = level->scroll_max;
+    int start = level.camera_start[0];
+    scroll_min_ = level.scroll_min;
+    scroll_max_ = level.scroll_max;
     Point centre = cell_to_world(start % kMapSize, start / kMapSize);
     camera_ = {centre.x - surface_.width() / 2, centre.y - surface_.height() / 2};
+    refresh_save_slots();
+}
+
+std::filesystem::path App::save_path(int slot) const
+{
+    return save_slot_path(save_dir_, startup_.player_name(), slot);
+}
+
+SaveInfo App::current_save() const
+{
+    SaveInfo info;
+    info.balance_id = balance_id_;
+    info.tutorial = tutorial_;
+    // The view's centre, not its top-left: it is restored the same whatever
+    // the view surface's size, including when it is 0x0 on a first load.
+    info.view_centre_x = camera_.x + surface_.width() / 2;
+    info.view_centre_y = camera_.y + surface_.height() / 2;
+    return info;
+}
+
+// check_save_games (src/menu.cpp): which File > Save/Load slots hold a save,
+// from the files in the save folder.
+void App::refresh_save_slots()
+{
+    save_slots_.fill(false);
+    for (int slot = 1; slot <= kMenuSlots; slot++)
+        save_slots_[size_t(slot)] = save_slot_exists(save_path(slot));
+}
+
+// check_okay_to_save (src/io.cpp): saving needs the normal mouse mode, with
+// nothing being placed, built or edited and no modal requester up.
+bool App::can_save(const Game &game) const
+{
+    if (interface_.modal() || hire_.placing() || game.world.placing.placing)
+        return false;
+    return game.world.building.mouse == BuildMouse::None && !build_tool_busy(game);
+}
+
+// The panel messages the save and load show (misc_text indices, io.cpp):
+// saved, cannot save and load failed.
+constexpr uint8_t kPanelMessageSaved = 0x18;
+constexpr uint8_t kPanelMessageCannotSave = 0x19;
+constexpr uint8_t kPanelMessageLoadFailed = 0x1c;
+
+// display_panel_special_info: the message text and its timer in frames.
+void App::show_panel_message(uint8_t id, int frames)
+{
+    if (!data_)
+        return;
+    panel_message_ = std::string(data_->text().at(TextSection::Misc, id));
+    panel_message_time_ = frames;
+}
+
+// save_game (src/io.cpp): the whole game to the slot's file.
+void App::perform_save(int slot)
+{
+    if (!map_ || !data_)
+        return;
+    if (!can_save(map_->game)) {
+        show_panel_message(kPanelMessageCannotSave, 0x14);
+        return;
+    }
+    std::string error;
+    if (!write_save_slot(save_path(slot), map_->game, current_save(), &error)) {
+        std::fprintf(stderr, "save slot %d: %s\n", slot, error.c_str());
+        show_panel_message(kPanelMessageCannotSave, 0x14);
+        return;
+    }
+    show_panel_message(kPanelMessageSaved, 3);
+    refresh_save_slots();
+}
+
+// load_game (src/io.cpp): the save at the slot's file, over a fresh level;
+// false, with the load-failed message, when it cannot be loaded.
+bool App::perform_load(int slot)
+{
+    if (!data_)
+        return false;
+    std::string error;
+    auto view = std::make_unique<LevelView>();
+    SaveInfo info;
+    if (!read_save_slot(save_path(slot), view->game, *data_, &info, &error)) {
+        std::fprintf(stderr, "load slot %d: %s\n", slot, error.c_str());
+        show_panel_message(kPanelMessageLoadFailed, 0x46);
+        return false;
+    }
+    auto level = data_->load_level(info.level, &error);
+    if (!level) {
+        std::fprintf(stderr, "%s\n", error.c_str());
+        show_panel_message(kPanelMessageLoadFailed, 0x46);
+        return false;
+    }
+    view->shadows = std::make_unique<ShadowSprites>(data_->blocks(), data_->ghost());
+    // The settings and the view the save continues with (window and
+    // scroll_y, src/data.cpp:22-23, restored by load_game io.cpp:2067-2093).
+    if (!info.balance_id.empty())
+        balance_id_ = info.balance_id;
+    tutorial_ = info.tutorial;
+    start_view(std::move(view), *level, false);
+    // The view centre over the surface's centre: with a 0x0 surface (a first
+    // load from the start-up screens) this leaves the centre, and resize_view
+    // moves the camera to it once the view has its size.
+    camera_ = {info.view_centre_x - surface_.width() / 2, info.view_centre_y - surface_.height() / 2};
+    return true;
+}
+
+// save_game(0x63) when the game returns to the main menu.
+void App::save_continue_slot()
+{
+    if (!map_ || !data_ || !can_save(map_->game))
+        return;
+    std::string error;
+    if (!write_save_slot(save_path(kContinueSlot), map_->game, current_save(), &error))
+        std::fprintf(stderr, "continue save: %s\n", error.c_str());
+    else
+        show_panel_message(kPanelMessageSaved, 3);
 }
 
 int App::ui_scale() const
@@ -894,28 +1211,15 @@ bool App::interface_escape(Game *game)
 // result it returns.
 InfoWindowResult App::interface_requesters(Game &game, const InterfaceEvents &events, const UiMouse &mouse)
 {
-    if (interface_.requester() == Requester::Jukebox) {
-        JukeboxResult jr = jukebox_frame(jukebox_, interface_, {events, mouse}, requester_art_, music_, game.paused);
-        for (uint8_t sfx : jr.sounds)
-            sounds_.play_sound(kSourceGeneral, sfx);
-        if (jr.close)
-            game.event = hire_staff_cancel(hire_);
-    }
+    interface_jukebox_input(game, events, mouse);
     const bool *keys = SDL_GetKeyboardState(nullptr);
     bool shift = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
     bool ctrl = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
     object_requesters_input(interface_, object_ui_, game, events, mouse, {shift, ctrl});
     build_requesters_input(interface_, build_ui_, game, events, mouse);
     queue_window_input(queue_, interface_, game, {*data_, requester_art_, map_cell_, events, mouse});
-    if (Event e = hire_staff_click(hire_, events, game); e.type)
-        game.event = e;
-    if (interface_.requester() == Requester::StaffDemand) {
-        bool accept = false;
-        if (Event e = staff_demand_click(demand_, events, accept); e.type) {
-            sounds_.play_sound(kSourceGeneral, accept ? kSfxBonus2 : kSfxSack);
-            game.event = e;
-        }
-    }
+    interface_hire_input(game, events);
+    interface_staff_demand_input(game, events);
     InfoWindowResult info = info_window_frame(info_, interface_, events, mouse,
                                               {game.world, data_->text(), {scroll_min_, scroll_max_}, game.balance});
     for (uint8_t sfx : info.sounds)
@@ -933,14 +1237,73 @@ InfoWindowResult App::interface_requesters(Game &game, const InterfaceEvents &ev
     return info;
 }
 
+void App::interface_jukebox_input(Game &game, const InterfaceEvents &events, const UiMouse &mouse)
+{
+    if (interface_.requester() != Requester::Jukebox)
+        return;
+    JukeboxResult jr = jukebox_frame(jukebox_, interface_, {events, mouse}, requester_art_, music_, game.paused);
+    for (uint8_t sfx : jr.sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    if (jr.close)
+        game.event = hire_staff_cancel(hire_);
+}
+
+void App::interface_hire_input(Game &game, const InterfaceEvents &events)
+{
+    std::vector<uint8_t> hire_sounds;
+    Event hire_event = hire_staff_click(hire_, events, game, &hire_sounds);
+    for (uint8_t sfx : hire_sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    if (hire_event.type)
+        game.event = hire_event;
+}
+
+void App::interface_staff_demand_input(Game &game, const InterfaceEvents &events)
+{
+    if (interface_.requester() != Requester::StaffDemand)
+        return;
+    bool accept = false;
+    if (Event e = staff_demand_click(demand_, events, accept); e.type) {
+        sounds_.play_sound(kSourceGeneral, accept ? kSfxBonus2 : kSfxSack);
+        game.event = e;
+    }
+}
+
 // The yes/no requester's answer: its sound, then what it was asked for.
 void App::interface_yes_no(Game *game, const InterfaceEvents &events)
 {
     if (events.yes_no == YesNoAnswer::None)
         return;
-    sounds_.play_sound(kSourceGeneral, events.yes_no == YesNoAnswer::Yes ? kSfxYesX : kSfxNo4);
-    if (events.yes_no == YesNoAnswer::Yes && asking_quit_)
-        running_ = false;
+    // The No button plays SFX_NO4 (req13); Escape and a right click outside
+    // the window answer No without a sound (req13_cancel_check).
+    if (events.yes_no == YesNoAnswer::Yes)
+        sounds_.play_sound(kSourceGeneral, kSfxYesX);
+    else if (!events.yes_no_cancel)
+        sounds_.play_sound(kSourceGeneral, kSfxNo4);
+    if (events.yes_no == YesNoAnswer::Yes && asking_quit_) {
+        // quit_game 1: close the requester, then save the Continue slot
+        // (game.cpp's close_irequesters before save_game(0x63)) and return to
+        // the main menu; a run started with --level has no menu to return to.
+        asking_quit_ = false;
+        yes_event_ = no_event_ = {};
+        interface_.close_yes_no(false);
+        if (!level_from_cli_ && data_) {
+            save_continue_slot();
+            map_.reset();
+            in_startup_ = true;
+            startup_.return_to_main_menu();
+        } else {
+            running_ = false;
+        }
+        return;
+    }
+    int save_slot = std::exchange(pending_save_slot_, 0);
+    if (events.yes_no == YesNoAnswer::Yes && save_slot > 0) {
+        // EV_CLOSE_SAVE_YES_NO closes the requester before the save
+        // (check_save_games follows).
+        interface_.close_yes_no(false);
+        perform_save(save_slot);
+    }
     if (game) {
         Event e = events.yes_no == YesNoAnswer::Yes ? yes_event_ : no_event_;
         if (e.type)
@@ -967,6 +1330,14 @@ bool App::panel_edit_room(Game &game)
 // says whether an object or a member of staff is being placed.
 void App::interface_panel_action(Game &game, PanelAction action, bool placing)
 {
+    if (action == PanelAction::None)
+        return;
+    // panel_l_button and panel_r_button refuse every panel click while an
+    // edited room empties (MM_EDIT_ROOM_WAIT).
+    if (game.world.building.mouse == BuildMouse::EditRoomWait) {
+        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+        return;
+    }
     // The other panel buttons lead to requesters and screens not ported yet.
     bool refused = action == PanelAction::Refused;
     if (action == PanelAction::FurnishCorridor) {
@@ -984,14 +1355,18 @@ void App::interface_panel_action(Game &game, PanelAction action, bool placing)
     } else if (action == PanelAction::EditRoom) {
         refused = panel_edit_room(game);
     } else if (action == PanelAction::TownMap) {
-        open_town_map();
+        // Refused while the edit room requester, or the buy objects one
+        // other than for the corridor, is open.
+        refused = interface_.requester() == Requester::EditRoom ||
+                  (interface_.requester() == Requester::BuyObjects && game.world.placing.arg != 1);
+        if (!refused)
+            open_town_map();
     } else if (int chart = chart_for_panel_action(action); chart >= 0) {
         Event e = open_chart_command(chart, game, &refused);
         if (!refused)
             game.event = e;
     }
-    if (action != PanelAction::None)
-        sounds_.play_sound(kSourceGeneral, refused ? kSfxWrong2 : kSfxSelectX);
+    sounds_.play_sound(kSourceGeneral, refused ? kSfxWrong2 : kSfxSelectX);
 }
 
 // The mouse on the map (`on_map`): what is being placed follows the
@@ -1056,7 +1431,9 @@ bool App::interface_watch_buttons(Game &game, const UiMouse &mouse)
         mouse.y >= kPanelWatchButtonY + button.height)
         return false;
     if (game.world.epidemic.timer > 0) {
+        // MM_VACCINATE, with SFX_SELECTX (mouse.cpp:317).
         vaccinate_ = !vaccinate_;
+        sounds_.play_sound(kSourceGeneral, kSfxSelectX);
         return true;
     }
     if (game.opening_countdown > 0) {
@@ -1067,6 +1444,28 @@ bool App::interface_watch_buttons(Game &game, const UiMouse &mouse)
     return false;
 }
 
+// The watch button's highlight (draw_emergency's othervar.watch_hovered): its
+// sound plays once on entering it, when the button is drawn.
+void App::interface_watch_hover(Game &game, const UiMouse &mouse)
+{
+    // The button is drawn only in the epidemic branch or, past an emergency
+    // and with the tutorial flag clear, in the opening-countdown branch
+    // (draw_emergency, panel.cpp:593).
+    bool epidemic = game.world.epidemic.timer > 0;
+    bool countdown =
+        game.opening_countdown > 0 && !(game.advisor.flags & kAdvisorTutorial) && game.open_countdown >= 13;
+    if (game.world.emergency.timer > 0 || (!epidemic && !countdown)) {
+        watch_hovered_ = false;
+        return;
+    }
+    Sprite button = data_->watch().at(14);
+    bool over_watch = mouse.x >= kPanelWatchButtonX && mouse.x < kPanelWatchButtonX + button.width &&
+                      mouse.y >= kPanelWatchButtonY && mouse.y < kPanelWatchButtonY + button.height;
+    if (over_watch && !watch_hovered_)
+        sounds_.play_sound(kSourceGeneral, kSfxHighlight5);
+    watch_hovered_ = over_watch;
+}
+
 // process_mouse's MM_NORMAL: what the pointer is over, and a left click
 // there (process_left_button) opens its window.
 void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing)
@@ -1075,6 +1474,7 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
     // (othervar.panel_info_timer).
     if (panel_info_timer_ && --panel_info_timer_ == 0)
         panel_info_ = 0;
+    interface_watch_hover(game, mouse);
     if (!on_map || placing || build_tool_busy(game) || game.world.building.mouse != BuildMouse::None ||
         interface_.requester() != Requester::None || advisor_hit(game.advisor, mouse.x, mouse.y)) {
         pointer_sprite_ = kPointerDefault;
@@ -1100,6 +1500,10 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
         panel_info_ = hover.info;
         panel_thing_ = hover.thing;
     }
+    // process_mouse's MM_NORMAL: a rat near the pointer but not aimed at
+    // (othervar.near_rat) shows the near pointer, and a click fires a miss.
+    if (interface_near_rat(game, mouse, hover))
+        return;
     // During a cover-up, hovering a contagious patient shows the vaccination
     // pointer, as process_mouse's MM_NORMAL does; a click on one queues them.
     uint16_t target = 0;
@@ -1119,6 +1523,21 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
     if (epidemic.timer == 0)
         vaccinate_ = false;
     interface_map_hover_click(game, mouse, hover);
+}
+
+// interface_map_hover's rat near the pointer but not aimed at: the near
+// pointer and, on a click, EV_SHOOT_RAT at nothing (a miss), as
+// process_mouse's MM_NORMAL. False if no rat is near or one is aimed at.
+bool App::interface_near_rat(Game &game, const UiMouse &mouse, const MapHover &hover)
+{
+    if (!near_rat_)
+        return false;
+    if (hover.hit && hover.thing < game.world.things.size() && game.world.things[hover.thing].type == kThingRat)
+        return false;
+    pointer_sprite_ = kPointerRatNear;
+    if (mouse.left_pressed)
+        game.event = map_left_click(game.world, hover, interface_, map_cell_, true);
+    return true;
 }
 
 // interface_map_hover's pointer and left click for the thing `hover` is over:
@@ -1201,9 +1620,14 @@ void App::interface_command(Game &game, const InfoWindowResult &info)
         no_event_ = info.no;
     }
     if (info.casebook) {
-        // req3 opens the casebook itself, with no command.
-        charts_.selected_illness = info.casebook;
-        chart_command(charts_, {EV_OPEN_SCREEN, uint16_t(kChartCasebook)});
+        // req3 opens the casebook itself, with no command; EV_OPEN_SCREEN is
+        // refused while an edited room empties (io.cpp:824).
+        if (game.world.building.mouse == BuildMouse::EditRoomWait) {
+            sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+        } else {
+            charts_.selected_illness = info.casebook;
+            chart_command(charts_, {EV_OPEN_SCREEN, uint16_t(kChartCasebook)});
+        }
     }
 }
 
@@ -1226,7 +1650,7 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
     }
     draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
     if (map_ && game)
-        draw_panel_info({ui_, panel_top(*data_), requester_art_.font()}, panel_info_, panel_thing_, *game, *data_);
+        draw_panel_bar(*game);
     if (map_) {
         draw_popup_icons(ui_, popups_, *data_, panel_state_, &figures);
         draw_emergency(ui_, figures, *data_);
@@ -1255,6 +1679,34 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
     SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
     SDL_FRect dst = {float(ox), float(oy), float(kUiWidth * scale), float(kUiHeight * scale)};
     SDL_RenderTexture(renderer_, ui_tex_, nullptr, &dst);
+}
+
+// The panel's information bar: the special message while one is up, else
+// the thing under the pointer.
+void App::draw_panel_bar(const Game &game)
+{
+    if (panel_message_.empty()) {
+        panel_info_drawn_ = draw_panel_info({ui_, panel_top(*data_), requester_art_.font(), panel_state_.raised},
+                                            panel_info_, panel_thing_, game, *data_);
+    } else {
+        panel_info_drawn_ = 0;
+        draw_panel_special_info();
+    }
+}
+
+// display_panel_special_info: the saved/cannot-save/load-failed message on
+// the panel's information bar, for its remaining frames. The pointer over the
+// panel clears it at once, unless the game is paused (panel.cpp:1558-1560).
+void App::draw_panel_special_info()
+{
+    if (map_ && !map_->game.paused && help_mouse_.y >= panel_top(*data_)) {
+        panel_message_.clear();
+        panel_message_time_ = 0;
+        return;
+    }
+    draw_panel_message({ui_, panel_top(*data_), requester_art_.font()}, panel_message_, *data_);
+    if (panel_message_time_ > 0 && --panel_message_time_ == 0)
+        panel_message_.clear();
 }
 
 // The help tooltip of the screen open this frame: the original computes the
@@ -1405,6 +1857,17 @@ void App::ask_quit()
     asking_quit_ = true;
 }
 
+// File > Restart: ask_restart_level's yes/no requester.
+void App::ask_restart()
+{
+    if (!map_ || interface_.modal())
+        return;
+    interface_.open_yes_no(data_->text().at(TextSection::YesNo, 6));
+    yes_event_ = {EV_RESTART_LEVEL};
+    no_event_ = {};
+    asking_quit_ = false;
+}
+
 // The game's own pointer `sprite`, in place of the system one over the
 // game; its hotspot is its top-left corner.
 void App::draw_pointer(int scale, uint8_t sprite)
@@ -1521,6 +1984,11 @@ void App::town_step(int out_w, int out_h)
 
 void App::run_command(Game &game)
 {
+    // EV_OPEN_SCREEN is refused while an edited room empties (io.cpp:824).
+    if (game.event.type == EV_OPEN_SCREEN && game.world.building.mouse == BuildMouse::EditRoomWait) {
+        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+        game.event = {};
+    }
     bool restart = game.event.type == EV_RESTART_LEVEL;
     // Answering a member of staff's resignation call opens the staff demand
     // requester once the command has removed the call (io.cpp's
@@ -1540,6 +2008,9 @@ void App::run_command(Game &game)
         interface_.close_yes_no(true);
     if (game.event.type == EV_SACK_STAFF)
         sounds_.play_sound(kSourceGeneral, kSfxSack);
+    // EV_CANCEL_SACK plays SFX_NO4 (io.cpp:1841), on top of the No button's.
+    else if (game.event.type == EV_CANCEL_SACK)
+        sounds_.play_sound(kSourceGeneral, kSfxNo4);
     info_window_event(info_, interface_, game.world, game.event);
     queue_window_event(queue_, interface_, game.world, game.event);
     fax_command(fax_, game.event);
@@ -1626,6 +2097,12 @@ void App::charts_step(int out_w, int out_h)
     ChartsResult r = chart_frame(charts_, mouse, keys, frame_seconds_, game, game.hospital);
     for (uint8_t sfx : r.sounds)
         sounds_.play_sound(kSourceGeneral, sfx);
+    // The research screen's bubbling loops on the crowd source until the
+    // screen closes (rschscrn.cpp:39/50).
+    if (r.research_sound)
+        sounds_.play_sound(kSourceCrowd, kSfxResearch);
+    if (r.research_stop)
+        sounds_.stop_sample(kSourceCrowd, kSfxResearch);
     if (r.event.type)
         game.event = r.event;
     last_event_ = game.event;
@@ -1687,8 +2164,10 @@ void App::year_end_step(int out_w, int out_h)
     YearEndResult r;
     if (year_end_phase_ == 0) {
         r = year_end_.hall_frame(mouse, keys, frame_seconds_, startup_.player_name(), game.progress.score);
-        if (r.hall_done)
+        if (r.hall_done) {
             year_end_phase_ = 1;
+            year_end_.set_phase(1);
+        }
     } else {
         YearEndView view;
         view.year = game.date.year;
@@ -1868,6 +2347,7 @@ void App::winlose_step(int out_w, int out_h)
             help_.set_page(-1, -1, level_briefing(data_->text(), r.next_level));
         } else if (winlose_to_menu_ && !level_from_cli_) {
             // DM_MAIN_MENU: back to the main menu (the game is unloaded).
+            save_continue_slot();
             map_.reset();
             in_startup_ = true;
             startup_.return_to_main_menu();
@@ -1915,64 +2395,193 @@ void App::startup_step(int out_w, int out_h)
 
     draw_fitted(src, startup_.palette(), startup_tex_, at);
 
+    startup_result(r);
+}
+
+// What the start-up screens chose: quit, or start a level, or load a save
+// (the main menu's Continue, or the load game screen's chosen slot).
+void App::startup_result(const StartupResult &r)
+{
+    if (r.kind == StartupResult::Kind::Running)
+        return;
+    if (movie_stream_)
+        SDL_DestroyAudioStream(movie_stream_);
+    movie_stream_ = nullptr;
     if (r.kind == StartupResult::Kind::Quit) {
         running_ = false;
     } else if (r.kind == StartupResult::Kind::StartLevel) {
-        if (movie_stream_)
-            SDL_DestroyAudioStream(movie_stream_);
-        movie_stream_ = nullptr;
         in_startup_ = false;
         balance_id_ = r.balance_id;
         tutorial_ = r.tutorial;
         load_level(r.level);
+    } else if (r.kind == StartupResult::Kind::LoadGame) {
+        if (perform_load(r.slot)) {
+            in_startup_ = false;
+        } else {
+            // loadscr state 1 on failure returns to the load game screen
+            // (state 4); the main menu's Continue (mainmenu.cpp
+            // MMS_CONTINUE_FAILED) returns to the main menu. The screens must
+            // stay up: no level was loaded.
+            in_startup_ = true;
+            startup_.load_failed(r.slot != kContinueSlot);
+        }
     }
+}
+
+std::filesystem::path App::report_base() const
+{
+    const char *dir = std::getenv("TH_DEBUG_REPORT_DIR");
+    return dir && *dir ? std::filesystem::path(dir) : std::filesystem::path("debug-reports");
+}
+
+void App::capture_debug_report(DebugCapture &capture)
+{
+    capture.shot = SDL_RenderReadPixels(renderer_, nullptr);
+    capture.shot_error = capture.shot ? std::string() : SDL_GetError();
+    capture.state = debug_state();
+    capture.snapshot.clear();
+    capture.commands.clear();
+    capture.has_snapshot = false;
+    capture.snapshot_error.clear();
+    if (map_ && !in_startup_) {
+        if (save_snapshot(map_->game, capture.snapshot))
+            capture.has_snapshot = true;
+        else
+            capture.snapshot_error = ", without the snapshot";
+        for (const std::string &line : map_->game.command_log)
+            capture.commands += line + '\n';
+    }
+}
+
+DebugReportResult App::write_debug_report(const std::string &note, DebugCapture &capture)
+{
+    namespace fs = std::filesystem;
+    DebugReportResult result;
+    char stamp[32];
+    std::time_t now = std::time(nullptr);
+    std::strftime(stamp, sizeof stamp, "%Y%m%d-%H%M%S", std::localtime(&now));
+    fs::path base = report_base();
+    fs::path dir = base / stamp;
+    for (int n = 2; fs::exists(dir); n++)
+        dir = base / std::format("{}-{}", stamp, n);
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+    if (ec) {
+        result.message = std::format("Could not create {}: {}", dir.string(), ec.message());
+        return result;
+    }
+    bool shot_ok = capture.shot && SDL_SavePNG(capture.shot, (dir / "screenshot.png").string().c_str());
+    std::ofstream(dir / "note.txt") << note << '\n';
+    std::ofstream(dir / "state.txt") << capture.state;
+    if (capture.has_snapshot)
+        std::ofstream(dir / "snapshot.bin", std::ios::binary)
+            .write(reinterpret_cast<const char *>(capture.snapshot.data()), std::streamsize(capture.snapshot.size()));
+    if (map_ && !in_startup_)
+        std::ofstream(dir / "commands.txt") << capture.commands;
+    result.dir = dir;
+    result.message = std::format("Saved to {}", fs::absolute(dir).string());
+    result.message += capture.snapshot_error;
+    if (!shot_ok)
+        result.message += ", without the screenshot: " + (capture.shot ? SDL_GetError() : capture.shot_error);
+    return result;
 }
 
 void App::save_debug_report()
 {
-    namespace fs = std::filesystem;
-    char stamp[32];
-    std::time_t now = std::time(nullptr);
-    std::strftime(stamp, sizeof stamp, "%Y%m%d-%H%M%S", std::localtime(&now));
-    fs::path dir = fs::path("debug-reports") / stamp;
-    for (int n = 2; fs::exists(dir); n++)
-        dir = fs::path("debug-reports") / std::format("{}-{}", stamp, n);
-    std::error_code ec;
-    fs::create_directories(dir, ec);
-    if (ec) {
-        tools_.report.last = std::format("Could not create {}: {}", dir.string(), ec.message());
-        return;
-    }
-    SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
-    bool shot_ok = shot && SDL_SavePNG(shot, (dir / "screenshot.png").string().c_str());
-    std::string shot_error = shot_ok ? "" : SDL_GetError();
-    if (shot)
-        SDL_DestroySurface(shot);
-    std::ofstream(dir / "note.txt") << tools_.report.note.data() << '\n';
-    std::ofstream(dir / "state.txt") << debug_state();
-    std::string snapshot_error;
-    if (map_ && !in_startup_) {
-        std::vector<uint8_t> snapshot;
-        if (save_snapshot(map_->game, snapshot))
-            std::ofstream(dir / "snapshot.bin", std::ios::binary)
-                .write(reinterpret_cast<const char *>(snapshot.data()), std::streamsize(snapshot.size()));
-        else
-            snapshot_error = ", without the snapshot";
-        std::ofstream commands(dir / "commands.txt");
-        for (const std::string &line : map_->game.command_log)
-            commands << line << '\n';
-    }
-    tools_.report.last = std::format("Saved to {}", fs::absolute(dir).string());
-    tools_.report.last += snapshot_error;
-    if (!shot_ok)
-        tools_.report.last += ", without the screenshot: " + shot_error;
+    DebugCapture capture;
+    capture_debug_report(capture);
+    DebugReportResult result = write_debug_report(tools_.report.note.data(), capture);
+    if (capture.shot)
+        SDL_DestroySurface(capture.shot);
+    tools_.report.last = result.message;
     std::fprintf(stderr, "debug report: %s\n", tools_.report.last.c_str());
+}
+
+// F10 pauses and arms the capture; Shift+F10 writes it at once, with no box.
+void App::quick_report_key(SDL_Keymod mods)
+{
+    if (quick_.open || quick_.armed)
+        return;
+    quick_.note.fill(0);
+    quick_.immediate = (mods & SDL_KMOD_SHIFT) != 0;
+    quick_.have_pause = map_ && !in_startup_;
+    quick_.restore_paused = quick_.have_pause && map_->game.paused;
+    if (quick_.have_pause)
+        map_->game.paused = true;
+    quick_.armed = true;
+}
+
+void App::quick_report_step()
+{
+    if (quick_.armed) {
+        quick_.armed = false;
+        capture_debug_report(quick_.capture);
+        if (quick_.immediate) {
+            quick_.immediate = false;
+            finish_quick_report("");
+        } else {
+            quick_.open = true;
+            quick_.focus = true;
+        }
+    }
+    if (!quick_.open)
+        return;
+    QuickNoteAction action = draw_quick_report_note(quick_.note, quick_.focus);
+    if (action == QuickNoteAction::Save) {
+        quick_.open = false;
+        finish_quick_report(quick_.note.data());
+    } else if (action == QuickNoteAction::Discard) {
+        quick_.open = false;
+        discard_quick_report();
+    }
+}
+
+void App::draw_quick_report()
+{
+    quick_report_step();
+    if (ticks_ms() >= quick_.toast_until)
+        quick_.toast.clear();
+    if (!quick_.toast.empty())
+        draw_toast(quick_.toast);
+}
+
+void App::finish_quick_report(const std::string &note)
+{
+    DebugReportResult result = write_debug_report(note, quick_.capture);
+    if (!result.dir.empty()) {
+        quick_.last_report = result.dir.string();
+        quick_.toast = "Report saved: " + result.dir.string();
+        quick_.toast_until = ticks_ms() + 3000;
+    }
+    tools_.report.last = result.message;
+    std::fprintf(stderr, "debug report: %s\n", result.message.c_str());
+    if (quick_.capture.shot) {
+        SDL_DestroySurface(quick_.capture.shot);
+        quick_.capture.shot = nullptr;
+    }
+    restore_quick_pause();
+}
+
+void App::discard_quick_report()
+{
+    if (quick_.capture.shot) {
+        SDL_DestroySurface(quick_.capture.shot);
+        quick_.capture.shot = nullptr;
+    }
+    restore_quick_pause();
+}
+
+void App::restore_quick_pause()
+{
+    if (quick_.have_pause)
+        map_->game.paused = quick_.restore_paused;
+    quick_.have_pause = false;
 }
 
 std::string App::screen_name() const
 {
     if (in_startup_)
-        return "start-up screens";
+        return std::format("start-up screen {} (movie {})", int(startup_.screen()), startup_.movie());
     if (!map_)
         return "no level";
     if (year_end_showing_)
@@ -2003,6 +2612,8 @@ std::string App::debug_state() const
         s += std::format(" (column {}, row {})", map_cell_ % kMapSize, map_cell_ / kMapSize);
     s += std::format("\ninterface: requester {}, modal {}, menu open {}\n", int(interface_.requester()),
                      interface_.modal(), menu_.active);
+    s += std::format("menu bar: count {}, row {}, open {}, selected {}, mouse {},{} (game)\n", menu_.count,
+                     menu_.line_height, menu_.open, menu_.selected_option, menu_.mouse_x, menu_.mouse_y);
     // The help page shown, if any, and the last tooltip drawn (on one line).
     const HelpBox &help = help_.box();
     bool page = help.style == 2 && !help.msg.empty();
@@ -2019,14 +2630,36 @@ std::string App::debug_state() const
                      interface_.is_open(int(Requester::Staff)), info_.staff,
                      interface_.is_open(int(Requester::Handyman)), interface_.is_open(int(Requester::Machine)),
                      info_.machine, pointer_sprite_, charts_.slist_staff);
+    s += std::format("quick report: {}, last report: {}\n", quick_.open ? "open" : "closed",
+                     quick_.last_report.empty() ? "(none)" : quick_.last_report);
+    if (in_startup_)
+        s += std::format("startup screen: {}\n", int(startup_.screen()));
     if (!map_ || in_startup_)
         return s;
     const Game &g = map_->game;
+    s += debug_state_hospital(g);
+    s += "\n";
+    s += debug_state_calls(g);
+    s += "\n";
+    s += dump_game(g, map_cell_);
+    return s;
+}
+
+std::string App::debug_state_hospital(const Game &g) const
+{
+    std::string s;
     s += std::format("level: {} ({}), tutorial {}\n", level_, balance_id_, tutorial_);
+    std::string slots;
+    for (int slot = 1; slot <= kMenuSlots; slot++)
+        if (save_slots_[size_t(slot)])
+            slots += std::format(" {}", slot);
+    s += std::format("save slots:{}\n", slots);
     s += std::format("camera: {},{}\n", camera_.x, camera_.y);
     s += std::format("speed: {} turns/s, paused {}\n", int(speed_), g.paused);
     s += std::format("route planner: {}\n", g.world.path_finder == PathFinder::AStar ? "A*" : "original");
-    s += std::format("panel info: kind {}, thing {}\n", panel_info_, panel_thing_);
+    s += std::format("panel info: kind {}, thing {}, shown {}\n", panel_info_, panel_thing_,
+                     panel_info_drawn_ != 0 ? "true" : "false");
+    s += std::format("panel message: \"{}\" ({} frames)\n", panel_message_, panel_message_time_);
     s += std::format("placing: object {}, staff {}, build mouse {}\n", g.world.placing.placing, hire_.placing(),
                      int(g.world.building.mouse));
     s += std::format("date: year {} month {} day {}, turn {}\n", g.date.year, g.date.month, g.date.day, g.turn_count);
@@ -2034,9 +2667,10 @@ std::string App::debug_state() const
     s += std::format("balance: {}, reputation {}\n", g.balance, g.arrivals.hospitals[0].hospital_reputation);
     s += std::format("last command: type={} value={} flags={} arg={}\n", last_event_.type, last_event_.value,
                      last_event_.flags, last_event_.arg);
-    s += debug_state_calls(g);
-    s += "\n";
-    s += dump_game(g, map_cell_);
+    s += "sounds played:";
+    for (int i = 0; i < kSfxCount; i++)
+        if (uint32_t n = sounds_.played_counts()[size_t(i)])
+            s += std::format(" {:#04x}={};", i, n);
     return s;
 }
 
@@ -2142,6 +2776,8 @@ void App::menu_step(int out_w, int scale)
                                               : 4;
     context.paused = map_ && map_->game.paused;
     context.disabled = interface_.modal() || (map_ && map_->game.world.placing.menu_disabled);
+    for (int i = 0; i < int(context.save_slots.size()); i++)
+        context.save_slots[size_t(i)] = save_slots_[size_t(i + 1)];
     perform(menu_frame(menu_, ui_mouse(ox, 0, scale), context));
 
     if (menu_layer_.width() != width)
@@ -2205,21 +2841,44 @@ void App::perform(const MenuEvent &event)
             map_->game.event = {EV_OPEN_JUKEBOX};
         break;
     case MenuAction::Restart:
-        // File > Restart: ask_restart_level's yes/no requester.
-        if (map_ && !interface_.modal()) {
-            interface_.open_yes_no(data_->text().at(TextSection::YesNo, 6));
-            yes_event_ = {EV_RESTART_LEVEL};
-            no_event_ = {};
-            asking_quit_ = false;
-        }
+        ask_restart();
         break;
     case MenuAction::Briefing:
-        // Charts > Briefing: show_help_page(1, level).
-        if (map_)
+        // Charts > Briefing: show_help_page(1, level), refused while an
+        // edited room empties (menu.cpp:487).
+        if (map_ && map_->game.world.building.mouse == BuildMouse::EditRoomWait)
+            sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+        else if (map_)
             help_.set_page(-1, -1, level_briefing(data_->text(), level_));
+        break;
+    case MenuAction::Save:
+    case MenuAction::Load:
+        perform_save_load(event);
         break;
     default:
         break;
+    }
+}
+
+// pulldown_save and pulldown_load: a slot already used asks before it is
+// overwritten (yesno_text[3], EV_SAVE_GAME on yes); a load goes to the slot
+// (EV_LOAD_GAME).
+void App::perform_save_load(const MenuEvent &event)
+{
+    if (event.value < 1 || event.value > kMenuSlots)
+        return;
+    if (event.action == MenuAction::Save) {
+        if (!map_)
+            return;
+        if (save_slots_[size_t(event.value)]) {
+            interface_.open_yes_no(data_->text().at(TextSection::YesNo, 3));
+            pending_save_slot_ = event.value;
+            asking_quit_ = false;
+        } else {
+            perform_save(event.value);
+        }
+    } else {
+        perform_load(event.value);
     }
 }
 
@@ -2262,25 +2921,29 @@ void App::handle_event(const SDL_Event &e)
         running_ = false;
         break;
     case SDL_EVENT_KEY_DOWN:
-        if (!io.WantCaptureKeyboard)
+        if (!io.WantCaptureKeyboard && !quick_.open)
             key_down(e.key);
         break;
+    case SDL_EVENT_KEY_UP:
+        key_up(e.key);
+        break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        if (!io.WantCaptureMouse)
+        if (!io.WantCaptureMouse && !quick_.open)
             mouse_down(e.button);
         break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
-        mouse_up(e.button);
+        if (!quick_.open)
+            mouse_up(e.button);
         break;
     case SDL_EVENT_MOUSE_MOTION:
-        if (dragging_ && data_) {
+        if (dragging_ && data_ && !quick_.open) {
             float density = SDL_GetWindowPixelDensity(window_);
             scroll_x_ -= e.motion.xrel * density / float(zoom());
             scroll_y_ -= e.motion.yrel * density / float(zoom());
         }
         break;
     case SDL_EVENT_MOUSE_WHEEL:
-        if (!io.WantCaptureMouse && data_) {
+        if (!io.WantCaptureMouse && data_ && !quick_.open) {
             // render() keeps the view centred when the surface changes size.
             zoom_ = std::clamp(zoom() + (e.wheel.y > 0 ? 1 : e.wheel.y < 0 ? -1 : 0), 1, 4);
         }
@@ -2293,6 +2956,10 @@ void App::handle_event(const SDL_Event &e)
 // A key pressed, outside the developer tools.
 void App::key_down(const SDL_KeyboardEvent &key)
 {
+    if (key.key == SDLK_F10 && data_) {
+        quick_report_key(SDL_Keymod(key.mod));
+        return;
+    }
     if (key.key == SDLK_F12 && data_ && in_startup_) {
         tools_.open = !tools_.open;
         return;
@@ -2312,8 +2979,17 @@ void App::key_down(const SDL_KeyboardEvent &key)
     } else if (interface_.modal() || town_.is_open()) {
         // A modal requester takes the keys; the town map only Escape.
     } else {
+        if (uint8_t bit = scroll_key_bit(key.key))
+            scroll_held_ |= bit;
         game_key(key);
     }
+}
+
+// A key released: the scroll keys stop (move_windows clears its scroll.*
+// every frame; the held set is what keeps them on).
+void App::key_up(const SDL_KeyboardEvent &key)
+{
+    scroll_held_ &= uint8_t(~scroll_key_bit(key.key));
 }
 
 // The game's speed keys 1-5 (process_game_keys, src/keyboard.cpp): key 1 is
@@ -2325,6 +3001,19 @@ bool App::game_speed_key(const SDL_KeyboardEvent &key)
     if (key.key == SDLK_1 && (key.mod & SDL_KMOD_SHIFT))
         return false;
     speed_ = menu_speed(10 * int(key.key - SDLK_1 + 1));
+    return true;
+}
+
+// Alt+S quick saves and Alt+L quick loads debug_save_slot (keyboard.cpp's
+// KC_S and KC_L with MOD_ALT).
+bool App::quick_save_load_key(const SDL_KeyboardEvent &key)
+{
+    if (!map_ || !(key.mod & SDL_KMOD_ALT) || (key.key != SDLK_S && key.key != SDLK_L))
+        return false;
+    if (key.key == SDLK_S)
+        perform_save(debug_save_slot_);
+    else
+        perform_load(debug_save_slot_);
     return true;
 }
 
@@ -2342,6 +3031,8 @@ void App::game_key(const SDL_KeyboardEvent &key)
         return;
     }
     if (map_ && game_speed_key(key))
+        return;
+    if (quick_save_load_key(key))
         return;
     if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
         // The charts, from the game or another chart; not while paused.
@@ -2427,6 +3118,8 @@ void App::update(float dt)
 {
     if (!data_ || in_startup_)
         return;
+    if (quick_.open)
+        return;
     if (restart_level_) {
         restart_level_ = false;
         load_level(level_);
@@ -2438,12 +3131,44 @@ void App::update(float dt)
         check_year_end();
     if (year_end_showing_ || winlose_showing_ || town_.is_open() || charts_.open || fax_.open)
         return;
+    // move_windows runs once a game frame, not once a rendered frame, so the
+    // scroll speed follows the game's 40 ms frame, not the display's refresh.
+    scroll_frame_time_ += double(dt);
+    if (scroll_frame_time_ < kGameFrame)
+        return;
+    scroll_frame_time_ = std::min(scroll_frame_time_ - kGameFrame, kGameFrame);
+    scroll_step(scroll_direction());
+}
+
+// The scroll direction this frame: the held keys, the pointer's window edge
+// replacing them, an open pulldown ignoring both, and opposite keys
+// cancelling, as keyboard.cpp, mouse.cpp and io.cpp set move_windows' flags.
+uint8_t App::scroll_direction()
+{
     const ImGuiIO &io = ImGui::GetIO();
-    if (!io.WantCaptureKeyboard)
-        key_scroll(dt);
-    if (!io.WantCaptureMouse && !dragging_ && SDL_GetMouseFocus() == window_)
-        edge_scroll(dt);
-    apply_scroll();
+    uint8_t dir = io.WantCaptureKeyboard ? 0 : scroll_held_;
+    if ((dir & kScrollUp) && (dir & kScrollDown))
+        dir &= uint8_t(~(kScrollUp | kScrollDown));
+    if ((dir & kScrollLeft) && (dir & kScrollRight))
+        dir &= uint8_t(~(kScrollLeft | kScrollRight));
+    if (!io.WantCaptureMouse && !dragging_ && SDL_GetMouseFocus() == window_) {
+        uint8_t edge = 0;
+        float mx, my;
+        SDL_GetMouseState(&mx, &my);
+        int w, h;
+        SDL_GetWindowSize(window_, &w, &h);
+        if (mx < kEdgeScrollMargin)
+            edge |= kScrollLeft;
+        else if (mx >= w - kEdgeScrollMargin)
+            edge |= kScrollRight;
+        if (my < kEdgeScrollMargin)
+            edge |= kScrollUp;
+        else if (my >= h - kEdgeScrollMargin)
+            edge |= kScrollDown;
+        if (edge)
+            dir = edge;
+    }
+    return menu_.open ? 0 : dir;
 }
 
 // The turns due after `dt` seconds at the game's speed.
@@ -2459,53 +3184,59 @@ void App::run_turns(float dt)
         map_->game.turn();
 }
 
-// The arrow keys and WASD scroll the view.
-void App::key_scroll(float dt)
+// move_windows (src/cakewin.cpp): the scroll direction `dir` accelerates the
+// view's velocity while held (and stops it dead when none is), the velocity
+// moves the view by its whole pixels with the fraction carried, clamped to
+// one tile a frame, stopped at the scroll limit, and then decays.
+void App::scroll_step(uint8_t dir)
 {
-    const bool *keys = SDL_GetKeyboardState(nullptr);
-    float step = kScrollSpeed * dt / float(zoom());
-    if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A])
-        scroll_x_ -= step;
-    if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D])
-        scroll_x_ += step;
-    if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W])
-        scroll_y_ -= step;
-    if (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S])
-        scroll_y_ += step;
-}
-
-// The pointer at the window's edges scrolls the view.
-void App::edge_scroll(float dt)
-{
-    float mx, my;
-    SDL_GetMouseState(&mx, &my);
-    int w, h;
-    SDL_GetWindowSize(window_, &w, &h);
-    float step = kScrollSpeed * dt / float(zoom());
-    if (mx < kEdgeScrollMargin)
-        scroll_x_ -= step;
-    else if (mx >= w - kEdgeScrollMargin)
-        scroll_x_ += step;
-    if (my < kEdgeScrollMargin)
-        scroll_y_ -= step;
-    else if (my >= h - kEdgeScrollMargin)
-        scroll_y_ += step;
-}
-
-// Moves the camera by the whole pixels of the scroll so far.
-void App::apply_scroll()
-{
-    int dx = int(scroll_x_), dy = int(scroll_y_);
-    scroll_x_ -= float(dx);
-    scroll_y_ -= float(dy);
-    // The game refuses a scroll that would take the view's centre out of the
-    // level's scroll area. Trying each axis on its own lets the view slide
-    // along the area's diagonal edges, where the game stops dead.
+    dir &= 0xf;
+    if (!dir) {
+        scroll_vel_x_ = 0;
+        scroll_vel_y_ = 0;
+    } else {
+        if (dir & kScrollLeft)
+            scroll_vel_x_ -= kScrollAccelX;
+        if (dir & kScrollRight)
+            scroll_vel_x_ += kScrollAccelX;
+        if (dir & kScrollUp)
+            scroll_vel_y_ -= kScrollAccelY;
+        if (dir & kScrollDown)
+            scroll_vel_y_ += kScrollAccelY;
+    }
+    int32_t dx = scroll_vel_x_ >> 16;
+    int32_t dy = scroll_vel_y_ >> 16;
+    scroll_frac_x_ += scroll_vel_x_ - (dx << 16);
+    scroll_frac_y_ += scroll_vel_y_ - (dy << 16);
+    int32_t carry_x = scroll_frac_x_ >> 16;
+    int32_t carry_y = scroll_frac_y_ >> 16;
+    scroll_frac_x_ -= carry_x << 16;
+    scroll_frac_y_ -= carry_y << 16;
+    dx += carry_x;
+    dy += carry_y;
+    // The mouse drag's own pixels ride along with the velocity's.
+    int32_t drag_x = int32_t(scroll_x_), drag_y = int32_t(scroll_y_);
+    scroll_x_ -= float(drag_x);
+    scroll_y_ -= float(drag_y);
+    dx += drag_x;
+    dy += drag_y;
+    // The game refuses, dead, a scroll that would take the view's centre out
+    // of the level's scroll area: both axes stop and the velocity is lost.
     Point centre = {camera_.x + surface_.width() / 2, camera_.y + surface_.height() / 2};
-    if (!beyond_scroll_limit({centre.x + dx, centre.y}, scroll_min_, scroll_max_))
-        camera_.x += dx;
-    if (!beyond_scroll_limit({camera_.x + surface_.width() / 2, centre.y + dy}, scroll_min_, scroll_max_))
-        camera_.y += dy;
+    if (beyond_scroll_limit({centre.x + dx, centre.y + dy}, scroll_min_, scroll_max_)) {
+        scroll_vel_x_ = 0;
+        scroll_vel_y_ = 0;
+        scroll_frac_x_ = 0;
+        scroll_frac_y_ = 0;
+        dx = 0;
+        dy = 0;
+    }
+    dx = std::clamp(dx, -kTileWidth, kTileWidth);
+    dy = std::clamp(dy, -kTileHeight, kTileHeight);
+    camera_.x += dx;
+    camera_.y += dy;
+    scroll_vel_x_ = (scroll_vel_x_ * kScrollDecay) >> 8;
+    scroll_vel_y_ = (scroll_vel_y_ * kScrollDecay) >> 8;
 }
 
 bool App::screen_step(int out_w, int out_h)
@@ -2560,22 +3291,28 @@ void App::render()
     // Read back before ImGui draws, so the screenshot shows the game alone.
     if (std::exchange(tools_.report.save, false))
         save_debug_report();
-    if (!drive_shot_.empty()) {
-        SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
-        if (!shot || !SDL_SavePNG(shot, drive_shot_.string().c_str()))
-            std::fprintf(stderr, "drive: screenshot %s: %s\n", drive_shot_.string().c_str(), SDL_GetError());
-        if (shot)
-            SDL_DestroySurface(shot);
-        drive_shot_.clear();
-    }
+    draw_quick_report();
+    if (!drive_shot_.empty())
+        save_drive_screenshot(std::exchange(drive_shot_, {}));
 
     ImGui::Render();
     const ImGuiIO &io = ImGui::GetIO();
     SDL_SetRenderScale(renderer_, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer_);
+    if (!drive_shot_ui_.empty())
+        save_drive_screenshot(std::exchange(drive_shot_ui_, {}));
     SDL_RenderPresent(renderer_);
     buttons_.left_pressed = buttons_.right_pressed = false;
     buttons_.left_released = buttons_.right_released = false;
+}
+
+void App::save_drive_screenshot(const std::filesystem::path &path)
+{
+    SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+    if (!shot || !SDL_SavePNG(shot, path.string().c_str()))
+        std::fprintf(stderr, "drive: screenshot %s: %s\n", path.string().c_str(), SDL_GetError());
+    if (shot)
+        SDL_DestroySurface(shot);
 }
 
 // One frame of the hospital: the view at its zoom with what is being placed
@@ -2591,10 +3328,11 @@ void App::hospital_step(int out_w, int out_h)
     SDL_GetMouseState(&cmx, &cmy);
     float cdensity = SDL_GetWindowPixelDensity(window_);
     pointed_.at = {int(cmx * cdensity) / z, int(cmy * cdensity) / z};
+    near_rat_ = false;
     frame_sounds_.clear();
     // The earthquake's shake offset (shake_screen) moved the original view.
     Point shaken = {camera_.x + map_->game.world.shake_x, camera_.y + map_->game.world.shake_y};
-    draw_view(surface_, *data_, map_.get(), shaken, shadows_, {&frame_sounds_, &pointed_});
+    draw_view(surface_, *data_, map_.get(), shaken, shadows_, {&frame_sounds_, &pointed_, &near_rat_});
     if (map_)
         view_sounds(vw, vh);
     mixer_.update(sounds_, &music_);
@@ -2663,6 +3401,9 @@ void App::view_sounds(int vw, int vh)
     for (uint8_t sfx : world.treatment_sounds)
         sounds_.play_sound(kSourceGeneral, sfx);
     world.treatment_sounds.clear();
+    for (uint8_t sfx : world.rat_sounds)
+        sounds_.play_sound(kSourceGeneral, sfx);
+    world.rat_sounds.clear();
     // The music moves on to the next song, and the announcer speaks, as
     // the game does each frame; only the announcer while a modal
     // requester is up.
@@ -2704,6 +3445,14 @@ void App::present_view(int vw, int vh, int z)
 
 void App::run()
 {
+    // A driven run starts with the pointer at the window's centre, not at the
+    // window's (0,0) edge, so the camera starts where the level puts it and
+    // does not edge-scroll until a script moves the pointer there.
+    if (driver_) {
+        int w = 0, h = 0;
+        SDL_GetWindowSize(window_, &w, &h);
+        SDL_WarpMouseInWindow(window_, float(w) / 2.0f, float(h) / 2.0f);
+    }
     uint64_t last = SDL_GetTicksNS();
     while (running_) {
         // A driven run moves on only as its commands ask for frames.
@@ -2720,6 +3469,8 @@ void App::run()
         SDL_Event e;
         while (SDL_PollEvent(&e))
             handle_event(e);
+        // The `type` text events are polled; SDL no longer needs the strings.
+        drive_texts_.clear();
 
         std::optional<std::string> chosen;
         {
@@ -2874,17 +3625,36 @@ void App::drive_button(int button, bool down)
     SDL_PushEvent(&e);
 }
 
-bool App::drive_key(std::string_view name, bool down)
+bool App::drive_key(std::string_view name, bool down, uint16_t mods)
 {
     SDL_Keycode key = SDL_GetKeyFromName(std::string(name).c_str());
     if (key == SDLK_UNKNOWN)
         return false;
+    SDL_Keymod sdl_mods = SDL_KMOD_NONE;
+    if (mods & kDriveModShift)
+        sdl_mods |= SDL_KMOD_SHIFT;
+    if (mods & kDriveModCtrl)
+        sdl_mods |= SDL_KMOD_CTRL;
+    if (mods & kDriveModAlt)
+        sdl_mods |= SDL_KMOD_ALT;
     SDL_Event e{};
     e.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
     e.key.windowID = SDL_GetWindowID(window_);
     e.key.key = key;
     e.key.scancode = SDL_GetScancodeFromKey(key, nullptr);
+    e.key.mod = sdl_mods;
     e.key.down = down;
+    SDL_PushEvent(&e);
+    return true;
+}
+
+bool App::drive_text(std::string_view text)
+{
+    drive_texts_.emplace_back(text);
+    SDL_Event e{};
+    e.type = SDL_EVENT_TEXT_INPUT;
+    e.text.windowID = SDL_GetWindowID(window_);
+    e.text.text = drive_texts_.back().c_str();
     SDL_PushEvent(&e);
     return true;
 }
@@ -2894,9 +3664,19 @@ void App::drive_screenshot(const std::filesystem::path &path)
     drive_shot_ = path;
 }
 
+void App::drive_screenshot_ui(const std::filesystem::path &path)
+{
+    drive_shot_ui_ = path;
+}
+
 std::string App::drive_state() const
 {
     return debug_state();
+}
+
+std::string App::drive_report_dir() const
+{
+    return quick_.last_report;
 }
 
 int64_t App::drive_turn() const
@@ -2912,11 +3692,10 @@ bool App::drive_staff_demand(uint16_t id)
     return true;
 }
 
-void App::shutdown()
+void App::destroy_textures()
 {
-    mixer_.close();
-    if (movie_stream_)
-        SDL_DestroyAudioStream(movie_stream_);
+    if (quick_.capture.shot)
+        SDL_DestroySurface(quick_.capture.shot);
     if (startup_tex_)
         SDL_DestroyTexture(startup_tex_);
     if (town_tex_)
@@ -2938,6 +3717,14 @@ void App::shutdown()
         SDL_DestroyCursor(crosshair_);
     if (screen_)
         SDL_DestroyTexture(screen_);
+}
+
+void App::shutdown()
+{
+    mixer_.close();
+    if (movie_stream_)
+        SDL_DestroyAudioStream(movie_stream_);
+    destroy_textures();
     if (imgui_ready_) {
         ImGui_ImplSDLRenderer3_Shutdown();
         ImGui_ImplSDL3_Shutdown();

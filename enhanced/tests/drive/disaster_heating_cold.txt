@@ -1,0 +1,93 @@
+# Level 1: seven corridor radiators and no handyman, so the random disaster
+# at turn 10050 (generate_disaster, gbv.disaster_launch days in) is the
+# heating failing cold: the advisor warns (forced advice 0xb), heating_level
+# drops to 0 with heating_broken set, and the town map's heating buttons do
+# nothing while it is broken (EV_SET_HEATING is dropped). It comes back with
+# the advisor's second message (0xc) when the timer runs out, restoring the
+# saved heating. The extra radiators draw the daily randoms so the roll
+# picks kind 1; the cold branch ignores how many radiators there are.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 166            # buy a radiator (the fifth entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the radiator in the corridor
+wait 20
+click 268 453            # furnish again for the second radiator
+wait 10
+click 328 166
+wait 10
+click 400 300
+wait 10
+click-cell 60 69
+wait 20
+click 268 453
+wait 10
+click 328 166
+wait 10
+click 400 300
+wait 10
+click-cell 60 67
+wait 20
+click 268 453
+wait 10
+click 328 166
+wait 10
+click 400 300
+wait 10
+click-cell 60 66
+wait 20
+click 268 453
+wait 10
+click 328 166
+wait 10
+click 400 300
+wait 10
+click-cell 60 65
+wait 20
+click 268 453
+wait 10
+click 328 166
+wait 10
+click 400 300
+wait 10
+click-cell 60 64
+wait 20
+click 268 453
+wait 10
+click 328 166
+wait 10
+click 400 300
+wait 10
+click-cell 60 63
+wait 20
+key 5                    # the fastest speed
+wait 5
+turns 10060              # just past the first disaster draw
+dump cold
+expect heating_broken=1
+expect disaster_kind=1
+expect heating_level=0
+screenshot cold
+key T                    # the town map, its heating controls
+wait 20
+screenshot town
+click 180 324            # heating up: dropped while it is broken
+wait 20
+dump town_up
+expect heating_level=0
+click 79 324             # heating down: also dropped
+wait 20
+dump town_down
+expect heating_level=0
+click 607 450            # its close button, back to the hospital
+wait 20
+turns 1000               # the timer runs out
+dump warm
+expect heating_broken=0
+expect disaster_kind=0
+expect heating_level=5
+screenshot warm
+quit

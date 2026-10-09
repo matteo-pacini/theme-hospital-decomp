@@ -1,6 +1,5 @@
 # Level 1: toilets.txt with one toilet and no patient sent home: patients
-# finding the toilet taken walk straight out again. Compare up to turn
-# 18000: the year's end awards (from turn 18250) are not ported.
+# finding the toilet taken walk straight out again.
 # gp_office.txt's commands up to the GP's office opened (turn 113).
 # Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
 # Expect to_toilets

@@ -1,0 +1,29 @@
+# Level 1: one corridor radiator and no handyman, so the first random
+# disaster (generate_disaster, after gbv.disaster_launch days) is kind 1:
+# the heating fails cold (heating_level 0, heating_broken) and comes back
+# when its timer runs out, with the advisor's forced message at each end.
+# The player sets the heating while it is broken (EV_SET_HEATING 10) and it
+# is ignored. Compare up to turn 18000.
+# The six drinks machines after the radiator draw the daily randoms so the
+# first disaster_roll (turn 10050) picks kind 1; they do not change the
+# radiator count the heating disaster checks. The disaster runs 10050-11350.
+# Expect disaster_roll owner=0 kind=1
+# Expect disaster_start owner=0 kind=1
+# Expect disaster_end owner=0 kind=1
+5 98 0 0
+6 37 44 1
+7 43 0 0
+8 7 9534 44
+6 37 7 1
+8 7 9535 7
+6 37 7 1
+8 7 9536 7
+6 37 7 1
+8 7 9537 7
+6 37 7 1
+8 7 9538 7
+6 37 7 1
+8 7 9539 7
+6 37 7 1
+8 7 9276 7
+10100 79 10 0

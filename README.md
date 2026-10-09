@@ -79,8 +79,8 @@ You also need Nix with flakes enabled. The flake lives in `nix/` and is used
 as `path:./nix`, from the repository root: a `path:` flake copies only that
 directory into the Nix store, where the repository root as a flake would copy
 the whole tree on every run. The first `nix develop path:./nix` downloads the
-Watcom 10.5 and 10.6 CD images from WinWorld for their runtime libraries
-(about 600 MB); everything else comes from nixpkgs.
+Watcom 10.5 and 10.6 CD images from archive.org for their runtime libraries;
+everything else comes from nixpkgs.
 
 ## Unpacking
 
@@ -191,9 +191,9 @@ keep their hand-laid-out initialisers.
 `enhanced/` is a new engine for the game, in C++20 with SDL3 and Dear ImGui,
 for Windows, macOS and Linux, that reads your own copy of the game's data and
 runs at any resolution and aspect ratio. It ports the game's behaviour from
-the decompilation. So far it draws a level's map and the panel; see
-[enhanced/README.md](enhanced/README.md). Build and run it with
-`nix run path:./nix#enhanced`.
+the decompilation and is a playable port in progress, checked against the
+original by replays; its status is in [enhanced/README.md](enhanced/README.md).
+Build and run it with `nix run path:./nix#enhanced`.
 
 ## Names from the 1997 demo
 
@@ -217,7 +217,7 @@ each function in its own segment. The flake provides:
 | --- | --- |
 | Watcom C/C++ 10.6 (`$WATCOM_10_6`) | period compiler, Win32 host binaries |
 | Watcom C/C++ 10.0a (`$WATCOM_10_0A`) | built the C runtime's printf/stdio modules |
-| Watcom C/C++ 10.5 and 10.6 runtime libraries (`$WATCOM_LIBS_10_5`, `$WATCOM_LIBS_10_6`) | `LIB386` of each CD (downloaded from WinWorld, 245 + 349 MB, on first `nix develop path:./nix`); several runtime units are built from their modules |
+| Watcom C/C++ 10.5 and 10.6 runtime libraries (`$WATCOM_LIBS_10_5`, `$WATCOM_LIBS_10_6`) | `LIB386` of each CD (downloaded from archive.org on the first `nix develop path:./nix`); several runtime units are built from their modules |
 | wibo 1.2.0 | runs the Win32 compiler on Linux |
 | objdiff-cli 3.8.1 | diffing and progress reports |
 | rizin + rz-ghidra | disassembly and decompiler output (`pdg`) |

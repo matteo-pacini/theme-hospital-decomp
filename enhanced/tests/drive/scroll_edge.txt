@@ -1,0 +1,25 @@
+# Level 1: the pointer at the window's edge scrolls the view, as the game's
+# mouse does (src/mouse.cpp's scroll flags), and the view stops dead once the
+# pointer leaves the edge. Run at the game's own 640 x 480 so the window edges
+# are the game screen's.
+# Size 640x480
+wait 60
+dump start
+expect camera: -736,1952
+move 480 2               # the top edge
+wait 30
+dump up
+expect camera: -736,1786
+move 320 120             # the centre: no edge, and the view stops
+wait 30
+dump stopped_up
+expect camera: -736,1786
+move 638 240             # the right edge
+wait 30
+dump right
+expect camera: -405,1786
+move 320 120
+wait 30
+dump stopped_right
+expect camera: -405,1786
+quit
