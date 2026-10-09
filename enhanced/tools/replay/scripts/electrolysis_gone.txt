@@ -1,24 +1,24 @@
 # Level 8: electrolysis.txt's hospital with its electrolysis room taken away
-# before any hairyitis patient reaches it. Nobody is in the room (its staff
-# list is empty at turn 19999; the nurse 45 hired for it wanders elsewhere), and
-# at turn 20000 it is taken back to a blueprint and abandoned (as
-# room_delete.txt does: EV_INIT_EDIT_ROOM, EV_EDIT_BLUEPRINT, EV_DELETE_ROOM
-# -> delete_room 9, delete_blueprint_room); the room has a rat hole on its
-# wall row (tile 5020), which delete_room removes (rathole_remove 5020).
-# Patient 53, fully diagnosed (X-ray, then the GP) although the cure is
-# researched, has no room that treats it: a call is made about it (playercall
-# 53 type=4, turn 22111) and it goes home (go_home 53 state=68, turn 22176).
-# It is not cured and not killed. A room deleted with staff still in it is
-# not covered: see docs/BUGS.md, delete_blueprint_room.
+# before the second hairyitis patient reaches it. Nobody is in the room (its
+# staff list is empty at turn 18499; the nurse 21 hired for it wanders
+# elsewhere), and at turn 18500 it is taken back to a blueprint and abandoned
+# (as room_delete.txt does: EV_INIT_EDIT_ROOM, EV_EDIT_BLUEPRINT,
+# EV_DELETE_ROOM -> delete_room 9, delete_blueprint_room); the room has a rat
+# hole on its wall column (tile 4895), which delete_room removes
+# (rathole_remove 4895). Patient 16, fully diagnosed (X-ray, then the GP)
+# although the cure is researched, has no room that treats it: a call is made
+# about it (playercall 34 type=4, turn 18879) and it goes home (go_home 16
+# state=68, turn 20383). It is not cured and not killed. A room deleted with
+# staff still in it is not covered: see docs/BUGS.md, delete_blueprint_room.
 # Expect delete_room 9 == 1
 # Expect delete_blueprint_room == 1
-# Expect rathole_remove 5020 == 1
-# Expect playercall 53 type=4 == 1
-# Expect go_home 53 state=68 >= 1
-# Expect-not cure 53 illness=3
-# Expect-not dies 53
+# Expect rathole_remove 4895 == 1
+# Expect playercall 34 type=4 == 1
+# Expect go_home 16 state=68 >= 1
+# Expect-not cure 16 illness=3
+# Expect-not dies 16
 # Expect-not winlose
-# Turns 23000
+# Turns 21500
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -76,14 +76,14 @@
 130 113 1 0
 131 113 2 10
 2000 90 100 0
+3000 48 1 17
+3001 5 4494 17
 4000 90 100 0
-4700 48 1 15
-4701 5 4494 15
-4702 48 1 16
-4703 5 4495 16
-4704 48 1 18
-4705 5 4496 18
 6000 90 100 0
+7650 48 1 23
+7651 5 4495 23
+7652 48 1 46
+7653 5 4496 46
 8000 90 100 0
 8260 114 3 0
 8300 55 0 0
@@ -98,31 +98,31 @@
 8309 7 5539 27
 8310 7 5285 28
 8311 1 0 0
-8330 48 1 31
-8331 5 6050 31
+8330 48 1 27
+8331 5 6050 27
 10000 90 100 0
-12000 55 0 0
-12000 90 100 0
-12001 53 23 23
-12002 2 4378 0
-12003 2 4894 0
-12004 8 4894 0
-12005 18 0 0
-12006 26 4251 0
-12007 3 0 0
-12008 4 23 0
-12060 7 4637 46
-12061 7 4764 527
-12062 1 0 0
-12070 48 1 45
-12071 5 6047 45
-12100 137 0 0
+12052 55 0 0
+12052 90 100 0
+12053 53 23 23
+12054 2 4378 0
+12055 2 4894 0
+12056 8 4894 0
+12057 18 0 0
+12058 26 4251 0
+12059 3 0 0
+12060 4 23 0
+12106 137 0 0
+12112 7 4637 46
+12113 7 4764 527
+12114 1 0 0
+12122 48 1 21
+12123 5 6047 21
 14000 90 100 0
 16000 90 100 0
 18000 90 100 0
+18500 70 9 0
+18501 69 0 0
+18502 121 0 0
 20000 90 100 0
-20000 70 9 0
-20001 69 0 0
-20002 121 0 0
 22000 90 100 0
 24000 90 100 0

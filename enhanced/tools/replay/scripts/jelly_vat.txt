@@ -1,11 +1,12 @@
 # Level 10: the jelly vat curing jellyitis (illness 12). A reception desk
 # (cell 11590) with its receptionist (applicant 26), a handyman (18), a GP's
 # office (64,82)-(68,86) with its door above it (cell 10434), a doctor (14)
-# and later two consultants (42 at turn 2504, 45 at turn 10626), and a research
-# room (72,82)-(76,86) with two researchers (13, 15) joined at turn 2500 by two
-# more (43, 44). The rooms keep a gap of one column between them: a GP's office
-# sharing a wall with the research room never gets its doctor to the desk (the
-# original does the same).
+# and a consultant (27, hired at turn 2117), and a research room
+# (72,82)-(76,86) with two researchers (13, 15) joined at turn 2500 by two
+# more (29, 16). The rivals take most of the consultants and researchers on
+# the job market, so these are the ones that were there to hire. The rooms keep
+# a gap of one column between them: a GP's office sharing a wall with the
+# research room never gets its doctor to the desk (the original does the same).
 # Jellyitis only arrives from the eighteenth month, so the months are ended
 # early (EV_CHEAT_END_MONTH, turns 200 to 2560) while the hospital is empty;
 # it is opened early (EV_OPEN_HOSPITAL, turn 2700) and the year ended early
@@ -13,29 +14,29 @@
 # lose line) so that the next year end falls after the end of the script.
 # All research goes into the specialisation (EV_CONCENTRATE_RESEARCH, then
 # EV_ALTER_RESEARCH 4 at 100%) on jellyitis: the jelly moulder (object 47) is
-# researched at turn 9500, and the jelly vat room (78,82)-(82,86), its door
+# researched at turn 9850, and the jelly vat room (78,82)-(82,86), its door
 # below it and the moulder (cell 10704), is built at turn 10600.
-# Jellyitis patient 10 arrives at turn 13075; the GP (45) diagnoses it at turn
-# 14486 (diagnose_patient: the diagnosis is complete, so its treatment is the
-# illness, no guess), it goes to the vat, the consultant 42 treats it and
-# it is cured at turn 14918 (cure_illness, illness 12, PF_CURED: no death).
-# Salaries are raised (EV_INCREASE_STAFF_SALARIES) now and then to keep the
-# staff in their jobs.
-# Jellyitis patient 5 arrives at turn 19800 and the GP's diagnosis stays short
-# (602 of the 1000 asked): no diagnosis room is left to try, so the patient
-# waits for the player's decision (a call, PS_WAITS_FOR_DECISION). The call is
-# answered at turn 21000 (EV_ANSWER_PLAYERCALL, then EV_CHOICE_RESULT
-# CH_DIAG_GUESS with the patient: best_guess_treatment, which here guesses
-# right), the patient goes to the vat and is cured at turn 21422.
+# Jellyitis patient 50 arrives at turn 10275; the consultant (27) diagnoses it
+# at turn 11163 (diagnose_patient: the diagnosis is complete, so its treatment
+# is the illness, no guess), it goes to the vat, the doctor 14 treats it and
+# it is cured at turn 11672 (cure_illness, illness 12, PF_CURED: no death).
+# Salaries are raised (EV_INCREASE_STAFF_SALARIES) now and then, every 2000
+# turns from turn 11000, to keep the staff in their jobs.
+# Jellyitis patient 7 arrives at turn 17625 and the consultant's diagnosis
+# stays short: no diagnosis room is left to try, so the patient waits for the
+# player's decision (a call, PS_WAITS_FOR_DECISION, playercall 61 at turn
+# 19171). The call is answered at turn 19240 (EV_ANSWER_PLAYERCALL, then
+# EV_CHOICE_RESULT CH_DIAG_GUESS with the patient: best_guess_treatment, which
+# here guesses right), the patient goes to the vat and is cured at turn 19654.
 # Expect researched 47 illness=12 == 1
-# Expect diagnose 10 staff=45 >= 1
-# Expect done_treatment 10 staff=42 == 1
-# Expect cure 10 illness=12 == 1
-# Expect choice 41 arg=5 == 1
-# Expect cure 5 illness=12 == 1
+# Expect diagnose 50 staff=27 >= 1
+# Expect done_treatment 50 staff=14 == 1
+# Expect cure 50 illness=12 == 1
+# Expect choice 41 arg=7 == 1
+# Expect cure 7 illness=12 == 1
 # Expect-not force_cure
 # Expect-not dies
-# Turns 22000
+# Turns 20000
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -100,14 +101,14 @@
 1580 101 0 0
 1672 101 0 0
 1764 101 0 0
+2117 48 1 27
+2118 5 11594 27
 2380 101 0 0
 2470 101 0 0
-2500 48 1 43
-2501 5 10698 43
-2502 48 1 44
-2503 5 10825 44
-2504 48 1 42
-2505 5 11594 42
+2500 48 1 29
+2501 5 10698 29
+2502 48 1 16
+2503 5 10825 16
 2560 101 0 0
 2700 139 0 0
 3000 90 100 0
@@ -125,7 +126,10 @@
 10608 4 24 0
 10609 7 10704 47
 10610 1 0 0
-10626 48 1 45
-10627 5 11600 45
-21000 10 8 79
-21001 125 41 5
+11000 90 100 0
+13000 90 100 0
+15000 90 100 0
+17000 90 100 0
+19000 90 100 0
+19240 10 8 61
+19241 125 41 7

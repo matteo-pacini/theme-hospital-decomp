@@ -1,23 +1,23 @@
 # Level 8: electrolysis.txt's hospital with the doctors that could work the
 # electrolysis room taken away while a patient waits for it. In
-# electrolysis.txt that room is worked by doctor 31, the GP's office doctor
-# (also the X-ray room's), who comes in when paged (room_move 31 from=0 to=9,
-# turn 21425); the room's own staff member, 45, is a nurse. Here patient 53,
-# fully diagnosed, is sent to the room (turn 20757) and joins its queue (join_queue
-# 53 room=9, turn 20796); the GP's office doctors, 31 and 14, are then picked up
-# (EV_PICK_UP_STAFF, turns 20810 and 20811) and never put down, so nobody
-# answers the room's page (page room=9 again and again) and the patient
-# gives up and goes home fed up (leave_queue 53 room=9 and go_home 53
-# state=24, turn 21881). Nobody is cured and nobody is killed.
+# electrolysis.txt that room is worked by doctor 27, the GP's office doctor
+# (also the X-ray room's), who comes in when paged (room_move 27 from=0 to=9,
+# turn 19241); the room's own staff member, 21, is a nurse. Here patient 16,
+# fully diagnosed, is sent to the room (turn 18918) and joins its queue
+# (join_queue 16 room=9, turn 18959); the GP's office doctors, 27 and 14, are
+# then picked up (EV_PICK_UP_STAFF, turns 18970 and 18971) and never put down,
+# so nobody answers the room's page (page room=9 again and again) and the
+# patient gives up and goes home fed up (leave_queue 16 room=9 and go_home 16
+# state=24, turn 20044). Nobody is cured and nobody is killed.
 # Expect staff_picked_up == 2
-# Expect join_queue 53 room=9 == 1
+# Expect join_queue 16 room=9 == 1
 # Expect page room=9 >= 100
-# Expect go_home 53 state=24 == 1
-# Expect leave_queue 53 room=9 == 1
-# Expect-not cure 53 illness=3
-# Expect-not dies 53
+# Expect go_home 16 state=24 == 1
+# Expect leave_queue 16 room=9 == 1
+# Expect-not cure 16 illness=3
+# Expect-not dies 16
 # Expect-not winlose
-# Turns 22500
+# Turns 21000
 5 98 0 0
 6 37 11 1
 7 43 0 0
@@ -75,14 +75,14 @@
 130 113 1 0
 131 113 2 10
 2000 90 100 0
+3000 48 1 17
+3001 5 4494 17
 4000 90 100 0
-4700 48 1 15
-4701 5 4494 15
-4702 48 1 16
-4703 5 4495 16
-4704 48 1 18
-4705 5 4496 18
 6000 90 100 0
+7650 48 1 23
+7651 5 4495 23
+7652 48 1 46
+7653 5 4496 46
 8000 90 100 0
 8260 114 3 0
 8300 55 0 0
@@ -97,30 +97,30 @@
 8309 7 5539 27
 8310 7 5285 28
 8311 1 0 0
-8330 48 1 31
-8331 5 6050 31
+8330 48 1 27
+8331 5 6050 27
 10000 90 100 0
-12000 55 0 0
-12000 90 100 0
-12001 53 23 23
-12002 2 4378 0
-12003 2 4894 0
-12004 8 4894 0
-12005 18 0 0
-12006 26 4251 0
-12007 3 0 0
-12008 4 23 0
-12060 7 4637 46
-12061 7 4764 527
-12062 1 0 0
-12070 48 1 45
-12071 5 6047 45
-12100 137 0 0
+12052 55 0 0
+12052 90 100 0
+12053 53 23 23
+12054 2 4378 0
+12055 2 4894 0
+12056 8 4894 0
+12057 18 0 0
+12058 26 4251 0
+12059 3 0 0
+12060 4 23 0
+12106 137 0 0
+12112 7 4637 46
+12113 7 4764 527
+12114 1 0 0
+12122 48 1 21
+12123 5 6047 21
 14000 90 100 0
 16000 90 100 0
 18000 90 100 0
+18970 104 27 0
+18971 104 14 0
 20000 90 100 0
-20810 104 31 0
-20811 104 14 0
 22000 90 100 0
 24000 90 100 0
