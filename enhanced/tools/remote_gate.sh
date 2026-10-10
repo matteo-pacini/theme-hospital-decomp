@@ -1,9 +1,10 @@
 #!/bin/sh
 # The gate inside enhanced/tools/remote.sh's container, run from the root of
 # the tree it was sent: builds the decompilation (build/base) and
-# build/enhanced, runs th_tests, tidy.sh and the clang-format check, then
-# replay_all.sh, and prints how long each step took. Failing replay pairs are
-# left under build/remote-out for remote.sh to copy back.
+# build/enhanced, runs th_tests, tidy.sh, the clang-format check and the drive
+# tests, then replay_all.sh, and prints how long each step took. Failing replay
+# pairs, and the drive tests' output when one fails, are left under
+# build/remote-out for remote.sh to copy back.
 #
 # Environment (set by remote.sh):
 #   GATE_JOBS     parallel jobs for every step (default: nproc)
@@ -50,6 +51,18 @@ format_check()
   }
 }
 
+# drive_tests: drive_tests.sh, one script per call and GATE_JOBS at once (each
+# runs its seed script into a folder of its own, so they are independent),
+# keeping the output (logs, screenshots, dumps) for remote.sh when one fails.
+drive_tests()
+{
+  printf '%s\0' enhanced/tests/drive/*.txt | TH_DRIVE_SLOTS=$jobs \
+    xargs -0 -P "$jobs" -n 1 enhanced/tools/drive_tests.sh || {
+    cp -r build/drive-tests build/remote-out/
+    return 1
+  }
+}
+
 # remote.sh mounts the game data at /orig and the shared replay cache at
 # /cache; podman creates mount points owned by root, so not inside the tree.
 ln -sfn /orig orig
@@ -62,6 +75,7 @@ step build-enhanced cmake --build build/enhanced
 step tests env TH_TEST_DATA_DIR=orig build/enhanced/th_tests
 step tidy enhanced/tools/tidy.sh
 step format format_check
+step drive drive_tests
 
 [ "${GATE_SCRIPTS:-}" = none ] && exit 0
 start=$(date +%s)

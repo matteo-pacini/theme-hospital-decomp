@@ -52,11 +52,13 @@ For a session where a lead agent briefs worker agents in herdr panes
   narrow the task quietly or report done with items left out.
 - "It can't happen" needs proof: the original's code and the data, ideally a
   run of the instrumented original showing it. Otherwise write the scenario.
-- Replay gate: your own new or changed scripts with fresh originals, plus
-  `CACHED_ONLY=1 replay_all.sh` over all the others (AGENTS.md, "Replay
-  check"). It exits 3 when any script had no cache entry: run those fresh.
-  After a decompilation or `instrument.py` change nothing is cached, so run
-  fresh.
+- Gate: `enhanced/tools/remote.sh gate` (AGENTS.md, "Remote gate"): the
+  builds, tests, tidy, format and drive checks and every replay script. Only
+  when the host is unreachable, the local split: your own new or changed
+  scripts with fresh originals, plus `CACHED_ONLY=1 replay_all.sh` over all
+  the others (AGENTS.md, "Replay check"); it exits 3 when any script had no
+  cache entry: run those fresh. After a decompilation or `instrument.py`
+  change nothing is cached, so run fresh.
 - A replay that agrees proves nothing if nothing happened in it. Report the
   event counts that show each branch ran; check that each command in your
   scripts changes something in both traces.
@@ -120,8 +122,10 @@ For a session where a lead agent briefs worker agents in herdr panes
   dispatch, just started or just finished, gets only `/clear`; `/clear` also
   comes before giving a worker an unrelated task.
 - Brief with a common rules file and one file per worker: task, gates, report
-  path. The common file repeats AGENTS.md's "Sharing the machine" limits
-  (`nice -n 19 ionice -c 3`, the job caps). Six workers at those caps load
+  path. Gates go through `remote.sh gate`; the common file repeats
+  AGENTS.md's "Sharing the machine" limits (`nice -n 19 ionice -c 3`, the
+  job caps) for everything still run here: edit-compile builds, single
+  tests, driven runs, local fallback gates. Six workers at those caps load
   the 16 cores fully: with the user at the machine, check `uptime` and the
   CPU temperature (`k10temp` Tctl under /sys/class/hwmon) during a batch
   and run fewer workers when it stays near 90°C or the desktop lags.
@@ -139,11 +143,12 @@ For a session where a lead agent briefs worker agents in herdr panes
   separate tasks. Workers never commit; the lead merges verified worktrees
   into its branch (through an integration worktree for a large batch), runs
   the combined check there and commits when the user asks.
-- Finish a batch with one combined check of the whole tree: every replay
-  script on both sides (the one full cold run, without `CACHED_ONLY`; workers
-  only ran theirs fresh), every drive test, all gates. Then remove the batch's
-  traces, verification folders and stale `build/replay-*` folders, and check
-  free space on `/` (`/tmp` lives there).
+- Finish a batch with one combined check of the whole tree:
+  `remote.sh gate` on the merged tree (every gate, drive test and replay
+  script; locally, without the host, the one full cold run without
+  `CACHED_ONLY` plus `drive_tests.sh`). Then remove the batch's traces,
+  verification folders and stale `build/replay-*` and `build/remote-*`
+  folders, and check free space on `/` (`/tmp` lives there).
 - Wait for workers going idle or blocked (`herdr agent get`), not for their
   report files: they update reports while working.
 - When a worker passes about 70% of its context mid-task, have it write its
