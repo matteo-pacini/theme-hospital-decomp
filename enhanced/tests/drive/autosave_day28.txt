@@ -1,0 +1,15 @@
+# Level 1: autosave is on by default (set_default_player_details) and
+# check_autosave (src/io.cpp) saves to slot 8 on day 28 of the month, a day
+# every 50 turns from day 1: nothing before it, the slot and the saved message
+# on the day, and the player's details written beside it (save/<name>.hdt).
+# Size 640x480
+wait 30
+turns 1300
+dump day26
+expect options: autosave true
+expect date: year 0 month 0 day 27
+expect-not save slots: 8
+turns 55
+dump day28
+expect date: year 0 month 0 day 28
+expect save slots: 8

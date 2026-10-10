@@ -1,0 +1,37 @@
+# A level started from the main menu and lost: the losing letter returns to
+# the main menu without writing the Continue slot (winlose state 4 sets
+# MMS_UNLOAD_GAME and leaves quit_game 0, src/winlose.cpp), so the Continue
+# button finds nothing.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+click 85 32
+wait 10
+key Space
+wait 160
+click 372 395
+wait 10
+key Space
+wait 80
+click 320 240
+wait 20
+dump playing
+expect screen: hospital
+lose
+wait 3000
+click 320 240
+wait 100
+click 320 240
+wait 100
+dump lost
+expect startup screen: 3
+expect continue save: no

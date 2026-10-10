@@ -335,7 +335,6 @@ constexpr uint8_t kRoomGpOffice = 7;
 constexpr uint8_t kRoomTrainingRoom = 22;
 constexpr uint8_t kRoomStaffRoom = 25;
 constexpr uint8_t kRoomResearchRoom = 28;
-constexpr uint8_t kRoomFirstBuilt = 7;
 constexpr uint8_t kRoomPsychiatry = 8;
 constexpr uint8_t kRoomWard = 9;
 constexpr uint8_t kRoomTheatre = 10;
@@ -380,16 +379,6 @@ int count_objects(const World &world, uint8_t kind)
 int32_t plant_health_scaled(const World &world, uint32_t factor)
 {
     return int32_t(uint32_t(world.plant_health_sum) * factor) / world.plants;
-}
-
-// NRAdcounts.open_rooms: the rooms the player has opened (open_room) and
-// not deleted.
-int count_open_rooms(const World &world)
-{
-    int n = 0;
-    for (const RoomInfo &r : world.rooms)
-        n += r.type >= kRoomFirstBuilt && r.owner == 0 && r.paid_for;
-    return n;
 }
 
 // advisor_old_hardware (0x60f90): the machines' average wear.
@@ -877,7 +866,7 @@ bool advise_hospital(Situation &s, int id, uint16_t situation)
         say(s.a, s.text(situation));
         return true;
     case 0x6b: {
-        int open = count_open_rooms(s.world);
+        int open = s.world.counts.open_rooms;
         if (open <= 2 || open >= 7)
             return false;
         say(s.a, s.text(0x6b + saferand(s.safeseed) % 3));

@@ -1,0 +1,5 @@
+# Level 1: a driven run starts a player without a details file at Normal,
+# 22 turns a second, so that the scripts' frame counts do not move (a normal
+# start is at Max: speed_default.txt).
+wait 30
+expect speed: 22 turns/s

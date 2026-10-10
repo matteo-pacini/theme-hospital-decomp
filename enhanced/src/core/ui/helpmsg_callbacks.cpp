@@ -580,28 +580,42 @@ void slist_help_if_doctor(HelpContext &ctx)
         set_plain(ctx);
 }
 
+namespace
+{
+
 // The surgeon, psychiatrist and researcher entries: the qualification's text
-// when the shown doctor has it. The original's else writes their training
-// progress (help_text 66) only while it is nonzero; this does not write it yet.
-void slist_help_if_surgeon(HelpContext &ctx)
+// when the shown doctor has it, else (help text `progress`) the percentage
+// of the training threshold reached, written only while the training is
+// nonzero.
+void slist_qualification_help(HelpContext &ctx, uint16_t skill, uint8_t Thing::*training, size_t threshold,
+                              int progress)
 {
     const Thing *staff = ctx.charts ? shown_thing(ctx, ctx.charts->value) : nullptr;
-    if (ctx.charts && (ctx.charts->slist_filter & 1) && staff && (staff->skills & kSkillSurgeon))
+    if (ctx.charts && (ctx.charts->slist_filter & 1) && staff && (staff->skills & skill)) {
         set_plain(ctx);
+        return;
+    }
+    if (!staff || !ctx.help || !ctx.text || !ctx.world->settings || staff->*training == 0)
+        return;
+    int pct = staff->*training * 100 / ctx.world->settings->gbv.ability_threshold[threshold];
+    ctx.help->msg = format_ints(ctx.text->at(TextSection::Help, progress), std::min(pct, 100), 0);
+}
+
+} // namespace
+
+void slist_help_if_surgeon(HelpContext &ctx)
+{
+    slist_qualification_help(ctx, kSkillSurgeon, &Thing::surgeon_training, 0, 66);
 }
 
 void slist_help_if_shrink(HelpContext &ctx)
 {
-    const Thing *staff = ctx.charts ? shown_thing(ctx, ctx.charts->value) : nullptr;
-    if (ctx.charts && (ctx.charts->slist_filter & 1) && staff && (staff->skills & kSkillPsychiatrist))
-        set_plain(ctx);
+    slist_qualification_help(ctx, kSkillPsychiatrist, &Thing::psych_training, 1, 67);
 }
 
 void slist_help_if_researcher(HelpContext &ctx)
 {
-    const Thing *staff = ctx.charts ? shown_thing(ctx, ctx.charts->value) : nullptr;
-    if (ctx.charts && (ctx.charts->slist_filter & 1) && staff && (staff->skills & kSkillResearcher))
-        set_plain(ctx);
+    slist_qualification_help(ctx, kSkillResearcher, &Thing::research_training, 2, 68);
 }
 
 // ---- Casebook (drugs.cpp) ----

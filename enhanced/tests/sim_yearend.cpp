@@ -97,6 +97,30 @@ void test_yearend_score(const char *dir)
     CHECK(game.progress.score >= before);
 }
 
+// A score whose growth product leaves 32 bits wraps as the original's does,
+// for the player and a computer player alike.
+void test_yearend_score_wraps(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &game = *f.game;
+    satisfy_win_criteria(game);
+    const int32_t before = 20000000;
+    game.progress.score = before;
+    th::calculate_score(game, 0);
+    bool found = false;
+    for (uint32_t rate : {0u, 200u, 300u, 400u, 500u, 600u, 700u})
+        found |= game.progress.score == std::min<int32_t>(before + int32_t(rate * uint32_t(before)) / 10000, 200000000);
+    CHECK(found);
+    CHECK(game.progress.score != before);
+
+    game.world.rivals[1].score = before;
+    game.world.rivals[1].start_score = before;
+    th::calculate_score(game, 1);
+}
+
 void test_yearend_year(const char *dir)
 {
     HireFixture f;

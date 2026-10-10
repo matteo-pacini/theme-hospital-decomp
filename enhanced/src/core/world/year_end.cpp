@@ -9,6 +9,7 @@
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
+#include "core/world/wrap32.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -495,11 +496,11 @@ void calculate_score(Game &game, uint8_t owner)
         if (r.threshold == 0 || r.threshold < progress)
             continue;
         if (score > 1000000)
-            score += r.capped_growth * score / 10000;
-        else if (int32_t(game.settings().gbv.score_max_inc) * start_score / 100 < score)
-            score += r.capped_growth * score / 10000;
+            score = add32(score, mul32(r.capped_growth, score) / 10000);
+        else if (mul32(game.settings().gbv.score_max_inc, start_score) / 100 < score)
+            score = add32(score, mul32(r.capped_growth, score) / 10000);
         else
-            score += r.growth * score / 10000;
+            score = add32(score, mul32(r.growth, score) / 10000);
         break;
     }
     if (owner == 0)

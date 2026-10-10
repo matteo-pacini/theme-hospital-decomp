@@ -1,0 +1,34 @@
+# Level 1: in the edit-room mouse mode the corridor object under the pointer
+# (othervar.pickup_thing, compute_room_pointed) flashes (draw_hilight_frame:
+# normal, flag 4, flag 8, hidden, flag 8, flag 4 over six turns); off it,
+# nothing does.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy a bench (the second entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the bench
+wait 20
+click 298 453            # panel: edit room
+wait 10
+expect build mouse 4
+expect flashing: pickup thing 0,
+thing 30
+wait 3
+expect flashing: pickup thing 30,
+screenshot flash_a
+wait 1
+screenshot flash_b
+wait 1
+screenshot flash_c
+wait 1
+screenshot flash_d
+wait 1
+screenshot flash_e
+wait 1
+screenshot flash_f
+cell 63 70
+wait 3
+expect flashing: pickup thing 0,

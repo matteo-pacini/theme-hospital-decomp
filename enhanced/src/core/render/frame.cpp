@@ -122,6 +122,11 @@ void draw_element(const ElementContext &c, const AnimElement &e, Bounds &b)
     const uint8_t glow = layered && c.options.glow >= 0 ? uint8_t(c.options.glow) : uint8_t(0);
     if (layered && c.options.glow >= 0)
         f |= kDrawGhost;
+    if (c.options.hidden) {
+        // draw_hilight_frame's hidden turn: only the box is kept.
+        b.grow(c.flip ? -ex - s.width : ex, ey, s.width, s.height);
+        return;
+    }
     if (c.options.scale != 0x10000)
         draw_element_scaled(c.dst, {c.at, {ex, ey}, c.flip, c.options.scale}, s, f, c.data.ghost().data());
     if (c.flip) {

@@ -1,0 +1,11 @@
+# Level 1: a player without a details file starts at Max, 25 turns a second
+# (set_default_player_details' game_speed 0x19, apply_player_details'
+# vary_speed(40)); the other scripts start at Normal because a driven run
+# does, unless "# DefaultSpeed" passes --default-speed, as here. Max stays
+# the speed item the options line and the speed keys agree on.
+# DefaultSpeed
+wait 30
+expect speed: 25 turns/s
+key 3
+wait 5
+expect speed: 22 turns/s

@@ -987,6 +987,7 @@ void dump_game_counts(std::string &out, const World &w)
     F(c, worst_machine);
     F(c, has_patients);
     F(c, last_quake_size);
+    F(c, open_rooms);
     F(w.new_staff, pending);
     F(w.new_staff, kind);
     F(w.new_staff, room);

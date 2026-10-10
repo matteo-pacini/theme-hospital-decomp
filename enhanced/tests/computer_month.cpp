@@ -155,6 +155,16 @@ void check_month_end(Balance b)
     rival_month_end(*r.world, r.arrivals, r.settings, 750);
     CHECK(rival.balance == 5000 - 3 * 5 * 750 / 100 - 240 * 20000 / 10000 / 12);
 
+    // A balance so far below zero that the original's 32-bit product wraps: the
+    // interest is what the wrapped product gives, with no undefined overflow.
+    rival.loan = 0;
+    rival.radiator_count = 0;
+    rival.balance = -20000000;
+    rival_month_end(*r.world, r.arrivals, r.settings, 750);
+    const int32_t wrapped = int32_t(uint32_t(240) * uint32_t(-20000000) * 2u);
+    CHECK(wrapped / 10000 / 12 != 240 * -20000000LL * 2 / 10000 / 12);
+    CHECK(rival.balance == -20000000 + wrapped / 10000 / 12);
+
     // The ceiling holds a balance that a negative interest would raise.
     rival.loan = 0;
     rival.radiator_count = 0;

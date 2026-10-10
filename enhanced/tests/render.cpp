@@ -577,3 +577,36 @@ void test_alien_filling(const char *dir)
     CHECK(std::any_of(sounds.begin(), sounds.end(), [&](const th::FrameSound &s) { return s.thing == f.machine; }));
     CHECK(alien_picked(gd, f, shots[0], scratch, view, camera));
 }
+
+// The mayor and the inspector are drawn and picked by their type whatever
+// their state (mapwho_mayor draws and tests both; MAYOR_PAUSES and
+// MAYOR_INSPECTS are not object states).
+void test_mayor_pointed(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(12, &error);
+    CHECK(level.has_value());
+    if (!level)
+        return;
+    FillingAlien f = make_filling_alien(gd, *level);
+    CHECK(f.alien != 0);
+    if (!f.alien)
+        return;
+    th::Thing &visitor = f.world->things[f.alien];
+    th::Point at = th::thing_to_world(visitor);
+    th::Rect view{0, 0, 640, 480};
+    th::Point camera{at.x - 320, at.y - 240};
+    th::Surface shot, scratch;
+    shot.resize(640, 480);
+    scratch.resize(640, 480);
+    scratch.fill(th::kMaskColour);
+    for (uint8_t type : {th::kThingMayor, th::kThingInspector}) {
+        for (uint8_t state : {2, 4, 6, 8}) {
+            visitor.type = type;
+            visitor.state = state;
+            CHECK(alien_picked(gd, f, shot, scratch, view, camera));
+        }
+    }
+}

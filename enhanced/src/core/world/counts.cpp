@@ -95,12 +95,14 @@ void reset_all_count(World &world, uint32_t game_turn)
     if (!counting(game_turn))
         return;
     // Both live outside the game's adcounts, which its memset clears:
-    // advisor.has_patients and NRAdcounts.last_quake_size.
+    // advisor.has_patients and NRAdcounts.last_quake_size, open_rooms.
     bool has_patients = world.counts.has_patients;
     uint8_t last_quake_size = world.counts.last_quake_size;
+    uint8_t open_rooms = world.counts.open_rooms;
     world.counts = {};
     world.counts.has_patients = has_patients;
     world.counts.last_quake_size = last_quake_size;
+    world.counts.open_rooms = open_rooms;
     world.emergency.present = 0;
     world.epidemic.contagious_count = 0;
 }

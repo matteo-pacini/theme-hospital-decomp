@@ -54,6 +54,9 @@ class DriveHost
     // Makes the level won, as the year end does: the win letter follows. A
     // test hook: a win needs the level's criteria met at a year end.
     virtual bool drive_win_level() = 0;
+    // Loses the level now, as a failed criterion does: the losing letter
+    // follows. A test hook.
+    virtual bool drive_lose_level() = 0;
 };
 
 // Waits for one of `max` slots in `dir` (enhanced/tools/slot.sh's files,
@@ -87,6 +90,7 @@ bool hold_slot(const std::filesystem::path &dir, int max, const std::string &inf
 //   demand ID           open the staff pay-raise requester for thing ID (a
 //                       test hook; the window normally needs a resignation)
 //   win                 win the level now (a test hook; the letter follows)
+//   lose                lose the level now (a test hook; the letter follows)
 //   screenshot NAME     save the next frame as OUT/NAME.png (the game, no
 //                       tools)
 //   screenshot-ui NAME  the same after the tools and note box are drawn

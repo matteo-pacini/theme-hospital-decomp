@@ -1,0 +1,22 @@
+# Level 1: the producer for details_read.txt. Options > Autosave off and the
+# slowest game speed, then Alt+S: a save writes the player's details
+# (save_player_details: save/<name>.hdt) beside the slot.
+# Size 640x480
+wait 30
+expect options: autosave true
+expect speed: 22 turns/s
+move 110 3
+down
+wait 3
+move 110 104
+wait 3
+up
+wait 5
+dump autosave_off
+expect options: autosave false
+key 1
+wait 5
+expect speed: 1 turns/s
+key Alt+s
+wait 15
+dump saved

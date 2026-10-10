@@ -1,0 +1,19 @@
+# Level 1: the paused game is shaded dark blue over the view, the panel and the
+# menu bar (draw_pause_mode, src/game.cpp), through the ghost table (draw flag
+# 4); P pauses and P resumes. The screenshots show the game before, paused and
+# after.
+# Size 640x480
+wait 60
+screenshot running
+dump running
+expect paused false
+key P
+wait 10
+screenshot paused
+dump paused
+expect paused true
+key P
+wait 10
+screenshot resumed
+dump resumed
+expect paused false

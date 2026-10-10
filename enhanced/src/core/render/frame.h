@@ -35,6 +35,9 @@ struct FrameOptions {
     // with this colour (kDrawGhost, as sprite_draw_glow) and the others
     // with colour 0 in their own flags; -1 draws as usual.
     int glow = -1;
+    // Draws nothing but still returns the box and extent, as
+    // draw_hilight_frame does on its hidden turn.
+    bool hidden = false;
 };
 
 // icon_gap (HiresCoords' IconScreen, src/coords.cpp): the lift of a status

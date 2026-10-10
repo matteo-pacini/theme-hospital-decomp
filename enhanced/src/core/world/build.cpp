@@ -16,6 +16,7 @@
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
+#include "core/world/wrap32.h"
 
 #include <cstdlib>
 #include <optional>
@@ -1542,6 +1543,7 @@ void delete_room(World &w, uint16_t r)
             clear_cell_of_ratholes(w, room.owner, uint16_t((y << 7) + x));
         }
     add_shadows(w);
+    w.counts.open_rooms--;
 }
 
 // check_invis_walls_around_object (src/build.cpp): the invisible walls of
@@ -1830,6 +1832,7 @@ void open_room(Game &game)
         w.placing.requester = ObjectRequester::None;
     b.room = 0;
     w.editing_room = 0;
+    w.counts.open_rooms++;
 }
 
 // allocate_roominfo (src/blueprnt.cpp): a free room for the blueprint, whose
@@ -1924,7 +1927,7 @@ bool remove_object(World &w, uint16_t id, int owner)
     trace_event("remove_object %u owner=%d", unsigned(id), owner);
     const Thing &obj = w.things[id];
     const MapCell &c = w.map[size_t(obj.x.tile + (obj.y.tile << 7))];
-    if (!(obj.subtype == kObjGatesOfHell || obj.subtype == kObjLitterBomb || c.owner_flags == 1 << owner))
+    if (!(obj.subtype == kObjGatesOfHell || obj.subtype == kObjLitterBomb || c.owner_flags == shl32(1, owner)))
         return false;
     remove_object_from_map(w, id);
     w.things[id] = Thing{};
@@ -1973,6 +1976,18 @@ uint16_t find_small_thing(const World &world, int tile)
     while (id > 0)
         id = world.things[size_t(id)].cell_next;
     return uint16_t(-id);
+}
+
+bool is_player_building(const World &world)
+{
+    if (world.building.build.draw_mode == 1)
+        return true;
+    for (int tile = 0; tile < kMapCells; tile++) {
+        uint16_t small = find_small_thing(world, tile);
+        if (small >= 1 && small <= 3)
+            return true;
+    }
+    return false;
 }
 
 bool blueprint_floor_invalid(const World &world, int x, int y, uint8_t *flags)

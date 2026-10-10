@@ -14,7 +14,7 @@ namespace th
 
 class Game;
 class GameData;
-struct ObjectPlacing;
+struct World;
 
 // The interface's own state for buying and placing objects, kept between
 // frames by the caller; the game's part is World::placing.
@@ -103,9 +103,9 @@ void draw_object_requesters(UiLayer &layer, const Interface &ui, const ObjectUi 
 
 // draw_object_cursor's drawing: the object being placed on its cell, in
 // `view` of `dst` with `camera` as draw_world, over everything drawn (the
-// game draws it after the view), in greys where it may not go. Nothing
-// unless ObjectUi::cursor_shown.
-void draw_placement(Surface &dst, Rect view, Point camera, const ObjectPlacing &p, const ObjectUi &oui,
+// game draws it after the view), in greys where it may not go; a plant
+// picked up earlier shows its health. Nothing unless ObjectUi::cursor_shown.
+void draw_placement(Surface &dst, Rect view, Point camera, const World &world, const ObjectUi &oui,
                     const GameData &data);
 
 } // namespace th

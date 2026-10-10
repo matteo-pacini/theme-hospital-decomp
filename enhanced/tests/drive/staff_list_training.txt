@@ -1,0 +1,36 @@
+# Level 6: the staff list shows a doctor's training progress. The seed is the
+# training_surgeon replay at turn 9000, where the consultant is teaching a
+# doctor who has 40 of the 150 points the surgeon qualification takes: the
+# doctor's faded surgeon icon with a bar of a quarter of the box
+# (draw_slist_training_bar, src/slist.cpp), the help text of the icon giving
+# the percentage (slist_help_if_surgeon), and the doctor's view on the map.
+# SeedReplay 6 enhanced/tools/replay/scripts/training_surgeon.txt 9000
+# Size 640x480
+wait 60
+# File > Load > Game 1.
+move 10 3
+down
+wait 2
+move 50 21
+wait 2
+move 150 21
+wait 2
+up
+wait 8
+key Escape
+wait 10
+key F6
+wait 30
+screenshot list
+dump list
+# Select the second row, B. Milbury (the doctor in training).
+click 115 122
+wait 20
+screenshot selected
+dump selected
+expect staff list: filter 1, page 0, member 18
+move 205 430
+wait 150
+screenshot hover
+dump hover
+expect 53% trained towards becoming a Surgeon

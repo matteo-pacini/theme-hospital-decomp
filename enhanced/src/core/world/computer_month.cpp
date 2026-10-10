@@ -6,6 +6,7 @@
 #include "core/world/reputation.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
+#include "core/world/wrap32.h"
 
 #include <algorithm>
 
@@ -115,7 +116,7 @@ void rival_month_end(World &world, ArrivalState &arrivals, const Balance &settin
         if (rival.loan != 0)
             rival_change_balance(rival, -(interest * rival.loan / 10000 / 12));
         if (rival.balance < 0)
-            rival_change_balance(rival, interest * rival.balance * 2 / 10000 / 12);
+            rival_change_balance(rival, mul32(mul32(interest, rival.balance), 2) / 10000 / 12);
         set_price_level(arrivals.hospitals[owner], settings, rival.cure_available);
     }
 }

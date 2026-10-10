@@ -9,6 +9,7 @@
 #include "core/render/text.h"
 #include "core/render/wibble.h"
 #include "core/world/complex.h"
+#include "core/world/objects.h"
 #include "core/world/reaper.h"
 #include "core/world/staff.h"
 #include "core/world/world.h"
@@ -17,6 +18,7 @@
 #include <array>
 #include <climits>
 #include <cstdio>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -302,12 +304,16 @@ AnimStart anim_start(const GameData &data, uint32_t anim)
     return anim < starts.size() ? starts[anim] : AnimStart{};
 }
 
-// Whether the game's mapwho_* tests `t` for being under the pointer: people
-// always, objects and doors in the states mapwho_object draws whole.
+// Whether the game's mapwho_* tests `t` for being under the pointer: people,
+// rats, the mayor and the inspector always, objects and doors in the states
+// mapwho_object draws whole, nothing else whatever its state.
 bool pointed_testable(const Thing &t)
 {
-    if (t.type == kThingPatient || t.type == kThingStaff || t.type == kThingRat)
+    if (t.type == kThingPatient || t.type == kThingStaff || t.type == kThingRat || t.type == kThingMayor ||
+        t.type == kThingInspector)
         return true;
+    if (t.type != kThingObject && t.type != kThingDoor)
+        return false;
     switch (t.state) {
     case 0x02: // OS_STATIC
     case 0x06: // OS_HELL
@@ -336,6 +342,10 @@ struct CellDrawing {
     bool pixbuf = false;
     Surface *energise = nullptr;
     uint32_t game_turn = 0;
+    // The things drawn flashing (othervar.pickup_thing and
+    // queue_hilight_thing), 0 for none.
+    uint16_t pickup_thing = 0;
+    uint16_t queue_hilight_thing = 0;
     // The 180x180 buffer draw_wibble_frame works in.
     Surface *wibble = nullptr;
 };
@@ -433,12 +443,13 @@ void draw_numfx(CellFrames &frames, const GameData &data, const Thing &t, int x,
 // Whether draw_cell_things draws thing `t`. mapwho_object (objects and
 // doors), mapwho_person (draw_special_id_frame, draw_split_frame,
 // draw_energise_frame and draw_wibble_frame), mapwho_reaper, mapwho_bang
-// (explosion debris) and mapwho_numfx are drawn.
+// (explosion debris), mapwho_numfx and mapwho_mayor (the mayor and the
+// inspector) are drawn.
 bool cell_thing_drawn(const Thing &t)
 {
     if (t.type != kThingObject && t.type != kThingDoor && t.type != kThingPatient && t.type != kThingStaff &&
         t.type != kThingReaper && t.type != kThingRat && t.type != kThingDebris && t.type != kThingHelicopter &&
-        t.type != kThingShadow && t.type != kThingMayor && t.type != kThingNumfx)
+        t.type != kThingShadow && t.type != kThingMayor && t.type != kThingInspector && t.type != kThingNumfx)
         return false;
     // mapwho_person draws no patient gone, merged into a member of staff's
     // animation or gone into the gates of hell; mapwho_reaper no reaper being
@@ -618,13 +629,53 @@ bool draw_glowing_or_wobbling(CellFrames &frames, const CellDrawing &drawing, co
     return true;
 }
 
+// Whether `t` (thing `id`) is drawn flashing: a patient or member of staff
+// that is the picked-up thing (mapwho_person, mapwho_staff), a patient hovered
+// in the queue window, an object that is or whose pair is the picked-up thing
+// (mapwho_object).
+bool hilighted(const CellDrawing &drawing, const Thing &t, int id)
+{
+    const uint16_t pickup = drawing.pickup_thing;
+    switch (t.type) {
+    case kThingPatient:
+        return plain_person_state(t) &&
+               ((pickup && id == pickup) || (drawing.queue_hilight_thing && id == drawing.queue_hilight_thing));
+    case kThingStaff:
+        return pickup && id == pickup;
+    case kThingObject:
+    case kThingDoor:
+        return pickup && (id == pickup || t.pair == pickup);
+    default:
+        return false;
+    }
+}
+
+// draw_hilight_frame's options: the layers and extent of `opts` without a
+// status icon, the draw flags cycling over six turns as normal, flag 4,
+// flag 8, hidden, flag 8, flag 4.
+FrameOptions hilight_options(const FrameOptions &opts, uint32_t turn)
+{
+    FrameOptions lit = opts;
+    lit.icon = 0;
+    uint32_t phase = turn % 6;
+    if (phase >= 4)
+        phase = 6 - phase;
+    lit.flags = phase == 1 ? unsigned(kDrawGhost) : phase == 2 ? unsigned(kDrawGhostUnder) : 0u;
+    lit.hidden = phase == 3;
+    return lit;
+}
+
 // Draws a thing's own frame as mapwho_person/mapwho_object do: a filling
 // patient split around its machine, an energising patient, or the thing's
-// frame when it is not an object being used. Returns the frame's box.
-ThingFrame draw_thing_frame(CellFrames &frames, const CellDrawing &drawing, const Thing &t, const Thing *obj, Point at,
-                            const FrameOptions &opts)
+// frame when it is not an object being used, with `lit` instead of `opts` if
+// given (draw_hilight_frame). Returns the frame's box.
+ThingFrame draw_thing_frame(CellFrames &frames, const CellDrawing &drawing, const Thing &t, Point at,
+                            const FrameOptions &opts, const FrameOptions *lit)
 {
     ThingFrame frame;
+    const Thing *obj = (t.type == kThingPatient || t.type == kThingStaff) && t.object && t.object < kThingCount
+                           ? &drawing.world.things[size_t(t.object)]
+                           : nullptr;
     if (t.type == kThingPatient && t.state == kPsFills) {
         // draw_split_frame; with no object it draws nothing.
         if (obj) {
@@ -647,7 +698,7 @@ ThingFrame draw_thing_frame(CellFrames &frames, const CellDrawing &drawing, cons
     } else if (!((t.type == kThingObject || t.type == kThingDoor) && t.state == kObjectInUse)) {
         // mapwho_object draws an object's own frame only when it is not in
         // use; while one is, its user's animation carries it.
-        frame.box = draw_frame(frames.dst, at, t.sprite, t.flip != 0, frames.data, opts);
+        frame.box = draw_frame(frames.dst, at, t.sprite, t.flip != 0, frames.data, lit ? *lit : opts);
         grow(frames.bounds, frame.box);
         frame.drawn = true;
     }
@@ -696,10 +747,11 @@ void draw_cell_thing(CellFrames &frames, const CellDrawing &drawing, int16_t id,
         opts.icon = t.icon_frame;
         opts.icon_over_frame = t.type == kThingObject;
     }
-    const Thing *obj = (t.type == kThingPatient || t.type == kThingStaff) && t.object && t.object < kThingCount
-                           ? &drawing.world.things[size_t(t.object)]
-                           : nullptr;
-    finish_cell_thing(frames, drawing, t, id, {tx, ty}, draw_thing_frame(frames, drawing, t, obj, {tx, ty}, opts));
+    std::optional<FrameOptions> lit;
+    if (hilighted(drawing, t, id))
+        lit = hilight_options(opts, drawing.game_turn);
+    finish_cell_thing(frames, drawing, t, id, {tx, ty},
+                      draw_thing_frame(frames, drawing, t, {tx, ty}, opts, lit ? &*lit : nullptr));
     if (frames.extent)
         grow(*frames.extent, sprites);
 }
@@ -734,7 +786,7 @@ void finish_cell_thing(CellFrames &frames, const CellDrawing &drawing, const Thi
                   frame.box.y + frame.box.h + margin > pointed->at.y;
     if (in_box && pointed_testable(t)) {
         pointed->thing = uint16_t(id);
-    } else if (t.type == kThingRat && drawing.drawn.near_rat) {
+    } else if (pointed && t.type == kThingRat && drawing.drawn.near_rat) {
         int near = drawing.world.rats.near_margin;
         if (frame.box.x - near < pointed->at.x && frame.box.x + frame.box.w + near > pointed->at.x &&
             frame.box.y - near < pointed->at.y && frame.box.y + frame.box.h + near > pointed->at.y)
@@ -785,8 +837,16 @@ class WorldDrawing
         pixbuf_.resize(0x40, 0x40);
         drawing_.energise = &pixbuf_;
         drawing_.game_turn = target.game_turn;
+        drawing_.pickup_thing = target.overlays.pickup_thing;
+        drawing_.queue_hilight_thing = target.overlays.queue_hilight_thing;
         wibble_ = make_wibble_buffer();
         drawing_.wibble = &wibble_;
+        if (const auto *marks = target.overlays.marks; marks && !marks->empty()) {
+            marked_.assign(world.map.begin(), world.map.end());
+            for (const CellMark &mark : *marks)
+                marked_[mark.cell].flags |= mark.flags;
+            map_ = marked_.data();
+        }
     }
 
     void floors() const
@@ -968,7 +1028,9 @@ class WorldDrawing
     const Rect view_;
     const SpriteSheet &blocks_;
     const int tallest_;
+    // The map as drawn: the world's, or `marked_` when cells are marked.
     const MapCell *map_;
+    std::vector<MapCell> marked_;
     const CellScan scan_;
     CellDrawing drawing_;
     const ShadowSprites *shadows_;

@@ -60,6 +60,7 @@ class FakeHost : public th::DriveHost
     int64_t drive_turn() const override { return turn; }
     bool drive_staff_demand(uint16_t id) override { return id != 0; }
     bool drive_win_level() override { return true; }
+    bool drive_lose_level() override { return true; }
 
     std::string report_dir;
 };

@@ -10,6 +10,7 @@ namespace th
 
 class GameData;
 class ShadowSprites;
+struct CellMark;
 struct FrameSound;
 struct World;
 
@@ -22,6 +23,17 @@ struct PointedThing {
     uint16_t thing = 0;
 };
 
+// What the interface leaves on the map for a frame, which the game keeps in
+// the map's flags and othervar: in `marks`, cells drawn with their flags bits
+// 6-7 set (compute_object_drag_shape's, while an object is carried; the
+// world's map is not changed); `pickup_thing` and `queue_hilight_thing`, the
+// things drawn flashing (draw_hilight_frame), 0 for none.
+struct ViewOverlays {
+    const std::vector<CellMark> *marks = nullptr;
+    uint16_t pickup_thing = 0;
+    uint16_t queue_hilight_thing = 0;
+};
+
 // Where the hospital view is drawn: the rectangle `view` of `dst`, with
 // `camera` the map pixel position at its top-left.
 struct ViewTarget {
@@ -31,6 +43,7 @@ struct ViewTarget {
     // The game turn (actual_game_turn), which the aliens' animation, the glow of
     // a patient with radiation and the wobble of one with jellyitis follow.
     uint32_t game_turn = 0;
+    ViewOverlays overlays{};
 };
 
 // What draw_world reports of the things it draws, each if given: in

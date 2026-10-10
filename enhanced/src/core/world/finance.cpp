@@ -5,6 +5,7 @@
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
+#include "core/world/wrap32.h"
 
 #include <algorithm>
 
@@ -167,7 +168,8 @@ void month_end(Finance &f, int32_t &balance, World &world, const Balance &settin
     if (f.loan != 0)
         change_balance(f, balance, day, month, {kTxLoanInterest, -(t.interest_rate * f.loan / 10000 / 12)});
     if (balance < 0)
-        change_balance(f, balance, day, month, {kTxOverdraftInterest, t.interest_rate * balance * 2 / 10000 / 12});
+        change_balance(f, balance, day, month,
+                       {kTxOverdraftInterest, mul32(mul32(t.interest_rate, balance), 2) / 10000 / 12});
     adjust_monthly_figures(f, balance, figures.reputation);
 }
 

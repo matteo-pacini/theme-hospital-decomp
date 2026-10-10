@@ -167,7 +167,9 @@ class Reader
             ok_ = false;
             return;
         }
-        std::memcpy(p, in_.data() + pos_, n);
+        // An empty vector's data() is null, which memcpy does not take even for 0.
+        if (n != 0)
+            std::memcpy(p, in_.data() + pos_, n);
         pos_ += n;
     }
     std::span<const uint8_t> in_;

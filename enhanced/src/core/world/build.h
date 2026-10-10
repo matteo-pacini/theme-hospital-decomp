@@ -314,6 +314,10 @@ void place_small_thing(World &world, int tile, int id, bool keep);
 // index) at the end of `tile`'s thing list, 0 for none.
 uint16_t find_small_thing(const World &world, int tile);
 
+// is_player_building (src/build.cpp): whether the blueprint is laid out
+// (draw_mode 1) or any blueprint outline (markers 1-3) is on the map.
+bool is_player_building(const World &world);
+
 // draw_blueprint_area's tests (src/blueprnt.cpp) for the player's blueprint:
 // whether floor cell (x, y) is drawn as invalid, and whether the outline
 // piece on cell (x, y) (corners from (x0, y0) to (x1 + 1, y1 + 1)) is.

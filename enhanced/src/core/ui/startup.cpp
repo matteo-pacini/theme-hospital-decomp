@@ -502,6 +502,7 @@ void Startup::tick(const UiMouse &mouse, std::span<const StartupKey> keys)
         // draw_nickname state 1.
         if (name_.empty())
             name_ = std::string(text_->misc(1));
+        name_confirmed_ = true;
         state_ = State::MenuEnter;
         break;
     case State::MenuEnter:

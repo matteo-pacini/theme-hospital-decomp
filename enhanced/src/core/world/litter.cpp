@@ -10,6 +10,7 @@
 #include "core/world/queue.h"
 #include "core/world/rooms.h"
 #include "core/world/trace.h"
+#include "core/world/wrap32.h"
 
 #include <array>
 #include <cstdlib>
@@ -301,7 +302,7 @@ void place_litter(World &world, uint16_t tile, uint8_t owner, uint8_t kind)
     if (tile >= kMapCells)
         return;
     MapCell &m = world.map[tile];
-    if (m.owner_flags != 1 << owner)
+    if (m.owner_flags != shl32(1, owner))
         return;
     uint8_t cur = m.litter_shadow & 0xf;
     if (cur == 0 && owner == 0)
@@ -320,7 +321,7 @@ void remove_litter(World &world, uint16_t tile, uint8_t owner)
         return;
     MapCell &m = world.map[tile];
     uint8_t cur = m.litter_shadow & 0xf;
-    if (m.owner_flags == 1 << owner && !(cur == 0 || cur == 7 || cur == 8)) {
+    if (m.owner_flags == shl32(1, owner) && !(cur == 0 || cur == 7 || cur == 8)) {
         m.litter_shadow &= 0xf0;
         if (owner == 0)
             world.litter_count--;

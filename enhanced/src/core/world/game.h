@@ -91,6 +91,12 @@ class Game
     // level ended (0: none): init_player keeps it above level 1 and starts at
     // 10000 otherwise, which start() has done. Recorded in command_log.
     void carry_score(int32_t score);
+    // The rivals' monthly banks as the level leaves them.
+    RivalBuckets rival_buckets() const;
+    // Gives the level just started the banks the last level left: comp_buckets
+    // is allocated once and no level clears it, so it starts with what was
+    // banked and not yet merged (get_computer_bucket).
+    void carry_buckets(const RivalBuckets &buckets);
 
     // Runs one game turn unless paused: advances the turn count and the
     // random values the game draws every turn, the date every 50 turns,

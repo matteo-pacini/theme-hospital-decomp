@@ -18,6 +18,7 @@
 #include "core/world/trace.h"
 #include "core/world/training.h"
 #include "core/world/vaccine.h"
+#include "core/world/wrap32.h"
 
 #include <algorithm>
 #include <bit>
@@ -583,7 +584,7 @@ void try_staff_wander(const Ctx &c, uint16_t id, int dx, int dy, uint8_t substat
     int y = e.y.tile + dy;
     auto tile = uint16_t(x + (y << 7));
     if (!(tile < kMapCells && !(c.world.map[tile].flags & 3) && x >= 0 && x < kMapSize && y >= 0 && y < kMapSize) ||
-        c.world.map[tile].owner_flags != 1 << e.owner || room_at(c.world, tile)) {
+        c.world.map[tile].owner_flags != shl32(1, e.owner) || room_at(c.world, tile)) {
         e.substate = 6;
         return;
     }
@@ -761,7 +762,7 @@ void handyman_check_for_litter(World &world, Thing &h)
     auto pos = uint16_t(cell_of(h) + (dy << 7) + dx);
     // The game reads past the map for cells off its end; here they hold no
     // litter.
-    if (pos >= kMapCells || !has_litter(world.map[pos]) || world.map[pos].owner_flags != 1 << h.owner)
+    if (pos >= kMapCells || !has_litter(world.map[pos]) || world.map[pos].owner_flags != shl32(1, h.owner))
         return;
     auto dist = [&](uint16_t cell) {
         int x = cell % 128 - h.x.tile;
@@ -1085,7 +1086,7 @@ void handyman_works_stroll(const Ctx &c, uint16_t id)
     auto pos = uint16_t(cell_of(h) + (dy << 7) + dx);
     // The game reads past the map for cells off its end; here they are
     // not his land.
-    if (pos < kMapCells && world.map[pos].owner_flags == 1 << h.owner && can_i_get_to(world, h, pos) &&
+    if (pos < kMapCells && world.map[pos].owner_flags == shl32(1, h.owner) && can_i_get_to(world, h, pos) &&
         !(world.map[pos].owner_flags & kCellOutdoor)) {
         h.next_state = h.resume_state = kStaffHandymanWorks;
         set_complex(world, id, kComplexWalkTo, pos);

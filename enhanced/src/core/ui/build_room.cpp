@@ -306,6 +306,8 @@ void build_mouse_edit(BuildUi &bui, Game &game, int cell, uint16_t pointed, cons
 
 void build_mouse(BuildUi &bui, Game &game, int cell, uint16_t pointed, const UiMouse &mouse, bool on_map)
 {
+    // process_mouse clears it every frame; the edit modes below set it.
+    bui.pickup_thing = 0;
     if (!on_map || cell < 0 || cell >= kMapCells) {
         bui.cell = -1;
         return;

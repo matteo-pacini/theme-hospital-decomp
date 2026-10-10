@@ -120,7 +120,11 @@ For a session where a lead agent briefs worker agents in herdr panes
   dispatch, just started or just finished, gets only `/clear`; `/clear` also
   comes before giving a worker an unrelated task.
 - Brief with a common rules file and one file per worker: task, gates, report
-  path.
+  path. The common file repeats AGENTS.md's "Sharing the machine" limits
+  (`nice -n 19 ionice -c 3`, the job caps). Six workers at those caps load
+  the 16 cores fully: with the user at the machine, check `uptime` and the
+  CPU temperature (`k10temp` Tctl under /sys/class/hwmon) during a batch
+  and run fewer workers when it stays near 90°C or the desktop lags.
 - Verify every handoff before accepting it (rerun its scripts and tests,
   compare the work with the original, look at its screenshots), and again
   after a substantial fix round. Accept no scope cut or "impossible" claim

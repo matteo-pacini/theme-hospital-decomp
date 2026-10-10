@@ -590,9 +590,27 @@ void draw_object_requesters(UiLayer &layer, const Interface &ui, const ObjectUi 
     }
 }
 
-void draw_placement(Surface &dst, Rect view, Point camera, const ObjectPlacing &p, const ObjectUi &oui,
+namespace
+{
+
+// get_frame_for_placing_plant (src/cursor.cpp): the frame of the player's plant
+// lifted off the map by its health, else a healthy plant's.
+uint32_t placing_plant_frame(const World &world, const AnimData &anims)
+{
+    for (uint16_t id : world.building.build.objects) {
+        const Thing &obj = world.things[id];
+        if (id && obj.subtype == kObjPlant && obj.owner == 0)
+            return compute_plant_frame(obj, anims);
+    }
+    return anims.starts[kPlantAnim].frame;
+}
+
+} // namespace
+
+void draw_placement(Surface &dst, Rect view, Point camera, const World &world, const ObjectUi &oui,
                     const GameData &data)
 {
+    const ObjectPlacing &p = world.placing;
     if (!p.placing || !oui.cursor_shown || p.kind >= kObjectKinds)
         return;
     const AnimData &anims = data.anims();
@@ -615,8 +633,11 @@ void draw_placement(Surface &dst, Rect view, Point camera, const ObjectPlacing &
     };
     dst.set_clip(view);
     const ObjectInfo &control = kObjects[p.kind];
+    // A litter bomb is drawn at its first frame: the game uses that of a
+    // lifted bomb by its fuse (get_frame_for_placing_bomb), and the port keeps
+    // no fuse.
     AnimStart start = p.kind == kObjLitterBomb ? AnimStart{start_of(kBombAnim).frame, 0}
-                      : p.kind == kObjPlant    ? AnimStart{start_of(kPlantAnim).frame, 0}
+                      : p.kind == kObjPlant    ? AnimStart{placing_plant_frame(world, anims), 0}
                                                : start_of(control.anim_start + p.dir);
     draw(p.tile, start);
     // The game draws the second part first for some facings (next_part's

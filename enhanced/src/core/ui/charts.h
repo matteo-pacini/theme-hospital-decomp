@@ -3,6 +3,7 @@
 #include "core/data/palette.h"
 #include "core/data/sprites.h"
 #include "core/data/text.h"
+#include "core/render/iso.h"
 #include "core/render/surface.h"
 #include "core/ui/layer.h"
 #include "core/world/events.h"
@@ -259,6 +260,12 @@ void chart_command(Charts &charts, const Event &event);
 // When set_help was called, the chart's help tooltip is drawn over it too.
 ChartsResult chart_frame(Charts &charts, const UiMouse &mouse, const ChartKeys &keys, double seconds, const Game &game,
                          const HospitalSettings &settings);
+
+// The map view of the staff member the open staff list shows (display_slist's
+// draw_window_not_using_bscreen): its box on the chart's surface and the
+// camera that centres the member in it. False when the list is not up or
+// shows nobody; the caller draws the world there after chart_frame.
+bool slist_view(const Charts &charts, const World &world, Rect &box, Point &camera);
 
 // The command opening chart `chart` (0-7) from a key F1-F8, the Charts menu or
 // the panel: EV_OPEN_SCREEN; the research screen is refused (with

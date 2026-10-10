@@ -1,0 +1,25 @@
+# Level 1: a bench being placed marks the cells it covers and is used from
+# (compute_object_drag_shape): sprite 625 + (flags >> 6) over each, the
+# marker of free floor where it fits and the other where an object already
+# stands.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy two benches (the second entry)
+wait 5
+click 328 100
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+cell 60 68
+wait 10
+expect placing: object true
+screenshot footprint_free
+click-cell 60 68         # place the first
+wait 20
+cell 60 68               # the second over the first
+wait 10
+screenshot footprint_blocked
+cell 63 70
+wait 10
+screenshot footprint_moved

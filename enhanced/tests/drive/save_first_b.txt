@@ -4,7 +4,7 @@
 # (save_first_a.txt's "camera:" line), not half a screen off.
 # Size 640x480
 # NoLevel
-# Seed build/drive-tests/save_first_a/save
+# SeedScript save_first_a
 wait 60
 key Space
 wait 20

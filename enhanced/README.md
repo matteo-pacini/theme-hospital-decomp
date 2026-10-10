@@ -88,7 +88,10 @@ Milestone 4 so far, the game's interface:
   plays one before the next level, and its end goes back to the level it
   interrupted;
 - the pull-down menu bar and the requester windows, with the original art;
-  quitting asks first; Options speed, sound and volume, Display shadows;
+  quitting asks first; Options speed, sound and volume, autosave (slot 8 on
+  day 28), Display shadows. The player's options, jukebox playlist and the
+  advisor's one-off advice are kept in `<name>.hdt` beside the saves, in the
+  original's 0x5c-byte layout, written after each save and read at start;
 - the panel's buttons; furnish corridor (buy, place, rotate, cost) and hire
   staff (applicants, faces, placing them) through the game's commands;
 - sound effects from the game's sound bank, and the music (the XMI songs on
@@ -293,15 +296,20 @@ renders a level's start view to a BMP.
 of clicks, keys and waits, with screenshots, state dumps and expectations,
 on a driven clock so that a run repeats exactly; `--control` takes the same
 commands on stdin, answering each on stdout (src/app/drive.h).
-`--visible` shows the window while it runs. The scripts in tests/drive are
+`--visible` shows the window while it runs. A driven run starts a player
+without a details file at Normal speed (a normal start is at Max, as the
+original's default); `--default-speed` keeps the Max. The scripts in tests/drive are
 interface tests: `tools/drive_tests.sh` runs them (all, or the ones named)
 from the repository root with the build in `DRIVE_BUILD` (default
 build/enhanced), its output in build/drive-tests/. A script's header picks
 how it starts: `# Level N` the level (default 1), `# NoLevel` the start-up
 screens instead, `# Size WxH` the window size (default 1280x720; the menu
-bar is only at the top in the game's 640x480 layout) and `# Seed DIR` saves
-copied from DIR into the run's save folder first. `type TEXT` types into a
-focused text field, `key [MOD+]NAME` presses a key with Shift, Ctrl or Alt held
+bar is only at the top in the game's 640x480 layout), `# SeedScript NAME`
+runs the script NAME first, into a folder of its own, and copies its saves
+into the run's save folder (the run order does not matter), and
+`# SeedReplay LEVEL SCRIPT TURNS` plays a replay script to that turn with
+th_replay and puts its end state in slot 1. `type TEXT` types into a focused
+text field, `key [MOD+]NAME` presses a key with Shift, Ctrl or Alt held
 (`keydown` and `keyup` hold one, as for W and Tab; spaces in a name are
 written `_`: `Keypad_8`), and `screenshot-ui` captures after the ImGui
 layer (the tools and the quick report's note box).

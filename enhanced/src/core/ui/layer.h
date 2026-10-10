@@ -42,6 +42,11 @@ class UiLayer
     // gives the same result.
     void shadow(Rect r, uint8_t alpha);
 
+    // Blends `colour` into every drawn pixel through `ghost` (the game's
+    // draw flag 4: ghost[colour << 8 | pixel]); undrawn pixels stay
+    // transparent.
+    void shade(uint8_t colour, const uint8_t *ghost);
+
     // The indexed pixels, for drawing that needs more than the above; mark
     // what it draws with mark().
     Surface &pixels() { return pixels_; }

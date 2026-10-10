@@ -48,8 +48,8 @@ constexpr uint32_t kPfRecorded = 0x400000;
 // the hospital's totals and, for `treatment` (an illness; 0 for the hospital
 // alone), to the treatment's, re-evaluates the reputations changed and then
 // moves the treatment's price (update_single_cure_cost). Nothing happens
-// without World::market. The rivals' monthly banks (comp_buckets) are not
-// ported.
+// without World::market. The rivals' monthly banks (comp_buckets) are filled by
+// rival_reputation_affected (computer.h).
 void reputation_affected(World &world, uint8_t treatment, RepEvent event, int32_t amount = 0);
 
 // What reputation_affected adds for an event: points, and events counted.

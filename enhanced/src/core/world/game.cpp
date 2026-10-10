@@ -173,6 +173,20 @@ void Game::carry_score(int32_t score)
     command_log.push_back(std::format("# Score {}", score));
 }
 
+RivalBuckets Game::rival_buckets() const
+{
+    RivalBuckets out;
+    for (size_t h = 0; h < out.size(); h++)
+        out[h] = world.rivals[h].buckets;
+    return out;
+}
+
+void Game::carry_buckets(const RivalBuckets &buckets)
+{
+    for (size_t h = 0; h < buckets.size(); h++)
+        world.rivals[h].buckets = buckets[h];
+}
+
 void Game::connect_world()
 {
     world.settings = &settings_;
@@ -536,7 +550,11 @@ void Game::raise_advisor_event(uint32_t bits)
 void Game::overview_frame(uint8_t hospital)
 {
     log_inputs();
-    log_line(std::format("@overview {}", int(hospital)));
+    // The status screen calls this every frame; the turn does not change
+    // between frames, so one line per turn and hospital replays the same run.
+    std::string line = std::format("{} @overview {}", turn_count + 1, int(hospital));
+    if (command_log.empty() || command_log.back() != line)
+        command_log.push_back(std::move(line));
     if (hospital >= kHospitalCount)
         return;
     if (hospital == 0)

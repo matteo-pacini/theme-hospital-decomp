@@ -15,6 +15,10 @@
 void test_user_paths();
 void test_migrate_old_prefs();
 
+// player_details.cpp
+void test_player_details_layout();
+void test_player_details_file();
+
 // render.cpp
 void test_blit_clips_and_skips();
 void test_drive_script();
@@ -26,6 +30,7 @@ void test_shadow_sprites(const char *dir);
 void test_level_objects(const char *dir);
 void test_draw_world(const char *dir);
 void test_alien_filling(const char *dir);
+void test_mayor_pointed(const char *dir);
 void test_draw_order_stable(const char *dir);
 void test_panel_image(const char *dir);
 void test_text_layout();
@@ -154,6 +159,7 @@ void test_applicant_expiry();
 void test_game_clock(const char *dir);
 void test_fax_palette(const char *dir);
 void test_open_hospital(const char *dir);
+void test_overview_log(const char *dir);
 void test_finance_level1(const char *dir);
 void test_balance_roll(const char *dir);
 void test_advisor_tutorial(const char *dir);
@@ -219,6 +225,7 @@ void test_winlose_letters(const char *dir);
 // sim_yearend.cpp
 void test_yearend_criteria(const char *dir);
 void test_yearend_score(const char *dir);
+void test_yearend_score_wraps(const char *dir);
 void test_yearend_year(const char *dir);
 void test_yearend_rivals(const char *dir);
 void test_level_rival_owner_cells(const char *dir);
@@ -254,6 +261,8 @@ struct DataTest {
 const Test kTests[] = {
     TEST(test_user_paths),
     TEST(test_migrate_old_prefs),
+    TEST(test_player_details_layout),
+    TEST(test_player_details_file),
     TEST(test_blit_clips_and_skips),
     TEST(test_sha256_vectors),
     TEST(test_manifest_covers_data),
@@ -311,11 +320,13 @@ const DataTest kDataTests[] = {
     TEST(test_level_objects),
     TEST(test_draw_world),
     TEST(test_alien_filling),
+    TEST(test_mayor_pointed),
     TEST(test_draw_order_stable),
     TEST(test_panel_image),
     TEST(test_game_clock),
     TEST(test_fax_palette),
     TEST(test_open_hospital),
+    TEST(test_overview_log),
     TEST(test_language_and_fonts),
     TEST(test_balance),
     TEST(test_walk_level1),
@@ -427,6 +438,7 @@ const DataTest kDataTests[] = {
     TEST(test_winlose_letters),
     TEST(test_yearend_criteria),
     TEST(test_yearend_score),
+    TEST(test_yearend_score_wraps),
     TEST(test_yearend_year),
     TEST(test_yearend_rivals),
     TEST(test_level_rival_owner_cells),

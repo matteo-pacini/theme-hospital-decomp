@@ -7,6 +7,7 @@
 #include "app/drive.h"
 #include "app/install_job.h"
 #include "app/paths.h"
+#include "app/player_details.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
 #include "core/audio/music.h"
@@ -42,6 +43,7 @@
 #include "core/world/debug_dump.h"
 #include "core/world/game.h"
 #include "core/world/icons.h"
+#include "core/world/queue.h"
 #include "core/world/rats.h"
 #include "core/world/rooms.h"
 #include "core/world/savegame.h"
@@ -144,6 +146,8 @@ struct LevelView {
     Game game;
     std::unique_ptr<ShadowSprites> shadows;
     Surface scratch;
+    // What the interface left on the map for the next draw.
+    ViewOverlays overlays;
 };
 
 // A debug report's contents, held in memory between the capture (at F10 or
@@ -179,11 +183,18 @@ struct DebugReportResult {
     std::filesystem::path dir;
 };
 
+// What a level leaves for the next: the hospital's score (0: none) and the
+// rivals' monthly banks (null: none).
+struct Carried {
+    int32_t score = 0;
+    const RivalBuckets *buckets = nullptr;
+};
+
 // Starts level `number` with its settings (the balance set `balance_id`:
-// "EASY", "FULL" or "HARD"), or returns nothing and says why. `carried_score`
-// is the score the hospital had when the last level ended (0: none).
+// "EASY", "FULL" or "HARD"), or returns nothing and says why. `carried` is
+// what the last level left.
 std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level, int number,
-                                       std::string_view balance_id, std::string *error, int32_t carried_score = 0)
+                                       std::string_view balance_id, std::string *error, Carried carried = {})
 {
     Balance settings;
     if (!load_balance(data.dir(), number, balance_id, settings, error))
@@ -191,7 +202,9 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
     auto view = std::make_unique<LevelView>();
     view->game.staff_market.ref_counts = reference_counts(data.text());
     view->game.start(level, number, settings, data.anims(), data.person_complexes(), data.staff_complexes());
-    view->game.carry_score(carried_score);
+    view->game.carry_score(carried.score);
+    if (carried.buckets)
+        view->game.carry_buckets(*carried.buckets);
     view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost());
     add_static_shadows(view->game.world.map);
     return view;
@@ -207,8 +220,9 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
             level->scratch.resize(surface.width(), surface.height());
             level->scratch.fill(kMaskColour);
         }
-        draw_world({surface, {0, 0, surface.width(), surface.height()}, camera, level->game.turn_count},
-                   level->game.world, data, shadows ? level->shadows.get() : nullptr, level->scratch, drawn);
+        draw_world(
+            {surface, {0, 0, surface.width(), surface.height()}, camera, level->game.turn_count, level->overlays},
+            level->game.world, data, shadows ? level->shadows.get() : nullptr, level->scratch, drawn);
     }
 }
 
@@ -221,6 +235,9 @@ MapHover game_map_hover(const World &world, uint16_t pointed)
         return {};
     return hover;
 }
+
+// OBJ_RECEPTION_DESK (include/enums.h).
+constexpr uint8_t kObjReceptionDesk = 11;
 
 // Whether the hospital has a receptionist (the announcer's pages wait for
 // one).
@@ -380,7 +397,8 @@ class App : public DriveHost
     int exit_code() const { return install_failed_ || (driver_ && driver_->failures() > 0) ? 1 : 0; }
 
   private:
-    // --drive SCRIPT, --control, --out DIR, --size WxH, --visible.
+    // --drive SCRIPT, --control, --out DIR, --size WxH, --visible,
+    // --default-speed.
     void parse_drive_args(int argc, char **argv);
     // --user-data (skip the development folder, so a development build looks
     // only in the game folder as a normal start does), --drop PATH (handle PATH as a file dropped
@@ -424,6 +442,7 @@ class App : public DriveHost
     int64_t drive_turn() const override;
     bool drive_staff_demand(uint16_t id) override;
     bool drive_win_level() override;
+    bool drive_lose_level() override;
 
     bool try_load_data(const std::filesystem::path &dir);
     void load_level(int number);
@@ -455,6 +474,21 @@ class App : public DriveHost
     // Saves the Continue slot when the game returns to the main menu
     // (quit_game 1: save_game(0x63)).
     void save_continue_slot();
+    // The player's name for file names: the name screen's, or the default
+    // name of a run that skipped it (--level).
+    std::string player_name() const;
+    // load_player_details: reads save/<name>.hdt (the defaults without one)
+    // and applies it; save_player_details writes it, after each save.
+    void load_player_details();
+    void save_player_details();
+    // apply_player_details: the audio, shadows and speed options.
+    void apply_player_details();
+    // Takes the live options and the advisor's flags into details_.
+    void collect_player_details();
+    // Gives a level's advisor the player's flags (they outlive the level).
+    void give_advisor_flags(Game &game) const;
+    // check_autosave (src/io.cpp): slot 8 on day 28.
+    void check_autosave(const Game &game);
     void handle_event(const SDL_Event &e);
     void key_down(const SDL_KeyboardEvent &key);
     void key_up(const SDL_KeyboardEvent &key);
@@ -508,6 +542,9 @@ class App : public DriveHost
     void view_sounds(int vw, int vh);
     void draw_view_overlays(int vw, int vh);
     void present_view(int vw, int vh, int z);
+    bool pause_shaded() const;
+    void shade_view();
+    void shade_ui(UiLayer &layer);
     int zoom() const;
     int ui_scale() const;
     void make_ui_textures();
@@ -531,6 +568,9 @@ class App : public DriveHost
     // modes, picking up or cancelling. Returns the command, EV_NONE for none.
     Event interface_map_right(Game &game, bool placing);
     void interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing);
+    // process_no_button's MM_NORMAL case: the pointer on a room of the player's
+    // or on its reception (desk or receptionist) flags the queue.
+    void interface_flag_queue(Game &game, const UiMouse &mouse);
     // The watch button's highlight sound (draw_emergency's othervar.watch_hovered):
     // played once on entering it, when the button is drawn (epidemic, or the
     // opening countdown past the tutorial flag).
@@ -581,6 +621,7 @@ class App : public DriveHost
     // Whether a framed help page is open.
     bool help_page_open() const { return help_.box().style == 2 && !help_.box().msg.empty(); }
     void draw_info_view(Game &game);
+    void draw_map_view(Surface &dst, const Game &game, Rect box, Point camera);
     void ask_quit();
     void quit_game();
     void ask_restart();
@@ -676,6 +717,11 @@ class App : public DriveHost
     // (othervar.panel_info and panel_thing).
     uint8_t panel_info_ = 0;
     uint16_t panel_thing_ = 0;
+    // flag_all_queue_members' last_flag_turn and last_flag_room: the frame and
+    // room (World::rooms index) it last ran for, which decide whether a
+    // newly highlighted queue plays its sound.
+    uint64_t last_flag_frame_ = 0;
+    uint16_t last_flag_room_ = 0;
     // The bar's kind as the last frame drew it, 0 when the raised panel
     // covered it (draw_panel_info's return).
     uint8_t panel_info_drawn_ = 0;
@@ -698,8 +744,15 @@ class App : public DriveHost
     UiMouse help_mouse_;
     // The help context the full-screen screens share, filled by help_context.
     HelpContext help_ctx_;
-    // Which room types have shown their help page, and the last room built.
-    std::array<bool, kRoomTypes> room_help_seen_{};
+    // The player's details (myplayer): the room types whose help page was
+    // shown, the advisor's one-off advice, the audio, speed and autosave
+    // options. save/<name>.hdt holds them between runs.
+    PlayerDetails details_;
+    // check_autosave's last_saved (month + day of the last autosave) and
+    // need_a_save (saving was not possible on day 28).
+    uint8_t last_autosave_ = 0;
+    bool need_autosave_ = false;
+    // The last room built, as seen by interface_room_help.
     uint8_t last_built_room_ = 0;
     // The town map: while open it takes the window from the view, the
     // interface and the menu bar; the game keeps running behind it.
@@ -857,6 +910,10 @@ class App : public DriveHost
     bool quit_now_ = false; // Shift+Ctrl+Escape: EV_QUIT_GAME without the question
     // The score the last level ended with, for the next level (init_player).
     int32_t carried_score_ = 0;
+    // The rivals' monthly banks, which no level clears (comp_buckets).
+    RivalBuckets carried_buckets_{};
+    bool have_carried_buckets_ = false;
+    void remember_level_end();
     bool winlose_to_menu_ = false; // the losing letter asked for the main menu
     bool chart_space_ = false;     // Space pressed for the charts this frame
     bool any_key_ = false;         // a key pressed for the win/lose screens (lbInkey)
@@ -887,6 +944,9 @@ class App : public DriveHost
     std::filesystem::path drive_out_ = "drive-out";
     bool drive_control_ = false;
     bool drive_visible_ = false;
+    // --default-speed: a driven run starts at the player's default speed
+    // (Max) like a normal start, not at Normal.
+    bool drive_default_speed_ = false;
     int drive_w_ = 1280, drive_h_ = 720;
     uint64_t drive_ns_ = 0;
     std::filesystem::path drive_shot_;
@@ -1020,8 +1080,11 @@ bool App::try_load_data(const std::filesystem::path &dir)
     // The start-up screens choose the level, unless --level did.
     if (!level_from_cli_ && startup_.load(dir, data_->text(), data_->language(), &error))
         in_startup_ = true;
-    else
+    else {
         load_level(level_);
+        // debug.direct_start: setup_new_level, then load_player_details.
+        load_player_details();
+    }
     return true;
 }
 
@@ -1053,19 +1116,30 @@ void App::load_ui_art(const std::filesystem::path &dir)
     make_ui_textures();
 }
 
+// Keeps what the level in progress leaves for the next one: the score and the
+// rivals' banks.
+void App::remember_level_end()
+{
+    if (!map_)
+        return;
+    carried_score_ = map_->game.progress.score;
+    carried_buckets_ = map_->game.rival_buckets();
+    have_carried_buckets_ = true;
+}
+
 void App::load_level(int number)
 {
     // allhosps[player].score outlives the game it was in, as in the original:
     // init_player of the next level keeps it.
-    if (map_)
-        carried_score_ = map_->game.progress.score;
+    remember_level_end();
     std::string error;
     auto level = data_->load_level(number, &error);
     if (!level) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
     }
-    auto map = begin_level(*data_, *level, number, balance_id_, &error, carried_score_);
+    auto map = begin_level(*data_, *level, number, balance_id_, &error,
+                           {carried_score_, have_carried_buckets_ ? &carried_buckets_ : nullptr});
     if (!map) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
@@ -1083,6 +1157,10 @@ void App::load_level(int number)
 // the level file, for its camera start and scroll area.
 void App::start_view(std::unique_ptr<LevelView> view, const Level &level, bool fresh)
 {
+    // The advice given and the advisor's switch outlive the level.
+    if (map_)
+        collect_player_details();
+    give_advisor_flags(view->game);
     level_ = view->game.level_number();
     map_ = std::move(view);
     close_irequesters(interface_);
@@ -1128,7 +1206,7 @@ void App::start_view(std::unique_ptr<LevelView> view, const Level &level, bool f
 
 std::filesystem::path App::save_path(int slot) const
 {
-    return save_slot_path(save_dir_, startup_.player_name(), slot);
+    return save_slot_path(save_dir_, player_name(), slot);
 }
 
 SaveInfo App::current_save() const
@@ -1153,12 +1231,14 @@ void App::refresh_save_slots()
 }
 
 // check_okay_to_save (src/io.cpp): saving needs the normal mouse mode, with
-// nothing being placed, built or edited and no modal requester up.
+// nothing being placed, built or edited (no blueprint on the map, no room being
+// furnished) and no modal requester up.
 bool App::can_save(const Game &game) const
 {
     if (interface_.modal() || hire_.placing() || game.world.placing.placing)
         return false;
-    return game.world.building.mouse == BuildMouse::None && !build_tool_busy(game);
+    return game.world.building.mouse == BuildMouse::None && !build_tool_busy(game) &&
+           game.world.building.build.room == 0 && !is_player_building(game.world);
 }
 
 // The panel messages the save and load show (misc_text indices, io.cpp):
@@ -1193,6 +1273,7 @@ void App::perform_save(int slot)
     }
     show_panel_message(kPanelMessageSaved, 3);
     refresh_save_slots();
+    save_player_details();
 }
 
 // load_game (src/io.cpp): the save at the slot's file, over a fresh level;
@@ -1237,8 +1318,141 @@ void App::save_continue_slot()
     std::string error;
     if (!write_save_slot(save_path(kContinueSlot), map_->game, current_save(), &error))
         std::fprintf(stderr, "continue save: %s\n", error.c_str());
-    else
+    else {
         show_panel_message(kPanelMessageSaved, 3);
+        save_player_details();
+    }
+}
+
+std::string App::player_name() const
+{
+    if (!startup_.player_name().empty() || !data_)
+        return startup_.player_name();
+    return std::string(data_->text().misc(1));
+}
+
+// The options the original keeps in myplayer, put in force: the sound, music
+// and announcement switches and volumes, the playlist, shadows and speed.
+// Switches and volumes of an audio system that is not there are left alone.
+void App::apply_player_details()
+{
+    const PlayerDetails &d = details_;
+    shadows_ = d.shadows_on != 0;
+    if (sounds_.sound_ok()) {
+        if (sounds_.sfx_on() != (d.sfx_on != 0))
+            sounds_.toggle_sound();
+        if (sounds_.ambients_on() != (d.ambients_on != 0))
+            sounds_.toggle_ambient();
+        sounds_.set_volume_item(9 - d.sfx_volume * 10 / 128);
+        sounds_.set_ambient_volume_item(9 - d.ambient_volume * 10 / 128);
+    }
+    if (music_.music_ok()) {
+        if (music_.music_on() != (d.music_on != 0))
+            music_.toggle_music();
+        music_.set_volume_item(9 - d.music_volume * 10 / 128);
+        for (size_t i = 0; i < d.track_enabled.size(); i++)
+            music_.set_track_enabled(int(i), d.track_enabled[i] != 0);
+    }
+    switch (d.game_speed) {
+    case 1:
+        speed_ = Speed::Slowest;
+        break;
+    case 5:
+        speed_ = Speed::Slower;
+        break;
+    case 0x16:
+        speed_ = Speed::Normal;
+        break;
+    case 0x19:
+        speed_ = Speed::Max;
+        break;
+    case 0x7d00:
+        speed_ = Speed::AndThenSome;
+        break;
+    default:
+        break;
+    }
+}
+
+void App::collect_player_details()
+{
+    PlayerDetails &d = details_;
+    d.shadows_on = shadows_;
+    if (sounds_.sound_ok()) {
+        d.sfx_on = sounds_.sfx_on();
+        d.sfx_volume = uint8_t(sounds_.sfx_volume());
+        d.ambients_on = sounds_.ambients_on();
+        d.ambient_volume = uint8_t(sounds_.ambient_volume());
+    }
+    if (music_.music_ok()) {
+        d.music_on = music_.music_on();
+        d.music_volume = uint8_t(music_.volume());
+        for (size_t i = 0; i < d.track_enabled.size(); i++)
+            d.track_enabled[i] = music_.track_enabled(int(i));
+    }
+    constexpr std::array<uint16_t, 5> kGameSpeeds = {1, 5, 0x16, 0x19, 0x7d00};
+    size_t choice = speed_ == Speed::Slowest  ? 0
+                    : speed_ == Speed::Slower ? 1
+                    : speed_ == Speed::Normal ? 2
+                    : speed_ == Speed::Max    ? 3
+                                              : 4;
+    d.game_speed = kGameSpeeds[choice];
+    if (data_)
+        d.language = uint8_t(data_->language());
+    if (map_) {
+        const Advisor &a = map_->game.advisor;
+        std::ranges::copy(a.given, d.advisor_flags.begin());
+        d.advisor_flags[20] = a.enabled;
+    }
+}
+
+void App::give_advisor_flags(Game &game) const
+{
+    std::copy_n(details_.advisor_flags.begin(), game.advisor.given.size(), game.advisor.given.begin());
+    game.advisor.enabled = details_.advisor_flags[20] != 0;
+}
+
+void App::load_player_details()
+{
+    std::filesystem::path path = player_details_path(save_dir_, player_name());
+    DetailsRead read = read_player_details(path, details_);
+    if (read == DetailsRead::Failed) {
+        std::fprintf(stderr, "cannot read the player details %s\n", path.string().c_str());
+        return;
+    }
+    if (read == DetailsRead::Missing) {
+        set_default_player_details(details_);
+        // Driven runs start at Normal: their scripts count frames.
+        if (driver_ && !drive_default_speed_)
+            details_.game_speed = kDrivenGameSpeed;
+    }
+    apply_player_details();
+    if (map_)
+        give_advisor_flags(map_->game);
+}
+
+void App::save_player_details()
+{
+    collect_player_details();
+    std::filesystem::path path = player_details_path(save_dir_, player_name());
+    if (!write_player_details(path, details_, player_name()))
+        std::fprintf(stderr, "cannot write the player details %s\n", path.string().c_str());
+}
+
+void App::check_autosave(const Game &game)
+{
+    if (!details_.autosave || (game.date.day != 28 && !need_autosave_))
+        return;
+    uint8_t stamp = uint8_t(game.date.month + game.date.day);
+    if (stamp == last_autosave_ && !need_autosave_)
+        return;
+    if (!can_save(game)) {
+        need_autosave_ = true;
+        return;
+    }
+    perform_save(kAutosaveSlot);
+    last_autosave_ = stamp;
+    need_autosave_ = false;
 }
 
 int App::ui_scale() const
@@ -1423,6 +1637,7 @@ void App::quit_game()
     yes_event_ = no_event_ = {};
     interface_.close_yes_no(false);
     if (!level_from_cli_ && data_) {
+        save_continue_slot();
         return_to_main_menu();
     } else {
         running_ = false;
@@ -1647,6 +1862,7 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
         panel_info_ = hover.info;
         panel_thing_ = hover.thing;
     }
+    interface_flag_queue(game, mouse);
     // process_mouse's MM_NORMAL: a rat near the pointer but not aimed at
     // (othervar.near_rat) shows the near pointer, and a click fires a miss.
     if (interface_near_rat(game, mouse, hover))
@@ -1670,6 +1886,35 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
     if (epidemic.timer == 0)
         vaccinate_ = false;
     interface_map_hover_click(game, mouse, hover);
+}
+
+// flag_all_queue_members from process_no_button (src/mouse.cpp): with no
+// mouse button down in MM_NORMAL, a room of the player's under the pointer
+// shows the icon on everyone in its queue, as does a reception desk or
+// receptionist (the room of the panel's thing); SFX_HLIGHTP2 plays when the
+// queue was not flagged on the frame before.
+void App::interface_flag_queue(Game &game, const UiMouse &mouse)
+{
+    World &world = game.world;
+    if (mouse.left_held || mouse.right_held || mouse.left_pressed || mouse.right_pressed || vaccinate_ ||
+        world.rats.fest_level)
+        return;
+    uint16_t room = map_cell_ >= 0 ? room_at(world, uint16_t(map_cell_)) : 0;
+    if (room && world.rooms[room % kRoomCount].owner != 0)
+        room = 0;
+    if (!room) {
+        const Thing *hovered = pointed_.thing < world.things.size() ? &world.things[pointed_.thing] : nullptr;
+        if (pointed_.thing && hovered && hovered->owner == 0 &&
+            ((hovered->type == kThingObject && hovered->subtype == kObjReceptionDesk) ||
+             (hovered->type == kThingStaff && hovered->subtype == kStaffReceptionist)) &&
+            panel_thing_ < world.things.size())
+            room = world.things[panel_thing_].room;
+    }
+    if (flag_all_queue_members(world, game.anims(), room) &&
+        (frame_ - 1 != last_flag_frame_ || last_flag_room_ != room))
+        sounds_.play_sound(kSourceGeneral, kSfxHighlightP2);
+    last_flag_room_ = room;
+    last_flag_frame_ = frame_;
 }
 
 // interface_map_hover's rat near the pointer but not aimed at: the near
@@ -1859,6 +2104,7 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
         draw_hire_staff(ui_, hire_, interface_, {requester_art_, hire_art_, data_->text()}, game->world);
         draw_staff_demand(ui_, demand_, interface_, {requester_art_, hire_art_, data_->text()}, *data_, game->world);
     }
+    shade_ui(ui_);
     help_draw();
     std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
     SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
@@ -1941,9 +2187,16 @@ void App::interface_room_help(Game &game)
     if (built == last_built_room_)
         return;
     last_built_room_ = built;
-    if (built == 0 || built >= int(room_help_seen_.size()) || room_help_seen_[built])
+    if (built == 0 || built >= kRoomTypes)
         return;
-    room_help_seen_[built] = true;
+    // The original's room_help_seen has 30 entries and is indexed by room
+    // type up to 30: the decontamination room's flag is advisor_flags[0],
+    // the advice given once a research room is built.
+    uint8_t &seen =
+        built < details_.room_help_seen.size() ? details_.room_help_seen[built] : game.advisor.given[built - 30];
+    if (seen)
+        return;
+    seen = 1;
     // open_room closes the edit room requester before the page; the page
     // then holds the screen, so the next frame's sync would come too late.
     sync_object_requesters(interface_, game);
@@ -2038,21 +2291,25 @@ void App::draw_info_view(Game &game)
     Point view_camera;
     if (!info_view(info_, interface_, game.world, view_box, view_camera))
         return;
-    if (info_view_.width() != view_box.w || info_view_.height() != view_box.h) {
-        info_view_.resize(view_box.w, view_box.h);
-        info_scratch_.resize(view_box.w, view_box.h);
+    draw_map_view(ui_.pixels(), game, view_box, view_camera);
+    ui_.mark(view_box);
+}
+
+// The world seen from `camera`, drawn into `box` of `dst`.
+void App::draw_map_view(Surface &dst, const Game &game, Rect box, Point camera)
+{
+    if (info_view_.width() != box.w || info_view_.height() != box.h) {
+        info_view_.resize(box.w, box.h);
+        info_scratch_.resize(box.w, box.h);
         info_scratch_.fill(kMaskColour);
     }
     info_view_.fill(0);
-    draw_world({info_view_, {0, 0, view_box.w, view_box.h}, view_camera, game.turn_count}, game.world, *data_,
+    draw_world({info_view_, {0, 0, box.w, box.h}, camera, game.turn_count}, game.world, *data_,
                shadows_ ? map_->shadows.get() : nullptr, info_scratch_);
-    Surface &px = ui_.pixels();
-    for (int y = 0; y < view_box.h; y++)
-        for (int x = 0; x < view_box.w; x++)
-            if (view_box.x + x >= 0 && view_box.x + x < px.width() && view_box.y + y >= 0 &&
-                view_box.y + y < px.height())
-                px.row(view_box.y + y)[view_box.x + x] = info_view_.row(y)[x];
-    ui_.mark(view_box);
+    for (int y = 0; y < box.h; y++)
+        for (int x = 0; x < box.w; x++)
+            if (box.x + x >= 0 && box.x + x < dst.width() && box.y + y >= 0 && box.y + y < dst.height())
+                dst.row(box.y + y)[box.x + x] = info_view_.row(y)[x];
 }
 
 // Asks "really quit?" with the yes/no requester, as the game does.
@@ -2243,6 +2500,7 @@ void App::run_command(Game &game)
         sounds_.play_sound(kSourceGeneral, sfx);
     game.world.building.sounds.clear();
     game_sounds(game);
+    check_autosave(game);
     if (restart)
         restart_level_ = true;
 }
@@ -2324,6 +2582,10 @@ void App::charts_step(int out_w, int out_h)
         yes_event_ = r.yes;
         no_event_ = r.no;
     }
+    Rect slist_box;
+    Point slist_camera;
+    if (slist_view(charts_, game.world, slist_box, slist_camera))
+        draw_map_view(charts_.surface, game, slist_box, slist_camera);
     draw_fitted(charts_.surface, charts_.palette, charts_tex_, at);
     if (r.town_map) {
         charts_.open = false;
@@ -2536,13 +2798,12 @@ bool App::end_game()
     return true;
 }
 
-// Back to the main menu: the Continue slot is saved and the score kept for
-// the next level (init_player).
+// Back to the main menu (MMS_UNLOAD_GAME): the score (init_player) and the
+// rivals' monthly banks are kept for the next level. The Continue slot is not
+// written here; only quit_game 1 does that.
 void App::return_to_main_menu()
 {
-    save_continue_slot();
-    if (map_)
-        carried_score_ = map_->game.progress.score;
+    remember_level_end();
     map_.reset();
     in_startup_ = true;
     startup_.return_to_main_menu();
@@ -2619,6 +2880,8 @@ void App::startup_step(int out_w, int out_h)
     startup_keys_.clear();
     for (uint8_t sfx : startup_.take_sounds())
         sounds_.play_sound(kSourceGeneral, sfx);
+    if (startup_.take_name_confirmed())
+        load_player_details();
 
     // The movie's sound: a stream of the movie's format, emptied when the
     // movie changes.
@@ -2882,8 +3145,10 @@ std::string App::debug_state() const
                      info_.machine, pointer_sprite_, charts_.slist_staff);
     s += std::format("quick report: {}, last report: {}\n", quick_.open ? "open" : "closed",
                      quick_.last_report.empty() ? "(none)" : quick_.last_report);
-    if (in_startup_)
+    if (in_startup_) {
         s += std::format("startup screen: {}\n", int(startup_.screen()));
+        s += std::format("continue save: {}\n", save_slot_exists(save_path(kContinueSlot)) ? "yes" : "no");
+    }
     if (!data_) {
         s += std::format("setup: game folder {}, {}, notice \"{}\", error \"{}\"\n",
                          game_dir_exists_ ? (game_dir_incomplete_ ? "incomplete" : "complete") : "absent",
@@ -2911,12 +3176,17 @@ std::string App::debug_state_hospital(const Game &g) const
     s += std::format("save slots:{}\n", slots);
     s += std::format("camera: {},{}\n", camera_.x, camera_.y);
     s += std::format("speed: {} turns/s, paused {}\n", int(speed_), g.paused);
+    s += std::format(
+        "options: autosave {}, shadows {}, sound {} volume {}, music {} volume {}, announcements {} volume {}\n",
+        details_.autosave != 0, shadows_, sounds_.sfx_on(), sounds_.sfx_volume(), music_.music_on(), music_.volume(),
+        sounds_.ambients_on(), sounds_.ambient_volume());
     s += std::format("route planner: {}\n", g.world.path_finder == PathFinder::AStar ? "A*" : "original");
     s += std::format("panel info: kind {}, thing {}, shown {}\n", panel_info_, panel_thing_,
                      panel_info_drawn_ != 0 ? "true" : "false");
     s += std::format("panel message: \"{}\" ({} frames)\n", panel_message_, panel_message_time_);
     s += std::format("placing: object {}, staff {}, build mouse {}\n", g.world.placing.placing, hire_.placing(),
                      int(g.world.building.mouse));
+    s += std::format("flashing: pickup thing {}, queue thing {}\n", build_ui_.pickup_thing, queue_.hilight);
     s += std::format("date: year {} month {} day {}, turn {}\n", g.date.year, g.date.month, g.date.day, g.turn_count);
     s += std::format("open: {}, opening countdown {}\n", g.open, g.opening_countdown);
     s += std::format("tutorial flash: counter {}, drawn {}\n", interface_.flash().counter, interface_.flash().drawn);
@@ -3028,6 +3298,7 @@ void App::menu_step(int out_w, int scale)
     int ox = (out_w - width * scale) / 2;
     MenuContext context;
     context.shadows = shadows_;
+    context.autosave = details_.autosave != 0;
     context.sound = sounds_.sfx_on();
     context.sound_volume = sounds_.volume_item();
     context.music = music_.music_on();
@@ -3050,6 +3321,7 @@ void App::menu_step(int out_w, int scale)
         menu_layer_.resize(width, kUiHeight);
     menu_layer_.clear();
     draw_menu_bar(menu_layer_, menu_);
+    shade_ui(menu_layer_);
     std::vector<uint32_t> pixels = menu_layer_.to_argb(data_->palette());
     if (menu_tex_ && menu_tex_->w != width) {
         SDL_DestroyTexture(menu_tex_);
@@ -3074,9 +3346,14 @@ void App::perform(const MenuEvent &event)
     switch (event.action) {
     case MenuAction::Speed:
         speed_ = menu_speed(event.value);
+        // pulldown_vary_speed: only the menu sets speed_choice.
+        details_.speed_choice = uint8_t(event.value / 10 - 1);
         break;
     case MenuAction::ToggleShadows:
         shadows_ = !shadows_;
+        break;
+    case MenuAction::ToggleAutosave:
+        details_.autosave = details_.autosave ? 0 : 1;
         break;
     case MenuAction::ToggleSound:
         sounds_.toggle_sound();
@@ -3710,6 +3987,14 @@ void App::hospital_step(int out_w, int out_h)
     frame_sounds_.clear();
     // The earthquake's shake offset (shake_screen) moved the original view.
     Point shaken = {camera_.x + map_->game.world.shake_x, camera_.y + map_->game.world.shake_y};
+    // What the interface of the frame before left on the map (the game's
+    // interface runs after the view): the cells the carried object covers
+    // (draw_object_cursor) and what flashes (othervar.pickup_thing and
+    // queue_hilight_thing).
+    std::vector<CellMark> marks;
+    if (object_ui_.cursor_shown)
+        marks = placement_marks(map_->game.world, map_->game.world.placing);
+    map_->overlays = {&marks, build_ui_.pickup_thing, queue_.hilight};
     draw_view(surface_, *data_, map_.get(), shaken, shadows_, {&frame_sounds_, &pointed_, &near_rat_});
     if (map_)
         view_sounds(vw, vh);
@@ -3721,6 +4006,7 @@ void App::hospital_step(int out_w, int out_h)
     map_cell_ = inside ? under.x + under.y * kMapSize : -1;
     if (map_)
         draw_view_overlays(vw, vh);
+    shade_view();
     present_view(vw, vh, z);
 
     // The interface and the pointer keep their size whatever the view's
@@ -3795,10 +4081,40 @@ void App::view_sounds(int vw, int vh)
 void App::draw_view_overlays(int vw, int vh)
 {
     Rect view{0, 0, vw, vh};
-    draw_placement(surface_, view, camera_, map_->game.world.placing, object_ui_, *data_);
+    draw_placement(surface_, view, camera_, map_->game.world, object_ui_, *data_);
     draw_build_overlay({surface_, view, camera_}, map_->game, build_ui_, object_ui_, *data_);
     if (hire_.placing() && map_cell_ >= 0)
         draw_held_staff({surface_, view, camera_}, hire_, map_->game.world, map_cell_, *data_, map_->scratch);
+}
+
+// Whether the paused game is shaded: the player's pause, not the one the F10
+// report takes for its capture.
+bool App::pause_shaded() const
+{
+    return map_ && map_->game.paused && !(quick_.have_pause && !quick_.restore_paused);
+}
+
+// draw_pause_mode (src/game.cpp): the paused view is blended with dark blue
+// through the ghost table (draw flag 4).
+void App::shade_view()
+{
+    if (!pause_shaded())
+        return;
+    const uint8_t *ghost = data_->ghost().data();
+    const size_t blend = size_t(colour_dark_blue(map_->game.world)) << 8;
+    for (int y = 0; y < surface_.height(); y++) {
+        uint8_t *row = surface_.row(y);
+        for (int x = 0; x < surface_.width(); x++)
+            row[x] = ghost[blend | row[x]];
+    }
+}
+
+// The same shade over what the interface layer drew, which the game also
+// shaded; the help text it draws afterwards is not.
+void App::shade_ui(UiLayer &layer)
+{
+    if (pause_shaded())
+        layer.shade(colour_dark_blue(map_->game.world), data_->ghost().data());
 }
 
 // The `vw` x `vh` view in the window at zoom `z`.
@@ -3911,6 +4227,8 @@ void App::parse_drive_args(int argc, char **argv)
             drive_control_ = true;
         else if (arg == "--visible")
             drive_visible_ = true;
+        else if (arg == "--default-speed")
+            drive_default_speed_ = true;
     }
 }
 
@@ -4210,6 +4528,17 @@ bool App::drive_win_level()
     s.year_end_type = 5;
     s.winlose_result = 1;
     s.win_declined = 0;
+    return true;
+}
+
+bool App::drive_lose_level()
+{
+    if (!map_ || in_startup_)
+        return false;
+    YearEnd &s = map_->game.progress;
+    s.level_won = 0;
+    s.year_end_type = 7;
+    s.winlose_result = 2;
     return true;
 }
 

@@ -131,4 +131,10 @@ void queue_person_go_reception(World &world, const AnimData &anims, const Person
 void restart_all_queue_peeps(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t room,
                              uint32_t game_turn);
 
+// flag_all_queue_members (0x4bbec): gives everyone in `room`'s queue the
+// queue status icon (kIconQueue, which lasts two icon updates unless
+// renewed). Returns whether the queue had anyone, which is when the game
+// plays SFX_HLIGHTP2.
+bool flag_all_queue_members(World &world, const AnimData &anims, uint16_t room);
+
 } // namespace th

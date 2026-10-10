@@ -45,7 +45,7 @@
 namespace
 {
 
-constexpr int kDesk = 11, kBench = 4;
+constexpr int kDesk = 11, kBench = 4, kPlantKind = 45;
 
 // Level 1 started with the buy objects requester's interface.
 struct FurnishFixture {
@@ -172,7 +172,7 @@ void check_desk_at_pointer(FurnishFixture &t, int tile)
     base = view;
     th::Point w = th::cell_to_world(tile % th::kMapSize, tile / th::kMapSize);
     th::Point camera = {w.x - 160, w.y - 120};
-    th::draw_placement(view, {0, 0, 320, 240}, camera, p, t.oui, t.gd);
+    th::draw_placement(view, {0, 0, 320, 240}, camera, t.game->world, t.oui, t.gd);
     int coloured = 0;
     for (int y = 0; y < 240; y++)
         for (int x = 0; x < 320; x++)
@@ -181,7 +181,7 @@ void check_desk_at_pointer(FurnishFixture &t, int tile)
     th::Surface colour_view = view;
     view = base;
     p.ok = false;
-    th::draw_placement(view, {0, 0, 320, 240}, camera, p, t.oui, t.gd);
+    th::draw_placement(view, {0, 0, 320, 240}, camera, t.game->world, t.oui, t.gd);
     int greyed = 0;
     for (int y = 0; y < 240; y++)
         for (int x = 0; x < 320; x++)
@@ -232,10 +232,60 @@ void check_second_desk_dropped(FurnishFixture &t, int tile, int balance)
     CHECK(p.placing && p.kind == kDesk);
     th::update_placement(world, p, tile);
     CHECK(!p.ok);
+    // The cursor marks the cell the placed desk covers as occupied (0x80), and
+    // the cells of an empty stretch of floor as free (0x40).
+    int occupied = 0;
+    for (const th::CellMark &m : th::placement_marks(world, p))
+        occupied += m.cell == tile && m.flags == 0x80;
+    CHECK(occupied > 0);
+    p.tile = uint16_t(tile + 3 * th::kMapSize);
+    std::vector<th::CellMark> free_marks = th::placement_marks(world, p);
+    CHECK(!free_marks.empty() &&
+          std::all_of(free_marks.begin(), free_marks.end(), [](const th::CellMark &m) { return m.flags == 0x40; }));
+    p.tile = uint16_t(tile);
     CHECK(th::object_escape(game));
     game.process_turn();
     CHECK(!p.placing && p.requester == th::ObjectRequester::None && p.buy_count[kDesk] == 0);
     CHECK(game.balance == balance && world.things[world.first_of_kind[kDesk]].type_obj_next == 0);
+}
+
+// A plant being placed is drawn at its health when it was picked up
+// (get_frame_for_placing_plant): a withered one differs from a healthy one.
+void check_plant_placing_frame(FurnishFixture &t, int tile)
+{
+    th::World &world = t.game->world;
+    th::ObjectPlacing &p = world.placing;
+    const uint16_t id = 7;
+    th::Thing &plant = world.things[id];
+    const th::Thing saved = plant;
+    plant.type = th::kThingObject;
+    plant.subtype = kPlantKind;
+    plant.owner = 0;
+    p.placing = true;
+    p.kind = kPlantKind;
+    p.tile = uint16_t(tile);
+    p.ok = true;
+    t.oui.cursor_shown = true;
+    world.building.build.objects[0] = id;
+    th::Point w = th::cell_to_world(tile % th::kMapSize, tile / th::kMapSize);
+    th::Point camera = {w.x - 160, w.y - 120};
+    th::Surface healthy, withered;
+    healthy.resize(320, 240);
+    healthy.fill(0);
+    withered = healthy;
+    plant.plant_health = 400;
+    th::draw_placement(healthy, {0, 0, 320, 240}, camera, world, t.oui, t.gd);
+    plant.plant_health = 0;
+    th::draw_placement(withered, {0, 0, 320, 240}, camera, world, t.oui, t.gd);
+    int differing = 0;
+    for (int y = 0; y < 240; y++)
+        for (int x = 0; x < 320; x++)
+            differing += healthy.row(y)[x] != withered.row(y)[x];
+    CHECK(differing > 0);
+    world.building.build.objects[0] = 0;
+    plant = saved;
+    p.placing = false;
+    t.oui.cursor_shown = false;
 }
 
 } // namespace
@@ -273,6 +323,7 @@ void test_furnish_corridor(const char *dir)
     if (!check_desk_placed(t, tile, balance))
         return;
     check_second_desk_dropped(t, tile, balance - desk_cost);
+    check_plant_placing_frame(t, tile);
 }
 
 namespace

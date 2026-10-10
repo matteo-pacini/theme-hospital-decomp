@@ -70,7 +70,8 @@ real interface (commands in `enhanced/src/app/drive.h`):
 - Explore with screenshots to find coordinates, then keep the script as a
   test in `enhanced/tests/drive/`; `enhanced/tools/drive_tests.sh` runs
   them all and lists the header lines (`# Level N`, `# NoLevel`, `# Size`,
-  `# Seed`). Fix interface bugs with one of these first, failing.
+  `# SeedScript`, `# SeedReplay`). Fix interface bugs with one of these
+  first, failing.
 
 ## Replay check
 `enhanced/tools/replay/orig_trace.sh` runs an instrumented original headless in
@@ -143,8 +144,12 @@ Several agents can run at once:
   `TH_DRIVE_SLOTS` (default 6) slots themselves, held until they exit;
   `enhanced/tools/slot.sh --status drive` shows them. Quit a `--control`
   session when done: it holds its slot while open.
-- Cap your build and tidy jobs: `CMAKE_BUILD_PARALLEL_LEVEL=4`,
-  `TIDY_JOBS=4`.
+- The user works on this machine while agents run, so keep it usable: start
+  every build, tidy, test and replay command under `nice -n 19 ionice -c 3`
+  (lowest CPU priority, idle I/O; the processes it starts inherit both).
+  Cap your jobs at `CMAKE_BUILD_PARALLEL_LEVEL=2`, `TIDY_JOBS=2` and
+  replays at `JOBS=1 PREFETCH_JOBS=1` when other agents are working, 4, 4
+  and 4 when you are the only one.
 - Disk: `/tmp` is on the root filesystem, and a `--rand` replay trace is
   35-70 MB per side. Delete both traces once they agree; keep only diverging
   pairs (gzip them) until the divergence is fixed. Put large temporary output

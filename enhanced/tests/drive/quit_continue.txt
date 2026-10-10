@@ -1,0 +1,34 @@
+# A level started from the main menu and quit with Shift+Escape, Yes:
+# quit_game 1 saves the Continue slot (src/game.cpp, save_game 0x63) before
+# the main menu.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+click 85 32
+wait 10
+key Space
+wait 160
+click 372 395
+wait 10
+key Space
+wait 80
+click 320 240
+wait 20
+dump playing
+expect screen: hospital
+key Shift+Escape
+wait 5
+expect modal true
+click 373 281            # Yes
+wait 30
+dump quit
+expect continue save: yes

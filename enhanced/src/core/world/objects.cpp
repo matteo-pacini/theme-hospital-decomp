@@ -367,6 +367,43 @@ void update_placement(World &world, ObjectPlacing &p, int mouse_cell)
     trace_placement(p);
 }
 
+namespace
+{
+
+// compute_object_drag_shape's marks for one object of `kind` facing `dir` at
+// `tile`: its footprint, then each use tile and extra use tile.
+void mark_object_cells(const World &world, int tile, int kind, int dir, std::vector<CellMark> &marks)
+{
+    const ShapeInfo &shape = kShapes[kObjects[size_t(kind)].shapes[size_t(dir)]];
+    auto mark = [&](int offset) {
+        int cell = tile + offset;
+        if (cell >= 0 && size_t(cell) < world.map.size())
+            marks.push_back({uint16_t(cell), (world.map[size_t(cell)].flags & 7) ? uint8_t(0x80) : uint8_t(0x40)});
+    };
+    for (int i = shape.count - 1; i >= 0; i--)
+        mark(shape.points[size_t(i)]);
+    for (int i = 2; i >= 0; i--) {
+        mark(shape.use_offsets[size_t(i)]);
+        mark(shape.use_offsets[size_t(i + 3)]);
+    }
+}
+
+} // namespace
+
+std::vector<CellMark> placement_marks(const World &world, const ObjectPlacing &p)
+{
+    std::vector<CellMark> marks;
+    if (!p.placing || p.kind >= kObjectKinds)
+        return marks;
+    int dir = p.dir;
+    mark_object_cells(world, p.tile, p.kind, dir, marks);
+    if (int8_t part = kObjects[p.kind].next_part; part != -1) {
+        const NextPartInfo &next = kNextParts[size_t(part)];
+        mark_object_cells(world, p.tile + next.offset[size_t(dir)], next.kind, next.dir[size_t(dir)], marks);
+    }
+    return marks;
+}
+
 void cancel_buy_objects(ObjectPlacing &p)
 {
     if (p.requester == ObjectRequester::BuyObjects && !p.arg3) {

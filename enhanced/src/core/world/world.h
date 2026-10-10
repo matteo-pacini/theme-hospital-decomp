@@ -558,6 +558,10 @@ struct AdCounts {
     // The strength of the last earthquake (NRAdcounts.last_quake_size), for
     // the advisor's damage report.
     uint8_t last_quake_size = 0;
+    // The rooms opened and not deleted (NRAdcounts.open_rooms): open_room
+    // counts one up, delete_room one down, whoever's room and whether or not
+    // it was ever opened.
+    uint8_t open_rooms = 0;
 };
 
 // Rat state values (the game's RAT_*, include/enums.h).
@@ -982,6 +986,11 @@ void remove_object_shape(World &world, int tile, int kind, int dir);
 // its thing id, 0 if refused or the things table is full. Draws two random
 // numbers per object made.
 uint16_t place_object(World &world, const AnimData &anims, ObjectAt object, int owner, bool force);
+
+// compute_plant_frame (src/handyman.cpp): the frame of `plant` at its
+// plant_health, the healthy one aged a stage for each 80 points lost (at
+// most four).
+uint16_t compute_plant_frame(const Thing &plant, const AnimData &anims);
 
 // inc_hardware_stats' and dec_hardware_stats' hospital value part
 // (src/objects.cpp) for hospital 0: a machine, diagnosis machine or leisure

@@ -1,6 +1,7 @@
 #include "core/world/queue.h"
 
 #include "core/world/complex_tables.h"
+#include "core/world/icons.h"
 #include "core/world/nav.h"
 #include "core/world/reception.h"
 #include "core/world/rooms.h"
@@ -237,6 +238,16 @@ void restart_all_queue_peeps(World &world, const AnimData &anims, const PersonCo
         leave_queue(world, id);
         start_person_going(world, anims, complexes, id, game_turn);
     }
+}
+
+bool flag_all_queue_members(World &world, const AnimData &anims, uint16_t room)
+{
+    if (room == 0 || room >= world.rooms.size() || world.rooms[room].queue_head == 0)
+        return false;
+    for (uint16_t id = world.rooms[room].queue_head; id != 0 && id < world.things.size();
+         id = world.things[id].queue_next)
+        set_icon_value(anims, world.things[id], kIconQueue);
+    return true;
 }
 
 } // namespace th

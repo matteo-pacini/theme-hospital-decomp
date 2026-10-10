@@ -283,12 +283,12 @@ int Driver::run(DriveHost &host, const Command &c)
     if (verb == "click" || verb == "click-cell" || verb == "click-thing" || verb == "key" || verb == "keydown" ||
         verb == "keyup")
         return run_click(host, c);
-    if (verb == "demand" || verb == "win" || verb == "type")
+    if (verb == "demand" || verb == "win" || verb == "lose" || verb == "type")
         return run_hook(host, c);
     return run_output(host, c);
 }
 
-// The commands that call a hook of the host: demand, win and type.
+// The commands that call a hook of the host: demand, win, lose and type.
 int Driver::run_hook(DriveHost &host, const Command &c)
 {
     const std::string &verb = c.words[0];
@@ -298,6 +298,8 @@ int Driver::run_hook(DriveHost &host, const Command &c)
         ok = number(c.words, 1, id) && host.drive_staff_demand(uint16_t(id));
     } else if (verb == "win") {
         ok = host.drive_win_level();
+    } else if (verb == "lose") {
+        ok = host.drive_lose_level();
     } else {
         ok = host.drive_text(rest_of(c.line, verb));
     }

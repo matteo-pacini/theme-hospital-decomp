@@ -1,0 +1,16 @@
+# Level 1: the next run of details_write.txt's player (same default name, its
+# save folder seeded) reads the details at start (load_player_details): the
+# slowest speed and autosave off come back, and no autosave is written on
+# day 28.
+# Size 640x480
+# SeedScript details_write
+wait 30
+dump start
+expect options: autosave false
+expect speed: 1 turns/s
+key 4
+wait 5
+turns 1360
+dump day28
+expect date: year 0 month 0 day 28
+expect-not save slots: 8

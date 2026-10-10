@@ -54,6 +54,16 @@ void UiLayer::shadow(Rect r, uint8_t alpha)
     }
 }
 
+void UiLayer::shade(uint8_t colour, const uint8_t *ghost)
+{
+    const uint8_t *d = drawn_.data();
+    uint8_t *p = pixels_.row(0);
+    const size_t n = size_t(width()) * size_t(height());
+    for (size_t i = 0; i < n; i++)
+        if (d[i])
+            p[i] = ghost[size_t(colour) << 8 | p[i]];
+}
+
 void UiLayer::mark(Rect r)
 {
     int x0 = std::max(r.x, 0), y0 = std::max(r.y, 0);

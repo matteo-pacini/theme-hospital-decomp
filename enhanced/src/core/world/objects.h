@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 namespace th
 {
@@ -133,6 +134,20 @@ int next_object_to_build(const ObjectPlacing &p);
 // use reachable from the entrance; corridor objects go into rooms only if
 // movable into them).
 void update_placement(World &world, ObjectPlacing &p, int mouse_cell);
+
+// A cell the placing cursor marks: MapCell.flags bits 6-7 to show on it, 0x40
+// for a cell nothing occupies and 0x80 for one that is occupied.
+struct CellMark {
+    uint16_t cell;
+    uint8_t flags;
+};
+
+// compute_object_drag_shape (src/build.cpp) for the object being placed and
+// its second part: the cells they cover and are used from at p.tile, each
+// marked free or occupied (the game sets these in the map's flags every frame
+// and clears them before the next; the view draws sprite 625 + (flags >> 6)
+// on them). Empty unless p.placing.
+std::vector<CellMark> placement_marks(const World &world, const ObjectPlacing &p);
 
 // cancel_top_level_requesters' part for the buy objects requester
 // (src/utils.cpp), for a command opening another top-level requester: unless

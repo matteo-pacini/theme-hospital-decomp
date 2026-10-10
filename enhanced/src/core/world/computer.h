@@ -161,6 +161,11 @@ struct RivalHospital {
     std::array<ComputerBucket, 12> buckets{};
 };
 
+// Every hospital's monthly banks (comp_buckets). The game allocates them once
+// at start-up and no level resets them, so a level starts with what the last
+// one left (Game::carry_buckets).
+using RivalBuckets = std::array<std::array<ComputerBucket, 12>, kHospitalCount>;
+
 // com_strategy (src/comtable.cpp): the scripts computer players follow, as
 // {type, arg, count}. Strategy 1 starts at the entry holding {5, 1}, strategy 2 at
 // {5, 2}, and type 9 marks the end of the table. The types: 1 employ staff

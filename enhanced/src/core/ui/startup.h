@@ -142,6 +142,14 @@ class Startup
     // The name typed on the name screen (myplayer.name; misc_text[1] if
     // none was typed).
     const std::string &player_name() const { return name_; }
+    // Whether the name screen finished since the last call (draw_nickname
+    // state 1, where the game loads the player's details).
+    bool take_name_confirmed()
+    {
+        bool confirmed = name_confirmed_;
+        name_confirmed_ = false;
+        return confirmed;
+    }
 
   private:
     enum class State;
@@ -272,6 +280,7 @@ class Startup
 
     int menu_state_ = 0; // mainmenu.state
     std::string name_;
+    bool name_confirmed_ = false;
     std::filesystem::path save_dir_;
     // The load game screen's slot under the mouse and the one last chosen
     // (loadgame.value).

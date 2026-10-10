@@ -10,6 +10,7 @@
 #include "core/world/objects.h"
 #include "core/world/rats.h"
 #include "core/world/trace.h"
+#include "core/world/wrap32.h"
 
 #include <algorithm>
 #include <bit>
@@ -88,7 +89,7 @@ bool can_place_object(World &w, int tile, int kind, int dir, int owner)
         uint8_t walls = shape.point_wall_flags[size_t(i)];
         if ((c->wall_n && (walls & 1)) || (c->wall_w && (walls & 2)) || (c->flags & 7))
             return false;
-        if (c->owner_flags != 1 << owner && kind != kObjLitterBomb)
+        if (c->owner_flags != shl32(1, owner) && kind != kObjLitterBomb)
             return false;
         if (w.map[size_t(tile)].owner_flags & kCellOutdoor)
             return false;
@@ -181,7 +182,8 @@ void adjust_big_cell_flag(World &w, int tile)
     c.flags &= ~kCellBig;
 }
 
-// compute_plant_frame (src/handyman.cpp).
+} // namespace
+
 uint16_t compute_plant_frame(const Thing &plant, const AnimData &anims)
 {
     uint32_t f = anims.starts[kPlantAnim].frame;
@@ -190,6 +192,9 @@ uint16_t compute_plant_frame(const Thing &plant, const AnimData &anims)
         f = anims.frames[f].next;
     return uint16_t(f);
 }
+
+namespace
+{
 
 // A placed plant's sprite at its condition, and the advisor's count of the
 // player's plants (place_existing_object's switch on OBJ_PLANT).

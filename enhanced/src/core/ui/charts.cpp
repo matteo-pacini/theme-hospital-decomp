@@ -6,6 +6,7 @@
 #include "core/render/panel.h"
 #include "core/render/text.h"
 #include "core/ui/helpmsg.h"
+#include "core/ui/info_windows.h"
 #include "core/ui/pie.h"
 #include "core/world/finance.h"
 #include "core/world/game.h"
@@ -2059,9 +2060,17 @@ class Frame
         draw_box(dst_, x + kFaceW + kFaceBorder, top, kFaceBorder, h, kFaceBorderColour);
     }
 
-    // The game also draws the staff member on the map in the view of
-    // kSlistView, which is not ported; nor are the training bars (Thing::surgeon_training and the like), which are not
-    // drawn.
+    // draw_slist_training_bar (src/slist.cpp): `value` of `max` as a row of
+    // pixels, one per max / width of the bar's box.
+    void draw_slist_training_bar(int x, int y, int value, int max)
+    {
+        const int width = kBoxes[115].w;
+        for (int i = 0; i < value / (max / width) && i < width; i++)
+            reqspr(x + kBoxes[115].x + i, y + kBoxes[115].y, 13);
+    }
+
+    // The staff member's map view in kSlistView is drawn over this by the
+    // caller (slist_view).
     void draw_slist_window(int id)
     {
         if (!id)
@@ -2069,15 +2078,31 @@ class Frame
         const Thing &s = thing(id);
         draw_face(s, kSlistFace.x, kSlistFace.y);
         if (s.subtype == kStaffDoctor || s.subtype == kStaffSurgeon) {
-            bool shows[6] = {(s.skills & kSkillJunior) && !(s.skills & kSkillConsultant),
-                             (s.skills & kSkillDoctor) && !(s.skills & kSkillConsultant) && !(s.skills & kSkillJunior),
-                             (s.skills & kSkillConsultant) != 0,
-                             (s.skills & kSkillSurgeon) != 0,
-                             (s.skills & kSkillPsychiatrist) != 0,
-                             (s.skills & kSkillResearcher) != 0};
-            for (int i = 0; i < 6; i++)
+            const bool shows[3] = {(s.skills & kSkillJunior) && !(s.skills & kSkillConsultant),
+                                   (s.skills & kSkillDoctor) && !(s.skills & kSkillConsultant) &&
+                                       !(s.skills & kSkillJunior),
+                                   (s.skills & kSkillConsultant) != 0};
+            for (int i = 0; i < 3; i++)
                 if (shows[i])
                     reqspr(kBoxes[i + 64].x, kBoxes[i + 64].y, kBoxes[i + 64].h);
+            // The qualifications: the icon if held, else the faded icon and
+            // the training bar once any training is done.
+            const struct {
+                uint16_t skill;
+                int training;
+            } skills[3] = {{kSkillSurgeon, s.surgeon_training},
+                           {kSkillPsychiatrist, s.psych_training},
+                           {kSkillResearcher, s.research_training}};
+            for (int i = 0; i < 3; i++) {
+                const Rect &b = kBoxes[i + 67];
+                if (s.skills & skills[i].skill) {
+                    reqspr(b.x, b.y, b.h);
+                } else if (skills[i].training) {
+                    reqspr(b.x, b.y, b.h - 3);
+                    draw_slist_training_bar(b.x, b.y, skills[i].training,
+                                            game_.settings().gbv.ability_threshold[size_t(i)]);
+                }
+            }
         }
         int delay = std::clamp(int(s.work_delay), 0, 10);
         int count = delay * 4200 / 1000;
@@ -2814,6 +2839,16 @@ Event open_chart_command(int chart, const Game &game, bool *refused)
         return {};
     }
     return {EV_OPEN_SCREEN, uint16_t(chart)};
+}
+
+bool slist_view(const Charts &charts, const World &world, Rect &box, Point &camera)
+{
+    if (!charts.open || charts.chart != kChartStaff || !charts.value || size_t(charts.value) >= world.things.size())
+        return false;
+    box = kSlistView;
+    Point c = info_centre(world, uint16_t(charts.value));
+    camera = {c.x - box.w / 2, c.y - box.h / 2};
+    return true;
 }
 
 int chart_for_panel_action(PanelAction action)

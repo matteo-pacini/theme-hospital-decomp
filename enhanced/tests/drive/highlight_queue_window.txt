@@ -1,0 +1,50 @@
+# Level 1: the queue window open on a reception desk's queue; the pointer on
+# a patient in it makes that patient flash on the map
+# (othervar.queue_hilight_thing, draw_hilight_frame: normal, flag 4, flag 8,
+# hidden, flag 8, flag 4 over six turns); off the window's list it stops.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 84             # buy the reception desk (the first entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the desk
+wait 20
+click 348 453            # panel: hire staff
+wait 10
+click 226 298            # the receptionist kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 61 70         # place the receptionist on the hospital's land
+wait 20
+click 17 343             # the watch's open-now button
+wait 20
+key 5                    # the fastest speed
+wait 5
+turns 2500
+click-thing 30           # the reception desk: its queue window
+wait 10
+expect interface: requester 6,
+expect flashing: pickup thing 0, queue thing 0
+keydown Down             # scroll the patients up out from behind the window
+wait 30
+keyup Down
+move 246 140             # the first patient of the queue
+wait 3
+expect flashing: pickup thing 0, queue thing 23
+screenshot flash_a
+wait 1
+screenshot flash_b
+wait 1
+screenshot flash_c
+wait 1
+screenshot flash_d
+wait 1
+screenshot flash_e
+wait 1
+screenshot flash_f
+move 100 100             # off the window
+wait 3
+expect flashing: pickup thing 0, queue thing 0

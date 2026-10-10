@@ -130,6 +130,38 @@ void test_open_hospital(const char *dir)
     CHECK(!game.command_log.empty() && game.command_log.back().ends_with("139 0 0"));
 }
 
+// The status screen draws every frame: overview_frame logs one line per turn
+// and hospital, and the log replays the same run.
+void test_overview_log(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    auto level = gd.load_level(1, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 1, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    th::Game game;
+    game.start(*level, 1, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    game.skipped_calls = th::kSkipComputerAction;
+    auto overviews = [&] {
+        return std::count_if(game.command_log.begin(), game.command_log.end(),
+                             [](const std::string &l) { return l.find("@overview") != std::string::npos; });
+    };
+    for (int frame = 0; frame < 5; frame++)
+        game.overview_frame(0);
+    CHECK(overviews() == 1);
+    game.overview_frame(1);
+    game.overview_frame(1);
+    CHECK(overviews() == 2);
+    game.process_turn();
+    game.turn();
+    game.overview_frame(1);
+    game.overview_frame(1);
+    CHECK(overviews() == 3);
+}
+
 namespace
 {
 
@@ -904,6 +936,22 @@ void check_advice_plants(AdvisorFixture &a)
     CHECK(first_advice(a, dying, &said) == 0x5a);
     CHECK(said == text.at(th::TextSection::ExtraAdvice, 0x28));
 }
+// The rooms open (NRAdcounts.open_rooms, a count kept by open_room and
+// delete_room) advise from three to six.
+void check_advice_open_rooms(AdvisorFixture &a)
+{
+    auto rooms = [](uint8_t n) {
+        return [n](th::World &, th::AdCounts &c) {
+            calm_patients(c, 12);
+            c.open_rooms = n;
+        };
+    };
+    CHECK(first_advice(a, rooms(2)) != 0x6b);
+    CHECK(first_advice(a, rooms(3)) == 0x6b);
+    CHECK(first_advice(a, rooms(6)) == 0x6b);
+    CHECK(first_advice(a, rooms(7)) != 0x6b);
+}
+
 // The advice about how close the level is to being won or lost: said from
 // the level's month on, by how little is left.
 void check_advice_progress(AdvisorFixture &a)
@@ -1209,6 +1257,7 @@ void test_advisor_counts(const char *dir)
     check_advice_hospital(a);
     check_advice_announcements(a);
     check_advice_progress(a);
+    check_advice_open_rooms(a);
     check_advice_new_staff(a);
     check_advice_quake(a);
     check_advice_promotions(a);
@@ -1249,4 +1298,25 @@ void test_carried_score(const char *dir)
         CHECK(game.command_log.size() == (c.score != 10000 ? 2u : 1u));
     }
     std::printf("carried score: kept above level 1 when not 0, else 10000\n");
+
+    // The rivals' monthly banks are not reset by a level: a level starts with
+    // the banks the last one left.
+    auto level = gd.load_level(2, &error);
+    th::Balance settings;
+    CHECK(level && th::load_balance(dir, 2, th::kDefaultBalanceId, settings, &error));
+    if (!level)
+        return;
+    th::Game first;
+    first.staff_market.ref_counts = th::reference_counts(gd.text());
+    first.start(*level, 2, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    first.world.rivals[2].buckets[5].income = 777;
+    first.world.rivals[1].buckets[11].room_rep_events[3] = 9;
+    th::Game next;
+    next.staff_market.ref_counts = th::reference_counts(gd.text());
+    next.start(*level, 2, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    CHECK(next.world.rivals[2].buckets[5].income == 0);
+    next.carry_buckets(first.rival_buckets());
+    CHECK(next.world.rivals[2].buckets[5].income == 777);
+    CHECK(next.world.rivals[1].buckets[11].room_rep_events[3] == 9);
+    std::printf("carried buckets: a level starts with the last level's banks\n");
 }

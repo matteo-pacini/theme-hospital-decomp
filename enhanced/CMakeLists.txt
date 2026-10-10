@@ -167,6 +167,7 @@ add_executable(th_enhanced
   src/app/datadir.cpp
   src/app/drive.cpp
   src/app/paths.cpp
+  src/app/player_details.cpp
   src/app/install_job.cpp
   src/app/settings.cpp
   src/app/ui/nav_tool.cpp
@@ -195,6 +196,8 @@ if (BUILD_TESTING)
     tests/main.cpp
     tests/paths.cpp
     src/app/paths.cpp
+    tests/player_details.cpp
+    src/app/player_details.cpp
     tests/common.cpp
     tests/audio.cpp
     tests/computer.cpp
