@@ -209,20 +209,44 @@ Not yet: the DNA fixer.
 Route planning defaults to A*; the game's wall following stays selectable
 in the tools window.
 
-## Game data
+## Game data and the user's folders
 
 The data folder is the one holding `DATA`, `LEVELS` and `QDATA` (file names
-are matched case-insensitively). It is looked for in this order:
+are matched case-insensitively). Where it is looked for:
 
-1. `--data <folder>` on the command line;
-2. the development folder, `../orig` (the repository's `orig/`, where
-   `nix run path:./nix#gog-unpack` puts the GOG release). Builds for others
-   should turn it off with `-DTH_DEV_DATA_DIR=`;
-3. the folder chosen before, saved in the user's preferences folder;
-4. next to the program, then the working directory.
+- The data comes from the first of these that holds every required file:
+  `--data <folder>`; the development folder, `../orig` (the repository's
+  `orig/`, where `nix run path:./nix#gog-unpack` puts the GOG release;
+  builds for others turn it off with `-DTH_DEV_DATA_DIR=`); the game folder
+  below, only when it holds `install.ok` (which an install leaves). If none
+  is complete, the setup screen installs it: from GOG's installer (any file name; size and sha256 are checked) or
+  from a game folder, chosen with the buttons or dropped on the window, on a
+  worker thread with a progress bar and Cancel. "Verify files" re-hashes an
+  existing install. `--install-from <installer or folder>` does the same
+  before the window opens (progress on stderr, exit 1 with the error if it
+  fails).
+- `--debug` turns the F12 tools on (off otherwise; F10 reports work in every
+  mode). `--drive` and `--control` imply it. `nix run path:./nix#enhanced`
+  passes it.
+- `--user-data` skips the development folder, so a development build looks
+  only in the game folder as a normal start does and can show the setup
+  screen; `--install-from` implies it. `--drop PATH` hands PATH to the setup screen as a file dropped on the window at start.
+  A driven run waits, its commands paused, while an install runs.
 
-If none holds the game, a screen lists where it looked and what was missing,
-with a button to choose the folder.
+The per-user folders (`ThemeHospitalEnhanced`, made on first use; src/app/
+paths.cpp):
+
+| | settings.ini | saves, hiscore.dat | game data | debug reports |
+|---|---|---|---|---|
+| Linux | `$XDG_CONFIG_HOME` (`~/.config`) | `$XDG_DATA_HOME` (`~/.local/share`) `/save` | `$XDG_DATA_HOME/.../game` | `$XDG_STATE_HOME` (`~/.local/state`) `/debug-reports` |
+| macOS | `~/Library/Application Support/` | `.../save` | `.../game` | `.../debug-reports` |
+| Windows | `%APPDATA%` | `%USERPROFILE%\Saved Games` | `%LOCALAPPDATA%\...\game` | `%LOCALAPPDATA%\...\debug-reports` |
+
+An unset or relative XDG variable falls back to its default under `$HOME`.
+On the first start settings.ini and `save/` are copied from the old folder
+(`SDL_GetPrefPath("ThemeHospitalDecomp", "Enhanced")`), and hiscore.dat from
+`save/` of the data folder, when missing in the new ones; nothing is
+overwritten or deleted. The old `data_dir` setting is ignored.
 
 ## Building
 
@@ -266,9 +290,10 @@ focused text field, `key [MOD+]NAME` holds Shift, Ctrl or Alt, and
 report's note box).
 
 The tools window (F12) has a debug report: Save report
-writes `debug-reports/<time>/` under the folder the game was started from,
-with `screenshot.png` (the window without the tools), `state.txt` (the
-screen, the last command, money, finance and the hospitals, building and
+writes `debug-reports/<time>/` (under the folder the game was started from when the data came from the
+development folder; otherwise in the user's reports folder, above;
+`TH_DEBUG_REPORT_DIR` overrides both) with `screenshot.png` (the window
+without the tools), `state.txt` (the screen, the last command, money, finance and the hospitals, building and
 placing, every room, every person and object with all their fields, the map
 around the mouse, and the turn in the replay trace format; `dump_game`,
 core/world/debug_dump.h), `note.txt` (the text typed in the tool),
@@ -434,11 +459,13 @@ opens a room before `commit_doors` has finished cannot agree
                       fax, town map, help, year end, win and lose
     src/app/          SDL3 window and input, data-folder search, settings, driving
     src/app/ui/       ImGui: the tools window, debug report, path finding tool
-                      and the missing-data screen
+                      and the setup screen
     src/app/audio/    mixes the sounds and music onto the audio device
     tests/            ctest tests
     tests/drive/      driven interface tests (tools/drive_tests.sh)
+    tests/install/    scripts of tools/install_tests.sh (setup screen, install)
     tools/replay/     the replay check against the original
     tools/help/       check_table.py: the help hotspot table against the original
-    tools/            drive_tests.sh, coverage.sh, tidy.sh (clang-tidy) and slot.sh
-                      (shared slots for DOSBox and driven runs)
+    tools/            drive_tests.sh, install_tests.sh, coverage.sh, tidy.sh
+                      (clang-tidy) and slot.sh (shared slots for DOSBox and
+                      driven runs)

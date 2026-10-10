@@ -11,12 +11,31 @@
 namespace th
 {
 
-enum class MissingDataAction { None, Choose, Quit };
+enum class SetupAction { None, InstallFromInstaller, InstallFromFolder, Verify, Cancel, Quit };
 
-// Full-window screen shown when no Theme Hospital data was found: what is
-// needed, where it looked, and a way to pick the folder. `error` is the
-// problem with the last folder chosen, if any.
-MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::string &error);
+// What the setup screen shows.
+struct SetupView {
+    const DataSearch &search;
+    // The last failure (an install's error text) and the last verification's
+    // result; either may be empty.
+    const std::string &error;
+    const std::string &notice;
+    // The game folder, whether it exists, and whether it holds an install
+    // that is not complete.
+    std::string game_dir;
+    bool game_dir_exists = false;
+    bool game_dir_incomplete = false;
+    // A job on the worker thread: whether it verifies, and its progress.
+    bool working = false;
+    bool verifying = false;
+    uint64_t done = 0;
+    uint64_t total = 0;
+};
+
+// Full-window setup screen shown when no Theme Hospital data was found: what
+// is needed, where it looked, and the ways to install it from GOG's installer
+// or a game folder. While a job runs it shows the progress and Cancel.
+SetupAction draw_setup_screen(const SetupView &view);
 
 // The debug report tool: saves a screenshot of the game, its
 // state and a note, for agents to review.

@@ -48,3 +48,18 @@ add_library(th_ymfm STATIC
   ${ymfm_SOURCE_DIR}/src/ymfm_pcm.cpp
 )
 target_include_directories(th_ymfm SYSTEM PUBLIC ${ymfm_SOURCE_DIR}/src)
+
+# miniz (MIT): only its inflate (miniz_tinfl.c) is used, to read GOG's
+# installer. Its own CMake build is not used (SOURCE_SUBDIR names no folder)
+# and its export header, which that build generates, is written here empty.
+# Built with its own flags, outside the project's warnings.
+FetchContent_Declare(miniz
+  URL https://github.com/richgel999/miniz/archive/refs/tags/3.0.2.tar.gz
+  URL_HASH SHA256=c4b4c25a4eb81883448ff8924e6dba95c800094a198dc9ce66a292ac2ef8e018
+  SOURCE_SUBDIR none)
+FetchContent_MakeAvailable(miniz)
+enable_language(C)
+
+file(WRITE ${CMAKE_BINARY_DIR}/miniz_generated/miniz_export.h "#define MINIZ_EXPORT\n")
+add_library(th_miniz STATIC ${miniz_SOURCE_DIR}/miniz_tinfl.c)
+target_include_directories(th_miniz SYSTEM PUBLIC ${miniz_SOURCE_DIR} ${CMAKE_BINARY_DIR}/miniz_generated)

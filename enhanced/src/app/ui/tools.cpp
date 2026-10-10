@@ -4,52 +4,110 @@
 #include "core/world/debug_dump.h"
 #include "core/world/world.h"
 
+#include <cstdint>
+#include <cstdio>
 #include <imgui.h>
 #include <string>
 #include <vector>
 
 namespace th
 {
-
-MissingDataAction draw_missing_data_screen(const DataSearch &search, const std::string &error)
+namespace
 {
-    MissingDataAction action = MissingDataAction::None;
-    const ImGuiViewport *vp = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(vp->WorkPos);
-    ImGui::SetNextWindowSize(vp->WorkSize);
-    ImGui::Begin("Theme Hospital data needed", nullptr,
-                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 
-    ImGui::TextUnformatted("Theme Hospital data needed");
-    ImGui::Separator();
-    ImGui::TextWrapped("This program contains no game files. It needs the data from your own copy of Theme Hospital "
-                       "(for example GOG's release): the folder that holds DATA, LEVELS and QDATA.");
-    ImGui::Spacing();
-    if (ImGui::Button("Choose the game folder..."))
-        action = MissingDataAction::Choose;
-    ImGui::SameLine();
-    if (ImGui::Button("Quit"))
-        action = MissingDataAction::Quit;
-    if (!error.empty()) {
-        ImGui::Spacing();
-        ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.4f, 1.0f), "%s", error.c_str());
-    }
+const ImVec4 kSetupErrorColor(1.0f, 0.45f, 0.4f, 1.0f);
 
-    ImGui::Spacing();
-    ImGui::TextUnformatted("Places looked at:");
+// Greyed text that wraps at the window's edge.
+void text_disabled_wrapped(const std::string &text)
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::TextWrapped("%s", text.c_str());
+    ImGui::PopStyleColor();
+}
+
+void draw_places_looked_at(const DataSearch &search)
+{
+    ImGui::TextDisabled("Places looked at:");
     for (const DataCandidate &c : search.tried) {
-        ImGui::BulletText("%s: %s", c.source.c_str(), c.path.string().c_str());
+        text_disabled_wrapped("- " + c.source + ": " + c.path.string());
         if (!c.missing.empty()) {
-            ImGui::Indent();
+            constexpr size_t kShown = 5;
             std::string missing = "missing ";
-            for (size_t i = 0; i < c.missing.size(); i++)
+            for (size_t i = 0; i < c.missing.size() && i < kShown; i++)
                 missing += (i ? ", " : "") + c.missing[i];
-            ImGui::TextDisabled("%s", missing.c_str());
+            if (c.missing.size() > kShown)
+                missing += " and " + std::to_string(c.missing.size() - kShown) + " more";
+            ImGui::Indent();
+            text_disabled_wrapped(missing);
             ImGui::Unindent();
         }
     }
-    ImGui::Spacing();
     ImGui::TextDisabled("You can also pass the folder on the command line: --data <folder>");
+}
+
+SetupAction draw_setup_progress(const SetupView &view)
+{
+    ImGui::TextUnformatted(view.verifying ? "Verifying the installed game files..." : "Installing the game files...");
+    float fraction = view.total ? float(double(view.done) / double(view.total)) : 0.0f;
+    char label[64];
+    std::snprintf(label, sizeof label, "%.0f MB of %.0f MB", double(view.done) / 1e6, double(view.total) / 1e6);
+    ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0.0f), label);
+    return ImGui::Button("Cancel") ? SetupAction::Cancel : SetupAction::None;
+}
+
+SetupAction draw_setup_actions(const SetupView &view)
+{
+    SetupAction action = SetupAction::None;
+    if (ImGui::Button("Install from GOG's installer..."))
+        action = SetupAction::InstallFromInstaller;
+    ImGui::SameLine();
+    if (ImGui::Button("Install from a game folder..."))
+        action = SetupAction::InstallFromFolder;
+    if (view.game_dir_exists) {
+        ImGui::SameLine();
+        if (ImGui::Button("Verify files"))
+            action = SetupAction::Verify;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Quit"))
+        action = SetupAction::Quit;
+    return action;
+}
+
+} // namespace
+
+SetupAction draw_setup_screen(const SetupView &view)
+{
+    const ImGuiViewport *vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(vp->WorkPos);
+    ImGui::SetNextWindowSize(vp->WorkSize);
+    ImGui::Begin("Theme Hospital setup", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+
+    ImGui::TextUnformatted("Theme Hospital setup");
+    ImGui::Separator();
+    ImGui::TextWrapped("This program contains no game files. It installs them from your own copy of Theme Hospital: "
+                       "GOG's installer (setup_theme_hospital_v3_(28027).exe) or a folder with the game installed "
+                       "from it. Drop the installer or the folder on this window, or choose it below.");
+    ImGui::Spacing();
+    if (view.game_dir_incomplete) {
+        ImGui::TextColored(kSetupErrorColor, "The installed game files are incomplete, install again.");
+        ImGui::Spacing();
+    }
+    SetupAction action = view.working ? draw_setup_progress(view) : draw_setup_actions(view);
+    if (!view.error.empty()) {
+        ImGui::Spacing();
+        ImGui::TextColored(kSetupErrorColor, "%s", view.error.c_str());
+    }
+    if (!view.notice.empty()) {
+        ImGui::Spacing();
+        ImGui::TextWrapped("%s", view.notice.c_str());
+    }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    text_disabled_wrapped("The game is installed into " + view.game_dir);
+    draw_places_looked_at(view.search);
     ImGui::End();
     return action;
 }

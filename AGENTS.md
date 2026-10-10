@@ -156,7 +156,9 @@ Several agents can run at once:
 
 ## Debugging
 The user files bugs as debug reports (F12's Debug report tab, or F10):
-`debug-reports/<time>/` holds a screenshot, `state.txt`, the note,
+`debug-reports/<time>/` (in the repository when the data came from the development folder,
+else in the state folder `ThemeHospitalEnhanced/debug-reports/` under
+`$XDG_STATE_HOME`; see enhanced/README.md) holds a screenshot, `state.txt`, the note,
 `snapshot.bin` and `commands.txt`. Load the snapshot with
 `build/enhanced/th_replay --load` to reproduce what the user saw. F12's
 Inspect shows a person's or object's fields live, with states named.

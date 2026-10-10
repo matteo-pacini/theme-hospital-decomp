@@ -5,6 +5,8 @@
 #include "app/audio/mixer.h"
 #include "app/datadir.h"
 #include "app/drive.h"
+#include "app/install_job.h"
+#include "app/paths.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
 #include "core/audio/music.h"
@@ -113,8 +115,8 @@ uint8_t scroll_key_bit(SDL_Keycode key)
 constexpr uint8_t kPointersDrawn[] = {kPointerDefault, kPointerStaff,     kPointerMachine,        kPointerPatient,
                                       kPointerQueue,   kPointerVaccinate, kPointerVaccinateTarget};
 
-// The folder chosen in the native dialog, handed over from its callback,
-// which SDL may call on another thread.
+// The folder or file chosen in a native dialog, handed over from its
+// callback, which SDL may call on another thread.
 struct FolderPick {
     std::mutex mutex;
     std::optional<std::string> chosen;
@@ -127,6 +129,12 @@ void SDLCALL on_folder_chosen(void *userdata, const char *const *files, int)
     auto *pick = static_cast<FolderPick *>(userdata);
     std::lock_guard lock(pick->mutex);
     pick->chosen = files[0];
+}
+
+std::optional<std::string> take_pick(FolderPick &pick)
+{
+    std::lock_guard lock(pick.mutex);
+    return std::exchange(pick.chosen, std::nullopt);
 }
 
 // A level as it starts: its map and objects, the shadowed blocks, and the
@@ -353,13 +361,32 @@ class App : public DriveHost
   public:
     bool init(int argc, char **argv);
     void run();
+    // A running install is cancelled and waited for when the app is destroyed.
     void shutdown();
-    // 1 when a drive script's expectations failed, else 0.
-    int exit_code() const { return driver_ && driver_->failures() > 0 ? 1 : 0; }
+    // 1 when --install-from failed or a drive script's expectations did, else 0.
+    int exit_code() const { return install_failed_ || (driver_ && driver_->failures() > 0) ? 1 : 0; }
 
   private:
     // --drive SCRIPT, --control, --out DIR, --size WxH, --visible.
     void parse_drive_args(int argc, char **argv);
+    // --user-data (skip the development folder, so a development build looks
+    // only in the game folder as a normal start does), --drop PATH (handle PATH as a file dropped
+    // on the window at start, for tests) and --install-from PATH, returned.
+    std::optional<std::filesystem::path> parse_setup_args(int argc, char **argv);
+    // Installs `from` (an installer or a game folder) before the window
+    // opens, reporting on stderr (stdout carries --control's answers);
+    // false when it failed.
+    bool install_from_command_line(const std::filesystem::path &from);
+    // The setup screen's jobs: starts one on the worker thread, takes its
+    // result when done, and loads the game from what an install made.
+    void start_setup_job(InstallKind kind, const std::filesystem::path &source);
+    void poll_setup();
+    void poll_setup_job();
+    // The event of --drop, queued at start.
+    void queue_drop_arg();
+    void setup_step();
+    void refresh_game_dir_state();
+    SetupView setup_view() const;
     // One of TH_DRIVE_SLOTS (default 6) slots shared by every driven run on
     // the machine, under the repository's build/slots/drive.
     void hold_drive_slot();
@@ -546,8 +573,9 @@ class App : public DriveHost
     void finish_quick_report(const std::string &note);
     void discard_quick_report();
     void restore_quick_pause();
-    // Where a report goes: debug-reports/ under the folder the game was
-    // started from, or TH_DEBUG_REPORT_DIR when set (the drive tests).
+    // Where a report goes: TH_DEBUG_REPORT_DIR when set (the drive tests),
+    // else debug-reports/ under the folder the game was started from when the
+    // data came from the development folder, else the user's reports folder.
     std::filesystem::path report_base() const;
     std::string debug_state() const;
     // What fills the window this frame, for debug_state.
@@ -710,14 +738,31 @@ class App : public DriveHost
     QueueWindow queue_;
 
     Settings settings_;
+    UserPaths user_paths_;
+    // --debug (implied by --drive and --control): the F12 developer tools.
+    bool debug_ = false;
+    // --data, and whether the development folder is skipped: with --user-data
+    // or --install-from, which make a run look as a normal start.
+    std::optional<std::filesystem::path> data_arg_;
+    bool user_data_ = false;
     DataSearch search_;
     std::string data_error_;
+    // The setup screen: the install or verification on its worker thread, the
+    // last verification's result, the state of the game folder, and a path
+    // to drop on the window at start (--drop).
+    InstallJob job_;
+    std::string setup_notice_;
+    bool game_dir_exists_ = false;
+    bool game_dir_incomplete_ = false;
+    std::string drop_arg_;
+    bool install_failed_ = false;
     std::filesystem::path hiscore_path_;
     // The folder the saved games live in, and which File > Save/Load slots
     // hold one ([0] is slot 1).
     std::filesystem::path save_dir_;
     std::array<bool, kMenuSlots + 1> save_slots_{};
     FolderPick pick_;
+    FolderPick installer_pick_;
     std::unique_ptr<GameData> data_;
 
     std::optional<int> language_; // --language: LANG-n.DAT instead of HOSPITAL.CFG's
@@ -808,11 +853,12 @@ class App : public DriveHost
 
 bool App::init(int argc, char **argv)
 {
-    std::optional<std::filesystem::path> data_arg;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg == "--data" && i + 1 < argc)
-            data_arg = argv[++i];
+            data_arg_ = argv[++i];
+        else if (arg == "--debug")
+            debug_ = true;
         else if (arg == "--level" && i + 1 < argc) {
             level_ = std::atoi(argv[++i]);
             level_from_cli_ = true;
@@ -821,6 +867,14 @@ bool App::init(int argc, char **argv)
     }
     parse_drive_args(argc, argv);
     bool driving = !drive_script_.empty() || drive_control_;
+    debug_ = debug_ || driving;
+
+    user_paths_ = user_paths();
+    std::optional<std::filesystem::path> install_from = parse_setup_args(argc, argv);
+    if (install_from && !install_from_command_line(*install_from)) {
+        install_failed_ = true;
+        return false;
+    }
     if (driving)
         hold_drive_slot();
     if (driving && !drive_visible_) {
@@ -832,13 +886,17 @@ bool App::init(int argc, char **argv)
         return false;
 
     // A driven run does not depend on, or change, the player's settings.
-    if (driving)
+    if (driving) {
         start_driver();
-    else
-        settings_.load();
-    search_ = find_data_dir(data_arg, settings_);
+    } else {
+        migrate_old_prefs(user_paths_);
+        settings_.load(user_paths_.settings_dir);
+    }
+    search_ = find_data_dir(data_arg_, user_data_ || install_from.has_value(), user_paths_.game_dir);
     if (search_.found)
         try_load_data(*search_.found);
+    refresh_game_dir_state();
+    queue_drop_arg();
     return true;
 }
 
@@ -892,13 +950,18 @@ bool App::try_load_data(const std::filesystem::path &dir)
     data_ = std::move(data);
     load_ui_art(dir);
     data_error_.clear();
-    // The saved games: in the user's preferences folder, or under a driven
-    // run's output folder, which is removed between runs, so tests start
-    // with no saves.
-    if (driver_)
+    // The saved games and the high scores: in the user's save folder, or
+    // under a driven run's output folder, which is removed between runs, so
+    // tests start with none.
+    if (driver_) {
         save_dir_ = drive_out_ / "save";
-    else
-        save_dir_ = settings_.path().empty() ? std::filesystem::path("save") : settings_.path().parent_path() / "save";
+    } else {
+        save_dir_ = user_paths_.save_dir.empty() ? std::filesystem::path("save") : user_paths_.save_dir;
+        migrate_hiscore(user_paths_, dir);
+    }
+    std::error_code save_ec;
+    std::filesystem::create_directories(save_dir_, save_ec);
+    hiscore_path_ = save_dir_ / "hiscore.dat";
     startup_.set_save_dir(save_dir_);
     // The start-up screens choose the level, unless --level did.
     if (!level_from_cli_ && startup_.load(dir, data_->text(), data_->language(), &error))
@@ -923,7 +986,6 @@ void App::load_ui_art(const std::filesystem::path &dir)
     report(load_fax(fax_, dir, data_->text(), &error));
     report(year_end_.load(dir, data_->text(), data_->palette(), &error));
     report(winlose_.load(dir, data_->text(), data_->palette(), &error));
-    hiscore_path_ = dir / "save" / "hiscore.dat";
     init_object_ui(object_ui_, data_->palette());
     report(bank_.load(dir, data_->language(), &error));
     sounds_.set_bank(&bank_);
@@ -2456,7 +2518,10 @@ void App::startup_result(const StartupResult &r)
 std::filesystem::path App::report_base() const
 {
     const char *dir = std::getenv("TH_DEBUG_REPORT_DIR");
-    return dir && *dir ? std::filesystem::path(dir) : std::filesystem::path("debug-reports");
+    if (dir && *dir)
+        return dir;
+    return search_.from_dev_folder || user_paths_.reports_dir.empty() ? std::filesystem::path("debug-reports")
+                                                                      : user_paths_.reports_dir;
 }
 
 void App::capture_debug_report(DebugCapture &capture)
@@ -2659,6 +2724,11 @@ std::string App::debug_state() const
                      quick_.last_report.empty() ? "(none)" : quick_.last_report);
     if (in_startup_)
         s += std::format("startup screen: {}\n", int(startup_.screen()));
+    if (!data_) {
+        s += std::format("setup: game folder {}, {}, notice \"{}\", error \"{}\"\n",
+                         game_dir_exists_ ? (game_dir_incomplete_ ? "incomplete" : "complete") : "absent",
+                         job_.busy() ? "job running" : "idle", setup_notice_, data_error_);
+    }
     if (!map_ || in_startup_)
         return s;
     const Game &g = map_->game;
@@ -2951,6 +3021,10 @@ void App::handle_event(const SDL_Event &e)
     case SDL_EVENT_QUIT:
         running_ = false;
         break;
+    case SDL_EVENT_DROP_FILE:
+        if (!data_ && e.drop.data)
+            start_setup_job(install_kind_of(e.drop.data), e.drop.data);
+        break;
     case SDL_EVENT_KEY_DOWN:
         if (!io.WantCaptureKeyboard && !quick_.open)
             key_down(e.key);
@@ -2991,6 +3065,8 @@ void App::key_down(const SDL_KeyboardEvent &key)
         quick_report_key(SDL_Keymod(key.mod));
         return;
     }
+    if (key.key == SDLK_F12 && !debug_)
+        return;
     if (key.key == SDLK_F12 && data_ && in_startup_) {
         tools_.open = !tools_.open;
         return;
@@ -3308,11 +3384,7 @@ void App::render()
     SDL_RenderClear(renderer_);
 
     if (!data_) {
-        MissingDataAction action = draw_missing_data_screen(search_, data_error_);
-        if (action == MissingDataAction::Quit)
-            running_ = false;
-        else if (action == MissingDataAction::Choose)
-            SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
+        setup_step();
     } else if (!screen_step(out_w, out_h)) {
         hospital_step(out_w, out_h);
     }
@@ -3474,6 +3546,31 @@ void App::present_view(int vw, int vh, int z)
     SDL_RenderTexture(renderer_, screen_, nullptr, &dst);
 }
 
+// The setup screen, with what its buttons ask for.
+void App::setup_step()
+{
+    static const SDL_DialogFileFilter kInstallerFilter = {"GOG's installer", "exe"};
+    switch (draw_setup_screen(setup_view())) {
+    case SetupAction::Quit:
+        running_ = false;
+        break;
+    case SetupAction::InstallFromInstaller:
+        SDL_ShowOpenFileDialog(on_folder_chosen, &installer_pick_, window_, &kInstallerFilter, 1, nullptr, false);
+        break;
+    case SetupAction::InstallFromFolder:
+        SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
+        break;
+    case SetupAction::Verify:
+        start_setup_job(InstallKind::Verify, {});
+        break;
+    case SetupAction::Cancel:
+        job_.cancel();
+        break;
+    case SetupAction::None:
+        break;
+    }
+}
+
 void App::run()
 {
     // A driven run starts with the pointer at the window's centre, not at the
@@ -3486,8 +3583,13 @@ void App::run()
     }
     uint64_t last = SDL_GetTicksNS();
     while (running_) {
+        // A driven run waits for an install, its frames not counted, so that
+        // what follows does not depend on how long the install took.
+        bool installing = driver_ && job_.busy();
         // A driven run moves on only as its commands ask for frames.
-        if (driver_) {
+        if (driver_ && installing) {
+            SDL_Delay(5);
+        } else if (driver_) {
             if (driver_->finished()) {
                 driver_->flush();
                 break;
@@ -3503,27 +3605,16 @@ void App::run()
         // The `type` text events are polled; SDL no longer needs the strings.
         drive_texts_.clear();
 
-        std::optional<std::string> chosen;
-        {
-            std::lock_guard lock(pick_.mutex);
-            chosen.swap(pick_.chosen);
-        }
-        if (chosen) {
-            std::vector<std::string> missing = missing_data_files(*chosen);
-            if (!missing.empty()) {
-                data_error_ = *chosen + " does not hold the game data (missing " + missing.front() + ")";
-            } else if (try_load_data(*chosen)) {
-                settings_.set("data_dir", *chosen);
-                settings_.save();
-            }
-        }
+        if (!data_)
+            poll_setup();
 
         uint64_t now = SDL_GetTicksNS();
         float dt = float(now - last) / 1e9f;
         last = now;
         if (driver_) {
             dt = 1.0f / 60.0f;
-            drive_ns_ += 16666667;
+            if (!installing)
+                drive_ns_ += 16666667;
         }
         frame_seconds_ = std::min(dt, 0.1f);
         update(frame_seconds_);
@@ -3546,6 +3637,114 @@ void App::parse_drive_args(int argc, char **argv)
         else if (arg == "--visible")
             drive_visible_ = true;
     }
+}
+
+std::optional<std::filesystem::path> App::parse_setup_args(int argc, char **argv)
+{
+    std::optional<std::filesystem::path> install_from;
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--user-data")
+            user_data_ = true;
+        else if (arg == "--install-from" && i + 1 < argc)
+            install_from = argv[++i];
+        else if (arg == "--drop" && i + 1 < argc)
+            drop_arg_ = argv[++i];
+    }
+    return install_from;
+}
+
+// --drop: the event a file dropped on the window sends.
+void App::queue_drop_arg()
+{
+    if (drop_arg_.empty())
+        return;
+    SDL_Event e{};
+    e.type = SDL_EVENT_DROP_FILE;
+    e.drop.windowID = SDL_GetWindowID(window_);
+    e.drop.data = drop_arg_.c_str();
+    SDL_PushEvent(&e);
+}
+
+bool App::install_from_command_line(const std::filesystem::path &from)
+{
+    if (user_paths_.game_dir.empty()) {
+        std::fprintf(stderr, "--install-from: no per-user folder for the game files (no home folder)\n");
+        return false;
+    }
+    std::fprintf(stderr, "Installing the game files from %s into %s\n", from.string().c_str(),
+                 user_paths_.game_dir.string().c_str());
+    uint64_t tenth = 0;
+    InstallOptions options;
+    options.progress = [&tenth](uint64_t done, uint64_t total) {
+        uint64_t now = total ? done * 10 / total : 0;
+        for (; tenth < now; tenth++)
+            std::fprintf(stderr, "  %llu%%\n", static_cast<unsigned long long>((tenth + 1) * 10));
+    };
+    InstallResult result = install_kind_of(from) == InstallKind::Folder
+                               ? install_from_folder(from, user_paths_.game_dir, options)
+                               : install_from_installer(from, user_paths_.game_dir, options);
+    if (!result.ok) {
+        std::fprintf(stderr, "--install-from: %s\n", result.error.c_str());
+        return false;
+    }
+    std::fprintf(stderr, "Installed.\n");
+    return true;
+}
+
+void App::start_setup_job(InstallKind kind, const std::filesystem::path &source)
+{
+    if (job_.busy())
+        return;
+    data_error_.clear();
+    setup_notice_.clear();
+    if (user_paths_.game_dir.empty()) {
+        data_error_ = "There is no per-user folder to install the game files into (no home folder).";
+        return;
+    }
+    job_.start(kind, source, user_paths_.game_dir);
+}
+
+// What the dialogs chose and the worker thread finished since the last frame.
+void App::poll_setup()
+{
+    if (std::optional<std::string> path = take_pick(installer_pick_))
+        start_setup_job(InstallKind::Installer, *path);
+    if (std::optional<std::string> path = take_pick(pick_))
+        start_setup_job(InstallKind::Folder, *path);
+    poll_setup_job();
+}
+
+void App::poll_setup_job()
+{
+    std::optional<InstallResult> result = job_.take_result();
+    if (!result)
+        return;
+    if (result->cancelled)
+        data_error_ = job_.kind() == InstallKind::Verify ? "Verification cancelled." : "Installation cancelled.";
+    else if (!result->ok)
+        data_error_ = result->error;
+    else if (job_.kind() != InstallKind::Verify)
+        try_load_data(user_paths_.game_dir);
+    refresh_game_dir_state();
+    if (result->ok && job_.kind() == InstallKind::Verify)
+        setup_notice_ = game_dir_incomplete_
+                            ? "The game files are correct, but the install was not completed: install again."
+                            : "All installed game files are present and correct.";
+}
+
+void App::refresh_game_dir_state()
+{
+    std::error_code ec;
+    game_dir_exists_ = !user_paths_.game_dir.empty() && std::filesystem::exists(user_paths_.game_dir, ec);
+    game_dir_incomplete_ = game_dir_exists_ && !is_installed(user_paths_.game_dir);
+}
+
+SetupView App::setup_view() const
+{
+    return {search_,          data_error_,          setup_notice_, user_paths_.game_dir.string(),
+            game_dir_exists_, game_dir_incomplete_, job_.busy(),   job_.kind() == InstallKind::Verify,
+            job_.done(),      job_.total()};
 }
 
 void App::hold_drive_slot()

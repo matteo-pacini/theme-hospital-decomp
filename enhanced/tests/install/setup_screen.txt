@@ -1,0 +1,7 @@
+# The setup screen of a start without game data (no install in the user's
+# game folder). Run by tools/install_tests.sh with a fake HOME.
+wait 3
+screenshot-ui setup_screen
+expect screen: no level
+expect setup: game folder absent, idle
+expect-not data: /

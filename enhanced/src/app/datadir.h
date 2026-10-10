@@ -8,8 +8,6 @@
 namespace th
 {
 
-class Settings;
-
 // A folder looked at for the game data, and why it was rejected.
 struct DataCandidate {
     std::string source; // where the candidate came from
@@ -20,13 +18,15 @@ struct DataCandidate {
 struct DataSearch {
     std::optional<std::filesystem::path> found;
     std::vector<DataCandidate> tried;
+    bool from_dev_folder = false; // `found` is the development folder
 };
 
-// Looks for the Theme Hospital data, in order: the --data argument, the
-// development folder (TH_DEV_DATA_DIR, orig/ in the repository unless the
-// build sets it empty), the folder saved in the settings, then next to the
-// executable and the working directory. The first folder holding every
-// required file wins.
-DataSearch find_data_dir(const std::optional<std::filesystem::path> &argument, const Settings &settings);
+// Looks for the Theme Hospital data: the --data argument first, then the
+// development folder (TH_DEV_DATA_DIR, orig/ in the repository unless the build
+// sets it empty) unless `skip_dev_folder`, then `game_dir`, which counts only
+// with the install.ok marker an install leaves. The first folder holding
+// every required file wins.
+DataSearch find_data_dir(const std::optional<std::filesystem::path> &argument, bool skip_dev_folder,
+                         const std::filesystem::path &game_dir);
 
 } // namespace th

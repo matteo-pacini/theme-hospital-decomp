@@ -7,13 +7,15 @@
 namespace th
 {
 
-// Key=value settings kept in the user's preferences folder (SDL_GetPrefPath).
+// Key=value settings kept in settings.ini in the user's settings folder.
 class Settings
 {
   public:
-    // Reads the settings file; a missing or unreadable file leaves them empty.
-    void load();
-    // Writes the settings file. Returns false if it could not be written.
+    // Reads settings.ini in `dir`; a missing or unreadable file leaves them
+    // empty.
+    void load(const std::filesystem::path &dir);
+    // Writes the settings file, making its folder. Returns false if it could
+    // not be written.
     bool save() const;
 
     std::string get(const std::string &key) const;

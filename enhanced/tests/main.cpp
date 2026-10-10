@@ -11,6 +11,10 @@
 #include <cstdlib>
 #include <cstring>
 
+// paths.cpp
+void test_user_paths();
+void test_migrate_old_prefs();
+
 // render.cpp
 void test_blit_clips_and_skips();
 void test_drive_script();
@@ -220,6 +224,15 @@ void test_yearend_trophy_kept(const char *dir);
 void test_yearend_drinks_counted(const char *dir);
 void test_yearend_object_value(const char *dir);
 
+// install.cpp
+void test_sha256_vectors();
+void test_manifest_covers_data();
+void test_install_from_folder(const char *dir);
+void test_install_refused_corrupt(const char *dir);
+void test_install_refused_missing(const char *dir);
+void test_install_cancelled(const char *dir);
+void test_install_from_installer(const char *dir);
+
 namespace
 {
 
@@ -236,7 +249,11 @@ struct DataTest {
 #define TEST(fn) {#fn, fn}
 
 const Test kTests[] = {
+    TEST(test_user_paths),
+    TEST(test_migrate_old_prefs),
     TEST(test_blit_clips_and_skips),
+    TEST(test_sha256_vectors),
+    TEST(test_manifest_covers_data),
     TEST(test_drive_script),
     TEST(test_drive_quick_report),
     TEST(test_req_format),
@@ -276,6 +293,11 @@ const Test kTests[] = {
 };
 
 const DataTest kDataTests[] = {
+    TEST(test_install_from_folder),
+    TEST(test_install_refused_corrupt),
+    TEST(test_install_refused_missing),
+    TEST(test_install_cancelled),
+    TEST(test_install_from_installer),
     TEST(test_game_data),
     TEST(test_computer_players),
     TEST(test_computer_money),

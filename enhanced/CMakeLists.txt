@@ -47,6 +47,8 @@ add_library(th_core STATIC
   src/core/data/palette.cpp
   src/core/data/level.cpp
   src/core/data/gamedata.cpp
+  src/core/data/gog_install.cpp
+  src/core/data/sha256.cpp
   src/core/render/surface.cpp
   src/core/render/text.cpp
   src/core/render/blit.cpp
@@ -155,7 +157,7 @@ target_sources(th_core PRIVATE ${TH_SNAPSHOT_ID})
 target_include_directories(th_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(th_core PUBLIC src)
 target_compile_options(th_core PRIVATE ${TH_WARNINGS})
-target_link_libraries(th_core PRIVATE th_ymfm)
+target_link_libraries(th_core PRIVATE th_ymfm th_miniz)
 target_compile_options(th_core PRIVATE ${TH_COVERAGE_FLAGS})
 target_link_options(th_core INTERFACE ${TH_COVERAGE_FLAGS})
 
@@ -164,10 +166,15 @@ add_executable(th_enhanced
   src/app/audio/mixer.cpp
   src/app/datadir.cpp
   src/app/drive.cpp
+  src/app/paths.cpp
+  src/app/install_job.cpp
   src/app/settings.cpp
   src/app/ui/nav_tool.cpp
   src/app/ui/tools.cpp)
 target_link_libraries(th_enhanced PRIVATE th_core th_imgui SDL3::SDL3)
+if (WIN32)
+  target_link_libraries(th_enhanced PRIVATE ole32 shell32)
+endif()
 target_compile_options(th_enhanced PRIVATE ${TH_WARNINGS})
 if (TH_DEV_DATA_DIR)
   target_compile_definitions(th_enhanced PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
@@ -186,6 +193,8 @@ include(CTest)
 if (BUILD_TESTING)
   add_executable(th_tests
     tests/main.cpp
+    tests/paths.cpp
+    src/app/paths.cpp
     tests/common.cpp
     tests/audio.cpp
     tests/computer.cpp
@@ -202,6 +211,7 @@ if (BUILD_TESTING)
     tests/help_callbacks.cpp
     tests/help_screens.cpp
     tests/icons.cpp
+    tests/install.cpp
     tests/nav.cpp
     tests/panel_info.cpp
     tests/patients.cpp
@@ -216,6 +226,9 @@ if (BUILD_TESTING)
     tests/ui.cpp
     tests/yearend.cpp)
   target_link_libraries(th_tests PRIVATE th_core)
+  if (WIN32)
+    target_link_libraries(th_tests PRIVATE ole32 shell32)
+  endif()
   target_compile_options(th_tests PRIVATE ${TH_WARNINGS})
   # Tests that need the game data are skipped when TH_TEST_DATA_DIR is unset
   # or missing.

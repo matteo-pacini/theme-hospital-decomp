@@ -1,19 +1,15 @@
 #include "app/settings.h"
 
-#include <SDL3/SDL.h>
-
 #include <fstream>
+#include <system_error>
 
 namespace th
 {
 
-void Settings::load()
+void Settings::load(const std::filesystem::path &dir)
 {
     values_.clear();
-    if (char *pref = SDL_GetPrefPath("ThemeHospitalDecomp", "Enhanced")) {
-        path_ = std::filesystem::path(pref) / "settings.ini";
-        SDL_free(pref);
-    }
+    path_ = dir.empty() ? std::filesystem::path() : dir / "settings.ini";
     if (path_.empty())
         return;
     std::ifstream in(path_);
@@ -29,6 +25,8 @@ bool Settings::save() const
 {
     if (path_.empty())
         return false;
+    std::error_code ec;
+    std::filesystem::create_directories(path_.parent_path(), ec);
     std::ofstream out(path_, std::ios::trunc);
     for (const auto &[key, value] : values_)
         out << key << '=' << value << '\n';
