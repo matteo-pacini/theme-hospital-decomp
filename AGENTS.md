@@ -132,6 +132,35 @@ dosbox-x:
 - New World, Game or Thing fields go in `core/world/debug_dump.cpp` and
   `core/world/snapshot.cpp`; size `static_assert`s enforce the snapshot.
 
+### Remote gate
+The gate runs on another machine by default:
+
+    enhanced/tools/remote.sh gate [SCRIPT ...]
+
+It sends the tree as it is on disk (uncommitted changes included) to
+`REMOTE_HOST` (default `nexus`) and runs, in a throwaway rootless podman
+container: both builds, `th_tests`, tidy, the clang-format check and
+`replay_all.sh` (all scripts, or the ones named). It prints each step's time
+and `replay_all.sh`'s summary, exits as it does (0, 1, 3; 1 also when an
+earlier step fails) and copies failing pairs to `build/remote-<time>/`. The
+local commands in "Build and check" and above are the fallback when the host
+is unreachable.
+- Workers run the whole `remote.sh gate`, not the split gate: the host's
+  cache makes the full replay set about two minutes warm. The lead's
+  integration run is `remote.sh gate` too.
+- The host needs passwordless ssh, rootless podman with cgroup v2's cpu and
+  memory controllers delegated to the user, systemd with lingering on, and
+  nix with flakes (it builds the image from `nix/flake.nix`); NixOS is the
+  tested setup. `with-fans` on the host is optional: where it is installed,
+  a run holds the fans at `REMOTE_FANS` (default 50) %.
+- The host keeps its own trace cache (the `th-replay-cache` volume). Its keys
+  never match local ones (Watcom writes each source's path into its object),
+  so local `CACHED_ONLY=1` runs still need the local cache.
+- The local side only runs tar and ssh, so the `nice`, `ionice` and job caps
+  in "Sharing the machine" do not apply. The host runs `REMOTE_RUNS`
+  (default 2) gates at once on `REMOTE_CPUS` (16) each; the rest queue.
+- `remote.sh clean` removes its images, containers and the cache volume.
+
 ## Sharing the machine
 Several agents can run at once:
 - DOSBox runs in one of `TH_REPLAY_SLOTS` (default 10) shared slots; a run
