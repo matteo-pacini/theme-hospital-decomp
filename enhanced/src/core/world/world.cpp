@@ -7,6 +7,7 @@
 #include "core/world/game.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
+#include "core/world/objects.h"
 #include "core/world/rats.h"
 #include "core/world/trace.h"
 
@@ -235,15 +236,28 @@ void place_existing_object_insert_object(World &w, uint16_t id, int tile)
 }
 
 // place_existing_object's place_object of a two-part object's second part,
-// for `owner`, if it fits (can_place_object): one of its kind the player
-// lifted off the map (BuildState::objects) is put back, else a new one is
-// bought at object_stats' cost (object_cost; nothing for the objects a
-// level starts with, as research has not started then) once a thing is
-// free for it. Its checks of people in the way and of the rooms' access
-// are not ported. Returns its thing id, 0 if none.
+// for `owner`, if it fits (can_place_object), outside rooms leaves the rooms
+// reachable (check_room_access; when blocked it sets the advisor's forced
+// advice 7) and has no one in the way (no_peeps_in_way): one of its kind
+// the player lifted off the map (BuildState::objects) is put back, else a
+// new one is bought at object_stats' cost (object_cost; nothing for the
+// objects a level starts with, as research has not started then) once a
+// thing is free for it. Returns its thing id, 0 if none.
 uint16_t place_existing_object_next_part(World &w, const AnimData &anims, ObjectAt part, int owner)
 {
     if (!can_place_object(w, part.pos, part.kind, part.dir, owner))
+        return 0;
+    if (!room_at(w, uint16_t(part.pos))) {
+        mark_object_shape(w, part.pos, part.kind, part.dir);
+        bool blocked = !check_room_access(w, owner);
+        remove_object_shape(w, part.pos, part.kind, part.dir);
+        if (blocked) {
+            if (w.game)
+                w.game->advisor.forced_advice_id = 7;
+            return 0;
+        }
+    }
+    if (!no_peeps_in_way(w, part.pos, part.kind, part.dir))
         return 0;
     for (uint16_t &lifted : w.building.build.objects) {
         if (lifted && w.things[lifted].subtype == part.kind && w.things[lifted].owner == owner) {

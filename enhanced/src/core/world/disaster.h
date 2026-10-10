@@ -65,8 +65,8 @@ void replace_machine(Game &game, uint16_t id);
 
 // Carries out the machine window's commands, as process_turn: EV_REPLACE_MACHINE
 // (replace_machine of thing event.value) and EV_THINGPAGE_REQUEST (a
-// handyman paged at once, priority 0xff, to repair thing event.value; its
-// icon is not ported). Returns whether the event was one of them.
+// handyman paged at once, priority 0xff, to repair thing event.value; the machine gets kIconNeedsRepair). Returns
+// whether the event was one of them.
 bool apply_machine_event(Game &game, const Event &event);
 
 // disaster_peeps (0x75ed0): applies `mode` to every patient of hospital

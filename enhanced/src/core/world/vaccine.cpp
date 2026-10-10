@@ -8,6 +8,7 @@
 #include "core/world/queue.h"
 #include "core/world/staff.h"
 #include "core/world/staff_complex.h"
+#include "core/world/trace.h"
 
 #include <array>
 #include <cstdlib>
@@ -106,6 +107,8 @@ void request_vaccination(World &world, const AnimData &anims, uint16_t id)
 void cancel_vaccination_request(World &world, uint16_t id)
 {
     Thing &person = world.things[id];
+    if (person.person_flags & (kPfVaccineRequested | kPfVaccineNurseSent))
+        trace_event("vaccine_cancel %u requests=%u", unsigned(id), unsigned(world.epidemic.vaccine_requests));
     if (is_person_in_vaccine_queue(world, id) && !(person.person_flags & kPfVaccineNurseSent))
         world.epidemic.vaccine_requests--;
     remove_person_from_vaccination_queue(world, id);

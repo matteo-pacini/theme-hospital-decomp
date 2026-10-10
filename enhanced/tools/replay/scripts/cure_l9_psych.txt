@@ -1,0 +1,125 @@
+# Level 9: real cures of psychiatry's illnesses 23, 26 and 31 and of the
+# pharmacy's 17 and 28, from a hospital in the level's empty floor
+# (24,27)-(40,51): reception desk (38,49) and receptionist 26; a GP's
+# office (24,28), general diagnosis (32,28), psychiatry (24,34), cardiogram
+# (32,34), pharmacy (24,40) and a ward (32,40); handyman 18, nurses 5 to 7,
+# doctors 15, 16 and 17 for the GP and the diagnosis rooms and psychiatrists
+# 12 and 14 (applicants with the psychiatrist skill from the start), all
+# hired after the rooms are open. The hospital is opened at turn 3200, which
+# fixes who arrives. Patients are diagnosed in full (record) and then
+# treated by psychiatrist 12 (patients 19: 26, 8: 22 and 23, 9: 31) or by
+# nurse 7 (10: 17, 11: 28). Two years run, to the loss at the end of the
+# second.
+# Level 9
+# Turns 36500
+# Expect cure 19 illness=26 == 1
+# Expect-not dies 19
+# Expect cure 8 illness=22 == 1
+# Expect-not dies 8
+# Expect cure 9 illness=31 == 1
+# Expect-not dies 9
+# Expect cure 8 illness=23 == 1
+# Expect-not dies 8
+# Expect cure 10 illness=17 == 1
+# Expect-not dies 10
+# Expect cure 11 illness=28 == 1
+# Expect-not dies 11
+# Expect winlose lose group=1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 6310 11
+10 48 3 26
+11 5 6308 26
+100 55 0 0
+101 53 7 7
+102 2 3608 0
+103 2 4124 0
+104 8 4124 0
+105 18 0 0
+106 26 3482 0
+107 3 0 0
+108 4 7 0
+109 7 3866 1
+110 7 3612 2
+111 7 3867 6
+112 1 0 0
+160 55 0 0
+161 53 27 27
+162 2 3616 0
+163 2 4132 0
+164 8 4132 0
+165 18 0 0
+166 26 4258 0
+167 3 0 0
+168 4 27 0
+169 7 3745 20
+170 7 4004 16
+171 1 0 0
+220 55 0 0
+221 53 8 8
+222 2 4376 0
+223 2 4892 0
+224 8 4892 0
+225 18 0 0
+226 26 5018 0
+227 3 0 0
+228 4 8 0
+229 7 4504 530
+230 7 4764 16
+231 7 4378 61
+232 1 0 0
+280 55 0 0
+281 53 12 12
+282 2 4384 0
+283 2 4900 0
+284 8 4900 0
+285 18 0 0
+286 26 5026 0
+287 3 0 0
+288 4 12 0
+289 7 4642 13
+290 7 4641 272
+291 1 0 0
+340 55 0 0
+341 53 11 11
+342 2 5144 0
+343 2 5531 0
+344 8 5531 0
+345 18 0 0
+346 26 5657 0
+347 3 0 0
+348 4 11 0
+349 7 5147 39
+350 1 0 0
+400 55 0 0
+401 53 9 9
+402 2 5152 0
+403 2 5797 0
+404 8 5797 0
+405 18 0 0
+406 26 5921 0
+407 3 0 0
+408 4 9 0
+409 7 5281 264
+410 7 5540 1
+411 1 0 0
+600 48 2 18
+601 5 3998 18
+602 48 0 5
+603 5 3996 5
+604 48 0 6
+605 5 4638 6
+606 48 0 7
+607 5 5406 7
+608 48 1 15
+609 5 3997 15
+610 48 1 16
+611 5 4254 16
+612 48 1 17
+613 5 4894 17
+614 48 1 12
+615 5 5662 12
+616 48 1 14
+617 5 6174 14
+3200 139 0 0

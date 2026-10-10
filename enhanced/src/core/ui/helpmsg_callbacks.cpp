@@ -463,7 +463,7 @@ void req11_help_minus(HelpContext &ctx)
         set_section(ctx, TextSection::Help, 0x2a);
 }
 
-// ---- Demand requester (req12.cpp; the requester is not ported) ----
+// ---- Demand requester (req12.cpp) ----
 
 void req12_help_if_doctor(HelpContext &ctx)
 {
@@ -582,8 +582,7 @@ void slist_help_if_doctor(HelpContext &ctx)
 
 // The surgeon, psychiatrist and researcher entries: the qualification's text
 // when the shown doctor has it. The original's else writes their training
-// progress only while it is nonzero; those fields are not ported (they read
-// 0), so it writes nothing, as here.
+// progress (help_text 66) only while it is nonzero; this does not write it yet.
 void slist_help_if_surgeon(HelpContext &ctx)
 {
     const Thing *staff = ctx.charts ? shown_thing(ctx, ctx.charts->value) : nullptr;

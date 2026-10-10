@@ -76,6 +76,32 @@ void start_rooms_in_use(Game &game, const PersonComplexes &person_complexes, con
 // hired staff of hospital `owner` with skill bit 1 << `skill`.
 int staff_with_skill(const World &world, uint8_t owner, int skill);
 
+// What hospital 0 still lacks to treat an illness (the game's Required,
+// filled by what_is_required, src/disaster.cpp).
+struct Required {
+    // The skills the illness needs when the hospital has none with one of
+    // them (kSkillSurgeon for surgery, which also needs two surgeons); else
+    // 0.
+    uint16_t staff_mask = 0;
+    // The first such skill's bit index (5 for the surgeons).
+    uint8_t missing_skill = 0;
+    // The surgeons still to hire, of the two surgery needs.
+    uint8_t surgeons_needed = 0;
+    // The illness can be treated already; nothing else is filled in.
+    bool treatable = false;
+    // The room type it needs that the hospital has none of, 0 for none, and
+    // whether that room cannot be built yet.
+    uint8_t missing_room = 0;
+    bool room_unavailable = false;
+    // A ward it needs is missing, or a nurse for it.
+    bool needs_ward = false;
+    bool needs_nurse = false;
+};
+
+// what_is_required (0x75fe4) for hospital 0 and treatment `illness`: the
+// room, staff and ward its treatment lacks.
+Required what_is_required(const World &world, uint8_t illness);
+
 // set_expertise_room (0x4a520), for room `room` laid out: makes available
 // each treatment given in rooms of its type whose staff skills its
 // hospital has (research rooms only with skills), and the ward treatments
@@ -134,7 +160,8 @@ void staff_abandon_pager_response(World &world, uint16_t id);
 
 // make_a_playercall (0x1824c): a call of `type` about `subject` for hospital
 // `owner`, expiring after `timeout` days (expire_playercalls), never if 0.
-// Returns its id (World::next_call_id, from 1), or 0 if the table is full.
+// Returns its id (World::next_call_id, from 1), or 0 if the table is full or
+// in the rat game.
 // Its fax icon goes on the panel (add_panel_popup), and it becomes its
 // kind's head call (World::first_call) if the kind has none.
 uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_t timeout, uint8_t owner);
@@ -144,8 +171,7 @@ uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_
 // once it runs out, with its icon (delete_panel_popup); an emergency's
 // result (kind 5, subject 1) going ends the emergency (World::Emergency::
 // state 0). A head call going leaves its kind's head to the first call of
-// that kind in the table. The answer the game then gives to a VIP's visit
-// is not ported.
+// that kind in the table. A VIP's call going sets the mayor's arrival 1500 turns on (World::mayor).
 void expire_playercalls(World &world);
 
 // get_playercall (0x18710): removes `owner`'s call of `type` with `id`, or
@@ -213,7 +239,7 @@ void affect_diagnosis(World &world, const AnimData &anims, uint16_t staff, uint1
 // (0-1000), held back (Thing.health_delta) while it is in a room and
 // added with the next change outside; its health history kept
 // (add_health_to_history). At 0 it dies (person_dies, core/world/reaper.h).
-// The dead do not change. The status icons are not ported.
+// The dead do not change.
 void change_health(World &world, const AnimData &anims, uint16_t id, int16_t amount, uint32_t game_turn);
 
 // effect_illness (0x54444) with cured 1: patient `id`'s looks back to
@@ -237,7 +263,7 @@ bool pre_administer_drugs(const World &world, uint16_t id);
 // not_contagious), else 1000 less ten times the effectiveness, and goes
 // back to the GP, quoted its fee. Either way it walks out of the room
 // (complex 90) to go for treatment, and the dose's cost (drug_cost) is
-// charged. Its sounds and icons are not ported.
+// charged.
 void administer_drugs(World &world, const AnimData &anims, uint16_t staff, uint16_t id, uint32_t game_turn);
 
 // setup_next_treatment (0x3c4ec): patient `id` pays for the treatment
@@ -246,8 +272,7 @@ void administer_drugs(World &world, const AnimData &anims, uint16_t staff, uint1
 // (cure_illness; killed if wrongly guessed), diagnosed (diagnose_patient)
 // or on to its next treatment; a diagnosis left wanting is guessed at or
 // given up on by the policy's guess_cure_threshold and
-// send_home_threshold. Then next_treatment_now_setup, out of its room. The
-// icons and sounds are not ported.
+// send_home_threshold. Then next_treatment_now_setup, out of its room.
 void setup_next_treatment(World &world, const AnimData &anims, uint16_t staff, uint16_t id, uint32_t game_turn);
 
 // next_treatment_now_setup (0x3c8d8): patient `id`'s next state: waiting for
@@ -353,7 +378,7 @@ constexpr uint16_t kChoiceDiagWait = 0x2a;
 //   fax offers only once autopsies can be done; kChoiceDiagGuess guesses
 //   its illness (interrupt_complex, best_guess_treatment, a draw from
 //   world.seed) and sends it on (next_treatment_now_setup). Any patient
-//   `arg` forgets its call. Status icons are not ported.
+//   `arg` forgets its call.
 // Returns false for other commands.
 bool apply_call_event(Game &game, const Event &event);
 

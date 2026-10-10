@@ -848,10 +848,16 @@ bool load_balance(const std::filesystem::path &dir, int level, std::string_view 
     char number[16];
     std::snprintf(number, sizeof number, "%2.2d", level);
     bool ok = true;
-    for (const std::string &rel : {"levels/" + id + "00.sam", "levels/" + id + number + ".sam"}) {
+    const std::string files[] = {"levels/" + id + "00.sam", "levels/" + id + number + ".sam"};
+    for (const std::string &rel : files) {
         std::string why;
         auto text = load_data_file(dir, rel, &why);
         if (!text) {
+            // The bonus rat levels (13 and 14) have no balance file of their
+            // own: the game reports it missing and goes on with the base
+            // settings.
+            if (&rel == &files[1] && level > 12)
+                continue;
             if (error)
                 *error = ok ? why : *error + "; " + why;
             ok = false;

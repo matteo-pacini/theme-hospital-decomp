@@ -30,7 +30,7 @@ constexpr uint16_t kChoiceEpidemicDeclare = 0xa;
 constexpr uint16_t kChoiceEpidemicCoverUp = 0xb;
 
 // The health inspector's states (the game's MAYOR_*, include/enums.h),
-// shared with the mayor, which is not ported: walking to its stop, waiting,
+// shared with the mayor (core/world/mayor.h): walking to its stop, waiting,
 // leaving the map.
 constexpr uint8_t kMayorGoto = 2;
 constexpr uint8_t kMayorPauses = 4;
@@ -47,8 +47,8 @@ constexpr uint8_t kSfxDeVaccin = 0xdf;
 // alert_epidemic (0xa0414): starts an epidemic of `illness` in `owner`'s
 // hospital unless one or an emergency is already running: withdraws any
 // emergency call (get_playercall 2) and raises the epidemic call (type 3,
-// subject 1, expiring after 20 days). The player's advisor flag and the
-// announcement are the interface's.
+// subject 1, expiring after 20 days). For the player's hospital the advisor
+// is told (kAdvisorEventEpidemic); the announcement is the interface's.
 void alert_epidemic(World &world, uint8_t illness, uint8_t owner);
 
 // count_and_flag_contagious_peeps (0xa04e4): goes over `owner`'s patients
@@ -62,7 +62,8 @@ uint32_t count_and_flag_contagious_peeps(World &world, const AnimData &anims, ui
 // epidemic_status (0xa0654): counts down `owner`'s epidemic cover-up
 // (World::Epidemic::timer): it ends when no contagious patient is left
 // (contagious_count) or the timer runs out. On ending, clears the cover-up
-// and sets epidemic_over. Returns 1 if it ended this call.
+// and sets epidemic_over, and for the player the advisor says so. Returns 1 if
+// it ended this call.
 uint32_t epidemic_status(World &world, uint8_t owner);
 
 // epidemic_over's call (0xa073c's display_choice_screen): the result fax for

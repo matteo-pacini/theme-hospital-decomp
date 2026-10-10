@@ -6,6 +6,8 @@
 #include "core/data/anims.h"
 #include "core/world/game.h"
 #include "core/world/rats.h"
+#include "core/world/rooms.h"
+#include "core/world/staff.h"
 #include "core/world/world.h"
 
 #include <cstdint>
@@ -119,4 +121,115 @@ void test_rats()
     anims.frames.push_back(th::AnimFrame{0, 0, 0, 0, 1, 0});
     uint16_t rat = test_rats_move(*world, anims);
     test_rats_shot(*world, rat);
+}
+
+namespace
+{
+
+// Starts level `number` with the game's own balance settings.
+std::unique_ptr<th::Game> start_special_level_game(const th::GameData &gd, const char *dir, int number)
+{
+    std::string error;
+    auto level = gd.load_level(number, &error);
+    th::Balance settings;
+    auto game = std::make_unique<th::Game>();
+    if (!level || !th::load_balance(dir, number, th::kDefaultBalanceId, settings, &error))
+        return nullptr;
+    game->staff_market.ref_counts = th::reference_counts(gd.text());
+    game->start(*level, number, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+    return game;
+}
+
+// How many of hospital 0's staff are of `kind`.
+int count_placed_staff(const th::World &world, uint8_t kind)
+{
+    int n = 0;
+    for (const th::Thing &t : world.things)
+        n += t.type == th::kThingStaff && t.subtype == kind && t.owner == 0;
+    return n;
+}
+
+// The training level: three consultant doctors (a psychiatrist, a surgeon
+// and a researcher) on the first tile of the player's land passing the
+// level's roll, the generators seeded from rat_fest_level[3].
+void test_training_level(const th::GameData &gd, const char *dir)
+{
+    auto game = start_special_level_game(gd, dir, 5);
+    CHECK(game);
+    if (!game)
+        return;
+    const th::World &w = game->world;
+    CHECK(w.rats.fest_level == 0 && game->safeseed != th::kLevelStartSeed);
+    int doctors = 0;
+    uint16_t skills = 0, first_tile = 0;
+    for (const th::Thing &t : w.things) {
+        if (t.type != th::kThingStaff || t.subtype != th::kStaffDoctor || t.owner != 0)
+            continue;
+        uint16_t tile = uint16_t(t.x.tile + (t.y.tile << 7));
+        if (doctors++ == 0)
+            first_tile = tile;
+        CHECK(tile == first_tile && (t.skills & th::kSkillConsultant));
+        skills |= t.skills;
+    }
+    CHECK(doctors == 3);
+    CHECK((skills & th::kSkillPsychiatrist) && (skills & th::kSkillSurgeon) && (skills & th::kSkillResearcher));
+}
+
+// The rat bonus levels: litter, rat holes and handymen from
+// rat_fest_level[1] and [2], the hospital open at once and no calls; the
+// game ends when the litter falls to 4.
+void test_rat_level(const th::GameData &gd, const char *dir, int number, uint8_t fest, int handymen)
+{
+    auto game = start_special_level_game(gd, dir, number);
+    CHECK(game);
+    if (!game)
+        return;
+    th::World &w = game->world;
+    CHECK(w.rats.fest_level == fest && game->open && game->opening_countdown == 0);
+    CHECK(w.litter_count > 4 && w.rats.hole_count > 0);
+    CHECK(count_placed_staff(w, th::kStaffHandyman) == handymen);
+    CHECK(th::make_a_playercall(w, 1, 0, 3, 0) == 0);
+    th::rat_fest_control(*game);
+    CHECK(!game->progress.rat_game_over);
+    w.litter_count = 4;
+    th::rat_fest_control(*game);
+    CHECK(game->progress.rat_game_over);
+}
+
+// The weapon in hand goes with a shot and its shots run down.
+void test_arm_rat_shot()
+{
+    auto world = std::make_unique<th::World>();
+    world->rats.fest_powerup = 2;
+    world->rats.powerup_shots = 2;
+    world->rats.hit_margin = 8;
+    th::Event shot{th::EV_SHOOT_RAT, 7, 0, 0x0100};
+    th::arm_rat_shot(*world, shot);
+    CHECK(shot.arg == 0x0102 && world->rats.powerup_shots == 1 && world->rats.fest_powerup == 2);
+    th::arm_rat_shot(*world, shot);
+    CHECK(shot.arg == 0x0102 && world->rats.powerup_shots == 0 && world->rats.fest_powerup == 0 &&
+          world->rats.hit_margin == 2);
+    th::Event other{th::EV_OPEN_BUILD_ROOM, 0, 0, 0x0100};
+    world->rats.fest_powerup = 3;
+    th::arm_rat_shot(*world, other);
+    CHECK(other.arg == 0x0100);
+    th::Event miss{th::EV_SHOOT_RAT, 0, 0, 0};
+    th::arm_rat_shot(*world, miss);
+    CHECK(miss.arg == 3 && miss.value == 0);
+}
+
+} // namespace
+
+void test_special_levels(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    if (!gd.load(dir, &error)) {
+        CHECK(false);
+        return;
+    }
+    test_arm_rat_shot();
+    test_training_level(gd, dir);
+    test_rat_level(gd, dir, 13, 1, 3);
+    test_rat_level(gd, dir, 14, 2, 5);
 }

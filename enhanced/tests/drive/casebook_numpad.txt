@@ -1,0 +1,19 @@
+# Level 1: in the casebook (F2) the numpad 2 and 8 select the next and
+# previous illness and 6 and 4 raise and lower its price, as the arrow keys
+# do (process_drug_keys, src/drugs.cpp).
+wait 60
+key F2
+wait 30
+expect casebook: illness 1, price scale 10000
+key Keypad_2
+wait 10
+expect casebook: illness 5, price scale 10000
+key Keypad_8
+wait 10
+expect casebook: illness 1, price scale 10000
+key Keypad_6
+wait 10
+expect casebook: illness 1, price scale 10100
+key Keypad_4
+wait 10
+expect casebook: illness 1, price scale 10000

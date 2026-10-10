@@ -9,6 +9,8 @@
 #include "core/ui/hire_staff.h"
 #include "core/ui/layer.h"
 #include "core/world/advisor.h"
+#include "core/world/build.h"
+#include "core/world/epidemic.h"
 #include "core/world/events.h"
 #include "core/world/fax_screen.h"
 #include "core/world/finance.h"
@@ -19,12 +21,14 @@
 #include "core/world/world.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 // The clock: a day every 50 turns, months and the year rolling over, the
@@ -900,6 +904,296 @@ void check_advice_plants(AdvisorFixture &a)
     CHECK(first_advice(a, dying, &said) == 0x5a);
     CHECK(said == text.at(th::TextSection::ExtraAdvice, 0x28));
 }
+// The advice about how close the level is to being won or lost: said from
+// the level's month on, by how little is left.
+void check_advice_progress(AdvisorFixture &a)
+{
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    a.in.level = 3;
+    a.in.month = 8;
+    a.in.win_progress = 60;
+    CHECK(first_advice(a, calm, &said) == 0x6f && said == text.advisor(0x71));
+    a.in.win_progress = 80;
+    CHECK(first_advice(a, calm, &said) == 0x6f && said == text.advisor(0x70));
+    a.in.win_progress = 97;
+    CHECK(first_advice(a, calm, &said) == 0x6f && said == text.advisor(0x6f));
+    // Won already, or too early in the year (month 6 is not past level + 3).
+    a.in.win_progress = 100;
+    CHECK(first_advice(a, calm) != 0x6f);
+    a.in.win_progress = 97;
+    a.in.month = 6;
+    CHECK(first_advice(a, calm) != 0x6f);
+    // Lost: the same three bands from the lose progress, from month 7 on.
+    a.in.win_progress = 0;
+    a.in.month = 7;
+    a.in.lose_progress = 70;
+    CHECK(first_advice(a, calm, &said) == 0x72 && said == text.advisor(0x74));
+    a.in.lose_progress = 90;
+    CHECK(first_advice(a, calm, &said) == 0x72 && said == text.advisor(0x73));
+    a.in.lose_progress = 97;
+    CHECK(first_advice(a, calm, &said) == 0x72 && said == text.advisor(0x72));
+    // Nothing on level 1.
+    a.in.level = 1;
+    CHECK(first_advice(a, calm) != 0x72 && a.advisor.advice_id != 14);
+    a.in.month = 0;
+    a.in.lose_progress = 0;
+}
+
+// The advice about new staff put down where they are not needed: the room's
+// own message for a doctor, one of two with the room's name otherwise; said
+// once, and none for a toilet.
+void check_advice_new_staff(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    auto put = [&](uint8_t kind, uint8_t room) {
+        w.new_staff.pending = true;
+        w.new_staff.kind = kind;
+        w.new_staff.room = room;
+    };
+    const std::string gp(text.at(th::TextSection::RealRoomNames, th::kRoomTypeInfo[7].name));
+    put(th::kStaffDoctor, 8);
+    CHECK(first_advice(a, calm, &said) == 0x7b && said == text.advisor(0x7d) && !w.new_staff.pending);
+    put(th::kStaffDoctor, 28);
+    CHECK(first_advice(a, calm, &said) == 0x7b && said == text.advisor(0x7b));
+    put(th::kStaffDoctor, 10);
+    CHECK(first_advice(a, calm, &said) == 0x7b && said == text.advisor(0x7c));
+    put(th::kStaffDoctor, 7);
+    CHECK(first_advice(a, calm, &said) == 0x7b);
+    CHECK(said.find(gp) != std::string::npos && (said.size() > gp.size()));
+    put(th::kStaffNurse, 7);
+    CHECK(first_advice(a, calm, &said) == 0x7b && said.find(gp) != std::string::npos);
+    put(th::kStaffReceptionist, 7);
+    CHECK(first_advice(a, calm, &said) == 0x7b && said == text.advisor(0x82));
+    // A toilet needs no word, and the report is forgotten all the same.
+    put(th::kStaffDoctor, 29);
+    CHECK(first_advice(a, calm) == 0 && !w.new_staff.pending && w.new_staff.kind == 0);
+}
+
+// The earthquake: its tremors once, and the strength of the one that ended.
+void check_advice_quake(AdvisorFixture &a)
+{
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    a.in.quake_phase = 2;
+    a.advisor.given[13] = 0;
+    CHECK(first_advice(a, calm, &said) == 0x6a && said == text.advisor(0x6a));
+    CHECK(a.advisor.given[13] == 1 && first_advice(a, calm) != 0x6a);
+    a.in.quake_phase = 0;
+    auto ended = [](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        c.last_quake_size = 12;
+    };
+    CHECK(first_advice(a, ended, &said) == 0x4d && said.find('6') != std::string::npos);
+    CHECK(a.f.game->world.counts.last_quake_size == 0);
+    auto mild = [](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        c.last_quake_size = 7;
+    };
+    CHECK(first_advice(a, mild) != 0x4d);
+}
+
+// The staff promoted: a skill gained is named by its help text; a junior made
+// a doctor and a doctor a consultant have their own words. Each is dropped
+// once said.
+void check_advice_promotions(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    w.announce = {};
+    const std::array<std::pair<uint32_t, int>, 3> skills = {{{5, 0x3f}, {6, 0x40}, {8, 0x41}}};
+    for (const auto &[value, help] : skills) {
+        w.announce[4][0] = value;
+        CHECK(first_advice(a, calm, &said) == 0x44);
+        CHECK(said.find(text.at(th::TextSection::Help, help)) != std::string::npos && w.announce[4][0] == 0);
+    }
+    w.announce[0x0d][0] = 1;
+    CHECK(first_advice(a, calm, &said) == 0x89 && said == text.advisor(0x89) && w.announce[0x0d][0] == 0);
+    w.announce[0x0a][0] = 1;
+    CHECK(first_advice(a, calm, &said) == 0x16 && said == text.advisor(0x16) && w.announce[0x0a][0] == 0);
+    CHECK(first_advice(a, calm) != 0x16);
+}
+
+// The advice after a room is built, by what the illness it treats still
+// lacks: kidney beans after a theatre (surgeons, a ward), invisibility after
+// a pharmacy, the king complex after a psychiatrist's room.
+void check_advice_room_built(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    constexpr uint8_t kTheatre = 10, kKidneyBeans = 19, kDiagWard = 42;
+    for (th::Thing &t : w.things)
+        if (t.type == th::kThingStaff)
+            t = {};
+    w.room_of_type = {};
+    w.room_of_type[kTheatre] = 1;
+    w.cure_available = {};
+    a.advisor.given = {};
+    CHECK(th::staff_with_skill(w, 0, 5) == 0 && th::what_is_required(w, kKidneyBeans).surgeons_needed == 2);
+    // No surgeon, no ward: the first time the situation's words, then the
+    // message; the room is then remembered as 1.
+    w.building.last_built_room = kTheatre;
+    CHECK(first_advice(a, calm, &said) == 0x66 && said == text.at(th::TextSection::AdvisorSituations, 3));
+    CHECK(a.advisor.given[2] == 1 && w.building.last_built_room == 1);
+    w.building.last_built_room = kTheatre;
+    CHECK(first_advice(a, calm, &said) == 0x66 && said == text.advisor(0x66));
+    // The ward's treatments are given: only the surgeons are left.
+    w.cure_available[kDiagWard] = 1;
+    w.building.last_built_room = kTheatre;
+    CHECK(first_advice(a, calm, &said) == 0x54 && said == text.advisor(0x54));
+    // One surgeon hired.
+    th::Thing &s = w.things[5];
+    s = {};
+    s.type = th::kThingStaff;
+    s.owner = 0;
+    s.skills = th::kSkillSurgeon;
+    w.cure_available[kDiagWard] = 0;
+    w.building.last_built_room = kTheatre;
+    CHECK(first_advice(a, calm, &said) == 0x67 && said == text.advisor(0x67));
+    w.cure_available[kDiagWard] = 1;
+    CHECK(first_advice(a, calm, &said) == 0x55 && said == text.advisor(0x55));
+    // Both: only the ward is left, said once and the room forgotten.
+    w.things[6] = s;
+    w.cure_available[kDiagWard] = 0;
+    CHECK(first_advice(a, calm, &said) == 0x56 && said == text.advisor(0x56));
+    CHECK(w.building.last_built_room == 0 && first_advice(a, calm) == 0);
+}
+
+// The advice after a ward, a pharmacy or a psychiatrist's room is built (see
+// check_advice_room_built, whose rooms and staff stay).
+void check_advice_room_built_needs(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    constexpr uint8_t kWard = 9, kPharmacy = 11, kPsych = 8;
+    // A ward built, with no nurse for it.
+    w.room_of_type[kWard] = 2;
+    w.building.last_built_room = kWard;
+    CHECK(first_advice(a, calm, &said) == 0x57 && said == text.advisor(0x57));
+    // A pharmacy, with no nurse for invisibility.
+    w.room_of_type[kPharmacy] = 3;
+    w.building.last_built_room = kPharmacy;
+    CHECK(first_advice(a, calm, &said) == 0x4f && said == text.advisor(0x4f));
+    // A psychiatrist's room, with no psychiatrist for the king complex.
+    w.room_of_type[kPsych] = 4;
+    w.building.last_built_room = kPsych;
+    CHECK(first_advice(a, calm, &said) == 0x4e && said == text.at(th::TextSection::AdvisorSituations, 4));
+    w.building.last_built_room = kPsych;
+    CHECK(first_advice(a, calm, &said) == 0x4e && said == text.advisor(0x4e));
+    w.room_of_type = {};
+}
+
+// The cures past the level's target while the level is not lost: its value
+// is quoted.
+void check_advice_cures_passed(AdvisorFixture &a)
+{
+    std::string said;
+    const th::Balance &settings = a.f.settings;
+    int crit = 0;
+    for (int i = 9; i > 0 && !crit; i--)
+        if (settings.win_criteria[size_t(i)].criteria == 4)
+            crit = i;
+    if (!crit)
+        return;
+    const int32_t target = settings.win_criteria[size_t(crit)].value;
+    auto passed = [&](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        a.finance.cures = target + 5;
+        a.advisor.event_flags = th::kAdvisorEventCure;
+    };
+    a.in.open = true;
+    a.in.lose_progress = 0x1a;
+    CHECK(first_advice(a, passed, &said) == 0x88);
+    CHECK(said == a.f.gd.text().at(th::TextSection::ExtraAdvice, 0x39));
+    a.in.lose_progress = 0x19;
+    CHECK(first_advice(a, passed) == 0);
+    a.in.open = false;
+    a.in.lose_progress = 0;
+    a.finance.cures = 0;
+}
+
+// An epidemic: its start tells the advisor, who says the first one in the
+// situation's words, and after that how many it has spread to once there are
+// four; its end has him say so.
+void check_advice_epidemic(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    std::string said;
+    {
+        auto started = std::make_unique<th::World>();
+        th::alert_epidemic(*started, 29, 0);
+        CHECK(started->advisor_events == th::kAdvisorEventEpidemic);
+    }
+    auto epidemic = [&](th::World &, th::AdCounts &c) {
+        calm_patients(c, 12);
+        a.advisor.event_flags = th::kAdvisorEventEpidemic;
+    };
+    w.epidemic.spread_count = 4;
+    a.advisor.given[14] = 0;
+    CHECK(first_advice(a, epidemic, &said) == 0x8d && said == text.at(th::TextSection::AdvisorSituations, 11));
+    CHECK(a.advisor.given[14] == 1 && !(a.advisor.event_flags & th::kAdvisorEventEpidemic));
+    CHECK(first_advice(a, epidemic, &said) == 0xd && said == text.at(th::TextSection::ExtraAdvice, 1));
+    w.epidemic.spread_count = 3;
+    CHECK(first_advice(a, epidemic) != 0xd);
+    w.epidemic.spread_count = 0;
+    // Its end: the forced advice about it.
+    w.epidemic.active = 1;
+    w.epidemic.contagious_count = 0;
+    CHECK(th::epidemic_status(w, 0) == 1 && a.f.game->advisor.forced_advice_id == 9);
+    w.epidemic = {};
+    a.f.game->advisor.forced_advice_id = 0;
+}
+
+// Shift+A: the advisor off, and what waited for him dropped; again, on.
+void check_advisor_toggle(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    w.announce[5][0] = 20;
+    w.announce_stuck = true;
+    a.advisor.enabled = true;
+    th::toggle_advisor(a.advisor, w);
+    CHECK(!a.advisor.enabled && w.announce[5][0] == 0 && !w.announce_stuck);
+    a.advisor.text.clear();
+    a.advisor.advice_id = 0;
+    a.advisor.forced_advice_id = 7;
+    a.frame();
+    CHECK(a.advisor.text.empty() && a.advisor.forced_advice_id == 7);
+    th::toggle_advisor(a.advisor, w);
+    CHECK(a.advisor.enabled);
+    a.frame();
+    CHECK(!a.advisor.text.empty() && a.advisor.forced_advice_id == 0);
+}
+
+// The mayor's visit (forced advice 8): the situation's words the first time,
+// then the message with the visitor's name.
+void check_advice_mayor(AdvisorFixture &a)
+{
+    th::World &w = a.f.game->world;
+    const th::LanguageText &text = a.f.gd.text();
+    th::start_advisor(a.advisor, false);
+    a.advisor.given[7] = 0;
+    w.mayor.name = 2;
+    a.advisor.forced_advice_id = 8;
+    a.frame();
+    CHECK(a.advisor.text == text.at(th::TextSection::AdvisorSituations, 8) && a.advisor.given[7] == 1);
+    th::start_advisor(a.advisor, false);
+    a.advisor.forced_advice_id = 8;
+    a.frame();
+    CHECK(a.advisor.text.find(text.at(th::TextSection::MayorNames, 2)) != std::string::npos);
+    CHECK(a.advisor.forced_advice_id == 0);
+}
 
 } // namespace
 
@@ -914,5 +1208,45 @@ void test_advisor_counts(const char *dir)
     check_advice_patients(a);
     check_advice_hospital(a);
     check_advice_announcements(a);
+    check_advice_progress(a);
+    check_advice_new_staff(a);
+    check_advice_quake(a);
+    check_advice_promotions(a);
+    check_advice_room_built(a);
+    check_advice_room_built_needs(a);
+    check_advice_cures_passed(a);
+    check_advice_epidemic(a);
+    check_advisor_toggle(a);
+    check_advice_mayor(a);
     check_advice_plants(a);
+}
+
+// With the game data: the score a level starts with (init_player): 10000 on
+// level 1 or with none carried over, else the score the last level left;
+// start_score follows it, and a command log names it for th_replay.
+void test_carried_score(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    struct Case {
+        int level;
+        int32_t carried;
+        int32_t score;
+    };
+    for (const Case &c :
+         {Case{1, 0, 10000}, Case{1, 50000, 10000}, Case{2, 0, 10000}, Case{2, 50000, 50000}, Case{12, 50000, 50000}}) {
+        auto level = gd.load_level(c.level, &error);
+        th::Balance settings;
+        CHECK(level && th::load_balance(dir, c.level, th::kDefaultBalanceId, settings, &error));
+        if (!level)
+            return;
+        th::Game game;
+        game.staff_market.ref_counts = th::reference_counts(gd.text());
+        game.start(*level, c.level, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        game.carry_score(c.carried);
+        CHECK(game.progress.score == c.score && game.progress.start_score == c.score);
+        CHECK(game.command_log.size() == (c.score != 10000 ? 2u : 1u));
+    }
+    std::printf("carried score: kept above level 1 when not 0, else 10000\n");
 }

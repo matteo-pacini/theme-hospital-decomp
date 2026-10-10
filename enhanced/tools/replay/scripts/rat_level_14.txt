@@ -1,0 +1,37 @@
+# Level 14: the second rat bonus level (towns[14] special_kind 1, special_arg
+# 2: rat_fest_level[2]: half the litter of level 13 and five handymen). The
+# builder's litter, rat holes and handymen, the player shooting rats with
+# every weapon and missing once, more than ten kills (a new weapon drawn by
+# rat_fest_control); the game ends when the litter is swept down to 4
+# (rat_game_over, the run's last turn).
+# Turns 6000
+# Expect rathole
+# Expect shoot_rat
+# Expect shoot_rat 0 killed=0
+# Expect rat_game_over
+28 106 29 257
+29 106 30 256
+30 106 31 258
+31 106 0 0
+53 106 33 256
+54 106 34 259
+55 106 35 256
+56 106 36 257
+78 106 30 256
+79 106 34 258
+80 106 0 0
+81 106 38 256
+103 106 31 259
+104 106 33 256
+105 106 35 257
+106 106 36 256
+107 106 39 258
+128 106 0 0
+129 106 37 256
+130 106 40 259
+131 106 41 256
+153 106 32 257
+178 106 29 256
+203 106 33 258
+228 106 0 0
+229 106 35 256

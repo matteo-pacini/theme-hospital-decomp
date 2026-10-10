@@ -2,6 +2,7 @@
 
 #include "core/data/anims.h"
 #include "core/data/balance.h"
+#include "core/world/events.h"
 #include "core/world/world.h"
 
 #include <cstdint>
@@ -42,15 +43,31 @@ void make_a_rat(World &world, const AnimData &anims, uint8_t owner);
 
 // rat_fest_control (0x7dd18): the rat game's per-turn control when
 // World::Rats::fest_level is set: a new weapon after every ten kills, more
-// rats, extra handymen, and the end of the game when the litter falls to 4 or
-// by turn 9000. Outside it, resets the rat hit radii. Draws from world.seed
-// as the game does.
+// rats, extra handymen, and the end of the game (Progress::rat_game_over,
+// and no things run that turn) when the litter falls to 4 or by turn 9000.
+// Outside it, resets the rat hit radii. Draws from world.seed as the game
+// does.
 void rat_fest_control(Game &game);
 
-// rat_fest_builder (0x7df1c): sets up rat game level `level` from
-// Balance::rat_fest, seeding the random generators and scattering litter,
-// holes and handymen over the player's land.
+// rat_fest_builder (0x7df1c): sets up rat game level `level` from the
+// game's rat_fest_level table: seeds world.seed and Game::safeseed and
+// scatters litter, rat holes and handymen over the player's land, then
+// starts the game (World::Rats::fest_level).
 void rat_fest_builder(Game &game, StaffMarket &market, uint8_t level);
+
+// training_builder (0x2cccc, src/staff.cpp): sets up the training level
+// (towns[].special_kind 2) from the rat_fest_level table's entry `level`:
+// seeds world.seed and Game::safeseed and, on the first tile of the player's
+// land that passes the level's staff_chance roll, places three consultant
+// doctors: a psychiatrist, a surgeon and a researcher. Leaves the job
+// market's skill odds as it sets them for the three.
+void training_builder(Game &game, StaffMarket &market, uint8_t level);
+
+// setup_new_level's special levels (src/start.cpp): a level whose towns[]
+// entry has special_kind 1 runs rat_fest_builder and one with special_kind 2
+// training_builder, both with its special_arg; any other level nothing. Run
+// after the map is loaded and before the job market is made.
+void start_special_level(Game &game, StaffMarket &market, int level_number);
 
 // cleanse_area (0x7dab4): removes hospital `owner`'s rat holes and the litter
 // in the box (x, y, width, height) of cells.
@@ -73,5 +90,11 @@ void rat_turn(World &world, const AnimData &anims, uint16_t id);
 // the rat, counts it, floats its number over it, leaves its mess and plays
 // the sounds. `powerup` and `hit` are the event's argb[0] and argb[1].
 void shoot_rat(Game &game, uint16_t rat_id, uint8_t powerup, uint8_t hit);
+
+// process_left_button's rat shot (src/mouse.cpp, hover actions 5 and 6): the
+// weapon in hand (World::Rats::fest_powerup) goes with the EV_SHOOT_RAT
+// `shot` as its argb[0], and its shots run down; the last one puts the
+// weapon away and narrows the hit box. Does nothing for another event.
+void arm_rat_shot(World &world, Event &shot);
 
 } // namespace th

@@ -26,6 +26,7 @@
 #include "core/ui/town_map.h"
 #include "core/ui/windows.h"
 #include "core/world/arrivals.h"
+#include "core/world/epidemic.h"
 #include "core/world/events.h"
 #include "core/world/finance.h"
 #include "core/world/mayor.h"
@@ -1673,6 +1674,22 @@ void check_fax_vip(th::Fax &fax, th::Game &g, uint32_t &safeseed)
     CHECK(r.event.type == th::EV_NONE && !fax.open);
 }
 
+// The epidemic's offer: declaring it answers with the fine; covering it up
+// answers and raises the advisor's covered-up event
+// (process_epidemic_start_buttons), which the command log carries.
+void check_fax_epidemic(th::Fax &fax, th::Game &g, uint32_t &safeseed)
+{
+    g.advisor.event_flags = 0;
+    fax_open(fax, g, safeseed, {th::kFaxEpidemic, 0, 0});
+    CHECK(fax.buttons.size() == 2);
+    th::FaxResult r = fax_answer(fax, g, safeseed, 0);
+    CHECK(r.event.value == th::kChoiceEpidemicDeclare && g.advisor.event_flags == 0);
+    fax_open(fax, g, safeseed, {th::kFaxEpidemic, 0, 0});
+    r = fax_answer(fax, g, safeseed, 1);
+    CHECK(r.event.value == th::kChoiceEpidemicCoverUp && g.advisor.event_flags == th::kAdvisorEventCoverUp);
+    CHECK(!g.command_log.empty() && g.command_log.back().ends_with(" @advisor_event 256"));
+}
+
 } // namespace
 
 // The palette index nearest to the 6-bit colour (r, g, b) in `palette`,
@@ -1727,6 +1744,7 @@ void test_fax(const char *dir)
     check_fax_colours(fax, f.gd.palette());
     check_fax_emergency(fax, g, safeseed, f.gd.text());
     check_fax_vip(fax, g, safeseed);
+    check_fax_epidemic(fax, g, safeseed);
     check_fax_patient(fax, g, safeseed, patient);
     check_fax_closing(fax, g, safeseed);
     check_fax_keypad(fax, g, safeseed, patient);

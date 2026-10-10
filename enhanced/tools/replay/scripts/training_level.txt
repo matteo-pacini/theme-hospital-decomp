@@ -1,0 +1,32 @@
+# Level 5: the training level (towns[5] special_kind 2, special_arg 3).
+# training_builder places three consultant doctors (a psychiatrist, a surgeon
+# and a researcher) on the first tile of the player's land that passes
+# rat_fest_level[3]'s roll; they stand together on cell 7739 from the first
+# turn. A training room (projector, two lecture chairs, a bookcase and a
+# skeleton) is built in the hospital's empty floor, the psychiatrist
+# consultant (thing 7) is picked up and placed in it with a doctor (applicant
+# 14): the consultant lectures and the doctor gains ability.
+# Turns 6000
+# Expect open_room
+# Expect staff_picked_up 7
+# Expect training
+# Expect train_ability
+101 55 0 0
+102 53 22 22
+103 2 7998 0
+104 2 8514 0
+105 8 8514 0
+106 18 0 0
+107 26 7872 0
+108 3 0 0
+109 4 22 0
+110 7 8255 37
+111 7 7998 36
+112 7 8128 36
+113 7 8001 56
+114 7 8126 60
+115 1 0 0
+116 104 7 0
+117 5 8384 7
+118 48 1 14
+119 5 8385 14

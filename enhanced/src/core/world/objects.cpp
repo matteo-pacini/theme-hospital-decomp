@@ -63,14 +63,14 @@ int entrance_tile(const World &w)
 // check_no_peeps_on_cell (src/objects.cpp) outside rooms: false if someone
 // stands on `tile` and, unless side is -1, faces `side`, except patients
 // in PS_ENTERTAINS_THEMSELF on any complex but 0x46, or awaiting a decision.
-// The mayor and the inspector do not exist yet.
 bool no_peeps_on_cell(const World &w, int tile, int side)
 {
     if (tile < 0 || tile >= kMapCells)
         return true;
     for (int id = w.map[size_t(tile)].first; id > 0; id = w.things[size_t(id)].cell_next) {
         const Thing &t = w.things[size_t(id)];
-        if (t.type != kThingPatient && t.type != kThingStaff && t.type != kThingReaper)
+        if (t.type != kThingPatient && t.type != kThingStaff && t.type != kThingMayor && t.type != kThingInspector &&
+            t.type != kThingReaper)
             continue;
         if (side == -1)
             return false;

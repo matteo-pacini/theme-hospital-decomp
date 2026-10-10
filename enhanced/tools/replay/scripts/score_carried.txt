@@ -1,0 +1,12 @@
+# Level 2
+# Turns 18300
+# Score 50000
+# Level 2 begun with the score the hospital had when the last level ended
+# (50000: what a won level's accepted offer, othervar.next_level_offer_s,
+# or any level's last score leaves in allhosps[player].score, which
+# setup_new_level keeps): init_player keeps it above level 1 instead of
+# starting at 10000, and start_score takes it, so the year end's score
+# grows from 50000 (the score event at the year end, 18250).
+# No commands: nothing is built, and the hospital stays empty.
+# Expect score 52500
+# Expect-not score 10500

@@ -10,10 +10,10 @@ const std::vector<std::string_view> &required_data_files()
 {
     static const std::vector<std::string_view> files = {
         "data/mpalette.dat", "data/vblk-0.tab",   "data/vblk-0.dat",   "data/panel02v.tab", "data/panel02v.dat",
-        "data/vspr-0.tab",   "data/vspr-0.dat",   "data/vstart-1.ani", "data/vfra-1.ani",   "data/vele-1.ani",
-        "data/vlist-1.ani",  "qdata/ghost66.dat", "data/mpointer.tab", "data/mpointer.dat", "qdata/font05v.tab",
-        "qdata/font05v.dat", "qdata/font16v.tab", "qdata/font16v.dat", "data/watch01v.tab", "data/watch01v.dat",
-        "data/p_comp.lex",   "data/s_comp.lex",   "levels/level.l1",
+        "data/panel04v.tab", "data/panel04v.dat", "data/vspr-0.tab",   "data/vspr-0.dat",   "data/vstart-1.ani",
+        "data/vfra-1.ani",   "data/vele-1.ani",   "data/vlist-1.ani",  "qdata/ghost66.dat", "data/mpointer.tab",
+        "data/mpointer.dat", "qdata/font05v.tab", "qdata/font05v.dat", "qdata/font16v.tab", "qdata/font16v.dat",
+        "data/watch01v.tab", "data/watch01v.dat", "data/p_comp.lex",   "data/s_comp.lex",   "levels/level.l1",
     };
     return files;
 }
@@ -88,6 +88,7 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error, std::o
     }
     if (!load_sheet(dir, "data/vblk-0", SpriteFormat::Rle, blocks_, error) ||
         !load_sheet(dir, "data/panel02v", SpriteFormat::Req, panel_, error) ||
+        !load_sheet(dir, "data/panel04v", SpriteFormat::Req, rat_panel_, error) ||
         !load_sheet(dir, "data/vspr-0", SpriteFormat::Rle, sprites_, error) ||
         !load_sheet(dir, "data/mpointer", SpriteFormat::Rle, pointers_, error) ||
         !load_sheet(dir, "data/watch01v", SpriteFormat::Req, watch_, error) ||
@@ -113,7 +114,7 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error, std::o
     if (!load_language(dir, language_, text_, error))
         return false;
     fonts_.clear();
-    for (int slot : {0, 5, 6, 0x1d})
+    for (int slot : {0, 5, 6, 0x1d, 0x29})
         if (!load_font(dir, slot, fonts_[slot], error))
             return false;
     return true;

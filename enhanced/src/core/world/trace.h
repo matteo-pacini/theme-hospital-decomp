@@ -122,6 +122,10 @@ void trace_rand(const char *function, uint32_t seed);
 //   go_home <id>                           person_go_home
 //   force_cure <patient>                   force_peep_to_be_cured
 //   diagnose <patient> staff=<id>          diagnose_patient
+//   diagnose_icon <person> icon=<n>        diagnose_patient's set_icon_value:
+//                                          the staff member's (ICON_DIAGNOSED,
+//                                          ICON_GUESSED, ICON_NO_DIAGNOSIS) or
+//                                          the patient's (ICON_AWAITING_DECISION)
 //   next_treatment <patient> staff=<id>    setup_next_treatment (staff 0: a
 //                                          ward's bed)
 //   done_treatment <patient> staff=<id>    done_treatment
@@ -163,6 +167,8 @@ void trace_rand(const char *function, uint32_t seed);
 //   shoot_rat <rat> killed=<0 or 1> powerup=<n> shots=<n> kills=<n>
 //                                          process_turn's EV_SHOOT_RAT (shots
 //                                          and kills the year's award counts)
+//   rat_game_over kills=<n> litter=<n>     rat_fest_control, the rat game
+//                                          ending (the run ends this turn)
 //   plant_thirsty <plant> priority=<n>     plant_ages, at a wilting stage
 //   plant_dead <plant>                     plant_ages, once 40 past dead
 //   watered <handyman> plant=<n> health=<n>  handyman_works, a plant watered,
@@ -223,6 +229,11 @@ void trace_rand(const char *function, uint32_t seed);
 //   emergency_start                        process_turn's EV_START_EMERGENCY
 //   epidemic_declare                       process_turn's CH_EPIDEMIC_DECLARE
 //   epidemic_cover_up                      process_turn's CH_EPIDEMIC_COVER_UP
+//   vaccine_cancel <person> requests=<n>   cancel_vaccination_request of a
+//                                          person with a request or a nurse
+//                                          sent, at its start (requests
+//                                          before): a vaccination toggled
+//                                          off, given, or the person removed
 //   heli <id>                              try_to_generate_emergency, the
 //                                          helicopter summoned (0: none free)
 //   heli_landed <id>                       helicopter_lands, on landing

@@ -1,0 +1,40 @@
+# Level 1: Alt+F1-F8 store the cell at the view's centre and Ctrl+F1-F8 move
+# the view back to it (record_mappos and recall_mappos, src/utils.cpp). The
+# store plays SFX_SNAPSHOT (0xda); an empty slot recalls nothing; Alt+F4
+# stores although the hospital has no research room (F4 alone is refused);
+# neither works while paused.
+wait 60
+expect camera: -1056,1832
+key Alt+F1
+wait 5
+expect camera: -1056,1832
+expect 0xda=1;
+key Right
+key Right
+key Right
+key Right
+key Right
+key Down
+key Down
+key Down
+key Down
+key Down
+wait 5
+expect camera: -973,1866
+key Ctrl+F2
+wait 5
+expect-not camera: -1056,1832
+key Alt+F4
+wait 5
+expect 0xda=2;
+key Ctrl+F1
+wait 5
+expect camera: -1056,1832
+key Ctrl+F4
+wait 5
+expect camera: -960,1848
+key P
+key Ctrl+F1
+wait 5
+expect paused true
+expect-not camera: -1056,1832

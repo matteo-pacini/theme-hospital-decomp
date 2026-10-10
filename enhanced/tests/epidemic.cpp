@@ -104,7 +104,11 @@ void vaccine_and_home()
     CHECK(!is_person_highlighted_for_vaccination(w, 2, target));
 
     CHECK(is_person_in_vaccine_queue(w, 1));
+    w.epidemic.spread_count = 1;
     clean_contagious_peep(w, 1);
+    CHECK(w.epidemic.spread_count == 0);
+    clean_contagious_peep(w, 1);
+    CHECK(w.epidemic.spread_count == 0);
     CHECK(w.things[1].contagion == 0 && !(w.things[1].person_flags & kPfContagious));
     CHECK(!is_person_in_vaccine_queue(w, 1));
 

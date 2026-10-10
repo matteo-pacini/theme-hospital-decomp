@@ -31,8 +31,9 @@ template <typename... T> constexpr uint64_t layout_hash()
 constexpr uint64_t kLayoutHash =
     layout_hash<Thing, RoomInfo, MapCell, ObjectPlacing, BuildState, Finance, Advice, ArrivalState, RivalHospital,
                 TownLand, HospitalSettings, StaffMarket, Disasters, Event, Date, World::Pager, World::PlayerCall,
-                World::ThingPager, World::Emergency, World::Epidemic, PanelPopups, AdCounts, Game::ChoiceScreen,
-                Game::FaxScreen, Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd, void *, bool, int>();
+                World::ThingPager, World::Emergency, World::Epidemic, World::NewStaff, PanelPopups, AdCounts,
+                Game::ChoiceScreen, Game::FaxScreen, Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd, void *,
+                bool, int>();
 
 // Fields of World, Game and the structures they hold that are not copied
 // as a whole must each be listed below; on the build the code is written on,
@@ -43,7 +44,7 @@ static_assert(sizeof(Building) == 224, "Building changed: list its new fields in
 static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Balance) == 3816, "Balance changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp and bump kSaveFormat");
-static_assert(sizeof(Game) == 341840, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Game) == 341848, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 #endif
 
 class Writer
@@ -271,6 +272,7 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.announce_stuck);
     io(w.unpaid_treatment);
     io(w.too_expensive);
+    io(w.new_staff);
     io(w.drinks_income);
     io(w.jukebox_income);
     io(w.held_staff);

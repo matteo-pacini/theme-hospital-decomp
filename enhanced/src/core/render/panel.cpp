@@ -319,4 +319,88 @@ void advance_balance_roll(PanelState &state, int balance)
     }
 }
 
+namespace
+{
+
+// panel_icons_ratfest (src/array.cpp), laid left to right and bottom-aligned
+// as setup_panel_icons does: the icons' sprite and the sprite drawn for the
+// weapon in hand (0 for none).
+constexpr std::array<PanelIconDef, 6> kRatPanelIcons = {{{10, 0}, {11, 16}, {12, 18}, {13, 20}, {14, 22}, {15, 0}}};
+
+// The litter bar's four segments' sprites at `level` (draw_ratfest_on_panel's
+// switch): 0x1a full, 0x19 and 0x18 partly, 0x1b at level 0 on the turns the
+// bar flashes, 0 for an empty segment.
+std::array<uint8_t, 4> rat_bar_sprites(uint8_t level, uint32_t turn)
+{
+    constexpr uint8_t full = 0x1a, partly = 0x19, little = 0x18;
+    switch (level) {
+    case 0:
+        return turn & 3 ? std::array<uint8_t, 4>{full, full, full, full}
+                        : std::array<uint8_t, 4>{0x1b, 0x1b, 0x1b, 0x1b};
+    case 1:
+        return {full, full, full, full};
+    case 2:
+        return {full, full, full, partly};
+    case 3:
+        return {full, full, full, little};
+    case 4:
+        return {full, full, full, 0};
+    case 5:
+        return {full, full, partly, 0};
+    case 6:
+        return {full, full, little, 0};
+    case 7:
+        return {full, full, 0, 0};
+    case 8:
+        return {full, partly, 0, 0};
+    case 9:
+        return {full, little, 0, 0};
+    case 10:
+        return {full, 0, 0, 0};
+    case 11:
+        return {partly, 0, 0, 0};
+    case 12:
+        return {little, 0, 0, 0};
+    default:
+        return {0, 0, 0, 0};
+    }
+}
+
+} // namespace
+
+int rat_panel_top(const GameData &data)
+{
+    return kUiHeight - data.rat_panel().at(kRatPanelIcons[1].sprite).height;
+}
+
+void draw_rat_panel(UiLayer &layer, const RatPanelFigures &figures, const GameData &data)
+{
+    const SpriteSheet &panel = data.rat_panel();
+    std::array<int, kRatPanelIcons.size()> left{};
+    int x = 0;
+    for (size_t i = 0; i < kRatPanelIcons.size(); i++) {
+        Sprite sprite = panel.at(kRatPanelIcons[i].sprite);
+        left[i] = x;
+        layer.draw_sprite(x, kUiHeight - sprite.height, sprite);
+        x += sprite.width;
+    }
+    char buf[16];
+    std::snprintf(buf, sizeof buf, "%5d", figures.kills);
+    layer.draw_text(data.font(0x29), 0x5d, 0x1be, buf, {{0, 0, kUiWidth}, {0, 0, kUiWidth, kUiHeight}});
+    // The weapon in hand: its icon's pressed look, 11 pixels down.
+    if (figures.powerup >= 0 && figures.powerup <= 3) {
+        size_t icon = size_t(figures.powerup) + 1;
+        Sprite pressed = panel.at(kRatPanelIcons[icon].pressed);
+        layer.draw_sprite(left[icon], kUiHeight - panel.at(kRatPanelIcons[icon].sprite).height + 0xb, pressed);
+    }
+    // The litter bar: 10 less an eighth of the litter below 100, as the
+    // game's byte (so 96 and more wrap past its cases and draw nothing).
+    uint8_t level = figures.litter < 100 ? uint8_t(10 - figures.litter / 8) : 10;
+    std::array<uint8_t, 4> segments = rat_bar_sprites(level, figures.turn);
+    int bar_y = kUiHeight - panel.at(kRatPanelIcons[5].sprite).height + 0xc;
+    int segment_width = panel.at(26).width;
+    for (size_t i = 0; i < segments.size(); i++)
+        layer.draw_sprite(left[5] + 0x2c + segment_width * int(i), bar_y, panel.at(segments[i]));
+}
+
 } // namespace th

@@ -651,6 +651,15 @@ struct World {
     bool announce_stuck = false;
     uint16_t unpaid_treatment = 0;
     bool too_expensive = false;
+    // A member of staff of hospital 0 was put down in a room they cannot
+    // work in (advisor.new_staff_pending, new_staff_kind, new_staff_room:
+    // the staff kind and the room's type), until the advisor says so.
+    struct NewStaff {
+        bool pending = false;
+        uint8_t kind = 0;
+        uint8_t room = 0;
+    };
+    NewStaff new_staff;
     // Hospital 0's drinks sales and paid amusements this month
     // (allhosps[0].drinks_income and jukebox_income, sales_income[0] and
     // [1]), which month_end banks.
@@ -809,11 +818,12 @@ struct World {
     int16_t shake_y = 0;
 
     // Machine disasters (disaster.cpp)
-    // Hospital 0's machines blown up (allhosps[0].mishaps), and whether one
-    // has (award_counts.machine_exploded, for the year's awards). The
-    // machines' sound effects (SFX_*) and announcements (play_ambient's
-    // Ambients index) made since the interface last played and cleared
-    // them, up to 8 of each.
+    // Hospital 0's mishaps (allhosps[0].mishaps): machines blown up and
+    // hopeless diagnoses (diagnose_patient); and whether a machine has
+    // (award_counts.machine_exploded, for the year's awards). The machines'
+    // sound effects (SFX_*) and announcements (play_ambient's Ambients
+    // index) made since the interface last played and cleared them, up to 8
+    // of each.
     uint16_t mishaps = 0;
     bool machine_exploded = false;
     std::vector<uint8_t> machine_sounds;
@@ -847,6 +857,10 @@ struct World {
         uint8_t illness = 0;
         uint16_t fine = 0;
         uint16_t contagious_count = 0;
+        // The patients the epidemic spread to, less those cleaned
+        // (othervar.contagious_count), which the advisor's contagion advice
+        // reads.
+        uint16_t spread_count = 0;
         int16_t timer = 0;
         uint8_t active = 0;
         uint8_t over = 0;
@@ -954,7 +968,7 @@ bool can_place_object(World &world, int tile, int kind, int dir, int owner);
 // object that is not placed yet; remove clears the bits whatever else set
 // them. With `cleanse` (as place_existing_object), the litter on the cells
 // it covers goes (cleanse_area: remove_litter, for the hospital whose land
-// each is; rat holes are not ported).
+// each is, and the rat holes under it).
 void mark_object_shape(World &world, int tile, int kind, int dir, bool cleanse = false);
 void remove_object_shape(World &world, int tile, int kind, int dir);
 

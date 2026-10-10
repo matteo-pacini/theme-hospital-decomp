@@ -54,8 +54,7 @@ void remove_litter(World &world, uint16_t tile, uint8_t owner);
 void add_litter_urge(Thing &patient, uint16_t amount);
 
 // check_warmth (0x712a8): person `p`'s warmth one step towards that of
-// the radiators near by at `heating_level` (outside rooms; a room's
-// radiators are not ported, so its warmth is 0); a hot patient gets
+// the radiators near by at `heating_level` (in a room, its own radiators over its area); a hot patient gets
 // thirstier.
 void check_warmth(const World &world, Thing &p, int heating_level);
 
@@ -74,8 +73,6 @@ void staff_check_around(const World &world, Thing &s);
 // (kPfEmergency) only gets the health held back in a room, or, once the
 // emergency's time is up (World::Emergency::state 2), loses all of it and
 // is an emergency patient no longer.
-// Not ported, as what they need does not exist yet: the status icons and a
-// room's radiators (its warmth is 0).
 void modify_person(World &world, const AnimData &anims, const Balance &settings, int heating_level, uint16_t id,
                    uint32_t game_turn);
 
@@ -84,10 +81,9 @@ void modify_person(World &world, const AnimData &anims, const Balance &settings,
 // gbv.bowel_overflows), each costing 10 health and playing a reaction
 // (PS_SHOWANIM, see person_showanim_turn) that leaves the mess; may play an
 // idle animation (1 in 200); may drop litter (past gbv.litter_drop urge or
-// 1 in gbv.litter_random, then 1 in 10). Earthquakes and abductions, which
-// do not exist, never happen. Returns whether a reaction started, in which
-// case the patient does not step this turn. Draws from world.seed as the
-// game does.
+// 1 in gbv.litter_random, then 1 in 10). A patient an earthquake shook (kPfQuakeShaken) reacts first; abductions,
+// disabled in the game, never happen. Returns whether a reaction started, in which case the patient does not step this
+// turn. Draws from world.seed as the game does.
 bool do_reaction(World &world, const AnimData &anims, const Balance &settings, uint16_t id, uint32_t game_turn);
 
 // modify_person then do_reaction, as a walking patient does when it decides

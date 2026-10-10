@@ -18,6 +18,7 @@
 #include "core/world/staff.h"
 #include "core/world/staff_complex.h"
 #include "core/world/trace.h"
+#include "core/world/vaccine.h"
 
 #include <cstdlib>
 
@@ -771,6 +772,7 @@ void remove(const Run &r, uint16_t id)
     leave_queue(r.world, id);
     abandon_complex(r, id);
     remove_person_from_room_list(r.world, id);
+    cancel_vaccination_request(r.world, id);
     trace_event("remove_thing %u type=%u", unsigned(id), unsigned(r.world.things[id].type));
     remove_node(r.world, id);
     r.world.things[id] = Thing{};
@@ -1443,9 +1445,8 @@ bool waits_for_decision_treatment(const Run &r, uint16_t id, uint16_t waited)
 // room goes once the hospital has one for it (find_possible_diagnosis,
 // which draws from world.seed), one waiting for a room for its treatment
 // once the hospital can give it and has its room; 1500 turns after it began
-// waiting, it goes home, turned away. Its player call is answered then. The
-// player's answers (EV_CHOICE_RESULT) and status icons are not ported.
-// Meanwhile it stands, moving off a blueprint or a crowded cell.
+// waiting, it goes home, turned away. Its player call is answered then. The player's answers (EV_CHOICE_RESULT) are
+// apply_call_event's. Meanwhile it stands, moving off a blueprint or a crowded cell.
 void waits_for_decision(const Run &r, uint16_t id)
 {
     World &world = r.world;

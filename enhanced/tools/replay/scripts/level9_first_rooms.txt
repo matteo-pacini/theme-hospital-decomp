@@ -1,0 +1,38 @@
+# Level 9: gp_office.txt's layout in the level's own empty hospital (floor
+# (24,27)-(40,51), entrance at (30,52)): a reception desk at cell 5918
+# (30,46) and receptionist 26, a GP's office (30,37)-(34,41) with its
+# door, desk, cabinet and chair, opened, and doctor 12. Two years run, to
+# the loss at the end of the second (winlose lose group=1). What the level
+# gives on the way: emergencies of illness 9 (four patients) and 20, an
+# epidemic of illness 9 and rats.
+# Level 9
+# Turns 36500
+# Expect use_object 26 obj=33 kind=11
+# Expect use_object 12 obj=35 kind=1
+# Expect emergency_offer 2 illness=9 count=4 bonus=500 win=75
+# Expect emergency_offer 6 illness=20 count=1 bonus=2000 win=100
+# Expect epidemic 9
+# Expect rathole
+# Expect winlose lose group=1
+# Expect-not winlose win
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 5918 11
+10 48 3 26
+11 5 6172 26
+101 55 0 0
+102 53 7 7
+103 2 4766 0
+104 2 5282 0
+105 8 5282 0
+106 18 0 0
+107 26 4640 0
+108 3 0 0
+109 4 7 0
+110 7 5024 1
+111 7 4770 2
+112 7 5025 6
+113 1 0 0
+114 48 1 12
+115 5 6428 12

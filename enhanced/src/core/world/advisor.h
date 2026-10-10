@@ -72,9 +72,11 @@ constexpr uint32_t kAdvisorEventCall = 0x4;
 // A patient of the player's cured, or dead (set by Game::turn).
 constexpr uint32_t kAdvisorEventCure = 0x40;
 constexpr uint32_t kAdvisorEventDeath = 0x80;
-// The game's event flag 0x100, tested by the rat-hole advice; nothing sets
-// it, so that branch never runs.
-constexpr uint32_t kAdvisorEvent0x100 = 0x100;
+// An epidemic started in the player's hospital (alert_epidemic).
+constexpr uint32_t kAdvisorEventEpidemic = 0x8;
+// An epidemic covered up: set by the fax's cover-up button
+// (process_epidemic_start_buttons), tested by find_advice's 0x8a.
+constexpr uint32_t kAdvisorEventCoverUp = 0x100;
 
 // The game's speech bubble limits in high resolution
 // (resvars.advisor_min_segments, advisor_max_segments): the middle pieces
@@ -134,7 +136,9 @@ struct Advisor {
     // The emergency's helicopter has landed since the advice about it was
     // last given (advisor.heli_landed; set by Game::turn).
     bool heli_landed = false;
-    // The player's advisor setting (myplayer.advisor_flags[20]).
+    // The player's advisor setting (myplayer.advisor_flags[20], which the
+    // game keeps in the player details file; here the snapshot carries it).
+    // Shift+A switches it (toggle_advisor).
     bool enabled = true;
     // Messages given once per game (myplayer.advisor_flags[0..19]).
     std::array<uint8_t, 20> given{};
@@ -179,6 +183,13 @@ struct AdvisorInputs {
     World *world = nullptr;
     // The patients the hospital has had (allhosps.visitors).
     uint32_t visitors = 0;
+    // The earthquake's phase (gamevar.quake_phase, 2 while the tremors build
+    // up), and the level's win progress, the average over its win criteria
+    // groups (adcounts.win_progress; YearEnd::win_average), and lose
+    // progress (adcounts.lose_progress; YearEnd::lose_progress).
+    uint8_t quake_phase = 0;
+    int32_t win_progress = 0;
+    int32_t lose_progress = 0;
     // The language's text.
     const LanguageText *text = nullptr;
     // Where the advice given puts the announcement it plays (play_ambient,
@@ -221,7 +232,7 @@ void start_advisor(Advisor &advisor, bool tutorial);
 // deaths so far (0x51, 0x4c, kAdvisorEventCure and kAdvisorEventDeath; the
 // first of each, 0x52 and 0x47), an emergency's helicopter landed (0x15,
 // heli_landed), the event and mouse-help messages (forced_advice_id 1 and
-// 3-0x11 but 2 and 8, and mouse_advice_id); from the statistics pass
+// 3-0x11 but 2, and mouse_advice_id); from the statistics pass
 // (World::counts, once it has found patients): the patients' waiting
 // (0xb), happiness and those gone home fed up (0xe), thirst (0xf), warmth
 // (0x11) and bladders (0x13), too few or many doctors and nurses (7, 8,
@@ -234,14 +245,20 @@ void start_advisor(Advisor &advisor, bool tutorial);
 // kAdvisorEventCall), a person stuck (0xc, World::announce_stuck) and the
 // prices high or low (0x76, 0x77, HospitalMarket::price_level), the cures
 // short of the level's target (0x88), and the research discoveries research
-// announces (World::announce: 0x17 to 0x1b and 0x79). The
-// plants, benches and rooms open are counted from the world, where the
-// game keeps running counts (which never uncount a bench sold). The others
-// need what is not ported yet (epidemics, rats, earthquakes,
-// the other announcements, the level's win and lose
-// progress (0x6f, 0x72, and 0x88's target passed), new staff in rooms,
-// what an illness requires) and are never given; the staff's tiredness
-// (0x10) the game works out but never says.
+// announces (World::announce: 0x17 to 0x1b and 0x79), the staff promoted
+// (0x44, 0x89, 0x16), new staff put down where they are not needed (0x7b,
+// World::new_staff), the earthquake begun and its strength
+// (0x6a, 0x4d; AdvisorInputs::quake_phase, AdCounts::last_quake_size), how
+// close the level is to being won and lost (0x6f, 0x72;
+// AdvisorInputs::win_progress, lose_progress), and what a room just built
+// leaves the illness it treats lacking (0x4e, 0x4f, 0x54 to 0x57, 0x66,
+// 0x67), and an epidemic (0x8d, 0xd; kAdvisorEventEpidemic,
+// World::Epidemic::spread_count). The plants, benches and rooms open are
+// counted from the world, where the game keeps running counts (which never
+// uncount a bench sold). The others are never given: a staff poaching, an
+// earthquake's damage report and abduction, which the game never raises, and
+// a network game's losers (forced_advice_id 2). The staff's tiredness (0x10)
+// the game works out but never says.
 //
 // Advice about the warmth and the litter plays an announcement, put in
 // AdvisorInputs::ambient for the caller.
@@ -260,6 +277,11 @@ void advisor_frame(Advisor &advisor, const AdvisorInputs &in, const AnimData &an
 // advice about how close the level is to being won or lost may be given
 // again.
 void monthly_update_of_advisor_counts(Advisor &advisor);
+
+// Shift+A (process_game_keys, src/keyboard.cpp): switches the advisor on or
+// off, and drops the announcements waiting for him to say (the game clears
+// gamevar.announce, the person stuck among them).
+void toggle_advisor(Advisor &advisor, World &world);
 
 // process_advisor_text (src/advtext.cpp): wraps the message, in `font`
 // (font slot 0x1d), into the narrowest bubble that holds it in at most three

@@ -280,24 +280,31 @@ int Driver::run(DriveHost &host, const Command &c)
     }
     if (verb == "move" || verb == "cell" || verb == "thing" || verb == "down" || verb == "up" || verb[0] == '_')
         return run_pointer(host, c);
-    if (verb == "click" || verb == "click-cell" || verb == "click-thing" || verb == "key")
+    if (verb == "click" || verb == "click-cell" || verb == "click-thing" || verb == "key" || verb == "keydown" ||
+        verb == "keyup")
         return run_click(host, c);
+    if (verb == "demand" || verb == "win" || verb == "type")
+        return run_hook(host, c);
+    return run_output(host, c);
+}
+
+// The commands that call a hook of the host: demand, win and type.
+int Driver::run_hook(DriveHost &host, const Command &c)
+{
+    const std::string &verb = c.words[0];
+    bool ok = false;
     if (verb == "demand") {
         int id = 0;
-        bool ok = number(c.words, 1, id) && host.drive_staff_demand(uint16_t(id));
-        if (!ok)
-            failures_++;
-        reply((ok ? "ok " : "fail ") + c.line, !ok);
-        return 0;
+        ok = number(c.words, 1, id) && host.drive_staff_demand(uint16_t(id));
+    } else if (verb == "win") {
+        ok = host.drive_win_level();
+    } else {
+        ok = host.drive_text(rest_of(c.line, verb));
     }
-    if (verb == "type") {
-        bool ok = host.drive_text(rest_of(c.line, verb));
-        if (!ok)
-            failures_++;
-        reply((ok ? "ok " : "fail ") + c.line, !ok);
-        return 0;
-    }
-    return run_output(host, c);
+    if (!ok)
+        failures_++;
+    reply((ok ? "ok " : "fail ") + c.line, !ok);
+    return 0;
 }
 
 // The pointer commands: moves, and pressing or releasing a button or key.
@@ -326,10 +333,24 @@ int Driver::run_pointer(DriveHost &host, const Command &c)
     return 0;
 }
 
+// keydown and keyup: a key pressed or released on its own, to hold it.
+int Driver::run_key_hold(DriveHost &host, const Command &c)
+{
+    std::string name;
+    uint16_t mods = c.words.size() > 1 ? key_mods(c.words[1], name) : 0;
+    bool ok = !name.empty() && host.drive_key(name, c.words[0] == "keydown", mods);
+    if (!ok)
+        failures_++;
+    defer((ok ? "ok " : "fail ") + c.line, !ok);
+    return kReleaseFrames;
+}
+
 // The commands that press then release: a click (after moving) or a key.
 int Driver::run_click(DriveHost &host, const Command &c)
 {
     const std::string &verb = c.words[0];
+    if (verb == "keydown" || verb == "keyup")
+        return run_key_hold(host, c);
     int a = 0, b = 0;
     bool ok = false;
     size_t button_at = 3;

@@ -123,7 +123,7 @@ bool update_staff_cursor(HireStaff &hire, const World &world, int cell);
 // A right click on the map in the normal mouse mode with no requester open
 // and no room being edited (process_right_button, 0x5b95c), on `pointed`
 // (PointedThing, core/render/view.h): EV_PICK_UP_STAFF if it is a member of
-// player 0's staff, else EV_NONE (picking up objects is not ported). The
+// player 0's staff, else EV_NONE (picking up objects is pick_up_object_right_click's). The
 // game plays SFX_PICKUP with it.
 Event pick_up_staff_click(const World &world, uint16_t pointed);
 

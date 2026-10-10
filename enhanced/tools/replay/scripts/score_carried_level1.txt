@@ -1,0 +1,9 @@
+# Level 1
+# Turns 18300
+# Score 50000
+# Level 1 ignores a carried score: init_player starts it at 10000
+# (`myhosp->level == 1`), so the year end's score grows from 10000 and
+# score_carried.txt's 50000 changes nothing.
+# No commands: nothing is built, and the hospital stays empty.
+# Expect score 10500
+# Expect-not score 52500

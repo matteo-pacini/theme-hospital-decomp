@@ -44,6 +44,7 @@ enum class StartupScreen {
     LoadGame,    // PREF01V with the save slots' list (src/loadscr.cpp)
     Preferences, // PREF01V: difficulty and tutorial
     Briefing,    // the level's area movie's last frame, waiting for a click
+    Credits,     // CRED01V with the credit text scrolling up over it
     Done,        // a level was started or the game quit
 };
 
@@ -96,6 +97,10 @@ class Startup
     // mainmenu.state MMS_UNLOAD_GAME: returns to the main menu from a level
     // that ended (the losing letter), showing its opening movie.
     void return_to_main_menu() { enter_menu(); }
+
+    // The game won (level 12's letter accepted): the WIN_GAME movie, the
+    // scrolling credits, then the main menu with its opening movie.
+    void start_credits();
 
     // A load the caller refused: the load game screen stays up
     // (from_load_screen, loadscr state 1's failure), or the main menu returns
@@ -172,6 +177,11 @@ class Startup
     void enter_menu();
     void enter_preferences();
     void enter_area();
+    void enter_credits();
+    void credits(const UiMouse &mouse);
+    // play_credits: draws one frame of the credit text and scrolls it; true
+    // at the '.' line or when a click ends it.
+    bool play_credits(const UiMouse &mouse);
     void finish_quit();
     // Shows `picture`; once the delay is over, zooms in boxes `mask` and
     // goes on to `next`.
@@ -202,6 +212,11 @@ class Startup
     void prefs_button(const UiMouse &mouse, int i, State &next);
     void process_nickname_button(int i, State &next);
     void briefing(const UiMouse &mouse, std::span<const StartupKey> keys);
+    // process_mouse_area_select state 5: a click on one of the 21 level areas
+    // plays that level's area movie and starts it. True when `mouse` was one.
+    bool pick_level(const UiMouse &mouse);
+    // draw_area_select state 2: hands the chosen level to the caller.
+    void start_level();
     void init_zoom_boxes(int mask);
     bool draw_zoom_boxes();
     // draw_zoom_boxes' levels: boxes of a type above `lo` are skipped, those
@@ -224,6 +239,14 @@ class Startup
     const LanguageText *text_ = nullptr;
     int language_ = 0;
     Picture title_, main_menu_, prefs_;
+    // CRED01V and font slot 0x2a, loaded when the credits first play.
+    Picture credits_;
+    Font credit_font_;
+    // play_credits' scroll (pixels into the top line), the index of that line
+    // and whether a mouse button went down since the credits began (the
+    // original's rleft_button is only set by a press and release).
+    int credit_scroll_ = 0, credit_line_ = 0;
+    bool credit_pressed_ = false;
     SpriteSheet main_sprites_, prefs_sprites_;
     std::vector<uint8_t> prefs_ghost_;
     std::array<Font, 3> fonts_; // cache slots 0x21, 0x22, 0x23
@@ -260,6 +283,8 @@ class Startup
     int level_ = 0;
     int idle_ = 600;
     int last_mouse_sum_ = 0;
+    // process_keys_area_select's C (area.state 5): any level can be picked.
+    bool pick_any_level_ = false;
 
     std::array<ZoomBox, 46> zoom_{};
     int current_display_ = 0, desired_display_ = 0;

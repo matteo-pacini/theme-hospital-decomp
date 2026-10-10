@@ -477,8 +477,10 @@ void process_answer(Fax &fax, size_t button, FaxResult &result, Game &game)
     case kFaxEpidemic:
         if (button == 0)
             result.event = {EV_CHOICE_RESULT, kChoiceEpidemicDeclare, 0, 0};
-        else if (button == 1)
+        else if (button == 1) {
             result.event = {EV_CHOICE_RESULT, kChoiceEpidemicCoverUp, 0, 0};
+            game.raise_advisor_event(kAdvisorEventCoverUp);
+        }
         break;
     case kFaxEmergencyOver:
     case kFaxEpidemicOver:

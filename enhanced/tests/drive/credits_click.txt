@@ -1,0 +1,23 @@
+# Level 12
+# The last level's win accepted ends the game: the WIN_GAME movie, then the
+# credits over CRED01V (startup screen 7), which a mouse click ends, then the
+# main menu (screen 3) after its opening movie. A key does not end them.
+wait 5
+win
+wait 450
+screenshot letter
+click 410 419
+expect startup screen: 0
+wait 600
+expect startup screen: 7
+screenshot credits_start
+wait 400
+screenshot credits_scroll
+key Space
+wait 5
+expect startup screen: 7
+click 100 100
+wait 5
+expect startup screen: 0
+wait 1500
+expect startup screen: 3

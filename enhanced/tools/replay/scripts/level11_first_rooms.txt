@@ -1,0 +1,37 @@
+# Level 11: gp_office.txt's layout in the level's own empty hospital
+# (floor (56,56)-(78,75), entrance at (70..74,76)): a reception desk at
+# cell 9284 (68,72) and receptionist 26, a GP's office (68,63)-(72,67)
+# with its door, desk, cabinet and chair, opened, and doctor 12 at cell
+# 9542. The level is lost at the end of its first year (winlose lose
+# group=1); on the way it gives an emergency of illness 22 (four patients),
+# a disaster roll of kind 2 and rats.
+# Level 11
+# Turns 36500
+# Expect use_object 26 obj=33 kind=11
+# Expect use_object 12 obj=35 kind=1
+# Expect emergency_offer 1 illness=22 count=4 bonus=800 win=75
+# Expect disaster_roll owner=0 kind=2
+# Expect rathole
+# Expect winlose lose group=1
+# Expect-not winlose win
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9284 11
+10 48 3 26
+11 5 9538 26
+101 55 0 0
+102 53 7 7
+103 2 8132 0
+104 2 8648 0
+105 8 8648 0
+106 18 0 0
+107 26 8006 0
+108 3 0 0
+109 4 7 0
+110 7 8390 1
+111 7 8136 2
+112 7 8391 6
+113 1 0 0
+114 48 1 12
+115 5 9542 12

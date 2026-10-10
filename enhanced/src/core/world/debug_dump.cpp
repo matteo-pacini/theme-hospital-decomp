@@ -756,6 +756,7 @@ void dump_game_progress(std::string &out, const Game &game)
     F(p, score);
     F(p, start_score);
     F(p, win_progress);
+    F(p, win_average);
     F(p, lose_progress);
     F(p, best_win_group);
     F(p, market_share);
@@ -773,6 +774,7 @@ void dump_game_progress(std::string &out, const Game &game)
     F(p, bonus_level);
     F(p, level_after_bonus);
     F(p, year_end_type);
+    F(p, rat_game_over);
     out += '\n';
     out += "awards:";
     for (size_t i = 0; i < p.awards.size(); i++)
@@ -839,6 +841,7 @@ void dump_game_epidemic(std::string &out, const World &w)
     F(w.epidemic, illness);
     F(w.epidemic, fine);
     F(w.epidemic, contagious_count);
+    F(w.epidemic, spread_count);
     F(w.epidemic, timer);
     F(w.epidemic, active);
     F(w.epidemic, over);
@@ -984,6 +987,9 @@ void dump_game_counts(std::string &out, const World &w)
     F(c, worst_machine);
     F(c, has_patients);
     F(c, last_quake_size);
+    F(w.new_staff, pending);
+    F(w.new_staff, kind);
+    F(w.new_staff, room);
     out += '\n';
 }
 
@@ -1181,7 +1187,7 @@ std::string dump_game(const Game &game, int focus, int radius)
     out += "## Game\n";
     out += std::format("date year={} month={} day={} turn={} paused={} open={} opening_countdown={}\n", game.date.year,
                        game.date.month, game.date.day, game.turn_count, game.paused, game.open, game.opening_countdown);
-    out += std::format("balance={} seed={:08x} route_planner={}\n", game.balance, w.seed,
+    out += std::format("balance={} seed={:08x} safeseed={:08x} route_planner={}\n", game.balance, w.seed, game.safeseed,
                        w.path_finder == PathFinder::AStar ? "A*" : "original");
     dump_game_finance(out, game);
     dump_game_progress(out, game);

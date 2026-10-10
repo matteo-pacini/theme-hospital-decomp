@@ -1,0 +1,15 @@
+# Level 1: in the staff list (F6) the numpad 6 and 4 change the kind of staff
+# shown, as the Right and Left arrows do (slist_keys, src/slist.cpp).
+wait 60
+key F6
+wait 30
+expect staff list: filter 1
+key Keypad_6
+wait 10
+expect staff list: filter 2
+key Keypad_6
+wait 10
+expect staff list: filter 4
+key Keypad_4
+wait 10
+expect staff list: filter 2

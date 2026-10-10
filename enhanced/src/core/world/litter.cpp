@@ -237,8 +237,8 @@ void check_around(const World &world, Thing &p)
 // spread_epidemic (0xa0040 in src/epidemic.cpp): passes the carrier's
 // contagious illness to one undiagnosed, uncontagious patient on or next to
 // its cell, splitting the carrier's contagion with them (and applying
-// effect_illness to the carrier, as the game does). othervar.contagious_count
-// is not kept: only the unported advisor epidemic advice reads it.
+// effect_illness to the carrier, as the game does), counting it in
+// World::Epidemic::spread_count.
 void spread_epidemic(World &world, const Balance &settings, uint16_t carrier_id)
 {
     trace_event("epidemic %u", unsigned(carrier_id));
@@ -266,6 +266,7 @@ void spread_epidemic(World &world, const Balance &settings, uint16_t carrier_id)
             if (kNotContagious[victim.illness % kNotContagious.size()] || int8_t(victim.contagion) != 0 ||
                 old_newrand(world.seed) & 1)
                 continue;
+            world.epidemic.spread_count++;
             if (other != illness) {
                 victim.illness = illness;
                 effect_illness(world.seed, carrier, illness);

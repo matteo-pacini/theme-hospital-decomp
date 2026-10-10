@@ -1,0 +1,127 @@
+# Level 10: real cures of the illnesses no other script cures, from a fully
+# built hospital: reception desk (cell 10326, 86,80) and receptionist 26; a
+# GP's office (64,82), general diagnosis (70,82), cardiogram (76,82),
+# pharmacy (82,82), a ward (77,88) and an operating theatre (63,88), their
+# objects as in theatre_surgery.txt; handyman 18, nurses 5 to 8, doctors 14,
+# 17 and 13 for the diagnosis rooms and surgeons 12 and 16 for the theatre
+# (hired after the rooms are open, as the blueprints are blocked by people
+# on the floor). The hospital is opened by EV_OPEN_HOSPITAL at a chosen turn,
+# which fixes who arrives: patients are diagnosed in full (record) and then
+# treated, so a cure here is neither a guess nor a forced one.
+# No psychiatry room. Opened at turn 400: theatre cures of 19 (patient 59) and 35
+# (patient 58) by surgeon 16 and pharmacy cures of 25 (patient 9) and 33
+# (patient 66) by nurse 6.
+# Level 10
+# Turns 18300
+# Expect cure 59 illness=19 == 1
+# Expect-not dies 59
+# Expect cure 58 illness=35 == 1
+# Expect-not dies 58
+# Expect cure 9 illness=25 == 1
+# Expect-not dies 9
+# Expect cure 66 illness=33 == 1
+# Expect-not dies 66
+# Expect-not winlose
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 10326 11
+10 48 3 26
+11 5 10324 26
+100 55 0 0
+101 53 7 7
+102 2 10560 0
+103 2 11076 0
+104 8 11076 0
+105 18 0 0
+106 26 10434 0
+107 3 0 0
+108 4 7 0
+109 7 10818 1
+110 7 10564 2
+111 7 10819 6
+112 1 0 0
+160 55 0 0
+161 53 27 27
+162 2 10566 0
+163 2 11082 0
+164 8 11082 0
+165 18 0 0
+166 26 11208 0
+167 3 0 0
+168 4 27 0
+169 7 10695 20
+170 7 10954 16
+171 1 0 0
+220 55 0 0
+221 53 12 12
+222 2 10572 0
+223 2 11088 0
+224 8 11088 0
+225 18 0 0
+226 26 10446 0
+227 3 0 0
+228 4 12 0
+229 7 10830 13
+230 7 10829 272
+231 1 0 0
+280 55 0 0
+281 53 11 11
+282 2 10578 0
+283 2 10965 0
+284 8 10965 0
+285 18 0 0
+286 26 10451 0
+287 3 0 0
+288 4 11 0
+289 7 10581 39
+290 1 0 0
+340 55 0 0
+341 53 9 9
+342 2 11341 0
+343 2 11986 0
+344 8 11986 0
+345 18 0 0
+346 26 11214 0
+347 3 0 0
+348 4 9 0
+349 7 11470 264
+350 7 11726 264
+351 7 11982 264
+352 7 11729 1
+353 1 0 0
+400 139 0 0
+420 55 0 0
+421 53 10 10
+422 2 11327 0
+423 2 11976 0
+424 8 11976 0
+425 18 0 0
+426 26 11204 0
+427 3 0 0
+428 4 10 0
+429 7 11717 30
+430 7 11464 33
+431 7 11848 29
+432 1 0 0
+433 7 11841 35
+600 48 2 18
+601 5 10310 18
+602 48 0 5
+603 5 10312 5
+604 48 0 6
+605 5 10314 6
+606 48 1 14
+607 5 10306 14
+608 48 1 17
+609 5 10308 17
+610 48 1 13
+611 5 10320 13
+612 48 1 12
+613 5 11202 12
+614 48 1 16
+615 5 11206 16
+616 48 0 7
+617 5 10316 7
+618 48 0 8
+619 5 10318 8

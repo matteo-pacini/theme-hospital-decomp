@@ -21,7 +21,7 @@ struct PeepSetup;
 // random turns within their months; the emergencies offered to the player
 // by a call, accepted or refused, their helicopter and patients, and their
 // end with a bonus or a loss of reputation (hospital 0's, World::emergency).
-// The earthquakes themselves (generate_quake) are not ported.
+// The earthquakes themselves (generate_quake) are in core/world/quake.h.
 struct Disasters {
     // The next emergency (gamevar.next_emergency_turn and on): the turn it
     // is due, its illness, patients, cure percentage to win and bonus per
@@ -135,7 +135,7 @@ void twice_daily_admin_emergency(World &world);
 // (make_a_peep) knowing its illness, quoted its treatment's price or, if
 // it will not pay, given none, and sent straight for treatment
 // (PS_GO_FOR_TREATMENT, kPfEmergency), counted a visitor; the helicopter
-// leaves after the last patient, made or not. Status icons are not ported.
+// leaves after the last patient, made or not.
 void create_a_peep_emergency(World &world, ArrivalState &state, const PeepSetup &setup);
 
 // modify_person's emergency patient (src/environ.cpp): for patient `id`

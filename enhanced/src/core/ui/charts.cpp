@@ -1737,13 +1737,14 @@ class Frame
 
     void process_drug_keys()
     {
-        if (keys_.up)
+        const uint8_t pad = keys_.pad_held;
+        if (keys_.up || (pad & ChartKeys::kPadUp))
             select_next(0);
-        if (keys_.down)
+        if (keys_.down || (pad & ChartKeys::kPadDown))
             select_next(1);
-        if (keys_.right)
+        if (keys_.right || (pad & ChartKeys::kPadRight))
             price(true);
-        else if (keys_.left)
+        else if (keys_.left || (pad & ChartKeys::kPadLeft))
             price(false);
         else if (!mleft_)
             reset_repeat();
@@ -1862,16 +1863,17 @@ class Frame
 
     void slist_keys()
     {
-        if (keys_.right) {
+        const uint8_t pad = keys_.pad_pressed;
+        if (keys_.right || (pad & ChartKeys::kPadRight)) {
             if (c_.slist_filter != 8)
                 slist_filter(c_.slist_filter << 1);
-        } else if (keys_.left) {
+        } else if (keys_.left || (pad & ChartKeys::kPadLeft)) {
             if (c_.slist_filter != 1)
                 slist_filter(c_.slist_filter >> 1);
         }
-        if (keys_.down)
+        if (keys_.down || (pad & ChartKeys::kPadDown))
             slist_key_down();
-        else if (keys_.up)
+        else if (keys_.up || (pad & ChartKeys::kPadUp))
             slist_key_up();
     }
 
@@ -2058,8 +2060,8 @@ class Frame
     }
 
     // The game also draws the staff member on the map in the view of
-    // kSlistView, which is not ported; nor are the training bars (no
-    // training is tracked).
+    // kSlistView, which is not ported; nor are the training bars (Thing::surgeon_training and the like), which are not
+    // drawn.
     void draw_slist_window(int id)
     {
         if (!id)
@@ -2787,6 +2789,8 @@ ChartsResult chart_frame(Charts &charts, const UiMouse &mouse, const ChartKeys &
     k.down = keys.down;
     k.left = keys.left;
     k.right = keys.right;
+    k.pad_held = keys.pad_held;
+    k.pad_pressed |= keys.pad_pressed;
     charts.frame_time += seconds;
     // The first frame of a chart runs at once: it shows the picture.
     if (charts.frame_time < kGameFrame && charts.state != 0)

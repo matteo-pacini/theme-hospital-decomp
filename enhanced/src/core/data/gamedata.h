@@ -45,6 +45,8 @@ class GameData
     const Palette &palette() const { return palette_; }
     const SpriteSheet &blocks() const { return blocks_; }
     const SpriteSheet &panel() const { return panel_; }
+    // DATA/PANEL04V: the rat game's panel.
+    const SpriteSheet &rat_panel() const { return rat_panel_; }
     const SpriteSheet &sprites() const { return sprites_; }
     const SpriteSheet &pointers() const { return pointers_; }
     const SpriteSheet &watch() const { return watch_; }
@@ -63,7 +65,7 @@ class GameData
     int language() const { return language_; }
     // The font in cache slot `slot` (set_font_from_cache); only the slots the
     // engine draws with are loaded: 0 (map text), 5 (panel balance), 6 (panel
-    // date) and 0x1d (advisor).
+    // date), 0x1d (advisor) and 0x29 (the rat game's score).
     const Font &font(int slot) const { return fonts_.at(slot); }
 
   private:
@@ -71,6 +73,7 @@ class GameData
     Palette palette_{};
     SpriteSheet blocks_;
     SpriteSheet panel_;
+    SpriteSheet rat_panel_;
     SpriteSheet sprites_;
     SpriteSheet pointers_;
     SpriteSheet watch_;

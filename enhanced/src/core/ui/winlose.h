@@ -21,10 +21,12 @@ namespace th
 // drawn in the game's 640 x 480 screen; the caller starts the next level when
 // a win is accepted.
 
-// The keys the win/lose screens read (lbInkey: Escape and Space).
+// The keys the win/lose screens read (lbInkey): Escape and Space, and any key
+// at all (the losing line leaves on one, play_winlose state 4).
 struct WinLoseKeys {
     bool escape = false;
     bool space = false;
+    bool any = false;
 };
 
 // The data the letters draw (othervar.winlose_result and the next level's
@@ -51,6 +53,9 @@ struct WinLoseResult {
     std::vector<uint8_t> sounds; // play_sound SFX_*
     // A win was accepted: the level to start next (0 when none).
     int next_level = 0;
+    // The last level's win was accepted: the game ends (WIN_GAME movie, the
+    // credits, the main menu); next_level stays 0.
+    bool game_won = false;
     // The screen closed (a win declined, or the losing line dismissed).
     bool closed = false;
 };
@@ -74,7 +79,7 @@ class WinLoseScreen
 
     // One frame of the letter, `seconds` since the last frame: the win letter
     // types out and waits for the accept or decline button; the losing line
-    // waits for a click or key.
+    // waits for a click or any key.
     WinLoseResult frame(const UiMouse &mouse, const WinLoseKeys &keys, double seconds, const WinLoseView &view);
 
     // concat_composite + sprintf + letter_format_text for `view`: the letter

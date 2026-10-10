@@ -28,7 +28,9 @@ call of old_newrand and old_normal_rand outside rand.cpp names the function
 it is in (trace_newrand, trace_normal_rand).
 
 start.cpp: setup_insurances picks the first three insurance companies left
-(ins_control 1, 2, 3, as this engine), not by the clock.
+(ins_control 1, 2, 3, as this engine), not by the clock. init_player takes the
+player's starting score from a "# Score N" line of SCRIPT.TXT, standing for
+the score the last level left (setup_new_level keeps it).
 
 finance.cpp: daily_admin and twice_daily_admin note the seed after each
 call that may draw from it ("# <call> done seed=...", which compare.py
@@ -261,6 +263,23 @@ static void script_load(void)
             script[script_count][2] = on ? 1 : 0;
             script[script_count][3] = 0;
             script_count++;
+        } else if (field >= 1 && p[0] == '@' && p[1] == 'a' && p[2] == 'd' && p[3] == 'v' && p[4] == 'i' &&
+                   p[5] == 's' && p[6] == 'o' && p[7] == 'r' && p[8] == '_' && p[9] == 'e' && p[10] == 'v' &&
+                   p[11] == 'e' && p[12] == 'n' && p[13] == 't') {
+            // The port's "@advisor_event <bits>": advisor.event_flags' bits
+            // raised by a button of the interface (the fax's cover-up button
+            // sets 0x100, process_epidemic_start_buttons).
+            u32 bits = 0;
+            p += 14;
+            while (*p == ' ' || *p == '\t')
+                p++;
+            while (*p >= '0' && *p <= '9')
+                bits = bits * 10 + (*p++ - '0');
+            script[script_count][0] = v[0];
+            script[script_count][1] = 0x1002;
+            script[script_count][2] = bits;
+            script[script_count][3] = 0;
+            script_count++;
         } else if (field == 4) {
             for (i = 0; i < 4; i++)
                 script[script_count][i] = v[i];
@@ -294,6 +313,8 @@ static void script_run(void)
                 // the area screen's step start (area.cpp).
                 advisor.flags = (advisor.flags & ~1) | (u8)(script[script_next][2] ? 1 : 0);
                 advisor.tutorial_step = 0x1d;
+            } else if (script[script_next][1] == 0x1002) {
+                advisor.event_flags_u32 |= script[script_next][2];
             } else {
                 player_events[0].type = (u8)script[script_next][1];
                 player_events[0].value = (u16)script[script_next][2];
@@ -405,6 +426,49 @@ GAME_EDITS = [
 
 START_EDITS = [
     ("""            pick = LbTimerClock() % left;""", """            pick = 0;"""),
+    # The score the player's hospital has as the level starts: a line
+    # "# Score N" in SCRIPT.TXT, which init_player keeps (above level 1, when
+    # not 0) as it keeps the last level's. th_replay reads the same line.
+    ("""// FUNCTION: 0x000910a0
+void init_player(u8 owner)
+{""", """static int trace_script_score(s32 *score)
+{
+    static char text[16384];
+    int handle, len;
+    char *p;
+
+    handle = LbFileOpen("SCRIPT.TXT", 2);
+    if (handle == -1)
+        return 0;
+    len = LbFileRead(handle, text, sizeof(text) - 1);
+    LbFileClose(handle);
+    if (len < 0)
+        return 0;
+    text[len] = 0;
+    for (p = text; *p;) {
+        if (p[0] == '#' && p[1] == ' ' && p[2] == 'S' && p[3] == 'c' && p[4] == 'o' && p[5] == 'r' &&
+            p[6] == 'e' && p[7] == ' ') {
+            *score = 0;
+            for (p += 8; *p >= '0' && *p <= '9'; p++)
+                *score = *score * 10 + (*p - '0');
+            return 1;
+        }
+        while (*p && *p != '\\n')
+            p++;
+        if (*p)
+            p++;
+    }
+    return 0;
+}
+
+// FUNCTION: 0x000910a0
+void init_player(u8 owner)
+{"""),
+    ("""    if (myhosp->level == 1 || statvar.num_players > 1 || hosp->score == 0)
+        hosp->score = 10000;""", """    if (owner == player)
+        trace_script_score(&hosp->score);
+    if (myhosp->level == 1 || statvar.num_players > 1 || hosp->score == 0)
+        hosp->score = 10000;"""),
 ]
 
 FINANCE_EDITS = [
@@ -544,6 +608,14 @@ EVENTS = {
         ("entry", "record_person_as_patient", f'trace_event("record %u", {ID.format("patient")});'),
         ("entry", "diagnose_patient",
          f'trace_event("diagnose %u staff=%u", {ID.format("patient")}, {ID.format("staff")});'),
+        (("before", "set_icon_value(staff, ICON_DIAGNOSED);"), "diagnose_patient",
+         f'trace_event("diagnose_icon %u icon=%u", {ID.format("staff")}, (unsigned)ICON_DIAGNOSED);'),
+        (("before", "set_icon_value(patient, ICON_AWAITING_DECISION);"), "diagnose_patient",
+         f'trace_event("diagnose_icon %u icon=%u", {ID.format("patient")}, (unsigned)ICON_AWAITING_DECISION);'),
+        (("before", "set_icon_value(staff, ICON_NO_DIAGNOSIS);"), "diagnose_patient",
+         f'trace_event("diagnose_icon %u icon=%u", {ID.format("staff")}, (unsigned)ICON_NO_DIAGNOSIS);'),
+        (("before", "set_icon_value(staff, ICON_GUESSED);"), "diagnose_patient",
+         f'trace_event("diagnose_icon %u icon=%u", {ID.format("staff")}, (unsigned)ICON_GUESSED);'),
         # A ward's bed gives no member of staff (a null pointer): 0.
         ("entry", "setup_next_treatment",
          f'trace_event("next_treatment %u staff=%u", {ID.format("patient")}, '
@@ -784,6 +856,12 @@ EVENTS = {
     "epidemic.cpp": [
         ("entry", "spread_epidemic", f'trace_event("epidemic %u", {ID.format("carrier")});'),
     ],
+    "vaccine.cpp": [
+        ("entry", "cancel_vaccination_request",
+         'if (person->flags & (PF_VACCINE_REQUESTED | PF_VACCINE_NURSE_SENT)) '
+         f'trace_event("vaccine_cancel %u requests=%u", {ID.format("person")}, '
+         '(unsigned)allhosps[person->owner].vaccine_requests);'),
+    ],
     "disaster.cpp": [
         ("entry", "machine_disaster",
          f'trace_event("machine_disaster %u kind=%u room=%u", {ID.format("machine")}, (unsigned)machine->subtype, '
@@ -920,6 +998,13 @@ EVENTS = {
          '(unsigned)allhosps[owner].ratholes[from].tile, (unsigned)allhosps[owner].ratholes[to].tile);'),
         (("before", "    }\n}"), "try_bonus_level",
          'trace_event("bonus_level %u", (unsigned)othervar.bonus_level);'),
+        # The rat game ends (rat_fest_control goes to the area screen, which a
+        # headless run cannot play): the run stops after this turn, as at a
+        # win or loss.
+        (("before", "            player_events[player].type = EV_CANCEL_BUILD;\n            level_number = othervar.level_after_bonus;"),
+         "rat_fest_control",
+         'trace_event("rat_game_over kills=%u litter=%u", (unsigned)myhosp->rats_killed_u, '
+         '(unsigned)myhosp->litter_count);\n            quit_game = 1;'),
     ],
     "tutorial.cpp": [
         ("entry", "tutorial", 'trace_event("tutorial %u", (unsigned)advisor.tutorial_step);'),

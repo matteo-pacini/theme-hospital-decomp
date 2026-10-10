@@ -88,11 +88,29 @@ int days_in_month(int month)
     return kCalendar[size_t(month % 12)];
 }
 
+namespace
+{
+
+// init_player in the rat game: the hospitals open at once, with no
+// countdown.
+void open_rat_game(Game &game)
+{
+    if (!game.world.rats.fest_level)
+        return;
+    game.opening_countdown = 0;
+    game.open = true;
+    for (size_t h = 1; h < game.arrivals.hospitals.size(); h++)
+        game.arrivals.hospitals[h].open = true;
+}
+
+} // namespace
+
 void Game::start(const Level &level, int number, const Balance &settings, const AnimData &anims,
                  const PersonComplexes &complexes, const StaffComplexes &staff_complexes)
 {
     complexes_ = &complexes;
     staff_complexes_ = &staff_complexes;
+    safeseed = kLevelStartSeed;
     int open_countdown = settings.gbv.open_countdown;
     anims_ = &anims;
     settings_ = settings;
@@ -110,6 +128,9 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     std::array<uint8_t, 3> refs = staff_market.ref_counts;
     staff_market = {};
     staff_market.ref_counts = refs;
+    // The builders place staff and litter through the world's links.
+    connect_world();
+    start_special_level(*this, staff_market, number);
     create_job_market(world, staff_market, settings, 0, 1);
     date = {};
     fax_screen = {};
@@ -119,6 +140,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     opening_countdown = open_countdown;
     this->open_countdown = open_countdown;
     open = open_countdown == 0;
+    open_rat_game(*this);
     balance = size_t(number) < settings.towns.size() ? int(settings.towns[size_t(number)].start_cash) : 0;
     start_finance(finance, balance, settings, number);
     // init_player's.
@@ -128,7 +150,6 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     calc_pricing_factor(arrivals.hospitals[0], settings_, world.cure_available);
     start_rivals(world, settings_, balance);
     start_rooms_in_use(*this, complexes, staff_complexes);
-    connect_world();
     start_research(world);
     start_year_end(*this);
     world.emergency = {};
@@ -141,6 +162,15 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     setup_next_quake(disasters, world, settings_, date);
     command_log.assign(1, std::format("# commands of level {}, build {:016x}", number, snapshot_build_id()));
     inputs_logged_ = false;
+}
+
+void Game::carry_score(int32_t score)
+{
+    const int hospital_level = level_number_ > 14 ? 1 : level_number_;
+    if (hospital_level == 1 || score == 0)
+        return;
+    progress.score = progress.start_score = score;
+    command_log.push_back(std::format("# Score {}", score));
 }
 
 void Game::connect_world()
@@ -496,6 +526,13 @@ void Game::send_walker(uint16_t id, int cell)
     set_destination_coords(world, id, cell);
 }
 
+void Game::raise_advisor_event(uint32_t bits)
+{
+    log_inputs();
+    log_line(std::format("@advisor_event {}", bits));
+    advisor.event_flags |= bits;
+}
+
 void Game::overview_frame(uint8_t hospital)
 {
     log_inputs();
@@ -662,6 +699,13 @@ bool Game::replay_input(std::string_view line, std::string *error)
         if (!id || !cell)
             return replay_input_fail(line, error, "bad walker or cell");
         send_walker(uint16_t(*id), int(*cell));
+        return true;
+    }
+    if (name == "@advisor_event") {
+        auto bits = replay_input_value(in, 1, 0xffff);
+        if (!bits)
+            return replay_input_fail(line, error, "bad bits");
+        raise_advisor_event(uint32_t(*bits));
         return true;
     }
     if (name == "@overview") {

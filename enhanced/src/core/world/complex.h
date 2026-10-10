@@ -171,7 +171,6 @@ void start_person_going(World &world, const AnimData &anims, const PersonComplex
 // entrance (get_room_info's first kRoomEntrance room of its owner; for a
 // rival, which has none, cell 0) and off the map, counted in the statistics
 // (record_person_as_patient).
-// Its player calls and status icon are not ported.
 void person_go_home(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                     uint32_t game_turn);
 
@@ -194,17 +193,16 @@ void interrupt_peep(World &world, uint16_t id);
 
 // remove_person (0x16760): takes patient `id` off the map and frees its
 // entry: leaves its queue, abandons its complex (abandon_complex) and its
-// room (remove_person_from_room_list), then unlinks it from its cell
-// (remove_thing). Vaccinations and the patient's window, which do not
-// exist yet, are not handled.
+// room (remove_person_from_room_list), drops its vaccination request
+// (cancel_vaccination_request), then unlinks it from its cell (remove_thing).
+// The patient's window is not closed here.
 void remove_person(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                    uint32_t game_turn);
 
 // person_nav_failure (0x1752c): person `id`, failing to find its way:
 // heading from the corridor for a room built in the last 500 turns, it is
 // sent on again (start_person_going); else back to queueing if it was to
-// queue, or PS_STUCK. The game also announces a stuck patient of the
-// player's, which is not ported.
+// queue, or PS_STUCK. A stuck patient of the player's is announced (World::announce_stuck).
 void person_nav_failure(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                         uint32_t game_turn);
 
@@ -250,8 +248,6 @@ void person_nav_failure(World &world, const AnimData &anims, const PersonComplex
 // - dead (PS_DEAD, PS_FLYS, PS_AT_HELL_GATE; core/world/reaper.h);
 // - PS_WAITS_FOR_BUSY, PS_GO_HOME, PS_GONE, PS_PLAY_COMPLEX_ANIM,
 //   PS_COMPLEX_RETRY, PS_SHOWANIM, PS_SLAVE_READY and PS_MERGED.
-// Not ported, as what they need does not exist yet: research, statistics
-// (person_count) and status icons.
 bool person_turn(World &world, const AnimData &anims, const PersonComplexes &complexes, uint16_t id,
                  uint32_t game_turn);
 

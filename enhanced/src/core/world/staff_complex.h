@@ -52,7 +52,7 @@ extern const std::array<std::array<uint16_t, 0x8c>, 5> kStaffAnimStarts;
 // answering its page (pager_arrival); complex_success (action 52) adds
 // research points, rests staff and counts a use of their object. Actions 60
 // and 62 play the surgeon screen changing animations by the room's count of
-// surgeons. Not yet ported: autopsies among complex_success's kinds.
+// surgeons.
 uint8_t process_staff_complex(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                               const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
 

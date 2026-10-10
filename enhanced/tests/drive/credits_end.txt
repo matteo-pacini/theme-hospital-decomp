@@ -1,0 +1,15 @@
+# Level 12
+# The credits run to the "." line of the credit text without a click, then the
+# main menu follows.
+wait 5
+win
+wait 450
+click 410 419
+wait 600
+expect startup screen: 7
+wait 9000
+expect startup screen: 7
+wait 1500
+expect startup screen: 0
+wait 1000
+expect startup screen: 3

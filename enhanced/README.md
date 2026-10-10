@@ -80,6 +80,13 @@ Milestone 4 so far, the game's interface:
 - the start-up flow: the intro, title and name, main menu, difficulty and
   tutorial choice, and the level's area movie (Smacker movies with their
   sound); `--level N` skips it and starts level N at once;
+- the special levels: the training level (5: three consultants placed by
+  `training_builder`) and the two rat bonus levels (13 and 14, which `--level`
+  also starts: litter, rat holes and handymen from `rat_fest_builder`, the
+  rat panel, shooting with the left button, the level's end); a win accepted
+  after a year whose rat shots beat the awards' targets (`try_bonus_level`)
+  plays one before the next level, and its end goes back to the level it
+  interrupted;
 - the pull-down menu bar and the requester windows, with the original art;
   quitting asks first; Options speed, sound and volume, Display shadows;
 - the panel's buttons; furnish corridor (buy, place, rotate, cost) and hire
@@ -140,8 +147,11 @@ Milestone 4 so far, the game's interface:
   thirst, warmth, toilets, unhappy patients and those gone home fed up,
   long waits, too few or too many doctors and nurses, worn machines, litter,
   plants, benches, the first death and cure, deaths near the level's limit,
-  the rooms open, a room just opened, a treatment not paid for, a doctor
-  cracked up;
+  the rooms open, a room just opened (and what its illness still lacks), a
+  treatment not paid for, a doctor cracked up; the staff promoted, new staff
+  put down where they are not needed, the earthquake and its strength, how
+  close the level is to being won or lost, and the mayor's visit; Shift+A
+  switches the advisor off and on;
 - machines wearing out and blowing up: their smoke drawn and their warning
   sounds and announcements from three quarters of their strength, a
   breakdown likelier the more worn past it; the explosion's debris flying
@@ -201,9 +211,15 @@ Milestone 4 so far, the game's interface:
   requester button each step points at;
 - the year end: the hall of fame, the charts, the awards and trophies and
   the year's score; winning or losing at the year end, and a win offered at
-  a quarter's end and declined;
+  a quarter's end and declined; accepting the win of level 12 ends the
+  game with the WIN_GAME movie, the scrolling credits and the main menu;
 - saving and loading: File > Save and Load, the quick save and load (Alt+S,
-  Alt+L), the Continue slot written on quitting, and the load game screen.
+  Alt+L), the Continue slot written on quitting, and the load game screen;
+- the game's other single-player keys: Alt+F1-F8 store and Ctrl+F1-F8 recall
+  view positions, W held runs turns faster (Ctrl+W does not), Shift+Ctrl+Esc
+  or Shift+Esc with Tab held quits at once, the numpad 8/2/4/6 work in the
+  casebook and the staff list, and C on the briefing picks any level by a
+  click on its area.
 
 Not yet: the DNA fixer.
 Route planning defaults to A*; the game's wall following stays selectable
@@ -285,9 +301,10 @@ how it starts: `# Level N` the level (default 1), `# NoLevel` the start-up
 screens instead, `# Size WxH` the window size (default 1280x720; the menu
 bar is only at the top in the game's 640x480 layout) and `# Seed DIR` saves
 copied from DIR into the run's save folder first. `type TEXT` types into a
-focused text field, `key [MOD+]NAME` holds Shift, Ctrl or Alt, and
-`screenshot-ui` captures after the ImGui layer (the tools and the quick
-report's note box).
+focused text field, `key [MOD+]NAME` presses a key with Shift, Ctrl or Alt held
+(`keydown` and `keyup` hold one, as for W and Tab; spaces in a name are
+written `_`: `Keypad_8`), and `screenshot-ui` captures after the ImGui
+layer (the tools and the quick report's note box).
 
 The tools window (F12) has a debug report: Save report
 writes `debug-reports/<time>/` (under the folder the game was started from when the data came from the
@@ -418,8 +435,11 @@ The player's commands checked so far are the scripts in
 and orig_trace.sh's SCRIPT; the EV_* numbers in include/enums.h). Each
 script's header comments say what it exercises, and its `# Expect` and
 `# Expect-not` lines check it on both traces; `# Level N` picks the level
-(th_replay `--level N`, orig_trace.sh's LEVEL) and `# Turns N` the last
-turn. A script is compared with the default SKIP, empty (the computer
+(th_replay `--level N`, orig_trace.sh's LEVEL), `# Turns N` the last
+turn and `# Score N` the score the last level left (init_player keeps it
+above level 1; both sides read the header line itself). `@advisor_event N`
+lines raise advisor.event_flags' bits as the interface's buttons do. A script
+is compared with the default SKIP, empty (the computer
 hospitals, rats and disasters all run), by hand as below; th_replay's
 `--skip NAMES` leaves calls out of the port (`replay_all.sh` passes its SKIP
 to both sides; `SKIP=computer_action` runs without the computer hospitals):

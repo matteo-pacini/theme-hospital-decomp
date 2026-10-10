@@ -45,6 +45,7 @@ enum : uint8_t {
     kSfxCheer = 0xaf,       // SFX_CHEER: a patient cured
     kSfxBonus2 = 0xb8,      // SFX_BONUS2: a demand accepted
     kSfxFanfare = 0xd9,     // SFX_FANFARE: the hospital opens
+    kSfxSnapshot = 0xda,    // SFX_SNAPSHOT: a view position stored
 };
 // Entries of sfx_details; play_sound ignores higher numbers.
 constexpr int kSfxCount = 0xf2;

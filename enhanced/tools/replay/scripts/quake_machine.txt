@@ -1,0 +1,83 @@
+# Level 8: blood_machine.txt's hospital run to turn 26000, through the
+# level's scheduled earthquake (turn 24865 on; severity 4: generate_quake,
+# earthquake, disaster_peeps modes 1 and 2, do_earthquake). The blood
+# machine (object 29), used 4 times by the quake, is worn to its limit:
+# modify_machine 29 used=8 strength=10 and its smoke. Patients in the
+# corridor are shaken (kPfQuakeShaken) and play the quake's reaction.
+# Level 8
+# Turns 26000
+# Expect rand generate_quake
+# Expect rand earthquake
+# Expect modify_machine 29 used=8 strength=10 == 1
+# Expect machine_smoke 29 smoke=1,0,0 == 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 5785 11
+10 48 3 28
+11 5 6044 28
+12 48 2 20
+13 5 6045 20
+20 115 20 31
+21 115 20 31
+22 115 20 31
+23 115 20 31
+24 115 20 31
+25 115 20 31
+26 115 20 31
+27 115 20 31
+28 115 20 31
+29 115 20 31
+30 115 20 31
+31 115 20 31
+60 55 0 0
+61 53 7 7
+62 2 4372 0
+63 2 4888 0
+64 8 4888 0
+65 18 0 0
+66 26 4246 0
+67 3 0 0
+68 4 7 0
+69 7 4630 1
+70 7 4376 2
+71 7 4631 6
+72 1 0 0
+73 48 1 14
+74 5 6046 14
+101 55 0 0
+102 53 28 28
+103 2 4366 0
+104 2 4882 0
+105 8 4882 0
+106 18 0 0
+107 26 4240 0
+108 3 0 0
+109 4 28 0
+110 7 4750 55
+111 7 4754 257
+112 7 4370 258
+113 1 0 0
+120 114 37 0
+121 80 0 0
+122 80 1 0
+123 80 2 0
+124 80 3 0
+125 80 4 100
+4700 48 1 17
+4701 5 4494 17
+7600 48 1 44
+7601 5 4495 44
+13000 55 0 0
+13001 53 15 15
+13002 2 4378 0
+13003 2 4765 0
+13004 8 4765 0
+13005 18 0 0
+13006 26 4251 0
+13007 3 0 0
+13008 4 15 0
+13009 7 4636 298
+13010 1 0 0
+13020 48 1 45
+13021 5 6047 45

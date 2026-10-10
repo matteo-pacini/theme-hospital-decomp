@@ -39,6 +39,9 @@ enum class Startup::State {
     PrefsEntry,
     AreaEnter,
     Briefing,
+    AreaStart,
+    CreditsEnter,
+    Credits,
     Quit,
     Done,
 };
@@ -60,6 +63,20 @@ constexpr uint8_t kSfxSelect = 0x43;     // SFX_SELECTX
 constexpr uint8_t kSfxHighlight = 0x44;  // SFX_HLIGHT5
 constexpr uint8_t kSfxDice = 0xd2;       // SFX_DICEYFIN
 constexpr uint8_t kSfxDiceLate = 0xdc;   // SFX_DICE122M, for levels 12 and up
+
+// The 21 level areas of the briefing when any level can be picked
+// (HiresBoxes[45] to [65], src/coords.cpp): x, y, width, height.
+struct AreaBox {
+    int x, y, w, h;
+};
+constexpr int kAreaCount = 21;
+constexpr AreaBox kAreaBoxes[kAreaCount] = {
+    {123, 333, 142, 65}, {339, 312, 68, 96}, {439, 194, 96, 54}, {359, 48, 64, 77},  {193, 58, 72, 70},
+    {134, 194, 93, 58},  {243, 252, 63, 91}, {350, 225, 81, 69}, {356, 141, 85, 59}, {290, 91, 56, 80},
+    {209, 146, 80, 50},  {282, 177, 77, 71}, {434, 49, 90, 85},  {139, 21, 60, 54},  {73, 47, 79, 43},
+    {73, 132, 157, 40},  {70, 13, 161, 261}, {167, 164, 50, 52}, {183, 77, 31, 38},  {41, 141, 176, 45},
+    {79, 207, 146, 59},
+};
 
 // mainmenu.state (MMS_* in include/enums.h); 0x11 to 0x16 show the menu's
 // diamond turning from one entry to another.
@@ -530,6 +547,16 @@ void Startup::tick_menu(const UiMouse &mouse, std::span<const StartupKey> keys)
         screen_ = StartupScreen::Briefing;
         briefing(mouse, keys);
         break;
+    case State::AreaStart:
+        start_level();
+        break;
+    case State::CreditsEnter:
+        enter_credits();
+        break;
+    case State::Credits:
+        screen_ = StartupScreen::Credits;
+        credits(mouse);
+        break;
     case State::Quit:
         finish_quit();
         break;
@@ -603,7 +630,81 @@ void Startup::enter_area()
     // is area01v.
     sound(level_ >= 12 ? kSfxDiceLate : kSfxDice);
     idle_ = 600;
+    pick_any_level_ = false;
     play_movie(kMovieArea + level_, State::Briefing);
+}
+
+void Startup::start_credits()
+{
+    result_ = {};
+    play_movie(kMovieWinGame, State::CreditsEnter);
+}
+
+// MMS_CREDITS: the picture and font load, then MMS_CREDITS_SCROLL's first
+// play_credits call, whose result the original ignores.
+void Startup::enter_credits()
+{
+    std::string error;
+    if (!load_picture(dir_, "cred01v", kUiWidth, kUiHeight, credits_, &error) ||
+        !load_font(dir_, 0x2a, credit_font_, &error)) {
+        enter_menu();
+        return;
+    }
+    result_ = {};
+    show(credits_);
+    screen_ = StartupScreen::Credits;
+    credit_scroll_ = 0;
+    credit_line_ = 0;
+    credit_pressed_ = false;
+    play_credits(UiMouse{});
+    state_ = State::Credits;
+}
+
+// MMS_CREDITS_SCROLL's loop body; MMS_CREDITS_DONE returns to the main menu.
+void Startup::credits(const UiMouse &mouse)
+{
+    show(credits_);
+    credit_pressed_ |= mouse.left_pressed || mouse.right_pressed;
+    if (play_credits(mouse))
+        enter_menu();
+}
+
+bool Startup::play_credits(const UiMouse &mouse)
+{
+    // The line spacing: the height of glyph 'A' (lbFontPtr[34]), up to a
+    // multiple of 3, the scroll's step.
+    int height = credit_font_.glyph('A').height;
+    if (height % 3)
+        height = (height / 3 + 1) * 3;
+    const TextSettings settings{
+        {0, 0x72, surface_.width()}, {0, 0, surface_.width(), surface_.height()}, kTextCentre, 0, nullptr};
+    const size_t count = text_->size(TextSection::Credit);
+    bool done = false;
+    int y = -credit_scroll_;
+    for (size_t i = 0; y < surface_.height(); y += height, i++) {
+        size_t index = i + size_t(credit_line_);
+        std::string line(index < count ? text_->at(TextSection::Credit, int(index)) : ".");
+        char marker = line.empty() ? '\0' : line[0];
+        // '!' draws nothing, '.' ends the credits, ':' and ',' draw the line
+        // with a space for the marker.
+        if (marker == '!')
+            continue;
+        if (marker == '.') {
+            done = true;
+            continue;
+        }
+        if (marker == ':' || marker == ',')
+            line[0] = ' ';
+        draw_text(surface_, credit_font_, 0, y, line, settings);
+    }
+    if (credit_pressed_ && (mouse.left_released || mouse.right_released))
+        done = true;
+    credit_scroll_ += 3;
+    if (credit_scroll_ % height == 0) {
+        credit_scroll_ = 0;
+        credit_line_++;
+    }
+    return done;
 }
 
 void Startup::finish_quit()
@@ -1098,24 +1199,55 @@ void Startup::process_nickname_button(int i, State &next)
 
 void Startup::briefing(const UiMouse &mouse, std::span<const StartupKey> keys)
 {
-    // process_keys_area_select: Escape goes back to the main menu.
+    // process_keys_area_select: Escape goes back to the main menu, C lets any
+    // level be picked.
     for (const StartupKey &k : keys) {
         if (k.code == StartupKey::Escape) {
             state_ = State::MenuEnter;
             return;
         }
+        if (k.code == StartupKey::Letter && k.letter == 'C')
+            pick_any_level_ = true;
     }
+    if (pick_any_level_ && pick_level(mouse))
+        return;
     // process_mouse_area_select: a click, or 600 frames without the mouse
-    // moving, starts the level (level 1 for a new game).
-    bool start = mouse.left_pressed;
+    // moving, starts the level (level 1 for a new game). While any level can
+    // be picked a click is spent on the areas alone.
+    bool start = mouse.left_pressed && !pick_any_level_;
     if (last_mouse_sum_ != mouse.x + mouse.y) {
         idle_ = 600;
         last_mouse_sum_ = mouse.x + mouse.y;
     }
     if (int16_t(idle_--) == 0)
         start = true;
-    if (!start)
-        return;
+    if (start)
+        start_level();
+}
+
+bool Startup::pick_level(const UiMouse &mouse)
+{
+    if (!mouse.left_pressed)
+        return false;
+    for (int i = 0; i < kAreaCount; i++) {
+        const AreaBox &b = kAreaBoxes[i];
+        if (mouse.x < b.x || mouse.x >= b.x + b.w || mouse.y < b.y || mouse.y >= b.y + b.h)
+            continue;
+        level_ = i + 1;
+        pick_any_level_ = false;
+        // The original plays animation_table[level + 7], which for level 21
+        // is past its 28 entries: that level starts without a movie.
+        if (kMovieArea + level_ < kMovieCount)
+            play_movie(kMovieArea + level_, State::AreaStart);
+        else
+            start_level();
+        return true;
+    }
+    return false;
+}
+
+void Startup::start_level()
+{
     if (level_ == 0)
         level_ = 1;
     result_ = {};

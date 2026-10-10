@@ -51,6 +51,9 @@ class DriveHost
     // answering a resignation call does. A test hook: the window otherwise
     // needs a member of staff to resign (about 9000 turns and discontent).
     virtual bool drive_staff_demand(uint16_t id) = 0;
+    // Makes the level won, as the year end does: the win letter follows. A
+    // test hook: a win needs the level's criteria met at a year end.
+    virtual bool drive_win_level() = 0;
 };
 
 // Waits for one of `max` slots in `dir` (enhanced/tools/slot.sh's files,
@@ -77,9 +80,13 @@ bool hold_slot(const std::filesystem::path &dir, int max, const std::string &inf
 //   click-thing ID [b]  the same on a thing
 //   key [MOD+]NAME      press a key, 4 frames, release, 2 frames; MOD is
 //                       Shift, Ctrl or Alt (Shift+Return, Shift+F10)
+//                       (NAME as SDL names it, spaces written as _: Keypad_8)
+//   keydown [MOD+]NAME  press a key and keep it down (W, Tab), 2 frames
+//   keyup NAME          release it, 2 frames
 //   type TEXT           the characters TEXT, as a keyboard types them
 //   demand ID           open the staff pay-raise requester for thing ID (a
 //                       test hook; the window normally needs a resignation)
+//   win                 win the level now (a test hook; the letter follows)
 //   screenshot NAME     save the next frame as OUT/NAME.png (the game, no
 //                       tools)
 //   screenshot-ui NAME  the same after the tools and note box are drawn
@@ -129,7 +136,9 @@ class Driver
     // Runs one command; returns the frames it needs before the next.
     int run(DriveHost &host, const Command &c);
     int run_pointer(DriveHost &host, const Command &c);
+    int run_hook(DriveHost &host, const Command &c);
     int run_click(DriveHost &host, const Command &c);
+    int run_key_hold(DriveHost &host, const Command &c);
     int run_output(DriveHost &host, const Command &c);
     // The expect-report commands; true when `c` is one.
     bool run_report(DriveHost &host, const Command &c, const std::string &text);

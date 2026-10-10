@@ -196,7 +196,8 @@ void WinLoseScreen::win_frame(const UiMouse &mouse, WinLoseResult &result, const
     if (over(kAccept.x, kAccept.y, accept.width, accept.height, mouse)) {
         open_ = false;
         result.closed = true;
-        result.next_level = level_ >= 12 ? 0 : level_ + 1;
+        result.game_won = level_ >= 12;
+        result.next_level = result.game_won ? 0 : level_ + 1;
     } else if (over(kDecline.x, kDecline.y, accept.width, accept.height, mouse)) {
         open_ = false;
         result.closed = true;
@@ -225,7 +226,7 @@ void WinLoseScreen::lose_frame(const UiMouse &mouse, WinLoseResult &result, cons
     Sprite accept = sprites_.at(1);
     bool over_accept = over(kAccept.x, kAccept.y, accept.width, accept.height, mouse);
     draw_sprite(surface_, kAccept.x, kAccept.y, sprites_.at(over_accept ? 2 : 1));
-    if (mouse.left_released && over_accept) {
+    if (mouse.left_released || pending_keys_.any) {
         open_ = false;
         result.closed = true;
     }
@@ -244,6 +245,7 @@ WinLoseResult WinLoseScreen::frame(const UiMouse &mouse, const WinLoseKeys &keys
     m.left_released |= lr;
     pending_keys_.escape |= keys.escape;
     pending_keys_.space |= keys.space;
+    pending_keys_.any |= keys.any;
     frame_time_ += seconds;
     if (frame_time_ < kGameFrame && typed_ == 0 && letter_.empty())
         return result;

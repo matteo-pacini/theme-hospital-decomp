@@ -42,6 +42,7 @@
 #include "core/world/debug_dump.h"
 #include "core/world/game.h"
 #include "core/world/icons.h"
+#include "core/world/rats.h"
 #include "core/world/rooms.h"
 #include "core/world/savegame.h"
 #include "core/world/snapshot.h"
@@ -179,9 +180,10 @@ struct DebugReportResult {
 };
 
 // Starts level `number` with its settings (the balance set `balance_id`:
-// "EASY", "FULL" or "HARD"), or returns nothing and says why.
+// "EASY", "FULL" or "HARD"), or returns nothing and says why. `carried_score`
+// is the score the hospital had when the last level ended (0: none).
 std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level, int number,
-                                       std::string_view balance_id, std::string *error)
+                                       std::string_view balance_id, std::string *error, int32_t carried_score = 0)
 {
     Balance settings;
     if (!load_balance(data.dir(), number, balance_id, settings, error))
@@ -189,6 +191,7 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
     auto view = std::make_unique<LevelView>();
     view->game.staff_market.ref_counts = reference_counts(data.text());
     view->game.start(level, number, settings, data.anims(), data.person_complexes(), data.staff_complexes());
+    view->game.carry_score(carried_score);
     view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost());
     add_static_shadows(view->game.world.map);
     return view;
@@ -207,6 +210,16 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
         draw_world({surface, {0, 0, surface.width(), surface.height()}, camera, level->game.turn_count},
                    level->game.world, data, shadows ? level->shadows.get() : nullptr, level->scratch, drawn);
     }
+}
+
+// map_hover, but the rat game shows nothing of the people and objects under
+// the pointer (process_mouse returns before them).
+MapHover game_map_hover(const World &world, uint16_t pointed)
+{
+    MapHover hover = map_hover(world, pointed);
+    if (world.rats.fest_level && !(hover.hit && world.things[hover.thing].type == kThingRat))
+        return {};
+    return hover;
 }
 
 // Whether the hospital has a receptionist (the announcer's pages wait for
@@ -410,6 +423,7 @@ class App : public DriveHost
     std::string drive_report_dir() const override;
     int64_t drive_turn() const override;
     bool drive_staff_demand(uint16_t id) override;
+    bool drive_win_level() override;
 
     bool try_load_data(const std::filesystem::path &dir);
     void load_level(int number);
@@ -444,12 +458,20 @@ class App : public DriveHost
     void handle_event(const SDL_Event &e);
     void key_down(const SDL_KeyboardEvent &key);
     void key_up(const SDL_KeyboardEvent &key);
+    void note_held_keys(const SDL_KeyboardEvent &key, bool down);
     void game_key(const SDL_KeyboardEvent &key);
     // Alt+S quick saves and Alt+L quick loads debug_save_slot; true when
     // `key` was one of them (keyboard.cpp's KC_S and KC_L).
     bool quick_save_load_key(const SDL_KeyboardEvent &key);
     // The speed keys 1-5: true when `key` is one and the speed was set.
     bool game_speed_key(const SDL_KeyboardEvent &key);
+    // P pauses, T the town map, Shift+A the advisor, J the jukebox.
+    void game_letter_key(const SDL_KeyboardEvent &key);
+    // The quit keys; true when `key` is one.
+    bool quit_key(const SDL_KeyboardEvent &key);
+    // Alt+F1-F8 stores and Ctrl+F1-F8 recalls a view position
+    // (record_mappos, recall_mappos); true when `key` was one.
+    bool view_bookmark_key(const SDL_KeyboardEvent &key);
     void open_chart_key(int chart);
     void mouse_down(const SDL_MouseButtonEvent &button);
     void inspect_click(uint8_t button);
@@ -526,8 +548,15 @@ class App : public DriveHost
     // information, the drag pointer and the door hotspot's scroll (req7_overdraw).
     void queue_window_after_frame(Game &game);
     void interface_advisor(Game &game, const UiMouse &mouse, bool input, bool paused);
+    // The panel's icons for this frame, and where its top is.
+    PanelAction panel_step(const Game *game, const UiMouse &mouse, bool paused, bool input);
+    int panel_top_of(const Game &game) const;
     void interface_command(Game &game, const InfoWindowResult &info);
+    // The rat bonus level has ended: on to the level it interrupted.
+    void finish_rat_level();
+    int level_after_win(const Game &game, int next);
     void interface_draw(Game *game, int ox, int oy, int scale);
+    void draw_panel(const Game *game, const PanelFigures &figures);
     void flash_tutorial(const Game *game);
     // The help tooltip of the screen open this frame (src/helpmsg.cpp): the
     // group depends on the front requester.
@@ -553,6 +582,7 @@ class App : public DriveHost
     bool help_page_open() const { return help_.box().style == 2 && !help_.box().msg.empty(); }
     void draw_info_view(Game &game);
     void ask_quit();
+    void quit_game();
     void ask_restart();
     void draw_pointer(int scale, uint8_t sprite = kPointerDefault);
     void startup_step(int out_w, int out_h);
@@ -595,8 +625,12 @@ class App : public DriveHost
     void open_year_end();
     void year_end_step(int out_w, int out_h);
     void open_winlose();
+    bool end_game();
     int lose_line_index(int anim);
     void winlose_step(int out_w, int out_h);
+    // Saves the Continue slot and unloads the game for the main menu, keeping
+    // its score for the next level.
+    void return_to_main_menu();
     // Plays the win/lose movie (index -1 when none): its frames and audio, as
     // startup_step plays a start-up movie.
     void open_winlose_movie(int index);
@@ -757,6 +791,7 @@ class App : public DriveHost
     std::string drop_arg_;
     bool install_failed_ = false;
     std::filesystem::path hiscore_path_;
+    std::filesystem::path data_dir_;
     // The folder the saved games live in, and which File > Save/Load slots
     // hold one ([0] is slot 1).
     std::filesystem::path save_dir_;
@@ -774,6 +809,17 @@ class App : public DriveHost
     // The scroll keys held (move_windows' scroll.*), and the view's velocity
     // in 1/65536 pixel a frame with the fraction carried between frames.
     uint8_t scroll_held_ = 0;
+    // W and Tab held (othervar.turbo_key, lbKeyOn[KC_TAB]) and the modifiers of
+    // the latest key event.
+    bool turbo_held_ = false;
+    bool tab_held_ = false;
+    uint16_t key_mod_ = 0;
+    // The numpad 8/2/4/6 keys held and pressed since the casebook or staff
+    // list last read them, as ChartKeys::kPad* bits.
+    uint8_t pad_held_ = 0, pad_pressed_ = 0;
+    // key_mappos: the cell (column + row * 128) Alt+F1-F8 stored for each of
+    // the 12 bookmark keys, 0 for none; cleared when a level starts.
+    std::array<uint16_t, 12> key_mappos_{};
     int32_t scroll_vel_x_ = 0, scroll_vel_y_ = 0;
     int32_t scroll_frac_x_ = 0, scroll_frac_y_ = 0;
     double scroll_frame_time_ = 0;      // real time accrued towards the next move_windows frame
@@ -808,10 +854,17 @@ class App : public DriveHost
     bool year_end_showing_ = false;
     bool winlose_showing_ = false;
     bool restart_level_ = false;
+    bool quit_now_ = false; // Shift+Ctrl+Escape: EV_QUIT_GAME without the question
+    // The score the last level ended with, for the next level (init_player).
+    int32_t carried_score_ = 0;
     bool winlose_to_menu_ = false; // the losing letter asked for the main menu
     bool chart_space_ = false;     // Space pressed for the charts this frame
+    bool any_key_ = false;         // a key pressed for the win/lose screens (lbInkey)
     bool in_startup_ = false;      // the start-up screens are shown
     bool level_from_cli_ = false;
+    // The level to go back to when a bonus level ends (othervar.level_after_bonus,
+    // which a new level keeps).
+    int level_after_bonus_ = 0;
     bool tutorial_ = false;    // the advisor's tutorial, chosen in the start-up screens
     bool escape_ = false;      // Escape pressed this frame
     bool asking_quit_ = false; // the yes/no requester asks whether to quit
@@ -949,6 +1002,7 @@ bool App::try_load_data(const std::filesystem::path &dir)
     }
     data_ = std::move(data);
     load_ui_art(dir);
+    data_dir_ = dir;
     data_error_.clear();
     // The saved games and the high scores: in the user's save folder, or
     // under a driven run's output folder, which is removed between runs, so
@@ -1001,18 +1055,26 @@ void App::load_ui_art(const std::filesystem::path &dir)
 
 void App::load_level(int number)
 {
+    // allhosps[player].score outlives the game it was in, as in the original:
+    // init_player of the next level keeps it.
+    if (map_)
+        carried_score_ = map_->game.progress.score;
     std::string error;
     auto level = data_->load_level(number, &error);
     if (!level) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
     }
-    auto map = begin_level(*data_, *level, number, balance_id_, &error);
+    auto map = begin_level(*data_, *level, number, balance_id_, &error, carried_score_);
     if (!map) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
     }
+    map->game.progress.level_after_bonus = uint8_t(level_after_bonus_);
     start_view(std::move(map), *level, true);
+    // rat_fest_builder's vary_speed(0x1e): the rat game starts at normal speed.
+    if (map_->game.world.rats.fest_level)
+        speed_ = Speed::Normal;
 }
 
 // Takes over `view` as the level in play and resets the interface round it.
@@ -1026,6 +1088,7 @@ void App::start_view(std::unique_ptr<LevelView> view, const Level &level, bool f
     close_irequesters(interface_);
     info_ = {};
     if (fresh) {
+        key_mappos_.fill(0);
         start_advisor(map_->game.advisor, tutorial_);
         start_hospital_settings(map_->game.hospital, map_->game.settings());
         setup_insurances(map_->game.world, ticks_ms());
@@ -1050,7 +1113,7 @@ void App::start_view(std::unique_ptr<LevelView> view, const Level &level, bool f
     panel_message_time_ = 0;
     last_year_ = map_->game.date.year;
     panel_state_.shown_balance = map_->game.balance;
-    sounds_.safeseed = kLevelStartSeed;
+    sounds_.safeseed = map_->game.safeseed;
     // A level starts on a song picked by the clock, as the game does.
     music_.start_level(ticks_ms());
     sounds_.init_ambients();
@@ -1224,14 +1287,14 @@ void App::interface_step(int out_w, int out_h, int scale)
     interface_yes_no(game, events);
     bool paused = game && game->paused;
     bool input = !events.mouse_on_window && !interface_.modal() && !menu_.active;
-    PanelAction action = panel_frame(panel_state_, mouse, *data_, paused, input);
+    PanelAction action = panel_step(game, mouse, paused, input);
     if (game)
         popup_icons_frame(popups_, game->world, mouse, *data_, frame_seconds_);
     if (game) {
         bool placing = game->world.placing.placing || hire_.placing();
         interface_panel_action(*game, action, placing);
         // The map: what is being placed follows the pointer.
-        bool on_map = input && !paused && mouse.y < panel_top(*data_);
+        bool on_map = input && !paused && mouse.y < panel_top_of(*game);
         interface_map_mouse(*game, mouse, on_map, placing);
         interface_map_hover(*game, mouse, on_map, placing);
         if (interface_.requester() == Requester::Queue)
@@ -1242,6 +1305,22 @@ void App::interface_step(int out_w, int out_h, int scale)
         interface_help();
     }
     interface_draw(game, ox, oy, scale);
+}
+
+// One frame of the panel's icons for `mouse`; the rat game's panel has none to
+// raise or click.
+PanelAction App::panel_step(const Game *game, const UiMouse &mouse, bool paused, bool input)
+{
+    if (game && game->world.rats.fest_level) {
+        panel_state_ = {.shown_balance = panel_state_.shown_balance};
+        return PanelAction::None;
+    }
+    return panel_frame(panel_state_, mouse, *data_, paused, input);
+}
+
+int App::panel_top_of(const Game &game) const
+{
+    return game.world.rats.fest_level ? rat_panel_top(*data_) : panel_top(*data_);
 }
 
 // Escape: with a modal requester up, the requester's; else it drops what is
@@ -1335,6 +1414,21 @@ void App::interface_staff_demand_input(Game &game, const InterfaceEvents &events
     }
 }
 
+// EV_QUIT_GAME (quit_game 1): close the requester, then save the Continue
+// slot (game.cpp's close_irequesters before save_game(0x63)) and return to
+// the main menu; a run started with --level has no menu to return to.
+void App::quit_game()
+{
+    asking_quit_ = false;
+    yes_event_ = no_event_ = {};
+    interface_.close_yes_no(false);
+    if (!level_from_cli_ && data_) {
+        return_to_main_menu();
+    } else {
+        running_ = false;
+    }
+}
+
 // The yes/no requester's answer: its sound, then what it was asked for.
 void App::interface_yes_no(Game *game, const InterfaceEvents &events)
 {
@@ -1347,20 +1441,7 @@ void App::interface_yes_no(Game *game, const InterfaceEvents &events)
     else if (!events.yes_no_cancel)
         sounds_.play_sound(kSourceGeneral, kSfxNo4);
     if (events.yes_no == YesNoAnswer::Yes && asking_quit_) {
-        // quit_game 1: close the requester, then save the Continue slot
-        // (game.cpp's close_irequesters before save_game(0x63)) and return to
-        // the main menu; a run started with --level has no menu to return to.
-        asking_quit_ = false;
-        yes_event_ = no_event_ = {};
-        interface_.close_yes_no(false);
-        if (!level_from_cli_ && data_) {
-            save_continue_slot();
-            map_.reset();
-            in_startup_ = true;
-            startup_.return_to_main_menu();
-        } else {
-            running_ = false;
-        }
+        quit_game();
         return;
     }
     int save_slot = std::exchange(pending_save_slot_, 0);
@@ -1404,7 +1485,6 @@ void App::interface_panel_action(Game &game, PanelAction action, bool placing)
         sounds_.play_sound(kSourceGeneral, kSfxWrong2);
         return;
     }
-    // The other panel buttons lead to requesters and screens not ported yet.
     bool refused = action == PanelAction::Refused;
     if (action == PanelAction::FurnishCorridor) {
         refused = hire_.placing() || build_tool_busy(game);
@@ -1450,7 +1530,8 @@ void App::interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, boo
         } else if (mouse.right_pressed) {
             game.event = hire_staff_cancel(hire_);
         }
-    } else if (mouse.right_pressed && on_map && !advisor_hit(game.advisor, mouse.x, mouse.y) &&
+    } else if (mouse.right_pressed && on_map && !game.world.rats.fest_level &&
+               !advisor_hit(game.advisor, mouse.x, mouse.y) &&
                (interface_.requester() == Requester::None || interface_.requester() == Requester::EditRoom)) {
         if (Event e = interface_map_right(game, placing); e.type)
             game.event = e;
@@ -1560,7 +1641,7 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
     if (interface_watch_buttons(game, mouse))
         return;
     const World::Epidemic &epidemic = game.world.epidemic;
-    MapHover hover = map_hover(game.world, pointed_.thing);
+    MapHover hover = game_map_hover(game.world, pointed_.thing);
     if (hover.hit) {
         panel_info_timer_ = 100;
         panel_info_ = hover.info;
@@ -1601,8 +1682,10 @@ bool App::interface_near_rat(Game &game, const UiMouse &mouse, const MapHover &h
     if (hover.hit && hover.thing < game.world.things.size() && game.world.things[hover.thing].type == kThingRat)
         return false;
     pointer_sprite_ = kPointerRatNear;
-    if (mouse.left_pressed)
+    if (mouse.left_pressed) {
         game.event = map_left_click(game.world, hover, interface_, map_cell_, true);
+        arm_rat_shot(game.world, game.event);
+    }
     return true;
 }
 
@@ -1620,8 +1703,29 @@ void App::interface_map_hover_click(Game &game, const UiMouse &mouse, const MapH
             peep_icon(game.world, h);
     }
     if (mouse.left_pressed)
-        if (Event e = map_left_click(game.world, hover, interface_, map_cell_); e.type)
+        if (Event e = map_left_click(game.world, hover, interface_, map_cell_); e.type) {
+            arm_rat_shot(game.world, e);
             game.event = e;
+        }
+}
+
+// The level a win accepted goes to: the bonus level a good year unlocked,
+// which then goes on to `next` (winlose.cpp's accept button).
+int App::level_after_win(const Game &game, int next)
+{
+    if (!game.progress.bonus_level)
+        return next;
+    level_after_bonus_ = next;
+    return game.progress.bonus_level;
+}
+
+void App::finish_rat_level()
+{
+    // rat_fest_control hands level_number level_after_bonus; the area
+    // screen takes level 0 as 1.
+    int next = std::max(level_after_bonus_, 1);
+    load_level(next);
+    help_.set_page(-1, -1, level_briefing(data_->text(), next));
 }
 
 // After interface_map_hover while the queue window is open: req7_overdraw's
@@ -1659,6 +1763,9 @@ void App::interface_advisor(Game &game, const UiMouse &mouse, bool input, bool p
     in.settings = &game.settings();
     in.world = &game.world;
     in.visitors = game.arrivals.hospitals[0].visitors;
+    in.quake_phase = game.disasters.quake_phase;
+    in.win_progress = game.progress.win_average;
+    in.lose_progress = game.progress.lose_progress;
     in.text = &data_->text();
     uint8_t ambient = 0;
     in.ambient = &ambient;
@@ -1732,14 +1839,7 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
         if (g.advisor.flags & kAdvisorTutorial)
             figures.opening_countdown = 0;
     }
-    draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
-    flash_tutorial(game);
-    if (map_ && game)
-        draw_panel_bar(*game);
-    if (map_) {
-        draw_popup_icons(ui_, popups_, *data_, panel_state_, &figures);
-        draw_emergency(ui_, figures, *data_);
-    }
+    draw_panel(game, figures);
     if (game) {
         draw_advisor(ui_, game->advisor, *data_, data_->font(0x1d));
         advance_balance_roll(panel_state_, game->balance);
@@ -1764,6 +1864,28 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
     SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
     SDL_FRect dst = {float(ox), float(oy), float(kUiWidth * scale), float(kUiHeight * scale)};
     SDL_RenderTexture(renderer_, ui_tex_, nullptr, &dst);
+}
+
+// The panel with what is drawn over it: the rat game's (score, weapons, litter
+// bar), or the hospital's icons with its figures, information bar, fax icons
+// and watch.
+void App::draw_panel(const Game *game, const PanelFigures &figures)
+{
+    if (map_ && map_->game.world.rats.fest_level) {
+        const Game &g = map_->game;
+        draw_rat_panel(ui_, {g.progress.rats_killed, g.world.litter_count, g.world.rats.fest_powerup, g.turn_count},
+                       *data_);
+        flash_tutorial(game);
+        return;
+    }
+    draw_panel_ui(ui_, panel_state_, map_ ? &figures : nullptr, *data_);
+    flash_tutorial(game);
+    if (map_ && game)
+        draw_panel_bar(*game);
+    if (map_) {
+        draw_popup_icons(ui_, popups_, *data_, panel_state_, &figures);
+        draw_emergency(ui_, figures, *data_);
+    }
 }
 
 // The panel's information bar: the special message while one is up, else
@@ -2179,6 +2301,8 @@ void App::charts_step(int out_w, int out_h)
     keys.down = held[SDL_SCANCODE_DOWN];
     keys.left = held[SDL_SCANCODE_LEFT];
     keys.right = held[SDL_SCANCODE_RIGHT];
+    keys.pad_held = pad_held_;
+    keys.pad_pressed = std::exchange(pad_pressed_, uint8_t(0));
     ChartsResult r = chart_frame(charts_, mouse, keys, frame_seconds_, game, game.hospital);
     for (uint8_t sfx : r.sounds)
         sounds_.play_sound(kSourceGeneral, sfx);
@@ -2392,8 +2516,40 @@ void App::advance_winlose_movie()
     }
 }
 
+// The game ends: the game is unloaded for the WIN_GAME movie, the credits and
+// the main menu. A run started with --level has not loaded the start-up
+// screens yet; it does so here and leaves --level behind. False if they
+// cannot load.
+bool App::end_game()
+{
+    if (level_from_cli_) {
+        std::string error;
+        if (!startup_.load(data_dir_, data_->text(), data_->language(), &error)) {
+            std::fprintf(stderr, "%s\n", error.c_str());
+            return false;
+        }
+        level_from_cli_ = false;
+    }
+    map_.reset();
+    in_startup_ = true;
+    startup_.start_credits();
+    return true;
+}
+
+// Back to the main menu: the Continue slot is saved and the score kept for
+// the next level (init_player).
+void App::return_to_main_menu()
+{
+    save_continue_slot();
+    if (map_)
+        carried_score_ = map_->game.progress.score;
+    map_.reset();
+    in_startup_ = true;
+    startup_.return_to_main_menu();
+}
+
 // One frame of the win or lose sequence: its movie, then its letter. Accepting
-// a win starts the next level; dismissing the losing letter returns to the
+// a win starts the next level, or ends the game after the last; dismissing the losing letter returns to the
 // main menu, as the original does.
 void App::winlose_step(int out_w, int out_h)
 {
@@ -2415,6 +2571,7 @@ void App::winlose_step(int out_w, int out_h)
     WinLoseKeys keys;
     keys.escape = std::exchange(escape_, false);
     keys.space = std::exchange(chart_space_, false);
+    keys.any = std::exchange(any_key_, false);
     WinLoseView view;
     view.win = game.progress.level_won != 0;
     view.level = game.level_number();
@@ -2430,14 +2587,17 @@ void App::winlose_step(int out_w, int out_h)
         winlose_.close();
         winlose_showing_ = false;
         if (r.next_level > 0) {
-            load_level(r.next_level);
-            help_.set_page(-1, -1, level_briefing(data_->text(), r.next_level));
+            // winlose.cpp: myhosp->score = othervar.next_level_offer_s.
+            game.progress.score = game.progress.next_level_offer;
+            int next = level_after_win(game, r.next_level);
+            load_level(next);
+            help_.set_page(-1, -1, level_briefing(data_->text(), next));
+        } else if (r.game_won && end_game()) {
+            // The last level won: the movie, the credits, the main menu.
+            // quit_game stays 0, so the Continue slot is not written.
         } else if (winlose_to_menu_ && !level_from_cli_) {
             // DM_MAIN_MENU: back to the main menu (the game is unloaded).
-            save_continue_slot();
-            map_.reset();
-            in_startup_ = true;
-            startup_.return_to_main_menu();
+            return_to_main_menu();
         } else {
             game.paused = false;
         }
@@ -2765,9 +2925,13 @@ std::string App::debug_state_hospital(const Game &g) const
     s += std::format("advisor: tutorial {}, step {:#x}, highlight {:#x}, message \"{}\"\n",
                      (g.advisor.flags & kAdvisorTutorial) != 0, g.advisor.tutorial_step, g.advisor.tutorial_highlight,
                      message);
+    s += std::format("advisor enabled: {}\n", g.advisor.enabled);
     s += std::format("balance: {}, reputation {}\n", g.balance, g.arrivals.hospitals[0].hospital_reputation);
     s += std::format("last command: type={} value={} flags={} arg={}\n", last_event_.type, last_event_.value,
                      last_event_.flags, last_event_.arg);
+    s += std::format("casebook: illness {}, price scale {}; staff list: filter {}, page {}, member {}\n",
+                     charts_.selected_illness, g.arrivals.hospitals[0].price_scale[charts_.selected_illness],
+                     charts_.slist_filter, charts_.slist_page, charts_.value);
     s += "sounds played:";
     for (int i = 0; i < kSfxCount; i++)
         if (uint32_t n = sounds_.played_counts()[size_t(i)])
@@ -2876,6 +3040,7 @@ void App::menu_step(int out_w, int scale)
                     : speed_ == Speed::Max    ? 3
                                               : 4;
     context.paused = map_ && map_->game.paused;
+    context.rat_level = map_ && map_->game.world.rats.fest_level;
     context.disabled = interface_.modal() || (map_ && map_->game.world.placing.menu_disabled);
     for (int i = 0; i < int(context.save_slots.size()); i++)
         context.save_slots[size_t(i)] = save_slots_[size_t(i + 1)];
@@ -3058,9 +3223,46 @@ void App::handle_event(const SDL_Event &e)
     }
 }
 
+// The keys the game reads as held or as the last key pressed: W (turbo),
+// the numpad 8/2/4/6 (the casebook and staff list), and the modifiers.
+void App::note_held_keys(const SDL_KeyboardEvent &key, bool down)
+{
+    key_mod_ = key.mod;
+    if (key.key == SDLK_W)
+        turbo_held_ = down;
+    if (key.key == SDLK_TAB)
+        tab_held_ = down;
+    uint8_t pad = 0;
+    switch (key.key) {
+    case SDLK_KP_8:
+        pad = ChartKeys::kPadUp;
+        break;
+    case SDLK_KP_2:
+        pad = ChartKeys::kPadDown;
+        break;
+    case SDLK_KP_4:
+        pad = ChartKeys::kPadLeft;
+        break;
+    case SDLK_KP_6:
+        pad = ChartKeys::kPadRight;
+        break;
+    default:
+        break;
+    }
+    if (down) {
+        pad_held_ |= pad;
+        if (charts_.open)
+            pad_pressed_ |= pad;
+    } else {
+        pad_held_ &= uint8_t(~pad);
+    }
+}
+
 // A key pressed, outside the developer tools.
 void App::key_down(const SDL_KeyboardEvent &key)
 {
+    note_held_keys(key, true);
+    any_key_ = winlose_showing_;
     if (key.key == SDLK_F10 && data_) {
         quick_report_key(SDL_Keymod(key.mod));
         return;
@@ -3096,17 +3298,21 @@ void App::key_down(const SDL_KeyboardEvent &key)
 // every frame; the held set is what keeps them on).
 void App::key_up(const SDL_KeyboardEvent &key)
 {
+    note_held_keys(key, false);
     scroll_held_ &= uint8_t(~scroll_key_bit(key.key));
 }
 
 // The game's speed keys 1-5 (process_game_keys, src/keyboard.cpp): key 1 is
-// ignored with Shift, its cheat. True when `key` is one and set the speed.
+// ignored with Shift, its cheat, and keys 1 and 2 in a rat game. True when
+// `key` is one and was taken.
 bool App::game_speed_key(const SDL_KeyboardEvent &key)
 {
     if (key.key < SDLK_1 || key.key > SDLK_5)
         return false;
     if (key.key == SDLK_1 && (key.mod & SDL_KMOD_SHIFT))
         return false;
+    if (key.key <= SDLK_2 && map_->game.world.rats.fest_level)
+        return true;
     speed_ = menu_speed(10 * int(key.key - SDLK_1 + 1));
     return true;
 }
@@ -3124,6 +3330,30 @@ bool App::quick_save_load_key(const SDL_KeyboardEvent &key)
     return true;
 }
 
+// Alt+F1-F8 stores the cell at the view's centre and Ctrl+F1-F8 moves the
+// view to it (record_mappos and recall_mappos, src/utils.cpp). Neither runs
+// while paused, nor in a rat game except on F4; recalling a slot nothing was
+// stored in does nothing, and cell 0 cannot be stored, as in the original.
+bool App::view_bookmark_key(const SDL_KeyboardEvent &key)
+{
+    if (!map_ || key.key < SDLK_F1 || key.key > SDLK_F8 || !(key.mod & (SDL_KMOD_ALT | SDL_KMOD_CTRL)))
+        return false;
+    const size_t slot = size_t(key.key - SDLK_F1);
+    if (map_->game.paused || (key.key != SDLK_F4 && map_->game.world.rats.fest_level))
+        return true;
+    if (key.mod & SDL_KMOD_ALT) {
+        sounds_.play_sound(kSourceGeneral, kSfxSnapshot);
+        Point cell = world_to_cell({camera_.x + surface_.width() / 2, camera_.y + surface_.height() / 2});
+        int col = std::clamp(cell.x, 0, kMapSize - 1);
+        int row = std::clamp(cell.y, 0, kMapSize - 1);
+        key_mappos_[slot] = uint16_t(col + row * kMapSize);
+    } else if (key_mappos_[slot]) {
+        Point p = cell_to_world(key_mappos_[slot] % kMapSize, key_mappos_[slot] / kMapSize);
+        camera_ = {p.x - surface_.width() / 2, p.y - surface_.height() / 2};
+    }
+    return true;
+}
+
 // A key pressed over the hospital or a chart, with no modal requester up.
 void App::game_key(const SDL_KeyboardEvent &key)
 {
@@ -3133,7 +3363,8 @@ void App::game_key(const SDL_KeyboardEvent &key)
         return;
     }
     if (year_end_showing_ || winlose_showing_) {
-        // The year-end screens and the letters read Escape and Space alone.
+        // The year-end screens read Escape and Space alone; the letters, any
+        // key (any_key_).
         chart_space_ = chart_space_ || key.key == SDLK_SPACE;
         return;
     }
@@ -3141,25 +3372,55 @@ void App::game_key(const SDL_KeyboardEvent &key)
         return;
     if (quick_save_load_key(key))
         return;
-    if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
-        // The charts, from the game or another chart; not while paused.
-        if (!map_->game.paused)
-            open_chart_key(int(key.key - SDLK_F1));
-    } else if (charts_.open) {
-        // The charts take Escape, Space and the arrows only.
+    if (view_bookmark_key(key))
+        return;
+    if (charts_.open)
         chart_space_ = chart_space_ || key.key == SDLK_SPACE;
-    } else if ((key.key == SDLK_ESCAPE && (key.mod & SDL_KMOD_SHIFT)) ||
-               ((key.key == SDLK_Q || key.key == SDLK_X) &&
-                (key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_SHIFT)))) {
-        // The game's quit keys ask first.
-        ask_quit();
-    } else if (key.key == SDLK_P && map_) {
+    if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
+        // The charts, from the game or another chart; not while paused, and
+        // only F4 in a rat game.
+        if (!map_->game.paused && (key.key == SDLK_F4 || !map_->game.world.rats.fest_level))
+            open_chart_key(int(key.key - SDLK_F1));
+        return;
+    }
+    if (quit_key(key) || !map_)
+        return;
+    game_letter_key(key);
+}
+
+void App::game_letter_key(const SDL_KeyboardEvent &key)
+{
+    if (key.key == SDLK_P) {
         map_->game.paused = !map_->game.paused;
-    } else if (key.key == SDLK_T && map_) {
+    } else if (key.key == SDLK_T && charts_.open) {
+        // From a chart, T leaves for the town map (DM_TOWN_MAP).
+        charts_.open = false;
+        open_town_map();
+    } else if (key.key == SDLK_T) {
         open_town_ = true;
-    } else if (key.key == SDLK_J && !(key.mod & SDL_KMOD_SHIFT) && map_ && !map_->game.paused) {
+    } else if (key.key == SDLK_A && (key.mod & SDL_KMOD_SHIFT)) {
+        toggle_advisor(map_->game.advisor, map_->game.world);
+    } else if (key.key == SDLK_J && !(key.mod & SDL_KMOD_SHIFT) && !map_->game.paused && !charts_.open) {
         map_->game.event = {EV_OPEN_JUKEBOX};
     }
+}
+
+// The game's quit keys, Escape with Shift and Q or X with a modifier: they
+// ask first, apart from Shift+Ctrl+Escape and Shift+Escape with Tab held,
+// which quit at once. True when `key` is one.
+bool App::quit_key(const SDL_KeyboardEvent &key)
+{
+    const bool shift_escape = key.key == SDLK_ESCAPE && (key.mod & SDL_KMOD_SHIFT);
+    if (shift_escape && ((key.mod & SDL_KMOD_CTRL) || tab_held_)) {
+        quit_now_ = true;
+        return true;
+    }
+    if (shift_escape ||
+        ((key.key == SDLK_Q || key.key == SDLK_X) && (key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_SHIFT)))) {
+        ask_quit();
+        return true;
+    }
+    return false;
 }
 
 // F1-F8: the chart `chart`, refused with a sound when it cannot open.
@@ -3227,6 +3488,10 @@ void App::update(float dt)
         return;
     if (quick_.open)
         return;
+    if (std::exchange(quit_now_, false)) {
+        quit_game();
+        return;
+    }
     if (restart_level_) {
         restart_level_ = false;
         load_level(level_);
@@ -3234,6 +3499,8 @@ void App::update(float dt)
     }
     if (map_ && !map_->game.paused)
         run_turns(dt);
+    if (map_ && map_->game.progress.rat_game_over)
+        finish_rat_level();
     if (map_ && !year_end_showing_ && !winlose_showing_)
         check_year_end();
     if (year_end_showing_ || winlose_showing_ || town_.is_open() || charts_.open || fax_.open)
@@ -3285,8 +3552,16 @@ void App::run_turns(float dt)
     // turns pause while it is open.
     if (map_ && interface_.requester() == Requester::StaffDemand)
         return;
+    double rate = double(int(speed_));
+    if (turbo_held_ && !(key_mod_ & SDL_KMOD_CTRL) && !interface_.modal() && !town_.is_open() && !fax_.open &&
+        !year_end_showing_ && !winlose_showing_) {
+        // process_game_keys sets othervar.turbo_key on every frame W is held
+        // without Ctrl: start_turn then runs unpaced, at least every second
+        // frame, and the game loop adds two more turns to each one it ran.
+        rate = 3 * std::clamp(rate, 0.5 / kGameFrame, 1.0 / kGameFrame);
+    }
     // At most a few frames' worth of turns after a stall.
-    turn_clock_ = std::min(turn_clock_ + dt * double(int(speed_)), 8.0);
+    turn_clock_ = std::min(turn_clock_ + dt * rate, 8.0);
     for (; turn_clock_ >= 1; turn_clock_ -= 1)
         map_->game.turn();
 }
@@ -3512,7 +3787,7 @@ void App::view_sounds(int vw, int vh)
     // requester is up.
     if (!interface_.modal())
         music_.play_next(map_->game.paused);
-    sounds_.do_ambients(map_->game.paused, false, has_receptionist(map_->game.world));
+    sounds_.do_ambients(map_->game.paused, map_->game.world.rats.fest_level != 0, has_receptionist(map_->game.world));
 }
 
 // What is being placed (an object, a room's blueprint, a member of staff),
@@ -3857,7 +4132,10 @@ void App::drive_button(int button, bool down)
 
 bool App::drive_key(std::string_view name, bool down, uint16_t mods)
 {
-    SDL_Keycode key = SDL_GetKeyFromName(std::string(name).c_str());
+    // A script word has no spaces: Keypad_8 is "Keypad 8".
+    std::string key_name(name);
+    std::ranges::replace(key_name, '_', ' ');
+    SDL_Keycode key = SDL_GetKeyFromName(key_name.c_str());
     if (key == SDLK_UNKNOWN)
         return false;
     SDL_Keymod sdl_mods = SDL_KMOD_NONE;
@@ -3919,6 +4197,19 @@ bool App::drive_staff_demand(uint16_t id)
     if (!map_ || in_startup_ || id == 0 || id >= map_->game.world.things.size())
         return false;
     open_staff_resign_requester(demand_, interface_, map_->game.world, id, sounds_.safeseed);
+    return true;
+}
+
+bool App::drive_win_level()
+{
+    if (!map_ || in_startup_)
+        return false;
+    YearEnd &s = map_->game.progress;
+    s.level_won = 1;
+    s.next_level_offer = 1000000;
+    s.year_end_type = 5;
+    s.winlose_result = 1;
+    s.win_declined = 0;
     return true;
 }
 

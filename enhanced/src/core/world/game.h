@@ -87,6 +87,10 @@ class Game
     // setup_new_level and init_player (src/start.cpp).
     void start(const Level &level, int number, const Balance &settings, const AnimData &anims,
                const PersonComplexes &complexes, const StaffComplexes &staff_complexes);
+    // Gives the level just started the score the hospital had when the last
+    // level ended (0: none): init_player keeps it above level 1 and starts at
+    // 10000 otherwise, which start() has done. Recorded in command_log.
+    void carry_score(int32_t score);
 
     // Runs one game turn unless paused: advances the turn count and the
     // random values the game draws every turn, the date every 50 turns,
@@ -108,6 +112,10 @@ class Game
     // The admin calls left out, the replay check's SKIP (kSkip*); not part of
     // a saved game.
     uint8_t skipped_calls = 0;
+    // The presentation generator (the game's safeseed) as the level's start
+    // leaves it: the special levels' builders draw from it. Not part of a
+    // saved game; a loaded one starts at kLevelStartSeed.
+    uint32_t safeseed = kLevelStartSeed;
     // Turns until the hospital opens to patients; 0 once it is open.
     int opening_countdown = 0;
     // The level's countdown from the start (gbv OpenCountdown).
@@ -194,12 +202,15 @@ class Game
     // each, for th_replay's --script (tools/replay/main.cpp): "<turn> <rest>",
     // the rest carried out by replay_input before turn <turn> runs, in order.
     // start() makes it a "#" line naming the level and the build
-    // (snapshot_build_id, core/world/snapshot.h), then it records:
+    // (snapshot_build_id, core/world/snapshot.h), a "# Score <n>" line when the
+    // level began with a carried score (th_replay starts from it), then it
+    // records:
     //   <type> <value> <arg>          a command, as process_turn carries it out
     //                                 (Event::flags is not kept);
     //   @walker_add <cell>            add_walker;
     //   @walker_send <id> <cell>      send_walker;
     //   @overview <hospital>          overview_frame;
+    //   @advisor_event <bits>         raise_advisor_event;
     //   @cursor <cell>                update_placement, when it would look
     //                                 again (the pointer moved or a redraw);
     // and what the interface changes in place, outside commands, found by
@@ -243,6 +254,10 @@ class Game
     // lose rows, written back to the hospital and to the shared criteria rows.
     // Recorded in command_log.
     void overview_frame(uint8_t hospital);
+    // The interface raises advisor.event_flags' `bits` (kAdvisorEvent*) as a
+    // button of the game's does outside the commands. Recorded in
+    // command_log.
+    void raise_advisor_event(uint32_t bits);
     // Path finding tool: sends person `id` to `cell`. A patient on an action
     // sequence leaves it and only walks from then on. Recorded in
     // command_log.

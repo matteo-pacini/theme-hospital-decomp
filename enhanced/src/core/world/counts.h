@@ -24,7 +24,7 @@ void reset_all_count(World &world, uint32_t game_turn);
 // refreshment, warmth, bladder, its illness) and, the first time, to this
 // month's visitors in the graphs' history (Finance::history, kept by
 // kPfCountedVisitor); an emergency patient of hospital 0 counts as present.
-// The contagious patients' counts and an epidemic's end are not ported.
+// Hospital 0's contagious patients add to World::epidemic.contagious_count, and one outdoors resets its timer.
 void person_count(World &world, uint16_t id, uint32_t game_turn);
 
 // staff_count (0x72684): hospital 0's member of staff `id`, not an

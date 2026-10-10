@@ -25,6 +25,9 @@ constexpr size_t kInspectorReserve = 0x19;
 // The animation the inspector stands in (check_frame 0x89, + its facing).
 constexpr uint16_t kAnimInspector = 0x89;
 
+// The forced advice (ForcedAdvice section) given when an epidemic is over.
+constexpr uint16_t kAdviceEpidemicOver = 9;
+
 bool outdoors(const World &world, const Thing &t)
 {
     return world.map[size_t(t.x.tile + (t.y.tile << 7))].owner_flags & kCellOutdoor;
@@ -131,6 +134,7 @@ void alert_epidemic(World &world, uint8_t illness, uint8_t owner)
     if (owner != 0 || world.epidemic.illness != 0 || world.emergency.state != 0)
         return;
     get_playercall(world, 2, 0, owner);
+    world.advisor_events |= kAdvisorEventEpidemic;
     world.epidemic.illness = illness;
     make_a_playercall(world, kCallEpidemic, 1, 0x14, owner);
 }
@@ -194,6 +198,8 @@ uint32_t epidemic_status(World &world, uint8_t owner)
         }
     }
     if (over) {
+        if (owner == 0 && world.game)
+            world.game->advisor.forced_advice_id = kAdviceEpidemicOver;
         e.timer = 0;
         e.active = 0;
         e.over = 1;
@@ -243,6 +249,8 @@ void clean_contagious_peep(World &world, uint16_t id)
     reset_icon_value(peep, kIconVaccinated);
     reset_icon_value(peep, kIconContagious);
     remove_person_from_vaccination_queue(world, id);
+    if (world.epidemic.spread_count >= 1)
+        world.epidemic.spread_count--;
 }
 
 uint16_t create_inspector(World &world, const AnimData &anims, uint8_t owner)

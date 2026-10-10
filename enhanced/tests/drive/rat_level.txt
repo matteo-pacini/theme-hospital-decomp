@@ -1,0 +1,30 @@
+# Level 13: the rat bonus level's panel and controls. The game opens at once
+# at normal speed with the rat panel (score, weapons, litter bar) instead of
+# the hospital's; speeds 1 and 2 and the F-keys' charts are refused, and a
+# left click near a rat fires a shot (a miss here: the rat is not under the
+# pointer), counted as one of the hospital's rat shots.
+wait 20
+expect level: 13
+expect open: true, opening countdown 0
+expect rats.fest_level=1
+screenshot rat_panel
+key 4
+wait 3
+expect speed: 25 turns/s
+key 1
+wait 3
+expect speed: 25 turns/s
+key 2
+wait 3
+expect speed: 25 turns/s
+key F1
+wait 5
+expect screen: hospital
+turns 28
+thing 30
+wait 1
+expect pointer 10
+click-thing 30
+wait 3
+expect rat_shots=1 rats_killed=0
+screenshot rat_shot

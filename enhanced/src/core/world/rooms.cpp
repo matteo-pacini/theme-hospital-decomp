@@ -33,6 +33,7 @@ namespace
 
 // Room types (the game's ROOM_*).
 constexpr uint8_t kRoomDestroyed = 6;
+constexpr uint8_t kRoomWard = 9;
 constexpr uint8_t kRoomTheatre = 10;
 constexpr uint8_t kRoomResearch = 28;
 
@@ -357,10 +358,18 @@ bool diagnose_patient_find_room(World &world, uint16_t id)
     return false;
 }
 
+// diagnose_patient's status icon over `target` (the member of staff, or the
+// patient awaiting a decision).
+void diagnose_icon(World &world, const AnimData &anims, Thing &target, int8_t icon)
+{
+    trace_event("diagnose_icon %u icon=%u", unsigned(&target - world.things.data()), unsigned(icon));
+    set_icon_value(anims, target, icon);
+}
+
 // diagnose_patient's complete diagnosis: the illness is known; its treatment
 // becomes the patient's unless the policy wants more diagnosis and a room is
 // left for it.
-void diagnose_patient_complete(World &world, Thing &staff, uint16_t id, int16_t diag)
+void diagnose_patient_complete(World &world, const AnimData &anims, Thing &staff, uint16_t id, int16_t diag)
 {
     Thing &p = world.things[id];
     uint8_t illness = p.illness;
@@ -378,12 +387,30 @@ void diagnose_patient_complete(World &world, Thing &staff, uint16_t id, int16_t 
     p.person_flags |= kPfDiagnosed;
     if (diag < hospital_of(world).diag_threshold && diagnose_patient_find_room(world, id))
         return;
+    diagnose_icon(world, anims, staff, kIconDiagnosed);
     if (world.cure_available[illness] == 0) {
         p.person_flags |= kPfAwaitingDecision | kPfWaitingForRoom;
         p.treatment = p.illness;
+        diagnose_icon(world, anims, p, kIconAwaitingDecision);
     } else {
         reputation_affected(world, p.illness, kRepDiagnosed);
         p.treatment = p.illness;
+    }
+}
+
+// diagnose_patient's guess for a diagnosis that is neither complete nor
+// hopeless: a diagnosis room is picked (find_possible_diagnosis) or the
+// patient needs one, and the staff member's icon says which.
+void diagnose_patient_guess(World &world, const AnimData &anims, Thing &staff, uint16_t id)
+{
+    Thing &p = world.things[id];
+    find_possible_diagnosis(world, id);
+    if (p.treatment == 0) {
+        diagnose_icon(world, anims, staff, kIconNoDiagnosis);
+        p.person_flags |= kPfNeedsDiagnosisRoom;
+        reputation_affected(world, p.illness, kRepNoTreatmentFound);
+    } else {
+        diagnose_icon(world, anims, staff, kIconGuessed);
     }
 }
 
@@ -403,6 +430,7 @@ void diagnose_patient_hopeless(World &world, const AnimData &anims, uint16_t id,
     if (coin == 1)
         change_health(world, anims, id, int16_t(-(p.health - 3)), game_turn);
     reputation_affected(world, p.illness, kRepDiagnosisFailed);
+    world.mishaps++;
 }
 
 // diagnose_patient (0x3d28c): a complete diagnosis makes the illness known
@@ -412,19 +440,19 @@ void diagnose_patient_hopeless(World &world, const AnimData &anims, uint16_t id,
 // autopsy or near death (a draw from world.seed); otherwise a diagnosis
 // room is picked (find_possible_diagnosis), or the patient needs one. Ward
 // illnesses go by the ward. A newly found illness is announced
-// (announce_new_illness). The status icons, epidemics and the diagnosed and
-// mishap counts are not ported.
+// (announce_new_illness); the staff member's status icon says what came of
+// it and a failed diagnosis counts as a mishap.
 void diagnose_patient(World &world, const AnimData &anims, Thing &staff, uint16_t id, uint32_t game_turn)
 {
     Thing &p = world.things[id];
     trace_event("diagnose %u staff=%u", unsigned(id), unsigned(&staff - world.things.data()));
     int16_t diag = p.diagnosis;
     if (diag >= kDiagnosisComplete)
-        diagnose_patient_complete(world, staff, id, diag);
+        diagnose_patient_complete(world, anims, staff, id, diag);
     else if (diag <= kDiagnosisHopeless)
         diagnose_patient_hopeless(world, anims, id, game_turn, std::source_location::current());
     else
-        diagnose_patient_find_room(world, id);
+        diagnose_patient_guess(world, anims, staff, id);
     p.next_treatment = 0;
     if (kExpertiseData[p.treatment].needs_ward & 1) {
         p.next_treatment = p.treatment;
@@ -641,6 +669,47 @@ int staff_with_skill(const World &world, uint8_t owner, int skill)
     for (const Thing &t : world.things)
         n += t.type == kThingStaff && t.owner == owner && (t.skills & (1 << skill));
     return n;
+}
+
+Required what_is_required(const World &world, uint8_t illness)
+{
+    constexpr uint8_t kNurseSkill = 2;
+    constexpr uint8_t kSurgeonSkill = 5;
+    Required r;
+    if (world.cure_available[illness] == 1) {
+        r.treatable = true;
+        return r;
+    }
+    const ExpertiseInfo &exp = kExpertiseData[illness];
+    if (world.room_of_type[exp.category] == 0) {
+        r.missing_room = exp.category;
+        r.room_unavailable = !room_available(world, exp.category);
+    }
+    if (exp.staff_mask & kSkillSurgeon) {
+        const int surgeons = surgeon_count(world, 0);
+        if (staff_with_skill(world, 0, kSurgeonSkill) == 0) {
+            r.staff_mask = kSkillSurgeon;
+            r.missing_skill = kSurgeonSkill;
+            r.surgeons_needed = 2;
+        } else if (surgeons < 2) {
+            r.surgeons_needed = uint8_t(2 - surgeons);
+            r.staff_mask = kSkillSurgeon;
+            r.missing_skill = kSurgeonSkill;
+        }
+    } else {
+        for (uint8_t i = 0; i < 9; i++) {
+            if ((exp.staff_mask & (1 << i)) && staff_with_skill(world, 0, i) == 0) {
+                r.staff_mask = exp.staff_mask;
+                r.missing_skill = i;
+                break;
+            }
+        }
+    }
+    if (exp.needs_ward && world.cure_available[kIllDiagWard] == 0) {
+        r.needs_ward = world.room_of_type[kRoomWard] == 0;
+        r.needs_nurse = staff_with_skill(world, 0, kNurseSkill) == 0;
+    }
+    return r;
 }
 
 namespace
@@ -914,6 +983,9 @@ void staff_abandon_pager_response(World &world, uint16_t id)
 
 uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_t timeout, uint8_t owner)
 {
+    // The rat game has no calls.
+    if (world.rats.fest_level)
+        return 0;
     for (size_t i = 1; i < world.calls.size(); i++) {
         World::PlayerCall &call = world.calls[i];
         if (call.type == 0) {

@@ -69,6 +69,7 @@ void test_patient_dies_level1(const char *dir);
 
 // rats.cpp
 void test_rats();
+void test_special_levels(const char *dir);
 
 // computer.cpp
 void test_computer_tables();
@@ -158,6 +159,7 @@ void test_balance_roll(const char *dir);
 void test_advisor_tutorial(const char *dir);
 void test_advisor_tutorial_rooms(const char *dir);
 void test_advisor_advice(const char *dir);
+void test_carried_score(const char *dir);
 void test_advisor_counts(const char *dir);
 
 // rooms.cpp
@@ -191,6 +193,7 @@ void test_machine_saved_level6(const char *dir);
 void test_machine_replace_level6(const char *dir);
 void test_do_earthquake_level6(const char *dir);
 void test_disasters_level1(const char *dir);
+void test_second_part_people_in_the_way(const char *dir);
 
 // research.cpp
 void test_research_choices();
@@ -299,6 +302,7 @@ const DataTest kDataTests[] = {
     TEST(test_install_cancelled),
     TEST(test_install_from_installer),
     TEST(test_game_data),
+    TEST(test_special_levels),
     TEST(test_computer_players),
     TEST(test_computer_money),
     TEST(test_computer_staff),
@@ -337,6 +341,7 @@ const DataTest kDataTests[] = {
     TEST(test_advisor_tutorial),
     TEST(test_advisor_tutorial_rooms),
     TEST(test_advisor_advice),
+    TEST(test_carried_score),
     TEST(test_advisor_counts),
     TEST(test_staff_at_work_level1),
     TEST(test_litter_drawn),
@@ -392,6 +397,7 @@ const DataTest kDataTests[] = {
     TEST(test_machine_replace_level6),
     TEST(test_do_earthquake_level6),
     TEST(test_disasters_level1),
+    TEST(test_second_part_people_in_the_way),
     TEST(test_help_tooltip_text),
     TEST(test_help_text_ids),
     TEST(test_help_box_clamped),

@@ -79,29 +79,31 @@ constexpr std::array<uint8_t, 47> kNotContagious = {
 
 // towns[] fields that are not balance keys (src/tables.cpp): a new patient
 // is insured with a 1 in insurance_odds chance; special_kind is 1 for the
-// rat levels (no patients), 2 for the training level.
+// rat levels (no patients), 2 for the training level; special_arg is the
+// rat_fest_level entry the builder of a special level takes.
 struct TownExtra {
     uint16_t insurance_odds;
     uint8_t special_kind;
+    uint8_t special_arg;
 };
 
 constexpr std::array<TownExtra, 16> kTownExtras = {{
-    {3, 0},
-    {3, 0},
-    {3, 0},
-    {10, 0},
-    {5, 0},
-    {5, 2},
-    {5, 0},
-    {5, 0},
-    {5, 0},
-    {5, 0},
-    {5, 0},
-    {5, 0},
-    {5, 0},
-    {5, 1},
-    {5, 1},
-    {5, 0},
+    {3, 0, 0},
+    {3, 0, 0},
+    {3, 0, 0},
+    {10, 0, 0},
+    {5, 0, 0},
+    {5, 2, 3},
+    {5, 0, 0},
+    {5, 0, 0},
+    {5, 0, 0},
+    {5, 0, 0},
+    {5, 0, 0},
+    {5, 0, 0},
+    {5, 0, 0},
+    {5, 1, 1},
+    {5, 1, 2},
+    {5, 0, 0},
 }};
 
 // gbv.peep_speed and gbv.peep_anim_speed (src/array.cpp; not balance keys):

@@ -108,14 +108,19 @@ void setup_insurances(World &world, uint32_t clock);
 bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &event);
 
 // The keys the charts read: Escape and Space pressed since the last frame
-// (lbInkey), the arrows held (lbKeyOn).
+// (lbInkey), the arrows held (lbKeyOn), and the numpad 8/2/4/6 keys both held
+// (the casebook, lbKeyOn[KC_NUMPAD*]) and pressed since the last frame (the
+// staff list, lbInkey), as ChartKeys::kPad* bits.
 struct ChartKeys {
+    static constexpr uint8_t kPadUp = 1, kPadDown = 2, kPadLeft = 4, kPadRight = 8;
     bool escape = false;
     bool space = false;
     bool up = false;
     bool down = false;
     bool left = false;
     bool right = false;
+    uint8_t pad_held = 0;
+    uint8_t pad_pressed = 0;
 };
 
 // What a frame of the charts asks of the caller.
@@ -170,7 +175,7 @@ struct Charts {
 
     // The hospitals' names (allhosps[i].name): [0] the player's, which the
     // caller sets; the rivals' are chosen when a level starts
-    // (setup_computer_players), which is not ported.
+    // (setup_computer_players).
     std::array<std::string, 4> hospital_names;
 
     Surface surface;

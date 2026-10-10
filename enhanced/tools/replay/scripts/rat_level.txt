@@ -1,0 +1,36 @@
+# Level 13: the first rat bonus level (towns[13] special_kind 1, special_arg 1:
+# rat_fest_level[1]). rat_fest_builder scatters litter, rat holes and three
+# handymen over the player's land, the hospital is open from the start and has
+# no patients, calls or computer hospitals. Rats come out of the holes and the
+# player shoots them: every weapon (shotgun, uzi, rocket, explosive) hits one
+# and one shot misses; a weapon change after ten kills (rat_fest_control); the
+# handymen sweep up the litter until it falls to 4 and the game ends
+# (rat_game_over, the run's last turn).
+# Turns 6000
+# Expect rat
+# Expect rathole
+# Expect shoot_rat
+# Expect shoot_rat 0 killed=0
+# Expect shoot_rat 29 killed=1 powerup=0
+# Expect shoot_rat 30 killed=1 powerup=1
+# Expect shoot_rat 31 killed=1 powerup=2
+# Expect shoot_rat 32 killed=1 powerup=3
+# Expect rat_game_over
+28 106 29 256
+29 106 30 257
+30 106 31 258
+53 106 32 259
+78 106 33 256
+79 106 34 256
+80 106 0 0
+81 106 36 256
+103 106 29 257
+128 106 30 258
+129 106 31 259
+153 106 30 256
+154 106 31 256
+155 106 0 0
+178 106 32 256
+179 106 34 257
+180 106 37 258
+203 106 33 259

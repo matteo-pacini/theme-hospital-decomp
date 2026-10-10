@@ -211,7 +211,11 @@ void check_other_balances(const char *dir)
 
     th::Balance missing;
     std::string error;
-    CHECK(!th::load_balance(dir, 13, "FULL", missing, &error) && !error.empty());
+    CHECK(!th::load_balance(dir, 13, "NONE", missing, &error) && !error.empty());
+    // The bonus rat levels have no balance file of their own.
+    th::Balance bonus;
+    CHECK(th::load_balance(dir, 13, "FULL", bonus));
+    CHECK(!th::load_balance(dir, 12, "NONE", missing, &error));
 
     CHECK(th::balance_description(dir, "FULL", 0) == " Doctor (Medium)");
     CHECK(th::balance_description(dir, "EASY", 2) == " AIPler (Einfach)");

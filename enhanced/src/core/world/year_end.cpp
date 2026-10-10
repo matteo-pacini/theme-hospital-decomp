@@ -467,14 +467,16 @@ int32_t evaluate_criteria(Game &game, uint8_t owner)
     const int32_t level_won = game.progress.level_won;
     const uint32_t groups = check_criteria_values(game, true, owner);
     const auto &rows = game.progress.win_criteria;
-    int32_t best = 0, best_group = 0;
+    int32_t best = 0, best_group = 0, total = 0;
     for (uint32_t group = 1; group <= groups; group++) {
         const int avg = group_average(rows, group, level_won);
         if (avg > best) {
             best = avg;
             best_group = int32_t(group);
         }
+        total += avg;
     }
+    game.progress.win_average = total > 0 && groups > 0 ? total / int32_t(groups) : 0;
     if (owner == 0) {
         game.progress.win_progress = best;
         game.progress.best_win_group = best_group;

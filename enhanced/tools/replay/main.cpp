@@ -84,7 +84,10 @@ struct ScriptLine {
     std::string input;
 };
 
-bool read_script(const char *path, std::vector<ScriptLine> &script, std::string &error)
+// Reads `path`'s commands into `script`, and a "# Score N" line into
+// `carried_score` (the score the last level left; the original's side reads
+// the same line).
+bool read_script(const char *path, std::vector<ScriptLine> &script, int32_t &carried_score, std::string &error)
 {
     std::ifstream in(path);
     if (!in) {
@@ -95,6 +98,8 @@ bool read_script(const char *path, std::vector<ScriptLine> &script, std::string 
     bool other_build = false, raw_bytes = false;
     while (std::getline(in, line)) {
         if (line.starts_with("#")) {
+            if (line.starts_with("# Score "))
+                carried_score = int32_t(std::strtol(line.c_str() + 8, nullptr, 10));
             // Game::command_log's first line names the build.
             if (size_t at = line.find(", build "); at != std::string::npos)
                 other_build |= std::strtoull(line.c_str() + at + 8, nullptr, 16) != th::snapshot_build_id();
@@ -319,7 +324,7 @@ bool load_from_snapshot(th::Game &game, Options &o, const th::GameData &data, st
 
 // Starts the game at level --level's start. Reports what went wrong on
 // standard error.
-bool start_level(th::Game &game, const Options &o, const th::GameData &data)
+bool start_level(th::Game &game, const Options &o, const th::GameData &data, int32_t carried_score)
 {
     std::string error;
     auto level = data.load_level(o.level_number, &error);
@@ -333,6 +338,7 @@ bool start_level(th::Game &game, const Options &o, const th::GameData &data)
     // touch the seed.
     game.staff_market.ref_counts = th::reference_counts(data.text());
     game.start(*level, o.level_number, settings, data.anims(), data.person_complexes(), data.staff_complexes());
+    game.carry_score(carried_score);
     th::add_static_shadows(game.world.map);
     th::start_advisor(game.advisor, false);
     th::start_hospital_settings(game.hospital, game.settings());
@@ -359,6 +365,9 @@ void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out, const
     in.settings = &game.settings();
     in.world = &game.world;
     in.visitors = game.arrivals.hospitals[0].visitors;
+    in.quake_phase = game.disasters.quake_phase;
+    in.win_progress = game.progress.win_average;
+    in.lose_progress = game.progress.lose_progress;
     in.text = &data.text();
     in.last = last;
     in.pending = pending;
@@ -374,7 +383,7 @@ void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out, const
     for (size_t i = 0; i < given.size(); i++)
         given[i] = game.advisor.advice[i].times_given;
     // The presentation's generator, which nothing traced reads.
-    static uint32_t safeseed = th::kLevelStartSeed;
+    static uint32_t safeseed = game.safeseed;
     // The tutorial's step events belong to this turn, as the game's frame
     // writes its turn's events.
     th::EventScope scope(&game.events, game.turn_count);
@@ -455,9 +464,10 @@ bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &
             std::fputs(th::trace_turn(game, &game.events).c_str(), out);
         game.events.events.clear();
         // The original ends the run at the turn the win or loss is decided
-        // (its year-end screens wait for input the replay cannot give), so
-        // the port stops here too, at the same turn.
-        if (game.progress.winlose_result != 0)
+        // (its year-end screens wait for input the replay cannot give) or the
+        // rat game ends (it goes to the area screen), so the port stops here
+        // too, at the same turn.
+        if (game.progress.winlose_result != 0 || game.progress.rat_game_over)
             break;
     }
     return true;
@@ -511,7 +521,8 @@ int main(int argc, char **argv)
 
     std::string error;
     std::vector<ScriptLine> script;
-    if (o.script_path && !read_script(o.script_path, script, error)) {
+    int32_t carried_score = 0;
+    if (o.script_path && !read_script(o.script_path, script, carried_score, error)) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 1;
     }
@@ -523,7 +534,7 @@ int main(int argc, char **argv)
     }
 
     auto game = std::make_unique<th::Game>();
-    if (o.load_path ? !load_from_snapshot(*game, o, data, script) : !start_level(*game, o, data))
+    if (o.load_path ? !load_from_snapshot(*game, o, data, script) : !start_level(*game, o, data, carried_score))
         return 1;
     if (!th::parse_skipped_calls(o.skip, game->skipped_calls)) {
         std::fprintf(stderr, "--skip: only computer_action is known\n");

@@ -1,0 +1,44 @@
+# Level 1: gp_office.txt with four benches in the corridor (cells 9790, 9792,
+# 9918, 9920; things 31 to 34), and the bench patient 7 sits on lifted off the
+# map while they wait in the GP's queue (EV_PICK_UP_OBJECT, turn 8800):
+# remove_object_from_map interrupts its user (interrupt_peep), whose queue
+# room is the GP's: interrupt_person picks PS_RETURN_TO_QUEUE_AREA, but the
+# get-off complex it runs first (complex 240) ends by setting the state, so
+# the patient never reaches return_to_queue_area; it gets up, sits on bench
+# 33 and is called. Both sides must agree on that.
+# Level 1
+# Turns 9400
+# Expect use_object 7 obj=31 kind=4 == 1
+# Expect cmd type=68
+# Expect abandon_complex 7
+# Expect use_object 7 obj=33 kind=4 == 1
+# Expect-not return_to_queue_area
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+40 98 0 0
+41 37 4 4
+42 43 0 0
+43 7 9790 4
+44 7 9792 4
+45 7 9918 4
+46 7 9920 4
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+8800 68 31 0

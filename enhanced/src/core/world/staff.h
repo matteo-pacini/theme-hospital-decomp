@@ -234,10 +234,7 @@ bool place_staff_on_map(World &world, const StaffSetup &setup, int cell, uint16_
 //   back to work;
 // - first, modify_staff: tiredness, warmth, happiness, discontent and
 //   cracking up.
-// Not ported, as they need what does not exist yet: research, training,
-// the treatment rooms' work, the operating theatre,
-// vaccinations, the per-turn counts, status icons and
-// poaching.
+// Poaching is not ported.
 void staff_turn(World &world, const AnimData &anims, const PersonComplexes &person_complexes,
                 const StaffComplexes &staff_complexes, uint16_t id, uint32_t game_turn);
 
@@ -313,7 +310,7 @@ void staff_abandon_for_pick_up(World &world, const AnimData &anims, uint16_t id,
 //   the order (kOrderRest 1, 4, 8 and 2) replaces the low four bits of
 //   member of staff `value`'s Thing.orders;
 // - EV_ANSWER_PLAYERCALL with `value` 1: the staff's resignation call `arg`
-//   removed; the staff demand requester it opens is not ported;
+//   removed (the requester it opens is core/ui/staff_demand.h's);
 // - that requester's answers about member of staff `value`:
 //   EV_REFUSE_STAFF_DEMAND (a draw: they leave, sack_staff mode 1, unless it
 //   is a multiple of their resignations plus one, when they stay),

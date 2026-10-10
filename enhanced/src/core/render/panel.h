@@ -174,8 +174,31 @@ void redraw_panel_left(UiLayer &layer, const PanelState &state, const PanelFigur
 // draw_emergency (src/panel.cpp): the watch above the panel's left end, for
 // an emergency (its time left; an empty watch once the time is up and its
 // result is due) or else the opening countdown (with its "open now"
-// button). Epidemics are not ported.
+// button). An epidemic's countdown shows as a face (epidemic_timer).
 void draw_emergency(UiLayer &layer, const PanelFigures &figures, const GameData &data);
+
+// What the rat game's panel shows (draw_ratfest_on_panel).
+struct RatPanelFigures {
+    // The hospital's rats killed (the score).
+    int kills = 0;
+    // The litter on the map (the bar's level).
+    int litter = 0;
+    // The weapon in hand (gamevar.rat_fest_powerup), 0 to 3.
+    int powerup = 0;
+    // The game turn (the bar's full segments change look on one turn in four
+    // at the worst level).
+    uint32_t turn = 0;
+};
+
+// The rat game's panel (PANEL04V, panel_icons_ratfest in src/array.cpp),
+// as draw_panel and draw_ratfest_on_panel draw it: the icons along the
+// bottom from the left edge, the weapon in hand pressed, the score and the
+// four-segment litter bar. The game has no hotspots on it.
+void draw_rat_panel(UiLayer &layer, const RatPanelFigures &figures, const GameData &data);
+
+// The top of the rat game's panel (statvar.panel_top) in 640 x 480
+// coordinates.
+int rat_panel_top(const GameData &data);
 
 // After a frame's draw_panel_ui, advances the balance's roll to `balance`
 // as draw_money_on_panel does: a step a frame, the roll ending after the

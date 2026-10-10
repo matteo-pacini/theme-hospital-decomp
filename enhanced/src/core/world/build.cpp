@@ -1422,11 +1422,9 @@ bool remove_object_from_map_is_big(const World &w, int t)
     return false;
 }
 
-// remove_object_from_map (src/objects.cpp) without the statistics and
-// interrupting its user, which are not ported: its plant and repair pages
-// cancelled, its plant figures kept (World::plants, plant_health_sum), the
-// object off the map and its lists, kept in the things table (state
-// OS_REMOVED).
+// remove_object_from_map (src/objects.cpp): its plant and repair pages cancelled, its plant figures kept
+// (World::plants, plant_health_sum), its user interrupted, the object off the map and its lists, kept in the things
+// table (state OS_REMOVED).
 void remove_object_from_map(World &w, uint16_t id)
 {
     Thing &obj = w.things[id];
@@ -1802,7 +1800,7 @@ void commit_doors(Game &game)
 
 // open_room (src/build.cpp): the room finished: its pages unanswered
 // again, its outline off the map, lifted objects refunded, the room paid
-// for, shadows recomputed. Its help page is not ported.
+// for, shadows recomputed. The interface shows its help page.
 void open_room(Game &game)
 {
     trace_event("open_room");

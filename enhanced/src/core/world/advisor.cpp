@@ -7,6 +7,7 @@
 #include "core/world/finance.h"
 #include "core/world/objects.h"
 #include "core/world/queue.h"
+#include "core/world/rooms.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 #include "core/world/world.h"
@@ -126,13 +127,23 @@ void enter_state(Advisor &a, const AnimData &anims, uint8_t state)
     a.anim_frame = start < anims.starts.size() ? uint16_t(anims.starts[start].frame) : 0;
 }
 
-// mouse_advice and forced_advice (src/advisor.cpp). Forced messages 2 (a
-// network game's losers) and 8 (the mayor's visit) are not ported and give
-// no text.
-void forced_advice(Advisor &a, const LanguageText &text)
+// forced_advice (src/advisor.cpp). Forced message 2 (a network game's
+// losers) is not ported and gives no text. The mayor's visit (8) is said in
+// the situation's own words the first time, then names the visitor.
+void forced_advice(Advisor &a, const AdvisorInputs &in)
 {
-    if (a.forced_advice_id != 2 && a.forced_advice_id != 8)
+    const LanguageText &text = *in.text;
+    if (a.forced_advice_id == 8) {
+        if (!a.given[7]) {
+            a.text = text.at(TextSection::AdvisorSituations, 8);
+            a.given[7] = 1;
+        } else {
+            say(a, text.at(TextSection::ForcedAdvice, 8),
+                std::string(text.at(TextSection::MayorNames, in.world->mayor.name)).c_str());
+        }
+    } else if (a.forced_advice_id != 2) {
         a.text = text.at(TextSection::ForcedAdvice, a.forced_advice_id);
+    }
     a.advice_id = 0;
     a.forced_advice_id = 0;
 }
@@ -325,6 +336,26 @@ constexpr uint8_t kRoomTrainingRoom = 22;
 constexpr uint8_t kRoomStaffRoom = 25;
 constexpr uint8_t kRoomResearchRoom = 28;
 constexpr uint8_t kRoomFirstBuilt = 7;
+constexpr uint8_t kRoomPsychiatry = 8;
+constexpr uint8_t kRoomWard = 9;
+constexpr uint8_t kRoomTheatre = 10;
+constexpr uint8_t kRoomPharmacy = 11;
+constexpr uint8_t kRoomToilets = 29;
+
+// The illnesses (ILL_*) whose treatment the advice after a room is built
+// reads what is required for.
+constexpr uint8_t kIllKingComplex = 4;
+constexpr uint8_t kIllInvisibility = 5;
+constexpr uint8_t kIllKidneyBeans = 19;
+
+// The announcement kinds (ANN_*) of the staff promoted, and the value of
+// ANN_PROMOTED for each skill a training room teaches.
+constexpr uint8_t kAnnPromoted = 4;
+constexpr uint8_t kAnnJuniorToDoctor = 0x0a;
+constexpr uint8_t kAnnDoctorToConsultant = 0x0d;
+constexpr uint32_t kPromotedSurgeon = 5;
+constexpr uint32_t kPromotedPsychiatrist = 6;
+constexpr uint32_t kPromotedResearcher = 8;
 
 // play_ambient's announcements of the advisor (kAnnounceLitter,
 // kAnnounceTooCold and kAnnounceTooHot of core/audio/sounds.h).
@@ -787,9 +818,9 @@ bool advise_deaths_limit(Situation &s)
     return found;
 }
 
-// find_advice's cures short of the level's target (0x88), after a cure
-// (kAdvisorEventCure, forgotten once tested). Its advice for the target
-// passed, which also needs the level's lose progress, is not ported.
+// find_advice's cures against the level's target (0x88), after a cure
+// (kAdvisorEventCure, forgotten once tested): those still to come, or, with
+// the target passed and the level not yet lost, a reminder of its value.
 bool advise_cures_target(Situation &s)
 {
     const Balance &settings = *s.in.settings;
@@ -798,22 +829,26 @@ bool advise_cures_target(Situation &s)
     if (!crit || !s.in.open || !(s.a.event_flags & kAdvisorEventCure) || f.cures <= s.in.level * 3)
         return false;
     int32_t value = settings.win_criteria[size_t(crit)].value;
-    bool found = f.cures < value;
-    if (found)
+    bool found = true;
+    if (f.cures > value && s.in.lose_progress > 0x19 && s.has_patients())
+        say(s.a, s.extra(0x39), value);
+    else if (f.cures < value)
         say(s.a, s.text(0x88), value - f.cures);
+    else
+        found = false;
     s.a.event_flags &= ~kAdvisorEventCure;
     return found;
 }
 
-// find_advice's rat holes (0x8a, 0x8b): the hole advice (0x8b) once, and the
-// unraised event's (0x8a; see kAdvisorEvent0x100), which the game may
-// overwrite with the hole advice.
+// find_advice's 0x8a and 0x8b: the advice for an epidemic covered up (0x8a,
+// kAdvisorEventCoverUp), which the game may overwrite with the rat-hole advice
+// (0x8b) as it falls through into its case, once.
 bool advise_ratholes(Situation &s)
 {
-    if (!s.a.given[6] && (s.a.event_flags & kAdvisorEvent0x100)) {
+    if (!s.a.given[6] && (s.a.event_flags & kAdvisorEventCoverUp)) {
         say(s.a, s.situation(7));
         s.a.given[6] = 1;
-        s.a.event_flags &= ~kAdvisorEvent0x100;
+        s.a.event_flags &= ~kAdvisorEventCoverUp;
         if (!(!s.a.given[4] && s.world.rats.hole_count > 0))
             return true;
     }
@@ -889,6 +924,221 @@ bool advise_hospital(Situation &s, int id, uint16_t situation)
     }
 }
 
+// find_advice's warnings of how close the level is to being won (0x6f) or
+// lost (0x72), once the level's year is well on: three messages, each for
+// the progress left (from 100) being under 50, 25 and 5 percent.
+bool advise_progress(Situation &s, uint16_t situation)
+{
+    const bool lose = situation == 0x72;
+    if (s.in.level <= 1 || !s.has_patients() || s.in.month <= (lose ? 6 : s.in.level + 3))
+        return false;
+    const int32_t left = 100 - (lose ? s.in.lose_progress : s.in.win_progress);
+    const int first = lose ? 0x74 : 0x71;
+    if (left < 0x32 && left > 0x19)
+        say(s.a, s.text(first));
+    else if (left < 0x19 && left > 5)
+        say(s.a, s.text(first - 1));
+    else if (left < 5 && left > 0)
+        say(s.a, s.text(first - 2));
+    else
+        return false;
+    return true;
+}
+
+// find_advice's staff put down where they are not needed (0x7b), said once
+// and forgotten: a doctor in a room that wants none, or a nurse; the room is
+// named, or the receptionist's welcome is given.
+bool advise_new_staff(Situation &s)
+{
+    World &w = s.world;
+    if (!w.new_staff.pending)
+        return false;
+    const uint8_t kind = w.new_staff.kind, room = w.new_staff.room;
+    w.new_staff = {};
+    const auto room_name = [&] {
+        return std::string(s.in.text->at(TextSection::RealRoomNames, kRoomTypeInfo[room % kRoomTypes].name));
+    };
+    if (kind == kStaffDoctor) {
+        if (room == kRoomPsychiatry)
+            say(s.a, s.text(0x7d));
+        else if (room == kRoomResearchRoom)
+            say(s.a, s.text(0x7b));
+        else if (room == kRoomTheatre)
+            say(s.a, s.text(0x7c));
+        else if (room != kRoomToilets)
+            say(s.a, s.text(0x7e + saferand(s.safeseed) % 2), room_name().c_str());
+        else
+            return false;
+        return true;
+    }
+    if (kind == kStaffNurse && room != kRoomToilets) {
+        say(s.a, s.text(0x80 + saferand(s.safeseed) % 2), room_name().c_str());
+        return true;
+    }
+    if (kind != kStaffReceptionist)
+        return false;
+    say(s.a, s.text(0x82));
+    return true;
+}
+
+// find_advice's earthquake: the tremors begun (0x6a, once) and the strength
+// of the one that ended (0x4d, from 8, forgotten once said).
+bool advise_quake(Situation &s, uint16_t situation)
+{
+    if (situation == 0x6a) {
+        if (s.in.quake_phase != 2 || s.a.given[13])
+            return false;
+        say(s.a, s.text(0x6a));
+        s.a.given[13] = 1;
+        return true;
+    }
+    if (s.c.last_quake_size < 8)
+        return false;
+    say(s.a, s.text(0x4d), s.c.last_quake_size / 2);
+    s.world.counts.last_quake_size = 0;
+    return true;
+}
+
+// find_advice's staff promoted: a skill gained in a training room (0x44,
+// named by the announcement's value), a junior made a doctor (0x16) or a
+// doctor a consultant (0x89); the announcement is dropped once said.
+bool advise_promotion(Situation &s, uint16_t situation)
+{
+    const uint8_t kind = situation == 0x44   ? kAnnPromoted
+                         : situation == 0x16 ? kAnnJuniorToDoctor
+                                             : kAnnDoctorToConsultant;
+    const uint32_t value = s.world.announce[kind % kAnnounceKinds][0];
+    if (!value)
+        return false;
+    if (situation != 0x44) {
+        say(s.a, s.text(situation));
+    } else if (value == kPromotedSurgeon || value == kPromotedPsychiatrist || value == kPromotedResearcher) {
+        const int help = value == kPromotedSurgeon ? 0x3f : value == kPromotedPsychiatrist ? 0x40 : 0x41;
+        say(s.a, s.text(0x44), std::string(s.in.text->at(TextSection::Help, help)).c_str());
+    }
+    done_announcement(s.world, kind);
+    return true;
+}
+
+// find_advice's follow-ups to a theatre built (0x66, 0x54: two surgeons to
+// hire, 0x66 and a ward too; 0x67, 0x55: the second; 0x56: only the ward).
+// What is left to say, the surgery's own words the first time.
+bool advise_theatre_built(Situation &s, uint16_t situation)
+{
+    uint8_t &built = s.world.building.last_built_room;
+    const Required r = what_is_required(s.world, kIllKidneyBeans);
+    const bool surgeons = (r.staff_mask & kSkillSurgeon) && r.missing_room != kRoomTheatre;
+    if (built != kRoomTheatre)
+        return false;
+    switch (situation) {
+    case 0x66:
+    case 0x54:
+        if (!surgeons || r.surgeons_needed != 2 || (situation == 0x66 && !r.needs_ward))
+            return false;
+        s.once(2, 3, s.text(situation));
+        built = 1;
+        return true;
+    case 0x67:
+    case 0x55:
+        if (!surgeons || r.surgeons_needed != 1 || (situation == 0x67 && !r.needs_ward))
+            return false;
+        say(s.a, s.text(situation));
+        return true;
+    default:
+        if (r.staff_mask || r.missing_room == kRoomTheatre || !r.needs_ward)
+            return false;
+        say(s.a, s.text(0x56));
+        built = 0;
+        return true;
+    }
+}
+
+// find_advice's follow-ups to a room built: a ward with no nurse for it
+// (0x57), a pharmacy still lacking a nurse for invisibility (0x4f) and a
+// psychiatrist's room for the king complex still lacking a psychiatrist
+// (0x4e, the situation's own words the first time). Each forgets the room.
+bool advise_room_built_needs(Situation &s, uint16_t situation)
+{
+    uint8_t &built = s.world.building.last_built_room;
+    bool found = false;
+    if (situation == 0x57) {
+        const Required r = what_is_required(s.world, kIllKidneyBeans);
+        found = !r.needs_ward && r.needs_nurse && built == kRoomWard;
+        if (found)
+            say(s.a, s.text(0x57));
+    } else if (situation == 0x4f) {
+        const Required r = what_is_required(s.world, kIllInvisibility);
+        found = (r.staff_mask & kSkillNurse) && r.missing_room != kRoomPharmacy && built == kRoomPharmacy;
+        if (found)
+            say(s.a, s.text(0x4f));
+    } else {
+        const Required r = what_is_required(s.world, kIllKingComplex);
+        found = (r.staff_mask & kSkillPsychiatrist) && r.missing_room != kRoomPsychiatry && built == kRoomPsychiatry;
+        if (found)
+            s.once(3, 4, s.text(0x4e));
+    }
+    if (found)
+        built = 0;
+    return found;
+}
+
+// find_advice's epidemic (kAdvisorEventEpidemic): the first one's own words
+// (0x8d, once per game, forgetting the event), and while it lasts the
+// patients it has spread to once there are four (0xd; the game's further
+// message for eight is never reached).
+bool advise_epidemic(Situation &s, uint16_t situation)
+{
+    if (!(s.a.event_flags & kAdvisorEventEpidemic))
+        return false;
+    if (situation == 0x8d) {
+        if (s.a.given[14])
+            return false;
+        say(s.a, s.situation(11));
+        s.a.given[14] = 1;
+        s.a.event_flags &= ~kAdvisorEventEpidemic;
+        return true;
+    }
+    if (s.world.epidemic.spread_count < 4)
+        return false;
+    say(s.a, s.extra(1));
+    return true;
+}
+
+// find_advice's situations of events the simulation leaves for him: see
+// the functions above.
+bool advise_events(Situation &s, uint16_t situation)
+{
+    switch (situation) {
+    case 0x6f:
+    case 0x72:
+        return advise_progress(s, situation);
+    case 0x7b:
+        return advise_new_staff(s);
+    case 0x6a:
+    case 0x4d:
+        return advise_quake(s, situation);
+    case 0x44:
+    case 0x16:
+    case 0x89:
+        return advise_promotion(s, situation);
+    case 0x66:
+    case 0x54:
+    case 0x67:
+    case 0x55:
+    case 0x56:
+        return advise_theatre_built(s, situation);
+    case 0x57:
+    case 0x4f:
+    case 0x4e:
+        return advise_room_built_needs(s, situation);
+    case 0x8d:
+    case 0xd:
+        return advise_epidemic(s, situation);
+    default:
+        return false;
+    }
+}
+
 bool find_advice_announcement(Advisor &a, const AdvisorInputs &in, uint16_t situation);
 
 // find_advice's situations of the statistics pass and of what the
@@ -914,7 +1164,8 @@ bool find_advice_counts(Advisor &a, int id, const AdvisorInputs &in, uint32_t &s
         return advise_room_built(s, situation);
     default:
         return advise_patients(s, situation) || advise_staff(s, situation) ||
-               advise_litter_and_plants(s, id, situation) || advise_hospital(s, id, situation);
+               advise_litter_and_plants(s, id, situation) || advise_hospital(s, id, situation) ||
+               advise_events(s, situation);
     }
 }
 
@@ -988,7 +1239,7 @@ bool find_advice_situation(Advisor &a, int id, const AdvisorInputs &in, uint32_t
     case 4:
         if (!a.forced_advice_id)
             return false;
-        forced_advice(a, *in.text);
+        forced_advice(a, in);
         return true;
     case 5:
         if (!a.mouse_advice_id)
@@ -1724,7 +1975,7 @@ constexpr std::array<TutorialStep, 24> kTutorialSteps = {{
 }};
 
 // tutorial (src/tutorial.cpp), in high resolution, where the hints about
-// controls are help text (set_force_help, not ported) and the advisor is
+// controls are help text (set_force_help, which the advisor does not call) and the advisor is
 // hidden. Returns 1 when a message was just given, 0 when he is to be
 // hidden, -1 otherwise.
 int tutorial(Advisor &a, const AdvisorInputs &in)
@@ -1940,6 +2191,9 @@ void advisor_frame(Advisor &a, const AdvisorInputs &in, const AnimData &anims, u
 {
     a.drawn = false;
     a.bubble = false;
+    // display_advisor does nothing in the rat game.
+    if (in.world->rats.fest_level)
+        return;
     // What drawing the blueprint and setting the edit room requester leave in
     // the flags, before the frame's advisor.
     a.flags = blueprint_draw_flags(*in.world, a.flags);
@@ -1974,6 +2228,13 @@ void monthly_update_of_advisor_counts(Advisor &a)
 {
     a.advice[14].times_given = 0;
     a.advice[15].times_given = 0;
+}
+
+void toggle_advisor(Advisor &a, World &world)
+{
+    a.enabled = !a.enabled;
+    world.announce = {};
+    world.announce_stuck = false;
 }
 
 void wrap_advisor_text(Advisor &a, const Font &font)

@@ -50,7 +50,7 @@ void sync_build_requester(Interface &ui, const Game &game);
 // room under the pointer becoming its selection (req10_overdraw); the edit
 // room requester's buy more (EV_FURNISH_EDITED_ROOM) and confirm (req14: by
 // the step, EV_COMMIT_BLUEPRINT, EV_COMMIT_DOORS or EV_OPEN_ROOM) while
-// enabled. Its pick up button is not ported. The commands go to
+// enabled. Its pick up button (kEditRoomPickUp) starts BuildMouse::PickUpObject. The commands go to
 // Game::event, the sounds to Building::sounds.
 void build_requesters_input(Interface &ui, BuildUi &bui, Game &game, const InterfaceEvents &events,
                             const UiMouse &mouse);

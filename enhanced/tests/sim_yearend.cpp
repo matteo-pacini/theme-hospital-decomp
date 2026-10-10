@@ -71,6 +71,7 @@ void test_yearend_criteria(const char *dir)
     satisfy_win_criteria(game);
     CHECK(th::evaluate_criteria(game, 0) >= 100);
     CHECK(game.progress.win_progress >= 100);
+    CHECK(game.progress.win_average >= 100 && game.progress.win_average <= game.progress.win_progress);
     th::check_game_over(game);
     CHECK(game.progress.winlose_result == 1 && game.progress.level_won == 1);
     CHECK(game.progress.year_end_type == 5);
@@ -244,9 +245,13 @@ void test_yearend_rivals(const char *dir)
     winner.object_value = 20000000;
     const int32_t before = winner.score;
     game.world.rivals[1].player_type = 0;
+    game.progress.win_average = -7;
     const int32_t idle = game.world.rivals[1].score;
     th::computer_year(game);
     CHECK(winner.win_progress >= 100);
+    // The advisor's average is the last computer player's, as the game's.
+    const int32_t last_average = game.progress.win_average;
+    CHECK(last_average != -7 && last_average > 0 && last_average <= winner.win_progress);
     CHECK(winner.score > before);
     CHECK(game.world.rivals[1].score == idle);
 }

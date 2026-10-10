@@ -86,11 +86,10 @@ MapHover map_hover(const World &world, uint16_t pointed);
 // EV_OPEN_THING_WINDOW, or with a pending call about them EV_ANSWER_PLAYERCALL
 // (a resigning member of staff: 1; a patient waiting for a diagnosis room:
 // 8, for a decision: 4). For the player's machine, EV_OPEN_THING_WINDOW (the
-// machine window). EV_NONE for the rest: a receptionist at her desk (the
-// queue window) opens a window that is not ported; poaching another player's
-// staff needs network games. A rat under the pointer (kThingRat) gives
-// EV_SHOOT_RAT, argb[1] 1: a hit. With `near_rat` (othervar.near_rat) and
-// nothing under the pointer, a shot at nothing (argb[1] 0: a miss).
+// machine window). A receptionist at her desk, a reception desk and the door of a queued room give EV_OPEN_QUEUE_WINDOW
+// (the queue window). EV_NONE for the rest; poaching another player's staff needs network games. A rat under the
+// pointer (kThingRat) gives EV_SHOOT_RAT, argb[1] 1: a hit. With `near_rat` (othervar.near_rat) and nothing under the
+// pointer, a shot at nothing (argb[1] 0: a miss).
 Event map_left_click(World &world, const MapHover &hover, Interface &ui, int cell = -1, bool near_rat = false);
 
 // The windows' part of command `event` (process_turn, src/io.cpp), before
@@ -145,8 +144,7 @@ struct InfoWindowContext {
 // left on the treatments: toggle the graph; left on a member of staff's face:
 // the staff list), then process_tracking_windows: the windows close once
 // their thing is beyond the level's scroll area widened by 10 cells, or gone.
-// The patient window's queue button opens the queue window, not ported: it
-// does nothing.
+// The patient window's queue button gives EV_OPEN_QUEUE_WINDOW for the patient's queue room.
 InfoWindowResult info_window_frame(InfoWindows &info, Interface &ui, const InterfaceEvents &events,
                                    const UiMouse &mouse, const InfoWindowContext &context);
 

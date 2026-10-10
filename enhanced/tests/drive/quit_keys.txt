@@ -1,0 +1,15 @@
+# Level 1: Shift+Escape asks the quit question (the yes/no requester) and
+# Escape answers No; Shift+Ctrl+Escape quits at once, with no question
+# (process_game_keys, src/keyboard.cpp). The run ends at the key, so the
+# expect after it never runs: a game that stayed up would fail it.
+wait 60
+expect modal false
+key Shift+Escape
+wait 5
+expect modal true
+key Escape
+wait 5
+expect modal false
+key Shift+Ctrl+Escape
+wait 20
+expect the game quit without ending the run

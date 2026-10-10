@@ -1,0 +1,35 @@
+# The level briefing's C key (process_keys_area_select, src/area.cpp): any
+# level can be picked by a click on one of the 21 areas of its map
+# (HiresBoxes[45..65]), which plays that level's area movie and starts it. A
+# click anywhere else starts nothing.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 140
+key a
+key Return
+wait 20
+key Space
+wait 90
+click 85 32
+wait 10
+key Space
+wait 160
+click 372 395
+wait 10
+key Space
+wait 80
+key c
+wait 5
+click 10 10
+wait 20
+expect screen: start-up screen 6 (movie -1)
+click 480 220
+wait 5
+key Space
+wait 40
+turns 5
+expect level: 3 (

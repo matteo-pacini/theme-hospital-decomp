@@ -1,0 +1,13 @@
+# Level 1: Shift+A switches the advisor off and on again (process_game_keys,
+# src/keyboard.cpp); A alone does nothing.
+wait 60
+expect advisor enabled: true
+key A
+wait 5
+expect advisor enabled: true
+key Shift+A
+wait 5
+expect advisor enabled: false
+key Shift+A
+wait 5
+expect advisor enabled: true

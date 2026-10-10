@@ -26,7 +26,7 @@ namespace th
 // patient with no treatment (send home,
 // wait, or the research department for an autopsy, once it can be done) or
 // no diagnosis (send home, guess the cure, once the illness is known and
-// curable, or wait); the VIP's faxes are not ported and show nothing.
+// curable, or wait); the VIP's faxes offer its visit (accept or refuse) and report the mayor's verdict.
 struct Fax {
     // A fax is up, display_choice's state (0x5a drawing it, 0x5b up, 0x5c
     // closing), and what it is about (choice.value, choice_spare_data and

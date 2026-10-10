@@ -6,6 +6,7 @@
 #include "core/world/game.h"
 #include "core/world/litter.h"
 #include "core/world/nav.h"
+#include "core/world/patient_tables.h"
 #include "core/world/staff.h"
 #include "core/world/trace.h"
 
@@ -27,6 +28,9 @@ constexpr uint8_t kSfxRocket = 0xd4;
 // An explosion's animation (the game's 0x902, blast_things' debris); 0x902
 // is the first frame of the rat game's rocket explosion.
 constexpr uint16_t kRatExplosionAnim = 0x902;
+
+// The cell (26, 50) rat_fest_control places each extra handyman on.
+constexpr uint16_t kRatHandymanCell = 0x1a32;
 
 // The rat frames: start[] indices of a rat coming out of a hole (0x3c4
 // north, 0x3c5 west), going back in (0x3c2 north, 0x3c3 west) and the eight
@@ -562,17 +566,27 @@ void rat_fest_control(Game &game)
         make_a_rat(world, game.anims(), 0);
         world.rats.fest_rats += count;
     }
-    // The end of the game and the extra handymen are the rat bonus level's
-    // mode, which the port does not run: its level selection has no special
-    // levels. World::Rats::fest_level is only set by rat_fest_builder, which
-    // nothing calls.
+    if (world.litter_count <= 4 || game.turn_count >= 9000) {
+        game.progress.rat_game_over = 1;
+        // The frame leaves the game screen: the things do not run this turn.
+        game.progress.skip_things = true;
+        trace_event("rat_game_over kills=%u litter=%u", unsigned(game.progress.rats_killed),
+                    unsigned(world.litter_count));
+    }
+    if (game.turn_count % (200 - game.progress.level_after_bonus * 2) == 0) {
+        uint16_t id =
+            place_staff_in_struct(world, game.staff_market, game.settings(), kStaffHandyman, 0, game.turn_count);
+        if (id)
+            place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, kRatHandymanCell, id, false);
+    }
 }
 
 void rat_fest_builder(Game &game, StaffMarket &market, uint8_t level)
 {
     World &world = game.world;
     const RatFestLevel &lvl = kRatFestLevel[level % kRatFestLevel.size()];
-    uint32_t safeseed = lvl.seed;
+    uint32_t &safeseed = game.safeseed;
+    safeseed = lvl.seed;
     world.seed = lvl.seed;
     uint32_t holes = 0, litter = 0, staff = 0;
     for (int cell = 0; cell < kMapCells; cell++) {
@@ -587,7 +601,7 @@ void rat_fest_builder(Game &game, StaffMarket &market, uint8_t level)
             holes++;
         }
         if (lvl.staff_max > staff && rat_saferand(safeseed) % lvl.staff_chance == 0) {
-            uint16_t id = place_staff_in_struct(world, market, game.settings(), 1, 0, game.turn_count);
+            uint16_t id = place_staff_in_struct(world, market, game.settings(), kStaffHandyman, 0, game.turn_count);
             if (id) {
                 place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, cell, id, false);
                 staff++;
@@ -598,6 +612,61 @@ void rat_fest_builder(Game &game, StaffMarket &market, uint8_t level)
     world.rats.fest_powerup = 0;
     world.rats.near_margin = 0x10;
     world.rats.hit_margin = 4;
+}
+
+void training_builder(Game &game, StaffMarket &market, uint8_t level)
+{
+    World &world = game.world;
+    const RatFestLevel &lvl = kRatFestLevel[level % kRatFestLevel.size()];
+    uint32_t &safeseed = game.safeseed;
+    safeseed = lvl.seed;
+    world.seed = lvl.seed;
+    for (int cell = 0; cell < kMapCells; cell++) {
+        if (world.map[size_t(cell)].owner_flags != 1u << 0)
+            continue;
+        if (!(lvl.staff_max > 0 && rat_saferand(safeseed) % lvl.staff_chance == 0))
+            continue;
+        // A psychiatrist, a surgeon and a researcher, each a consultant.
+        auto place_doctor = [&] {
+            uint16_t id = place_staff_in_struct(world, market, game.settings(), kStaffDoctor, 0, game.turn_count);
+            if (id)
+                place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, cell, id, false);
+        };
+        market.consultant_rate = 1;
+        market.shrink_rate = 1;
+        market.surgeon_rate = 0;
+        market.researcher_rate = 0;
+        place_doctor();
+        market.shrink_rate = 0;
+        market.surgeon_rate = 1;
+        place_doctor();
+        market.surgeon_rate = 0;
+        market.researcher_rate = 1;
+        place_doctor();
+        break;
+    }
+}
+
+void arm_rat_shot(World &world, Event &shot)
+{
+    if (shot.type != EV_SHOOT_RAT)
+        return;
+    World::Rats &rats = world.rats;
+    shot.arg = uint16_t((shot.arg & 0xff00) | rats.fest_powerup);
+    if (rats.powerup_shots && --rats.powerup_shots == 0) {
+        rats.fest_powerup = 0;
+        rats.hit_margin = 2;
+    }
+}
+
+void start_special_level(Game &game, StaffMarket &market, int level_number)
+{
+    // setup_new_level plays the levels above 14 as level 1.
+    const TownExtra &town = kTownExtras[level_number > 14 ? 1 : size_t(level_number)];
+    if (town.special_kind == 1)
+        rat_fest_builder(game, market, town.special_arg);
+    else if (town.special_kind == 2)
+        training_builder(game, market, town.special_arg);
 }
 
 } // namespace th

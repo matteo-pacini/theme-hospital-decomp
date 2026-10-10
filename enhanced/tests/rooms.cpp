@@ -2481,3 +2481,61 @@ void test_disasters_level1(const char *dir)
     check_quake_peeps(g);
     std::printf("disasters: cold, hot, sick and rejected branches exercised\n");
 }
+
+namespace
+{
+
+// A cell near level 1's view start where the operating table (facing 0) and
+// its lamp both fit; -1 if none.
+int table_and_lamp_spot(th::World &w, const th::Level &level, const th::NextPartInfo &part, int table_kind)
+{
+    const int start = level.camera_start[0];
+    for (int c = start - 20 * th::kMapSize; c < start + 20 * th::kMapSize; c++) {
+        int at = c + part.offset[0];
+        bool in_map = c >= 0 && c < th::kMapCells && at >= 0 && at < th::kMapCells;
+        if (in_map && th::can_place_object(w, c, table_kind, 0, 0) &&
+            th::can_place_object(w, at, part.kind, part.dir[0], 0))
+            return c;
+    }
+    return -1;
+}
+
+} // namespace
+
+// With the game data: a two-part object's second part (the operating table's
+// lamp) is placed with it only while no one is in its way
+// (place_object's check_no_peeps_in_way, run again for the part by
+// place_existing_object); the first part is placed either way.
+void test_second_part_people_in_the_way(const char *dir)
+{
+    constexpr int kTable = 30;
+    int spot = -1, lamp = -1;
+    for (int in_the_way = 0; in_the_way < 2; in_the_way++) {
+        HireFixture f;
+        CHECK(f.start(dir));
+        if (!f.level)
+            return;
+        th::World &w = f.game->world;
+        const th::NextPartInfo &part = th::kNextParts[size_t(th::kObjects[kTable].next_part)];
+        if (!in_the_way) {
+            spot = table_and_lamp_spot(w, *f.level, part, kTable);
+            lamp = spot + part.offset[0];
+        }
+        CHECK(spot >= 0);
+        if (spot < 0)
+            return;
+        if (in_the_way)
+            CHECK(f.game->add_walker(lamp) != 0);
+        uint16_t table = th::place_object(w, f.gd.anims(), {spot, kTable, 0}, 0, false);
+        CHECK(table != 0);
+        if (!table)
+            return;
+        if (in_the_way) {
+            CHECK(w.things[table].pair == 0);
+            CHECK(!th::no_peeps_in_way(w, lamp, part.kind, part.dir[0]));
+        } else {
+            CHECK(w.things[table].pair != 0 && w.things[w.things[table].pair].subtype == part.kind);
+        }
+    }
+    std::printf("second part: placed with no one in the way, left out with someone\n");
+}

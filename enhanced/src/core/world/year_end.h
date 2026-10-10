@@ -84,6 +84,10 @@ struct YearEnd {
     int32_t score = 0;
     int32_t start_score = 0;
     int32_t win_progress = 0;
+    // The win criteria groups' average percent of the last hospital
+    // evaluate_criteria looked at, the player's or a computer player's
+    // (adcounts.win_progress), which the advisor quotes.
+    int32_t win_average = 0;
     int32_t lose_progress = 0;
     int32_t best_win_group = 0;
     // allhosps[0].market_share (percent of the month's patients).
@@ -95,7 +99,7 @@ struct YearEnd {
     int32_t year_start_staff = 0;
     // gamevar.prev_year_deaths, for the no-deaths trophy.
     int32_t prev_year_deaths = 0;
-    // The rat counters (myhosp->rat_shots/rats_killed_u); rats are not ported.
+    // The rat counters (myhosp->rat_shots/rats_killed_u).
     uint16_t rat_shots = 0;
     uint16_t rats_killed = 0;
     // othervar.level_won, win_declined and winlose_result (0 none, 1 win,
@@ -109,6 +113,10 @@ struct YearEnd {
     uint8_t bonus_level = 0;
     uint8_t level_after_bonus = 0;
     uint8_t year_end_type = 0;
+    // The rat bonus level has ended (rat_fest_control sets level_number to
+    // level_after_bonus and goes to the area screen): the app leaves the level
+    // and clears it.
+    uint8_t rat_game_over = 0;
     // The criteria, evaluated each statistics pass and at the year end.
     std::array<WinLoseRow, 10> win_criteria{};
     std::array<WinLoseRow, 10> lose_criteria{};
@@ -155,7 +163,8 @@ int32_t check_criteria(Game &game, bool win, uint8_t owner);
 // evaluate_criteria (0x594d0): hospital `owner`'s progress towards winning
 // (the best win group's percent, 100 = won). Stores it in state.win_progress
 // and state.best_win_group for the player, in the computer player's
-// win_progress otherwise.
+// win_progress otherwise. For either, the groups' average percent goes to
+// state.win_average.
 int32_t evaluate_criteria(Game &game, uint8_t owner);
 
 // calculate_score (0x588a8): grows hospital `owner`'s score by the rating

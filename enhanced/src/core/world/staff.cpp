@@ -237,8 +237,9 @@ void modify_staff_mood(World &world, Thing &s, const AnimData &anims, const Bala
 // modify_staff (0x71eb8 in src/environ.cpp) for member of staff `id`: due
 // once game_turn (in 16 bits) passes Thing.modify_time, which it then sets
 // gbv.modify_freq turns on; not for rivals' staff, applicants or
-// receptionists. Speed, warmth and surroundings, then tiredness from work
-// (not while wandering nor in a staff room), and modify_staff_mood.
+// receptionists, nor in the rat game. Speed, warmth and surroundings, then
+// tiredness from work (not while wandering nor in a staff room), and
+// modify_staff_mood.
 void modify_staff(World &world, const AnimData &anims, uint16_t id, uint32_t game_turn)
 {
     Thing &s = world.things[id];
@@ -249,7 +250,7 @@ void modify_staff(World &world, const AnimData &anims, uint16_t id, uint32_t gam
     if (!(now > s.modify_time || s.modify_time - now > 0x7fff))
         return;
     s.modify_time = uint16_t(game_turn + gbv.modify_freq);
-    if (s.owner >= 4 || s.subtype == kStaffReceptionist)
+    if (s.owner >= 4 || world.rats.fest_level || s.subtype == kStaffReceptionist)
         return;
     calculate_speed(world, s, settings);
     check_warmth(world, s, world.finance ? world.finance->heating_level : kStartHeatingLevel);
@@ -614,7 +615,7 @@ const HospitalSettings &policy_of(const World &world)
 // the policy's rest_threshold, else a stroll of 3 cells back the way they
 // came (85%), else, standing, a pause of 20-49 turns, a stroll of 3 cells in
 // a random direction or one to a random cell within 3. The orders to go
-// back to research or training are dropped. The status icons are not ported.
+// back to research or training are dropped.
 void wander_decide(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -1964,8 +1965,7 @@ bool staff_in_staff_room_rested(const Ctx &c, uint16_t id, const Balance &settin
 // (kOrderReturnToResearch: send_doctor_to_research), else answers a page
 // (obey_pager) or goes back to the corridor, a nurse goes to a ward
 // (nurse_check_for_work) or the corridor, and a handyman or receptionist
-// goes out (SS_EVACUATE). The order to go back to training, which is never
-// given here (the training room's work is not ported), is not looked at.
+// goes out (SS_EVACUATE). The order to go back to training sends them to the training room (send_doctor_to_training).
 void staff_in_staff_room(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -2048,7 +2048,7 @@ void receptionist_reset(const Ctx &c, uint16_t id)
 // them in the state for where they are, their pages dropped; a
 // receptionist leaves her reception (receptionist_reset); a handyman drops
 // his repair and plant pages, reopening the room of the machine he was to
-// repair. The status icons are not ported.
+// repair.
 void private_interrupt_staff(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -2173,8 +2173,7 @@ void staff_picked_up(const Ctx &c, uint16_t id)
 // and to their hospital's first entrance, to go back to the applicants
 // (kStaffBackToApplicants); mode 0 pays them a month's wage, mode 1 (notice
 // run out) clears it, mode 2 removes them at once. Their skills no longer
-// count (remove_expertise_staff, and the counts by going to kNoOwner). Not
-// for staff already no one's. The status icons are not ported.
+// count (remove_expertise_staff, and the counts by going to kNoOwner). Not for staff already no one's.
 void sack(const Ctx &c, uint16_t id, uint8_t mode)
 {
     World &world = c.world;
@@ -2474,8 +2473,8 @@ void doctor_works_at_desk(const Ctx &c, uint16_t id)
 
 // The examinations a doctor starts once the patient called has arrived
 // (doctor_waits_for_patient_to_arrive), by room type: the doctor's complex
-// (S_COMP.LEX) and the SS_DOCTOR_EXAMINES substate it leads to; complex 0
-// for rooms not ported (the operating theatre).
+// (S_COMP.LEX) and the SS_DOCTOR_EXAMINES substate it leads to; complex 0 for the rooms the game's switch leaves to its
+// default (the operating theatre has its own path, doctor_waits_for_patient_theatre).
 struct Examination {
     uint16_t complex;
     uint8_t substate;
@@ -2650,8 +2649,8 @@ void doctor_waits_for_patient_arrived(const Ctx &c, uint16_t id, const RoomInfo 
 // to SS_DOCTOR_EXAMINES; a cracked-up doctor first sends one patient in
 // four (a draw from world.seed) on elsewhere. Until then the call is
 // repeated every 200 turns (call_person_again) and given up on a patient
-// who no longer comes (forget_about_my_slave). The rooms kExaminations does
-// not list are not ported: their patients wait.
+// who no longer comes (forget_about_my_slave). The rooms the game's switch leaves to its default (ward, training, staff
+// room, toilets) do nothing: their patients wait.
 void doctor_waits_for_patient(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -3342,8 +3341,7 @@ void doctor_in_machine_room_call(const Ctx &c, uint16_t id, const RoomInfo &room
 // (2 * work_delay + 1 tired), another doctor paged if a queue is left.
 // First, they may resign or leave (shall_i_resign), take an ordered break
 // (kOrderRest), and a room due a repair is closed. A doctor in an
-// operating theatre goes to SS_DOCTOR_IN_THEATRE; nurses' vaccinations are
-// not ported.
+// operating theatre goes to SS_DOCTOR_IN_THEATRE; a nurse who could vaccinate leaves (could_nurse_vaccinate).
 void doctor_in_machine_room(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -3402,6 +3400,7 @@ bool doctor_researches_call(const Ctx &c, uint16_t id, const RoomInfo &room)
     }
     if (!call_person_to_room(c.person_run(), id, queue, kComplexCalledToRoom, room.door_tile, true))
         return false;
+    set_icon_value(c.anims, world.things[id], kIconCalling);
     world.things[id].state = kStaffDoctorWaitsForPatient;
     return true;
 }
@@ -3446,7 +3445,7 @@ bool doctor_researches_task(const Ctx &c, uint16_t id)
 // (take_a_break), and otherwise, a quarter of the time, call a patient for
 // an autopsy (doctor_researches_call), else take up a research task
 // (doctor_researches_task); failing those, they move off a crowded cell
-// (overlapping_staff_check). Status icons are not ported.
+// (overlapping_staff_check).
 void doctor_researches(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -3650,7 +3649,7 @@ void nurse_in_ward_decide(const Ctx &c, uint16_t id, RoomInfo &room, uint16_t de
 // Substate 1: the patient called arrived, she examines them
 // (affect_diagnosis) and they go to bed (PS_IN_BED); until then the call is
 // repeated every 200 turns (call_person_again) and given up on a patient
-// who no longer comes. Vaccinations and status icons are not ported.
+// who no longer comes.
 void nurse_in_ward(const Ctx &c, uint16_t id)
 {
     World &world = c.world;
@@ -4222,6 +4221,29 @@ void place_staff_on_map_hire(World &world, uint16_t id, uint32_t game_turn)
         world.staff_market->applicants[s.subtype]--;
     }
 }
+
+// place_staff_on_map's member of staff put down in `room`: listed there, in
+// the state the room gives them. Where that is evacuating, and they are not
+// a handyman, the advisor is told; otherwise they take the room's lock if
+// they work in it.
+void place_staff_on_map_room(World &world, const AnimData &anims, uint32_t game_turn, uint16_t id, uint16_t room)
+{
+    Thing &s = world.things[id];
+    uint8_t type = world.rooms[room].type;
+    insert_person_in_room_list(world, room, id);
+    s.state = get_state(type, s);
+    if (s.state == kStaffEvacuate) {
+        if (s.subtype != kStaffHandyman) {
+            world.new_staff.pending = true;
+            world.new_staff.kind = s.subtype;
+            world.new_staff.room = type;
+        }
+    } else if (s.subtype != kStaffHandyman &&
+               (type != kRoomTraining || s.subtype != kStaffDoctor || (s.skills & kSkillConsultant)) &&
+               type != kRoomResearch) {
+        change_lockholder(ctx_of(world, anims, game_turn), id, room);
+    }
+}
 } // namespace
 
 bool place_staff_on_map(World &world, const StaffSetup &setup, int cell, uint16_t id, bool force)
@@ -4243,15 +4265,7 @@ bool place_staff_on_map(World &world, const StaffSetup &setup, int cell, uint16_
     s.y = {0x80, uint8_t(cell / kMapSize)};
     s.path.x1 = 0xff;
     if (uint16_t room = room_at(world, uint16_t(cell))) {
-        uint8_t type = world.rooms[room].type;
-        insert_person_in_room_list(world, room, id);
-        s.state = get_state(type, s);
-        // The advisor's word on staff placed where they cannot work is not
-        // ported.
-        if (s.state != kStaffEvacuate && s.subtype != kStaffHandyman &&
-            (type != kRoomTraining || s.subtype != kStaffDoctor || (s.skills & kSkillConsultant)) &&
-            type != kRoomResearch)
-            change_lockholder(ctx_of(world, anims, game_turn), id, room);
+        place_staff_on_map_room(world, anims, game_turn, id, room);
     } else {
         s.state = get_state(0, s);
     }

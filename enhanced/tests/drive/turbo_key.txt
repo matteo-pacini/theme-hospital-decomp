@@ -1,0 +1,22 @@
+# Level 1: with W held (not with Ctrl), othervar.turbo_key makes start_turn
+# run unpaced and the game loop add two turns to each one it ran
+# (src/game.cpp), at least a turn every other frame: at the slowest speed the
+# turns come 37 a second, instead of one. Fifty frames at speed 1 run one turn;
+# with W held they run 32; with Ctrl held too, one.
+wait 60
+key 1
+wait 5
+expect speed: 1 turns/s
+expect day 1, turn 23
+wait 50
+expect day 1, turn 24
+keydown W
+wait 50
+expect day 2, turn 56
+keyup W
+wait 50
+expect day 2, turn 57
+keydown Ctrl+W
+wait 50
+expect day 2, turn 58
+keyup W
