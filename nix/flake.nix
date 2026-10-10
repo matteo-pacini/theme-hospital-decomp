@@ -173,39 +173,12 @@
         runtimeEnv.CMAKE_PREFIX_PATH = "${pkgs.sdl3.dev}";
         text = builtins.readFile ./enhanced.sh;
       };
-
-      # Both dev shells in one, plus what the replay scripts call outside
-      # them (ps, flock), for the remote gate's image.
-      gateShell = pkgs.mkShell (
-        {
-          packages =
-            buildTools
-            ++ enhancedTools
-            ++ (with pkgs; [
-              clang-tools
-              dosbox-x
-              zstd
-              procps
-              util-linux
-            ]);
-        }
-        // watcomEnv
-      );
     in
     {
       overlays.default = overlay;
 
       packages.${system} = {
         inherit (pkgs) wibo objdiff-cli watcom-10_6 watcom-10_0a watcom-10_5-libs watcom-10_6-libs owdemangle;
-
-        # enhanced/tools/remote.sh's container: a script that streams the
-        # image to stdout (`| podman load`). The container reads the source
-        # tree as a tar on stdin into /build/w and runs remote_gate.sh there.
-        gate-image = pkgs.dockerTools.streamNixShellImage {
-          drv = gateShell;
-          name = "th-gate-env";
-          run = "mkdir -p /build/w && cd /build/w && tar x && exec sh enhanced/tools/remote_gate.sh";
-        };
       };
 
       apps.${system} = {

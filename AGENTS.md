@@ -30,10 +30,6 @@ each do a brief in their own pane.
   `git checkout <file>` to undo, no push unless asked.
 
 ## Build and check
-The full check below runs on another machine by default, with
-`enhanced/tools/remote.sh gate` ("Remote gate", under "Replay check"); the
-local commands here are for the edit-compile loop and the fallback.
-
 Always unset `LD_LIBRARY_PATH` (the host's points at libraries built
 against a newer glibc, which breaks linking):
 
@@ -115,8 +111,7 @@ dosbox-x:
   Never weaken an Expect line to make it pass. Common script traps (forced
   cures, wrong headers, dead commands): docs/agents/herdr.md, "Workers".
 - Every script in `enhanced/tools/replay/scripts/` must agree to its turns.
-  The remote gate (below) runs them all. Run locally, as the fallback, a
-  worker's gate is split: its own new or changed scripts with fresh
+  A worker's gate is split: its own new or changed scripts with fresh
   originals (`replay_all.sh NAME ...`), plus `CACHED_ONLY=1 replay_all.sh` over
   all the others, which compares the port with cached originals only, never
   starts DOSBox (seconds) and lists scripts without a cache entry as "no
@@ -136,42 +131,6 @@ dosbox-x:
   `enhanced/tools/coverage.sh` shows what no script reaches yet.
 - New World, Game or Thing fields go in `core/world/debug_dump.cpp` and
   `core/world/snapshot.cpp`; size `static_assert`s enforce the snapshot.
-
-### Remote gate
-The gate runs on another machine by default:
-
-    enhanced/tools/remote.sh gate [SCRIPT ...]
-
-It sends the tree as it is on disk (uncommitted changes included) to
-`REMOTE_HOST` (default `nexus`) and runs, in a throwaway rootless podman
-container: both builds, `th_tests`, tidy, the clang-format check, the drive
-tests and `replay_all.sh` (all scripts, or the ones named). It prints each
-step's time and `replay_all.sh`'s summary, exits as it does (0, 1, 3; 1 also
-when an earlier step fails) and copies failing replay pairs, or the drive
-tests' output when one fails, to `build/remote-<time>/`. The local commands
-in "Build and check" and above are the fallback when the host is
-unreachable.
-- Workers run the whole `remote.sh gate`, not the split gate. The lead's
-  integration run is `remote.sh gate` too. With the host's cache current a
-  gate takes about seven minutes (replays about two); the first gate after a
-  change to the decompilation or `instrument.py` runs every original fresh,
-  about twenty-five.
-- The host runs `REMOTE_RUNS` (default 2) gates at once on `REMOTE_CPUS`
-  (16) each; the others wait for a slot, which with several workers gating
-  can take a quarter of an hour ("waiting for one of 2 runs" is printed once).
-- The game data image is built from the local `orig/` (a worktree needs its
-  `orig` link) and resent only when those files change.
-- The host needs passwordless ssh, rootless podman with cgroup v2's cpu and
-  memory controllers delegated to the user, systemd with lingering on, and
-  nix with flakes (it builds the image from `nix/flake.nix`); NixOS is the
-  tested setup. `with-fans` on the host is optional: where it is installed,
-  a run holds the fans at `REMOTE_FANS` % (default 50).
-- The host keeps its own trace cache (the `th-replay-cache` volume). Its keys
-  never match local ones (Watcom writes each source's path into its object),
-  and remote runs never fill the local cache.
-- The local side only runs tar and ssh, so the `nice`, `ionice` and job caps
-  in "Sharing the machine" do not apply to it.
-- `remote.sh clean` removes its images, containers and the cache volume.
 
 ## Sharing the machine
 Several agents can run at once:
@@ -197,10 +156,8 @@ Several agents can run at once:
   under `build/` or your scratch folder, not loose in `/tmp`.
 - When your task is done, remove what you made: your traces and temporary
   files, your `REPLAY_DIR` (`build/replay-<you>*`, and `build/replay-all-<pid>*`
-  the runner leaves), the `build/remote-<time>` folders of your remote gates
-  once their failures are fixed, and any extra build folders. Keep
-  `build/replay-cache`, `build/slots` and anything still in use by someone
-  else.
+  the runner leaves) and any extra build folders. Keep `build/replay-cache`,
+  `build/slots` and anything still in use by someone else.
 
 ## Debugging
 The user files bugs as debug reports (F12's Debug report tab, or F10):

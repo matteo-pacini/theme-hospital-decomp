@@ -194,25 +194,16 @@ run_script() {
   return "$status"
 }
 
-# A rolling pool of JOBS: each script takes a token from the FIFO and gives it
-# back when done, so the next one starts at once rather than when a whole
-# batch has finished.
-mkfifo "$RESULTS/tokens"
-exec 7<>"$RESULTS/tokens"
-i=0
-while [ "$i" -lt "$JOBS" ]; do
-  echo >&7
-  i=$((i + 1))
-done
+running=0
 for f in $scripts; do
-  read -r _ <&7
-  (
-    run_script "$f"
-    echo >&7
-  ) &
+  run_script "$f" &
+  running=$((running + 1))
+  if [ "$running" -ge "$JOBS" ]; then
+    wait
+    running=0
+  fi
 done
 wait
-exec 7>&-
 
 passed=0
 failed=0
