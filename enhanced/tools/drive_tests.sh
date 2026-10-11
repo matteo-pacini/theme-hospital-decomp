@@ -10,10 +10,14 @@
 # --default-speed (the speed a normal start has: Max). A script's debug reports
 # go under its own output folder. Run from the repository root after building
 # build/enhanced (or the build tree in DRIVE_BUILD). Screenshots and dumps go
-# to build/drive-tests/.
+# to build/drive-tests/<pid>/, a folder per run so that two runs in one tree
+# do not clash; it is removed when every script passes and kept, with its
+# logs, when one fails. A script whose seed script or seed replay fails fails
+# without its own run.
 set -u
 build=${DRIVE_BUILD:-build/enhanced}
 dir=enhanced/tests/drive
+base=build/drive-tests/$$
 
 # run_script SCRIPT OUT [SEEDOUT]: one driven run of SCRIPT into a fresh OUT
 # (log in OUT.log), its save folder starting with SEEDOUT's saves if given;
@@ -47,7 +51,7 @@ run_script() {
     set -- $seedreplay
     env -u LD_LIBRARY_PATH "$build/th_replay" --level "$1" --script "$2" --turns "$3" \
       --out /dev/null --save "$out/save/HORZA.h1" >/dev/null 2>"$out.seed.log" \
-      || { echo "FAIL $name (seed replay, see $out.seed.log)"; failed=1; continue; }
+      || { echo "seed replay failed (see $out.seed.log)" >&2; return 1; }
   fi
   # shellcheck disable=SC2086
   env -u LD_LIBRARY_PATH TH_DEBUG_REPORT_DIR="$out/debug-reports" \
@@ -57,10 +61,10 @@ run_script() {
 
 [ $# -eq 0 ] && set -- $dir/*.txt
 failed=0
-mkdir -p build/drive-tests
+mkdir -p "$base"
 for script in "$@"; do
   name=$(basename "$script" .txt)
-  out=build/drive-tests/$name
+  out=$base/$name
   # A script that continues or loads another script's save in a fresh run
   # names the producer; the producer runs here, so the result does not depend
   # on the order the scripts run in or on their output folders.
@@ -81,4 +85,5 @@ for script in "$@"; do
     failed=1
   fi
 done
+[ "$failed" = 0 ] && rm -rf "$base"
 exit "$failed"

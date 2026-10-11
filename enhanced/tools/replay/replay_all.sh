@@ -1,84 +1,90 @@
 #!/bin/sh
 # Runs the replay scripts against the instrumented original and this engine
 # (enhanced/tools/replay/cached_orig_trace.sh, a cached orig_trace.sh, and
-# th_replay), checks that each pair of traces agrees (compare.py) and that
-# each script's "# Expect" header lines hold on both traces (check_expect.py),
-# and reports one line per script. Exits non-zero if any script disagrees or
-# fails an expectation.
+# th_replay --advisor), checks that each pair of traces agrees (compare.py),
+# that the advisor's "# advice" lines agree (original's seed suffix left off)
+# and that each script's "# Expect" header lines hold on both traces
+# (check_expect.py), and reports one line per script. Exits non-zero if any
+# script disagrees or fails an expectation.
 #
-# Usage (from the repository root):
-#   enhanced/tools/replay/replay_all.sh [SCRIPT ...]
+# Usage (from any directory):
+#   enhanced/tools/replay/replay_all.sh [--orig-only] [SCRIPT ...]
 #     SCRIPT  a script's name (in tools/replay/scripts) or a path; without
 #             any, every script in tools/replay/scripts.
-#   enhanced/tools/replay/trace_cache.sh status|prune  cache size and pruning
+#     --orig-only  runs only the original's side, filling the cache (what
+#             trace_cache.sh prefetch does): no th_replay, no comparison.
+#   enhanced/tools/replay/trace_cache.sh status|prune|missing|prefetch
 #
 # Environment:
 #   BUILD        the enhanced build directory (default build/enhanced)
-#   JOBS         scripts run at once (default 10, TH_REPLAY_SLOTS's)
+#   JOBS         scripts run at once (default TH_REPLAY_SLOTS, else 10)
 #   TURNS        the last turn for a script without "# Turns" (default 18300)
 #   RAND         1 also traces every random draw (default 1)
 #   TRACE_DRAW   1 also draws the original's view and copies its screen
 #                (default 0; passed to the original's side, part of the cache key)
-#   NO_CACHE     1 runs the original fresh (and refreshes the cache entry)
-#                instead of using a cached trace (default 0); the cached
-#                original trace is a valid reference unless the script, its
-#                options, or the instrumented executable changed
+#   CACHE        use (default): a cached original trace is the reference and a
+#                script without one runs DOSBox and stores the result; only:
+#                never starts DOSBox, a script without a cache entry is
+#                listed as "no cache" (neither passed nor failed; not
+#                compared) and the run exits 3 (1 if anything failed), so it
+#                never reads as a full pass; refresh: runs every original
+#                fresh and replaces its entry (only when the cache is
+#                suspected stale). After a decompilation or instrument.py
+#                change every key is new and nothing is cached, so `only`
+#                finds nothing and fresh originals are needed.
 #   KEEP         1 keeps every trace and replay folder, for debugging
 #                (default: a passing script's traces go as soon as they
 #                agree and its expectations hold; a failing script's two
-#                traces are kept, gzipped, with their paths printed)
-#   CACHED_ONLY  1 never starts DOSBox: each script is compared with its cached
-#                original trace, and one without a cache entry is listed as
-#                "no cache" (neither passed nor failed; not compared). The
-#                run then exits 3 (1 if anything failed), so it never reads
-#                as a full pass. Needs the keys to be current: after a
-#                decompilation or instrument.py change every key is new and
-#                nothing is cached, so fresh originals are needed.
-#                (default 0; overrides NO_CACHE)
+#                traces are kept, zstd-compressed, with their paths printed)
 #   WATCHDOG     minutes without new original-side trace output before a
 #                fresh run is killed as hung and its script marked failed
 #                (default 5; 0 disables; cache hits never run DOSBox)
 #   REPLAY_BASE  where the per-script replay folders and traces go
 #                (default build/replay-all-<pid>, so two runs at once do
 #                not clash; set it to share one)
-#   IGNORE_EVENTS  event kinds compare.py leaves out on both sides,
-#                comma-separated (default empty: every event is compared)
-#   SKIP         calls left out of the original's trace, comma-separated
-#                (default in lib.sh: empty, every call is in the trace)
+# DOSBox runs in one of TH_REPLAY_SLOTS (default 10) slots shared by every
+# caller (orig_trace.sh).
 #
-# Needs, on PATH: python3 (with the tools the decomp's dev shell has),
-# dosbox-x, wibo and the Watcom tools, and the decompilation built in
-# build/base; the game data in orig/. Runs inside the decompilation's dev
-# shell (`nix develop path:./nix`) with dosbox-x on PATH.
+# Exit codes: 0 all passed, 1 a script disagreed or failed, 2 bad usage or a
+# missing tool, 3 nothing disagreed but some script had no cached original
+# (CACHE=only).
+#
+# Needs, on PATH: python3, zstd (with the tools the decomp's dev shell has),
+# dosbox-x (not for CACHE=only), wibo and the Watcom tools, and the
+# decompilation built in build/base; the game data in orig/. Runs inside the
+# decompilation's dev shell (`nix develop path:./nix`).
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../../.." && pwd)
-# Defaults (SKIP, TURNS, RAND, WATCHDOG), script headers, the watchdog: lib.sh,
-# shared with trace_cache.sh prefetch.
+# Defaults (TURNS, RAND, WATCHDOG, CACHE), script lookups, the watchdog:
+# lib.sh, shared with cached_orig_trace.sh and trace_cache.sh.
 # shellcheck source=lib.sh
 . "$here/lib.sh"
 BUILD=${BUILD:-build/enhanced}
-JOBS=${JOBS:-10}
+JOBS=${JOBS:-${TH_REPLAY_SLOTS:-10}}
 KEEP=${KEEP:-0}
 REPLAY_BASE=${REPLAY_BASE:-build/replay-all-$$}
 
+orig_only=0
+if [ "${1:-}" = --orig-only ]; then
+  orig_only=1
+  shift
+fi
+
 rand_flag=
 [ "$RAND" = 1 ] && rand_flag=--rand
-ignore_flags=
-for kind in $(printf '%s' "$IGNORE_EVENTS" | tr ',' ' '); do
-  ignore_flags="$ignore_flags --ignore-event $kind"
-done
 
-need="python3 dosbox-x gzip"
-[ "${CACHED_ONLY:-0}" = 1 ] && need="python3 gzip"
+need="python3 zstd"
+[ "$orig_only" = 1 ] && need=zstd
+[ "$CACHE" != only ] && need="$need dosbox-x"
 for tool in $need; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "replay_all.sh: $tool is not on PATH (see the header)" >&2
     exit 2
   }
 done
-[ -x "$root/$BUILD/th_replay" ] || {
+[ "$orig_only" = 1 ] || [ -x "$root/$BUILD/th_replay" ] || {
   echo "replay_all.sh: $root/$BUILD/th_replay is missing: build it first" >&2
   exit 2
 }
@@ -88,36 +94,28 @@ done
 }
 
 # One line per script, plus a summary. `scripts` is the list of paths.
-scripts=
-if [ "$#" -eq 0 ]; then
-  for f in "$here"/scripts/*.txt; do
-    scripts="$scripts $f"
-  done
-else
-  for a in "$@"; do
-    if [ -f "$a" ]; then
-      f=$a
-    elif [ -f "$here/scripts/$a.txt" ]; then
-      f=$here/scripts/$a.txt
-    elif [ -f "$here/scripts/$a" ]; then
-      f=$here/scripts/$a
-    else
-      echo "replay_all.sh: no such script: $a" >&2
-      exit 2
-    fi
-    scripts="$scripts $f"
-  done
-fi
+scripts=$(script_list "$@") || exit 2
 
 cd "$root" || exit 2
 mkdir -p "$REPLAY_BASE"
 RESULTS=$(mktemp -d "$REPLAY_BASE/.results.XXXXXX")
 trap 'rm -rf "$RESULTS"' EXIT
 
+# advice_diff ORIG ENH: succeeds when the two traces' "# advice" lines
+# agree; otherwise prints how they differ. The original appends its random
+# seed to each line, the port does not.
+advice_diff() {
+  grep -a '^# advice ' "$1" | tr -d '\r' | sed 's/ seed=[0-9a-f]*$//' >"$1.adv"
+  grep -a '^# advice ' "$2" >"$2.adv"
+  cmp -s "$1.adv" "$2.adv" && return 0
+  echo "advice differs (original $(wc -l <"$1.adv"), port $(wc -l <"$2.adv"); first: $(diff "$1.adv" "$2.adv" | sed -n '/^[<>]/{p;q;}'))"
+  return 1
+}
+
 # Runs one script on both sides, compares the traces and checks its
 # expectations; writes its result line and status to $RESULTS. A passing
 # script's traces are deleted (unless KEEP=1); a failing script's are kept,
-# gzipped.
+# compressed.
 run_script() {
   f=$1
   n=$(basename "$f" .txt)
@@ -127,13 +125,13 @@ run_script() {
   mkdir -p "$dir"
   o=$dir/orig.txt
   e=$dir/enh.txt
-  rm -f "$o" "$e" "$o.gz" "$e.gz"
+  rm -f "$o" "$e" "$o.zst" "$e.zst"
   status=0
   line="$n (level $lvl, $t turns): agree"
   # The original side is cached (cached_orig_trace.sh) and runs in the
   # background so the watchdog can stop a fresh run if the trace it writes
   # stops growing (DOSBox hung, or never started).
-  REPLAY_DIR="$dir" TRACE_RAND="$RAND" TRACE_DRAW="${TRACE_DRAW:-0}" "$here/cached_orig_trace.sh" "$o" "$t" "$f" "$SKIP" "$lvl" \
+  REPLAY_DIR="$dir" TRACE_RAND="$RAND" TRACE_DRAW="${TRACE_DRAW:-0}" "$here/cached_orig_trace.sh" "$o" "$t" "$f" "" "$lvl" \
     >"$dir/orig.log" 2>&1 &
   opid=$!
   hung=0
@@ -144,7 +142,7 @@ run_script() {
   else
     wait "$opid"
     ocode=$?
-    if [ "${CACHED_ONLY:-0}" = 1 ] && [ "$ocode" != 0 ] &&
+    if [ "$CACHE" = only ] && [ "$ocode" != 0 ] &&
       grep -q "^orig trace: no cache" "$dir/orig.log" 2>/dev/null; then
       printf '%s\n' "$n (level $lvl, $t turns): no cache (not compared)" >"$RESULTS/$n.line"
       printf 'nocache\n' >"$RESULTS/$n.status"
@@ -156,18 +154,26 @@ run_script() {
   fi
   if grep -q 'cache hit' "$dir/orig.log" 2>/dev/null; then src=cached; else src=fresh; fi
   printf '%s\n' "$src" >"$RESULTS/$n.src"
-  if [ "$status" = 0 ] && ! "$root/$BUILD/th_replay" --script "$f" --turns "$t" $rand_flag --skip "$SKIP" \
+  if [ "$orig_only" = 1 ]; then
+    [ "$status" = 0 ] && line="$n (level $lvl, $t turns): original trace ready"
+  elif [ "$status" = 0 ] && ! "$root/$BUILD/th_replay" --script "$f" --turns "$t" $rand_flag --advisor \
     --out "$e" --level "$lvl" >"$dir/enh.log" 2>&1; then
     status=1
     line="$n (level $lvl, $t turns): enhanced run failed (see $dir/enh.log)"
   fi
-  if [ "$status" = 0 ]; then
-    out=$(python3 "$here/compare.py" "$o" "$e" $ignore_flags 2>&1) || {
+  if [ "$orig_only" = 0 ] && [ "$status" = 0 ]; then
+    out=$(python3 "$here/compare.py" "$o" "$e" 2>&1) || {
       status=1
       line="$n (level $lvl, $t turns): $(printf '%s\n' "$out" | head -n 1)"
     }
   fi
-  if [ "$status" = 0 ]; then
+  if [ "$orig_only" = 0 ] && [ "$status" = 0 ]; then
+    out=$(advice_diff "$o" "$e") || {
+      status=1
+      line="$n (level $lvl, $t turns): $out"
+    }
+  fi
+  if [ "$orig_only" = 0 ] && [ "$status" = 0 ]; then
     out=$(python3 "$here/check_expect.py" "$f" "$o" "$e" 2>&1) || {
       status=1
       line="$n (level $lvl, $t turns): $(printf '%s\n' "$out" | head -n 1)"
@@ -175,7 +181,7 @@ run_script() {
   fi
   if [ "$status" = 0 ]; then
     if [ "$KEEP" != 1 ]; then
-      rm -f "$o" "$e"
+      rm -f "$o" "$e" "$o.adv" "$e.adv"
       rm -rf "$dir/run"
     fi
   else
@@ -183,8 +189,9 @@ run_script() {
       line="$line [traces:$o $e]"
     else
       traces=
-      if [ -f "$o" ]; then gzip -f "$o"; traces="$o.gz"; fi
-      if [ -f "$e" ]; then gzip -f "$e"; traces="$traces $e.gz"; fi
+      rm -f "$o.adv" "$e.adv"
+      if [ -f "$o" ]; then zstd -q -f --rm "$o"; traces="$o.zst"; fi
+      if [ -f "$e" ]; then zstd -q -f --rm "$e"; traces="$traces $e.zst"; fi
       [ -n "$traces" ] && line="$line [traces:$traces]"
       rm -rf "$dir/run"
     fi
@@ -238,7 +245,7 @@ rmdir "$REPLAY_BASE" 2>/dev/null
 echo "---"
 echo "$passed passed, $failed failed"
 echo "original trace: $cached from cache, $fresh fresh"
-[ "$nocache" = 0 ] || echo "$nocache without a cached original, not compared (CACHED_ONLY=1):$nocache_list"
+[ "$nocache" = 0 ] || echo "$nocache without a cached original, not compared (CACHE=only):$nocache_list"
 [ "$failed" = 0 ] || exit 1
 # Exit 3: nothing disagreed, but part of the check did not run, so the gate
 # must not read as passed.

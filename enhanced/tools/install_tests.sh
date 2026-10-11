@@ -1,7 +1,9 @@
 #!/bin/sh
 # Tests the setup screen and --install-from through th_enhanced, headless,
-# each in a fake HOME under build/install-tests (the user's folders are never
-# touched; an install is ~175 MB, removed when the tests are done). Needs
+# each in a fake HOME under build/install-tests/<pid> (a folder per run, so two
+# runs in one tree do not clash; the user's folders are never
+# touched; an install is ~175 MB, removed when the tests are done, the logs
+# with it when all pass). Needs
 # `orig/` (the game data) and build/enhanced (or INSTALL_BUILD). Run from the
 # repository root; prints one line per check and exits non-zero on a failure.
 set -u
@@ -9,7 +11,7 @@ build=${INSTALL_BUILD:-build/enhanced}
 exe=$PWD/$build/th_enhanced
 tests=$PWD/enhanced/tests/install
 orig=$PWD/orig
-base=$PWD/build/install-tests
+base=$PWD/build/install-tests/$$
 failed=0
 
 pass() { echo "pass $1"; }
@@ -77,4 +79,5 @@ run incomplete_verify "$base/h-cli" --user-data --size 640x480
 check incomplete "setup screen and verify" $?
 
 rm -rf "$base/h-drop" "$base/h-cli" "$base/h-empty" "$base/h-bad" "$base/src"
+[ "$failed" = 0 ] && rm -rf "$base"
 exit "$failed"

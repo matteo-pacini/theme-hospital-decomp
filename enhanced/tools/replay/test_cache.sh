@@ -71,7 +71,7 @@ export FAKE_LOG PATH="$tmp/bin:$PATH" REPLAY_DIR="$tmp/work"
 cd "$root"
 traces=build/replay-cache/traces
 runs() { grep -c '^run$' "$FAKE_LOG" || true; }
-entries() { find "$traces" -name '*.zst' -o -name '*.gz' 2>/dev/null | wc -l; }
+entries() { find "$traces" -name '*.zst' 2>/dev/null | wc -l; }
 cached() { "$rp/cached_orig_trace.sh" "$@" 2>&1; }
 
 # 1. A finished run is stored and the next call is a hit without DOSBox.
@@ -251,7 +251,7 @@ rm -rf "$tmp/repo-copy"
 # 6. The language is forced to ENG whatever the original's config says.
 check "run uses LANGUAGE=ENG" "$(grep '^cfg:' "$FAKE_LOG" | sort -u)" "cfg: LANGUAGE=ENG"
 
-# 7. The watchdog (lib.sh, used by replay_all.sh and prefetch): a hit costs
+# 7. The watchdog (lib.sh, used by replay_all.sh): a hit costs
 # no wait; with SLOW=1 a silent run holding a slot is killed (about 75 s).
 . "$rp/lib.sh"
 WATCHDOG=1
@@ -272,45 +272,45 @@ if [ "${SLOW:-0}" = 1 ]; then
   check "watchdog: killed run is gone" "$r" dead
 fi
 
-# 8. CACHED_ONLY=1 never starts DOSBox: a miss is reported ("no cache", exit
-# 3, nothing written or stored), a hit is used, whatever NO_CACHE says.
+# 8. CACHE=only never starts DOSBox: a miss is reported ("no cache", exit
+# 3, nothing written or stored), a hit is used.
 : >"$FAKE_LOG"
 n=$(entries)
-CACHED_ONLY=1 cached "$tmp/out8" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8.txt" && r=exit0 || r=$?
-check "cached-only miss exits 3" "$r" 3
+CACHE=only cached "$tmp/out8" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8.txt" && r=exit0 || r=$?
+check "cache-only miss exits 3" "$r" 3
 grep -q '^orig trace: no cache ' "$tmp/o8.txt" && r=reported || r=silent
-check "cached-only miss says 'no cache'" "$r" reported
-check "cached-only miss starts no DOSBox" "$(runs)" 0
-check "cached-only miss stores nothing" "$(entries)" "$n"
+check "cache-only miss says 'no cache'" "$r" reported
+check "cache-only miss starts no DOSBox" "$(runs)" 0
+check "cache-only miss stores nothing" "$(entries)" "$n"
 [ -e "$tmp/out8" ] && r=written || r=absent
-check "cached-only miss writes no trace" "$r" absent
+check "cache-only miss writes no trace" "$r" absent
 cached "$tmp/out8a" 400 "$tmp/script.txt" skipme 1 >/dev/null
 : >"$FAKE_LOG"
-CACHED_ONLY=1 NO_CACHE=1 cached "$tmp/out8b" 400 "$tmp/script.txt" skipme 1 | grep -q 'cache hit' && r=hit || r=miss
-check "cached-only hit, even with NO_CACHE=1" "$r" hit
-check "cached-only hit starts no DOSBox" "$(runs)" 0
+CACHE=only cached "$tmp/out8b" 400 "$tmp/script.txt" skipme 1 | grep -q 'cache hit' && r=hit || r=miss
+check "cache-only hit" "$r" hit
+check "cache-only hit starts no DOSBox" "$(runs)" 0
 cmp -s "$tmp/out8a" "$tmp/out8b" && r=same || r=differ
-check "cached-only hit returns the stored trace" "$r" same
+check "cache-only hit returns the stored trace" "$r" same
 # A fresh run holding the key's lock has stored nothing yet; a cache-only
 # call neither waits for it nor misreads it, and a stored entry is a hit
 # for two readers at once, lock held or not.
 lockkey=$("$rp/trace_key.sh" "$exekey" 400 1 skipme 0 0 "$tmp/script.txt")
 exec 7>"$traces/$lockkey.lock"
 flock 7
-(CACHED_ONLY=1 cached "$tmp/out8d" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8d.txt") &
-(CACHED_ONLY=1 cached "$tmp/out8e" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8e.txt") &
+(CACHE=only cached "$tmp/out8d" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8d.txt") &
+(CACHE=only cached "$tmp/out8e" 400 "$tmp/script.txt" skipme 1 >"$tmp/o8e.txt") &
 wait
 exec 7>&-
 cmp -s "$tmp/out8d" "$tmp/out8a" && cmp -s "$tmp/out8e" "$tmp/out8a" && r=hits || r=lost
-check "cached-only: two readers at once, lock held, both hit" "$r" hits
+check "cache-only: two readers at once, lock held, both hit" "$r" hits
 unheld=$("$rp/trace_key.sh" "$exekey" 410 1 skipme 0 0 "$tmp/script.txt")
 exec 7>"$traces/$unheld.lock"
 flock 7
-CACHED_ONLY=1 cached "$tmp/out8c" 410 "$tmp/script.txt" skipme 1 | grep -q 'no cache' && r=reported || r=waited
+CACHE=only cached "$tmp/out8c" 410 "$tmp/script.txt" skipme 1 | grep -q 'no cache' && r=reported || r=waited
 exec 7>&-
-check "cached-only does not wait for a key being run" "$r" reported
+check "cache-only does not wait for a key being run" "$r" reported
 
-# 9. replay_all.sh with CACHED_ONLY=1: a script with a cached original is
+# 9. replay_all.sh with CACHE=only: a script with a cached original is
 # compared, one without is listed as "no cache" and does not fail the run,
 # and no DOSBox is started.
 mkdir -p "$root/build/enhanced"
@@ -323,39 +323,64 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-printf 'T 1 seed=1\nT %s seed=2\n# end\n' "$turns" >"$out"
+printf 'T 1 seed=1\n' >"$out"
+[ -z "${FAKE_ADVICE:-}" ] || echo '# advice 3' >>"$out"
+printf 'T %s seed=2\n# end\n' "$turns" >>"$out"
 FAKE
 chmod +x "$root/build/enhanced/th_replay"
 printf '# Turns 50\n0 1\n' >"$rp/scripts/zz_hit.txt"
 printf '# Turns 51\n0 1\n' >"$rp/scripts/zz_miss.txt"
-# Primed with replay_all.sh's defaults (lib.sh: SKIP empty, RAND=1), or the
+# Primed with replay_all.sh's defaults (lib.sh: RAND=1, no calls left out), or the
 # key differs and zz_hit misses.
 TRACE_RAND=1 REPLAY_DIR="$tmp/prime" "$rp/cached_orig_trace.sh" "$tmp/prime.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null
 : >"$FAKE_LOG"
-CACHED_ONLY=1 REPLAY_BASE="$tmp/ra" "$rp/replay_all.sh" zz_hit zz_miss >"$tmp/ra.out" 2>&1 && r=0 || r=$?
-check "replay_all cached-only with a missing cache exits 3, not 0" "$r" 3
+CACHE=only REPLAY_BASE="$tmp/ra" "$rp/replay_all.sh" zz_hit zz_miss >"$tmp/ra.out" 2>&1 && r=0 || r=$?
+check "replay_all cache-only with a missing cache exits 3, not 0" "$r" 3
 grep -q '^zz_hit .*agree .*\[original cached\]' "$tmp/ra.out" && r=compared || r=missing
-check "replay_all cached-only compares the cached script" "$r" compared
+check "replay_all cache-only compares the cached script" "$r" compared
 grep -q '^zz_miss .*no cache' "$tmp/ra.out" && r=listed || r=missing
-check "replay_all cached-only lists the script without cache" "$r" listed
+check "replay_all cache-only lists the script without cache" "$r" listed
 grep -q '^1 passed, 0 failed' "$tmp/ra.out" && r=counted || r=wrong
-check "replay_all cached-only counts only the compared script" "$r" counted
+check "replay_all cache-only counts only the compared script" "$r" counted
 grep -q '^1 without a cached original.*zz_miss' "$tmp/ra.out" && r=counted || r=wrong
-check "replay_all cached-only counts the missing one" "$r" counted
-check "replay_all cached-only starts no DOSBox" "$(runs)" 0
-TRACE_DRAW=1 CACHED_ONLY=1 REPLAY_DIR="$tmp/prime" "$rp/cached_orig_trace.sh" "$tmp/draw.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null && r=0 || r=$?
+check "replay_all cache-only counts the missing one" "$r" counted
+check "replay_all cache-only starts no DOSBox" "$(runs)" 0
+TRACE_DRAW=1 CACHE=only REPLAY_DIR="$tmp/prime" "$rp/cached_orig_trace.sh" "$tmp/draw.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null && r=0 || r=$?
 check "cache: a run with TRACE_DRAW=1 never hits the default entry" "$r" 3
-TRACE_DRAW=0 CACHED_ONLY=1 REPLAY_DIR="$tmp/prime" TRACE_RAND=1 "$rp/cached_orig_trace.sh" "$tmp/draw.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null && r=0 || r=$?
+TRACE_DRAW=0 CACHE=only REPLAY_DIR="$tmp/prime" TRACE_RAND=1 "$rp/cached_orig_trace.sh" "$tmp/draw.txt" 50 "$rp/scripts/zz_hit.txt" "" 1 >/dev/null && r=0 || r=$?
 check "cache: TRACE_DRAW=0 is the default entry" "$r" 0
-# Without CACHED_ONLY the same miss runs the original (a fresh run here).
+# Without CACHE=only the same miss runs the original (a fresh run here).
 REPLAY_BASE="$tmp/ra2" "$rp/replay_all.sh" zz_miss >"$tmp/ra2.out" 2>&1 && r=exit0 || r=failed
-check "replay_all runs a script without cache when not cached-only" "$(runs)" 1
-check "replay_all not cached-only passes it" "$r" exit0
+check "replay_all runs a script without cache when not cache-only" "$(runs)" 1
+check "replay_all not cache-only passes it" "$r" exit0
 printf '# Turns 52\n0 1\n' >"$rp/scripts/zz_miss2.txt"
-CACHED_ONLY=1 REPLAY_BASE="$tmp/ra3" "$rp/replay_all.sh" zz_miss2 >"$tmp/ra3.out" 2>&1 && r=0 || r=$?
-check "replay_all cached-only with nothing cached exits 3" "$r" 3
-CACHED_ONLY=1 REPLAY_BASE="$tmp/ra4" "$rp/replay_all.sh" zz_hit >"$tmp/ra4.out" 2>&1 && r=0 || r=$?
-check "replay_all cached-only with everything cached exits 0" "$r" 0
+CACHE=only REPLAY_BASE="$tmp/ra3" "$rp/replay_all.sh" zz_miss2 >"$tmp/ra3.out" 2>&1 && r=0 || r=$?
+check "replay_all cache-only with nothing cached exits 3" "$r" 3
+CACHE=only REPLAY_BASE="$tmp/ra4" "$rp/replay_all.sh" zz_hit >"$tmp/ra4.out" 2>&1 && r=0 || r=$?
+check "replay_all cache-only with everything cached exits 0" "$r" 0
+# 10. The advisor's "# advice" lines are compared: the port writes one the
+# cached original does not have.
+FAKE_ADVICE=1 CACHE=only REPLAY_BASE="$tmp/ra5" "$rp/replay_all.sh" zz_hit >"$tmp/ra5.out" 2>&1 && r=0 || r=$?
+check "replay_all fails on an advice line the original lacks" "$r" 1
+grep -q '^zz_hit .*advice differs' "$tmp/ra5.out" && r=named || r=silent
+check "replay_all names the advice difference" "$r" named
+
+# 11. CACHE: a bad value is refused, refresh runs the original over an entry.
+CACHE=bogus cached "$tmp/out11" 400 "$tmp/script.txt" skipme 1 >/dev/null && r=0 || r=$?
+check "bad CACHE value exits 2" "$r" 2
+: >"$FAKE_LOG"
+CACHE=refresh cached "$tmp/out11" 400 "$tmp/script.txt" skipme 1 | grep -q 'cache miss .*stored' && r=stored || r=not
+check "CACHE=refresh runs the original over an entry" "$r" stored
+check "CACHE=refresh starts DOSBox" "$(runs)" 1
+
+# 12. trace_cache.sh missing lists the scripts without an entry; prefetch
+# fills them through replay_all.sh --orig-only and then finds none.
+check "missing lists only the script without cache" "$("$rp/trace_cache.sh" missing zz_hit zz_miss2 | sed 's|.*/||')" "zz_miss2.txt"
+: >"$FAKE_LOG"
+"$rp/trace_cache.sh" prefetch zz_miss2 >/dev/null 2>&1
+check "prefetch runs the original for the missing script" "$(runs)" 1
+check "prefetch leaves nothing missing" "$("$rp/trace_cache.sh" missing zz_hit zz_miss2)" ""
+
 rm -f "$rp/scripts/zz_hit.txt" "$rp/scripts/zz_miss.txt" "$rp/scripts/zz_miss2.txt"
 
 if [ "$fails" = 0 ]; then echo "all cache tests passed"; else echo "$fails cache test(s) failed"; exit 1; fi

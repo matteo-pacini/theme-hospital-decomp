@@ -52,14 +52,10 @@ For a session where a lead agent briefs worker agents in herdr panes
   narrow the task quietly or report done with items left out.
 - "It can't happen" needs proof: the original's code and the data, ideally a
   run of the instrumented original showing it. Otherwise write the scenario.
-- Replay gate: your own new or changed scripts with fresh originals, plus
-  `CACHED_ONLY=1 replay_all.sh` over all the others (AGENTS.md, "Replay
-  check"). It exits 3 when any script had no cache entry: run those fresh.
-  After a decompilation or `instrument.py` change nothing is cached, so run
-  fresh.
-- A replay that agrees proves nothing if nothing happened in it. Report the
-  event counts that show each branch ran; check that each command in your
-  scripts changes something in both traces.
+- Gate: `enhanced/tools/check.sh` in your worktree (AGENTS.md, "Gate"),
+  green before you report.
+- A replay that agrees proves nothing if nothing happened in it: check that
+  each command in your scripts changes something in both traces.
 - Shared files take small edits on top of what is there now. Never write a
   whole file from an earlier copy or from memory, never revert or delete code
   or files you didn't write. Re-read before each edit.
@@ -77,8 +73,6 @@ For a session where a lead agent briefs worker agents in herdr panes
     the illness discovered, a full diagnosis does not.
   - Commands past `# Turns`, or aimed at a freed or reused thing id, change
     nothing: check each command's effect in both traces.
-  - A helper that draws random numbers passes the original function's name,
-    also in branches that look unreachable.
   - Rendering: no scratch or mask colour (0xfe) in a path the original draws
     straight to the screen; palette data can produce that value.
   - Headers and comments go stale when ids or turns move: re-read them after
@@ -108,9 +102,11 @@ For a session where a lead agent briefs worker agents in herdr panes
   Then two tabs for the user, one pane each, in the repository root:
   `terminal` (a plain shell) and `nvim` (running `nvim .`). Label each agent
   pane after the agent in it.
-- Start each worker in a pane at a shell prompt, named after
-  its pane label, `th-agent-NN` (`th-agent-NN-<tag>` in a worktree
-  workspace); if herdr drops a name, address the pane id:
+- The lead runs `claude-opus-5-5` at medium effort (high for a hard task),
+  the workers `claude-sonnet-5-5` at medium. Start each worker in a pane at
+  a shell prompt, named after its pane label, `th-agent-NN`
+  (`th-agent-NN-<tag>` in a worktree workspace); if herdr drops a name,
+  address the pane id:
 
       herdr agent start <name> --kind claude --pane <id> -- \
         --model claude-sonnet-5-5 --effort medium
@@ -120,10 +116,10 @@ For a session where a lead agent briefs worker agents in herdr panes
   dispatch, just started or just finished, gets only `/clear`; `/clear` also
   comes before giving a worker an unrelated task.
 - Brief with a common rules file and one file per worker: task, gates, report
-  path. The common file repeats AGENTS.md's "Sharing the machine" limits
-  (`nice -n 19 ionice -c 3`, the job caps). Six workers at those caps load
-  the 16 cores fully: with the user at the machine, check `uptime` and the
-  CPU temperature (`k10temp` Tctl under /sys/class/hwmon) during a batch
+  path. `check.sh`'s default caps are the ones for several agents; what a
+  worker runs by hand follows AGENTS.md, "Sharing the machine". Six workers
+  load the 16 cores fully: with the user at the machine, check `uptime` and
+  the CPU temperature (`k10temp` Tctl under /sys/class/hwmon) during a batch
   and run fewer workers when it stays near 90°C or the desktop lags.
 - Verify every handoff before accepting it (rerun its scripts and tests,
   compare the work with the original, look at its screenshots), and again
@@ -139,9 +135,7 @@ For a session where a lead agent briefs worker agents in herdr panes
   separate tasks. Workers never commit; the lead merges verified worktrees
   into its branch (through an integration worktree for a large batch), runs
   the combined check there and commits when the user asks.
-- Finish a batch with one combined check of the whole tree: every replay
-  script on both sides (the one full cold run, without `CACHED_ONLY`; workers
-  only ran theirs fresh), every drive test, all gates. Then remove the batch's
+- Finish a batch with `check.sh` on the merged tree. Then remove the batch's
   traces, verification folders and stale `build/replay-*` folders, and check
   free space on `/` (`/tmp` lives there).
 - Wait for workers going idle or blocked (`herdr agent get`), not for their

@@ -279,7 +279,7 @@ found, otherwise fetched, and Dear ImGui is always fetched):
 
     env -u LD_LIBRARY_PATH nix develop path:./nix#enhanced
     unset LD_LIBRARY_PATH
-    cmake -S enhanced -B build/enhanced -G Ninja
+    cmake -S enhanced -B build/enhanced -G Ninja -DCMAKE_BUILD_TYPE=Release
     cmake --build build/enhanced
     build/enhanced/th_enhanced
 
@@ -288,6 +288,24 @@ pointing at libraries built against a newer glibc, breaks linking.
 
 Tests: `ctest --test-dir build/enhanced`. The tests that need the game data
 read it from the development folder and are skipped without it.
+
+The gate is one command from a plain terminal (it enters the dev shells,
+unsets `LD_LIBRARY_PATH` and runs at the lowest priority itself):
+
+    enhanced/tools/check.sh [SCRIPT ...]
+
+It builds `build/enhanced` (configuring it if missing; a warning from our
+own targets fails), runs `th_tests`, `tools/tidy.sh`, `clang-format
+--dry-run` over the sources, `tools/drive_tests.sh`, `tools/install_tests.sh`
+and `tools/replay/replay_all.sh` (over the scripts named, else all), prints
+one line per step and stops at the first failure. Before the replays it
+prints how many scripts have no cached original and stops when there are
+more than `FRESH_MAX` (default 10; not with `CACHE=refresh`), saying to fill
+the cache first (`trace_cache.sh prefetch`). `CACHE` goes on to
+`replay_all.sh` (below). The job caps default to those for a machine shared
+with other agents (`CMAKE_BUILD_PARALLEL_LEVEL=2`, `TIDY_JOBS=2`, `JOBS=1`);
+set them higher when the machine is yours. Its logs are in
+`build/check-<pid>/`, removed when the gate passes.
 
 Without a window, `--screenshot OUT.bmp --data FOLDER [--level N] [--size WxH]`
 renders a level's start view to a BMP.
@@ -301,7 +319,8 @@ without a details file at Normal speed (a normal start is at Max, as the
 original's default); `--default-speed` keeps the Max. The scripts in tests/drive are
 interface tests: `tools/drive_tests.sh` runs them (all, or the ones named)
 from the repository root with the build in `DRIVE_BUILD` (default
-build/enhanced), its output in build/drive-tests/. A script's header picks
+build/enhanced), its output in build/drive-tests/<pid>/ (a folder per
+run, removed when every script passes). A script's header picks
 how it starts: `# Level N` the level (default 1), `# NoLevel` the start-up
 screens instead, `# Size WxH` the window size (default 1280x720; the menu
 bar is only at the top in the game's 640x480 layout), `# SeedScript NAME`
@@ -356,8 +375,9 @@ choice); the replay check needs wall following, the default.
 With `--advisor`, th_replay also runs the advisor in each turn, as the
 game's frame does, and notes each advice given as a comment line
 (`# advice <situation>`), which the instrumented original writes too,
-followed by the seed. compare.py ignores them; to compare them, diff the
-two traces' `grep -o '^# advice [0-9]*'`.
+followed by the seed. compare.py ignores them; `replay_all.sh` runs the
+port with `--advisor` and compares them with the original's (the seed left
+off), a difference failing the script.
 
 Replay check against the original: `tools/replay/orig_trace.sh` relinks an
 instrumented HOSPITAL.EXE from the decompilation and runs it in DOSBox-X
@@ -382,8 +402,12 @@ header (`# Expect <text> [<op> <n>]`: an event line whose text after `E `
 starts with `<text>` occurs `<op> <n>` times, `op` one of `>= == <=`, default
 `>= 1`; `# Expect-not <text>`: no such event), and prints one line per script
 and a summary; `check_expect.py` does the checking on both traces. It runs
-`JOBS` scripts at once (default 10) with the th_replay of `BUILD` (default
-build/enhanced). `tools/replay/expect_candidates.py SCRIPT TRACE` lists,
+`JOBS` scripts at once (default `TH_REPLAY_SLOTS`, else 10) with the
+th_replay of `BUILD` (default build/enhanced). Its settings are `BUILD`,
+`JOBS`, `TURNS` (the last turn of a script without `# Turns`), `RAND`,
+`TRACE_DRAW`, `CACHE` (below), `KEEP` (keep every trace; otherwise a
+failing script's two traces are kept, zstd-compressed), `WATCHDOG` and
+`REPLAY_BASE`; they are listed at the top of the script. `tools/replay/expect_candidates.py SCRIPT TRACE` lists,
 for each of a script's `# Expect` lines, the trace's events of the same
 shape (the same text, any numbers) with their numbers, to re-derive an
 Expect line whose numbers drift with the generator.
@@ -391,13 +415,13 @@ Expect line whose numbers drift with the generator.
 Original trace cache. `build/replay-cache/traces/` holds the original
 side of past runs, so `replay_all.sh` runs DOSBox only for a script it
 has no entry for. Each entry is one script's trace, compressed with zstd
-when it is on PATH (gzip otherwise) and named by a key of everything that
-fixes the trace: the instrumented executable's cache key (a hash of the
+and named by a key of everything that fixes the trace: the instrumented executable's cache key (a hash of the
 decompilation's sources, objects and tools and of instrument.py as a parsed
 syntax tree without docstrings, so editing its comments, docstrings or layout
 keeps the key while any change to its code, EVENTS tables or the C++ they
 insert changes it), the script file's bytes
-(not its path), the last turn, the level, the SKIP list, RAND, `TRACE_DRAW`,
+(not its path), the last turn, the level, the left-out calls (none under
+`replay_all.sh`), RAND, `TRACE_DRAW`,
 `orig_trace.sh` read without its comment-only and blank lines (everything
 else counts: the DOSBox configuration, command line, run folder setup and the text of its
 messages; a line after a backslash continuation, a multi-line string or an
@@ -412,28 +436,29 @@ once-only advisor flags never leak between runs. `replay_all.sh` and
 calls) consult it; a hit is decompressed in a moment and prints `orig trace:
 cache hit`. The cache is machine local and git-ignored, and each machine
 fills its own under its own executable key: any change to the key above (a
-new or edited script, other turns, level or SKIP, an edited `orig_trace.sh`
+new or edited script, other turns, level, an edited `orig_trace.sh`
 or CFG, a decompilation or `instrument.py` change) misses only the affected
-entries and refreshes them. `CACHED_ONLY=1 replay_all.sh [SCRIPT ...]`
-compares the port with cached originals only and never starts DOSBox, taking
-no lock: a script without an entry is listed as "no cache", neither passed
-nor failed, and the run exits 3 (1 if anything disagreed), so it never reads
-as a full pass. After a decompilation or `instrument.py` change every key is
-new, so nothing is cached and fresh originals are needed. The full run with
-fresh originals is the lead's at integration. A key edit that could change a
-trace must be kept in the key; when unsure, keep it, since a false hit is
-worse than a miss. `enhanced/tools/replay/test_cache.sh` tests
-the cache with a fake DOSBox. To fill it for every script in one go, run
-`enhanced/tools/replay/trace_cache.sh prefetch` (from any directory; the
-same SKIP, turns, RAND and watchdog as `replay_all.sh`, from `lib.sh`,
-so it fills exactly what `replay_all.sh` hits; `PREFETCH_JOBS`, default
-10). Entries with RAND on are about 0.5 MB each on average (up to 1.5 MB),
-so the whole set is some 50-100 MB per executable key until `prune` drops
-old keys; at about a minute per script on the DOSBox slots, it is best
-left to run unattended. `NO_CACHE=1` forces a fresh run and refreshes the
-entry; use it only when the cache is suspected stale, not to check a port
-change, since a cached original trace is the reference while the executable
-key is unchanged. `trace_cache.sh status` prints the entry count, size,
+entries and refreshes them. `CACHE` picks how `replay_all.sh` uses it:
+`use` (the default) hits the cache and runs DOSBox for a miss; `only` never
+starts DOSBox and takes no lock: a script without an entry is listed as "no
+cache", neither passed nor failed, and the run exits 3 (1 if anything
+disagreed), so it never reads as a full pass; `refresh` runs every original
+fresh and replaces its entry, only when the cache is suspected stale, not to
+check a port change, since a cached original trace is the reference while the
+executable key is unchanged. After a decompilation or `instrument.py` change
+every key is new, so nothing is cached and fresh originals are needed. The
+full run with fresh originals is the lead's at integration. A key edit that
+could change a trace must be kept in the key; when unsure, keep it, since a
+false hit is worse than a miss. `enhanced/tools/replay/test_cache.sh` tests
+the cache with a fake DOSBox. `trace_cache.sh missing [SCRIPT ...]` lists
+the scripts without an entry at the `replay_all.sh` defaults. To fill them
+in one go, run `enhanced/tools/replay/trace_cache.sh prefetch [SCRIPT ...]`
+(from any directory): it runs `replay_all.sh --orig-only` over the missing
+ones, so it fills exactly what `replay_all.sh` hits, with its `JOBS` and
+watchdog. Entries with RAND on are about 0.5 MB each on average (up to
+1.5 MB), so the whole set is some 50-100 MB per executable key until `prune`
+drops old keys; at about a minute per script on the DOSBox slots, it is best
+left to run unattended. `trace_cache.sh status` prints the entry count, size,
 current key and stale count; `trace_cache.sh prune` removes entries whose
 executable key is no longer current, and `prune DAYS` also removes entries
 older than DAYS days. Never edit or hand-place cache files.
@@ -447,10 +472,10 @@ script's header comments say what it exercises, and its `# Expect` and
 turn and `# Score N` the score the last level left (init_player keeps it
 above level 1; both sides read the header line itself). `@advisor_event N`
 lines raise advisor.event_flags' bits as the interface's buttons do. A script
-is compared with the default SKIP, empty (the computer
-hospitals, rats and disasters all run), by hand as below; th_replay's
-`--skip NAMES` leaves calls out of the port (`replay_all.sh` passes its SKIP
-to both sides; `SKIP=computer_action` runs without the computer hospitals):
+is compared with no call left out (the computer hospitals, rats and
+disasters all run) by `replay_all.sh`, or by hand as below; th_replay's
+`--skip NAMES` and orig_trace.sh's SKIP leave calls out of one side
+(`--skip computer_action` runs without the computer hospitals):
 
     enhanced/tools/replay/orig_trace.sh orig.txt 18000 \
         enhanced/tools/replay/scripts/gp_office.txt
@@ -459,10 +484,9 @@ to both sides; `SKIP=computer_action` runs without the computer hospitals):
         --turns 18000 --out enhanced.txt
     enhanced/tools/replay/compare.py orig.txt enhanced.txt
 
-`IGNORE_EVENTS` (comma-separated event kinds, default empty) makes
-`replay_all.sh` leave those events out of the comparison on both sides, for
-events the original writes and the engine does not emit yet (none today:
-the engine emits every event).
+`compare.py --ignore-event KIND` leaves an event kind out of a comparison on
+both sides, for events the original writes and the engine does not emit yet
+(none today: the engine emits every event).
 
 What the scripts leave unexercised: `tools/coverage.sh` (in the dev shell, GCC)
 builds th_replay with `-DTH_COVERAGE=ON` in build/coverage, runs every script

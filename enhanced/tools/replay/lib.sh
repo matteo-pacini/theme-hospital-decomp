@@ -1,21 +1,68 @@
 # shellcheck shell=sh
-# Shared by replay_all.sh and trace_cache.sh prefetch (sourced, not run), so
-# that a prefetch fills exactly the cache entries replay_all.sh will hit: the
-# one place of the default SKIP list, turns and RAND, of the script header
-# lookups, and of the watchdog on the original's run.
+# Shared by replay_all.sh, cached_orig_trace.sh and trace_cache.sh (sourced,
+# not run; the sourcing script sets `here` to this folder first), so that a
+# prefetch fills exactly the cache entries replay_all.sh will hit: the one
+# place of the defaults (turns, RAND, CACHE), of the script lookups and of the
+# watchdog on the original's run.
 
-# The calls left out on both sides, comma-separated (also the list in
-# AGENTS.md's "Replay check"): none by default, since every call is ported.
-# SKIP=computer_action leaves the computer players out; SKIP set but empty
-# skips nothing.
-SKIP=${SKIP-}
-# Event kinds compare.py leaves out on both sides (comma-separated): the ones
-# the original writes and the engine does not emit yet. Empty compares every
-# event.
-IGNORE_EVENTS=${IGNORE_EVENTS:-}
+: "${here:?lib.sh is sourced by a script that sets here}"
 TURNS=${TURNS:-18300}
 RAND=${RAND:-1}
 WATCHDOG=${WATCHDOG:-5}
+# use: a cached original trace is the reference and a miss runs DOSBox and
+# stores the result; only: never starts DOSBox, a miss is reported; refresh:
+# runs the original fresh and replaces the entry.
+CACHE=${CACHE:-use}
+case $CACHE in
+  use | only | refresh) ;;
+  *)
+    echo "CACHE must be use, only or refresh, not '$CACHE'" >&2
+    exit 2
+    ;;
+esac
+
+# script_path NAME|PATH: prints the absolute path of a replay script given by
+# its name (in scripts/, with or without .txt) or by a path; fails if there
+# is none.
+script_path()
+{
+  if [ -f "$1" ]; then
+    case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac
+  elif [ -f "$here/scripts/$1.txt" ]; then
+    echo "$here/scripts/$1.txt"
+  elif [ -f "$here/scripts/$1" ]; then
+    echo "$here/scripts/$1"
+  else
+    return 1
+  fi
+}
+
+# script_list [NAME|PATH ...]: one script path per line, in the order given,
+# or every script in scripts/ without arguments. Names no script has are
+# reported on stderr and make it fail.
+script_list()
+{
+  if [ "$#" -eq 0 ]; then
+    for f in "$here"/scripts/*.txt; do echo "$f"; done
+    return 0
+  fi
+  bad=0
+  for a in "$@"; do
+    script_path "$a" || {
+      echo "no such script: $a" >&2
+      bad=1
+    }
+  done
+  return "$bad"
+}
+
+# orig_key EXE TURNS LEVEL SKIP SCRIPT: the cache key of one original-side
+# run (trace_key.sh, with TRACE_RAND and TRACE_DRAW as the run gets them),
+# EXE being exe_cache_key.sh's. Run from the repository root.
+orig_key()
+{
+  "$here/trace_key.sh" "$1" "$2" "$3" "$4" "${TRACE_RAND:-0}" "${TRACE_DRAW:-0}" "$5"
+}
 
 # script_level SCRIPT / script_turns SCRIPT: the "# Level N" / "# Turns N"
 # header values, else 1 / $TURNS.

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Inspects and prunes the original trace cache
 # (build/replay-cache/traces; see enhanced/README.md, "Original trace
-# cache"). Entries are named <exe-key>-<rest>.<zst|gz>, so an entry belongs
+# cache"). Entries are named <exe-key>-<rest>.zst, so an entry belongs
 # to the instrumented executable its key names; entries for any other key are
 # stale. This cache is machine-local and git-ignored; never edit or hand-place
 # its files.
@@ -11,13 +11,16 @@
 #   trace_cache.sh prune [DAYS]    remove entries whose exe key is not the
 #                                  current one, and (with DAYS) entries older
 #                                  than DAYS days
+#   trace_cache.sh missing [SCRIPT ...]
+#                                  list (as paths) the scripts, or the ones
+#                                  named, that have no cached original at the
+#                                  replay_all.sh defaults (turns, level, RAND,
+#                                  TRACE_DRAW)
 #   trace_cache.sh prefetch [SCRIPT ...]
-#                                  run the original for every script (or the
-#                                  ones named), filling the cache; the same
-#                                  turns/level/SKIP/RAND defaults and the
-#                                  watchdog as replay_all.sh (lib.sh), so a
-#                                  later replay_all.sh run is all cache hits.
-#                                  PREFETCH_JOBS scripts at once (default 10)
+#                                  run the original for the scripts of
+#                                  `missing` through replay_all.sh --orig-only
+#                                  (its JOBS, WATCHDOG and CACHE), so a later
+#                                  replay_all.sh run is all cache hits
 set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -37,7 +40,7 @@ case $cmd in
   status)
     entries=0
     stale=0
-    for f in "$cache"/*.zst "$cache"/*.gz; do
+    for f in "$cache"/*.zst; do
       [ -f "$f" ] || continue
       entries=$((entries + 1))
       base=${f##*/}
@@ -53,7 +56,7 @@ case $cmd in
     days=${2:-}
     removed=0
     freed=0
-    for f in "$cache"/*.zst "$cache"/*.gz; do
+    for f in "$cache"/*.zst; do
       [ -f "$f" ] || continue
       base=${f##*/}
       key=${base%.*}
@@ -72,59 +75,30 @@ case $cmd in
     done
     echo "pruned $removed entr$( [ "$removed" = 1 ] && echo y || echo ies), freed $((freed / 1024)) KiB"
     ;;
+  missing)
+    shift
+    list=$(script_list "$@")
+    # shellcheck disable=SC2086
+    set -- $list
+    [ -n "$current" ] || { echo "missing: build/base is missing: build the decompilation first (ninja)" >&2; exit 1; }
+    cd "$root"
+    for f in "$@"; do
+      key=$(TRACE_RAND=$RAND orig_key "$current" "$(script_turns "$f")" "$(script_level "$f")" "" "$f")
+      [ -f "$cache/$key.zst" ] || echo "$f"
+    done
+    ;;
   prefetch)
     shift
-    scripts=
-    if [ "$#" -eq 0 ]; then
-      for s in "$root"/enhanced/tools/replay/scripts/*.txt; do scripts="$scripts $s"; done
-    else
-      for a in "$@"; do
-        if [ -f "$a" ]; then
-          case $a in /*) f=$a ;; *) f=$PWD/$a ;; esac
-        elif [ -f "$root/enhanced/tools/replay/scripts/$a.txt" ]; then
-          f=$root/enhanced/tools/replay/scripts/$a.txt
-        elif [ -f "$root/enhanced/tools/replay/scripts/$a" ]; then
-          f=$root/enhanced/tools/replay/scripts/$a
-        else
-          echo "prefetch: no such script: $a" >&2
-          continue
-        fi
-        scripts="$scripts $f"
-      done
+    todo=$("$0" missing "$@")
+    if [ -z "$todo" ]; then
+      echo "prefetch: every original is cached"
+      exit 0
     fi
-    jobs=${PREFETCH_JOBS:-10}
-    tmp=$root/build/replay-prefetch-$$
-    mkdir -p "$tmp"
-    running=0
-    for f in $scripts; do
-      [ -f "$f" ] || { echo "prefetch: no such script: $f" >&2; continue; }
-      d=$tmp/$(basename "$f" .txt)
-      mkdir -p "$d"
-      (
-        # Like replay_all.sh: the same arguments, and the same watchdog on
-        # the original's run.
-        cd "$root"
-        REPLAY_DIR="$d" TRACE_RAND=$RAND TRACE_DRAW="${TRACE_DRAW:-0}" \
-          "$here/cached_orig_trace.sh" "$d/out.txt" "$(script_turns "$f")" "$f" "$SKIP" "$(script_level "$f")" \
-          >"$d/orig.log" 2>&1 &
-        opid=$!
-        hung=0
-        watch_original "$opid" "$d" "$root" || hung=1
-        if [ "$hung" = 1 ]; then
-          echo "prefetch: $(basename "$f") hung (no trace for ${WATCHDOG}m; killed; see $d/orig.log)" >&2
-        elif ! wait "$opid"; then
-          echo "prefetch: $(basename "$f") failed (see $d/orig.log)" >&2
-        fi
-      ) &
-      running=$((running + 1))
-      if [ "$running" -ge "$jobs" ]; then wait; running=0; fi
-    done
-    wait
-    rm -rf "$tmp"
-    echo "prefetch done"
+    # shellcheck disable=SC2086
+    "$here/replay_all.sh" --orig-only $todo
     ;;
   *)
-    echo "usage: trace_cache.sh status | prune [DAYS] | prefetch [SCRIPT ...]" >&2
+    echo "usage: trace_cache.sh status | prune [DAYS] | missing [SCRIPT ...] | prefetch [SCRIPT ...]" >&2
     exit 2
     ;;
 esac
