@@ -29,6 +29,11 @@
   var Module = {
     arguments: args,
     canvas: document.getElementById('canvas'),
+    // A deployment names its files by content hash (tools/web_deploy.sh): it
+    // sets thFiles, the plain names to the hashed ones.
+    locateFile: function (name) {
+      return (window.thFiles && window.thFiles[name]) || name;
+    },
     print: function (text) { console.log(text); },
     printErr: function (text) { console.warn(text); },
     onRuntimeInitialized: function () {

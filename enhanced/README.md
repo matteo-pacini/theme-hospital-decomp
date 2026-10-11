@@ -551,6 +551,42 @@ half of it), `web_th_tests` 18 s (native 11 s), `web_replays` 11 minutes for
 the 158 scripts (a script takes two to three times as long as natively) and
 `web_cross_load` 20 s.
 
+### Deploy
+
+`tools/web_smoke.sh` runs the build in headless Chromium: it installs from
+`orig/` through the picker, reloads, starts level 1 and downloads a debug
+report. Given a deploy folder (below) it also checks the headers of
+`web/vercel.json` as the page received them, and for a folder with `data/` that
+the install runs by itself and the picker is never asked for.
+
+`tools/web_deploy.sh` deploys the build to Vercel as static files, with the
+Vercel CLI (`vercel@63.1.2` through `npx`; log in once with `npx vercel
+login`). It brings `build/web` up to date and assembles `build/web/deploy`:
+`index.html`, `index.<hash>.js` and `index.<hash>.wasm` (the page finds the
+wasm through `Module.locateFile`) and `web/vercel.json`, which sends the
+COOP/COEP headers the page needs for threads on every path, caches the hashed
+files for good and the page and `data/` not at all. `TH_VERCEL_PROJECT` names
+the Vercel project (default `theme-hospital-enhanced`).
+
+- `tools/web_deploy.sh`: the folder, without game data, to production
+  (`vercel deploy --prod`). The player picks their installer or folder.
+- `tools/web_deploy.sh --with-data`: for testing. `build/web/deploy-data`
+  also holds `data/`, the files of the install manifest taken from `orig/`
+  (not the Watcom files, DOSBox, demos, manual or GOG's files) and
+  `data/files.txt`; the page fetches them and runs the folder install without
+  the picker. It deploys a preview and then checks, without credentials, that
+  every address the deploy printed answers 401 or Vercel's sign-in redirect,
+  for the page and for `data/files.txt`, that Vercel did not make it
+  production, and that the project's public domain has no `data/`. Otherwise
+  it runs `vercel remove` on the deployment and fails. Vercel makes a
+  project's first deployment production on the public domain, which Vercel
+  Authentication does not cover, even when asked for a preview: deploy the
+  code-only build to a new project first. The game data stays behind Vercel
+  Authentication and nowhere in the repository; delete `build/web/deploy-data`
+  when done.
+- `--preview`: the same preview and checks without the data.
+- `--dry-run` assembles the folder and prints the commands; nothing is sent.
+
 ## Bugs in the original
 
 `init_edit_room`'s `u8` overflow for an empty room is in
