@@ -1,0 +1,12 @@
+# Level 1
+# Size 640x480
+# The losing line stays over the newspaper's last frame; see
+# winlose_backdrop.txt.
+wait 30
+lose
+wait 100
+expect screen: win/lose (movie
+expect-not backdrop
+wait 3000
+expect screen: win/lose (movie -1, backdrop)
+screenshot lose_letter

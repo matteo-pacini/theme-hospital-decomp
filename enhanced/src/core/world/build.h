@@ -10,7 +10,7 @@ namespace th
 {
 
 class Game;
-struct AnimData;
+class AnimData;
 struct Balance;
 struct Event;
 struct ObjectPlacing;

@@ -1,0 +1,11 @@
+# Level 1
+# Size 640x480
+# A key pressed during the win movie leaves the letter open and typing.
+wait 30
+win
+wait 100
+expect screen: win/lose (movie 6)
+key Space
+wait 3000
+expect screen: win/lose (movie -1, backdrop)
+screenshot win_letter_after_key

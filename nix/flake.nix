@@ -218,6 +218,24 @@
           # clang-tools for clang-tidy (enhanced/tools/tidy.sh) and clang-format
           packages = enhancedTools ++ [ pkgs.clang-tools ];
         };
+
+        # `nix develop path:./nix#web`: the WebAssembly build of enhanced/
+        # (Emscripten; node runs its tests). Emscripten writes the system
+        # libraries it builds to EM_CACHE, which the store cannot hold.
+        web = pkgs.mkShell {
+          packages = with pkgs; [
+            cmake ninja git clang-tools emscripten nodejs zstd
+            playwright-driver
+          ];
+          shellHook = ''
+            export EM_CACHE=''${EM_CACHE:-$PWD/build/em-cache}
+            # The smoke test (enhanced/tools/web_smoke.sh) drives the browsers
+            # nixpkgs ships; their download is skipped.
+            export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
+            export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+            export PLAYWRIGHT_CORE=${pkgs.playwright-driver}
+          '';
+        };
       };
     };
 }

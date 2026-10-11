@@ -5,7 +5,7 @@
 namespace th
 {
 
-struct AnimData;
+class AnimData;
 struct Thing;
 struct World;
 

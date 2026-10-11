@@ -7,7 +7,7 @@
 namespace th
 {
 
-struct AnimData;
+class AnimData;
 struct Event;
 class Game;
 

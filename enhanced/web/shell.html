@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme Hospital Enhanced</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas#canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+  #status, #closed { position: fixed; left: 0; right: 0; font: 16px sans-serif; color: #ddd; text-align: center; }
+  #status { top: 1em; display: none; }
+  #closed { top: 40%; display: none; font-size: 20px; }
+  #loading { position: fixed; top: 40%; left: 0; right: 0; font: 16px sans-serif; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<div id="loading">Loading…</div>
+<div id="status"></div>
+<div id="closed">The game is closed. Reload the page to play again.</div>
+<script>
+  // ?level=N starts that level at once; ?debug turns the developer tools on.
+  var args = [];
+  var query = new URLSearchParams(location.search);
+  ['level', 'language'].forEach(function (key) {
+    if (/^[0-9]+$/.test(query.get(key) || '')) args.push('--' + key, query.get(key));
+  });
+  if (query.has('debug')) args.push('--debug');
+  var Module = {
+    arguments: args,
+    canvas: document.getElementById('canvas'),
+    print: function (text) { console.log(text); },
+    printErr: function (text) { console.warn(text); },
+    onRuntimeInitialized: function () {
+      window.thReady = true;
+      document.getElementById('loading').style.display = 'none';
+    }
+  };
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

@@ -12,6 +12,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(TH_DEV_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../orig" CACHE PATH
                     "Game data folder a development build reads first (empty to disable)")
 
+# WebAssembly (`emcmake cmake`, in the `web` dev shell). Every object, the
+# fetched dependencies included, is built with threads (th_enhanced installs
+# on a std::thread), as wasm objects must all agree. th_tests and th_replay
+# run under node on the host's files; the browser target takes its own link
+# options.
+if (EMSCRIPTEN)
+  add_compile_options(-pthread)
+  # Memory growth with threads is the design's choice (the data and the install
+  # need more than a fixed size is kind to), not something to warn of.
+  add_link_options(-pthread -Wno-pthreads-mem-growth)
+  set(TH_NODE_LINK_OPTIONS -sSTACK_SIZE=8MB -sNODERAWFS=1 -sALLOW_MEMORY_GROWTH=1 -sEXIT_RUNTIME=1 -sENVIRONMENT=node)
+endif()
+
 include(cmake/deps.cmake)
 
 if (MSVC)
@@ -177,13 +190,37 @@ if (WIN32)
   target_link_libraries(th_enhanced PRIVATE ole32 shell32)
 endif()
 target_compile_options(th_enhanced PRIVATE ${TH_WARNINGS})
-if (TH_DEV_DATA_DIR)
+if (TH_DEV_DATA_DIR AND NOT EMSCRIPTEN)
   target_compile_definitions(th_enhanced PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
+endif()
+
+# The browser build: build/web/dist/index.html, index.js and index.wasm, with
+# the shell page and the JS bridge of web/ (storage, picker, reports). The
+# thread pool holds the install thread and the audio threads SDL may start.
+if (EMSCRIPTEN)
+  set(TH_WEB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/web)
+  target_sources(th_enhanced PRIVATE src/app/web.cpp)
+  set_target_properties(th_enhanced PROPERTIES
+    OUTPUT_NAME index
+    SUFFIX ".html"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    LINK_DEPENDS "${TH_WEB_DIR}/shell.html;${TH_WEB_DIR}/bridge.js")
+  target_link_options(th_enhanced PRIVATE
+    --shell-file ${TH_WEB_DIR}/shell.html
+    --pre-js ${TH_WEB_DIR}/bridge.js
+    -lidbfs.js
+    -sEXPORTED_RUNTIME_METHODS=FS,ccall
+    -sALLOW_MEMORY_GROWTH=1
+    -sPTHREAD_POOL_SIZE=4
+    # The simulation overflows the default 64 KB stack (as th_replay does).
+    -sSTACK_SIZE=8MB
+    -sDEFAULT_PTHREAD_STACK_SIZE=2MB)
 endif()
 
 # The replay check: runs a level headless and writes its trace (no SDL).
 add_executable(th_replay tools/replay/main.cpp)
 target_link_libraries(th_replay PRIVATE th_core)
+target_link_options(th_replay PRIVATE ${TH_NODE_LINK_OPTIONS})
 target_compile_options(th_replay PRIVATE ${TH_WARNINGS})
 target_compile_options(th_replay PRIVATE ${TH_COVERAGE_FLAGS})
 if (TH_DEV_DATA_DIR)
@@ -229,6 +266,7 @@ if (BUILD_TESTING)
     tests/ui.cpp
     tests/yearend.cpp)
   target_link_libraries(th_tests PRIVATE th_core)
+  target_link_options(th_tests PRIVATE ${TH_NODE_LINK_OPTIONS})
   if (WIN32)
     target_link_libraries(th_tests PRIVATE ole32 shell32)
   endif()

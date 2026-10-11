@@ -316,7 +316,10 @@ on a driven clock so that a run repeats exactly; `--control` takes the same
 commands on stdin, answering each on stdout (src/app/drive.h).
 `--visible` shows the window while it runs. A driven run starts a player
 without a details file at Normal speed (a normal start is at Max, as the
-original's default); `--default-speed` keeps the Max. The scripts in tests/drive are
+original's default); `--default-speed` keeps the Max. `--real-time` gives a driven
+run the real clock and frame lengths of a normal start (`wait` then counts
+frames that take milliseconds), to look for what only a real clock shows. The
+scripts in tests/drive are
 interface tests: `tools/drive_tests.sh` runs them (all, or the ones named)
 from the repository root with the build in `DRIVE_BUILD` (default
 build/enhanced), its output in build/drive-tests/<pid>/ (a folder per
@@ -363,7 +366,8 @@ runs N turns on from the moment it was saved, then writes `dump_game` of the
 end state (the map around CELL) and the hospital view as the game draws it
 (`--camera` from state.txt's camera line, `--size WxH`; a `.ppm` name writes
 a PPM). `--script FILE` adds commands, its turns counted from the
-snapshot's. `th_replay --script debug-reports/X/commands.txt --turns T`
+snapshot's. `--snapshot FILE` writes the end state as a snapshot, to
+`--load` again. `th_replay --script debug-reports/X/commands.txt --turns T`
 plays the level again from its start up to turn T instead. `--save SAVE`
 writes the end state as a saved game that the game's Load reads (its
 slots are `<player name>.h<slot>` in the save folder; a save checks the
@@ -491,6 +495,61 @@ both sides, for events the original writes and the engine does not emit yet
 What the scripts leave unexercised: `tools/coverage.sh` (in the dev shell, GCC)
 builds th_replay with `-DTH_COVERAGE=ON` in build/coverage, runs every script
 there and writes an HTML report and `summary.txt` to build/coverage/report/.
+
+## Web build
+
+The engine also builds to WebAssembly with Emscripten, in its own dev shell
+(Emscripten, node, clang-tidy, zstd; the system libraries it builds are
+cached in `build/em-cache`):
+
+    env -u LD_LIBRARY_PATH nix develop path:./nix#web
+    unset LD_LIBRARY_PATH
+    emcmake cmake -S enhanced -B build/web -G Ninja -DCMAKE_BUILD_TYPE=Release
+    cmake --build build/web
+
+Every object, the fetched dependencies included, is built with `-pthread`
+(the install runs on a `std::thread`), with memory growth allowed. SDL3 is
+always fetched (there is none to find). `th_tests` and `th_replay` link for
+node with `-sNODERAWFS=1` and an 8 MB stack, so they read the game data and
+the scripts from the host, and run as `node build/web/th_replay.js ARGS`
+with the native one's arguments. Node's directory listing does not follow a
+link given as the folder, so pass the data folder by its real path
+(`--data "$(readlink -f orig)"`, `TH_TEST_DATA_DIR="$(readlink -f orig)"`)
+where `orig` is a link, as it is in a worktree.
+
+`WEB=1 enhanced/tools/check.sh` adds a phase after the replays, in the web
+shell, stopping at the first failure:
+
+1. `web_build`: configures `build/web` when missing and builds it; a
+   `warning:` outside `_deps` fails.
+2. `web_th_tests`: `th_tests` under node, with the game data.
+3. `web_tidy`: `tidy.sh` (the same checks) over the `.cpp` files with a
+   region under `__EMSCRIPTEN__`, using `build/web`'s compile database, the
+   `wasm32-unknown-emscripten` target and Emscripten's sysroot (`TIDY_EXTRA`),
+   so those regions are the ones analysed. A compiler `error:` fails it too.
+4. `web_replays`: every script (or the ones named) through native and wasm
+   `th_replay` with `replay_all.sh`'s arguments (`--script`, `--turns`,
+   `--level`, `--rand`, `--advisor`), `JOBS` at a time. The two traces must
+   be byte-identical (`cmp`); equal ones are deleted, different ones kept
+   zstd-compressed in `build/web-replay/<script>/`. The original is not
+   involved: the native port already agrees with it.
+5. `web_cross_load`: one build writes a snapshot at turn N
+   (`th_replay --snapshot FILE`, at the end of the run), the other `--load`s
+   it with the script's remaining commands (turns counted from N) and must
+   continue to the trace of the first build's whole run from turn N + 1;
+   native to wasm and wasm to native. `CROSS_LOAD` lists the `SCRIPT:N` items
+   (default `rival_two_years:18000`, with rivals and a year end after it,
+   `win_level1:9000` and `tutorial:9000`). The `# advice` comment lines are
+   left out: th_replay keeps the advisor character's animation seed outside
+   the snapshot, so after any load (native too) an advice can come a turn
+   earlier or later; the state and the events are what is compared.
+
+Without `WEB=1` the gate does not touch `build/web`. At one job
+(`CMAKE_BUILD_PARALLEL_LEVEL=1 TIDY_JOBS=1 JOBS=1`, nice 19) a clean
+`build/web` takes about 3 minutes (the `th_enhanced` part, SDL3 and ImGui, is
+half of it), `web_th_tests` 18 s (native 11 s), `web_replays` 11 minutes for
+the 158 scripts (a script takes two to three times as long as natively) and
+`web_cross_load` 20 s.
 
 ## Bugs in the original
 

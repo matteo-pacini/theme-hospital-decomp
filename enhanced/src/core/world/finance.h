@@ -9,7 +9,7 @@ namespace th
 {
 
 struct World;
-struct AnimData;
+class AnimData;
 
 // change_balance's transaction types, as listed in the bank statement (the
 // game's TX_*, include/enums.h; language section 7 at the same index).

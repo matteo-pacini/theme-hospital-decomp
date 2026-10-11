@@ -2,6 +2,8 @@
 // any window size, with the bottom panel centred at native size and ImGui
 // developer tools (F12).
 
+#define SDL_MAIN_USE_CALLBACKS 1
+
 #include "app/audio/mixer.h"
 #include "app/datadir.h"
 #include "app/drive.h"
@@ -10,6 +12,7 @@
 #include "app/player_details.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
+#include "app/web.h"
 #include "core/audio/music.h"
 #include "core/audio/sounds.h"
 #include "core/data/fs.h"
@@ -390,7 +393,12 @@ class App : public DriveHost
 {
   public:
     bool init(int argc, char **argv);
-    void run();
+    // Starts the frame clock; call once after init, before the first iterate.
+    void begin();
+    // One pass of the main loop: the driver's step, update and render. False
+    // when the app is done; exit_code() then tells how.
+    bool iterate();
+    void on_event(const SDL_Event &e) { handle_event(e); }
     // A running install is cancelled and waited for when the app is destroyed.
     void shutdown();
     // 1 when --install-from failed or a drive script's expectations did, else 0.
@@ -398,7 +406,7 @@ class App : public DriveHost
 
   private:
     // --drive SCRIPT, --control, --out DIR, --size WxH, --visible,
-    // --default-speed.
+    // --default-speed, --real-time.
     void parse_drive_args(int argc, char **argv);
     // --user-data (skip the development folder, so a development build looks
     // only in the game folder as a normal start does), --drop PATH (handle PATH as a file dropped
@@ -450,6 +458,7 @@ class App : public DriveHost
     // it. `fresh` starts the advisor, the hospital settings and the insurers
     // as a level's start does; a loaded save has them already.
     void start_view(std::unique_ptr<LevelView> view, const Level &level, bool fresh);
+    void reset_interface_for_level();
     // The save slot path for the player's name and the current save folder.
     std::filesystem::path save_path(int slot) const;
     // What a save of the game in play continues with: the balance id, the
@@ -669,6 +678,7 @@ class App : public DriveHost
     bool end_game();
     int lose_line_index(int anim);
     void winlose_step(int out_w, int out_h);
+    void start_next_level(int next);
     // Saves the Continue slot and unloads the game for the main menu, keeping
     // its score for the next level.
     void return_to_main_menu();
@@ -676,6 +686,10 @@ class App : public DriveHost
     // startup_step plays a start-up movie.
     void open_winlose_movie(int index);
     void advance_winlose_movie();
+    // Puts the movie's current frame and palette on winlose_movie_surface_;
+    // a losing movie's line is drawn over the frames from its text frame on
+    // (lose_call).
+    void show_winlose_movie_frame();
     void load_ui_art(const std::filesystem::path &dir);
     // The sounds and announcements of what the game did since the last
     // frame: new faxes, the emergency's helicopter sent, its clock.
@@ -791,6 +805,7 @@ class App : public DriveHost
     // played before the letter as startup_step plays a start-up movie.
     SmackerVideo winlose_movie_;
     int winlose_movie_index_ = -1;
+    int winlose_movie_frame_ = 0; // frames shown so far (current_frame)
     unsigned winlose_movie_flags_ = 0;
     double winlose_movie_time_ = 0;
     Surface winlose_movie_surface_;
@@ -947,8 +962,12 @@ class App : public DriveHost
     // --default-speed: a driven run starts at the player's default speed
     // (Max) like a normal start, not at Normal.
     bool drive_default_speed_ = false;
+    // --real-time: a driven run takes its frame length and clock from the
+    // real time, as a normal start does, not a fixed 1/60 s.
+    bool drive_real_time_ = false;
     int drive_w_ = 1280, drive_h_ = 720;
     uint64_t drive_ns_ = 0;
+    uint64_t last_ns_ = 0;
     std::filesystem::path drive_shot_;
     std::filesystem::path drive_shot_ui_;
     // The text of the `type` commands waiting to be polled: SDL keeps the
@@ -1151,6 +1170,27 @@ void App::load_level(int number)
         speed_ = Speed::Normal;
 }
 
+// What setup_new_level clears of the interface (othervar, gamevar) and what
+// EV_CANCEL_BUILD closes: nothing of the old level stays open or held.
+void App::reset_interface_for_level()
+{
+    hire_ = {};
+    if (interface_.modal())
+        interface_.close_yes_no(false);
+    hire_staff_event(hire_, interface_, map_->game.world, {EV_CANCEL_BUILD, 0, 0, 0});
+    close_irequesters(interface_);
+    info_ = {};
+    demand_ = {};
+    queue_ = {};
+    build_ui_ = {};
+    panel_info_ = 0;
+    panel_thing_ = 0;
+    panel_info_timer_ = 0;
+    yes_event_ = {};
+    no_event_ = {};
+    pending_save_slot_ = 0;
+}
+
 // Takes over `view` as the level in play and resets the interface round it.
 // A loaded save has the advisor, the hospital settings and the insurers in
 // the snapshot already, so `fresh` skips their level-start setup. `level` is
@@ -1163,8 +1203,7 @@ void App::start_view(std::unique_ptr<LevelView> view, const Level &level, bool f
     give_advisor_flags(view->game);
     level_ = view->game.level_number();
     map_ = std::move(view);
-    close_irequesters(interface_);
-    info_ = {};
+    reset_interface_for_level();
     if (fresh) {
         key_mappos_.fill(0);
         start_advisor(map_->game.advisor, tutorial_);
@@ -1437,6 +1476,7 @@ void App::save_player_details()
     std::filesystem::path path = player_details_path(save_dir_, player_name());
     if (!write_player_details(path, details_, player_name()))
         std::fprintf(stderr, "cannot write the player details %s\n", path.string().c_str());
+    web::flush_storage();
 }
 
 void App::check_autosave(const Game &game)
@@ -2617,6 +2657,7 @@ void App::open_year_end()
     load_highscores(hiscore_path_, hosp_scores_);
     bool showing_fame = insert_hall_details(hosp_scores_, startup_.player_name(), game.progress.score);
     save_highscores(hiscore_path_, hosp_scores_);
+    web::flush_storage();
     year_end_.open(hosp_scores_, showing_fame);
     year_end_phase_ = 0;
     year_end_showing_ = true;
@@ -2704,6 +2745,7 @@ void App::open_winlose()
         load_highscores(hiscore_path_, hosp_scores_);
         insert_hall_details(hosp_scores_, startup_.player_name(), game.progress.score);
         save_highscores(hiscore_path_, hosp_scores_);
+        web::flush_storage();
     }
     winlose_.open(win, game.level_number());
     winlose_showing_ = true;
@@ -2727,16 +2769,25 @@ void App::open_winlose_movie(int index)
         return;
     const MovieInfo &info = movie_info(index);
     auto path = resolve_ci(data_->dir(), info.file);
-    if (!path || !winlose_movie_.open(*path) || !winlose_movie_.next_frame())
+    std::string error;
+    if (!path)
+        error = "not found in " + data_->dir().string();
+    else if (!winlose_movie_.open(*path, &error))
+        error = error.empty() ? "cannot be opened" : error;
+    else if (!winlose_movie_.next_frame())
+        error = "the first frame cannot be decoded";
+    if (!error.empty()) {
+        std::fprintf(stderr, "win/lose movie %.*s: %s\n", int(info.file.size()), info.file.data(), error.c_str());
         return;
+    }
     winlose_movie_index_ = index;
     movie_playing_ = index;
     winlose_movie_flags_ = info.flags;
     winlose_movie_time_ = 0;
     winlose_movie_surface_.resize(kUiWidth, kUiHeight);
     winlose_movie_surface_.fill(0);
-    copy_frame_to_screen(winlose_movie_, winlose_movie_surface_, winlose_movie_flags_);
-    winlose_movie_palette_ = winlose_movie_.palette();
+    winlose_movie_frame_ = 0;
+    show_winlose_movie_frame();
     winlose_movie_audio_.clear();
     SmackerAudioFormat format = winlose_movie_.audio_format(0);
     if (!(winlose_movie_flags_ & kSmkNoSound) && format.present()) {
@@ -2746,6 +2797,19 @@ void App::open_winlose_movie(int index)
             SDL_ResumeAudioStreamDevice(movie_stream_);
         winlose_movie_audio_.insert(winlose_movie_audio_.end(), winlose_movie_.audio(0).begin(),
                                     winlose_movie_.audio(0).end());
+    }
+}
+
+void App::show_winlose_movie_frame()
+{
+    copy_frame_to_screen(winlose_movie_, winlose_movie_surface_, winlose_movie_flags_);
+    winlose_movie_palette_ = winlose_movie_.palette();
+    winlose_movie_frame_++;
+    if (winlose_movie_index_ < kMovieWinLevel &&
+        unsigned(winlose_movie_frame_) >= movie_info(winlose_movie_index_).text_frame) {
+        WinLoseView view;
+        view.pick = winlose_pick_;
+        winlose_.draw_lose_line(winlose_movie_surface_, view);
     }
 }
 
@@ -2761,13 +2825,18 @@ void App::advance_winlose_movie()
             ended = true;
             break;
         }
-        copy_frame_to_screen(winlose_movie_, winlose_movie_surface_, winlose_movie_flags_);
-        winlose_movie_palette_ = winlose_movie_.palette();
+        show_winlose_movie_frame();
         if (!(winlose_movie_flags_ & kSmkNoSound))
             winlose_movie_audio_.insert(winlose_movie_audio_.end(), winlose_movie_.audio(0).begin(),
                                         winlose_movie_.audio(0).end());
     }
     if (ended) {
+        winlose_.set_backdrop(winlose_movie_surface_, winlose_movie_palette_);
+        // play_winlose clears lbInkey and the buttons after the movie: what
+        // was pressed during it does not reach the letter.
+        any_key_ = escape_ = chart_space_ = false;
+        buttons_.left_pressed = buttons_.right_pressed = false;
+        buttons_.left_released = buttons_.right_released = false;
         winlose_movie_index_ = -1;
         movie_playing_ = -1;
         winlose_movie_audio_.clear();
@@ -2807,6 +2876,16 @@ void App::return_to_main_menu()
     map_.reset();
     in_startup_ = true;
     startup_.return_to_main_menu();
+}
+
+// The level an accepted letter goes to: the letter's EV_CANCEL_BUILD is the
+// new level's first command (src/winlose.cpp), then comes its briefing page.
+void App::start_next_level(int next)
+{
+    load_level(next);
+    map_->game.event = {EV_CANCEL_BUILD, 0, 0, 0};
+    run_command(map_->game);
+    help_.set_page(-1, -1, level_briefing(data_->text(), next));
 }
 
 // One frame of the win or lose sequence: its movie, then its letter. Accepting
@@ -2851,8 +2930,7 @@ void App::winlose_step(int out_w, int out_h)
             // winlose.cpp: myhosp->score = othervar.next_level_offer_s.
             game.progress.score = game.progress.next_level_offer;
             int next = level_after_win(game, r.next_level);
-            load_level(next);
-            help_.set_page(-1, -1, level_briefing(data_->text(), next));
+            start_next_level(next);
         } else if (r.game_won && end_game()) {
             // The last level won: the movie, the credits, the main menu.
             // quit_game stays 0, so the Continue slot is not written.
@@ -2992,6 +3070,8 @@ DebugReportResult App::write_debug_report(const std::string &note, DebugCapture 
     if (map_ && !in_startup_)
         std::ofstream(dir / "commands.txt") << capture.commands;
     result.dir = dir;
+    web::download_report(dir);
+    web::flush_storage();
     result.message = std::format("Saved to {}", fs::absolute(dir).string());
     result.message += capture.snapshot_error;
     if (!shot_ok)
@@ -3100,7 +3180,7 @@ std::string App::screen_name() const
     if (year_end_showing_)
         return std::format("year end {} (phase {})", int(year_end_.phase()), year_end_phase_);
     if (winlose_showing_)
-        return std::format("win/lose (movie {})", winlose_movie_index_);
+        return std::format("win/lose (movie {}{})", winlose_movie_index_, winlose_.has_backdrop() ? ", backdrop" : "");
     if (fax_.open)
         return "fax";
     if (charts_.open)
@@ -3540,6 +3620,10 @@ void App::key_down(const SDL_KeyboardEvent &key)
 {
     note_held_keys(key, true);
     any_key_ = winlose_showing_;
+    if (key.key == SDLK_F11 && web::kEnabled) {
+        SDL_SetWindowFullscreen(window_, !(SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN));
+        return;
+    }
     if (key.key == SDLK_F10 && data_) {
         quick_report_key(SDL_Keymod(key.mod));
         return;
@@ -4146,10 +4230,16 @@ void App::setup_step()
         running_ = false;
         break;
     case SetupAction::InstallFromInstaller:
-        SDL_ShowOpenFileDialog(on_folder_chosen, &installer_pick_, window_, &kInstallerFilter, 1, nullptr, false);
+        if (web::kEnabled)
+            web::show_picker(false, on_folder_chosen, &installer_pick_);
+        else
+            SDL_ShowOpenFileDialog(on_folder_chosen, &installer_pick_, window_, &kInstallerFilter, 1, nullptr, false);
         break;
     case SetupAction::InstallFromFolder:
-        SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
+        if (web::kEnabled)
+            web::show_picker(true, on_folder_chosen, &pick_);
+        else
+            SDL_ShowOpenFolderDialog(on_folder_chosen, &pick_, window_, nullptr, false);
         break;
     case SetupAction::Verify:
         start_setup_job(InstallKind::Verify, {});
@@ -4162,7 +4252,7 @@ void App::setup_step()
     }
 }
 
-void App::run()
+void App::begin()
 {
     // A driven run starts with the pointer at the window's centre, not at the
     // window's (0,0) edge, so the camera starts where the level puts it and
@@ -4172,45 +4262,55 @@ void App::run()
         SDL_GetWindowSize(window_, &w, &h);
         SDL_WarpMouseInWindow(window_, float(w) / 2.0f, float(h) / 2.0f);
     }
-    uint64_t last = SDL_GetTicksNS();
-    while (running_) {
-        // A driven run waits for an install, its frames not counted, so that
-        // what follows does not depend on how long the install took.
-        bool installing = driver_ && job_.busy();
-        // A driven run moves on only as its commands ask for frames.
-        if (driver_ && installing) {
-            SDL_Delay(5);
-        } else if (driver_) {
-            if (driver_->finished()) {
-                driver_->flush();
-                break;
-            }
-            if (!driver_->frame(*this)) {
-                SDL_Delay(5);
-                continue;
-            }
+    last_ns_ = SDL_GetTicksNS();
+}
+
+bool App::iterate()
+{
+    // A driven run waits for an install, its frames not counted, so that
+    // what follows does not depend on how long the install took.
+    bool installing = driver_ && job_.busy();
+    // A driven run moves on only as its commands ask for frames.
+    if (driver_ && installing) {
+        SDL_Delay(5);
+    } else if (driver_) {
+        if (driver_->finished()) {
+            driver_->flush();
+            return false;
         }
+        if (!driver_->frame(*this)) {
+            SDL_Delay(5);
+            return true;
+        }
+    }
+    // The events the driver just pushed take effect in this frame; SDL's own
+    // events were handled before this call.
+    if (driver_) {
         SDL_Event e;
         while (SDL_PollEvent(&e))
             handle_event(e);
         // The `type` text events are polled; SDL no longer needs the strings.
         drive_texts_.clear();
-
-        if (!data_)
-            poll_setup();
-
-        uint64_t now = SDL_GetTicksNS();
-        float dt = float(now - last) / 1e9f;
-        last = now;
-        if (driver_) {
-            dt = 1.0f / 60.0f;
-            if (!installing)
-                drive_ns_ += 16666667;
-        }
-        frame_seconds_ = std::min(dt, 0.1f);
-        update(frame_seconds_);
-        render();
     }
+
+    if (!data_)
+        poll_setup();
+
+    uint64_t now = SDL_GetTicksNS();
+    float dt = float(now - last_ns_) / 1e9f;
+    last_ns_ = now;
+    if (driver_ && drive_real_time_) {
+        if (!installing)
+            drive_ns_ += uint64_t(dt * 1e9f);
+    } else if (driver_) {
+        dt = 1.0f / 60.0f;
+        if (!installing)
+            drive_ns_ += 16666667;
+    }
+    frame_seconds_ = std::min(dt, 0.1f);
+    update(frame_seconds_);
+    render();
+    return running_;
 }
 
 void App::parse_drive_args(int argc, char **argv)
@@ -4229,6 +4329,8 @@ void App::parse_drive_args(int argc, char **argv)
             drive_visible_ = true;
         else if (arg == "--default-speed")
             drive_default_speed_ = true;
+        else if (arg == "--real-time")
+            drive_real_time_ = true;
     }
 }
 
@@ -4317,8 +4419,13 @@ void App::poll_setup_job()
         data_error_ = job_.kind() == InstallKind::Verify ? "Verification cancelled." : "Installation cancelled.";
     else if (!result->ok)
         data_error_ = result->error;
-    else if (job_.kind() != InstallKind::Verify)
+    else if (job_.kind() != InstallKind::Verify) {
         try_load_data(user_paths_.game_dir);
+        web::flush_storage();
+        web::request_persistent_storage();
+    }
+    if (job_.kind() != InstallKind::Verify)
+        web::discard_picked();
     refresh_game_dir_state();
     if (result->ok && job_.kind() == InstallKind::Verify)
         setup_notice_ = game_dir_incomplete_
@@ -4590,7 +4697,17 @@ void App::shutdown()
 } // namespace
 } // namespace th
 
-int main(int argc, char **argv)
+namespace
+{
+
+SDL_AppResult app_result(const th::App &app)
+{
+    return app.exit_code() ? SDL_APP_FAILURE : SDL_APP_SUCCESS;
+}
+
+} // namespace
+
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 {
     // --screenshot OUT.bmp [--size WxH] [--level N] [--language N] --data DIR
     std::string shot, data_dir;
@@ -4612,14 +4729,38 @@ int main(int argc, char **argv)
     if (!shot.empty()) {
         if (data_dir.empty()) {
             std::fprintf(stderr, "--screenshot needs --data\n");
-            return 2;
+            std::exit(2);
         }
-        return th::screenshot(data_dir, level, width, height, shot, language);
+        // exit() because the callbacks' results give only 0 and 1.
+        std::exit(th::screenshot(data_dir, level, width, height, shot, language));
     }
 
-    th::App app;
-    if (app.init(argc, argv))
-        app.run();
-    app.shutdown();
-    return app.exit_code();
+    th::App *app = new th::App;
+    *appstate = app;
+    if (!app->init(argc, argv))
+        return app_result(*app);
+    app->begin();
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
+{
+    static_cast<th::App *>(appstate)->on_event(*event);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate)
+{
+    th::App &app = *static_cast<th::App *>(appstate);
+    return app.iterate() ? SDL_APP_CONTINUE : app_result(app);
+}
+
+void SDL_AppQuit(void *appstate, SDL_AppResult)
+{
+    th::App *app = static_cast<th::App *>(appstate);
+    if (!app)
+        return;
+    app->shutdown();
+    delete app;
+    th::web::show_closed();
 }

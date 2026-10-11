@@ -142,6 +142,9 @@ enum SmackerPlayFlags : unsigned {
 struct MovieInfo {
     std::string_view file; // relative to the game data folder
     unsigned flags = 0;    // SmackerPlayFlags
+    // The frame from which the win/lose screen draws its text over the movie
+    // (AnimTable::text_frame); 0 for a movie without one.
+    unsigned text_frame = 0;
 };
 
 // The movies by animation_table index (ANIM_* in include/enums.h). Level L's

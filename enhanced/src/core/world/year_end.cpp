@@ -627,8 +627,8 @@ void sort_charts(YearEnd &s)
     const auto descend = [](const ChartEntry &a, const ChartEntry &b) { return a.value > b.value; };
     const auto ascend = [](const ChartEntry &a, const ChartEntry &b) { return a.value < b.value; };
     for (int cat : {0, 1, 3, 5, 8, 9, 10})
-        std::sort(s.chart[size_t(cat)].begin(), s.chart[size_t(cat)].end(), descend);
-    std::sort(s.chart[4].begin(), s.chart[4].end(), ascend);
+        std::stable_sort(s.chart[size_t(cat)].begin(), s.chart[size_t(cat)].end(), descend);
+    std::stable_sort(s.chart[4].begin(), s.chart[4].end(), ascend);
 }
 
 } // namespace

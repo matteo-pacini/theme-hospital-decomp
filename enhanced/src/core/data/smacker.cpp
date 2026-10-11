@@ -524,13 +524,13 @@ namespace
 
 // animation_table (src/files.cpp): file and play_smk flags.
 constexpr std::array<MovieInfo, kMovieCount> kMovies = {{
-    {"anims/lose1.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth},
-    {"anims/lose2.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth},
-    {"anims/lose3.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth},
-    {"anims/lose4.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth},
-    {"anims/lose5.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth},
-    {"anims/lose6.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth},
-    {"anims/winlevel.smk", kSmkNoSkip | kSmkDoubleHeight | kSmkDoubleWidth},
+    {"anims/lose1.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth, 52},
+    {"anims/lose2.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth, 59},
+    {"anims/lose3.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth, 90},
+    {"anims/lose4.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth, 79},
+    {"anims/lose5.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth, 137},
+    {"anims/lose6.smk", kSmkNoSkip | kSmkInterlace | kSmkDoubleWidth, 148},
+    {"anims/winlevel.smk", kSmkNoSkip | kSmkDoubleHeight | kSmkDoubleWidth, 0x1e},
     {"anims/area01v.smk", kSmkNoSound},
     {"anims/area02v.smk", kSmkNoSound},
     {"anims/area02v.smk", kSmkNoSound},

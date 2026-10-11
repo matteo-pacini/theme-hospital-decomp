@@ -12,7 +12,7 @@ class LanguageText;
 struct ArrivalState;
 struct HospitalMarket;
 struct Thing;
-struct Game;
+class Game;
 struct World;
 enum RepEvent : uint8_t;
 

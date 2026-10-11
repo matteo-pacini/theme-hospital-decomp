@@ -10,7 +10,7 @@
 namespace th
 {
 
-struct Game;
+class Game;
 struct StaffMarket;
 
 // Rats, as the game's rats.cpp (manage_rats and the functions it reaches)

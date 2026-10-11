@@ -59,9 +59,14 @@ void trace_rand(const char *function, uint32_t seed)
     if (!tracing_rand())
         return;
     // "uint16_t th::{anonymous}::process(const Run&, uint16_t)" and, in a
-    // lambda, "th::f(int)::<lambda()>": the name before the first '('.
+    // lambda, "th::f(int)::<lambda()>": the name before the first '('. Clang
+    // writes an anonymous namespace as "(anonymous namespace)", whose '(' is
+    // not that one.
     std::string_view name = function;
-    name = name.substr(0, name.find('('));
+    size_t paren = name.find('(');
+    while (paren != std::string_view::npos && name.substr(paren).starts_with("(anonymous namespace)"))
+        paren = name.find('(', paren + 1);
+    name = name.substr(0, paren);
     size_t start = name.size();
     while (start > 0 && (std::isalnum(static_cast<unsigned char>(name[start - 1])) || name[start - 1] == '_'))
         start--;

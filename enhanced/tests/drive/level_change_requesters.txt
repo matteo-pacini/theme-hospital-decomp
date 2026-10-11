@@ -1,0 +1,63 @@
+# Level 1: a requester left open across a level change. The edit room
+# requester is up with an object lifted (as when the year end or the win letter
+# starts), the level is won and the letter accepted: the next level starts
+# with no requester open and nothing being placed, as setup_new_level and the
+# accepted letter's EV_CANCEL_BUILD leave it (src/start.cpp, src/winlose.cpp),
+# so the briefing page shows no stale window.
+wait 60
+click 228 453            # panel: build room
+wait 10
+click 240 130            # Clinics
+wait 10
+click 380 85             # the room (Inflation, kind 17)
+wait 10
+cell 56 64
+wait 5
+down left
+wait 5
+cell 60 68
+wait 10
+up left
+wait 10
+click 580 148            # confirm the blueprint
+wait 10
+click-cell 56 66         # the door
+wait 10
+click 580 148            # no windows: confirm
+wait 30
+click-cell 58 65
+wait 10
+click 505 189            # the object in the list
+wait 10
+click-cell 57 67
+wait 10
+click 580 148            # confirm the room
+wait 30
+key Escape               # close the room's first help page
+wait 10
+click 298 453            # panel: edit room
+wait 10
+dump edit_mode
+expect build mouse 4
+click-cell 58 65         # the room
+wait 10
+dump edit_room
+expect interface: requester 5,
+click 539 149            # pick up objects
+wait 10
+dump edit_pick
+expect build mouse 6
+click-thing 31           # the inflator
+wait 10
+dump edit_picked
+expect placing: object true
+win
+wait 450
+click 410 419            # the letter's accept button
+wait 60
+dump next_level
+screenshot next_level
+expect level: 2 (
+expect-not interface: requester 5,
+expect placing: object false
+expect help: page open

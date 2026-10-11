@@ -77,6 +77,9 @@ For a session where a lead agent briefs worker agents in herdr panes
     straight to the screen; palette data can produce that value.
   - Headers and comments go stale when ids or turns move: re-read them after
     any retune.
+  - Waiting on a background run: use its PID (`kill -0`) or its output file;
+    `pgrep -f` with a pattern your own command line contains matches itself
+    and never ends.
 - No git commands. No broad `pkill`/`kill`: stop only processes you started.
 - Delete a named folder whole (`rm -rf build/replay-01`), never a glob
   (`rm -rf dir/*`): a glob after a `cd` is flagged as an unresolvable target

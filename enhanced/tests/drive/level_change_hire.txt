@@ -1,0 +1,21 @@
+# Level 1: a hired applicant held for placing when the level is won and the
+# letter accepted: the next level starts with nobody held and no requester
+# open (EV_CANCEL_BUILD, src/winlose.cpp, src/io.cpp).
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+dump held
+expect placing: object false, staff true
+win
+wait 450
+click 410 419            # the letter's accept button
+wait 60
+dump next_level
+screenshot next_level
+expect level: 2 (
+expect-not interface: requester 11,
+expect placing: object false, staff false

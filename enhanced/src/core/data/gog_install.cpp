@@ -26,6 +26,26 @@ struct ManifestChunk {
 #include "core/data/gog_manifest.inc"
 
 constexpr size_t kBlock = 1 << 16;
+constexpr size_t kStreamBuffer = 1 << 20;
+
+// A file stream with a kStreamBuffer buffer in place of the library's default
+// of a few KB: the number of calls that reach the OS then no longer depends on
+// it. Under the browser each one is proxied to the main thread and waits for a
+// frame, so an install with the default made thousands of them.
+template <class Stream> class BufferedFile : private std::vector<char>, public Stream
+{
+  public:
+    BufferedFile() : std::vector<char>(kStreamBuffer)
+    {
+        // Before open(): the library ignores a buffer set on an open file.
+        this->rdbuf()->pubsetbuf(std::vector<char>::data(), static_cast<std::streamsize>(kStreamBuffer));
+    }
+
+    BufferedFile(const std::filesystem::path &path, std::ios::openmode mode) : BufferedFile()
+    {
+        this->open(path, mode | std::ios::binary);
+    }
+};
 constexpr char kChunkMagic[4] = {'z', 'l', 'b', 0x1a};
 constexpr std::string_view kInstallerName = "setup_theme_hospital_v3_(28027).exe";
 constexpr std::string_view kMarker = "install.ok";
@@ -85,7 +105,7 @@ uint64_t manifest_total()
 class Output
 {
   public:
-    explicit Output(const std::filesystem::path &path) : file_(path, std::ios::binary | std::ios::trunc) {}
+    explicit Output(const std::filesystem::path &path) : file_(path, std::ios::trunc) {}
 
     bool write(const uint8_t *data, size_t size)
     {
@@ -112,7 +132,7 @@ class Output
     }
 
   private:
-    std::ofstream file_;
+    BufferedFile<std::ofstream> file_;
     Sha256 sha_;
     uint64_t size_ = 0;
 };
@@ -270,7 +290,7 @@ std::string check_installer(const std::filesystem::path &path, Job &job)
     if (size != kInstallerSize)
         return what + " (size " + std::to_string(size) + ", expected " + std::to_string(kInstallerSize) + ")";
 
-    std::ifstream in(path, std::ios::binary);
+    BufferedFile<std::ifstream> in(path, std::ios::in);
     Sha256 sha;
     uint64_t hashed = 0;
     if (!hash_stream(in, sha, hashed, job))
@@ -299,7 +319,7 @@ std::string copy_into(std::ifstream &in, Output &out, Job &job)
 std::string copy_file(const std::filesystem::path &source, const ManifestFile &file, const std::filesystem::path &path,
                       Job &job)
 {
-    std::ifstream in(source, std::ios::binary);
+    BufferedFile<std::ifstream> in(source, std::ios::in);
     if (!in)
         return std::string(file.path) + ": cannot be read from " + source.string();
     std::error_code ec;
@@ -370,7 +390,7 @@ InstallResult install_from_installer(const std::filesystem::path &installer, con
     error = staging.begin();
     if (!error.empty())
         return failed(error);
-    std::ifstream in(installer, std::ios::binary);
+    BufferedFile<std::ifstream> in(installer, std::ios::in);
     if (!in)
         error = installer.string() + ": cannot be read";
     for (const ManifestFile &file : kManifestFiles) {
@@ -404,7 +424,7 @@ InstallResult verify_install(const std::filesystem::path &dest, const InstallOpt
     Job job(options, manifest_total());
     for (const ManifestFile &file : kManifestFiles) {
         auto path = resolve_ci(dest, file.path);
-        std::ifstream in;
+        BufferedFile<std::ifstream> in;
         if (path)
             in.open(*path, std::ios::binary);
         if (!in)

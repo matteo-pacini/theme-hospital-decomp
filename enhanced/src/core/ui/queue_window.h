@@ -12,7 +12,7 @@ namespace th
 
 class Game;
 class GameData;
-struct RequesterArt;
+class RequesterArt;
 struct World;
 
 // The queue window (req7): World::rooms index `room` shown, the queue

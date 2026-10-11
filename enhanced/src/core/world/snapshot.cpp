@@ -28,16 +28,27 @@ template <typename... T> constexpr uint64_t layout_hash()
         h = (h ^ size) * 0x100000001b3ull;
     return h;
 }
+
+// Stands for a pointer as the 64-bit native build has it, so the layout hash
+// is the same where pointers are narrower.
+using PointerBytes = std::array<char, 8>;
+
 constexpr uint64_t kLayoutHash =
     layout_hash<Thing, RoomInfo, MapCell, ObjectPlacing, BuildState, Finance, Advice, ArrivalState, RivalHospital,
                 TownLand, HospitalSettings, StaffMarket, Disasters, Event, Date, World::Pager, World::PlayerCall,
                 World::ThingPager, World::Emergency, World::Epidemic, World::NewStaff, PanelPopups, AdCounts,
-                Game::ChoiceScreen, Game::FaxScreen, Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd, void *,
-                bool, int>();
+                Game::ChoiceScreen, Game::FaxScreen, Balance::Gbv, Balance::AwardsTrophies, Research, YearEnd,
+                PointerBytes, bool, int>();
+
+// The raw structs' sizes hold on every platform; a change here is a new save
+// layout.
+static_assert(kLayoutHash == 0x75417a56a182e5a5ull, "a raw struct's size changed: bump kSaveFormat");
 
 // Fields of World, Game and the structures they hold that are not copied
 // as a whole must each be listed below; on the build the code is written on,
-// these sizes catch one added without being listed.
+// these sizes catch one added without being listed. They hold vectors,
+// strings, a deque and pointers, so they depend on the standard library and
+// the pointer width: only that build checks them.
 #if defined(__GLIBCXX__) && defined(__x86_64__)
 static_assert(sizeof(World) == 163640, "World changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Building) == 224, "Building changed: list its new fields in snapshot.cpp and bump kSaveFormat");

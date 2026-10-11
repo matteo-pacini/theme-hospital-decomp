@@ -72,6 +72,15 @@ class WinLoseScreen
     // Opens the win (`win` true) or lose letter for level `level`.
     void open(bool win, int level);
     void close() { open_ = false; }
+    // The letter's backdrop: the movie's last frame, in the movie's palette.
+    // The original loads no picture for the letter and never clears the
+    // screen (src/winlose.cpp state 1), so it draws over what the movie left;
+    // without a backdrop the letter has black behind it.
+    void set_backdrop(const Surface &frame, const Palette &palette);
+    bool has_backdrop() const { return has_backdrop_; }
+    // lose_call: the losing line of `view` drawn on `target`, then scan lines
+    // over its top half.
+    void draw_lose_line(Surface &target, const WinLoseView &view) const;
     bool is_open() const { return open_; }
 
     Surface &surface() { return surface_; }
@@ -101,7 +110,7 @@ class WinLoseScreen
     std::string make_letter(const WinLoseView &view) const;
     void draw_letter();
     // The win letter (typed out, then its accept and decline buttons) and the
-    // losing line (its accept button).
+    // losing line (no button: a click or any key closes it).
     void win_frame(const UiMouse &mouse, WinLoseResult &result, const WinLoseView &view);
     void lose_frame(const UiMouse &mouse, WinLoseResult &result, const WinLoseView &view);
     bool over(int x, int y, int w, int h, const UiMouse &mouse) const;
@@ -112,6 +121,8 @@ class WinLoseScreen
     Surface surface_;
     Palette palette_{};
     Palette game_palette_{};
+    Surface backdrop_;
+    bool has_backdrop_ = false;
     const LanguageText *text_ = nullptr;
     SpriteSheet sprites_;
     std::array<Font, 5> fonts_{}; // cache slots 0x13-0x17

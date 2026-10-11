@@ -10,7 +10,7 @@
 namespace th
 {
 
-struct Game;
+class Game;
 
 // The year-end and win/lose simulation (src/awards.cpp, src/sim.cpp,
 // src/finance.cpp's year_end/start_year_end, src/rats.cpp's try_bonus_level):

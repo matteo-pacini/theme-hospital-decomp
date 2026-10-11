@@ -7,7 +7,7 @@
 #include <knownfolders.h>
 #include <objbase.h>
 #include <shlobj.h>
-#else
+#elif !defined(__EMSCRIPTEN__)
 #include <pwd.h>
 #include <unistd.h>
 #endif
@@ -20,7 +20,9 @@ namespace
 
 namespace fs = std::filesystem;
 
+#if !defined(__EMSCRIPTEN__)
 constexpr const char *kAppFolder = "ThemeHospitalEnhanced";
+#endif
 
 #ifdef _WIN32
 
@@ -42,7 +44,7 @@ UserPaths windows_paths(const fs::path &roaming, const fs::path &saved, const fs
             local / kAppFolder / "debug-reports"};
 }
 
-#else
+#elif !defined(__EMSCRIPTEN__)
 
 fs::path home_dir()
 {
@@ -67,10 +69,12 @@ fs::path xdg_dir(const char *name, const char *fallback)
 
 #endif
 
+#if !defined(__EMSCRIPTEN__)
 fs::path old_prefs_under(const fs::path &base)
 {
     return base.empty() ? fs::path() : base / "ThemeHospitalDecomp" / "Enhanced";
 }
+#endif
 
 int copy_if_missing(const fs::path &from, const fs::path &to)
 {
@@ -85,7 +89,10 @@ int copy_if_missing(const fs::path &from, const fs::path &to)
 
 UserPaths user_paths()
 {
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+    // The browser keeps these in IndexedDB (web/bridge.js mounts /persist).
+    return {"/persist/settings", "/persist/saves", "/persist/game", "/persist/reports"};
+#elif defined(_WIN32)
     return windows_paths(known_folder(FOLDERID_RoamingAppData), known_folder(FOLDERID_SavedGames),
                          known_folder(FOLDERID_LocalAppData));
 #elif defined(__APPLE__)
@@ -109,7 +116,9 @@ UserPaths user_paths()
 
 fs::path old_prefs_dir()
 {
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+    return {};
+#elif defined(_WIN32)
     return old_prefs_under(known_folder(FOLDERID_RoamingAppData));
 #elif defined(__APPLE__)
     fs::path home = home_dir();

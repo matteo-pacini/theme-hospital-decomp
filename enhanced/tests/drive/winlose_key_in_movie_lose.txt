@@ -1,0 +1,18 @@
+# Level 1
+# Size 640x480
+# A key or a click made during the lose movie does not reach the letter: the
+# original clears lbInkey and the buttons when the movie ends, so the letter
+# waits for a new key or click. The letter has no button; look at the
+# screenshot.
+wait 30
+lose
+wait 100
+expect screen: win/lose (movie
+key Space
+click 320 240
+wait 3000
+expect screen: win/lose (movie -1, backdrop)
+screenshot lose_letter_no_button
+key Space
+wait 10
+expect-not win/lose

@@ -1,0 +1,16 @@
+# Level 1
+# Size 640x480
+# The win letter is drawn over the level-end movie's last frame (a blank sheet
+# of letter paper) in the movie's palette, as the original does (it loads no
+# picture for the letter and never clears the screen); the lose letter keeps
+# the newspaper's last frame with its line and scan lines. Look at the
+# screenshots: the paper behind the win letter's text and buttons, the
+# newspaper behind the losing line.
+wait 30
+win
+wait 100
+expect screen: win/lose (movie 6)
+expect-not backdrop
+wait 3000
+expect screen: win/lose (movie -1, backdrop)
+screenshot win_letter

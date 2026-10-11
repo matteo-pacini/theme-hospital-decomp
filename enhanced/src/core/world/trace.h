@@ -25,7 +25,7 @@ struct EventLog {
     // Also record each draw from World::seed (`rand` events), many a turn.
     bool rand = false;
     // Events kept, the oldest dropped first; 0 keeps them all until cleared.
-    size_t limit = 500;
+    uint64_t limit = 500;
     std::deque<TraceEvent> events;
 };
 

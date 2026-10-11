@@ -7,6 +7,7 @@
 // Usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] [--astar] [--rand]
 //                  [--skip NAME[,NAME]] [--advisor]
 //                  [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm [--camera X,Y] [--size WxH]]
+//                  [--snapshot FILE]
 //   --data    the game data folder (default: the development folder)
 //   --level   the level to start (default 1); with --load, the snapshot's
 //   --load    start from a snapshot (core/world/snapshot.h; a debug report's
@@ -33,6 +34,8 @@
 //             --dump or --render is given)
 //   --dump    write dump_game (core/world/debug_dump.h) at the end, with the
 //             map around cell --focus (column + row * 128)
+//   --snapshot write the game's snapshot (core/world/snapshot.h) at the end, to
+//             continue with --load (in this build or one of the same snapshot id)
 //   --render  draw the hospital view at the end, with shadows, as a PNG or (by
 //             the extension) a PPM: --size pixels (default 1280x720), the
 //             view's top-left at map pixel --camera (a debug report's camera
@@ -74,7 +77,7 @@ int usage()
     std::fprintf(stderr, "usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] "
                          "[--astar] [--rand] [--skip NAMES] [--advisor] [--out FILE] [--dump FILE [--focus CELL]] "
                          "[--render OUT.png|OUT.ppm "
-                         "[--camera X,Y] [--size WxH]] [--save SAVE]\n");
+                         "[--camera X,Y] [--size WxH]] [--save SAVE] [--snapshot FILE]\n");
     return 2;
 }
 
@@ -231,6 +234,7 @@ struct Options {
     const char *dump_path = nullptr;
     const char *render_path = nullptr;
     const char *save_path = nullptr;
+    const char *snapshot_path = nullptr;
     const char *skip = "";
     int focus = -1;
     bool camera_given = false;
@@ -258,6 +262,8 @@ bool take_text_option(Options &o, const char *flag, const char *value)
         o.render_path = value;
     else if (!std::strcmp(flag, "--save"))
         o.save_path = value;
+    else if (!std::strcmp(flag, "--snapshot"))
+        o.snapshot_path = value;
     else if (!std::strcmp(flag, "--skip"))
         o.skip = value;
     else
@@ -476,12 +482,27 @@ bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &
     return true;
 }
 
-// Writes --dump and --render at the end of the run. Returns the process
-// exit code.
+// Writes the snapshot of `game` to `path`.
+bool write_snapshot(const th::Game &game, const char *path)
+{
+    std::vector<uint8_t> bytes;
+    if (!th::save_snapshot(game, bytes))
+        return false;
+    std::ofstream out(path, std::ios::binary);
+    out.write(reinterpret_cast<const char *>(bytes.data()), std::streamsize(bytes.size()));
+    return bool(out);
+}
+
+// Writes --dump, --snapshot, --save and --render at the end of the run.
+// Returns the process exit code.
 int write_results(const th::Game &game, Options &o, const th::GameData &data)
 {
     if (o.dump_path && !(std::ofstream(o.dump_path) << th::dump_game(game, o.focus))) {
         std::perror(o.dump_path);
+        return 1;
+    }
+    if (o.snapshot_path && !write_snapshot(game, o.snapshot_path)) {
+        std::fprintf(stderr, "%s: cannot write the snapshot\n", o.snapshot_path);
         return 1;
     }
     if (o.save_path) {

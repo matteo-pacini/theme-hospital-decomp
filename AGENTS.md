@@ -25,7 +25,9 @@ with zero warnings, `th_tests`, `tidy.sh`, clang-format, the drive tests,
 the install tests, then every replay script (or the ones named) against the
 original. `CACHE=only` compares with cached originals only and never starts
 DOSBox, for checking as you go; it exits 3 when a script has no cache entry,
-so it never counts as a pass. Settings and timings: enhanced/README.md.
+so it never counts as a pass. `WEB=1` adds the WebAssembly build and its
+checks; use it when a change touches the browser build. Settings and
+timings: enhanced/README.md.
 
 Code must also meet what tidy enforces: functions of at most 60 lines, 50
 statements, 15 branches, 6 parameters, nesting 4 and cognitive complexity

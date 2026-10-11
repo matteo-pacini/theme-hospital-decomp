@@ -80,7 +80,17 @@ void WinLoseScreen::open(bool win, int level)
     frame_time_ = 0;
     pending_mouse_ = {};
     pending_keys_ = {};
+    has_backdrop_ = false;
+    palette_ = game_palette_;
     surface_.fill(0);
+}
+
+void WinLoseScreen::set_backdrop(const Surface &frame, const Palette &palette)
+{
+    backdrop_ = frame;
+    has_backdrop_ = true;
+    palette_ = palette;
+    surface_ = backdrop_;
 }
 
 std::string WinLoseScreen::composite_page(TextSection section, int page) const
@@ -206,10 +216,11 @@ void WinLoseScreen::win_frame(const UiMouse &mouse, WinLoseResult &result, const
     }
 }
 
-void WinLoseScreen::lose_frame(const UiMouse &mouse, WinLoseResult &result, const WinLoseView &view)
+void WinLoseScreen::draw_lose_line(Surface &target, const WinLoseView &view) const
 {
     // The losing line (win_lose[text_choice]) centred near the bottom; a line
-    // wider than the screen uses the next font slot and y 4, as lose_call.
+    // wider than the screen uses the next font slot and 4 rows lower, as
+    // lose_call.
     int slot = std::clamp(view.lose_font, 0x13, 0x16);
     const Font &font = fonts_[size_t(slot - 0x13)];
     std::string line(text_->at(TextSection::WinLose, view.pick));
@@ -219,13 +230,17 @@ void WinLoseScreen::lose_frame(const UiMouse &mouse, WinLoseResult &result, cons
     if (width > kUiWidth && slot < 0x16) {
         draw_font = &fonts_[size_t(slot + 1 - 0x13)];
         width = text_width(*draw_font, line);
-        y = 4;
+        y += 4;
     }
     int x = (kUiWidth - width) / 2;
-    draw_text(surface_, *draw_font, x, y, line, {{0, 0, kUiWidth}, {0, 0, kUiWidth, kUiHeight}, 0, 0, nullptr});
-    Sprite accept = sprites_.at(1);
-    bool over_accept = over(kAccept.x, kAccept.y, accept.width, accept.height, mouse);
-    draw_sprite(surface_, kAccept.x, kAccept.y, sprites_.at(over_accept ? 2 : 1));
+    draw_text(target, *draw_font, x, y, line, {{0, 0, kUiWidth}, {0, 0, kUiWidth, kUiHeight}, 0, 0, nullptr});
+    for (int row = 1; row < target.height() / 2; row += 2)
+        std::fill_n(target.row(row), target.width(), uint8_t(0));
+}
+
+void WinLoseScreen::lose_frame(const UiMouse &mouse, WinLoseResult &result, const WinLoseView &view)
+{
+    draw_lose_line(surface_, view);
     if (mouse.left_released || pending_keys_.any) {
         open_ = false;
         result.closed = true;
@@ -251,7 +266,10 @@ WinLoseResult WinLoseScreen::frame(const UiMouse &mouse, const WinLoseKeys &keys
         return result;
     frame_time_ = std::clamp(frame_time_ - kGameFrame, 0.0, kGameFrame);
 
-    surface_.fill(0);
+    if (has_backdrop_)
+        surface_ = backdrop_;
+    else
+        surface_.fill(0);
     if (win_)
         win_frame(m, result, view);
     else
