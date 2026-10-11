@@ -10,6 +10,13 @@
 # script's trace from wasm and native th_replay compared byte for byte, and
 # the snapshot cross-load test.
 #
+# The replays of both phases keep a cache of passes (tools/replay/port_cache.sh,
+# build/replay-cache/port/): a script whose key (the port's sources, build
+# configuration, checking tools and the original's trace key) has a stored
+# pass is not run, and its stored line is printed; the summary counts them,
+# e.g. "158 passed (150 cached, 8 run)". Failures are never stored. The wasm
+# records count only with the native one for the same key.
+#
 # Usage (from any directory, a plain terminal; it enters the dev shells
 # itself, with LD_LIBRARY_PATH unset, and runs at nice 19 / ionice idle):
 #   enhanced/tools/check.sh [SCRIPT ...]
@@ -17,7 +24,10 @@
 #             without any, every script in tools/replay/scripts.
 #
 # Environment:
-#   CACHE       use|only|refresh, passed to replay_all.sh (default use)
+#   CACHE       use|only|refresh, passed to replay_all.sh (default use);
+#               refresh also runs the port side of every replay again
+#   PORT_CACHE  use|off (default use): off runs the port side of every replay
+#               again (native and wasm) and stores the passes again
 #   FRESH_MAX   with CACHE=use, the most scripts without a cached original
 #               that a run accepts before the replays (default 10): more
 #               would run DOSBox for a long time, so it stops and says how
@@ -51,13 +61,21 @@ export CACHE
 # failing phase.
 if [ -z "${TH_CHECK_PHASE:-}" ]; then
   command -v nix >/dev/null 2>&1 || { echo "check.sh: nix is not on PATH" >&2; exit 2; }
+  # The replay phase leaves the scripts' native port verdict keys here for the
+  # web phase: a key holds the original's trace key, which the web shell
+  # (no python3, no DOSBox) cannot compute as the replay shell does.
+  TH_CHECK_STATE=$root/build/check-state-$$
+  export TH_CHECK_STATE
+  mkdir -p "$TH_CHECK_STATE"
+  trap 'rm -rf "$TH_CHECK_STATE"' EXIT
   nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=enhanced \
     nix develop path:./nix#enhanced -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@" || exit $?
   nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=replay \
     nix develop path:./nix -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@" || exit $?
   [ "${WEB:-0}" = 1 ] || exit 0
-  exec nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=web \
+  nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=web \
     nix develop path:./nix#web -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@"
+  exit $?
 fi
 
 logs=$root/build/check-$$
@@ -122,7 +140,7 @@ replays()
   enhanced/tools/replay/replay_all.sh "$@" >"$logs/replay_all.full" 2>&1
   code=$?
   if [ "$code" = 0 ]; then
-    echo "$(grep ' passed, ' "$logs/replay_all.full"); $(grep '^original trace:' "$logs/replay_all.full")"
+    echo "$(grep -E '^[0-9]+ passed ' "$logs/replay_all.full"); $(grep '^original trace:' "$logs/replay_all.full")"
   else
     grep -v ': agree' "$logs/replay_all.full"
   fi
@@ -176,19 +194,58 @@ web_tidy()
   return "$code"
 }
 
+# web_cache_init: sources the replay tools and sets up the port verdict cache
+# (port_cache.sh) once; use_verdicts is 1 when a stored pass may stand for a
+# run (PORT_CACHE=use and not CACHE=refresh).
+web_cache_init()
+{
+  [ -z "${web_cache_ready:-}" ] || return 0
+  here=$root/enhanced/tools/replay
+  # shellcheck source=replay/lib.sh
+  . "$here/lib.sh"
+  # shellcheck source=replay/port_cache.sh
+  . "$here/port_cache.sh"
+  PORT_NATIVE_KEYS=${TH_CHECK_STATE:-/nonexistent}/native_keys
+  port_cache_init build/enhanced build/web || true
+  use_verdicts=0
+  [ "$PORT_CACHE" = use ] && [ "$CACHE" != refresh ] && use_verdicts=1
+  web_cache_ready=1
+}
+
 # web_replay_one SCRIPT RESULTS: native th_replay and the wasm one run the
 # script with replay_all.sh's arguments; the traces must be byte-identical.
-# Equal traces are deleted, different ones kept zstd-compressed.
+# Equal traces are deleted, different ones kept zstd-compressed. A stored
+# pass for the script's current web key (with the native pass for the same
+# key) stands for the run; with a native pass stored, only the wasm one runs
+# and its trace's hash is compared with the native trace's.
 web_replay_one()
 {
   f=$1
   n=$(basename "$f" .txt)
   lvl=$(script_level "$f")
   t=$(script_turns "$f")
+  if [ "$use_verdicts" = 1 ] && stored=$(port_get web "$f"); then
+    echo "$stored" >"$2/$n.line"
+    echo verdict >"$2/$n.src"
+    echo 0 >"$2/$n.status"
+    return 0
+  fi
   dir=build/web-replay/$n
   mkdir -p "$dir"
   flags="--data $(readlink -f orig) --script $f --turns $t --advisor --level $lvl"
   [ "$RAND" = 1 ] && flags="$flags --rand"
+  if [ "$use_verdicts" = 1 ] && native_hash=$(port_trace native "$f"); then
+    # shellcheck disable=SC2086
+    if node build/web/th_replay.js $flags --out "$dir/wasm.txt" >"$dir/wasm.log" 2>&1 &&
+      [ "$(sha256sum <"$dir/wasm.txt" | cut -c1-64)" = "$native_hash" ]; then
+      rm -rf "$dir"
+      echo "$n: identical" >"$2/$n.line"
+      port_put web "$f" "" "$n: identical" "$native_hash"
+      echo 0 >"$2/$n.status"
+      return 0
+    fi
+    rm -f "$dir/wasm.txt" "$dir/wasm.log"
+  fi
   # shellcheck disable=SC2086
   if ! build/enhanced/th_replay $flags --out "$dir/native.txt" >"$dir/native.log" 2>&1; then
     echo "$n: native run failed (see $dir/native.log)" >"$2/$n.line"
@@ -202,8 +259,10 @@ web_replay_one()
     return 1
   fi
   if cmp -s "$dir/native.txt" "$dir/wasm.txt"; then
+    hash=$(sha256sum <"$dir/wasm.txt" | cut -c1-64)
     rm -rf "$dir"
     echo "$n: identical" >"$2/$n.line"
+    port_put web "$f" "" "$n: identical" "$hash"
     echo 0 >"$2/$n.status"
     return 0
   fi
@@ -217,9 +276,7 @@ web_replay_one()
 # list), JOBS at a time.
 web_replays()
 {
-  here=$root/enhanced/tools/replay
-  # shellcheck source=replay/lib.sh
-  . "$here/lib.sh"
+  web_cache_init
   scripts=$(script_list "$@") || return 1
   results=$(mktemp -d "$logs/web-replays.XXXXXX")
   running=0
@@ -234,6 +291,7 @@ web_replays()
   wait
   passed=0
   failed=0
+  verdicts=0
   for f in $scripts; do
     n=$(basename "$f" .txt)
     [ "$(cat "$results/$n.status" 2>/dev/null)" = 0 ] || {
@@ -242,9 +300,10 @@ web_replays()
       continue
     }
     passed=$((passed + 1))
+    [ "$(cat "$results/$n.src" 2>/dev/null)" = verdict ] && verdicts=$((verdicts + 1))
   done
   rmdir build/web-replay 2>/dev/null
-  echo "$passed traces identical, $failed failed"
+  echo "$passed traces identical ($verdicts cached, $((passed - verdicts)) run), $failed failed"
   [ "$failed" = 0 ]
 }
 
@@ -254,12 +313,17 @@ web_replays()
 # "# advice" comment lines are left out: th_replay keeps the advisor's
 # character animation seed outside the snapshot, so after a load an advice
 # can come a turn earlier or later than in the whole run (a native load
-# does it too), while the state and events are the same.
+# does it too), while the state and events are the same. A stored pass for
+# the script's web key and turn N (and its native pass) stands for the run.
 cross_one()
 {
   script=$1
   f=$(script_path "$script") || return 1
   n=$2
+  if [ "$use_verdicts" = 1 ] && stored=$(port_get web "$f" "cross-$n"); then
+    echo "$stored"
+    return 0
+  fi
   lvl=$(script_level "$f")
   m=$(script_turns "$f")
   dir=build/web-cross/$script
@@ -289,7 +353,9 @@ cross_one()
     }
     rm -f "$out.txt" "$out.tail" "$snap"
   done
-  echo "$script: turn $n of $m, native and wasm snapshots continue identically (trace from turn $from: $(wc -l <"$dir/whole.tail") lines)"
+  line="$script: turn $n of $m, native and wasm snapshots continue identically (trace from turn $from: $(wc -l <"$dir/whole.tail") lines)"
+  echo "$line"
+  port_put web "$f" "cross-$n" "$line" "$(port_trace native "$f")"
   rm -rf "$dir"
 }
 
@@ -308,9 +374,7 @@ run_th_replay()
 # web_cross_load: cross_one for each of CROSS_LOAD's NAME:TURN items.
 web_cross_load()
 {
-  here=$root/enhanced/tools/replay
-  # shellcheck source=replay/lib.sh
-  . "$here/lib.sh"
+  web_cache_init
   for item in ${CROSS_LOAD:-rival_two_years:18000 win_level1:9000 tutorial:9000}; do
     cross_one "${item%%:*}" "${item##*:}" || return 1
   done
@@ -345,6 +409,7 @@ else
       exit 1
     fi
   fi
+  enhanced/tools/replay/trace_cache.sh native-keys "$@" >"$TH_CHECK_STATE/native_keys" || exit 1
   step replays replays "$@"
 fi
 rm -rf "$logs"

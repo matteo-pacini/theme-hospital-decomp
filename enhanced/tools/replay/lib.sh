@@ -2,7 +2,7 @@
 # Shared by replay_all.sh, cached_orig_trace.sh and trace_cache.sh (sourced,
 # not run; the sourcing script sets `here` to this folder first), so that a
 # prefetch fills exactly the cache entries replay_all.sh will hit: the one
-# place of the defaults (turns, RAND, CACHE), of the script lookups and of the
+# place of the defaults (turns, RAND, CACHE, PORT_CACHE), of the script lookups and of the
 # watchdog on the original's run.
 
 : "${here:?lib.sh is sourced by a script that sets here}"
@@ -17,6 +17,17 @@ case $CACHE in
   use | only | refresh) ;;
   *)
     echo "CACHE must be use, only or refresh, not '$CACHE'" >&2
+    exit 2
+    ;;
+esac
+# use: a stored port verdict for the same key is a pass without running the
+# port; off: the port side runs again. Either way a pass is stored
+# (port_cache.sh).
+PORT_CACHE=${PORT_CACHE:-use}
+case $PORT_CACHE in
+  use | off) ;;
+  *)
+    echo "PORT_CACHE must be use or off, not '$PORT_CACHE'" >&2
     exit 2
     ;;
 esac

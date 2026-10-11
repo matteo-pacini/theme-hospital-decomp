@@ -301,7 +301,10 @@ and `tools/replay/replay_all.sh` (over the scripts named, else all), prints
 one line per step and stops at the first failure. Before the replays it
 prints how many scripts have no cached original and stops when there are
 more than `FRESH_MAX` (default 10; not with `CACHE=refresh`), saying to fill
-the cache first (`trace_cache.sh prefetch`). `CACHE` goes on to
+the cache first (`trace_cache.sh prefetch`); a script with a stored port
+verdict needs no original and is not counted. The replays are cached on the
+port's side too (`PORT_CACHE`, "Port verdict cache" below), so a gate on an
+unchanged `src/core` repeats no replay. `CACHE` goes on to
 `replay_all.sh` (below). The job caps default to those for a machine shared
 with other agents (`CMAKE_BUILD_PARALLEL_LEVEL=2`, `TIDY_JOBS=2`, `JOBS=1`);
 set them higher when the machine is yours. Its logs are in
@@ -409,7 +412,7 @@ and a summary; `check_expect.py` does the checking on both traces. It runs
 `JOBS` scripts at once (default `TH_REPLAY_SLOTS`, else 10) with the
 th_replay of `BUILD` (default build/enhanced). Its settings are `BUILD`,
 `JOBS`, `TURNS` (the last turn of a script without `# Turns`), `RAND`,
-`TRACE_DRAW`, `CACHE` (below), `KEEP` (keep every trace; otherwise a
+`TRACE_DRAW`, `CACHE` and `PORT_CACHE` (below), `KEEP` (keep every trace; otherwise a
 failing script's two traces are kept, zstd-compressed), `WATCHDOG` and
 `REPLAY_BASE`; they are listed at the top of the script. `tools/replay/expect_candidates.py SCRIPT TRACE` lists,
 for each of a script's `# Expect` lines, the trace's events of the same
@@ -466,6 +469,59 @@ left to run unattended. `trace_cache.sh status` prints the entry count, size,
 current key and stale count; `trace_cache.sh prune` removes entries whose
 executable key is no longer current, and `prune DAYS` also removes entries
 older than DAYS days. Never edit or hand-place cache files.
+
+Port verdict cache. The port's side of a replay is cached too:
+`build/replay-cache/port/` holds, for each script that passed, a small
+record (`<kind>.<script>.<tag>.<key>.rec`: the key, the script's result line
+as printed, the `# Expect` counts of the port's trace and the hash of that
+trace). Only passes are stored; a failure stores nothing and keeps its
+traces as before. The key is a hash of everything that decides the verdict,
+so any change is a miss and nothing is ever invalidated by hand:
+
+- the sources `th_replay` is built from (all of `src/core/`,
+  `tools/replay/main.cpp`, `CMakeLists.txt`, `cmake/`, and `nix/flake.lock`
+  and `nix/flake.nix`, which pin the compiler and the dependencies), by
+  their bytes, so the same source in two worktrees is the same key;
+- the build folder's configuration (type, flags, compilers, linker flags and
+  our own options from its `CMakeCache.txt`, the data folder's path left
+  out: the game data is the installed game, as for the original's key);
+- the checking tools: `compare.py`, `check_expect.py`, `replay_all.sh` and
+  `port_cache.sh` (the last two without comment-only and blank lines);
+- the original's trace key for the script (script bytes, turns, level,
+  RAND, `TRACE_DRAW`, the instrumented executable and the DOSBox run), so a
+  decompilation or `instrument.py` change misses it too.
+
+The wasm results (`web_replays` and `web_cross_load`) are separate records
+with the web key: the native key and `web/`, `check.sh` (without
+comment-only lines) and the wasm build folder's configuration; Emscripten
+and node come from `flake.lock`. A wasm record counts only with the native
+record for the same script and key, and with the same trace hash. A
+cross-load record is also keyed by the turn. All-or-nothing: no script's
+verdict depends on which source file it reaches, so any change under
+`src/core` reruns all 158 (8 minutes native, 4 wasm with the native hashes known, at two jobs); a
+change to `src/app`, `tools/` outside the list above or the docs reruns
+nothing.
+
+`replay_all.sh` and the web phase read a record before running a script
+and print its stored line, so the gate reads the same; the summaries count
+them: `158 passed (150 cached, 8 run), 0 failed`. A script with a native
+record needs no original at all (`trace_cache.sh missing` and the gate's
+fresh count skip it). `PORT_CACHE=use` (default) reads records;
+`PORT_CACHE=off` runs the port side again (both native and wasm; the
+original side still comes from its cache) and a pass rewrites its record;
+`CACHE=refresh` also runs both sides and rewrites. A record is stored only
+when `th_replay` (`th_replay.js` for wasm) is newer than the files it is
+built from, so a stale binary never writes a verdict for newer sources
+(`replay_all.sh` says so on standard error); the check is the files'
+modification times, so a source restored with an old time is not seen. A
+false hit is a key bug: add the missing input to `port_cache.sh`. The web
+phase cannot compute the native key (no python3 or DOSBox in its shell), so
+the gate's replay phase writes the scripts' native keys
+(`trace_cache.sh native-keys`) for it to read.
+`trace_cache.sh status` and `prune` cover the records (stale means the
+key is not the script's current one, or the script is gone; a record whose
+build folder is missing here is counted unknown and kept). The tests are in
+`test_cache.sh` too.
 
 The player's commands checked so far are the scripts in
 `tools/replay/scripts/`, lines of `turn type value arg` (th_replay --script
@@ -532,7 +588,10 @@ shell, stopping at the first failure:
    `--level`, `--rand`, `--advisor`), `JOBS` at a time. The two traces must
    be byte-identical (`cmp`); equal ones are deleted, different ones kept
    zstd-compressed in `build/web-replay/<script>/`. The original is not
-   involved: the native port already agrees with it.
+   involved: the native port already agrees with it. A script with a stored
+   wasm pass for the current key (and the native pass for it) is not run;
+   with a native pass stored, only the wasm one runs and its trace hash is
+   compared with the native trace's ("Port verdict cache" above).
 5. `web_cross_load`: one build writes a snapshot at turn N
    (`th_replay --snapshot FILE`, at the end of the run), the other `--load`s
    it with the script's remaining commands (turns counted from N) and must
@@ -542,7 +601,8 @@ shell, stopping at the first failure:
    `win_level1:9000` and `tutorial:9000`). The `# advice` comment lines are
    left out: th_replay keeps the advisor character's animation seed outside
    the snapshot, so after any load (native too) an advice can come a turn
-   earlier or later; the state and the events are what is compared.
+   earlier or later; the state and the events are what is compared. Each
+   item's pass is stored too, keyed by the script and N.
 
 Without `WEB=1` the gate does not touch `build/web`. At one job
 (`CMAKE_BUILD_PARALLEL_LEVEL=1 TIDY_JOBS=1 JOBS=1`, nice 19) a clean

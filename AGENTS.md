@@ -91,7 +91,8 @@ enhanced/README.md.
   stale. A change to `src/` or `instrument.py` makes every original run
   fresh (an hour or more): `check.sh` counts the missing ones first and
   stops above `FRESH_MAX` (10); fill the cache with
-  `trace_cache.sh prefetch`, or raise `FRESH_MAX`.
+  `trace_cache.sh prefetch`, or raise `FRESH_MAX`. The port's passes are
+  cached too, keyed by the sources (`PORT_CACHE=off` reruns them).
 
 ## Sharing the machine
 The user works on this machine while agents run.

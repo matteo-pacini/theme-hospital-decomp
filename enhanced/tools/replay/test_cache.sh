@@ -31,6 +31,20 @@ echo x >"$root/tools/t.py"
 echo x >"$root/config/c"
 echo x >"$root/configure.py"
 echo x >"$root/build/base/a.o"
+# What the port verdict key covers (port_cache.sh), with the build folders
+# the gate configures.
+mkdir -p "$root/enhanced/src/core" "$root/enhanced/src/app" "$root/enhanced/cmake" \
+  "$root/enhanced/web" "$root/nix" "$root/build/enhanced" "$root/build/web"
+echo core >"$root/enhanced/src/core/x.cpp"
+echo app >"$root/enhanced/src/app/y.cpp"
+echo cmake >"$root/enhanced/CMakeLists.txt"
+echo deps >"$root/enhanced/cmake/deps.cmake"
+echo lock >"$root/nix/flake.lock"
+echo nix >"$root/nix/flake.nix"
+echo shell >"$root/enhanced/web/shell.html"
+printf '# the web phase\nstep web_replays\n' >"$root/enhanced/tools/check.sh"
+printf 'CMAKE_BUILD_TYPE:STRING=Release\nCMAKE_CXX_FLAGS:STRING=\nTH_DEV_DATA_DIR:PATH=/somewhere\n' >"$root/build/enhanced/CMakeCache.txt"
+printf 'CMAKE_BUILD_TYPE:STRING=Release\n' >"$root/build/web/CMakeCache.txt"
 printf 'LANGUAGE=FRE\nSOUND=1\n' >"$root/orig/HOSPITAL.CFG"
 echo m >"$root/orig/MODEM.INI"
 echo d >"$root/orig/DOS4GW.EXE"
@@ -313,9 +327,9 @@ check "cache-only does not wait for a key being run" "$r" reported
 # 9. replay_all.sh with CACHE=only: a script with a cached original is
 # compared, one without is listed as "no cache" and does not fail the run,
 # and no DOSBox is started.
-mkdir -p "$root/build/enhanced"
 cat >"$root/build/enhanced/th_replay" <<'FAKE'
 #!/bin/sh
+echo portrun >>"$FAKE_LOG"
 while [ $# -gt 0 ]; do
   case $1 in
     --turns) turns=$2 ;;
@@ -340,7 +354,7 @@ grep -q '^zz_hit .*agree .*\[original cached\]' "$tmp/ra.out" && r=compared || r
 check "replay_all cache-only compares the cached script" "$r" compared
 grep -q '^zz_miss .*no cache' "$tmp/ra.out" && r=listed || r=missing
 check "replay_all cache-only lists the script without cache" "$r" listed
-grep -q '^1 passed, 0 failed' "$tmp/ra.out" && r=counted || r=wrong
+grep -q '^1 passed (0 cached, 1 run), 0 failed' "$tmp/ra.out" && r=counted || r=wrong
 check "replay_all cache-only counts only the compared script" "$r" counted
 grep -q '^1 without a cached original.*zz_miss' "$tmp/ra.out" && r=counted || r=wrong
 check "replay_all cache-only counts the missing one" "$r" counted
@@ -360,7 +374,7 @@ CACHE=only REPLAY_BASE="$tmp/ra4" "$rp/replay_all.sh" zz_hit >"$tmp/ra4.out" 2>&
 check "replay_all cache-only with everything cached exits 0" "$r" 0
 # 10. The advisor's "# advice" lines are compared: the port writes one the
 # cached original does not have.
-FAKE_ADVICE=1 CACHE=only REPLAY_BASE="$tmp/ra5" "$rp/replay_all.sh" zz_hit >"$tmp/ra5.out" 2>&1 && r=0 || r=$?
+PORT_CACHE=off FAKE_ADVICE=1 CACHE=only REPLAY_BASE="$tmp/ra5" "$rp/replay_all.sh" zz_hit >"$tmp/ra5.out" 2>&1 && r=0 || r=$?
 check "replay_all fails on an advice line the original lacks" "$r" 1
 grep -q '^zz_hit .*advice differs' "$tmp/ra5.out" && r=named || r=silent
 check "replay_all names the advice difference" "$r" named
@@ -380,6 +394,228 @@ check "missing lists only the script without cache" "$("$rp/trace_cache.sh" miss
 "$rp/trace_cache.sh" prefetch zz_miss2 >/dev/null 2>&1
 check "prefetch runs the original for the missing script" "$(runs)" 1
 check "prefetch leaves nothing missing" "$("$rp/trace_cache.sh" missing zz_hit zz_miss2)" ""
+
+# 13. The port verdict cache (port_cache.sh): a pass is stored under a key
+# of the port's sources, build configuration and checking tools plus the
+# original's trace key, and stands for the run while the key is current.
+# Modification times come from a fake clock, so "the binary is newer than
+# the sources" is exact: tick advances it, edit stamps a source, built the
+# binaries.
+port=build/replay-cache/port
+rm -rf "$port"
+base=$(($(date +%s) - 100000))
+clock=$base
+tick() { clock=$((clock + 10)); }
+stamp() { tick; touch -d "@$clock" "$@"; }
+find enhanced nix -type f -exec touch -d "@$base" {} +
+touch -d "@$base" "$rp/main.cpp" "$rp/compare.py" "$rp/check_expect.py" "$rp/replay_all.sh" "$rp/port_cache.sh"
+built() { stamp build/enhanced/th_replay build/web/th_replay.js; }
+edit() { echo "// edit $RANDOM" >>"$1"; stamp "$1"; }
+portruns() { grep -c '^portrun$' "$FAKE_LOG" || true; }
+records() { find "$port" -name "$1" 2>/dev/null | wc -l; }
+pa() { CACHE=only REPLAY_BASE="$tmp/pa" "$rp/replay_all.sh" "$@" >"$tmp/pa.out" 2>&1; }
+summary() { grep '^[0-9]* passed' "$tmp/pa.out"; }
+# port NAME ARG ...: a port_cache.sh function in a fresh shell, with the
+# state the gate sets up.
+portfn()
+{
+  (
+    here=$rp root=$root
+    . "$rp/lib.sh"
+    . "$rp/port_cache.sh"
+    port_cache_init build/enhanced build/web >/dev/null 2>&1
+    "$@"
+  )
+}
+nkey() { portfn port_key "$@"; }
+pget() { portfn port_get "$@"; }
+pput() { portfn port_put "$@"; }
+ptrace() { portfn port_trace "$@"; }
+differs() { [ "$1" != "$2" ] && echo differs || echo same; }
+zz=$rp/scripts/zz_hit.txt
+rec_of() { printf '%s/%s.zz_hit.%s.%s.rec' "$port" "$1" "$2" "$(nkey "$1" "$zz" "$2")"; }
+built
+: >"$FAKE_LOG"
+pa zz_hit && r=0 || r=$?
+check "port cache: first run passes" "$r" 0
+check "port cache: first run runs th_replay" "$(portruns)" 1
+check "port cache: first run counts it as run" "$(summary)" "1 passed (0 cached, 1 run), 0 failed"
+check "port cache: first run stores a native record" "$(records 'native.zz_hit.*')" 1
+check "port cache: the record holds the trace hash" "$(grep -c '^trace=[0-9a-f]\{64\}$' "$(rec_of native '')")" 1
+first_line=$(grep '^zz_hit ' "$tmp/pa.out")
+check "port cache: the record holds the printed line" "$(sed -n 's/^line=//p' "$(rec_of native '')")" "$first_line"
+pa zz_hit && r=0 || r=$?
+check "port cache: second identical run passes" "$r" 0
+check "port cache: second run runs nothing" "$(portruns)" 1
+check "port cache: second run counts it as cached" "$(summary)" "1 passed (1 cached, 0 run), 0 failed"
+check "port cache: a cached pass prints the stored line" "$(grep '^zz_hit ' "$tmp/pa.out")" "$first_line"
+
+# The key follows the port's sources (src/core), not src/app.
+edit enhanced/src/app/y.cpp
+pa zz_hit
+check "port cache: editing src/app reruns nothing" "$(portruns)" 1
+edit enhanced/src/core/x.cpp
+pa zz_hit
+check "port cache: editing src/core reruns the script" "$(portruns)" 2
+check "port cache: a binary older than the source stores nothing" "$(records 'native.zz_hit.*')" 1
+built
+pa zz_hit
+check "port cache: after a rebuild the script runs" "$(portruns)" 3
+check "port cache: after a rebuild the pass is stored" "$(records 'native.zz_hit.*')" 2
+pa zz_hit
+check "port cache: and then it is a hit" "$(portruns)" 3
+# A touch changes no bytes, and the key holds bytes.
+stamp enhanced/src/core/x.cpp
+built
+pa zz_hit
+check "port cache: touching src/core without a change is a hit" "$(portruns)" 3
+
+# A failing script caches nothing.
+edit enhanced/src/core/x.cpp
+built
+n=$(records 'native.*')
+FAKE_ADVICE=1 pa zz_hit && r=0 || r=$?
+check "port cache: a failing script fails" "$r" 1
+check "port cache: a failing script stores nothing" "$(records 'native.*')" "$n"
+pa zz_hit && r=0 || r=$?
+check "port cache: the fixed script passes" "$r" 0
+check "port cache: and is stored" "$(records 'native.*')" "$((n + 1))"
+
+# PORT_CACHE=off reruns the port and rewrites the record.
+rec=$(rec_of native '')
+good=$(sed -n 's/^trace=//p' "$rec")
+sed -i 's/^trace=.*/trace=corrupt/' "$rec"
+before=$(portruns)
+PORT_CACHE=off pa zz_hit
+check "port cache: PORT_CACHE=off reruns the port" "$(portruns)" "$((before + 1))"
+check "port cache: PORT_CACHE=off counts it as run" "$(summary)" "1 passed (0 cached, 1 run), 0 failed"
+check "port cache: PORT_CACHE=off rewrites the record" "$(sed -n 's/^trace=//p' "$rec")" "$good"
+PORT_CACHE=bogus pa zz_hit && r=0 || r=$?
+check "port cache: a bad PORT_CACHE value exits 2" "$r" 2
+# CACHE=refresh runs both sides.
+: >"$FAKE_LOG"
+CACHE=refresh REPLAY_BASE="$tmp/pa" "$rp/replay_all.sh" zz_hit >"$tmp/pa.out" 2>&1
+check "port cache: CACHE=refresh runs DOSBox" "$(runs)" 1
+check "port cache: CACHE=refresh runs the port" "$(portruns)" 1
+check "port cache: CACHE=refresh counts it as run" "$(summary)" "1 passed (0 cached, 1 run), 0 failed"
+
+# What the key covers.
+k=$(nkey native "$zz")
+kw=$(nkey web "$zz")
+check "port key: stable" "$(nkey native "$zz")" "$k"
+cp "$zz" "$tmp/zz_copy.txt"
+check "port key: same bytes, another path" "$(nkey native "$tmp/zz_copy.txt")" "$k"
+printf '# Turns 50\n0 2\n' >"$tmp/zz_other.txt"
+check "port key: another script's bytes" "$(differs "$(nkey native "$tmp/zz_other.txt")" "$k")" differs
+echo "zz_hit 0123456789abcdef" >"$tmp/native_keys"
+check "port key: PORT_NATIVE_KEYS gives the native key" "$(PORT_NATIVE_KEYS=$tmp/native_keys nkey native "$zz")" 0123456789abcdef
+check "port key: the web key is built on the given native key" "$(differs "$(PORT_NATIVE_KEYS=$tmp/native_keys nkey web "$zz")" "$kw")" differs
+check "port key: a script missing from the file is computed" "$(PORT_NATIVE_KEYS=$tmp/native_keys nkey native "$tmp/zz_other.txt")" "$(nkey native "$tmp/zz_other.txt")"
+check "trace_cache native-keys prints the computed key" "$("$rp/trace_cache.sh" native-keys zz_hit)" "zz_hit $k"
+# keyvar LABEL FILE NATIVE WEB LINE: appends LINE to FILE, compares the keys
+# (NATIVE and WEB are "differs" or "same") and restores the file.
+keyvar()
+{
+  cp "$2" "$tmp/keyvar.bak"
+  echo "$5" >>"$2"
+  a=$(differs "$(nkey native "$zz")" "$k")
+  b=$(differs "$(nkey web "$zz")" "$kw")
+  cp "$tmp/keyvar.bak" "$2"
+  touch -d "@$base" "$2"
+  check "port key: $1 (native)" "$a" "$3"
+  check "port key: $1 (web)" "$b" "$4"
+}
+keyvar "a src/core code line" enhanced/src/core/x.cpp differs differs "int x;"
+keyvar "an app file is outside it" enhanced/src/app/y.cpp same same "int y;"
+keyvar "main.cpp of th_replay" "$rp/main.cpp" differs differs "int m;"
+keyvar "CMakeLists.txt" enhanced/CMakeLists.txt differs differs "x"
+keyvar "cmake/deps.cmake" enhanced/cmake/deps.cmake differs differs "x"
+keyvar "flake.lock" nix/flake.lock differs differs "x"
+keyvar "flake.nix" nix/flake.nix differs differs "x"
+keyvar "compare.py" "$rp/compare.py" differs differs "x = 1"
+keyvar "check_expect.py" "$rp/check_expect.py" differs differs "x = 1"
+keyvar "replay_all.sh code" "$rp/replay_all.sh" differs differs "true"
+keyvar "replay_all.sh comment" "$rp/replay_all.sh" same same "# a comment"
+keyvar "replay_all.sh blank line" "$rp/replay_all.sh" same same ""
+keyvar "port_cache.sh code" "$rp/port_cache.sh" differs differs "true"
+keyvar "an enhanced/web file" enhanced/web/shell.html same differs "x"
+keyvar "check.sh code" enhanced/tools/check.sh same differs "true"
+keyvar "check.sh comment" enhanced/tools/check.sh same same "# comment"
+keyvar "the wasm configuration" build/web/CMakeCache.txt same differs "CMAKE_CXX_FLAGS:STRING=-O0"
+keyvar "the native configuration" build/enhanced/CMakeCache.txt differs differs "CMAKE_CXX_FLAGS_RELEASE:STRING=-O1"
+keyvar "the data folder of the configuration" build/enhanced/CMakeCache.txt same same "TH_DEV_DATA_DIR:PATH=/elsewhere"
+keyvar "an unrelated cache entry" build/enhanced/CMakeCache.txt same same "CMAKE_HOME_DIRECTORY:INTERNAL=/x"
+# The original's trace key is in it: another decompilation, another key.
+echo y >>"$root/src/a.cpp"
+check "port key: the decompilation (native)" "$(differs "$(nkey native "$zz")" "$k")" differs
+check "port key: the decompilation (web)" "$(differs "$(nkey web "$zz")" "$kw")" differs
+echo x >"$root/src/a.cpp"
+check "port key: restored" "$(nkey native "$zz")" "$k"
+check "port key: RAND is in it" "$(differs "$(RAND=0 nkey native "$zz")" "$k")" differs
+check "port key: another tag" "$(differs "$(nkey web "$zz" cross-9000)" "$kw")" differs
+check "port key: web differs from native" "$(differs "$kw" "$k")" differs
+
+# Web records count only with the native record for the same key and trace.
+built
+pa zz_hit
+native_trace=$(ptrace native "$zz")
+check "web record: no record, no hit" "$(pget web "$zz" || echo miss)" miss
+pput web "$zz" "" "zz_hit: identical" "$native_trace"
+check "web record: a stored pass is a hit" "$(pget web "$zz")" "zz_hit: identical"
+check "web record: another tag is a miss" "$(pget web "$zz" cross-9000 || echo miss)" miss
+pput web "$zz" cross-9000 "zz_hit: turn 9000" "$native_trace"
+check "web record: the cross-load record is a hit" "$(pget web "$zz" cross-9000)" "zz_hit: turn 9000"
+pput web "$zz" "" "zz_hit: identical" "not-the-native-trace"
+check "web record: another trace than the native one is a miss" "$(pget web "$zz" || echo miss)" miss
+pput web "$zz" "" "zz_hit: identical" "$native_trace"
+nrec=$(rec_of native '')
+mv "$nrec" "$tmp/native.rec"
+check "web record: without the native record it is a miss" "$(pget web "$zz" || echo miss)" miss
+mv "$tmp/native.rec" "$nrec"
+check "web record: with the native record it is a hit" "$(pget web "$zz")" "zz_hit: identical"
+stamp enhanced/web/shell.html
+echo "<!-- x -->" >>enhanced/web/shell.html
+check "web record: a web shell edit misses it" "$(pget web "$zz" || echo miss)" miss
+check "web record: the native record still hits" "$(pget native "$zz" | head -c 8)" "zz_hit ("
+touch -d "@$base" enhanced/web/shell.html
+sed -i '$d' enhanced/web/shell.html
+edit enhanced/src/core/x.cpp
+check "web record: a core edit misses it" "$(pget web "$zz" || echo miss)" miss
+check "web record: a wasm binary older than the sources stores nothing" "$(pput web "$zz" "" l "$native_trace"; records "$(basename "$(rec_of web '')")")" 0
+built
+
+# status and prune: a record is stale when its key is not current.
+pa zz_hit
+stale_count() { "$rp/trace_cache.sh" status | sed -n 's/^stale entries (key not current): \([0-9]*\),.*/\1/p'; }
+[ "$(stale_count)" -ge 1 ] && r=some || r=none
+check "trace_cache status counts stale port records" "$r" some
+all=$(records '*.rec')
+"$rp/trace_cache.sh" prune >/dev/null
+check "trace_cache prune keeps the current native record" "$(pget native "$zz" | head -c 8)" "zz_hit ("
+[ "$(records '*.rec')" -lt "$all" ] && r=fewer || r=same
+check "trace_cache prune removes stale port records" "$r" fewer
+check "trace_cache status after prune: none stale" "$(stale_count)" 0
+
+# missing: a script with a native verdict needs no original; a verdict
+# stands for the whole run, so CACHE=only passes it without one.
+printf '# Turns 53\n0 1\n' >"$rp/scripts/zz_miss3.txt"
+zz3=$rp/scripts/zz_miss3.txt
+touch -d "@$base" "$zz3"
+built
+: >"$FAKE_LOG"
+check "missing lists a script without original and verdict" "$("$rp/trace_cache.sh" missing zz_miss3 | sed 's|.*/||')" zz_miss3.txt
+pput native "$zz3" "" "zz_miss3 (level 1, 53 turns): agree [original fresh]" abc "enh: Expect X >= 1: 3"
+check "port record: Expect counts are kept" "$(sed -n 's/^expect=//p' "$(portfn port_rec_path native "$zz3" "" "$(nkey native "$zz3")")")" "enh: Expect X >= 1: 3"
+check "missing skips a script with a native verdict" "$("$rp/trace_cache.sh" missing zz_miss3)" ""
+check "missing with PORT_CACHE=off lists it again" "$(PORT_CACHE=off "$rp/trace_cache.sh" missing zz_miss3 | sed 's|.*/||')" zz_miss3.txt
+CACHE=only REPLAY_BASE="$tmp/pa" "$rp/replay_all.sh" zz_miss3 >"$tmp/pa.out" 2>&1 && r=0 || r=$?
+check "a verdict passes without an original (CACHE=only)" "$r" 0
+check "a verdict starts no DOSBox and no port run" "$(runs)$(portruns)" "00"
+rm -f "$zz3"
+
+# The files whose text the key strips hold no heredoc.
+grep -l '<<' "$here/replay_all.sh" "$here/port_cache.sh" "$here/../check.sh" >/dev/null 2>&1 && r=heredoc || r=none
+check "key: replay_all.sh, port_cache.sh and check.sh have no heredoc" "$r" none
 
 rm -f "$rp/scripts/zz_hit.txt" "$rp/scripts/zz_miss.txt" "$rp/scripts/zz_miss2.txt"
 
