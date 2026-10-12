@@ -89,6 +89,7 @@ void reach_main_menu(StartupDriver &d)
     CHECK(s.movie_audio_format().rate == 22050);
     d.run(still, {space});
     CHECK(s.screen() == th::StartupScreen::Title && s.surface().width() == 640);
+    d.run(still, {}, 10); // the input guard after a skip
     d.run(startup_click(5, 5));
     d.run(still, {}, 100);
     CHECK(s.screen() == th::StartupScreen::About);
@@ -97,6 +98,7 @@ void reach_main_menu(StartupDriver &d)
     CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu1);
     d.run(still, {space}, 2);
     CHECK(s.screen() == th::StartupScreen::MainMenu && s.surface().width() == 320);
+    d.run(still, {}, 10);
 }
 
 } // namespace
@@ -127,6 +129,7 @@ void test_startup_new_game(const char *dir)
     CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieArea);
     d.run(still, {space}, 2);
     CHECK(s.screen() == th::StartupScreen::Briefing);
+    d.run(still, {}, 10);
     d.run(startup_click(320, 240));
     CHECK(d.r.kind == th::StartupResult::Kind::StartLevel);
     CHECK(d.r.level == 1 && d.r.balance_id == "FULL" && !d.r.tutorial);
@@ -137,6 +140,81 @@ void test_startup_new_game(const char *dir)
 
     auto page = th::level_briefing(text, 1);
     CHECK(!page.empty());
+}
+
+namespace
+{
+
+// From the intro to the main menu's opening movie, playing.
+void reach_menu_movie(StartupDriver &d)
+{
+    const th::UiMouse still = startup_still();
+    d.run(still);
+    d.run(still, {{th::StartupKey::Space, 0}});
+    d.run(still, {}, 10);
+    d.run(startup_click(5, 5));
+    d.run(still, {}, 100);
+    d.run(still, {{th::StartupKey::Return, 0}}, 3);
+}
+
+} // namespace
+
+// A click or key that skips a movie does not also act on the screen after
+// it: the menu ignores input until every button is up and 0.3 s have passed.
+void test_startup_input_guard(const char *dir)
+{
+    th::LanguageText text;
+    CHECK(th::load_language(dir, 0, text));
+    th::Startup s;
+    if (!s.load(dir, text, 0))
+        return;
+    StartupDriver d{s, {}};
+    const th::UiMouse still = startup_still();
+    reach_menu_movie(d);
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu1);
+
+    // New Game is a click on the diamond's top quarter (0x55, 0x20 in
+    // test_startup_new_game): refused for the frames after the skip.
+    d.run(startup_click(5, 5));
+    CHECK(s.screen() == th::StartupScreen::MainMenu);
+    d.run(startup_click(0x55, 0x20), {{th::StartupKey::Return, 0}}, 2);
+    CHECK(s.screen() == th::StartupScreen::MainMenu);
+    d.run(still, {}, 10);
+    d.run(startup_click(0x55, 0x20), {}, 2);
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu2);
+}
+
+// The same with the skipping button kept down: its release, however late, is
+// not a click on the menu.
+void test_startup_input_guard_held(const char *dir)
+{
+    th::LanguageText text;
+    CHECK(th::load_language(dir, 0, text));
+    th::Startup s;
+    if (!s.load(dir, text, 0))
+        return;
+    StartupDriver d{s, {}};
+    const th::UiMouse still = startup_still();
+    reach_menu_movie(d);
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu1);
+
+    th::UiMouse down;
+    down.x = 0x55;
+    down.y = 0x20;
+    down.left_held = down.left_pressed = true;
+    d.run(down);
+    down.left_pressed = false;
+    d.run(down, {}, 30);
+    CHECK(s.screen() == th::StartupScreen::MainMenu);
+    th::UiMouse up;
+    up.x = 0x55;
+    up.y = 0x20;
+    up.left_released = true;
+    d.run(up);
+    CHECK(s.screen() == th::StartupScreen::MainMenu);
+    d.run(still);
+    d.run(startup_click(0x55, 0x20), {}, 2);
+    CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu2);
 }
 
 namespace

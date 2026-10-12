@@ -1,0 +1,23 @@
+# A click that skips the main menu's opening movie is not followed by a click
+# on a menu item: the menu ignores clicks and keys for 0.3 s after the skip
+# and until every button is up. After the grace period a click works.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 260
+key Return
+wait 20
+expect startup screen: 0
+click 85 32
+click 85 32
+expect startup screen: 3
+key Space
+wait 3
+expect startup screen: 3
+wait 60
+click 85 32
+wait 10
+expect startup screen: 0

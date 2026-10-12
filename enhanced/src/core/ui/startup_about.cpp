@@ -56,7 +56,7 @@ bool Startup::about_box_shown() const
 
 int Startup::changelog_scroll_max() const
 {
-    const int content = int(changelog_lines_.size()) * fonts_[kFontGlass].line_height();
+    const int content = int(changelog_lines_.size()) * fonts_[kFontChangelog].line_height();
     return std::max(content - kChangelogView.h, 0);
 }
 
@@ -108,7 +108,7 @@ void Startup::about_screen(const UiMouse &mouse, std::span<const StartupKey> key
 
 void Startup::about_keys(std::span<const StartupKey> keys)
 {
-    const int line = fonts_[kFontGlass].line_height();
+    const int line = fonts_[kFontChangelog].line_height();
     for (const StartupKey &k : keys) {
         if (!changelog_open_) {
             // Escape does nothing here: it quit the original's name screen.
@@ -150,7 +150,7 @@ void Startup::about_mouse(const UiMouse &mouse)
         const Rect r = box_rect(g);
         return over(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
     };
-    const int line = fonts_[kFontGlass].line_height();
+    const int line = fonts_[kFontChangelog].line_height();
     if (!changelog_open_) {
         if (mouse.left_released && inside(kAboutGlass[kAboutContinueButton]))
             about_continue();
@@ -209,7 +209,7 @@ void Startup::wrap_changelog()
 {
     if (changelog_lines_.empty())
         changelog_lines_ =
-            changelog_wrap(fonts_[kFontGlass], changelog_paragraphs(kChangelogMarkdown), kChangelogView.w);
+            changelog_wrap(fonts_[kFontChangelog], changelog_paragraphs(kChangelogMarkdown), kChangelogTextWidth);
 }
 
 void Startup::draw_box_label(const UiMouse &mouse, const Rect &box, std::string_view label)
@@ -256,7 +256,7 @@ void Startup::draw_about(const UiMouse &mouse)
 
 void Startup::draw_changelog(const UiMouse &mouse)
 {
-    const Font &font = fonts_[kFontGlass];
+    const Font &font = fonts_[kFontChangelog];
     const int line = font.line_height();
     const Rect clip = kChangelogView;
     const TextSettings settings{{0, 0, surface_.width()}, clip};

@@ -234,6 +234,7 @@ StartupResult Startup::frame(const UiMouse &mouse, std::span<const StartupKey> k
     }
     for (int n = 0; frame_time_ >= kGameFrame && n < 5 && movie_index_ < 0; n++) {
         frame_time_ -= kGameFrame;
+        hold_input_back(m);
         tick(m, pending_keys_);
         m.left_pressed = m.right_pressed = m.left_released = m.right_released = false;
         m.wheel = 0;
@@ -285,7 +286,26 @@ void Startup::advance_movie(double seconds, bool skip)
         movie_index_ = -1;
         movie_audio_.clear();
         state_ = after_movie_;
+        input_guard_ = skip;
+        guard_frames_ = 0;
     }
+}
+
+void Startup::hold_input_back(UiMouse &mouse)
+{
+    if (!input_guard_)
+        return;
+    const bool buttons = mouse.left_held || mouse.right_held || mouse.left_pressed || mouse.right_pressed ||
+                         mouse.left_released || mouse.right_released;
+    if (++guard_frames_ >= kInputGuardFrames && !buttons) {
+        input_guard_ = false;
+        return;
+    }
+    mouse.left_held = mouse.right_held = false;
+    mouse.left_pressed = mouse.right_pressed = false;
+    mouse.left_released = mouse.right_released = false;
+    mouse.wheel = 0;
+    pending_keys_.clear();
 }
 
 // calculate_grey: the boxes' colours in the screen's palette.

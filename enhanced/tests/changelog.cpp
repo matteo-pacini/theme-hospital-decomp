@@ -4,12 +4,15 @@
 #include "common.h"
 
 #include "core/data/text.h"
+#include "core/render/surface.h"
+#include "core/render/text.h"
 #include "core/ui/changelog.h"
 #include "core/ui/layer.h"
 #include "core/ui/startup.h"
 #include "th_changelog.h"
 #include "th_version.h"
 
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -36,6 +39,7 @@ struct AboutRun {
     {
         run(1);
         run(1, {{th::StartupKey::Space, 0}});
+        run(10); // the input guard after a skip
         run(1, {}, true);
         run(3);
     }
@@ -69,16 +73,30 @@ void test_changelog_text(const char *)
 void test_changelog_wrap(const char *dir)
 {
     th::Font font;
-    CHECK(th::load_font(dir, 0x21, font));
-    // Every character of the embedded changelog exists in the font: a
-    // missing glyph would draw as a blank.
-    for (char c : std::string(th::kChangelogMarkdown)) {
-        const auto u = uint8_t(c);
-        if (u > 32 && c != '#' && c != '*' && c != '`' && c != '[' && c != ']')
-            CHECK(!font.glyph(u).empty());
+    CHECK(th::load_font(dir, th::kChangelogFontSlot, font));
+    // Every character the changelog draws puts pixels on the screen: a
+    // missing glyph is a blank of the glyph's width.
+    for (const std::string &p : th::changelog_paragraphs(th::kChangelogMarkdown)) {
+        for (char c : p) {
+            const auto u = uint8_t(c);
+            if (u <= 32)
+                continue;
+            th::Surface cell;
+            cell.resize(40, 40);
+            cell.fill(0);
+            const std::string one(1, c);
+            th::draw_text(cell, font, 0, 0, one, {{0, 0, 40}, {0, 0, 40, 40}});
+            bool inked = false;
+            for (int y = 0; y < 40 && !inked; y++)
+                for (int x = 0; x < 40; x++)
+                    inked |= cell.row(y)[x] != 0;
+            if (!inked)
+                std::fprintf(stderr, "changelog: no glyph for '%c' in font slot 0x%02x\n", c, th::kChangelogFontSlot);
+            CHECK(inked);
+        }
     }
     const std::vector<std::string> paragraphs = th::changelog_paragraphs(th::kChangelogMarkdown);
-    const int width = 482;
+    const int width = th::kChangelogTextWidth;
     std::vector<th::ChangelogLine> lines = th::changelog_wrap(font, paragraphs, width);
     CHECK(lines.size() > paragraphs.size());
     bool fits = true;
@@ -121,9 +139,9 @@ void test_startup_about_screen(const char *dir)
     a.run(60);
     CHECK(s.changelog_open() && s.changelog_scroll() == 0);
     const int max = s.changelog_scroll_max();
-    CHECK(max > 0 && max % 21 == 0);
+    CHECK(max > 0 && max % 12 == 0);
     a.run(1, {{th::StartupKey::Down, 0}});
-    CHECK(s.changelog_scroll() == 21);
+    CHECK(s.changelog_scroll() == 12);
     a.run(1, {{th::StartupKey::Up, 0}, {th::StartupKey::Up, 0}});
     CHECK(s.changelog_scroll() == 0);
     for (int i = 0; i < 100; i++)

@@ -208,6 +208,10 @@ class Startup
     // goes on to `next`.
     void zoom_after_delay(const Picture &picture, int mask, State next);
     void advance_movie(double seconds, bool skip);
+    // After a skipped movie the screen it leads to ignores clicks and keys
+    // until about 0.3 s have passed and no mouse button is down, pressed or
+    // released: the click that skipped must not also press a button there.
+    void hold_input_back(UiMouse &mouse);
     void play_movie(int index, State next);
     void show(const Picture &picture);
     void calculate_grey(const Picture &picture);
@@ -291,7 +295,7 @@ class Startup
     bool credit_pressed_ = false;
     SpriteSheet main_sprites_, prefs_sprites_;
     std::vector<uint8_t> prefs_ghost_;
-    std::array<Font, 3> fonts_; // cache slots 0x21, 0x22, 0x23
+    std::array<Font, 4> fonts_; // kStartupFonts
 
     State state_{};
     StartupScreen screen_ = StartupScreen::Movie;
@@ -306,6 +310,9 @@ class Startup
     unsigned movie_flags_ = 0;
     double movie_time_ = 0;
     State after_movie_{};
+    // Whether hold_input_back is at work, and the game frames it has run.
+    bool input_guard_ = false;
+    int guard_frames_ = 0;
     std::vector<int16_t> movie_audio_;
     std::vector<uint8_t> sounds_;
 

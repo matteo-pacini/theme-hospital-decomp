@@ -9,6 +9,11 @@
 namespace th
 {
 
+// The font cache slot the changelog is drawn in (qdata/font44v, 12 pixels a
+// line) and the width in pixels its lines wrap to.
+inline constexpr int kChangelogFontSlot = 0x0b;
+inline constexpr int kChangelogTextWidth = 482;
+
 // A line of the changelog as the title screen draws it: its text and how far
 // it is indented in pixels (the lines a bullet wraps onto hang under its text).
 struct ChangelogLine {

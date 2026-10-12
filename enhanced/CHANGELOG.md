@@ -29,6 +29,6 @@ from the decompilation.
 - PNG screen shots (Alt+C).
 - Six languages: English, French, German, Italian, Spanish and Swedish.
 - A browser build that runs in the page and installs from the files you give it.
-- The original's bugs are kept, and listed in docs/BUGS.md.
+- The original's bugs are kept, and listed in BUGS.md in the project's docs folder.
 - Debug reports (F10, F12): a screenshot, the state, a snapshot and the
   commands since the level began.

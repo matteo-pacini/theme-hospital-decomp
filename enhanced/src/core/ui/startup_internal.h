@@ -3,6 +3,7 @@
 // What the screens of startup*.cpp share: the state names, the sounds, glass
 // boxes and buttons several of them use. Private to src/core/ui/startup*.cpp.
 
+#include "core/ui/changelog.h"
 #include "core/ui/startup.h"
 
 #include <array>
@@ -44,6 +45,9 @@ inline namespace startup_detail
 {
 
 constexpr int kDelay800ms = 20; // draw_nickname's delay(800), in frames
+
+// Frames (0.3 s) a skipped movie's screen holds input back.
+constexpr int kInputGuardFrames = 8;
 
 // play_sound's sfx numbers (include/enums.h).
 constexpr uint8_t kSfxYes = 0x41; // SFX_YESX
@@ -109,9 +113,9 @@ constexpr std::array<GlassBox, 4> kChangelogGlass = {{
     {235, 418, 404, 451, 2, true, 7, 0, 0},
 }};
 enum : int { kChangelogUpButton = 1, kChangelogDownButton = 2, kChangelogCloseButton = 3 };
-// The text of the changelog is drawn in this window of its panel, 17 lines of
-// the glass font (21 pixels) tall so that no line is cut.
-constexpr Rect kChangelogView = {62, 36, 482, 357};
+// The text of the changelog is drawn in this window of its panel, 30 lines of
+// its font (12 pixels) tall so that no line is cut.
+constexpr Rect kChangelogView = {62, 36, kChangelogTextWidth, 360};
 
 // The rectangle of box `g`.
 constexpr Rect box_rect(const GlassBox &g)
@@ -154,8 +158,8 @@ constexpr std::array<ScreenButton, 6> kPrefsButtons = {{
 }};
 
 // Font cache slots in Startup::fonts_.
-enum : int { kFontGlass, kFontGlassHi, kFontTitle, kFontSlotCount };
-constexpr std::array<int, kFontSlotCount> kStartupFonts = {0x21, 0x22, 0x2a};
+enum : int { kFontGlass, kFontGlassHi, kFontTitle, kFontChangelog, kFontSlotCount };
+constexpr std::array<int, kFontSlotCount> kStartupFonts = {0x21, 0x22, 0x2a, kChangelogFontSlot};
 
 // Whether (mx, my) is in the w x h box at (x, y).
 bool over(int mx, int my, int x, int y, int w, int h);

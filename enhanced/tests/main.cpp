@@ -104,6 +104,8 @@ void test_queue_bar_names(const char *dir);
 void test_pie_render_plan();
 void test_main_menu_art(const char *dir);
 void test_startup_new_game(const char *dir);
+void test_startup_input_guard(const char *dir);
+void test_startup_input_guard_held(const char *dir);
 void test_changelog_text(const char *dir);
 void test_changelog_wrap(const char *dir);
 void test_startup_about_screen(const char *dir);
@@ -378,6 +380,8 @@ const DataTest kDataTests[] = {
     TEST(test_smacker_intro),
     TEST(test_main_menu_art),
     TEST(test_startup_new_game),
+    TEST(test_startup_input_guard),
+    TEST(test_startup_input_guard_held),
     TEST(test_changelog_text),
     TEST(test_changelog_wrap),
     TEST(test_startup_about_screen),

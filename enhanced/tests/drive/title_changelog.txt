@@ -18,22 +18,22 @@ expect changelog: open, scroll 0 of
 expect-not (end)
 key Down
 wait 5
-expect changelog: open, scroll 21 of
+expect changelog: open, scroll 12 of
 wheel -1
 wait 5
-expect changelog: open, scroll 84 of
+expect changelog: open, scroll 48 of
 click 569 52
 wait 5
-expect changelog: open, scroll 63 of
+expect changelog: open, scroll 36 of
 click 569 376
 wait 5
-expect changelog: open, scroll 84 of
+expect changelog: open, scroll 48 of
 key PageUp
 wait 5
 expect changelog: open, scroll 0 of
 key PageDown
 wait 5
-expect changelog: open, scroll 336 of
+expect changelog: open, scroll 72 of
 screenshot changelog_middle
 key PageDown
 key PageDown

@@ -3,7 +3,7 @@
 # box and Enter writes the report (with no map, so no snapshot or commands).
 wait 3
 key Space
-wait 3
+wait 30
 click 5 5
 wait 210
 key Return
