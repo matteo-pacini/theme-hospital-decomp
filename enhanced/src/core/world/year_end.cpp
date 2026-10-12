@@ -12,6 +12,7 @@
 #include "core/world/wrap32.h"
 
 #include <algorithm>
+#include <bit>
 #include <cstdlib>
 #include <utility>
 

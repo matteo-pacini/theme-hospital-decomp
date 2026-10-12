@@ -76,8 +76,10 @@ bool App::init(int argc, char **argv)
         install_failed_ = true;
         return false;
     }
+#ifndef TH_NO_DRIVE_SLOTS
     if (driving)
         hold_drive_slot();
+#endif
     if (driving && !drive_visible_) {
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "offscreen");
         SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");

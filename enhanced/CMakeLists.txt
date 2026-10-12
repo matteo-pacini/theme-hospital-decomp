@@ -295,6 +295,11 @@ target_compile_options(th_enhanced PRIVATE ${TH_WARNINGS})
 if (TH_DEV_DATA_DIR AND NOT EMSCRIPTEN)
   target_compile_definitions(th_enhanced PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
 endif()
+# The drive-slot lock lives in the repository's build/ folder, which a
+# release program does not have.
+if (TH_RELEASE)
+  target_compile_definitions(th_enhanced PRIVATE TH_NO_DRIVE_SLOTS)
+endif()
 
 # Release packaging: <build>/ThemeHospitalEnhanced.exe on Windows (GUI
 # subsystem, icon and version resource), <build>/Theme Hospital Enhanced.app

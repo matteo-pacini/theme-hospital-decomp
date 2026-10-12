@@ -126,8 +126,8 @@ jobs:
         include:
           - { id: linux-x86_64, os: ubuntu-22.04, kind: linux, arch: x86_64 }
           - { id: linux-arm64, os: ubuntu-22.04-arm, kind: linux, arch: arm64 }
-          - { id: windows-x86_64, os: windows-2022, kind: windows, arch: x86_64, msystem: UCRT64 }
-          - { id: windows-arm64, os: windows-11-arm, kind: windows, arch: arm64, msystem: CLANGARM64 }
+          - { id: windows-x86_64, os: windows-2022, kind: windows, arch: x86_64, msystem: UCRT64, msys_cache: true }
+          - { id: windows-arm64, os: windows-11-arm, kind: windows, arch: arm64, msystem: CLANGARM64, msys_cache: false }
           - { id: macos-arm64, os: macos-14, kind: macos, arch: arm64 }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -171,6 +171,8 @@ jobs:
         uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
         with:
           msystem: ${{ matrix.msystem }}
+          # setup-msys2 cannot save its cache on windows-11-arm (no paccache).
+          cache: ${{ matrix.msys_cache }}
           update: true
           install: git zip unzip
           pacboy: toolchain:p cmake:p ninja:p

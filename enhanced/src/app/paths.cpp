@@ -57,6 +57,7 @@ fs::path home_dir()
     return {};
 }
 
+#if !defined(__APPLE__)
 // An absolute $name, else `fallback` under the home folder.
 fs::path xdg_dir(const char *name, const char *fallback)
 {
@@ -68,6 +69,7 @@ fs::path xdg_dir(const char *name, const char *fallback)
     fs::path home = home_dir();
     return home.empty() ? fs::path() : home / fallback;
 }
+#endif
 
 #endif
 
