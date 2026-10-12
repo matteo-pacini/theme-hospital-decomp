@@ -111,6 +111,18 @@ bool same_file(const std::filesystem::path &a, const std::filesystem::path &b)
                       std::istreambuf_iterator<char>(fb), std::istreambuf_iterator<char>());
 }
 
+// Whether the report folder `dir` has the file named by the first word of
+// `spec` and it contains the rest of `spec`.
+bool report_file_contains(const std::string &dir, const std::string &spec)
+{
+    size_t space = spec.find(' ');
+    if (dir.empty() || space == std::string::npos)
+        return false;
+    std::string body;
+    return read_file(std::filesystem::path(dir) / spec.substr(0, space), body) &&
+           body.find(spec.substr(space + 1)) != std::string::npos;
+}
+
 #ifndef _WIN32
 // Takes the first free slot of `dir`, writing `info` into it; the open file
 // keeps the lock. -1 if all are held, -2 if the files cannot be made.
@@ -406,13 +418,15 @@ int Driver::run_click(DriveHost &host, const Command &c)
     return verb == "key" ? kHoldFrames : 1;
 }
 
-// The expect-report commands: the last report's note or screenshot.
+// The expect-report commands: the last report's note, screenshot or another
+// file.
 bool Driver::run_report(DriveHost &host, const Command &c, const std::string &text)
 {
     const std::string &verb = c.words[0];
     bool note = verb == "expect-report" || verb == "expect-report-none";
     bool shot = verb == "expect-report-shot";
-    if (!note && !shot)
+    bool file = verb == "expect-report-file";
+    if (!note && !shot && !file)
         return false;
     std::string dir = host.drive_report_dir();
     bool ok = false;
@@ -422,6 +436,8 @@ bool Driver::run_report(DriveHost &host, const Command &c, const std::string &te
              same_file(std::filesystem::path(dir) / "screenshot.png", out_ / (text + ".png"));
     else if (verb == "expect-report-none")
         ok = dir.empty();
+    else if (file)
+        ok = report_file_contains(dir, text);
     else
         ok = !dir.empty() && read_file(std::filesystem::path(dir) / "note.txt", body) &&
              body.find(text) != std::string::npos;

@@ -248,6 +248,42 @@ file(READ ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md TH_CHANGELOG)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md)
 configure_file(cmake/version.h.in generated/th_version.h @ONLY)
 configure_file(cmake/changelog.h.in generated/th_changelog.h @ONLY)
+# th_build_info.h: the commit ("unknown" outside a git checkout; read again
+# when HEAD or the branch ref it names changes), the compiler and TH_RELEASE.
+set(TH_GIT_COMMIT "unknown")
+find_package(Git QUIET)
+if (GIT_FOUND)
+  execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short=12 HEAD
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  OUTPUT_VARIABLE TH_GIT_HEAD OUTPUT_STRIP_TRAILING_WHITESPACE
+                  RESULT_VARIABLE TH_GIT_STATUS ERROR_QUIET)
+  if (TH_GIT_STATUS EQUAL 0 AND TH_GIT_HEAD)
+    set(TH_GIT_COMMIT ${TH_GIT_HEAD})
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --path-format=absolute --git-path HEAD
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    OUTPUT_VARIABLE TH_GIT_HEAD_FILE OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    execute_process(COMMAND ${GIT_EXECUTABLE} symbolic-ref -q HEAD
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    OUTPUT_VARIABLE TH_GIT_BRANCH_REF OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if (TH_GIT_HEAD_FILE)
+      set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${TH_GIT_HEAD_FILE})
+    endif()
+    if (TH_GIT_BRANCH_REF)
+      execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --path-format=absolute --git-path ${TH_GIT_BRANCH_REF}
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                      OUTPUT_VARIABLE TH_GIT_REF_FILE OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+      if (EXISTS "${TH_GIT_REF_FILE}")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${TH_GIT_REF_FILE})
+      endif()
+    endif()
+  endif()
+endif()
+if (TH_RELEASE)
+  set(TH_RELEASE_BUILD true)
+else()
+  set(TH_RELEASE_BUILD false)
+endif()
+configure_file(cmake/build_info.h.in generated/th_build_info.h @ONLY)
 # th_icon.h holds the window icon's PNG bytes.
 set(TH_ICON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon)
 file(READ ${TH_ICON_DIR}/icon-256.png TH_ICON_HEX HEX)
@@ -275,6 +311,7 @@ add_executable(th_enhanced
   src/app/app_screens.cpp
   src/app/app_setup.cpp
   src/app/app_start.cpp
+  src/app/app_sysinfo.cpp
   src/app/app_winlose.cpp
   src/app/audio/mixer.cpp
   src/app/datadir.cpp
@@ -285,11 +322,12 @@ add_executable(th_enhanced
   src/app/upscale_texture.cpp
   src/app/install_job.cpp
   src/app/settings.cpp
+  src/app/sysinfo.cpp
   src/app/ui/nav_tool.cpp
   src/app/ui/tools.cpp)
 target_link_libraries(th_enhanced PRIVATE th_core th_imgui SDL3::SDL3)
 if (WIN32)
-  target_link_libraries(th_enhanced PRIVATE ole32 shell32)
+  target_link_libraries(th_enhanced PRIVATE ole32 shell32 advapi32)
 endif()
 target_compile_options(th_enhanced PRIVATE ${TH_WARNINGS})
 if (TH_DEV_DATA_DIR AND NOT EMSCRIPTEN)
@@ -365,6 +403,8 @@ if (BUILD_TESTING)
     tests/main.cpp
     tests/paths.cpp
     src/app/paths.cpp
+    tests/sysinfo.cpp
+    src/app/sysinfo.cpp
     tests/player_details.cpp
     src/app/player_details.cpp
     tests/common.cpp

@@ -21,6 +21,9 @@ wait 5
 expect quick report: closed
 expect paused true
 expect-report hello quick report
+expect-report-file system.txt Theme Hospital Enhanced system report
+expect-report-file system.txt [renderer]
+expect-report-file system.txt SDL: compiled
 expect-report-shot before
 key p
 wait 5

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <string>
 
 namespace th::web
 {
@@ -38,6 +39,13 @@ void download_file(const std::filesystem::path &path);
 // Tells the page the program has quit.
 void show_closed();
 
+// The browser's user agent string.
+std::string user_agent();
+
+// The WebGL renderer string (the unmasked one when the browser gives it), or
+// empty when there is no WebGL.
+std::string webgl_renderer();
+
 #else
 
 constexpr bool kEnabled = false;
@@ -62,6 +70,14 @@ inline void download_file(const std::filesystem::path &)
 }
 inline void show_closed()
 {
+}
+inline std::string user_agent()
+{
+    return {};
+}
+inline std::string webgl_renderer()
+{
+    return {};
 }
 
 #endif

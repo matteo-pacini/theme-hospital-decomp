@@ -117,8 +117,9 @@ void test_drive_quick_report()
     std::filesystem::remove_all(out);
     std::filesystem::create_directories(out);
     th::Driver d(out, false);
-    for (const char *line : {"key Shift+F10", "type hello world", "screenshot-ui box", "expect-report hello",
-                             "expect-report-shot shot", "expect-report-none", "quit"})
+    for (const char *line :
+         {"key Shift+F10", "type hello world", "screenshot-ui box", "expect-report hello", "expect-report-shot shot",
+          "expect-report-file note.txt hello", "expect-report-file note.txt absent", "expect-report-none", "quit"})
         d.add_line(line);
     d.end_input();
     FakeHost host;
@@ -136,6 +137,7 @@ void test_drive_quick_report()
     CHECK(has("key F10 up 0"));
     CHECK(has("type hello world"));
     CHECK(has("shot-ui"));
-    // expect-report and expect-report-shot pass; expect-report-none fails.
-    CHECK(d.failures() == 1);
+    // expect-report, expect-report-shot and the matching expect-report-file
+    // pass; the file without its text and expect-report-none fail.
+    CHECK(d.failures() == 2);
 }

@@ -103,6 +103,9 @@ bool hold_slot(const std::filesystem::path &dir, int max, const std::string &inf
 //   expect-not TEXT     fail if it does
 //   expect-report TEXT  fail unless the last debug report's note.txt contains
 //                       TEXT (the note alone when TEXT is empty)
+//   expect-report-file FILE TEXT
+//                       fail unless the last debug report's FILE (state.txt,
+//                       system.txt, ...) contains TEXT
 //   expect-report-none  fail unless no debug report was written
 //   expect-report-shot FILE
 //                       fail unless the last report's screenshot.png equals

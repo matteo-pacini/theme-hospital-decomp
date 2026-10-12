@@ -426,7 +426,11 @@ development folder; otherwise in the user's reports folder, above;
 without the tools), `state.txt` (the screen, the last command, money, finance and the hospitals, building and
 placing, every room, every person and object with all their fields, the map
 around the mouse, and the turn in the replay trace format; `dump_game`,
-core/world/debug_dump.h), `note.txt` (the text typed in the tool),
+core/world/debug_dump.h), `system.txt` (what it ran on: the version, commit,
+compiler and SDL, the operating system, processor, memory, displays, audio
+and video drivers, the renderer and GPU, upscaling, language and sound
+settings; no host or user name; `sysinfo.cpp`, `app_sysinfo.cpp`),
+`note.txt` (the text typed in the tool),
 `snapshot.bin` (the whole game state, core/world/snapshot.h) and
 `commands.txt` (every command and other input since the level started,
 `Game::command_log`), for review. F10 does the same at once, on any screen:

@@ -171,7 +171,7 @@ async function main() {
     await (await download).saveAs(tar);
     const names = execFileSync('tar', ['tf', tar]).toString().split('\n').filter(Boolean);
     const leaves = names.map((n) => path.basename(n)).sort().join(' ');
-    if (leaves === 'commands.txt note.txt screenshot.png snapshot.bin state.txt') pass('report tar holds ' + leaves);
+    if (leaves === 'commands.txt note.txt screenshot.png snapshot.bin state.txt system.txt') pass('report tar holds ' + leaves);
     else fail('report tar holds: ' + leaves);
 
     // Alt+C: the screen shot downloaded as a PNG, not kept in the storage.

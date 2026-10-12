@@ -29,6 +29,7 @@ void App::capture_debug_report(DebugCapture &capture)
     capture.shot = SDL_RenderReadPixels(renderer_, nullptr);
     capture.shot_error = capture.shot ? std::string() : SDL_GetError();
     capture.state = debug_state();
+    capture.system = system_text();
     capture.snapshot.clear();
     capture.commands.clear();
     capture.has_snapshot = false;
@@ -64,6 +65,7 @@ DebugReportResult App::write_debug_report(const std::string &note, DebugCapture 
     bool shot_ok = capture.shot && SDL_SavePNG(capture.shot, (dir / "screenshot.png").string().c_str());
     std::ofstream(dir / "note.txt") << note << '\n';
     std::ofstream(dir / "state.txt") << capture.state;
+    std::ofstream(dir / "system.txt") << capture.system;
     if (capture.has_snapshot)
         std::ofstream(dir / "snapshot.bin", std::ios::binary)
             .write(reinterpret_cast<const char *>(capture.snapshot.data()), std::streamsize(capture.snapshot.size()));

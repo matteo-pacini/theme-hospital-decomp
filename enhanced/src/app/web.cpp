@@ -100,4 +100,21 @@ void show_closed()
     js_closed();
 }
 
+std::string user_agent()
+{
+    return emscripten_run_script_string("navigator.userAgent");
+}
+
+std::string webgl_renderer()
+{
+    return emscripten_run_script_string(
+        "(function () {"
+        "  var gl = document.createElement('canvas').getContext('webgl2') ||"
+        "           document.createElement('canvas').getContext('webgl');"
+        "  if (!gl) return '';"
+        "  var info = gl.getExtension('WEBGL_debug_renderer_info');"
+        "  return String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));"
+        "})()");
+}
+
 } // namespace th::web

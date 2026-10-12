@@ -15,6 +15,9 @@
 void test_user_paths();
 void test_migrate_old_prefs();
 
+// sysinfo.cpp
+void test_sysinfo_parse();
+
 // player_details.cpp
 void test_player_details_layout();
 void test_player_details_file();
@@ -284,6 +287,7 @@ struct DataTest {
 const Test kTests[] = {
     TEST(test_user_paths),
     TEST(test_migrate_old_prefs),
+    TEST(test_sysinfo_parse),
     TEST(test_player_details_layout),
     TEST(test_player_details_file),
     TEST(test_blit_clips_and_skips),

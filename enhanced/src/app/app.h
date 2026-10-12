@@ -76,6 +76,7 @@ struct DebugCapture {
     bool has_snapshot = false;
     std::string snapshot_error;
     std::string commands;
+    std::string system;
 };
 
 // The F10 quick report: the capture held while its note box is up.
@@ -404,6 +405,8 @@ class App : public DriveHost
     // data came from the development folder, else the user's reports folder.
     std::filesystem::path report_base() const;
     std::string debug_state() const;
+    // The report's system.txt: build, machine, display, renderer, settings.
+    std::string system_text() const;
     // What fills the window this frame, for debug_state.
     std::string screen_name() const;
     // debug_state's hospital lines: the level, saves, camera, panel, date,

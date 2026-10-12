@@ -129,7 +129,7 @@ The user files bugs as debug reports (F12's Debug report tab, or F10):
 `debug-reports/<time>/` (in the repository when the data came from the
 development folder, else in
 `$XDG_STATE_HOME/ThemeHospitalEnhanced/debug-reports/`)
-holds a screenshot, `state.txt`, the note, `snapshot.bin` and
+holds a screenshot, `state.txt`, `system.txt` (build, OS, hardware, display, GPU), the note, `snapshot.bin` and
 `commands.txt`. Load the snapshot with `build/enhanced/th_replay --load` to
 reproduce what the user saw. F12's Inspect shows a person's or object's
 fields live, with states named. Details: enhanced/README.md.
