@@ -1,0 +1,13 @@
+# A level 10 hospital at the end of its year, quick-loaded from slot 0 (README
+# screenshot). The seed is the cure_l10_a replay at turn 18000; Shift+A
+# switches the advisor off so that his speech bubble stays out of the picture.
+# Size 1280x720
+# SeedReplay 10 enhanced/tools/replay/scripts/cure_l10_a.txt 18000
+wait 60
+key Alt+l
+wait 30
+key Shift+A
+wait 5
+key Escape
+wait 20
+screenshot hospital

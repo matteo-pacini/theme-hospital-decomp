@@ -1,283 +1,137 @@
-# Theme Hospital decompilation
+# Theme Hospital Enhanced
 
-A matching decompilation of the DOS release of Theme Hospital (Bullfrog, 1997):
-C++ source that, compiled with the original toolchain, reproduces the code in
-`HOSPITAL.EXE` function for function. Progress is measured with
-[objdiff](https://github.com/encounter/objdiff).
+Theme Hospital, Bullfrog's 1997 hospital management game, rebuilt as a C++20
+program that runs at any resolution and aspect ratio on Windows, macOS and
+Linux, and in a browser. It is a port of a matching decompilation of the
+original `HOSPITAL.EXE`, function by function, and plays like the original
+turn by turn: every random draw happens in the original's order, and replays
+of the same player actions through the original and through this port are
+checked against each other.
 
-No game files are included. You need your own copy.
+Version 1.0.0 is the first release; see the
+[changelog](enhanced/CHANGELOG.md). No game files are included: you need your
+own copy of the game.
 
-## Status
+![A level 10 hospital at the end of its year](docs/images/hospital.png)
 
-As of 2026-09-30, `ninja report` counts all 2938 functions matched (100% of
-code bytes): 1381 in the game, 813 in Bullfrog's libraries and 744 in the
-runtime (Watcom C library, Miles, Smacker). Of these:
+![The title screen, with the credits and the changelog](docs/images/title.png)
 
-- 53 are assembly stand-ins (`*.standin.s`, listed in
-  [docs/MATCHING.md](docs/MATCHING.md)): functions whose C has not yet been
-  made to match (mostly register or stack-slot choices), after flag sweeps
-  and source attempts. They count as matched, not as decompiled;
-  `STANDIN_OFF=1` builds their C instead.
-- 79, in 15 runtime modules, are built from Watcom's own 10.5/10.6 runtime
-  libraries (`lib` entries in `config/cflags.txt`), which the EXE links.
+## What it does
 
-The rest are compiled from the C++/C in `src/`, which also defines the
-EXE's data.
+- The whole single-player game: the 12 campaign levels and the two rat bonus
+  levels, the win and lose letters, and the credits.
+- Any resolution and aspect ratio, from the game's own data, with optional
+  xBRZ upscaling of the graphics (2x to 6x).
+- The original's rules, bugs included ([docs/BUGS.md](docs/BUGS.md) lists
+  them), so that levels, rivals, emergencies and the year end go as they did.
+- Sound effects, announcements and the music, with the jukebox.
+- Saves in the original's slots, autosave on day 28, the cheats and the
+  briefing's level pick.
+- Six languages: English, French, German, Italian, Spanish and Swedish.
+- PNG screen shots (Alt+C).
+- A browser build that installs from the files you give it.
 
-## Two builds of the EXE
+![The town map](docs/images/town-map.png)
 
-The same compiled units make two executables:
+A close view with the original graphics, then the same view upscaled 4x with
+xBRZ:
 
-| | Byte-identical build | wlink build |
-| --- | --- | --- |
-| Output | `build/hospital.exe` | `build/link/hosp.exe` |
-| Made by | `tools/lewrite.py --strict` (after `ninja`) | `ninja link` (`tools/link.py`, Open Watcom's wlink) |
-| Layout | every function and global at its original address | chosen by wlink |
-| Result | byte for byte the original `HOSPITAL.EXE` | a working game, not identical to the original |
-| Needs `orig/HOSPITAL.EXE` | yes: the build checks the placement against it and compares the result | no: the repository's objects alone |
-| Use it to | prove the decompilation exact | change the code |
+![A close view, original graphics](docs/images/zoom-original.png)
 
-The byte-identical build is the decompilation's result: `lewrite.py`
-places every unit where `tools/relink.py` checks it belongs, fills the gaps
-as the original linker did and writes the headers, fixup tables and the
-DOS/4GW stub of the Watcom 10.5 toolchain itself, so the file compares
-equal to the original. Because everything sits at a fixed address, a
-function that compiles to a different size no longer fits.
+![The same view upscaled 4x with xBRZ](docs/images/zoom-upscaled.png)
 
-The wlink build is for changing the code. wlink links the units like any
-other program, so functions and data may grow, shrink or be added. No code,
-data or layout comes from the original EXE: the data the units do not
-define is laid out from `config/` as zeroed storage, and the stack is a
-segment of its own. It runs in DOSBox-X; check changes there, since only
-the byte-identical build is compared with the original.
+Screenshots show Theme Hospital's original art, © Electronic Arts, shown to
+illustrate this project. No game files are included; you need your own copy.
 
-## What you need
+## You need your own copy
 
-The game's files come from GOG's offline installer for Theme Hospital, from
-your GOG library (Theme Hospital → offline backup installers). Only this
-build is supported:
+The game data is read from your copy of Theme Hospital. The supported copy is
+GOG's offline installer, from your GOG library (Theme Hospital → offline
+backup installers):
 
 | | |
 | --- | --- |
 | File | `setup_theme_hospital_v3_(28027).exe` |
 | Size | 174,951,008 bytes |
 | SHA-256 | `3475c2bb4b262156af4d92e6b1e9e20075f1788a8776835b534e2917c7921e93` |
-| SHA-1 | `9e26a9eafc59ba6a85894a6365391843ccdb42ca` |
-| MD5 | `cb1a467f48532d3607fa5b9dd571a342` |
 
-Check it with `sha256sum` (Linux), `shasum -a 256` (macOS) or
-`certutil -hashfile <file> SHA256` (Windows). The game executable it
-contains, which the matching build is compared against, is:
+On the first start the game finds no data and shows its setup screen. Choose
+the GOG installer, or a folder with the game already installed from it, with
+the buttons or by dropping it on the window. The installer's name, size and
+SHA-256 are checked; the files are copied into the game's own folder, with a
+progress bar and Cancel. The setup screen also offers to upscale the graphics
+(xBRZ, 2x to 6x), done once at install. "Verify files" checks an install
+again.
 
-| | |
-| --- | --- |
-| `HOSPITAL.EXE` SHA-256 | `2bd86130c9c44bb9c76f993c3c0365e032414cb873f5740dc0aff9cf0a08bade` |
-| `HOSPITAL.EXE` SHA-1 | `d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae` |
-| `HOSPITAL.EXE` MD5 | `a4a934ec18b66d131c53bdc71a429f93` |
+Where the files go:
 
-You also need Nix with flakes enabled. The flake lives in `nix/` and is used
-as `path:./nix`, from the repository root: a `path:` flake copies only that
-directory into the Nix store, where the repository root as a flake would copy
-the whole tree on every run. The first `nix develop path:./nix` downloads the
-Watcom 10.5 and 10.6 CD images from archive.org for their runtime libraries;
-everything else comes from nixpkgs.
+| | Settings | Saves | Game data |
+| --- | --- | --- | --- |
+| Linux | `~/.config/ThemeHospitalEnhanced` | `~/.local/share/ThemeHospitalEnhanced/save` | `~/.local/share/ThemeHospitalEnhanced/game` |
+| macOS | `~/Library/Application Support/ThemeHospitalEnhanced` | `…/save` | `…/game` |
+| Windows | `%APPDATA%\ThemeHospitalEnhanced` | `%USERPROFILE%\Saved Games` | `%LOCALAPPDATA%\ThemeHospitalEnhanced\game` |
 
-## Unpacking
+On Linux `$XDG_CONFIG_HOME` and `$XDG_DATA_HOME` are honoured. The options
+(`--level N`, `--language N`, `--upscale`) and the folders are described in
+the [developer guide](enhanced/README.md#game-data-and-the-users-folders).
 
-```sh
-nix run path:./nix#gog-unpack -- 'PATH/setup_theme_hospital_v3_(28027).exe'
-```
+## Run it
 
-This checks the installer's name and SHA-256, extracts it with innoextract,
-checks `HOSPITAL.EXE`'s SHA-1, and copies the game into `orig/`:
-`HOSPITAL.EXE`, `DOS4GW.EXE`, `HOSPITAL.CFG`, `MODEM.INI` and the `ANIMS`,
-`DATA`, `DATAM`, `INTRO`, `LEVELS`, `QDATA`, `QDATAM` and `SOUND`
-directories. The installer holds one `HOSPITAL.CFG` per language; the
-English one is extracted (`LANGUAGE=ENG`; edit it for another of FRE, GER,
-ITA, SPA, SWE). Other files already in `orig/` are left alone. `orig/` is
-gitignored: never commit game files.
+Natively, with [Nix](https://nixos.org/) and flakes enabled, from the
+repository root:
 
-## Playing
+    nix run path:./nix#enhanced
+    nix run path:./nix#enhanced -- --level 5      # start at level 5 at once
 
-```sh
-nix run path:./nix                 # DOSBox Staging
-nix run path:./nix -- --dosbox-x   # or DOSBox-X, or --dosbox
-nix run path:./nix -- --wlink      # play the wlink build (for changed code) instead
-nix run path:./nix -- --486        # at the minimum spec (486DX2-66); --pentium for a Pentium 133
-```
+To build it by hand with CMake instead, see
+[Building](enhanced/README.md#building).
 
-This builds every unit, rebuilds `HOSPITAL.EXE` from them with
-`tools/lewrite.py --strict`, checks it is byte-identical to `orig/`'s, links
-`build/link/hosp.exe`, and starts the rebuilt game in DOSBox from a run
-directory `build/run` (game data linked from `orig/`; its own
-`HOSPITAL.CFG`, set to English on first run, and its saves). Run it from the
-repository root.
+In the browser: <https://theme-hospital-enhanced.vercel.app/>. Pick your
+installer or game folder on the page; the install runs in the page and no
+game files are served.
 
-`--wlink` builds and plays only the wlink build (see [Two builds of the
-EXE](#two-builds-of-the-exe)), without the byte-identical rebuild and its
-check, so it needs only the game's files, not `orig/HOSPITAL.EXE`:
-`DOS4GW.EXE`, `HOSPITAL.CFG` and the data directories (`DATA` and the others
-above).
+## Building from source
 
-## Developing
+CMake 3.24 or later and a C++20 compiler; SDL3 is used from the system if
+found and fetched otherwise, and Dear ImGui is fetched. With Nix, the
+`enhanced` dev shell has everything:
 
-Enter the dev shell and build:
+    nix develop path:./nix#enhanced
+    cmake -S enhanced -B build/enhanced -G Ninja -DCMAKE_BUILD_TYPE=Release
+    cmake --build build/enhanced
+    build/enhanced/th_enhanced
 
-```sh
-nix develop path:./nix
-python3 configure.py     # writes build.ninja and objdiff.json; rerun after adding a source file
-ninja                    # target and base objects (without orig/HOSPITAL.EXE: base objects only)
-ninja build/report.json  # objdiff report and progress summary (plain `ninja` does not rebuild it)
-ninja link               # the wlink build, for changed code; unresolved symbols in build/link/report.txt
-```
+The [developer guide](enhanced/README.md) covers the tests, the replay check
+against the original, the debug reports, the browser build and its deploy.
+[AGENTS.md](AGENTS.md) holds the working rules for coding agents.
 
-`objdiff` (GUI) can open the project root directly; it reads `objdiff.json`.
+## The decompilation
 
-The matching side (`build/target`, split from `orig/HOSPITAL.EXE` by
-`tools/split.py`; `ninja all`, `ninja report`, objdiff, `tools/check.py`,
-`tools/lewrite.py`) needs the original EXE. Compiling the units and linking
-them with wlink (`ninja link`) does not: without the EXE,
-`configure.py` says so, and the matching targets fail with that message if
-built.
+The port is built from a matching decompilation of the game: C++ that, compiled
+with the original Watcom toolchain, reproduces `HOSPITAL.EXE` byte for byte.
+That work, with its own README, its techniques
+([docs/MATCHING.md](https://github.com/matteo-pacini/theme-hospital-decomp/blob/decomp/docs/MATCHING.md))
+and its tooling, lives on the
+[`decomp`](https://github.com/matteo-pacini/theme-hospital-decomp/tree/decomp)
+branch. `src/` and `include/` here are its read-only reference for the replay
+checks; fixes to them are made on `decomp` and merged into `master`.
 
-Editors: `configure.py` also writes `compile_commands.json`, which lets
-clangd and clang-tidy parse the sources (clang flags approximating Watcom's
-dialect, with `tools/clangd/compat.h` pre-included). A few Watcom-only
-constructs still show as errors (ordered comparisons of a pointer with 0,
-one callback type). For Neovim, `.nvim.lua` (read with `exrc` on) turns
-format-on-save off here, since plain clang-format rewrites Watcom pragmas;
-use `tools/format.py` instead.
+## Credits and legal
 
-Before committing, check that everything still matches:
+Original game by Bullfrog Productions. Published by Electronic Arts (1997).
+Decompiled and enhanced by Matteo Pacini,
+[github.com/matteo-pacini/theme-hospital-decomp](https://github.com/matteo-pacini/theme-hospital-decomp).
 
-```sh
-ninja build/report.json                       # every function matched (build/report.json measures)
-python3 tools/lewrite.py --strict             # rebuild HOSPITAL.EXE from the units alone
-cmp build/hospital.exe orig/HOSPITAL.EXE      # byte-identical
-```
+Theme Hospital is a trademark of Electronic Arts. This project is not
+affiliated with or endorsed by EA, Bullfrog Productions, RAD Game Tools or
+Sybase; it is an unofficial, non-commercial fan project. The repository holds
+no game files, apart from the screenshots above. Please don't open issues or
+pull requests with game files or leaked material.
 
-Day-to-day tools (see [Matching a function](#matching-a-function) and
-[docs/MATCHING.md](docs/MATCHING.md)):
-
-- `tools/fn.py 0xADDR`: disassembly of a function with relocations named,
-  then rz-ghidra pseudo-C.
-- `tools/check.py src/FILE.cpp`: builds one file's unit in isolation and
-  shows each function's match; safe to run while other builds run.
-- `tools/variants.py src/FILE.cpp 0xADDR`: searches source rewrites
-  (operand and declaration order, block scopes, zero tests, variable reuse)
-  for a near-miss.
-- `tools/setfn.py 0xADDR NAME`: rename or add one entry in
-  `config/functions.txt`.
-- `tools/format.py FILE...`: clang-format (`.clang-format`) with Watcom
-  `#pragma`s left exactly as written; `--check` lists files that would
-  change. Formatting never changes the build, but check it as above.
-
-Renaming is safe as long as the build still matches: locals and parameters
-can be renamed freely; functions and globals need their entries in
-`config/functions.txt` / `config/symbols.txt` changed with them; never
-reorder declarations, since order decides stack slots and (for C files)
-the layout of statics, whose names also decide their order (see "Static
-data layout" in docs/MATCHING.md).
-
-Named constants live in `include/enums.h`. Enumerators only replace
-literals: fields, parameters and variables keep their integer types, since
-an enum-typed declaration changes layout and mangled names. Bit masks are
-`#define`s, because Watcom compiles `field & ENUMERATOR` differently from
-`field & 8`. The data-only table files start with `// clang-format off` to
-keep their hand-laid-out initialisers.
-
-## Enhanced
-
-`enhanced/` is a new engine for the game, in C++20 with SDL3 and Dear ImGui,
-for Windows, macOS and Linux, that reads your own copy of the game's data and
-runs at any resolution and aspect ratio. It ports the game's behaviour from
-the decompilation and is a playable port in progress, checked against the
-original by replays; its status is in [enhanced/README.md](enhanced/README.md).
-Build and run it with `nix run path:./nix#enhanced`.
-
-## Names from the 1997 demo
-
-The March 1997 demo of the game (`HOSPITAL.EXE`, sha1
-`d37aaea89e22be35467b3050280394c74a5e0b07`, on archive.org as `HOSP_zip`) was
-built from nearly the same source and ships with Watcom debug info: 437 source
-modules and about 4,000 named functions and globals. It was built with
-optimisation, so its code differs from retail; `tools/mapdemo.py` and
-`tools/mapdata.py` match retail functions and globals to it by strings, call
-graphs, link order and struct offsets. The results are committed as
-`config/demo_map.txt` and `config/demo_data_map.txt`, so the demo is only
-needed to regenerate them (extract it to `orig/demo-1997-03/`, then
-`wdump -Dx HOSPITAL.EXE > HOSPITAL.debug.txt`).
-
-## Toolchain
-
-The game code was built with Watcom C/C++ 10.x (`wpp386`), unoptimised, with
-each function in its own segment. The flake provides:
-
-| Tool | Purpose |
-| --- | --- |
-| Watcom C/C++ 10.6 (`$WATCOM_10_6`) | period compiler, Win32 host binaries |
-| Watcom C/C++ 10.0a (`$WATCOM_10_0A`) | built the C runtime's printf/stdio modules |
-| Watcom C/C++ 10.5 and 10.6 runtime libraries (`$WATCOM_LIBS_10_5`, `$WATCOM_LIBS_10_6`) | `LIB386` of each CD (downloaded from archive.org on the first `nix develop path:./nix`); several runtime units are built from their modules |
-| wibo 1.2.0 | runs the Win32 compiler on Linux |
-| objdiff-cli 3.8.1 | diffing and progress reports |
-| rizin + rz-ghidra | disassembly and decompiler output (`pdg`) |
-| Open Watcom v2 | `wdis` for inspecting OMF objects |
-
-Compiler flags for the game: `wpp386 -s -ot -d2 -zm`, in that order (`-d2`: full
-debug info, which also disables optimisation; the earlier `-ot` still steers
-register allocation). Library flags are in `config/cflags.txt`.
-
-## Layout
-
-| Path | Contents |
-| --- | --- |
-| `config/functions.txt` | every function: address, size, symbol (from `tools/discover.py`; edit single entries with `tools/setfn.py`) |
-| `config/cflags.txt` | compiler, version and flags for each source file |
-| `config/demo_map.txt`, `config/demo_data_map.txt` | retail functions and globals paired with the demo's names |
-| `config/symbols.txt` | named data symbols |
-| `config/relocs.txt` | relocations named after a symbol other than the one containing their target |
-| `config/sections.txt` | a module's own data segments (compiler-generated tables, string literals, the data of data-only modules), emitted into its target object |
-| `src/` | decompiled C++ |
-| `src/**/*.standin.s` | assembly stand-ins for functions of the source file of the same name (see `tools/standin.py`) |
-| `include/` | shared headers |
-| `tools/` | LE reader, splitter, compiler wrapper, OMF-to-ELF converter, matching aids |
-| `nix/` | the flake (toolchain, dev shell, `nix run` apps), its play and unpack scripts, the owdemangle filter |
-| `enhanced/` | a new SDL3 + Dear ImGui engine for the game at any resolution, using the decompilation as its reference (see `enhanced/README.md`) |
-
-## Matching a function
-
-1. Pick a function from `config/functions.txt`; view it with
-   `tools/fn.py 0xADDR`.
-2. Write it in a source file under `src/`, declared `extern "C"` and named
-   `fn_XXXXXXXX` (the trailing `_` in the symbol comes from Watcom's register
-   calling convention). Reference unnamed globals as `D_XXXXXXXX`.
-3. Put `// FUNCTION: 0xXXXXXXXX` on the line above it (a new file needs
-   `python3 configure.py` once).
-4. `tools/check.py src/<file>.cpp` for per-function results, `ninja report`
-   for overall progress, or diff interactively:
-   `objdiff-cli diff -p . -u game/<unit> fn_XXXXXXXX_`.
-5. For a near-miss, `tools/variants.py src/<file>.cpp 0xADDR` searches
-   operand orders, declaration orders and similar rewrites for a better
-   match.
-
-See [docs/MATCHING.md](docs/MATCHING.md) for compiler behaviour and the
-source idioms that reproduce it.
-
-[docs/BUGS.md](docs/BUGS.md) lists bugs in the original code that the
-decompilation keeps.
-
-## Legal
-
-This is an unofficial, non-commercial fan project, not affiliated with or
-endorsed by Electronic Arts, Bullfrog Productions, RAD Game Tools or
-Sybase. Theme Hospital is (C) 1997 Bullfrog Productions Ltd / Electronic
-Arts Inc.; trademarks belong to their owners. The repository holds no game
-assets and no original binaries: you need your own copy of the game (the
-GOG release) to build it. Please don't open issues or pull requests with
-game files or leaked material.
-
-The tools, build system and documentation are GPLv3 ([COPYING](COPYING)).
-The reconstructed code in `src/` and `include/`, including the Miles Sound
-System, Smacker and Watcom runtime code linked into the game, is not ours to
-license; see [LICENSE](LICENSE). If you hold rights to any of it and object,
-open an issue and it will be taken down.
+The engine, tools, build system and documentation are licensed under the GNU
+General Public License, version 3 ([COPYING](COPYING)); the xBRZ scaler by
+Zenju is its author's under GPL-3.0 only, so binaries that contain it are
+conveyed under version 3. The reconstructed code in `src/` and `include/`,
+including the Miles Sound System, Smacker and Watcom runtime code linked into
+the game, is not ours to license; see [LICENSE](LICENSE). If you hold rights
+to any of it and object, open an issue and it will be taken down.

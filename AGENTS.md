@@ -1,8 +1,14 @@
 # Agent notes
 
-`src/` and `include/` are the decompiled original: read them, never edit them.
-`enhanced/` is a C++20 port of it (SDL3, ImGui for dev tools only), ported
-function by function with the same RNG draw order. Read `enhanced/README.md`.
+`enhanced/` is a C++20 port of Theme Hospital (SDL3, ImGui for dev tools
+only), ported function by function with the same RNG draw order. Read
+`enhanced/README.md`.
+
+`src/` and `include/` are the matching decompilation it is ported from: the
+read-only reference, never edited here. The replay gate builds the
+instrumented original from them (with `tools/`, `config/`, `configure.py`
+and `nix/`). Fixes to them are made on the `decomp` branch and merged into
+`master`.
 
 ## Multi-agent work
 Multi-agent work runs under herdr: one lead briefs workers, each in its own
@@ -11,9 +17,18 @@ prints; with `HERDR_ENV=1`, also read `docs/agents/herdr.md` (models,
 layout, briefs, worktrees, messaging).
 
 ## Git
-- Enhanced work lives on branch `enhanced` only, never on master.
+- Work on `master`. Changes to `src/`, `include/`, the root `tools/`,
+  `config/` and `configure.py` are not made here: they come from the
+  `decomp` branch by merge.
+- Game files are never committed. The only game-derived files allowed in the
+  repository are the README screenshots in `docs/images/`.
 - Commit only when asked; stage by path; no `commit -a`, no
   `git checkout <file>` to undo, no push unless asked.
+- After each feature is committed to `master`, redeploy the public browser
+  build with `enhanced/tools/web_deploy.sh` (code only: never `--with-data`
+  to production; the protected data preview only when the user asks), then
+  check that the site loads. A deploy publishes, so it needs the same go-ahead
+  as a push.
 
 ## Gate
 Work is done when the gate passes:

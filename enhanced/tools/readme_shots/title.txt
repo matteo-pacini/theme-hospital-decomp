@@ -1,0 +1,9 @@
+# The title picture with the credits box over it (README screenshot).
+# Size 1280x720
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 260
+screenshot title
