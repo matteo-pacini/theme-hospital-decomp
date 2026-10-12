@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to release, vX.Y.Z (must equal v + the project VERSION in enhanced/CMakeLists.txt)
+        description: Existing tag to release, vX.Y.Z (must equal v + the project VERSION in enhanced/CMakeLists.txt); a dry run also takes a branch or commit
         required: true
         type: string
       dry_run:
@@ -30,39 +30,51 @@ env:
 
 jobs:
   # The tag names the project version, its changelog section exists (and, on
-  # a real run, is dated), no release exists yet; extracts the notes.
+  # a real run, is dated), no release exists yet; extracts the notes. A dry
+  # run also takes a branch or commit: it then builds what that ref holds and
+  # names the files after the project version, skipping the tag's checks.
   verify:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
       sha: ${{ steps.version.outputs.sha }}
+      name: ${{ steps.version.outputs.name }}
     steps:
       - name: Check the tag name
+        if: ${{ !inputs.dry_run }}
         run: |
-          case "$TAG" in
-            v[0-9]*.[0-9]*.[0-9]*) ;;
-            *) echo "::error::tag '$TAG' is not of the form vX.Y.Z"; exit 1 ;;
-          esac
           printf '%s\n' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' ||
             { echo "::error::tag '$TAG' is not of the form vX.Y.Z"; exit 1; }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: refs/tags/${{ inputs.tag }}
+          ref: ${{ inputs.dry_run && inputs.tag || format('refs/tags/{0}', inputs.tag) }}
           persist-credentials: false
       - name: Tag against the project version
         id: version
         run: |
-          version=$(enhanced/tools/release/version.sh "$TAG")
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "$DRY_RUN" = true ] && ! git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            version=$(enhanced/tools/release/version.sh)
+            name=v$version
+            echo "Dry run of $TAG (not a tag): files named $name, tag checks skipped." >> "$GITHUB_STEP_SUMMARY"
+          else
+            version=$(enhanced/tools/release/version.sh "$TAG")
+            name=$TAG
+          fi
+          {
+            echo "version=$version"
+            echo "name=$name"
+            echo "sha=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
           echo "### $TAG (version $version, commit $(git rev-parse --short HEAD))" >> "$GITHUB_STEP_SUMMARY"
           [ "$DRY_RUN" = true ] && echo "Dry run: nothing is released or deployed." >> "$GITHUB_STEP_SUMMARY" || true
       - name: Release notes
+        env:
+          NAME: ${{ steps.version.outputs.name }}
         run: |
           if [ "$DRY_RUN" = true ]; then
-            enhanced/tools/release/notes.sh "$TAG" notes.md
+            enhanced/tools/release/notes.sh "$NAME" notes.md
           else
-            enhanced/tools/release/notes.sh "$TAG" notes.md --require-date
+            enhanced/tools/release/notes.sh "$NAME" notes.md --require-date
           fi
       - name: No release of this tag yet
         if: ${{ !inputs.dry_run }}
@@ -106,6 +118,8 @@ jobs:
     needs: verify
     name: build ${{ matrix.id }}
     runs-on: ${{ matrix.os }}
+    env:
+      NAME: ${{ needs.verify.outputs.name }}
     strategy:
       fail-fast: false
       matrix:
@@ -148,7 +162,7 @@ jobs:
         run: |
           enhanced/tools/release/check_binary.sh linux build/release/th_enhanced 2.35
           enhanced/tools/release/smoke.sh build/release/th_enhanced
-          enhanced/tools/release/package_linux.sh build/release "${{ matrix.arch }}" "$TAG" dist
+          enhanced/tools/release/package_linux.sh build/release "${{ matrix.arch }}" "$NAME" dist
           enhanced/tools/release/check_contents.sh dist/*.AppImage
 
       # --- Windows: MSYS2 (UCRT64 GCC on x86_64, CLANGARM64 clang on arm64).
@@ -170,7 +184,7 @@ jobs:
         run: |
           enhanced/tools/release/check_binary.sh windows build/release/ThemeHospitalEnhanced.exe
           enhanced/tools/release/smoke.sh build/release/ThemeHospitalEnhanced.exe
-          enhanced/tools/release/package_windows.sh build/release "${{ matrix.arch }}" "$TAG" dist
+          enhanced/tools/release/package_windows.sh build/release "${{ matrix.arch }}" "$NAME" dist
           enhanced/tools/release/check_contents.sh dist/*.zip
 
       # --- macOS: arm64 only, minimum macOS 13.3.
@@ -185,7 +199,7 @@ jobs:
           program=$(find "build/release/Theme Hospital Enhanced.app/Contents/MacOS" -type f | head -n 1)
           enhanced/tools/release/check_binary.sh macos "$program"
           enhanced/tools/release/smoke.sh "$program"
-          enhanced/tools/release/package_macos.sh build/release "$TAG" dist
+          enhanced/tools/release/package_macos.sh build/release "$NAME" dist
           enhanced/tools/release/check_contents.sh dist/*.zip
 
       - name: Checksum
