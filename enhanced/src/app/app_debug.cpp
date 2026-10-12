@@ -2,6 +2,7 @@
 // it and the driven runs' `expect` read.
 
 #include "app/app.h"
+#include "app/sysinfo.h"
 #include "app/web.h"
 #include "core/data/gamedata.h"
 #include "core/world/debug_dump.h"
@@ -215,7 +216,8 @@ std::string App::debug_state() const
     SDL_GetMouseState(&mx, &my);
     std::string s = "# Theme Hospital Enhanced debug report\n";
     s += std::format("version: {}\n", kVersion);
-    s += std::format("data: {}\n", data_ ? data_->dir().string() : "");
+    const char *home = SDL_GetUserFolder(SDL_FOLDER_HOME);
+    s += std::format("data: {}\n", data_ ? sysinfo::without_home(data_->dir().string(), home ? home : "") : "");
     s += std::format("window: {}x{} px, zoom {}, UI scale {}\n", w, h, zoom(), ui_scale());
     s += std::format("screen: {}", screen_name());
     s += std::format("\nfade: {}\nscreen shots: {}", fader_.state(), screen_shots_);

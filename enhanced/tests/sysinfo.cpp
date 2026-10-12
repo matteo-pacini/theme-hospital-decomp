@@ -23,4 +23,12 @@ void test_sysinfo_parse()
     CHECK(format_mib(512) == "512 MiB");
     CHECK(format_mib(16384) == "16 GiB");
     CHECK(format_mib(7782) == "7.6 GiB");
+
+    CHECK(without_home("/home/ana/.local/share/ThemeHospitalEnhanced/game", "/home/ana/") ==
+          "~/.local/share/ThemeHospitalEnhanced/game");
+    CHECK(without_home("/home/ana", "/home/ana") == "~");
+    CHECK(without_home("/home/anabel/game", "/home/ana") == "/home/anabel/game");
+    CHECK(without_home("C:\\Users\\Ana\\AppData\\Local\\x", "C:\\Users\\Ana\\") == "~\\AppData\\Local\\x");
+    CHECK(without_home("/persist/game", "/") == "/persist/game");
+    CHECK(without_home("/opt/th/game", "") == "/opt/th/game");
 }

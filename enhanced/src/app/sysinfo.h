@@ -20,6 +20,11 @@ std::string parse_cpuinfo_model(std::string_view text);
 // "16 GiB", "7.6 GiB" or "512 MiB" for a size in MiB.
 std::string format_mib(int mib);
 
+// `path` with the home folder `home` (trailing separators ignored) shown as
+// "~", so that a report shared in public names no user; `path` unchanged
+// when it is not under `home` or `home` is empty or a root.
+std::string without_home(std::string_view path, std::string_view home);
+
 // The operating system's name and version, and the kernel or build, from the
 // running system ("unknown" where it cannot be read). The browser build
 // reports the user agent instead (web::user_agent).

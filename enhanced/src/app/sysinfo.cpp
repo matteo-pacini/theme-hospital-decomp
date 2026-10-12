@@ -88,6 +88,18 @@ std::string format_mib(int mib)
     return std::format("{:.1f} GiB", double(mib) / 1024.0);
 }
 
+std::string without_home(std::string_view path, std::string_view home)
+{
+    while (home.size() > 1 && (home.back() == '/' || home.back() == '\\'))
+        home.remove_suffix(1);
+    if (home.size() <= 1 || !path.starts_with(home))
+        return std::string(path);
+    std::string_view rest = path.substr(home.size());
+    if (!rest.empty() && rest.front() != '/' && rest.front() != '\\')
+        return std::string(path);
+    return "~" + std::string(rest);
+}
+
 const char *architecture()
 {
 #if defined(__x86_64__) || defined(_M_X64)
