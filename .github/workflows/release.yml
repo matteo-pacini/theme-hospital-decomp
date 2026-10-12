@@ -1,7 +1,8 @@
-# Builds the release files of an existing tag and, on a real run, drafts the
-# GitHub release and redeploys the web build. Run by hand from the Actions
-# tab (Release > Run workflow); the job never creates a tag. The steps are
-# scripts in enhanced/tools/release/, which also run locally.
+# Builds the release files (the Linux AppImages) of an existing tag and, on
+# a real run, drafts the GitHub release and redeploys the web build. Run by
+# hand from the Actions tab (Release > Run workflow); the job never creates a
+# tag. The steps are scripts in enhanced/tools/release/, which also run
+# locally.
 name: Release
 
 on:
@@ -126,9 +127,6 @@ jobs:
         include:
           - { id: linux-x86_64, os: ubuntu-22.04, kind: linux, arch: x86_64 }
           - { id: linux-arm64, os: ubuntu-22.04-arm, kind: linux, arch: arm64 }
-          - { id: windows-x86_64, os: windows-2022, kind: windows, arch: x86_64, msystem: UCRT64, msys_cache: true }
-          - { id: windows-arm64, os: windows-11-arm, kind: windows, arch: arm64, msystem: CLANGARM64, msys_cache: false }
-          - { id: macos-arm64, os: macos-14, kind: macos, arch: arm64 }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -165,45 +163,6 @@ jobs:
           enhanced/tools/release/package_linux.sh build/release "${{ matrix.arch }}" "$NAME" dist
           enhanced/tools/release/check_contents.sh dist/*.AppImage
 
-      # --- Windows: MSYS2 (UCRT64 GCC on x86_64, CLANGARM64 clang on arm64).
-      - name: MSYS2
-        if: ${{ matrix.kind == 'windows' }}
-        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
-        with:
-          msystem: ${{ matrix.msystem }}
-          # setup-msys2 cannot save its cache on windows-11-arm (no paccache).
-          cache: ${{ matrix.msys_cache }}
-          update: true
-          install: git zip unzip
-          pacboy: toolchain:p cmake:p ninja:p
-      - name: Build and test (Windows)
-        if: ${{ matrix.kind == 'windows' }}
-        shell: msys2 {0}
-        run: enhanced/tools/release/build.sh build/release
-      - name: Check, smoke test, package (Windows)
-        if: ${{ matrix.kind == 'windows' }}
-        shell: msys2 {0}
-        run: |
-          enhanced/tools/release/check_binary.sh windows build/release/ThemeHospitalEnhanced.exe
-          enhanced/tools/release/smoke.sh build/release/ThemeHospitalEnhanced.exe
-          enhanced/tools/release/package_windows.sh build/release "${{ matrix.arch }}" "$NAME" dist
-          enhanced/tools/release/check_contents.sh dist/*.zip
-
-      # --- macOS: arm64 only, minimum macOS 13.3.
-      - name: Build and test (macOS)
-        if: ${{ matrix.kind == 'macos' }}
-        run: |
-          command -v ninja > /dev/null || brew install ninja
-          enhanced/tools/release/build.sh build/release -DCMAKE_OSX_ARCHITECTURES=arm64
-      - name: Check, smoke test, package (macOS)
-        if: ${{ matrix.kind == 'macos' }}
-        run: |
-          program=$(find "build/release/Theme Hospital Enhanced.app/Contents/MacOS" -type f | head -n 1)
-          enhanced/tools/release/check_binary.sh macos "$program"
-          enhanced/tools/release/smoke.sh "$program"
-          enhanced/tools/release/package_macos.sh build/release "$NAME" dist
-          enhanced/tools/release/check_contents.sh dist/*.zip
-
       - name: Checksum
         shell: bash
         run: |
@@ -216,7 +175,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # Real run only: the draft release, with the five files and the notes. The
+  # Real run only: the draft release, with the AppImages and the notes. The
   # maintainer publishes it.
   release:
     if: ${{ !inputs.dry_run }}
@@ -234,11 +193,11 @@ jobs:
           pattern: release-*
           path: files
           merge-multiple: true
-      - name: Exactly the five files
+      - name: Exactly the expected files
         run: |
           ls -l files
           {
-            for platform in linux-x86_64.AppImage linux-arm64.AppImage windows-x86_64.zip windows-arm64.zip macos-arm64.zip; do
+            for platform in linux-x86_64.AppImage linux-arm64.AppImage; do
               echo "theme-hospital-enhanced-$TAG-$platform"
             done
             echo notes.md
