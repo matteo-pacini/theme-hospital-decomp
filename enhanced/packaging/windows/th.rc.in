@@ -1,0 +1,32 @@
+// Generated from packaging/windows/th.rc.in by CMake. Plain numbers rather
+// than winver.h's names, so windres and llvm-rc read it alike.
+1 ICON "@TH_ICON_ICO@"
+
+1 VERSIONINFO
+FILEVERSION @TH_VERSION_COMMA@
+PRODUCTVERSION @TH_VERSION_COMMA@
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"
+    BEGIN
+      VALUE "CompanyName", "Matteo Pacini"
+      VALUE "FileDescription", "Theme Hospital Enhanced"
+      VALUE "FileVersion", "@PROJECT_VERSION@"
+      VALUE "InternalName", "ThemeHospitalEnhanced"
+      VALUE "LegalCopyright", "Free software, GPL 3 (with xBRZ by Zenju)."
+      VALUE "OriginalFilename", "ThemeHospitalEnhanced.exe"
+      VALUE "ProductName", "Theme Hospital Enhanced"
+      VALUE "ProductVersion", "@PROJECT_VERSION@"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1200
+  END
+END

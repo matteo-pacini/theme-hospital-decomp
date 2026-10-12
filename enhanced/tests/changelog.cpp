@@ -56,12 +56,17 @@ void test_changelog_text(const char *)
     CHECK(th::changelog_paragraphs(md) == want);
     CHECK(th::changelog_paragraphs("").empty());
     CHECK(th::changelog_paragraphs("\n\n").empty());
-    // The project's own file reduces to a heading and some bullets.
+    // A heading may carry a date, shown as written.
+    const std::vector<std::string> dated = {"v1.0.0 - 2026-10-20", "", "Text"};
+    CHECK(th::changelog_paragraphs("## v1.0.0 - 2026-10-20\n\nText\n") == dated);
+    // The project's own file reduces to a heading and some bullets; the
+    // version's heading is undated or dated.
     std::vector<std::string> own = th::changelog_paragraphs(th::kChangelogMarkdown);
     CHECK(own.size() > 5 && own[0] == "CHANGELOG");
+    const std::string head = std::string("v") + th::kVersion;
     bool version = false;
     for (const std::string &p : own)
-        version |= p == std::string("v") + th::kVersion;
+        version |= p == head || p.starts_with(head + " - ");
     CHECK(version);
 
     CHECK(th::changelog_clamp_scroll(-5, 100, 40) == 0);

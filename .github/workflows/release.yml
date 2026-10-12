@@ -1,0 +1,264 @@
+# Builds the release files of an existing tag and, on a real run, drafts the
+# GitHub release and redeploys the web build. Run by hand from the Actions
+# tab (Release > Run workflow); the job never creates a tag. The steps are
+# scripts in enhanced/tools/release/, which also run locally.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release, vX.Y.Z (must equal v + the project VERSION in enhanced/CMakeLists.txt)
+        required: true
+        type: string
+      dry_run:
+        description: Dry run - build and check everything, upload workflow artifacts only (no release, no deploy)
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag }}
+  DRY_RUN: ${{ inputs.dry_run }}
+
+jobs:
+  # The tag names the project version, its changelog section exists (and, on
+  # a real run, is dated), no release exists yet; extracts the notes.
+  verify:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.version.outputs.sha }}
+    steps:
+      - name: Check the tag name
+        run: |
+          case "$TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::tag '$TAG' is not of the form vX.Y.Z"; exit 1 ;;
+          esac
+          printf '%s\n' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' ||
+            { echo "::error::tag '$TAG' is not of the form vX.Y.Z"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+      - name: Tag against the project version
+        id: version
+        run: |
+          version=$(enhanced/tools/release/version.sh "$TAG")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "### $TAG (version $version, commit $(git rev-parse --short HEAD))" >> "$GITHUB_STEP_SUMMARY"
+          [ "$DRY_RUN" = true ] && echo "Dry run: nothing is released or deployed." >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Release notes
+        run: |
+          if [ "$DRY_RUN" = true ]; then
+            enhanced/tools/release/notes.sh "$TAG" notes.md
+          else
+            enhanced/tools/release/notes.sh "$TAG" notes.md --require-date
+          fi
+      - name: No release of this tag yet
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "::error::a release for $TAG exists already"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-notes
+          path: notes.md
+          if-no-files-found: error
+          retention-days: 14
+
+  # clang-tidy and clang-format, through the repository's nix shell.
+  lint:
+    needs: verify
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: wimpysworld/nothing-but-nix@687c797a730352432950c707ab493fcc951818d7 # v10
+        with:
+          hatchet-protocol: "rampage"
+          witness-carnage: true
+          nix-permission-edict: true
+      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          persist-credentials: false
+      - name: tidy and clang-format
+        run: nix develop path:./nix#enhanced -c enhanced/tools/release/lint.sh
+
+  # One job per release file: configure, build with no warning, th_tests
+  # without data, check the binary, start it headless, package, check the
+  # package's contents.
+  build:
+    needs: verify
+    name: build ${{ matrix.id }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { id: linux-x86_64, os: ubuntu-22.04, kind: linux, arch: x86_64 }
+          - { id: linux-arm64, os: ubuntu-22.04-arm, kind: linux, arch: arm64 }
+          - { id: windows-x86_64, os: windows-2022, kind: windows, arch: x86_64, msystem: UCRT64 }
+          - { id: windows-arm64, os: windows-11-arm, kind: windows, arch: arm64, msystem: CLANGARM64 }
+          - { id: macos-arm64, os: macos-14, kind: macos, arch: arm64 }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          persist-credentials: false
+
+      # --- Linux: GCC 13 on the oldest runner (glibc 2.35); SDL's backends
+      # are compiled in only when their development packages are present.
+      - name: Linux toolchain and SDL dependencies
+        if: ${{ matrix.kind == 'linux' }}
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            g++-13 ninja-build file curl pkg-config \
+            libasound2-dev libpulse-dev libpipewire-0.3-dev libsndio-dev \
+            libx11-dev libxext-dev libxcursor-dev libxi-dev libxfixes-dev \
+            libxrandr-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libwayland-dev wayland-protocols libdecor-0-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libegl1-mesa-dev \
+            libdbus-1-dev libudev-dev libibus-1.0-dev
+          cmake --version
+      - name: Build and test (Linux)
+        if: ${{ matrix.kind == 'linux' }}
+        env:
+          CC: gcc-13
+          CXX: g++-13
+        run: enhanced/tools/release/build.sh build/release
+      - name: Check, smoke test, package (Linux)
+        if: ${{ matrix.kind == 'linux' }}
+        run: |
+          enhanced/tools/release/check_binary.sh linux build/release/th_enhanced 2.35
+          enhanced/tools/release/smoke.sh build/release/th_enhanced
+          enhanced/tools/release/package_linux.sh build/release "${{ matrix.arch }}" "$TAG" dist
+          enhanced/tools/release/check_contents.sh dist/*.AppImage
+
+      # --- Windows: MSYS2 (UCRT64 GCC on x86_64, CLANGARM64 clang on arm64).
+      - name: MSYS2
+        if: ${{ matrix.kind == 'windows' }}
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: git zip unzip
+          pacboy: toolchain:p cmake:p ninja:p
+      - name: Build and test (Windows)
+        if: ${{ matrix.kind == 'windows' }}
+        shell: msys2 {0}
+        run: enhanced/tools/release/build.sh build/release
+      - name: Check, smoke test, package (Windows)
+        if: ${{ matrix.kind == 'windows' }}
+        shell: msys2 {0}
+        run: |
+          enhanced/tools/release/check_binary.sh windows build/release/ThemeHospitalEnhanced.exe
+          enhanced/tools/release/smoke.sh build/release/ThemeHospitalEnhanced.exe
+          enhanced/tools/release/package_windows.sh build/release "${{ matrix.arch }}" "$TAG" dist
+          enhanced/tools/release/check_contents.sh dist/*.zip
+
+      # --- macOS: arm64 only, minimum macOS 13.3.
+      - name: Build and test (macOS)
+        if: ${{ matrix.kind == 'macos' }}
+        run: |
+          command -v ninja > /dev/null || brew install ninja
+          enhanced/tools/release/build.sh build/release -DCMAKE_OSX_ARCHITECTURES=arm64
+      - name: Check, smoke test, package (macOS)
+        if: ${{ matrix.kind == 'macos' }}
+        run: |
+          program=$(find "build/release/Theme Hospital Enhanced.app/Contents/MacOS" -type f | head -n 1)
+          enhanced/tools/release/check_binary.sh macos "$program"
+          enhanced/tools/release/smoke.sh "$program"
+          enhanced/tools/release/package_macos.sh build/release "$TAG" dist
+          enhanced/tools/release/check_contents.sh dist/*.zip
+
+      - name: Checksum
+        shell: bash
+        run: |
+          cd dist
+          { echo '```'; if command -v sha256sum > /dev/null; then sha256sum -- *; else shasum -a 256 -- *; fi; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-${{ matrix.id }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  # Real run only: the draft release, with the five files and the notes. The
+  # maintainer publishes it.
+  release:
+    if: ${{ !inputs.dry_run }}
+    needs: [verify, lint, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: release-*
+          path: files
+          merge-multiple: true
+      - name: Exactly the five files
+        run: |
+          ls -l files
+          {
+            for platform in linux-x86_64.AppImage linux-arm64.AppImage windows-x86_64.zip windows-arm64.zip macos-arm64.zip; do
+              echo "theme-hospital-enhanced-$TAG-$platform"
+            done
+            echo notes.md
+          } | sort > expected.txt
+          (cd files && printf "%s\n" *) | sort > found.txt
+          diff expected.txt found.txt
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mv files/notes.md notes.md
+          gh release create "$TAG" files/* --draft --verify-tag \
+            --title "$TAG" --notes-file notes.md
+
+  # Real run only, after the draft exists: the public site, code only (never
+  # game data). The secrets are the `production` environment's.
+  web:
+    if: ${{ !inputs.dry_run }}
+    needs: [verify, release]
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: wimpysworld/nothing-but-nix@687c797a730352432950c707ab493fcc951818d7 # v10
+        with:
+          hatchet-protocol: "rampage"
+          witness-carnage: true
+          nix-permission-edict: true
+      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          persist-credentials: false
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: enhanced/tools/web_deploy.sh

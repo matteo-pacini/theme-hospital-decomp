@@ -191,7 +191,7 @@ void test_upscale_cache_rejects_inconsistent()
     CHECK(th::build_map_hires(sheets, config, {}, built));
 
     const std::filesystem::path dir =
-        std::filesystem::temp_directory_path() / ("th_upscale_cache_bad_" + std::to_string(long(&built) & 0xffff));
+        std::filesystem::temp_directory_path() / ("th_upscale_cache_bad_" + std::to_string(uintptr_t(&built) & 0xffff));
     std::filesystem::remove_all(dir);
     std::string error;
     th::MapHires read;
@@ -239,7 +239,7 @@ void test_upscale_cache_round_trip()
     CHECK(built.blocks.entries[0].width == 12 && built.blocks.entries[0].height == 9);
 
     const std::filesystem::path dir =
-        std::filesystem::temp_directory_path() / ("th_upscale_cache_test_" + std::to_string(long(&last) & 0xffff));
+        std::filesystem::temp_directory_path() / ("th_upscale_cache_test_" + std::to_string(uintptr_t(&last) & 0xffff));
     std::filesystem::remove_all(dir);
     std::string error;
     CHECK(th::write_upscale_cache(dir, config, sheets, built, &error));

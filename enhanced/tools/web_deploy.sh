@@ -31,6 +31,12 @@
 # Needs `vercel login` done once (the CLI is vercel@$VERCEL_VERSION through
 # npx: it is not in nixpkgs). TH_VERCEL_PROJECT names the Vercel project
 # (default theme-hospital-enhanced).
+#
+# In CI there is no login: with VERCEL_TOKEN, VERCEL_ORG_ID and
+# VERCEL_PROJECT_ID in the environment (the CLI reads all three itself) the
+# production deploy goes to the project those ids name, which must exist, and
+# TH_VERCEL_PROJECT is not used. Without the two ids, or with --preview or
+# --with-data, the script behaves as described above.
 set -eu
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
@@ -82,6 +88,19 @@ ensure_project()
 }
 
 if [ "$preview" = 0 ]; then
+  if [ -n "${VERCEL_ORG_ID:-}" ] && [ -n "${VERCEL_PROJECT_ID:-}" ]; then
+    # With both ids the CLI takes the project from them (an explicit
+    # --project would have it look for a link or a login instead).
+    if [ "$dry_run" = 1 ]; then
+      echo "would run: $vercel deploy $out --prod --yes (project $VERCEL_PROJECT_ID of $VERCEL_ORG_ID)"
+      exit 0
+    fi
+    [ -n "${VERCEL_TOKEN:-}" ] || {
+      echo "web_deploy: VERCEL_ORG_ID and VERCEL_PROJECT_ID are set but VERCEL_TOKEN is not" >&2
+      exit 2
+    }
+    exec $vercel deploy "$out" --prod --yes
+  fi
   if [ "$dry_run" = 1 ]; then
     echo "would run: $vercel deploy $out --project $project --prod --yes"
     exit 0

@@ -4,6 +4,8 @@
 #include <system_error>
 
 #ifdef _WIN32
+#include <windows.h>
+
 #include <knownfolders.h>
 #include <objbase.h>
 #include <shlobj.h>

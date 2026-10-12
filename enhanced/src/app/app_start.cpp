@@ -5,6 +5,8 @@
 #include "core/data/gamedata.h"
 #include "core/render/blit.h"
 #include "core/render/upscale/cache.h"
+#include "th_icon.h"
+#include "th_version.h"
 
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_sdlrenderer3.h>
@@ -20,6 +22,20 @@ namespace
 // corner.
 constexpr uint8_t kPointersDrawn[] = {kPointerDefault, kPointerStaff,     kPointerMachine,        kPointerPatient,
                                       kPointerQueue,   kPointerVaccinate, kPointerVaccinateTarget};
+
+// The window's icon, decoded from the PNG built into the program. A platform
+// with no window icons (the browser) refuses it; the window works without.
+void set_window_icon(SDL_Window *window)
+{
+    SDL_IOStream *io = SDL_IOFromConstMem(kIconPng, sizeof kIconPng);
+    SDL_Surface *icon = io ? SDL_LoadPNG_IO(io, true) : nullptr;
+    if (!icon) {
+        std::fprintf(stderr, "window icon: %s\n", SDL_GetError());
+        return;
+    }
+    SDL_SetWindowIcon(window, icon);
+    SDL_DestroySurface(icon);
+}
 
 // A static texture of `width` x `height` 0xAARRGGBB pixels, scaled without
 // smoothing.
@@ -89,6 +105,9 @@ bool App::init(int argc, char **argv)
 // --size it asked for, at a scale of 1.
 bool App::create_window(bool driving)
 {
+    // The identifier names the app to the desktop (Wayland app id, X11 class)
+    // and matches the macOS bundle's.
+    SDL_SetAppMetadata("Theme Hospital Enhanced", kVersion, "me.matteopacini.theme-hospital-enhanced");
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         std::fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
         return false;
@@ -103,6 +122,7 @@ bool App::create_window(bool driving)
         std::fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
         return false;
     }
+    set_window_icon(window_);
     renderer_ = SDL_CreateRenderer(window_, nullptr);
     if (!renderer_) {
         std::fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError());

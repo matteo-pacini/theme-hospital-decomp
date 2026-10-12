@@ -31,7 +31,8 @@ function assemblePage(withData) {
   page = page.replace('<script', '<script>' + flags + '</script>\n<script');
   fs.writeFileSync(path.join(out, 'index.html'), page);
   fs.copyFileSync(path.join(webDir, 'vercel.json'), path.join(out, 'vercel.json'));
-  const others = fs.readdirSync(dist).filter((n) => !['index.html', 'index.js', 'index.wasm'].includes(n));
+  fs.copyFileSync(path.join(dist, 'favicon.png'), path.join(out, 'favicon.png'));
+  const others = fs.readdirSync(dist).filter((n) => !['index.html', 'index.js', 'index.wasm', 'favicon.png'].includes(n));
   if (others.length) throw new Error('unexpected files in the build output: ' + others.join(' '));
   return files;
 }

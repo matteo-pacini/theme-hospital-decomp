@@ -1,4 +1,17 @@
 cmake_minimum_required(VERSION 3.24)
+
+# A release build (what CI ships): SDL3 built from source and linked
+# statically, the C++ runtime linked statically where the platform allows it,
+# no development data folder, the platform's application packaging (Windows
+# GUI executable with icon and version resource, macOS bundle). The default
+# is the development build.
+option(TH_RELEASE "Build the release binaries" OFF)
+if (TH_RELEASE AND CMAKE_HOST_APPLE)
+  # Both must be set before project().
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3" CACHE STRING "Minimum macOS version")
+  set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "macOS architectures")
+endif()
+
 project(theme_hospital_enhanced VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -11,6 +24,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # src/app/datadir.cpp).
 set(TH_DEV_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../orig" CACHE PATH
                     "Game data folder a development build reads first (empty to disable)")
+if (TH_RELEASE)
+  set(TH_DEV_DATA_DIR "" CACHE PATH "" FORCE)
+  if (WIN32)
+    enable_language(RC)
+  endif()
+  # glibc stays dynamic on Linux; MinGW has no dynamic runtime worth having.
+  if (MINGW)
+    add_link_options(-static)
+  elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_link_options(-static-libstdc++ -static-libgcc)
+  endif()
+endif()
 
 # WebAssembly (`emcmake cmake`, in the `web` dev shell). Every object, the
 # fetched dependencies included, is built with threads (th_enhanced installs
@@ -223,6 +248,12 @@ file(READ ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md TH_CHANGELOG)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md)
 configure_file(cmake/version.h.in generated/th_version.h @ONLY)
 configure_file(cmake/changelog.h.in generated/th_changelog.h @ONLY)
+# th_icon.h holds the window icon's PNG bytes.
+set(TH_ICON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon)
+file(READ ${TH_ICON_DIR}/icon-256.png TH_ICON_HEX HEX)
+string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," TH_ICON_BYTES "${TH_ICON_HEX}")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${TH_ICON_DIR}/icon-256.png)
+configure_file(cmake/icon.h.in generated/th_icon.h @ONLY)
 target_include_directories(th_core PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(th_core PUBLIC src)
 target_compile_options(th_core PRIVATE ${TH_WARNINGS})
@@ -265,6 +296,27 @@ if (TH_DEV_DATA_DIR AND NOT EMSCRIPTEN)
   target_compile_definitions(th_enhanced PRIVATE TH_DEV_DATA_DIR="${TH_DEV_DATA_DIR}")
 endif()
 
+# Release packaging: <build>/ThemeHospitalEnhanced.exe on Windows (GUI
+# subsystem, icon and version resource), <build>/Theme Hospital Enhanced.app
+# on macOS, <build>/th_enhanced elsewhere.
+if (TH_RELEASE AND WIN32)
+  set(TH_ICON_ICO ${TH_ICON_DIR}/icon.ico)
+  set(TH_VERSION_COMMA "${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},0")
+  configure_file(packaging/windows/th.rc.in ${CMAKE_BINARY_DIR}/th.rc @ONLY)
+  target_sources(th_enhanced PRIVATE ${CMAKE_BINARY_DIR}/th.rc)
+  set_target_properties(th_enhanced PROPERTIES WIN32_EXECUTABLE ON OUTPUT_NAME ThemeHospitalEnhanced)
+elseif (TH_RELEASE AND APPLE)
+  set(TH_BUNDLE_EXECUTABLE "Theme Hospital Enhanced")
+  configure_file(packaging/macos/Info.plist.in ${CMAKE_BINARY_DIR}/Info.plist @ONLY)
+  set(TH_ICNS ${TH_ICON_DIR}/icon.icns)
+  set_source_files_properties(${TH_ICNS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+  target_sources(th_enhanced PRIVATE ${TH_ICNS})
+  set_target_properties(th_enhanced PROPERTIES
+    MACOSX_BUNDLE ON
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_BINARY_DIR}/Info.plist
+    OUTPUT_NAME "${TH_BUNDLE_EXECUTABLE}")
+endif()
+
 # The browser build: build/web/dist/index.html, index.js and index.wasm, with
 # the shell page and the JS bridge of web/ (storage, picker, reports). The
 # thread pool holds the install thread and the audio threads SDL may start.
@@ -272,6 +324,8 @@ if (EMSCRIPTEN)
   set(TH_WEB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/web)
   # The shell page shows the project version (@PROJECT_VERSION@ in it).
   configure_file(${TH_WEB_DIR}/shell.html ${CMAKE_BINARY_DIR}/shell.html @ONLY)
+  # The page's favicon (shell.html), served next to index.html.
+  configure_file(${TH_ICON_DIR}/icon-256.png ${CMAKE_BINARY_DIR}/dist/favicon.png COPYONLY)
   target_sources(th_enhanced PRIVATE src/app/web.cpp)
   set_target_properties(th_enhanced PROPERTIES
     OUTPUT_NAME index

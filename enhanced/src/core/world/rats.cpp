@@ -11,6 +11,7 @@
 #include "core/world/trace.h"
 
 #include <array>
+#include <bit>
 #include <cstdint>
 
 namespace th
@@ -134,7 +135,7 @@ uint32_t lb_sqr_l(uint32_t n)
         0x0040, 0x005a, 0x0080, 0x00b5, 0x0100, 0x016a, 0x0200, 0x02d4, 0x0400, 0x05a8, 0x0800,
         0x0b50, 0x1000, 0x16a0, 0x2000, 0x2d41, 0x4000, 0x5a82, 0x8000, 0xb504, 0xffff,
     };
-    uint32_t b = 31 - uint32_t(__builtin_clz(n)); // bit index of the highest set bit
+    uint32_t b = 31 - uint32_t(std::countl_zero(n)); // bit index of the highest set bit
     uint32_t guess = kTable[b];
     for (;;) {
         uint32_t q = n / guess;

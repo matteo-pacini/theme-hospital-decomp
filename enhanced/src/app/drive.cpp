@@ -10,9 +10,11 @@
 #include <thread>
 #include <utility>
 
+#ifndef _WIN32
 #include <fcntl.h>
 #include <sys/file.h>
 #include <unistd.h>
+#endif
 
 namespace th
 {
@@ -109,6 +111,7 @@ bool same_file(const std::filesystem::path &a, const std::filesystem::path &b)
                       std::istreambuf_iterator<char>(fb), std::istreambuf_iterator<char>());
 }
 
+#ifndef _WIN32
 // Takes the first free slot of `dir`, writing `info` into it; the open file
 // keeps the lock. -1 if all are held, -2 if the files cannot be made.
 int try_slots(const std::filesystem::path &dir, int max, const std::string &info)
@@ -131,11 +134,18 @@ int try_slots(const std::filesystem::path &dir, int max, const std::string &info
     }
     return -1;
 }
+#endif
 
 } // namespace
 
 bool hold_slot(const std::filesystem::path &dir, int max, const std::string &info)
 {
+#ifdef _WIN32
+    // Slots serialise the machine's dev runs, which are a Linux and macOS
+    // matter; a Windows build never waits.
+    (void)dir, (void)max, (void)info;
+    return true;
+#else
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     bool told = false;
@@ -150,6 +160,7 @@ bool hold_slot(const std::filesystem::path &dir, int max, const std::string &inf
         told = true;
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
+#endif
 }
 
 Driver::Driver(std::filesystem::path out, bool control) : out_(std::move(out)), control_(control)

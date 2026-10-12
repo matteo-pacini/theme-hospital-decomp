@@ -1,15 +1,22 @@
 include(FetchContent)
 
 # SDL3: the system's when there is one (Nix, distro packages), otherwise
-# built from source.
-find_package(SDL3 CONFIG QUIET)
-if(NOT SDL3_FOUND)
-  message(STATUS "SDL3 not found, fetching it")
+# built from source. A release build always builds it, as a static library, so
+# that no system copy is picked up.
+if(NOT TH_RELEASE)
+  find_package(SDL3 CONFIG QUIET)
+endif()
+if(TH_RELEASE OR NOT SDL3_FOUND)
+  message(STATUS "Fetching SDL3")
   FetchContent_Declare(SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.4.16
     GIT_SHALLOW TRUE)
   set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+  if(TH_RELEASE)
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+  endif()
   FetchContent_MakeAvailable(SDL3)
 endif()
 

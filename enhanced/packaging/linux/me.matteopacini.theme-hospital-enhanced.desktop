@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Theme Hospital Enhanced
+GenericName=Hospital simulation
+Comment=A port of Theme Hospital to modern systems, played with your own game files
+Exec=th_enhanced
+Icon=me.matteopacini.theme-hospital-enhanced
+Terminal=false
+Categories=Game;Simulation;
+StartupWMClass=me.matteopacini.theme-hospital-enhanced
