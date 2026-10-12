@@ -7,6 +7,12 @@ C++ source that, compiled with the original toolchain, reproduces the code in
 
 No game files are included. You need your own copy.
 
+This branch, `decomp`, is the matching decompilation and its tooling. The
+playable port built from it, Theme Hospital Enhanced, lives on the
+[`master`](https://github.com/matteo-pacini/theme-hospital-decomp/tree/master)
+branch. Fixes to `src/` and `include/` are made here and merged into `master`,
+never the other way.
+
 ## Status
 
 As of 2026-09-30, `ninja report` counts all 2938 functions matched (100% of
