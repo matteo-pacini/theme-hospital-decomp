@@ -858,7 +858,7 @@ class Frame
         boxed(20, str(TextSection::Bank, 6));
         const Finance &fin = game_.finance;
         const Balance &bal = game_.settings();
-        const Balance::Town &town = bal.towns[size_t(game_.level_number()) % bal.towns.size()];
+        const Balance::Town &town = bal.towns[size_t(game_.hospital_level()) % bal.towns.size()];
         boxed(21, format("$ %d", fin.hospital_value));
         boxed(22, format("$ %d", game_.balance));
         boxed(23, format("$ %d", fin.loan));

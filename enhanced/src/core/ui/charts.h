@@ -154,10 +154,8 @@ struct ChartsResult {
 // The charts' state and art: the game's display_mode DM_CHARTS with
 // chart_type and each screen's state. Each chart is drawn into `surface`
 // (640 x 480) with its own palette, from its QDATA picture and sprites as
-// load_ingame_pic shows it; the palette fades and the help texts are not
-// drawn. The game keeps running while a chart is up (display_mode_control
-// runs turns in DM_CHARTS); the panel, menus, requesters and map are not
-// shown and take no input.
+// load_ingame_pic shows it (the app fades it in and out). The game keeps running while a chart is up
+// (display_mode_control runs turns in DM_CHARTS); the panel, menus, requesters and map are not shown and take no input.
 struct Charts {
     // A chart is up; `chart` says which.
     bool open = false;

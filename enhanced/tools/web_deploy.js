@@ -27,7 +27,7 @@ function assemblePage(withData) {
   let page = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
   if (!page.includes('src="index.js"')) throw new Error('index.html does not load index.js');
   page = page.replace('src="index.js"', 'src="' + files['index.js'] + '"');
-  const flags = 'var thFiles = ' + JSON.stringify(files) + ';' + (withData ? ' var thWithData = true;' : '');
+  const flags = 'var thFiles = ' + JSON.stringify(files) + ';' + (withData ? ' var thWithData = true; var thUpscale = "xbrz:4";' : '');
   page = page.replace('<script', '<script>' + flags + '</script>\n<script');
   fs.writeFileSync(path.join(out, 'index.html'), page);
   fs.copyFileSync(path.join(webDir, 'vercel.json'), path.join(out, 'vercel.json'));

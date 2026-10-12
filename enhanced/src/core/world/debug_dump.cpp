@@ -1190,6 +1190,7 @@ std::string dump_game(const Game &game, int focus, int radius)
                        game.date.month, game.date.day, game.turn_count, game.paused, game.open, game.opening_countdown);
     out += std::format("balance={} seed={:08x} safeseed={:08x} route_planner={}\n", game.balance, w.seed, game.safeseed,
                        w.path_finder == PathFinder::AStar ? "A*" : "original");
+    out += std::format("cheats_enabled={} force_bonus_level={}\n", game.cheats_enabled, game.force_bonus_level);
     dump_game_finance(out, game);
     dump_game_progress(out, game);
     dump_game_hospitals(out, game);

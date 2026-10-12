@@ -1,10 +1,12 @@
 Theme Hospital decompilation
 Copyright (C) 2026 Matteo Pacini and contributors
 
-The project's own work (the build system and tools in tools/, configure.py,
-nix/, the configuration in config/ and the documentation) is licensed
-under the GNU General Public License, version 3 or any later version; see
-COPYING for the full text.
+The project's own work (the engine in enhanced/, the build system and tools
+in tools/, configure.py, nix/, the configuration in config/ and the
+documentation) is licensed under the GNU General Public License, version 3
+or any later version; see COPYING for the full text. The xBRZ scaler in
+enhanced/third_party/xbrz/ is its author's, under version 3 only; binaries
+that contain it are conveyed under version 3.
 
 The code in src/ and include/ is not covered by that licence. It is a
 reconstruction, by reverse engineering, of the program code of Theme

@@ -1,0 +1,10 @@
+# Level 2 with the EASY balance files (levels/EASY00.sam and levels/EASY02.sam,
+# as the original's -bEASY); EASY02.SAM differs from FULL02.SAM in the keys
+# gbv, lose_criteria, objects, staff_levels.
+# The hospital opens at turn 100, no rooms; the run passes the first
+# quarterly check.
+# Expect peep == 19
+# Expect computer_action == 110
+# Balance EASY
+# Turns 4700
+100 139 0 0

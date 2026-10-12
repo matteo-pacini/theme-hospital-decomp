@@ -9,6 +9,12 @@ const { execFileSync } = require('child_process');
 const { chromium } = require(process.env.PLAYWRIGHT_CORE);
 
 const [dist, orig, out] = process.argv.slice(2);
+// The upscaling the install is asked for (the setup screen starts with it);
+// SMOKE_UPSCALE=off turns it off.
+const upscale = process.env.SMOKE_UPSCALE || 'xbrz:4';
+const upscaleQuery = '?upscale=' + upscale;
+// The setup screen's buttons sit lower with the upscaling options open.
+const buttonsY = upscale === 'off' ? 109 : 176;
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm', '.txt': 'text/plain' };
 
 // A folder from web_deploy.js has the vercel.json that Vercel serves it with:
@@ -124,28 +130,32 @@ async function main() {
       await waitFor(page, 'install finished by itself (install.ok in /persist/game)', installed);
     } else {
       // No data yet: the setup screen; its Quit button shows the closed page.
-      await page.goto(base);
+      await page.goto(base + upscaleQuery);
       await waitFor(page, 'runtime started', ready, null, 60000);
       await page.waitForTimeout(2000);
       await page.screenshot({ path: path.join(out, 'setup.png') });
-      await page.mouse.click(478, 87);
+      await page.mouse.click(478, buttonsY);
       await waitFor(page, 'quit shows the closed page', () => getComputedStyle(document.getElementById('closed')).display === 'block');
 
       // Install from the game folder through the picker.
-      await page.goto(base);
+      await page.goto(base + upscaleQuery);
       await waitFor(page, 'runtime started again', ready, null, 60000);
       await page.waitForTimeout(2000);
       const chooser = page.waitForEvent('filechooser', { timeout: 30000 });
-      await page.mouse.click(Number(process.env.SMOKE_FOLDER_X || 346), Number(process.env.SMOKE_FOLDER_Y || 87));
+      await page.mouse.click(Number(process.env.SMOKE_FOLDER_X || 346), Number(process.env.SMOKE_FOLDER_Y || buttonsY));
       await (await chooser).setFiles(orig);
       await waitFor(page, 'install finished (install.ok in /persist/game)', installed);
+    }
+    if (upscale !== 'off') {
+      const file = '/persist/upscale/' + upscale.replace(':', '-') + '.thup';
+      await waitFor(page, 'upscaled sprites cached (' + file + ')', (f) => Module.FS.analyzePath(f).exists, file);
     }
     await page.evaluate(sync);
     pass('storage written');
     if (config) checkHeaders(seen);
 
     // A reload keeps the install and goes straight to level 1.
-    await page.goto(base + '?level=1');
+    await page.goto(base + '?level=1&upscale=' + upscale);
     await waitFor(page, 'runtime started after reload', ready, null, 60000);
     await waitFor(page, 'install.ok kept by the reload', installed);
     const partial = await page.evaluate(() => Module.FS.analyzePath('/persist/game.partial').exists);
@@ -163,6 +173,22 @@ async function main() {
     const leaves = names.map((n) => path.basename(n)).sort().join(' ');
     if (leaves === 'commands.txt note.txt screenshot.png snapshot.bin state.txt') pass('report tar holds ' + leaves);
     else fail('report tar holds: ' + leaves);
+
+    // Alt+C: the screen shot downloaded as a PNG, not kept in the storage.
+    const shot = page.waitForEvent('download', { timeout: 30000 });
+    await page.keyboard.press('Alt+c');
+    const shotDownload = await shot;
+    const png = path.join(out, shotDownload.suggestedFilename());
+    await shotDownload.saveAs(png);
+    const signature = fs.readFileSync(png).subarray(0, 8).toString('hex');
+    if (path.basename(png) === 'hosp0000.png' && signature === '89504e470d0a1a0a') pass('screen shot downloaded as ' + path.basename(png));
+    else fail('screen shot downloaded as ' + path.basename(png) + ' (' + signature + ')');
+    const kept = await page.evaluate(() => {
+      const dir = '/persist/scrshots';
+      return Module.FS.analyzePath(dir).exists ? Module.FS.readdir(dir).filter((n) => n.endsWith('.png')) : [];
+    });
+    if (kept.length) fail('screen shots kept in storage: ' + kept.join(' '));
+    else pass('no screen shot kept in storage');
   } catch (e) {
     console.log('stopped: ' + e.message.split('\n')[0]);
     await page.screenshot({ path: path.join(out, 'stopped.png') }).catch(() => {});

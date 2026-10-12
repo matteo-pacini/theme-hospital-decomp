@@ -4,12 +4,14 @@
 // with the instrumented original's (orig_trace.sh); at the end it can dump
 // the game's state and render the view.
 //
-// Usage: th_replay [--data DIR] [--level N] [--load SNAPSHOT] [--turns [+]N] [--script FILE] [--astar] [--rand]
+// Usage: th_replay [--data DIR] [--level N] [-bID] [--load SNAPSHOT] [--turns [+]N] [--script FILE] [--astar] [--rand]
 //                  [--skip NAME[,NAME]] [--advisor]
 //                  [--out FILE] [--dump FILE [--focus CELL]] [--render OUT.png|OUT.ppm [--camera X,Y] [--size WxH]]
 //                  [--snapshot FILE]
 //   --data    the game data folder (default: the development folder)
 //   --level   the level to start (default 1); with --load, the snapshot's
+//   -bID      the balance files' prefix (default FULL), as the game's -b: levels/<ID>00.sam
+//             and levels/<ID><level>.sam; --level also takes "N -bID"
 //   --load    start from a snapshot (core/world/snapshot.h; a debug report's
 //             snapshot.bin) instead of the level's start
 //   --turns   the last turn to run, as the game counts them from 1, or with
@@ -224,6 +226,7 @@ struct Options {
 #endif
     int level_number = 1;
     bool level_given = false;
+    std::string balance_id{th::kDefaultBalanceId};
     std::string turns_arg = "2000";
     bool astar = false;
     bool rand = false;
@@ -271,6 +274,40 @@ bool take_text_option(Options &o, const char *flag, const char *value)
     return true;
 }
 
+// Reads --level's value: the level number, then optionally the balance id as
+// the game's command line gives it ("20 -bNET", a script's `# Balance`).
+bool parse_level_arg(Options &o, const char *value)
+{
+    char *end = nullptr;
+    o.level_number = int(std::strtol(value, &end, 10));
+    if (end == value)
+        return false;
+    while (*end == ' ')
+        end++;
+    if (!std::strncmp(end, "-b", 2) && end[2])
+        o.balance_id = end + 2;
+    else if (*end)
+        return false;
+    return true;
+}
+
+// Takes `arg` when it is an option without a value (--astar, --rand,
+// --advisor, -b<id>); false for any other.
+bool take_flag(Options &o, const char *arg)
+{
+    if (!std::strcmp(arg, "--astar"))
+        o.astar = true;
+    else if (!std::strcmp(arg, "--rand"))
+        o.rand = true;
+    else if (!std::strcmp(arg, "--advisor"))
+        o.advisor = true;
+    else if (!std::strncmp(arg, "-b", 2) && arg[2])
+        o.balance_id = arg + 2;
+    else
+        return false;
+    return true;
+}
+
 // Reads the command line into `o`; false when it is not a valid one.
 bool parse_args(int argc, char **argv, Options &o)
 {
@@ -279,7 +316,8 @@ bool parse_args(int argc, char **argv, Options &o)
         if (has_value && take_text_option(o, argv[i], argv[i + 1])) {
             i++;
         } else if (!std::strcmp(argv[i], "--level") && has_value) {
-            o.level_number = std::atoi(argv[++i]);
+            if (!parse_level_arg(o, argv[++i]))
+                return false;
             o.level_given = true;
         } else if (!std::strcmp(argv[i], "--focus") && has_value) {
             o.focus = std::atoi(argv[++i]);
@@ -290,13 +328,7 @@ bool parse_args(int argc, char **argv, Options &o)
         } else if (!std::strcmp(argv[i], "--size") && has_value) {
             if (std::sscanf(argv[++i], "%dx%d", &o.width, &o.height) != 2 || o.width <= 0 || o.height <= 0)
                 return false;
-        } else if (!std::strcmp(argv[i], "--astar")) {
-            o.astar = true;
-        } else if (!std::strcmp(argv[i], "--rand")) {
-            o.rand = true;
-        } else if (!std::strcmp(argv[i], "--advisor")) {
-            o.advisor = true;
-        } else {
+        } else if (!take_flag(o, argv[i])) {
             return false;
         }
     }
@@ -335,7 +367,7 @@ bool start_level(th::Game &game, const Options &o, const th::GameData &data, int
     std::string error;
     auto level = data.load_level(o.level_number, &error);
     th::Balance settings;
-    if (!level || !th::load_balance(data.dir(), o.level_number, th::kDefaultBalanceId, settings, &error)) {
+    if (!level || !th::load_balance(data.dir(), o.level_number, o.balance_id, settings, &error)) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return false;
     }
@@ -362,7 +394,7 @@ void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out, const
 {
     th::AdvisorInputs in;
     in.game_turn = game.turn_count;
-    in.level = game.level_number();
+    in.level = game.hospital_level();
     in.month = game.date.month;
     in.open = game.open;
     in.balance = game.balance;
@@ -388,12 +420,10 @@ void run_advisor(th::Game &game, const th::GameData &data, std::FILE *out, const
     std::array<uint8_t, th::kAdviceCount> given{};
     for (size_t i = 0; i < given.size(); i++)
         given[i] = game.advisor.advice[i].times_given;
-    // The presentation's generator, which nothing traced reads.
-    static uint32_t safeseed = game.safeseed;
     // The tutorial's step events belong to this turn, as the game's frame
     // writes its turn's events.
     th::EventScope scope(&game.events, game.turn_count);
-    th::advisor_frame(game.advisor, in, data.anims(), safeseed);
+    th::advisor_frame(game.advisor, in, data.anims(), game.safeseed);
     for (size_t i = 0; i < given.size(); i++)
         if (out && game.advisor.advice[i].times_given != given[i])
             std::fprintf(out, "# advice %u\n", unsigned(game.advisor.advice[i].id));
@@ -508,7 +538,7 @@ int write_results(const th::Game &game, Options &o, const th::GameData &data)
     if (o.save_path) {
         std::string error;
         th::SaveInfo info;
-        info.balance_id = th::kDefaultBalanceId;
+        info.balance_id = o.balance_id;
         auto level = data.load_level(o.level_number, &error);
         int start = level ? level->camera_start[0] : 0;
         th::Point centre = th::cell_to_world(start % th::kMapSize, start / th::kMapSize);

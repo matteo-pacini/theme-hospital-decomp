@@ -76,11 +76,14 @@ orig_key()
 }
 
 # script_level SCRIPT / script_turns SCRIPT: the "# Level N" / "# Turns N"
-# header values, else 1 / $TURNS.
+# header values, else 1 / $TURNS. script_level appends " -bID" when the
+# header has "# Balance ID" (the game's command line, which the original side
+# passes as it is; th_replay's --level reads it too).
 script_level()
 {
   l=$(sed -n 's/^# Level \([0-9][0-9]*\).*/\1/p' "$1" | head -n 1)
-  echo "${l:-1}"
+  b=$(sed -n 's/^# Balance \([A-Za-z0-9_]*\).*/\1/p' "$1" | head -n 1)
+  echo "${l:-1}${b:+ -b$b}"
 }
 script_turns()
 {

@@ -117,7 +117,7 @@ Figures shown_figures(const HelpContext &ctx, int hospital)
         return f;
     if (hospital != 0) {
         const Balance &bal = ctx.game->settings();
-        f.balance = int32_t(bal.towns[size_t(ctx.game->level_number()) % bal.towns.size()].start_cash);
+        f.balance = int32_t(bal.towns[size_t(ctx.game->hospital_level()) % bal.towns.size()].start_cash);
         return f;
     }
     f.reputation = ctx.game->reputation();

@@ -28,7 +28,17 @@ Sprite SpriteSheet::at(size_t index) const
     if (index >= sprites_.size())
         return {};
     const Entry &e = sprites_[index];
-    return {data_.data() + e.offset, format_, e.width, e.height};
+    Sprite s{data_.data() + e.offset, format_, e.width, e.height, {}};
+    if (index < hires_.entries.size() && hires_.entries[index].width > 0) {
+        const HiresSheet::Entry &h = hires_.entries[index];
+        s.hi = {hires_.data.data() + h.offset, h.width, h.height, hires_.factor};
+    }
+    return s;
+}
+
+void SpriteSheet::attach_hires(HiresSheet hires)
+{
+    hires_ = std::move(hires);
 }
 
 } // namespace th

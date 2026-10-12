@@ -537,28 +537,33 @@ Rect draw_split_frames(CellFrames &frames, const CellDrawing &drawing, const Thi
 void draw_energise_ghost(CellFrames &frames, Surface &pixbuf, const Thing &t, const Thing &obj, Point at,
                          const FrameOptions &opts)
 {
+    const int n = frames.dst.scale();
+    if (pixbuf.scale() != n)
+        pixbuf.resize(0x40, 0x40, n);
     pixbuf.fill(kMaskColour);
     pixbuf.reset_clip();
     draw_frame(pixbuf, {0x20, 0x3a}, t.sprite, t.flip != 0, frames.data, {.layers = opts.layers});
     uint32_t rng = 0x546b1;
     for (int i = int(obj.split_height) * 10; i > 0; i--) {
         for (int shift : {0, 10, 20})
-            pixbuf.row(((rng >> shift) & 0xfff) / 0x40)[((rng >> shift) & 0xfff) % 0x40] = kMaskColour;
+            pixbuf.put(((rng >> shift) & 0xfff) % 0x40, ((rng >> shift) & 0xfff) / 0x40, kMaskColour);
         rng = ror13(rng * 0x24a1 + 0x24df);
     }
     const uint8_t *ghost = frames.data.ghost().data();
     const Rect clip = frames.dst.clip();
+    const int first = std::max(0, clip.x - (at.x - 0x20));
+    const int last = std::min(0x40, clip.x + clip.w - (at.x - 0x20));
     for (int py = 0; py < 0x40; py++) {
         int sy = at.y - 0x3a + py;
         if (sy < clip.y || sy >= clip.y + clip.h)
             continue;
-        uint8_t *out = frames.dst.row(sy);
-        const uint8_t *in = pixbuf.row(py);
-        for (int px = 0; px < 0x40; px++) {
-            int sx = at.x - 0x20 + px;
-            if (sx < clip.x || sx >= clip.x + clip.w)
-                continue;
-            out[sx] = pixbuf_pixel(out[sx], in[px], obj.aux_param, ghost);
+        // The game pixels first..last of the buffer's row, each n indices.
+        for (int j = 0; j < n; j++) {
+            uint8_t *out = frames.dst.row(sy * n + j);
+            const int shift = (at.x - 0x20) * n;
+            const uint8_t *in = pixbuf.row(py * n + j);
+            for (int k = first * n; k < last * n; k++)
+                out[shift + k] = pixbuf_pixel(out[shift + k], in[k], obj.aux_param, ghost);
         }
     }
 }
@@ -991,16 +996,17 @@ class WorldDrawing
         mask_walls_in_front(bounds, col, row);
         // Only the frames' box is copied, as the game does; sprites reaching
         // outside it are cut off.
-        for (int py = bounds.y; py < bounds.y + bounds.h; py++) {
+        const int n = dst_.scale();
+        for (int py = bounds.y * n; py < (bounds.y + bounds.h) * n; py++) {
             const uint8_t *src = scratch_.row(py);
             uint8_t *out = dst_.row(py);
-            for (int px = bounds.x; px < bounds.x + bounds.w; px++)
+            for (int px = bounds.x * n; px < (bounds.x + bounds.w) * n; px++)
                 if (src[px] != kMaskColour)
                     out[px] = src[px];
         }
         grow(touched, bounds);
-        for (int py = touched.y; py < touched.y + touched.h; py++)
-            std::fill(scratch_.row(py) + touched.x, scratch_.row(py) + touched.x + touched.w, kMaskColour);
+        for (int py = touched.y * n; py < (touched.y + touched.h) * n; py++)
+            std::fill(scratch_.row(py) + touched.x * n, scratch_.row(py) + (touched.x + touched.w) * n, kMaskColour);
     }
 
     // Masks out on the scratch surface the walls of every cell east or south

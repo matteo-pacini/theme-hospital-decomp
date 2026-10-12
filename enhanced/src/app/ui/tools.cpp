@@ -1,12 +1,15 @@
 #include "app/ui/tools.h"
 
+#include "core/render/upscale/scaler.h"
 #include "core/world/build.h"
 #include "core/world/debug_dump.h"
 #include "core/world/world.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <imgui.h>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -47,17 +50,59 @@ void draw_places_looked_at(const DataSearch &search)
 
 SetupAction draw_setup_progress(const SetupView &view)
 {
-    ImGui::TextUnformatted(view.verifying ? "Verifying the installed game files..." : "Installing the game files...");
+    ImGui::TextUnformatted(view.upscaling   ? "Upscaling the graphics..."
+                           : view.verifying ? "Verifying the installed game files..."
+                                            : "Installing the game files...");
     float fraction = view.total ? float(double(view.done) / double(view.total)) : 0.0f;
     char label[64];
-    std::snprintf(label, sizeof label, "%.0f MB of %.0f MB", double(view.done) / 1e6, double(view.total) / 1e6);
+    if (view.upscaling)
+        std::snprintf(label, sizeof label, "%llu of %llu sprites", static_cast<unsigned long long>(view.done),
+                      static_cast<unsigned long long>(view.total));
+    else
+        std::snprintf(label, sizeof label, "%.0f MB of %.0f MB", double(view.done) / 1e6, double(view.total) / 1e6);
     ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0.0f), label);
     return ImGui::Button("Cancel") ? SetupAction::Cancel : SetupAction::None;
+}
+
+// What upscaling takes: the indexed sprites at the factor held in memory and
+// stored compressed (measured on the GOG release, rounded up).
+constexpr double kMemoryMbPerFactorSquared = 4.0;
+constexpr double kDiskMbPerFactorSquared = 0.5;
+
+// The upscaling options, drawn above the install buttons.
+void draw_upscale_choice(UpscaleChoice &choice)
+{
+    ImGui::Checkbox("Upscale the graphics while installing", &choice.on);
+    if (!choice.on)
+        return;
+    ImGui::Indent();
+    const std::span<const Scaler> algorithms = scalers();
+    choice.algorithm = std::clamp(choice.algorithm, 0, int(algorithms.size()) - 1);
+    const Scaler &current = algorithms[size_t(choice.algorithm)];
+    ImGui::SetNextItemWidth(160.0f);
+    if (ImGui::BeginCombo("Algorithm", current.name)) {
+        for (size_t i = 0; i < algorithms.size(); i++)
+            if (ImGui::Selectable(algorithms[i].name, int(i) == choice.algorithm))
+                choice.algorithm = int(i);
+        ImGui::EndCombo();
+    }
+    choice.factor = std::clamp(choice.factor, current.min_factor, current.max_factor);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::SliderInt("Factor", &choice.factor, current.min_factor, current.max_factor, "%dx");
+    const double squared = double(choice.factor) * double(choice.factor);
+    char note[160];
+    std::snprintf(note, sizeof note, "About %.0f MB of memory while playing and %.0f MB on disk.",
+                  squared * kMemoryMbPerFactorSquared, squared * kDiskMbPerFactorSquared);
+    text_disabled_wrapped(note);
+    ImGui::Unindent();
+    ImGui::Spacing();
 }
 
 SetupAction draw_setup_actions(const SetupView &view)
 {
     SetupAction action = SetupAction::None;
+    if (view.upscale)
+        draw_upscale_choice(*view.upscale);
     if (ImGui::Button("Install from GOG's installer..."))
         action = SetupAction::InstallFromInstaller;
     ImGui::SameLine();

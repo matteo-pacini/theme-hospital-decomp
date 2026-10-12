@@ -70,9 +70,14 @@ add_library(th_core STATIC
   src/core/render/iso.cpp
   src/core/render/panel.cpp
   src/core/render/shadows.cpp
+  src/core/render/upscale/cache.cpp
+  src/core/render/upscale/hires.cpp
+  src/core/render/upscale/scaler.cpp
+  src/core/render/upscale/snap.cpp
   src/core/render/view.cpp
   src/core/ui/build_room.cpp
   src/core/ui/buy_objects.cpp
+  src/core/ui/fade.cpp
   src/core/ui/fax.cpp
   src/core/ui/charts.cpp
   src/core/ui/pie.cpp
@@ -83,6 +88,7 @@ add_library(th_core STATIC
   src/core/ui/info_windows.cpp
   src/core/ui/jukebox.cpp
   src/core/ui/layer.cpp
+  src/core/ui/loading_screen.cpp
   src/core/ui/menubar.cpp
   src/core/ui/panel_info.cpp
   src/core/ui/popups.cpp
@@ -170,7 +176,7 @@ target_sources(th_core PRIVATE ${TH_SNAPSHOT_ID})
 target_include_directories(th_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(th_core PUBLIC src)
 target_compile_options(th_core PRIVATE ${TH_WARNINGS})
-target_link_libraries(th_core PRIVATE th_ymfm th_miniz)
+target_link_libraries(th_core PRIVATE th_ymfm th_miniz th_xbrz)
 target_compile_options(th_core PRIVATE ${TH_COVERAGE_FLAGS})
 target_link_options(th_core INTERFACE ${TH_COVERAGE_FLAGS})
 
@@ -181,6 +187,8 @@ add_executable(th_enhanced
   src/app/drive.cpp
   src/app/paths.cpp
   src/app/player_details.cpp
+  src/app/screen_fade.cpp
+  src/app/upscale_texture.cpp
   src/app/install_job.cpp
   src/app/settings.cpp
   src/app/ui/nav_tool.cpp
@@ -237,6 +245,7 @@ if (BUILD_TESTING)
     src/app/player_details.cpp
     tests/common.cpp
     tests/audio.cpp
+    tests/cheats.cpp
     tests/computer.cpp
     tests/computer_month.cpp
     tests/computer_staff.cpp
@@ -246,6 +255,7 @@ if (BUILD_TESTING)
     tests/drive.cpp
     src/app/drive.cpp
     tests/epidemic.cpp
+    tests/fade.cpp
     tests/game.cpp
     tests/help.cpp
     tests/help_callbacks.cpp
@@ -264,6 +274,7 @@ if (BUILD_TESTING)
     tests/staff.cpp
     tests/staff_demand.cpp
     tests/ui.cpp
+    tests/upscale.cpp
     tests/yearend.cpp)
   target_link_libraries(th_tests PRIVATE th_core)
   target_link_options(th_tests PRIVATE ${TH_NODE_LINK_OPTIONS})

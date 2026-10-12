@@ -12,6 +12,7 @@ struct UserPaths {
     std::filesystem::path save_dir;     // saved games and hiscore.dat
     std::filesystem::path game_dir;     // the installed game data
     std::filesystem::path reports_dir;  // debug reports
+    std::filesystem::path upscale_dir;  // the upscaled sprites (a cache)
 };
 
 // The folders for the running user, from the platform's conventions: XDG on

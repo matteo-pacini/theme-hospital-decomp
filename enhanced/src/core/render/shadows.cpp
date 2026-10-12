@@ -2,6 +2,8 @@
 
 #include "core/data/blocks.h"
 
+#include <algorithm>
+
 namespace th
 {
 
@@ -73,6 +75,78 @@ std::vector<uint8_t> overlay(const Sprite &src, const Sprite &ovr, std::span<con
     return out;
 }
 
+size_t hires_u16(const uint8_t *p)
+{
+    return size_t(p[0] | p[1] << 8);
+}
+
+// Unpacks the HiSprite row at `o` into `line` (the colour of each pixel, 0
+// where there is none); returns the start of the next row.
+const uint8_t *overlay_hires_line(const uint8_t *o, std::vector<uint8_t> &line)
+{
+    const size_t runs = hires_u16(o);
+    o += 2;
+    size_t col = 0;
+    for (size_t r = 0; r < runs; r++) {
+        col += hires_u16(o);
+        const size_t length = hires_u16(o + 2);
+        for (size_t i = 0; i < length; i++)
+            line[col + i] = o[4 + i];
+        col += length;
+        o += 4 + length;
+    }
+    return o;
+}
+
+// Appends the HiSprite row at `s` to `out`, mixing `line` into its pixels;
+// returns the start of the next row.
+const uint8_t *overlay_hires_row(const uint8_t *s, const std::vector<uint8_t> &line, std::span<const uint8_t> ghost,
+                                 std::vector<uint8_t> &out)
+{
+    auto put16 = [&out](size_t v) {
+        out.push_back(uint8_t(v));
+        out.push_back(uint8_t(v >> 8));
+    };
+    const size_t runs = hires_u16(s);
+    s += 2;
+    put16(runs);
+    size_t col = 0;
+    for (size_t r = 0; r < runs; r++) {
+        const size_t skip = hires_u16(s), length = hires_u16(s + 2);
+        s += 4;
+        put16(skip);
+        put16(length);
+        col += skip;
+        for (size_t i = 0; i < length; i++, col++) {
+            const uint8_t shade = col < line.size() ? line[col] : uint8_t(0);
+            out.push_back(shade ? ghost[size_t(shade) << 8 | s[i]] : s[i]);
+        }
+        s += length;
+    }
+    return s;
+}
+
+// The upscaled blocks' counterpart of overlay: `src` and `ovr` coded as
+// HiSprite rows, the result in `src`'s coding with the opaque pixels of `ovr`
+// mixed in. Empty if either sprite has no upscaled version, or they differ in
+// factor.
+std::vector<uint8_t> overlay_hires(const HiSprite &src, const HiSprite &ovr, std::span<const uint8_t> ghost)
+{
+    std::vector<uint8_t> out;
+    if (src.empty() || ovr.empty() || src.factor != ovr.factor)
+        return out;
+    std::vector<uint8_t> line(size_t(std::max(src.width, ovr.width)));
+    const uint8_t *s = src.data;
+    const uint8_t *o = ovr.data;
+    for (int row = 0; row < src.height; row++) {
+        std::fill(line.begin(), line.end(), uint8_t(0));
+        if (row < ovr.height)
+            o = overlay_hires_line(o, line);
+        s = overlay_hires_row(s, line, ghost, out);
+    }
+    return out;
+}
+
 } // namespace
 
 void add_static_shadows(std::array<MapCell, kMapCells> &map, const DoorFacing &door_facing)
@@ -126,10 +200,22 @@ ShadowSprites::ShadowSprites(const SpriteSheet &blocks, std::span<const uint8_t>
     const Sprite wall = base(kWallShadowBlock);
     for (int id = 0; id < kBlockCount; id++) {
         Sprite s = base(uint8_t(id));
-        full_[size_t(id)] = {overlay(s, full, ghost), s.width, s.height};
-        half_[size_t(id)] = {overlay(s, half, ghost), s.width, s.height};
-        wall_[size_t(id)] = {overlay(s, wall, ghost), s.width, s.height};
+        full_[size_t(id)] = make_shaded(s, full, ghost);
+        half_[size_t(id)] = make_shaded(s, half, ghost);
+        wall_[size_t(id)] = make_shaded(s, wall, ghost);
     }
+}
+
+ShadowSprites::Shaded ShadowSprites::make_shaded(const Sprite &s, const Sprite &shadow, std::span<const uint8_t> ghost)
+{
+    Shaded out{overlay(s, shadow, ghost), s.width, s.height, {}, 0, 0, 1};
+    out.hi = overlay_hires(s.hi, shadow.hi, ghost);
+    if (!out.hi.empty()) {
+        out.hi_width = s.hi.width;
+        out.hi_height = s.hi.height;
+        out.factor = s.hi.factor;
+    }
+    return out;
 }
 
 Sprite ShadowSprites::base(uint8_t id) const
@@ -143,7 +229,10 @@ Sprite ShadowSprites::shaded(const std::vector<Shaded> &sprites, uint8_t id) con
     if (id >= sprites.size() || sprites[id].data.empty())
         return {};
     const Shaded &s = sprites[id];
-    return {s.data.data(), SpriteFormat::Rle, s.width, s.height};
+    Sprite out{s.data.data(), SpriteFormat::Rle, s.width, s.height, {}};
+    if (!s.hi.empty())
+        out.hi = {s.hi.data(), s.hi_width, s.hi_height, s.factor};
+    return out;
 }
 
 ShadedSprite ShadowSprites::floor(const MapCell &cell) const

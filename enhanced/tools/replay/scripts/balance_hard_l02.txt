@@ -1,0 +1,10 @@
+# Level 2 with the HARD balance files (levels/HARD00.sam and levels/HARD02.sam,
+# as the original's -bHARD); HARD02.SAM differs from FULL02.SAM in the keys
+# expertise, gbv.
+# The hospital opens at turn 100, no rooms; the run passes the first
+# quarterly check.
+# Expect peep == 19
+# Expect computer_action == 110
+# Balance HARD
+# Turns 4700
+100 139 0 0

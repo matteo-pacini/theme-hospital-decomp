@@ -309,12 +309,9 @@ web_replays()
 
 # cross_one NAME N: the script's snapshot, written by one build at turn N,
 # carries on in the other build to the script's last turn M with the trace
-# the first build's whole run has from turn N + 1; both ways round. The
-# "# advice" comment lines are left out: th_replay keeps the advisor's
-# character animation seed outside the snapshot, so after a load an advice
-# can come a turn earlier or later than in the whole run (a native load
-# does it too), while the state and events are the same. A stored pass for
-# the script's web key and turn N (and its native pass) stands for the run.
+# the first build's whole run has from turn N + 1, advice lines included;
+# both ways round. A stored pass for the script's web key and turn N (and
+# its native pass) stands for the run.
 cross_one()
 {
   script=$1
@@ -335,7 +332,7 @@ cross_one()
   from=$((n + 1))
   # shellcheck disable=SC2086
   build/enhanced/th_replay $flags --script "$f" --turns "$m" --out "$dir/whole.txt" || return 1
-  awk -v t="$from" '$1 == "T" && $2 == t { p = 1 } p && !($1 == "#" && $2 == "advice")' "$dir/whole.txt" >"$dir/whole.tail"
+  awk -v t="$from" '$1 == "T" && $2 == t { p = 1 } p' "$dir/whole.txt" >"$dir/whole.tail"
   rm -f "$dir/whole.txt"
   for pair in "native wasm" "wasm native"; do
     from_build=${pair% *}
@@ -346,7 +343,7 @@ cross_one()
     run_th_replay "$from_build" $flags --script "$f" --turns "$n" --out /dev/null --snapshot "$snap" || return 1
     # shellcheck disable=SC2086
     run_th_replay "$to_build" $flags --load "$snap" --script "$dir/rest.txt" --turns "$m" --out "$out.txt" || return 1
-    awk -v t="$from" '$1 == "T" && $2 == t { p = 1 } p && !($1 == "#" && $2 == "advice")' "$out.txt" >"$out.tail"
+    awk -v t="$from" '$1 == "T" && $2 == t { p = 1 } p' "$out.txt" >"$out.tail"
     cmp -s "$dir/whole.tail" "$out.tail" || {
       echo "$script: $from_build snapshot at turn $n, $to_build from there: trace differs from the whole run's ($dir)"
       return 1

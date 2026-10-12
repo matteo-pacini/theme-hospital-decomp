@@ -57,6 +57,7 @@ EM_JS(void, js_pick, (int folder), { Module.thPick(folder != 0); });
 EM_JS(void, js_flush, (), { Module.thFlush(); });
 EM_JS(void, js_persist, (), { Module.thRequestPersist(); });
 EM_JS(void, js_download_tar, (const char *dir), { Module.thDownloadTar(UTF8ToString(dir)); });
+EM_JS(void, js_download_file, (const char *path), { Module.thDownloadFile(UTF8ToString(path)); });
 EM_JS(void, js_closed, (), { Module.thClosed(); });
 
 void show_picker(bool folder, PickCallback callback, void *userdata)
@@ -87,6 +88,11 @@ void request_persistent_storage()
 void download_report(const std::filesystem::path &dir)
 {
     js_download_tar(dir.c_str());
+}
+
+void download_file(const std::filesystem::path &path)
+{
+    js_download_file(path.c_str());
 }
 
 void show_closed()

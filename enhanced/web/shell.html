@@ -10,6 +10,8 @@
   #status, #closed { position: fixed; left: 0; right: 0; font: 16px sans-serif; color: #ddd; text-align: center; }
   #status { top: 1em; display: none; }
   #closed { top: 40%; display: none; font-size: 20px; }
+  #licence { position: fixed; right: 0; top: 0; z-index: 2; padding: 1px 5px; font: 10px sans-serif; color: #999; background: rgba(0, 0, 0, 0.5); }
+  #licence a { color: #bcd; }
   #loading { position: fixed; top: 40%; left: 0; right: 0; font: 16px sans-serif; color: #888; text-align: center; }
 </style>
 </head>
@@ -18,6 +20,9 @@
 <div id="loading">Loading…</div>
 <div id="status"></div>
 <div id="closed">The game is closed. Reload the page to play again.</div>
+<div id="licence">Free software, GPL 3 (with xBRZ by Zenju):
+  <a href="https://github.com/matteo-pacini/theme-hospital-decomp/tree/enhanced" target="_blank" rel="noopener">source</a>,
+  <a href="https://github.com/matteo-pacini/theme-hospital-decomp/blob/enhanced/COPYING" target="_blank" rel="noopener">licence</a></div>
 <script>
   // ?level=N starts that level at once; ?debug turns the developer tools on.
   var args = [];
@@ -26,6 +31,8 @@
     if (/^[0-9]+$/.test(query.get(key) || '')) args.push('--' + key, query.get(key));
   });
   if (query.has('debug')) args.push('--debug');
+  // ?upscale=xbrz:4 (or off) preselects the setup screen's upscaling.
+  if (/^(off|[a-z]+:[2-6])$/.test(query.get('upscale') || '')) args.push('--upscale', query.get('upscale'));
   var Module = {
     arguments: args,
     canvas: document.getElementById('canvas'),

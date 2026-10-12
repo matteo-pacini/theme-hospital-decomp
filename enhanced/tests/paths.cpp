@@ -70,6 +70,7 @@ void test_user_paths()
     CHECK(p.save_dir == home / ".local/share/ThemeHospitalEnhanced/save");
     CHECK(p.game_dir == home / ".local/share/ThemeHospitalEnhanced/game");
     CHECK(p.reports_dir == home / ".local/state/ThemeHospitalEnhanced/debug-reports");
+    CHECK(p.upscale_dir == home / ".local/share/ThemeHospitalEnhanced/upscale");
     CHECK(th::old_prefs_dir() == home / ".local/share/ThemeHospitalDecomp/Enhanced");
 
     setenv("XDG_CONFIG_HOME", (home / "c").c_str(), 1);
@@ -80,6 +81,7 @@ void test_user_paths()
     CHECK(p.save_dir == home / "d/ThemeHospitalEnhanced/save");
     CHECK(p.game_dir == home / "d/ThemeHospitalEnhanced/game");
     CHECK(p.reports_dir == home / "s/ThemeHospitalEnhanced/debug-reports");
+    CHECK(p.upscale_dir == home / "d/ThemeHospitalEnhanced/upscale");
     CHECK(th::old_prefs_dir() == home / "d/ThemeHospitalDecomp/Enhanced");
 
     // A relative value is ignored, as the XDG specification says.

@@ -1,0 +1,8 @@
+# Level 43 with the NET balance files (NET00.SAM, NET43.SAM: what a four player
+# network game reads), as the original's -L43 -bNET: one player on the map,
+# hospital level 1. The hospital opens at turn 100; no rooms.
+# Expect peep == 2
+# Expect computer_action == 33
+# Balance NET
+# Turns 2000
+100 139 0 0

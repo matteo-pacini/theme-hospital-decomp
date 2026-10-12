@@ -111,6 +111,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     complexes_ = &complexes;
     staff_complexes_ = &staff_complexes;
     safeseed = kLevelStartSeed;
+    cheats_enabled = false;
     int open_countdown = settings.gbv.open_countdown;
     anims_ = &anims;
     settings_ = settings;
@@ -141,8 +142,8 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
     this->open_countdown = open_countdown;
     open = open_countdown == 0;
     open_rat_game(*this);
-    balance = size_t(number) < settings.towns.size() ? int(settings.towns[size_t(number)].start_cash) : 0;
-    start_finance(finance, balance, settings, number);
+    balance = int(settings.towns[size_t(hospital_level())].start_cash);
+    start_finance(finance, balance, settings, hospital_level());
     // init_player's.
     count_hospital_area(finance, world);
     start_queues(world, settings_, arrivals.hospitals[0], finance);
@@ -166,8 +167,7 @@ void Game::start(const Level &level, int number, const Balance &settings, const 
 
 void Game::carry_score(int32_t score)
 {
-    const int hospital_level = level_number_ > 14 ? 1 : level_number_;
-    if (hospital_level == 1 || score == 0)
+    if (hospital_level() == 1 || score == 0)
         return;
     progress.score = progress.start_score = score;
     command_log.push_back(std::format("# Score {}", score));
@@ -547,6 +547,68 @@ void Game::raise_advisor_event(uint32_t bits)
     advisor.event_flags |= bits;
 }
 
+void Game::set_cheats_enabled(bool on)
+{
+    log_inputs();
+    log_line(std::format("@cheats {}", int(on)));
+    cheats_enabled = on;
+}
+
+void Game::set_force_bonus_level(bool on)
+{
+    log_inputs();
+    log_line(std::format("@force_bonus {}", int(on)));
+    force_bonus_level = on;
+}
+
+void Game::carry_force_bonus_level(bool on)
+{
+    if (on)
+        set_force_bonus_level(true);
+}
+
+bool Game::cheat(uint32_t flags)
+{
+    log_inputs();
+    log_line(std::format("@cheat {}", flags));
+    if (!cheats_enabled)
+        return false;
+    EventScope scope(&events, turn_count + 1);
+    for (size_t i = 1; i < 0x3e; i++) {
+        if (flags & 4)
+            settings_.objects[i].available_for_level = 1;
+        if ((flags & 4) || ((flags & 2) && settings_.objects[i].available_for_level))
+            world.research.objects[i].equip_available = 1;
+    }
+    if (flags & 8)
+        change_balance(finance, balance, date.day, date.month, {kTxCheatMoney, 1000});
+    if (flags & 0x10)
+        change_balance(finance, balance, date.day, date.month, {kTxCheatMoney, -1000});
+    return true;
+}
+
+bool Game::cheat_rat()
+{
+    log_inputs();
+    log_line("@cheat_rat");
+    if (!cheats_enabled)
+        return false;
+    EventScope scope(&events, turn_count + 1);
+    make_a_rat(world, *anims_, 0);
+    return true;
+}
+
+bool Game::cheat_scroll()
+{
+    log_inputs();
+    log_line("@cheat_scroll");
+    if (!cheats_enabled)
+        return false;
+    world.scroll_min = 0;
+    world.scroll_max = kMapCells - 1;
+    return true;
+}
+
 void Game::overview_frame(uint8_t hospital)
 {
     log_inputs();
@@ -672,6 +734,28 @@ bool replay_input_setting(Game &g, const std::string &name, std::istream &in, st
     return true;
 }
 
+// Game::replay_input's @cheats <0 or 1>, @force_bonus <0 or 1>, @cheat <flags>,
+// @cheat_rat and @cheat_scroll.
+bool replay_input_cheat(Game &g, const std::string &name, std::istream &in, std::string_view line, std::string *error)
+{
+    if (name == "@cheat_rat") {
+        g.cheat_rat();
+    } else if (name == "@cheat_scroll") {
+        g.cheat_scroll();
+    } else {
+        auto v = replay_input_value(in, 0, name == "@cheat" ? 0xffff : 1);
+        if (!v)
+            return replay_input_fail(line, error, "bad value");
+        if (name == "@cheat")
+            g.cheat(uint32_t(*v));
+        else if (name == "@cheats")
+            g.set_cheats_enabled(*v);
+        else
+            g.set_force_bonus_level(*v);
+    }
+    return true;
+}
+
 // Game::replay_input's byte changes: "<name> <offset> <hex>".
 bool replay_input_bytes(Game &g, const std::string &name, std::istream &in, std::string_view line, std::string *error)
 {
@@ -735,6 +819,8 @@ bool Game::replay_input(std::string_view line, std::string *error)
     }
     if (name == "@paused" || name == "@tutorial" || name == "@path_finder" || name == "@build_mouse")
         return replay_input_setting(*this, name, in, line, error);
+    if (name.starts_with("@cheat") || name == "@force_bonus")
+        return replay_input_cheat(*this, name, in, line, error);
     return replay_input_bytes(*this, name, in, line, error);
 }
 

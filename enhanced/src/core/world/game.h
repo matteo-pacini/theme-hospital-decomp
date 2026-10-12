@@ -119,8 +119,10 @@ class Game
     // a saved game.
     uint8_t skipped_calls = 0;
     // The presentation generator (the game's safeseed) as the level's start
-    // leaves it: the special levels' builders draw from it. Not part of a
-    // saved game; a loaded one starts at kLevelStartSeed.
+    // leaves it: the special levels' builders draw from it. The shell draws
+    // from it between turns (the advisor among them), either directly or
+    // through a copy it writes back here before it saves a snapshot, so a
+    // loaded game continues from the same draw.
     uint32_t safeseed = kLevelStartSeed;
     // Turns until the hospital opens to patients; 0 once it is open.
     int opening_countdown = 0;
@@ -269,9 +271,36 @@ class Game
     // command_log.
     void send_walker(uint16_t id, int cell);
 
+    // The cheats. cheats_enabled (othervar.cheats_enabled) is switched by the
+    // fax keypad's code and cleared when a level starts. force_bonus_level
+    // (debug.force_bonus_level) is set by the keypad's other code, makes
+    // try_bonus_level unlock a rat level and is cleared by it; it outlives the
+    // level (carry_force_bonus_level). Both are in the snapshot.
+    bool cheats_enabled = false;
+    bool force_bonus_level = false;
+    // Sets cheats_enabled or force_bonus_level, recorded in command_log.
+    void set_cheats_enabled(bool on);
+    void set_force_bonus_level(bool on);
+    // The level just started inherits force_bonus_level `on` from the last.
+    void carry_force_bonus_level(bool on);
+    // cheat (src/utils.cpp) for `flags`: 2 makes the level's objects
+    // available, 4 every object, 8 adds 1000 cash and 0x10 takes 1000. Does
+    // nothing unless cheats_enabled; returns whether it did, for the
+    // interface to play the announcement. Recorded in command_log.
+    bool cheat(uint32_t flags);
+    // Shift+R: a rat leaves a rat hole, with cheats enabled. Returns whether
+    // they are. Recorded in command_log.
+    bool cheat_rat();
+    // Ctrl+Alt+D: the view may scroll over the whole map, with cheats
+    // enabled. Returns whether they are. Recorded in command_log.
+    bool cheat_scroll();
+
     // The level's settings, its number and the animations it was started with.
     const Balance &settings() const { return settings_; }
     int level_number() const { return level_number_; }
+    // The hospital's level (myhosp->level): the level number, 1 above 14 (the
+    // levels of a network game, started with -L).
+    int hospital_level() const { return level_number_ > 14 ? 1 : level_number_; }
     const AnimData &anims() const { return *anims_; }
     // The level's action sequences (start_rooms_in_use).
     const PersonComplexes &person_complexes() const { return *complexes_; }

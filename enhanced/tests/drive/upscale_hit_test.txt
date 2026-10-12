@@ -1,0 +1,21 @@
+# Level 1: with the upscaling on (xBRZ at 2x, drawn on a map surface twice
+# the size) the mouse still lands on the game's pixels: a bench carried to a
+# cell is placed on that cell, and clicked there it is picked up again, as at
+# 1x (pick_up_object.txt).
+# Upscale xbrz:2
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+expect interface: requester 10,
+click 328 100            # buy a bench (the second entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the bench
+wait 20
+dump placed
+expect placing: object false
+click-thing 30 right     # pick it up again
+wait 20
+dump picked
+expect placing: object true

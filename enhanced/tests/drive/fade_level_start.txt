@@ -1,0 +1,38 @@
+# NoLevel
+# Fades
+# Size 640x480
+# Starting a level from the start-up screens: the briefing fades out, the
+# loading picture fades in and out, and the hospital fades in
+# (src/area.cpp state 2: display_loading_screen, clear_loading_screen). The
+# keys and clicks wait in the meantime and are not lost.
+wait 400
+key Space
+wait 100
+click 5 5
+wait 300
+key a
+key Return
+wait 100
+key Space
+wait 200
+click 85 32
+wait 100
+key Space
+wait 300
+click 372 395
+wait 100
+key Space
+wait 300
+dump briefing
+screenshot briefing
+click 320 240
+wait 3
+expect fade: out
+screenshot briefing_out
+wait 9
+expect fade: in
+screenshot loading
+wait 40
+expect fade: none
+expect screen: hospital
+screenshot hospital

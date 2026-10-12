@@ -1,0 +1,7 @@
+# Level 20, a two-player network map (player_count 2, no FULL20.SAM so only
+# FULL00.SAM is read), started as the original's -L20 does: a single player
+# on a level above 14, whose hospital level (myhosp->level) is 1, so the
+# start cash, ill rate, insurance odds and win criteria are level 1's.
+# The hospital opens at turn 100; no rooms.
+# Turns 2000
+100 139 0 0

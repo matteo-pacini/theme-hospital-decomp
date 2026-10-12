@@ -1,0 +1,19 @@
+xBRZ 1.9 (2026-01-24), by Zenju: https://sourceforge.net/projects/xbrz/
+
+Licence: GNU GPL version 3 only (License.txt), with the linking exception
+named in each file's header, which covers only MAME, FreeFileSync, Snes9x
+and ePSXe. Every binary of this project that contains xBRZ is conveyed under
+the GPL version 3; the source is this repository.
+
+Upstream release archive (not a copy from another project's tree):
+
+  https://sourceforge.net/projects/xbrz/files/xBRZ/xBRZ_1.9.zip
+  SHA-256 b2dff73b3abd24a18a7cde78d5ff5ed8f0922296dce6ed734dce2264cd0a0fc9
+
+The files here are the archive's xbrz.h, xbrz.cpp, xbrz_config.h,
+xbrz_tools.h, License.txt and Changelog.txt, with one change, in xbrz.cpp
+(blendPixel): `[&] -> bool` is `[&]() -> bool`. A lambda with a return type
+and no parameter list is C++23; this project builds as C++20.
+
+Built by the th_xbrz target (enhanced/cmake/deps.cmake) with warnings off,
+outside the zero-warnings set.

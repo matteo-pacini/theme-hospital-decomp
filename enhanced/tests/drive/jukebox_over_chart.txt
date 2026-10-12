@@ -1,0 +1,30 @@
+# Level 1
+# Size 640x480
+# J opens the jukebox over a chart too (process_keys runs in DM_CHARTS,
+# src/game.cpp): the requester is open behind the chart and shows when the
+# chart is left by its close button; Escape in the chart closes it with the
+# chart (setup_abort_all_requesters).
+wait 60
+key F1
+wait 40
+expect screen: chart 0
+key j
+wait 3
+expect interface: requester 13
+click 614 456
+wait 40
+expect screen: hospital
+expect interface: requester 13
+screenshot jukebox_after_chart
+key Escape
+wait 6
+expect interface: requester 99
+key F1
+wait 40
+key j
+wait 3
+expect interface: requester 13
+key Escape
+wait 40
+expect screen: hospital
+expect interface: requester 99

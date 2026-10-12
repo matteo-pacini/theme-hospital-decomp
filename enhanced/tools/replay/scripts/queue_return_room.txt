@@ -1,0 +1,47 @@
+# Level 1: gp_office.txt with a drinks machine at cell 8126 beside the GP's
+# door, three radiators round the reception desk and the heating at its
+# highest (EV_SET_HEATING 10), so that patients waiting for the GP's
+# room (queue room 6) get thirsty and drink. Patient 16 is at the machine
+# (use_object 16 obj=34 kind=7) at turn 16735 when it is lifted off the map
+# with EV_PICK_UP_OBJECT's `both` argument set (turn 16736, which, unlike
+# the single pick-up, does not stop its user first): remove_object_from_map
+# interrupts the user (interrupt_peep), whose queue is the GP's, so
+# interrupt_person leaves it in PS_RETURN_TO_QUEUE_AREA and
+# return_to_queue_area sends it back to the room's door tile (8256) with
+# complex 30.
+# Level 1
+# Turns 16800
+# Expect use_object 16 obj=34 kind=7 == 1
+# Expect return_to_queue_area 16 == 1
+# Expect set_complex 16 action=30 arg=8256 == 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+160 98 0 0
+161 37 7 1
+162 37 44 3
+163 43 0 0
+164 7 8126 7
+165 7 9276 44
+166 7 9410 44
+167 7 10047 44
+170 79 10 0
+16736 68 34 1

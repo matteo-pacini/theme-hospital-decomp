@@ -38,6 +38,9 @@ enum EventType : uint8_t {
     EV_VARY_SPEED = 0xe,
     EV_COMMIT_BLUEPRINT = 0x12,
     EV_UNCOMMIT_BLUEPRINT = 0x13,
+    // Shift+1 with cheats enabled (value: the pointer's cell); the original
+    // carries it out as nothing.
+    EV_CHEAT_CELL = 0x17,
     EV_TEMP_PLACE_DOOR = 0x1a,
     EV_QUIT_GAME = 0x1c,
     EV_GOTO_COLUMN_ROW = 0x1d,

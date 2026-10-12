@@ -1,0 +1,15 @@
+# Level 1
+# Size 640x480
+# Alt+C saves the screen as scrshots/hospNNNN.png (the original's
+# screen_shot, src/utils.cpp:172, writes .lbm), in the hospital and over a
+# chart; the first number is the first one free in the folder.
+wait 60
+expect screen shots: 0
+key Alt+c
+wait 3
+expect screen shots: 1
+key F1
+wait 40
+key Alt+c
+wait 3
+expect screen shots: 2

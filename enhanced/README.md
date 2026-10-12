@@ -142,8 +142,12 @@ Milestone 4 so far, the game's interface:
   (send home, wait, or the research department, once autopsies can be
   done) or no diagnosis (send home, guess the cure, once known and curable,
   or wait), a new illness found, the emergency offered and its result; the
-  answers carried out; the keypad (its numbers dial through, the cheats do
-  nothing);
+  answers carried out; the keypad (its numbers dial through; 2 4 3 2 8
+  switches the cheats on and off and 7 2 8 7 forces the next bonus rat
+  level), and with the cheats on Ctrl+C and Ctrl+Shift+C make objects
+  available, Shift+C adds 1000 cash, Shift+R makes a rat, Ctrl+Alt+D lets
+  the view scroll over the whole map and Ctrl+Y and Ctrl+M end the year and
+  the month (Shift+1 sends a command the game carries out as nothing);
 - the statistics pass of every 32nd turn (the patients' and staff's
   happiness, thirst, warmth, bladders and waits, the idle staff, the
   machines' wear, this month's visitors) and the advisor's advice from it:
@@ -223,6 +227,14 @@ Milestone 4 so far, the game's interface:
   or Shift+Esc with Tab held quits at once, the numpad 8/2/4/6 work in the
   casebook and the staff list, and C on the briefing picks any level by a
   click on its area.
+- the interface's cosmetics: the palette fades between screens (the old
+  screen to black in 10 steps, or 5 on leaving a screen for the hospital, the
+  new one up in 10; a movie sets its own palette), the loading screen at the
+  start and around a level's start, the game standing still and its input
+  kept for after a fade; Alt+C saves the screen as scrshots/hospNNNN.png
+  beside the saves (downloaded in the browser), and J opens the jukebox over a
+  chart too (it shows when the chart is left, and Escape closes it with the
+  chart.
 
 Not yet: the DNA fixer.
 Route planning defaults to A*; the game's wall following stays selectable
@@ -266,6 +278,47 @@ On the first start settings.ini and `save/` are copied from the old folder
 (`SDL_GetPrefPath("ThemeHospitalDecomp", "Enhanced")`), and hiscore.dat from
 `save/` of the data folder, when missing in the new ones; nothing is
 overwritten or deleted. The old `data_dir` setting is ignored.
+
+## Upscaling
+
+The setup screen (an install from the installer or a folder) offers to
+upscale the graphics: a checkbox, the algorithm (a table: xBRZ only, in
+src/core/render/upscale/scaler.cpp) and the factor, 2x to 6x. The choice is
+the `upscale` setting (`off` or `xbrz:4`); `--upscale off|xbrz:N` overrides
+it for a run and preselects the setup screen's choice. Nothing in the
+simulation changes: replays and snapshots are not involved.
+
+- **What is upscaled.** The map's sheets (blocks, things and people, the money
+  bag) are scaled once at install, in the install thread after the files are
+  in place (about 1 s at any factor, plus writing), then snapped back to the
+  game's 256 colours so that ghosting, the wall mask, the pause shade and the
+  palette fades work on indices as before. The result is in the user's
+  `upscale` folder (`$XDG_DATA_HOME/ThemeHospitalEnhanced/upscale`, the
+  browser's `/persist/upscale`) as `<algorithm>-<factor>.thup`, one file,
+  deflated, valid for the data it was made from (a hash of the sheets and
+  the palette), the algorithm's version and the factor. Missing or stale, the
+  game builds it at start (and writes it); a factor that cannot be had in
+  memory (a probe allocation fails) gives the next lower one. About 40 MB of
+  indices at 4x and a 7 MB file; the shaded blocks the game derives at
+  load come on top.
+- **How it is drawn.** The map surface holds `factor` x `factor` indices per
+  game pixel (`Surface::scale`); a sprite with an upscaled version copies
+  its runs, any other (fonts, the wobbling buffer) replicates its pixels, so
+  every drawing function takes game coordinates as before and clicks land on
+  the same cells. The window shows that surface at the view's zoom (linear
+  filter unless the ratio is whole).
+- **What is not.** The interface layers (panel, requesters, menu bar),
+  full-screen pictures (when first shown) and the pointers are scaled at
+  present, through the same scaler, in RGBA; the layer again only when its
+  pixels change. Movies are not scaled.
+- **Full-screen pictures** are drawn at a whole-number scale when the window
+  is at least 640 x 480, upscaling or not.
+- **Check.** `# Compare nearest:2` (tests/drive/upscale_nearest_matches_zoom.txt)
+  keeps the machinery honest: the nearest scaler through the Nx surface must
+  give the 1x frame zoomed, byte for byte. `th_tests` has the scaler, snapper
+  and cache tests; the install tests have a cache build.
+- **Licence.** xBRZ is GPL-3.0-only (third_party/xbrz); a binary that contains
+  it is conveyed under the GPL version 3, and the web page links the source.
 
 ## Building
 
@@ -321,17 +374,25 @@ commands on stdin, answering each on stdout (src/app/drive.h).
 without a details file at Normal speed (a normal start is at Max, as the
 original's default); `--default-speed` keeps the Max. `--real-time` gives a driven
 run the real clock and frame lengths of a normal start (`wait` then counts
-frames that take milliseconds), to look for what only a real clock shows. The
+frames that take milliseconds), to look for what only a real clock shows.
+A normal start fades between screens and shows the loading screen as the
+game does (the game stands still meanwhile, its input kept for after);
+a driven run changes screens at once unless it is given `--fades`. The
 scripts in tests/drive are
 interface tests: `tools/drive_tests.sh` runs them (all, or the ones named)
 from the repository root with the build in `DRIVE_BUILD` (default
 build/enhanced), its output in build/drive-tests/<pid>/ (a folder per
 run, removed when every script passes). A script's header picks
-how it starts: `# Level N` the level (default 1), `# NoLevel` the start-up
+how it starts: `# Level N` the level (default 1), `# Fades` passes `--fades`,
+`# NoLevel` the start-up
 screens instead, `# Size WxH` the window size (default 1280x720; the menu
 bar is only at the top in the game's 640x480 layout), `# SeedScript NAME`
 runs the script NAME first, into a folder of its own, and copies its saves
-into the run's save folder (the run order does not matter), and
+into the run's save folder (the run order does not matter),
+`# Upscale SPEC` runs it with `--upscale SPEC`, `# Compare SPEC FILE...` also
+runs it with `--upscale SPEC` and fails unless each named output file is
+byte for byte the 1x run's (`nearest:N` at the zoom N matches the 1x
+frame), and
 `# SeedReplay LEVEL SCRIPT TURNS` plays a replay script to that turn with
 th_replay and puts its end state in slot 1. `type TEXT` types into a focused
 text field, `key [MOD+]NAME` presses a key with Shift, Ctrl or Alt held
@@ -528,10 +589,15 @@ The player's commands checked so far are the scripts in
 and orig_trace.sh's SCRIPT; the EV_* numbers in include/enums.h). Each
 script's header comments say what it exercises, and its `# Expect` and
 `# Expect-not` lines check it on both traces; `# Level N` picks the level
-(th_replay `--level N`, orig_trace.sh's LEVEL), `# Turns N` the last
+(th_replay `--level N`, orig_trace.sh's LEVEL), `# Balance ID` the
+balance files' prefix (EASY, HARD or NET; the game's `-bID`, default FULL: the
+level is then passed to both sides as `N -bID`), `# Turns N` the last
 turn and `# Score N` the score the last level left (init_player keeps it
 above level 1; both sides read the header line itself). `@advisor_event N`
-lines raise advisor.event_flags' bits as the interface's buttons do. A script
+lines raise advisor.event_flags' bits as the interface's buttons do. The
+cheats' lines (`@cheats 0|1`, `@force_bonus 0|1`, `@cheat FLAGS`,
+`@cheat_rat`, `@cheat_scroll`) are th_replay's only: the instrumented
+original has no stand-in for them, so no script uses them yet. A script
 is compared with no call left out (the computer hospitals, rats and
 disasters all run) by `replay_all.sh`, or by hand as below; th_replay's
 `--skip NAMES` and orig_trace.sh's SKIP leave calls out of one side
@@ -598,11 +664,10 @@ shell, stopping at the first failure:
    continue to the trace of the first build's whole run from turn N + 1;
    native to wasm and wasm to native. `CROSS_LOAD` lists the `SCRIPT:N` items
    (default `rival_two_years:18000`, with rivals and a year end after it,
-   `win_level1:9000` and `tutorial:9000`). The `# advice` comment lines are
-   left out: th_replay keeps the advisor character's animation seed outside
-   the snapshot, so after any load (native too) an advice can come a turn
-   earlier or later; the state and the events are what is compared. Each
-   item's pass is stored too, keyed by the script and N.
+   `win_level1:9000` and `tutorial:9000`). The `# advice` lines are compared
+   too: the snapshot carries the presentation generator (`Game::safeseed`)
+   the advisor draws from. Each item's pass is stored too, keyed by the script
+   and N.
 
 Without `WEB=1` the gate does not touch `build/web`. At one job
 (`CMAKE_BUILD_PARALLEL_LEVEL=1 TIDY_JOBS=1 JOBS=1`, nice 19) a clean
@@ -644,6 +709,10 @@ the Vercel project (default `theme-hospital-enhanced`).
   code-only build to a new project first. The game data stays behind Vercel
   Authentication and nowhere in the repository; delete `build/web/deploy-data`
   when done.
+  The page sets `thUpscale` to `xbrz:4`, which the setup screen starts with
+  (`--upscale xbrz:4`: the player can change it); the install builds the
+  upscaled sprites, 3x when 4x cannot be had in memory. `web_smoke.sh` runs
+  with `?upscale=xbrz:4` (`SMOKE_UPSCALE=off` for none) and waits for the cache.
 - `--preview`: the same preview and checks without the data.
 - `--dry-run` assembles the folder and prints the commands; nothing is sent.
 
@@ -659,6 +728,8 @@ opens a room before `commit_doors` has finished cannot agree
     src/core/data/    file formats: RNC, sprites, palette, levels, text, Smacker,
                       the data folder
     src/core/render/  indexed surface, sprites, frames, shadows, the hospital view, panel
+    src/core/render/upscale/  the upscaler: algorithms, palette snapping, the cache
+    third_party/xbrz/ xBRZ, vendored (GPL 3; README there)
     src/core/world/   the map and its things, level start, the turn, arrivals, action
                       sequences, path finding
     src/core/audio/   the sound bank's effects and the XMI music

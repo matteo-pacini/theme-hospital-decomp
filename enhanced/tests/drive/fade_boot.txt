@@ -1,0 +1,21 @@
+# Level 1
+# Fades
+# Size 640x480
+# The loading screen at the program's start (setup_host, src/pchost.cpp:90):
+# the loading picture fades in over 10 blanks, out over 10, and the level's
+# first frame fades in (src/screens.cpp:251 and :284, src/game.cpp:254). The
+# game stands still meanwhile: the turn counter does not move.
+wait 4
+expect fade: in
+expect turn=1 paused
+screenshot loading_in
+wait 12
+screenshot loading_out
+wait 9
+expect fade: in
+expect turn=1 paused
+screenshot level_in
+wait 20
+expect fade: none
+expect-not turn=1 paused
+screenshot level

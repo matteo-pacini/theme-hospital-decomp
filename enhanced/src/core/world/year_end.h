@@ -215,7 +215,8 @@ void create_chart_data(Game &game);
 void year_end_sim(Game &game);
 
 // try_bonus_level (0x7e140): unlocks a bonus rat level when the player's rat
-// kills beat the level's targets; nothing when they did not.
+// kills beat the level's targets or Game::force_bonus_level is set (and cleared);
+// nothing when neither holds.
 void try_bonus_level(Game &game);
 
 } // namespace th

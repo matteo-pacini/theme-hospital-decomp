@@ -97,8 +97,8 @@ struct TownMapInput {
 // the panel's. A left click on a plot the player may buy and afford buys
 // it; a right click on the map centres the view there and closes the map;
 // the balance opens the bank manager. The game keeps running behind it.
-// The help tooltips, palette fades and the network auction are not
-// ported.
+// The help tooltips and the network auction are not ported; the app
+// fades the screen in and out (ScreenFader).
 class TownMap
 {
   public:

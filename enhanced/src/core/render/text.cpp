@@ -51,7 +51,7 @@ void hline(Surface &dst, int x1, int x2, int y, uint8_t colour)
     x1 = std::max(x1, clip.x);
     x2 = std::min(x2, clip.x + clip.w - 1);
     for (int x = x1; x <= x2; x++)
-        dst.row(y)[x] = colour;
+        dst.put(x, y, colour);
 }
 
 // put_down_sprites' control bytes: toggles a drawing flag, or for 14 takes

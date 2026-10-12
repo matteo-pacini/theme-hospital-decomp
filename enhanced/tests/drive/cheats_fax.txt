@@ -1,0 +1,60 @@
+# Level 1: the cheats' input side. A reception desk, then the VIP's offer at
+# day 150 opens a fax (kind 8) with the keypad. Keys do nothing until the
+# keypad's code 2 4 3 2 8 (src/choice.cpp cheat_numbers, action 0) enables
+# the cheats; a number that is no cheat (1 2 3) and the code 7 2 8 7, which
+# only forces the bonus level, leave them off. Then Shift+C adds 1000 cash
+# (cheat(8)) and Ctrl+Y ends the year (EV_CHEAT_END_YEAR).
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 84             # buy the reception desk (the first entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the desk
+wait 20
+key 5                    # the fastest speed
+wait 5
+key Shift+c
+wait 5
+expect cheats_enabled=false
+key Ctrl+y
+wait 5
+expect date: year 0 month 0
+turns 7700               # past day 150, when the VIP is offered
+click 10 420             # the VIP's panel icon (kind 6)
+wait 20
+expect fax: kind 8
+click 271 382            # 0
+click 220 348            # 1
+click 272 348            # 2
+click 515 359            # send: no cheat
+wait 5
+expect cheats_enabled=false
+click 240 376            # 7
+click 294 353            # 2
+click 293 375            # 8
+click 240 376            # 7
+click 515 359            # send: force the bonus level
+wait 5
+expect cheats_enabled=false
+expect force_bonus_level=true
+click 294 353            # 2
+click 241 363            # 4
+click 348 353            # 3
+click 294 353            # 2
+click 293 375            # 8
+click 515 359            # send: cheats on
+wait 5
+expect cheats_enabled=true
+click 514 245            # accept the VIP's visit
+wait 30
+expect fax: closed
+expect balance: 39850,
+key Shift+c
+wait 5
+expect balance: 40850,
+key Ctrl+y
+wait 5
+expect date: year 0 month 11
+quit

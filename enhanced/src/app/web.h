@@ -32,6 +32,9 @@ void request_persistent_storage();
 // Downloads the report folder `dir` as one tar file.
 void download_report(const std::filesystem::path &dir);
 
+// Downloads the file `path`, under its own name.
+void download_file(const std::filesystem::path &path);
+
 // Tells the page the program has quit.
 void show_closed();
 
@@ -52,6 +55,9 @@ inline void request_persistent_storage()
 {
 }
 inline void download_report(const std::filesystem::path &)
+{
+}
+inline void download_file(const std::filesystem::path &)
 {
 }
 inline void show_closed()

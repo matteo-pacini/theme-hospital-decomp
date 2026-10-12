@@ -1,10 +1,10 @@
 # Size 640x480
 # A game folder without its install.ok marker shows the setup screen, says
-# so, and "Verify files" (at 505,107 on the 640x480 screen) checks the files.
+# so, and "Verify files" (at 505,131 on the 640x480 screen) checks the files.
 # Run by tools/install_tests.sh with a fake HOME.
 wait 3
 expect screen: no level
 expect setup: game folder incomplete, idle
-click 505 107
+click 505 131
 wait 3
 expect setup: game folder incomplete, idle, notice "The game files are correct

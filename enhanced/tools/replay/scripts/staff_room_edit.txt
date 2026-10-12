@@ -1,0 +1,74 @@
+# Level 1: staff_room.txt's hospital (a GP's office, a ward and nurse, a staff
+# room with its sofa, pool table and video game, a handyman and a second
+# receptionist) with the staff room (room 8) edited at turn 2500 and the ward
+# (room 7) at turn 9000. Staff resting in the staff room leave it once it is
+# being edited (staff_in_staff_room's evacuation) and the ward's nurse does
+# too (nurse_in_ward's).
+# Turns 10600
+# Expect cmd type=70 >= 2
+# Expect room_move 19 from=8 to=0 == 1
+# Expect room_move 7 from=7 to=0 == 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+130 55 0 0
+131 53 9 9
+132 2 7602 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8371 0
+137 3 0 0
+138 4 9 0
+139 7 7731 264
+140 7 7990 1
+141 1 0 0
+142 48 0 3
+143 5 10044 3
+160 55 0 0
+161 53 25 25
+162 2 6714 0
+163 2 7230 0
+164 8 7230 0
+165 18 0 0
+166 26 7356 0
+167 3 0 0
+168 4 25 0
+169 37 10 1
+170 37 57 1
+171 43 0 0
+172 7 6973 19
+173 7 6716 10
+174 7 7098 57
+175 1 0 0
+180 48 2 19
+181 5 10044 19
+182 48 3 23
+183 5 10044 23
+220 113 4 100
+2100 104 19 0
+2101 5 10044 19
+2500 70 8 0
+8100 97 3 0
+9000 113 4 300
+9000 70 7 0
+10000 104 11 0
+10001 5 6971 11

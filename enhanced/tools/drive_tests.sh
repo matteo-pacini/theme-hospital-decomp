@@ -7,13 +7,17 @@
 # only at the top in the game's 640x480 layout); a "# SeedScript NAME" line
 # first runs enhanced/tests/drive/NAME.txt into a folder of its own and copies
 # its saves into the run's save folder; a "# DefaultSpeed" line passes
-# --default-speed (the speed a normal start has: Max). A script's debug reports
-# go under its own output folder. Run from the repository root after building
-# build/enhanced (or the build tree in DRIVE_BUILD). Screenshots and dumps go
-# to build/drive-tests/<pid>/, a folder per run so that two runs in one tree
-# do not clash; it is removed when every script passes and kept, with its
-# logs, when one fails. A script whose seed script or seed replay fails fails
-# without its own run.
+# --default-speed (the speed a normal start has: Max); a "# Fades" line passes
+# --fades (the palette fades between screens, which a driven run skips); a
+# "# Upscale SPEC" line passes --upscale SPEC (xbrz:2, nearest:2: the
+# install-time upscaling); a "# Compare SPEC FILE..." line also runs the
+# script with --upscale SPEC and fails unless each FILE it wrote is byte for
+# byte the 1x run's. A script's debug reports go under its own output folder.
+# Run from the repository root after building build/enhanced (or the build
+# tree in DRIVE_BUILD). Screenshots and dumps go to build/drive-tests/<pid>/, a
+# folder per run so that two runs in one tree do not clash; it is removed
+# when every script passes and kept, with its logs, when one fails. A
+# script whose seed script or seed replay fails fails without its own run.
 set -u
 build=${DRIVE_BUILD:-build/enhanced}
 dir=enhanced/tests/drive
@@ -35,7 +39,11 @@ run_script() {
   level_arg="--level ${level:-1}"
   speed_arg=""
   grep -q "^# DefaultSpeed" "$script" && speed_arg="--default-speed"
+  grep -q "^# Fades" "$script" && speed_arg="$speed_arg --fades"
   [ -n "$nolevel" ] && level_arg=""
+  upscale=${UPSCALE_SPEC:-$(sed -n 's/^# Upscale \(.*\)/\1/p' "$script" | head -1)}
+  upscale_arg=""
+  [ -n "$upscale" ] && upscale_arg="--upscale $upscale"
   if [ $# -ge 3 ]; then
     mkdir -p "$out/save"
     cp "$3"/save/*.h* "$out/save/" 2>/dev/null
@@ -55,8 +63,24 @@ run_script() {
   fi
   # shellcheck disable=SC2086
   env -u LD_LIBRARY_PATH TH_DEBUG_REPORT_DIR="$out/debug-reports" \
-    "$build/th_enhanced" $level_arg $size_arg $speed_arg --drive "$script" \
+    "$build/th_enhanced" $level_arg $size_arg $speed_arg $upscale_arg --drive "$script" \
     --out "$out" >"$out.log" 2>&1
+}
+
+# compare_run SCRIPT OUT: for a "# Compare SPEC FILE..." header, runs SCRIPT
+# again with --upscale SPEC into OUT-upscaled and succeeds if each FILE is
+# byte for byte the one OUT holds; with no such header, succeeds.
+compare_run() {
+  spec=$(sed -n 's/^# Compare \([^ ]*\) .*/\1/p' "$1" | head -1)
+  [ -z "$spec" ] && return 0
+  files=$(sed -n 's/^# Compare [^ ]* \(.*\)/\1/p' "$1" | head -1)
+  (UPSCALE_SPEC=$spec; run_script "$1" "$2-upscaled") || return 1
+  for file in $files; do
+    if ! cmp -s "$2/$file" "$2-upscaled/$file"; then
+      echo "$file differs at --upscale $spec" >&2
+      return 1
+    fi
+  done
 }
 
 [ $# -eq 0 ] && set -- $dir/*.txt
@@ -78,7 +102,7 @@ for script in "$@"; do
     false
   fi
   # shellcheck disable=SC2181
-  if [ $? -eq 0 ]; then
+  if [ $? -eq 0 ] && compare_run "$script" "$out"; then
     echo "pass $name"
   else
     echo "FAIL $name (see $out.log)"

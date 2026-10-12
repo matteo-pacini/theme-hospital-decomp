@@ -130,6 +130,30 @@ void test_open_hospital(const char *dir)
     CHECK(!game.command_log.empty() && game.command_log.back().ends_with("139 0 0"));
 }
 
+// A level above 14 (a network game's map, the original's -L20) starts the
+// hospital at level 1 (setup_new_level): the level 1 start cash and the
+// hospital level the year-end and advisor tests read; the bonus levels keep
+// their numbers.
+void test_hospital_level(const char *dir)
+{
+    th::GameData gd;
+    std::string error;
+    CHECK(gd.load(dir, &error));
+    for (int number : {1, 14, 20, 44}) {
+        auto level = gd.load_level(number, &error);
+        th::Balance settings;
+        CHECK(level && th::load_balance(dir, number, th::kDefaultBalanceId, settings, &error));
+        if (!level)
+            return;
+        th::Game game;
+        game.start(*level, number, settings, gd.anims(), gd.person_complexes(), gd.staff_complexes());
+        const int hospital = number > 14 ? 1 : number;
+        CHECK(game.level_number() == number && game.hospital_level() == hospital);
+        CHECK(game.balance == int(settings.towns[size_t(hospital)].start_cash));
+        CHECK(game.finance.start_cash == settings.towns[size_t(hospital)].start_cash);
+    }
+}
+
 // The status screen draws every frame: overview_frame logs one line per turn
 // and hospital, and the log replays the same run.
 void test_overview_log(const char *dir)

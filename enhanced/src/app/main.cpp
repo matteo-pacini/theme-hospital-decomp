@@ -10,8 +10,10 @@
 #include "app/install_job.h"
 #include "app/paths.h"
 #include "app/player_details.h"
+#include "app/screen_fade.h"
 #include "app/settings.h"
 #include "app/ui/tools.h"
+#include "app/upscale_texture.h"
 #include "app/web.h"
 #include "core/audio/music.h"
 #include "core/audio/sounds.h"
@@ -22,6 +24,8 @@
 #include "core/render/panel.h"
 #include "core/render/shadows.h"
 #include "core/render/surface.h"
+#include "core/render/upscale/cache.h"
+#include "core/render/upscale/scaler.h"
 #include "core/render/view.h"
 #include "core/ui/build_room.h"
 #include "core/ui/buy_objects.h"
@@ -32,6 +36,7 @@
 #include "core/ui/info_windows.h"
 #include "core/ui/jukebox.h"
 #include "core/ui/layer.h"
+#include "core/ui/loading_screen.h"
 #include "core/ui/menubar.h"
 #include "core/ui/panel_info.h"
 #include "core/ui/popups.h"
@@ -61,6 +66,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -72,8 +78,10 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <span>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <utility>
 
 namespace th
@@ -186,11 +194,12 @@ struct DebugReportResult {
     std::filesystem::path dir;
 };
 
-// What a level leaves for the next: the hospital's score (0: none) and the
-// rivals' monthly banks (null: none).
+// What a level leaves for the next: the hospital's score (0: none), the
+// rivals' monthly banks (null: none) and whether a bonus level is forced.
 struct Carried {
     int32_t score = 0;
     const RivalBuckets *buckets = nullptr;
+    bool force_bonus = false;
 };
 
 // Starts level `number` with its settings (the balance set `balance_id`:
@@ -208,6 +217,7 @@ std::unique_ptr<LevelView> begin_level(const GameData &data, const Level &level,
     view->game.carry_score(carried.score);
     if (carried.buckets)
         view->game.carry_buckets(*carried.buckets);
+    view->game.carry_force_bonus_level(carried.force_bonus);
     view->shadows = std::make_unique<ShadowSprites>(data.blocks(), data.ghost());
     add_static_shadows(view->game.world.map);
     return view;
@@ -219,8 +229,9 @@ void draw_view(Surface &surface, const GameData &data, LevelView *level, Point c
 {
     surface.fill(0);
     if (level) {
-        if (level->scratch.width() != surface.width() || level->scratch.height() != surface.height()) {
-            level->scratch.resize(surface.width(), surface.height());
+        if (level->scratch.width() != surface.width() || level->scratch.height() != surface.height() ||
+            level->scratch.scale() != surface.scale()) {
+            level->scratch.resize(surface.width(), surface.height(), surface.scale());
             level->scratch.fill(kMaskColour);
         }
         draw_world(
@@ -253,11 +264,14 @@ bool has_receptionist(const World &world)
 }
 
 // Where `src` goes in an `out_w` x `out_h` window, as large as fits whole and
-// centred.
+// centred: at a whole-number scale where it can be (a window smaller than
+// `src` shows it reduced to fit).
 SDL_FRect fit_rect(const Surface &src, int out_w, int out_h)
 {
     int sw = std::max(src.width(), 1), sh = std::max(src.height(), 1);
     float fit = std::min(float(out_w) / float(sw), float(out_h) / float(sh));
+    if (fit >= 1.0f)
+        fit = std::floor(fit);
     float dw = sw * fit, dh = sh * fit;
     return {(out_w - dw) / 2, (out_h - dh) / 2, dw, dh};
 }
@@ -406,7 +420,7 @@ class App : public DriveHost
 
   private:
     // --drive SCRIPT, --control, --out DIR, --size WxH, --visible,
-    // --default-speed, --real-time.
+    // --default-speed, --real-time, --fades.
     void parse_drive_args(int argc, char **argv);
     // --user-data (skip the development folder, so a development build looks
     // only in the game folder as a normal start does), --drop PATH (handle PATH as a file dropped
@@ -425,7 +439,9 @@ class App : public DriveHost
     void queue_drop_arg();
     void setup_step();
     void refresh_game_dir_state();
-    SetupView setup_view() const;
+    SetupView setup_view();
+    // The job's upscaling: what the setup screen chose, saved as the setting.
+    UpscaleBuild commit_upscale_choice();
     // One of TH_DRIVE_SLOTS (default 6) slots shared by every driven run on
     // the machine, under the repository's build/slots/drive.
     void hold_drive_slot();
@@ -453,6 +469,17 @@ class App : public DriveHost
     bool drive_lose_level() override;
 
     bool try_load_data(const std::filesystem::path &dir);
+    // Sets upscale_ from --upscale, else the settings file.
+    void choose_upscale();
+    // Gives `data` its upscaled map sheets from the cache or by building
+    // them; upscaling is off for the run if they cannot be made.
+    void attach_upscaled(GameData &data, const std::filesystem::path &dir);
+    // Where the upscaled sprites are kept: the user's folder, or the output
+    // folder of a driven run.
+    std::filesystem::path upscale_cache_dir() const;
+    // Preselects the setup screen's upscaling choice from --upscale or the
+    // settings, once.
+    void init_upscale_choice();
     void load_level(int number);
     // Takes over `view` as the level in play and resets the interface round
     // it. `fresh` starts the advisor, the hospital settings and the insurers
@@ -499,6 +526,14 @@ class App : public DriveHost
     // check_autosave (src/io.cpp): slot 8 on day 28.
     void check_autosave(const Game &game);
     void handle_event(const SDL_Event &e);
+    // What comes during a fade is kept (hold_during_fade) and handled once it
+    // is over (deliver_held_events).
+    bool hold_during_fade(const SDL_Event &e);
+    bool chart_escape(Game &game);
+    void decline_win(Game &game, bool win);
+    void mouse_motion(const SDL_MouseMotionEvent &motion);
+    void mouse_wheel(const SDL_MouseWheelEvent &wheel);
+    void deliver_held_events();
     void key_down(const SDL_KeyboardEvent &key);
     void key_up(const SDL_KeyboardEvent &key);
     void note_held_keys(const SDL_KeyboardEvent &key, bool down);
@@ -510,6 +545,8 @@ class App : public DriveHost
     bool game_speed_key(const SDL_KeyboardEvent &key);
     // P pauses, T the town map, Shift+A the advisor, J the jukebox.
     void game_letter_key(const SDL_KeyboardEvent &key);
+    // The cheat keys; true when `key` was one.
+    bool cheat_key(const SDL_KeyboardEvent &key);
     // The quit keys; true when `key` is one.
     bool quit_key(const SDL_KeyboardEvent &key);
     // Alt+F1-F8 stores and Ctrl+F1-F8 recalls a view position
@@ -539,6 +576,18 @@ class App : public DriveHost
     // both (io.cpp), and opposite keys cancelling (process_game_keys).
     uint8_t scroll_direction();
     void render();
+    // The palette fades and the loading screen (ScreenFader): queues the fade
+    // of a change of screen and presents a fade's frame. True when the frame
+    // was presented, so the screen is not drawn.
+    bool fade_frame(int out_w, int out_h);
+    // The screen shown, as the fades tell them apart.
+    ScreenId screen_id() const;
+    void draw_loading_picture(int out_w, int out_h);
+    // Alt+C: the screen shot (screen_shot, src/utils.cpp:172) of the frame
+    // being drawn, saved as scrshots/hospNNNN.png (downloaded in the browser).
+    void take_screen_shot();
+    // True when `key` is Alt+C.
+    bool screen_shot_key(const SDL_KeyboardEvent &key);
     // Reads the render target back and saves it as a PNG (a driven run's
     // screenshot).
     void save_drive_screenshot(const std::filesystem::path &path);
@@ -699,8 +748,15 @@ class App : public DriveHost
     void run_command(Game &game);
     // The mouse in `src` drawn at `at` (from fit_rect).
     UiMouse fitted_mouse(const SDL_FRect &at, const Surface &src) const;
-    // Draws `src` in `palette` into `dst` of the window through `tex`.
-    void draw_fitted(const Surface &src, const Palette &palette, SDL_Texture *&tex, const SDL_FRect &dst);
+    // Draws `src` in `palette` into `dst` of the window through `tex`, or
+    // through the upscaler when it is on and `upscalable` (a picture, not a
+    // movie's frame).
+    void draw_fitted(const Surface &src, const Palette &palette, SDL_Texture *&tex, const SDL_FRect &dst,
+                     bool upscalable = true);
+    // Draws the `w`-wide ARGB layer `pixels` over `dst`: scaled by the
+    // upscaler when it is on, else through `plain` (a texture of its size).
+    void draw_layer(ScaledTexture &scaled, SDL_Texture *plain, const std::vector<uint32_t> &pixels, int w,
+                    const SDL_FRect &dst);
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -711,6 +767,18 @@ class App : public DriveHost
     // canvas.
     UiLayer ui_;
     SDL_Texture *ui_tex_ = nullptr;
+    // The upscaling of this run (--upscale, else settings.ini), and the 1x
+    // layers and full-screen pictures shown through it.
+    UpscaleConfig upscale_;
+    // --upscale, as given; empty when the setting decides.
+    std::string upscale_arg_;
+    // The setup screen's upscaling options, preselected from the above on
+    // its first frame.
+    UpscaleChoice upscale_choice_;
+    bool upscale_choice_ready_ = false;
+    ScaledTexture ui_scaled_;
+    ScaledTexture menu_scaled_;
+    ScaledTexture fit_scaled_;
     PanelState panel_state_;
     Interface interface_;
     HospScores hosp_scores_;
@@ -928,6 +996,8 @@ class App : public DriveHost
     // The rivals' monthly banks, which no level clears (comp_buckets).
     RivalBuckets carried_buckets_{};
     bool have_carried_buckets_ = false;
+    // debug.force_bonus_level, which no level clears.
+    bool carried_force_bonus_ = false;
     void remember_level_end();
     bool winlose_to_menu_ = false; // the losing letter asked for the main menu
     bool chart_space_ = false;     // Space pressed for the charts this frame
@@ -965,6 +1035,10 @@ class App : public DriveHost
     // --real-time: a driven run takes its frame length and clock from the
     // real time, as a normal start does, not a fixed 1/60 s.
     bool drive_real_time_ = false;
+    // --fades: a driven run fades between screens as a normal start does; by
+    // default it changes them at once, so that scripts need not wait out the
+    // fades (the game stands still while one runs).
+    bool drive_fades_ = false;
     int drive_w_ = 1280, drive_h_ = 720;
     uint64_t drive_ns_ = 0;
     uint64_t last_ns_ = 0;
@@ -981,6 +1055,22 @@ class App : public DriveHost
         uint64_t frame = 0;
     } fit_;
     uint64_t frame_ = 0;
+    // The fades between screens and the loading screen, with the loading
+    // picture's texture; whether the program's start has shown it yet.
+    ScreenFader fader_;
+    LoadingScreen loading_;
+    SDL_Texture *loading_tex_ = nullptr;
+    bool boot_faded_ = false;
+    // Events (keys, buttons, the wheel) that came while a fade held the game,
+    // delivered when it ends, as the keyboard buffer and mouse driver keep
+    // them for the game.
+    std::vector<SDL_Event> held_events_;
+    // Alt+C asked for a screen shot of this frame; the number of the last one
+    // taken (debug.screenshot_number, -1 before the first: the folder is
+    // scanned for the first free name) and how many were taken.
+    bool screen_shot_requested_ = false;
+    int screen_shot_number_ = -1;
+    int screen_shots_ = 0;
 };
 
 bool App::init(int argc, char **argv)
@@ -1071,6 +1161,50 @@ bool App::create_window(bool driving)
     return true;
 }
 
+void App::choose_upscale()
+{
+    const std::string text = upscale_arg_.empty() ? settings_.get("upscale") : upscale_arg_;
+    upscale_ = {};
+    if (!text.empty() && !parse_upscale(text, upscale_))
+        std::fprintf(stderr, "upscale: expected off or ALGORITHM:FACTOR (xbrz:2 to xbrz:6), not \"%s\"\n",
+                     text.c_str());
+}
+
+std::filesystem::path App::upscale_cache_dir() const
+{
+    return driver_ ? drive_out_ / "upscale" : user_paths_.upscale_dir;
+}
+
+void App::init_upscale_choice()
+{
+    if (upscale_choice_ready_)
+        return;
+    choose_upscale();
+    upscale_choice_.on = upscale_.on();
+    if (upscale_.on()) {
+        upscale_choice_.factor = upscale_.factor;
+        for (size_t i = 0; i < scalers().size(); i++)
+            if (&scalers()[i] == upscale_.scaler)
+                upscale_choice_.algorithm = int(i);
+    }
+    upscale_choice_ready_ = true;
+}
+
+void App::attach_upscaled(GameData &data, const std::filesystem::path &dir)
+{
+    if (!upscale_.on())
+        return;
+    MapHires hires;
+    std::string error;
+    const std::filesystem::path cache = upscale_cache_dir();
+    if (!upscaled_map_sheets(dir, cache, upscale_, {}, hires, &error)) {
+        std::fprintf(stderr, "upscale: %s\n", error.c_str());
+        upscale_ = {};
+        return;
+    }
+    data.attach_hires(std::move(hires.blocks), std::move(hires.sprites), std::move(hires.money));
+}
+
 bool App::try_load_data(const std::filesystem::path &dir)
 {
     auto data = std::make_unique<GameData>();
@@ -1079,6 +1213,8 @@ bool App::try_load_data(const std::filesystem::path &dir)
         data_error_ = error;
         return false;
     }
+    choose_upscale();
+    attach_upscaled(*data, dir);
     data_ = std::move(data);
     load_ui_art(dir);
     data_dir_ = dir;
@@ -1135,8 +1271,8 @@ void App::load_ui_art(const std::filesystem::path &dir)
     make_ui_textures();
 }
 
-// Keeps what the level in progress leaves for the next one: the score and the
-// rivals' banks.
+// Keeps what the level in progress leaves for the next one: the score, the
+// rivals' banks and the forced bonus level.
 void App::remember_level_end()
 {
     if (!map_)
@@ -1144,6 +1280,7 @@ void App::remember_level_end()
     carried_score_ = map_->game.progress.score;
     carried_buckets_ = map_->game.rival_buckets();
     have_carried_buckets_ = true;
+    carried_force_bonus_ = map_->game.force_bonus_level;
 }
 
 void App::load_level(int number)
@@ -1158,7 +1295,7 @@ void App::load_level(int number)
         return;
     }
     auto map = begin_level(*data_, *level, number, balance_id_, &error,
-                           {carried_score_, have_carried_buckets_ ? &carried_buckets_ : nullptr});
+                           {carried_score_, have_carried_buckets_ ? &carried_buckets_ : nullptr, carried_force_bonus_});
     if (!map) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return;
@@ -1305,6 +1442,8 @@ void App::perform_save(int slot)
         return;
     }
     std::string error;
+    // The live generator is the sounds'; the snapshot carries the game's.
+    map_->game.safeseed = sounds_.safeseed;
     if (!write_save_slot(save_path(slot), map_->game, current_save(), &error)) {
         std::fprintf(stderr, "save slot %d: %s\n", slot, error.c_str());
         show_panel_message(kPanelMessageCannotSave, 0x14);
@@ -1355,6 +1494,7 @@ void App::save_continue_slot()
     if (!map_ || !data_ || !can_save(map_->game))
         return;
     std::string error;
+    map_->game.safeseed = sounds_.safeseed;
     if (!write_save_slot(save_path(kContinueSlot), map_->game, current_save(), &error))
         std::fprintf(stderr, "continue save: %s\n", error.c_str());
     else {
@@ -2039,7 +2179,7 @@ void App::interface_advisor(Game &game, const UiMouse &mouse, bool input, bool p
     in.game_turn = game.turn_count;
     in.paused = paused;
     in.requester_open = interface_.requester() != Requester::None && interface_.requester() != Requester::EditRoom;
-    in.level = game.level_number();
+    in.level = game.hospital_level();
     in.month = game.date.month;
     in.open = game.open;
     in.balance = game.balance;
@@ -2146,10 +2286,8 @@ void App::interface_draw(Game *game, int ox, int oy, int scale)
     }
     shade_ui(ui_);
     help_draw();
-    std::vector<uint32_t> pixels = ui_.to_argb(data_->palette());
-    SDL_UpdateTexture(ui_tex_, nullptr, pixels.data(), kUiWidth * 4);
     SDL_FRect dst = {float(ox), float(oy), float(kUiWidth * scale), float(kUiHeight * scale)};
-    SDL_RenderTexture(renderer_, ui_tex_, nullptr, &dst);
+    draw_layer(ui_scaled_, ui_tex_, ui_.to_argb(data_->palette()), kUiWidth, dst);
 }
 
 // The panel with what is drawn over it: the rat game's (score, weapons, litter
@@ -2394,6 +2532,7 @@ void App::draw_pointer(int scale, uint8_t sprite)
     } else if (pt.texture && over_game) {
         SDL_HideCursor();
         SDL_FRect p = {mx * density, my * density, float(pt.w * scale), float(pt.h * scale)};
+        set_scale_mode_for(pt.texture, p.w);
         SDL_RenderTexture(renderer_, pt.texture, nullptr, &p);
     } else {
         SDL_ShowCursor();
@@ -2412,9 +2551,38 @@ UiMouse App::fitted_mouse(const SDL_FRect &at, const Surface &src) const
     return mouse;
 }
 
-void App::draw_fitted(const Surface &src, const Palette &palette, SDL_Texture *&tex, const SDL_FRect &dst)
+void App::draw_layer(ScaledTexture &scaled, SDL_Texture *plain, const std::vector<uint32_t> &pixels, int w,
+                     const SDL_FRect &dst)
+{
+    const int h = int(pixels.size()) / w;
+    SDL_Texture *tex = scaled.update(renderer_, upscale_, pixels.data(), w, h);
+    if (tex) {
+        set_scale_mode_for(tex, dst.w);
+    } else {
+        SDL_UpdateTexture(plain, nullptr, pixels.data(), w * 4);
+        tex = plain;
+    }
+    SDL_RenderTexture(renderer_, tex, nullptr, &dst);
+}
+
+void App::draw_fitted(const Surface &src, const Palette &palette, SDL_Texture *&tex, const SDL_FRect &dst,
+                      bool upscalable)
 {
     int sw = std::max(src.width(), 1), sh = std::max(src.height(), 1);
+    if (upscalable && upscale_.on() && src.width() > 0) {
+        std::vector<uint32_t> argb(size_t(sw) * size_t(sh));
+        for (size_t i = 0; i < argb.size(); i++)
+            argb[i] = palette[src.data()[i]];
+        if (SDL_Texture *scaled = fit_scaled_.update(renderer_, upscale_, argb.data(), sw, sh)) {
+            set_scale_mode_for(scaled, dst.w);
+            SDL_RenderTexture(renderer_, scaled, nullptr, &dst);
+            fit_.at = dst;
+            fit_.w = sw;
+            fit_.h = sh;
+            fit_.frame = frame_;
+            return;
+        }
+    }
     if (!tex || tex->w != sw || tex->h != sh) {
         if (tex)
             SDL_DestroyTexture(tex);
@@ -2584,6 +2752,21 @@ void App::fax_step(int out_w, int out_h)
 
 // One frame of the open chart, in place of the view and the interface,
 // drawn aspect-fit in the window; then the turn's command.
+// Escape over a chart: process_keys runs there as over the hospital, so it
+// also aborts what is open behind the chart (setup_abort_all_requesters), the
+// jukebox among it. The abort's command runs now; the event the frame had
+// pending stays. Returns whether Escape was pressed, for the chart.
+bool App::chart_escape(Game &game)
+{
+    const bool escape = escape_;
+    Event pending = std::exchange(game.event, {});
+    interface_escape(&game);
+    if (game.event.type)
+        run_command(game);
+    game.event = pending;
+    return escape;
+}
+
 void App::charts_step(int out_w, int out_h)
 {
     Game &game = map_->game;
@@ -2593,7 +2776,7 @@ void App::charts_step(int out_w, int out_h)
     help_context();
     const bool *held = SDL_GetKeyboardState(nullptr);
     ChartKeys keys;
-    keys.escape = std::exchange(escape_, false);
+    keys.escape = chart_escape(game);
     keys.space = std::exchange(chart_space_, false);
     keys.up = held[SDL_SCANCODE_UP];
     keys.down = held[SDL_SCANCODE_DOWN];
@@ -2882,10 +3065,20 @@ void App::return_to_main_menu()
 // new level's first command (src/winlose.cpp), then comes its briefing page.
 void App::start_next_level(int next)
 {
+    fader_.queue_level_start();
     load_level(next);
     map_->game.event = {EV_CANCEL_BUILD, 0, 0, 0};
     run_command(map_->game);
     help_.set_page(-1, -1, level_briefing(data_->text(), next));
+}
+
+// A win letter declined: the game's files reload behind the loading screen
+// (src/winlose.cpp, state 5), and the game runs on.
+void App::decline_win(Game &game, bool win)
+{
+    if (win)
+        fader_.queue_level_start();
+    game.paused = false;
 }
 
 // One frame of the win or lose sequence: its movie, then its letter. Accepting
@@ -2902,7 +3095,7 @@ void App::winlose_step(int out_w, int out_h)
             winlose_movie_audio_.clear();
         }
         SDL_FRect mat = fit_rect(winlose_movie_surface_, out_w, out_h);
-        draw_fitted(winlose_movie_surface_, winlose_movie_palette_, winlose_tex_, mat);
+        draw_fitted(winlose_movie_surface_, winlose_movie_palette_, winlose_tex_, mat, false);
         return;
     }
     const Surface &src = winlose_.surface();
@@ -2938,7 +3131,7 @@ void App::winlose_step(int out_w, int out_h)
             // DM_MAIN_MENU: back to the main menu (the game is unloaded).
             return_to_main_menu();
         } else {
-            game.paused = false;
+            decline_win(game, view.win);
         }
         winlose_to_menu_ = false;
     }
@@ -2981,7 +3174,7 @@ void App::startup_step(int out_w, int out_h)
     if (movie_stream_ && !pcm.empty())
         SDL_PutAudioStreamData(movie_stream_, pcm.data(), int(pcm.size() * sizeof(int16_t)));
 
-    draw_fitted(src, startup_.palette(), startup_tex_, at);
+    draw_fitted(src, startup_.palette(), startup_tex_, at, startup_.movie() < 0);
 
     startup_result(r);
 }
@@ -2998,12 +3191,14 @@ void App::startup_result(const StartupResult &r)
     if (r.kind == StartupResult::Kind::Quit) {
         running_ = false;
     } else if (r.kind == StartupResult::Kind::StartLevel) {
+        fader_.queue_level_start();
         in_startup_ = false;
         balance_id_ = r.balance_id;
         tutorial_ = r.tutorial;
         load_level(r.level);
     } else if (r.kind == StartupResult::Kind::LoadGame) {
         if (perform_load(r.slot)) {
+            fader_.queue_level_start();
             in_startup_ = false;
         } else {
             // loadscr state 1 on failure returns to the load game screen
@@ -3035,6 +3230,7 @@ void App::capture_debug_report(DebugCapture &capture)
     capture.has_snapshot = false;
     capture.snapshot_error.clear();
     if (map_ && !in_startup_) {
+        map_->game.safeseed = sounds_.safeseed;
         if (save_snapshot(map_->game, capture.snapshot))
             capture.has_snapshot = true;
         else
@@ -3200,6 +3396,7 @@ std::string App::debug_state() const
     s += std::format("data: {}\n", data_ ? data_->dir().string() : "");
     s += std::format("window: {}x{} px, zoom {}, UI scale {}\n", w, h, zoom(), ui_scale());
     s += std::format("screen: {}", screen_name());
+    s += std::format("\nfade: {}\nscreen shots: {}", fader_.state(), screen_shots_);
     s += std::format("\nmouse: {},{} (window points), map cell {}", mx, my, map_cell_);
     if (map_cell_ >= 0)
         s += std::format(" (column {}, row {})", map_cell_ % kMapSize, map_cell_ / kMapSize);
@@ -3340,7 +3537,12 @@ void App::make_ui_textures()
         pt.h = s.height;
         std::vector<uint32_t> pixels(size_t(pt.w) * size_t(pt.h));
         sprite_to_argb(s, data_->palette(), pixels.data(), pt.w * 4);
-        pt.texture = argb_texture(renderer_, pixels, pt.w, pt.h);
+        if (upscale_.on() && !s.empty()) {
+            pt.texture = argb_texture(renderer_, upscale_argb(upscale_, pixels.data(), pt.w, pt.h),
+                                      pt.w * upscale_.factor, pt.h * upscale_.factor);
+        } else {
+            pt.texture = argb_texture(renderer_, pixels, pt.w, pt.h);
+        }
     }
 }
 
@@ -3403,6 +3605,7 @@ void App::menu_step(int out_w, int scale)
     draw_menu_bar(menu_layer_, menu_);
     shade_ui(menu_layer_);
     std::vector<uint32_t> pixels = menu_layer_.to_argb(data_->palette());
+    SDL_FRect dst = {float(ox), 0, float(width * scale), float(kUiHeight * scale)};
     if (menu_tex_ && menu_tex_->w != width) {
         SDL_DestroyTexture(menu_tex_);
         menu_tex_ = nullptr;
@@ -3413,9 +3616,7 @@ void App::menu_step(int out_w, int scale)
         SDL_SetTextureScaleMode(menu_tex_, SDL_SCALEMODE_NEAREST);
         SDL_SetTextureBlendMode(menu_tex_, SDL_BLENDMODE_BLEND);
     }
-    SDL_UpdateTexture(menu_tex_, nullptr, pixels.data(), width * 4);
-    SDL_FRect dst = {float(ox), 0, float(width * scale), float(kUiHeight * scale)};
-    SDL_RenderTexture(renderer_, menu_tex_, nullptr, &dst);
+    draw_layer(menu_scaled_, menu_tex_, pixels, width, dst);
 }
 
 // Carries out what the menu bar asked for; what does not exist yet is
@@ -3535,8 +3736,58 @@ void App::open_menu_screen(int chart)
         map_->game.event = e;
 }
 
+// Keeps the game's input that comes during a fade, for after it. True when
+// `e` was kept.
+bool App::hold_during_fade(const SDL_Event &e)
+{
+    if (!fader_.blocking())
+        return false;
+    switch (e.type) {
+    case SDL_EVENT_KEY_DOWN:
+    case SDL_EVENT_KEY_UP:
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+    case SDL_EVENT_MOUSE_MOTION:
+    case SDL_EVENT_MOUSE_WHEEL:
+        held_events_.push_back(e);
+        return true;
+    default:
+        return false;
+    }
+}
+
+void App::deliver_held_events()
+{
+    std::vector<SDL_Event> held;
+    held.swap(held_events_);
+    for (const SDL_Event &e : held)
+        handle_event(e);
+}
+
+// A mouse drag scrolls the view.
+void App::mouse_motion(const SDL_MouseMotionEvent &motion)
+{
+    if (!dragging_ || !data_ || quick_.open)
+        return;
+    float density = SDL_GetWindowPixelDensity(window_);
+    scroll_x_ -= motion.xrel * density / float(zoom());
+    scroll_y_ -= motion.yrel * density / float(zoom());
+}
+
+// The wheel zooms. render() keeps the view centred when the surface changes
+// size.
+void App::mouse_wheel(const SDL_MouseWheelEvent &wheel)
+{
+    if (!data_ || quick_.open)
+        return;
+    int step = wheel.y > 0 ? 1 : wheel.y < 0 ? -1 : 0;
+    zoom_ = std::clamp(zoom() + step, 1, 4);
+}
+
 void App::handle_event(const SDL_Event &e)
 {
+    if (hold_during_fade(e))
+        return;
     ImGui_ImplSDL3_ProcessEvent(&e);
     const ImGuiIO &io = ImGui::GetIO();
     switch (e.type) {
@@ -3563,17 +3814,11 @@ void App::handle_event(const SDL_Event &e)
             mouse_up(e.button);
         break;
     case SDL_EVENT_MOUSE_MOTION:
-        if (dragging_ && data_ && !quick_.open) {
-            float density = SDL_GetWindowPixelDensity(window_);
-            scroll_x_ -= e.motion.xrel * density / float(zoom());
-            scroll_y_ -= e.motion.yrel * density / float(zoom());
-        }
+        mouse_motion(e.motion);
         break;
     case SDL_EVENT_MOUSE_WHEEL:
-        if (!io.WantCaptureMouse && data_ && !quick_.open) {
-            // render() keeps the view centred when the surface changes size.
-            zoom_ = std::clamp(zoom() + (e.wheel.y > 0 ? 1 : e.wheel.y < 0 ? -1 : 0), 1, 4);
-        }
+        if (!io.WantCaptureMouse)
+            mouse_wheel(e.wheel);
         break;
     default:
         break;
@@ -3735,6 +3980,8 @@ void App::game_key(const SDL_KeyboardEvent &key)
         return;
     if (view_bookmark_key(key))
         return;
+    if (screen_shot_key(key))
+        return;
     if (charts_.open)
         chart_space_ = chart_space_ || key.key == SDLK_SPACE;
     if (key.key >= SDLK_F1 && key.key <= SDLK_F8 && map_) {
@@ -3744,9 +3991,43 @@ void App::game_key(const SDL_KeyboardEvent &key)
             open_chart_key(int(key.key - SDLK_F1));
         return;
     }
-    if (quit_key(key) || !map_)
+    if (quit_key(key) || !map_ || cheat_key(key))
         return;
     game_letter_key(key);
+}
+
+// The cheat keys of process_game_keys (src/keyboard.cpp), which act only
+// once the fax's code has enabled cheats: Ctrl+C and Ctrl+Shift+C make
+// objects available, Shift+C adds 1000 cash, Shift+1 sends EV_CHEAT_CELL,
+// Shift+R makes a rat, Ctrl+Alt+D lets the view scroll over the map, Ctrl+Y
+// and Ctrl+M end the year and the month. Alt+C is the screenshot's. True
+// when `key` was one.
+bool App::cheat_key(const SDL_KeyboardEvent &key)
+{
+    Game &game = map_->game;
+    const bool shift = key.mod & SDL_KMOD_SHIFT;
+    const bool ctrl = key.mod & SDL_KMOD_CTRL;
+    const bool alt = key.mod & SDL_KMOD_ALT;
+    if (key.key == SDLK_C && !alt && (ctrl || shift)) {
+        if (game.cheat(ctrl ? (shift ? 4 : 2) : 8)) {
+            const int announcement = kAnnounceCheat + saferand(sounds_.safeseed) % 2;
+            sounds_.play_ambient(announcement, has_receptionist(game.world), game.paused);
+        }
+    } else if (key.key == SDLK_1 && shift) {
+        if (game.cheats_enabled)
+            game.event = {EV_CHEAT_CELL, uint16_t(std::max(map_cell_, 0)), 0, 0};
+    } else if (key.key == SDLK_R && shift) {
+        game.cheat_rat();
+    } else if (key.key == SDLK_D && ctrl && alt) {
+        game.cheat_scroll();
+    } else if (key.key == SDLK_Y && ctrl && game.cheats_enabled) {
+        game.event = {EV_CHEAT_END_YEAR};
+    } else if (key.key == SDLK_M && ctrl && game.cheats_enabled) {
+        game.event = {EV_CHEAT_END_MONTH};
+    } else {
+        return false;
+    }
+    return true;
 }
 
 void App::game_letter_key(const SDL_KeyboardEvent &key)
@@ -3761,7 +4042,9 @@ void App::game_letter_key(const SDL_KeyboardEvent &key)
         open_town_ = true;
     } else if (key.key == SDLK_A && (key.mod & SDL_KMOD_SHIFT)) {
         toggle_advisor(map_->game.advisor, map_->game.world);
-    } else if (key.key == SDLK_J && !(key.mod & SDL_KMOD_SHIFT) && !map_->game.paused && !charts_.open) {
+    } else if (key.key == SDLK_J && !(key.mod & SDL_KMOD_SHIFT) && !map_->game.paused) {
+        // Over a chart too (process_keys runs in DM_CHARTS): the requester
+        // opens behind it and shows when the chart is left.
         map_->game.event = {EV_OPEN_JUKEBOX};
     }
 }
@@ -4021,8 +4304,13 @@ void App::render()
 
     if (!data_) {
         setup_step();
-    } else if (!screen_step(out_w, out_h)) {
-        hospital_step(out_w, out_h);
+    } else if (!fade_frame(out_w, out_h)) {
+        fader_.begin_frame(renderer_, out_w, out_h);
+        if (!screen_step(out_w, out_h))
+            hospital_step(out_w, out_h);
+        if (std::exchange(screen_shot_requested_, false))
+            take_screen_shot();
+        fader_.end_frame(renderer_);
     }
 
     if (data_)
@@ -4052,6 +4340,95 @@ void App::save_drive_screenshot(const std::filesystem::path &path)
         std::fprintf(stderr, "drive: screenshot %s: %s\n", path.string().c_str(), SDL_GetError());
     if (shot)
         SDL_DestroySurface(shot);
+}
+
+void App::take_screen_shot()
+{
+    // scrshots/hospNNNN.png beside the saves; the first shot of a run takes
+    // the first number not used yet.
+    std::filesystem::path dir = save_dir_.parent_path() / "scrshots";
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    auto name = [](int n) { return std::format("hosp{:04}.png", n); };
+    if (screen_shot_number_ == -1) {
+        int i = 0;
+        while (i < 10000 && std::filesystem::exists(dir / name(i), ec))
+            i++;
+        screen_shot_number_ = i - 1;
+    }
+    int number = ++screen_shot_number_;
+    if (number >= 10000)
+        return;
+    // The frame just drawn, with its interface and pointer.
+    SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+    if (!shot)
+        return;
+    const std::filesystem::path path = dir / name(number);
+    const bool saved = SDL_SavePNG(shot, path.string().c_str());
+    SDL_DestroySurface(shot);
+    if (!saved)
+        return;
+    screen_shots_++;
+    // The browser's storage is no place to keep pictures: the shot is
+    // downloaded and removed.
+    if (web::kEnabled) {
+        web::download_file(path);
+        std::filesystem::remove(path, ec);
+    }
+}
+
+bool App::screen_shot_key(const SDL_KeyboardEvent &key)
+{
+    if (key.key != SDLK_C || !(key.mod & SDL_KMOD_ALT))
+        return false;
+    screen_shot_requested_ = true;
+    return true;
+}
+
+bool App::fade_frame(int out_w, int out_h)
+{
+    if (!std::exchange(boot_faded_, true)) {
+        // setup_host shows the loading screen once, before the intro; a level
+        // started at once (--level) fades in from it.
+        std::string error;
+        if (load_loading_screen(data_->dir(), loading_, &error))
+            fader_.queue_boot(!in_startup_);
+        else
+            std::fprintf(stderr, "%s\n", error.c_str());
+    }
+    fader_.screen(screen_id());
+    bool shown = fader_.present(renderer_, out_w, out_h, frame_seconds_, [&] { draw_loading_picture(out_w, out_h); });
+    if (shown)
+        mixer_.update(sounds_, &music_);
+    return shown;
+}
+
+ScreenId App::screen_id() const
+{
+    if (in_startup_) {
+        FadeScreen kind = startup_.screen() == StartupScreen::Movie ? FadeScreen::Movie : FadeScreen::Startup;
+        int sub = kind == FadeScreen::Movie ? startup_.movie() : int(startup_.screen());
+        return {kind, sub};
+    }
+    if (!map_)
+        return {};
+    if (year_end_showing_)
+        return {FadeScreen::YearEnd, int(year_end_.phase()) * 8 + year_end_phase_};
+    if (winlose_showing_)
+        return {winlose_movie_index_ >= 0 ? FadeScreen::WinLoseMovie : FadeScreen::WinLoseLetter, 0};
+    if (fax_.open)
+        return {FadeScreen::Fax, 0};
+    if (charts_.open)
+        return {FadeScreen::Chart, charts_.chart};
+    if (town_.is_open())
+        return {FadeScreen::TownMap, 0};
+    return {FadeScreen::Hospital, 0};
+}
+
+void App::draw_loading_picture(int out_w, int out_h)
+{
+    SDL_FRect at = fit_rect(loading_.pixels, out_w, out_h);
+    draw_fitted(loading_.pixels, loading_.palette, loading_tex_, at);
 }
 
 // One frame of the hospital: the view at its zoom with what is being placed
@@ -4108,19 +4485,20 @@ void App::hospital_step(int out_w, int out_h)
 // Makes the view's surface and texture `vw` x `vh`.
 void App::resize_view(int vw, int vh)
 {
-    if (vw != surface_.width() || vh != surface_.height()) {
+    const int n = upscale_.on() ? upscale_.factor : 1;
+    if (vw != surface_.width() || vh != surface_.height() || n != surface_.scale()) {
         // Keep the same map point at the view's centre across resizes.
         Point centre = {camera_.x + surface_.width() / 2, camera_.y + surface_.height() / 2};
-        surface_.resize(vw, vh);
+        surface_.resize(vw, vh, n);
         camera_ = {centre.x - vw / 2, centre.y - vh / 2};
     }
-    if (!screen_ || screen_w_ != vw || screen_h_ != vh) {
+    if (!screen_ || screen_w_ != vw * n || screen_h_ != vh * n) {
         if (screen_)
             SDL_DestroyTexture(screen_);
-        screen_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, vw, vh);
+        screen_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, vw * n, vh * n);
         SDL_SetTextureScaleMode(screen_, SDL_SCALEMODE_NEAREST);
-        screen_w_ = vw;
-        screen_h_ = vh;
+        screen_w_ = vw * n;
+        screen_h_ = vh * n;
     }
 }
 
@@ -4186,9 +4564,9 @@ void App::shade_view()
         return;
     const uint8_t *ghost = data_->ghost().data();
     const size_t blend = size_t(colour_dark_blue(map_->game.world)) << 8;
-    for (int y = 0; y < surface_.height(); y++) {
+    for (int y = 0; y < surface_.pixel_height(); y++) {
         uint8_t *row = surface_.row(y);
-        for (int x = 0; x < surface_.width(); x++)
+        for (int x = 0; x < surface_.pixel_width(); x++)
             row[x] = ghost[blend | row[x]];
     }
 }
@@ -4210,14 +4588,16 @@ void App::present_view(int vw, int vh, int z)
         return;
     const Palette &pal = data_->palette();
     const uint8_t *src = surface_.data();
-    for (int y = 0; y < vh; y++) {
+    const int pw = surface_.pixel_width(), ph = surface_.pixel_height();
+    for (int y = 0; y < ph; y++) {
         auto *row = reinterpret_cast<uint32_t *>(static_cast<uint8_t *>(pixels) + y * pitch);
-        for (int x = 0; x < vw; x++)
+        for (int x = 0; x < pw; x++)
             row[x] = pal[src[x]];
-        src += vw;
+        src += pw;
     }
     SDL_UnlockTexture(screen_);
     SDL_FRect dst = {0, 0, float(vw * z), float(vh * z)};
+    set_scale_mode_for(screen_, dst.w);
     SDL_RenderTexture(renderer_, screen_, nullptr, &dst);
 }
 
@@ -4267,6 +4647,9 @@ void App::begin()
 
 bool App::iterate()
 {
+    // What came during a fade reaches the game once it is over.
+    if (!fader_.blocking() && !held_events_.empty())
+        deliver_held_events();
     // A driven run waits for an install, its frames not counted, so that
     // what follows does not depend on how long the install took.
     bool installing = driver_ && job_.busy();
@@ -4308,7 +4691,8 @@ bool App::iterate()
             drive_ns_ += 16666667;
     }
     frame_seconds_ = std::min(dt, 0.1f);
-    update(frame_seconds_);
+    if (!fader_.blocking())
+        update(frame_seconds_);
     render();
     return running_;
 }
@@ -4331,6 +4715,8 @@ void App::parse_drive_args(int argc, char **argv)
             drive_default_speed_ = true;
         else if (arg == "--real-time")
             drive_real_time_ = true;
+        else if (arg == "--fades")
+            drive_fades_ = true;
     }
 }
 
@@ -4345,6 +4731,8 @@ std::optional<std::filesystem::path> App::parse_setup_args(int argc, char **argv
             install_from = argv[++i];
         else if (arg == "--drop" && i + 1 < argc)
             drop_arg_ = argv[++i];
+        else if (arg == "--upscale" && i + 1 < argc)
+            upscale_arg_ = argv[++i];
     }
     return install_from;
 }
@@ -4397,7 +4785,26 @@ void App::start_setup_job(InstallKind kind, const std::filesystem::path &source)
         data_error_ = "There is no per-user folder to install the game files into (no home folder).";
         return;
     }
-    job_.start(kind, source, user_paths_.game_dir);
+    job_.start(kind, source, user_paths_.game_dir,
+               kind == InstallKind::Verify ? UpscaleBuild{} : commit_upscale_choice());
+}
+
+UpscaleBuild App::commit_upscale_choice()
+{
+    init_upscale_choice();
+    UpscaleBuild build;
+    const std::span<const Scaler> algorithms = scalers();
+    if (upscale_choice_.on && size_t(upscale_choice_.algorithm) < algorithms.size())
+        build.config = {&algorithms[size_t(upscale_choice_.algorithm)], upscale_choice_.factor};
+    build.cache_dir = upscale_cache_dir();
+    // The screen's choice is the player's setting from here on, whatever
+    // --upscale preselected; a driven run leaves the settings alone.
+    if (!driver_) {
+        upscale_arg_.clear();
+        settings_.set("upscale", upscale_to_string(build.config));
+        settings_.save();
+    }
+    return build;
 }
 
 // What the dialogs chose and the worker thread finished since the last frame.
@@ -4420,6 +4827,8 @@ void App::poll_setup_job()
     else if (!result->ok)
         data_error_ = result->error;
     else if (job_.kind() != InstallKind::Verify) {
+        if (!job_.upscale_error().empty())
+            setup_notice_ = "The game is installed; its graphics could not be upscaled: " + job_.upscale_error();
         try_load_data(user_paths_.game_dir);
         web::flush_storage();
         web::request_persistent_storage();
@@ -4440,11 +4849,12 @@ void App::refresh_game_dir_state()
     game_dir_incomplete_ = game_dir_exists_ && !is_installed(user_paths_.game_dir);
 }
 
-SetupView App::setup_view() const
+SetupView App::setup_view()
 {
-    return {search_,          data_error_,          setup_notice_, user_paths_.game_dir.string(),
-            game_dir_exists_, game_dir_incomplete_, job_.busy(),   job_.kind() == InstallKind::Verify,
-            job_.done(),      job_.total()};
+    init_upscale_choice();
+    return {search_,          data_error_,          setup_notice_,    user_paths_.game_dir.string(),
+            game_dir_exists_, game_dir_incomplete_, job_.busy(),      job_.kind() == InstallKind::Verify,
+            job_.done(),      job_.total(),         &upscale_choice_, job_.upscaling()};
 }
 
 void App::hold_drive_slot()
@@ -4467,6 +4877,7 @@ void App::start_driver()
     if (!language_)
         language_ = kEnglish;
     driver_ = std::make_unique<Driver>(drive_out_, drive_control_);
+    fader_.enable(drive_fades_);
     if (!drive_control_) {
         std::ifstream in(drive_script_);
         if (!in)
@@ -4674,6 +5085,9 @@ void App::destroy_textures()
         SDL_DestroyCursor(crosshair_);
     if (screen_)
         SDL_DestroyTexture(screen_);
+    if (loading_tex_)
+        SDL_DestroyTexture(loading_tex_);
+    fader_.release();
 }
 
 void App::shutdown()

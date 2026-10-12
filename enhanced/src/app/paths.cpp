@@ -40,8 +40,8 @@ UserPaths windows_paths(const fs::path &roaming, const fs::path &saved, const fs
 {
     if (roaming.empty() || saved.empty() || local.empty())
         return {};
-    return {roaming / kAppFolder, saved / kAppFolder, local / kAppFolder / "game",
-            local / kAppFolder / "debug-reports"};
+    return {roaming / kAppFolder, saved / kAppFolder, local / kAppFolder / "game", local / kAppFolder / "debug-reports",
+            local / kAppFolder / "upscale"};
 }
 
 #elif !defined(__EMSCRIPTEN__)
@@ -91,7 +91,7 @@ UserPaths user_paths()
 {
 #if defined(__EMSCRIPTEN__)
     // The browser keeps these in IndexedDB (web/bridge.js mounts /persist).
-    return {"/persist/settings", "/persist/saves", "/persist/game", "/persist/reports"};
+    return {"/persist/settings", "/persist/saves", "/persist/game", "/persist/reports", "/persist/upscale"};
 #elif defined(_WIN32)
     return windows_paths(known_folder(FOLDERID_RoamingAppData), known_folder(FOLDERID_SavedGames),
                          known_folder(FOLDERID_LocalAppData));
@@ -102,7 +102,7 @@ UserPaths user_paths()
     if (home.empty())
         return {};
     fs::path base = home / "Library" / "Application Support" / kAppFolder;
-    return {base, base / "save", base / "game", base / "debug-reports"};
+    return {base, base / "save", base / "game", base / "debug-reports", base / "upscale"};
 #else
     fs::path config = xdg_dir("XDG_CONFIG_HOME", ".config");
     fs::path data = xdg_dir("XDG_DATA_HOME", ".local/share");
@@ -110,7 +110,7 @@ UserPaths user_paths()
     if (config.empty() || data.empty() || state.empty())
         return {};
     return {config / kAppFolder, data / kAppFolder / "save", data / kAppFolder / "game",
-            state / kAppFolder / "debug-reports"};
+            state / kAppFolder / "debug-reports", data / kAppFolder / "upscale"};
 #endif
 }
 

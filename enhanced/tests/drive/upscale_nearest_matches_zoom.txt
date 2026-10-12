@@ -1,0 +1,18 @@
+# Level 1: the map drawn into an upscaled surface through the nearest scaler
+# is, at the zoom that matches it (window 1280x960: zoom 2, so factor 2 is one
+# window pixel per index), the 1x map zoomed twice, panel and pointer too. A
+# bench is bought and carried over the map, so that the ghost cursor, the
+# placement marks and the interface requesters are in the frame.
+# Size 1280x960
+# Compare nearest:2 view.png ui.png
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 100            # buy a bench (the second entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68
+wait 5
+screenshot view
+screenshot-ui ui

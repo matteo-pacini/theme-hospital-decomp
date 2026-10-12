@@ -77,7 +77,8 @@ struct WibbleBlit {
 };
 
 // draw_wibble (src/wibble.cpp), clipped to the clip rectangle of `dst`
-// (the game's graphics window).
+// (the game's graphics window). The buffer is of game pixels whatever the
+// scale of `dst`, each of its pixels drawn as a block there.
 void draw_wibble(Surface &dst, const Surface &buffer, WibbleBlit b)
 {
     const WibbleTables &t = tables();
@@ -104,11 +105,10 @@ void draw_wibble(Surface &dst, const Surface &buffer, WibbleBlit b)
         size_t xp = b.phase;
         for (int k = 0; k < skip_x; k++)
             sample += t.xoff[xp++];
-        uint8_t *out = dst.row(b.y + row) + b.x;
         for (int k = 0; k < b.w; k++) {
             uint8_t c = buffer_pixel(buffer, sample);
             if (c != kMaskColour)
-                out[k] = c;
+                dst.put(b.x + k, b.y + row, c);
             sample += t.xoff[xp++];
         }
     }

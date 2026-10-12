@@ -41,6 +41,10 @@ class GameData
     // Loads levels/level.l<number>.
     std::optional<Level> load_level(int number, std::string *error = nullptr) const;
 
+    // Gives the map's sheets (blocks, sprites, money) their upscaled
+    // versions, drawn by a surface of that scale. Replaces earlier ones.
+    void attach_hires(HiresSheet blocks, HiresSheet sprites, HiresSheet money);
+
     const std::filesystem::path &dir() const { return dir_; }
     const Palette &palette() const { return palette_; }
     const SpriteSheet &blocks() const { return blocks_; }

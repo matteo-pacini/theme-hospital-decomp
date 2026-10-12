@@ -19,6 +19,16 @@ void test_migrate_old_prefs();
 void test_player_details_layout();
 void test_player_details_file();
 
+// upscale.cpp
+void test_upscale_scaler_table();
+void test_upscale_xbrz_golden();
+void test_upscale_snapper();
+void test_upscale_sprite_nearest_is_replication();
+void test_upscale_sprite_xbrz_keeps_box();
+void test_upscale_cache_round_trip();
+void test_upscale_cache_rejects_inconsistent();
+void test_upscale_game_data(const char *dir);
+
 // render.cpp
 void test_blit_clips_and_skips();
 void test_drive_script();
@@ -39,6 +49,7 @@ void test_text_layout();
 void test_rnc_rejects_garbage();
 void test_missing_data();
 void test_game_data(const char *dir);
+void test_cheats(const char *dir);
 void test_language_and_fonts(const char *dir);
 void test_balance(const char *dir);
 void test_smacker_intro(const char *dir);
@@ -159,6 +170,7 @@ void test_applicant_expiry();
 void test_game_clock(const char *dir);
 void test_fax_palette(const char *dir);
 void test_open_hospital(const char *dir);
+void test_hospital_level(const char *dir);
 void test_overview_log(const char *dir);
 void test_finance_level1(const char *dir);
 void test_balance_roll(const char *dir);
@@ -234,6 +246,11 @@ void test_yearend_trophy_kept(const char *dir);
 void test_yearend_drinks_counted(const char *dir);
 void test_yearend_object_value(const char *dir);
 
+// fade.cpp
+void test_palette_fade();
+void test_fade_between();
+void test_loading_screen(const char *dir);
+
 // install.cpp
 void test_sha256_vectors();
 void test_manifest_covers_data();
@@ -264,6 +281,15 @@ const Test kTests[] = {
     TEST(test_player_details_layout),
     TEST(test_player_details_file),
     TEST(test_blit_clips_and_skips),
+    TEST(test_palette_fade),
+    TEST(test_fade_between),
+    TEST(test_upscale_scaler_table),
+    TEST(test_upscale_xbrz_golden),
+    TEST(test_upscale_snapper),
+    TEST(test_upscale_sprite_nearest_is_replication),
+    TEST(test_upscale_sprite_xbrz_keeps_box),
+    TEST(test_upscale_cache_round_trip),
+    TEST(test_upscale_cache_rejects_inconsistent),
     TEST(test_sha256_vectors),
     TEST(test_manifest_covers_data),
     TEST(test_drive_script),
@@ -305,18 +331,21 @@ const Test kTests[] = {
 };
 
 const DataTest kDataTests[] = {
+    TEST(test_loading_screen),
     TEST(test_install_from_folder),
     TEST(test_install_refused_corrupt),
     TEST(test_install_refused_missing),
     TEST(test_install_cancelled),
     TEST(test_install_from_installer),
     TEST(test_game_data),
+    TEST(test_cheats),
     TEST(test_special_levels),
     TEST(test_computer_players),
     TEST(test_computer_money),
     TEST(test_computer_staff),
     TEST(test_sound_bank),
     TEST(test_shadow_sprites),
+    TEST(test_upscale_game_data),
     TEST(test_level_objects),
     TEST(test_draw_world),
     TEST(test_alien_filling),
@@ -326,6 +355,7 @@ const DataTest kDataTests[] = {
     TEST(test_game_clock),
     TEST(test_fax_palette),
     TEST(test_open_hospital),
+    TEST(test_hospital_level),
     TEST(test_overview_log),
     TEST(test_language_and_fonts),
     TEST(test_balance),

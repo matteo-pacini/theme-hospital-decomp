@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <utility>
 
 namespace th
 {
@@ -572,7 +573,7 @@ void check_game_over(Game &game)
 void check_quarterly_game_over(Game &game)
 {
     YearEnd &s = game.progress;
-    if (game.level_number() >= 12)
+    if (game.hospital_level() >= 12)
         return;
     const int32_t progress = evaluate_criteria(game, 0);
     trace_event("quarterly progress=%d offered=%d", int(progress), progress >= 100 ? 1 : 0);
@@ -663,7 +664,7 @@ namespace
 
 void award_reputation(AwardsContext &c)
 {
-    if (c.game.level_number() * 2 > c.cures)
+    if (c.game.hospital_level() * 2 > c.cures)
         return;
     const auto &t = trophies(c.game);
     general_award(c.game, c.game.reputation(),
@@ -693,7 +694,7 @@ void award_deaths(AwardsContext &c)
 
 void award_population(AwardsContext &c)
 {
-    if (c.game.level_number() * 2 > c.cures)
+    if (c.game.hospital_level() * 2 > c.cures)
         return;
     const auto &t = trophies(c.game);
     general_award(c.game, c.game.progress.market_share,
@@ -872,7 +873,7 @@ void check_awards_won(Game &game)
         visitors += game.finance.history[kHistoryVisitors][size_t(i)];
         cures += game.finance.history[kHistoryCures][size_t(i)];
     }
-    if (game.level_number() * 3 >= visitors)
+    if (game.hospital_level() * 3 >= visitors)
         return;
     AwardsContext c{game, cures, visitors,
                     int32_t(game.arrivals.hospitals[0].visitors) - game.progress.year_start_visitors};
@@ -946,13 +947,13 @@ void year_end_sim(Game &game)
 void try_bonus_level(Game &game)
 {
     const Balance::AwardsTrophies &t = trophies(game);
-    if (game.progress.rat_shots > 0 && game.progress.rats_killed > uint32_t(t.rat_kills_absolute) / 2) {
-        if ((uint32_t(game.progress.rats_killed) << 8) / game.progress.rat_shots >
-            (uint32_t(t.rat_kills_percentage) << 8) / 100) {
-            game.progress.bonus_level =
-                uint8_t((old_newrand(game.world.seed, std::source_location::current()) & 1) + 13);
-        }
+    bool unlock = std::exchange(game.force_bonus_level, false);
+    if (!unlock && game.progress.rat_shots > 0 && game.progress.rats_killed > uint32_t(t.rat_kills_absolute) / 2) {
+        unlock = (uint32_t(game.progress.rats_killed) << 8) / game.progress.rat_shots >
+                 (uint32_t(t.rat_kills_percentage) << 8) / 100;
     }
+    if (unlock)
+        game.progress.bonus_level = uint8_t((old_newrand(game.world.seed, std::source_location::current()) & 1) + 13);
     trace_event("bonus_level %u", unsigned(game.progress.bonus_level));
 }
 

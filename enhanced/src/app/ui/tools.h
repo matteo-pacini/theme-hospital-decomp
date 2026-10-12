@@ -13,6 +13,14 @@ namespace th
 
 enum class SetupAction { None, InstallFromInstaller, InstallFromFolder, Verify, Cancel, Quit };
 
+// What the setup screen offers for the upscaling built after an install: on
+// or off, the algorithm (an index into scalers()) and the factor.
+struct UpscaleChoice {
+    bool on = false;
+    int algorithm = 0;
+    int factor = 4;
+};
+
 // What the setup screen shows.
 struct SetupView {
     const DataSearch &search;
@@ -30,6 +38,10 @@ struct SetupView {
     bool verifying = false;
     uint64_t done = 0;
     uint64_t total = 0;
+    // The upscaling choice the screen edits, and whether the job is past
+    // the install and building the upscaled sprites.
+    UpscaleChoice *upscale = nullptr;
+    bool upscaling = false;
 };
 
 // Full-window setup screen shown when no Theme Hospital data was found: what

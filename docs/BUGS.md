@@ -118,7 +118,10 @@ open before queueing the event.
 Cheat codes typed into the message line are recognised by `cheat_mode`
 (`0x86544`), which passes flags 0x20 to 0x4000, but `cheat` acts only on
 flags 2, 4, 8 and 0x10. The code is swallowed and nothing happens. This
-may be the cheats being disabled on purpose for release.
+may be the cheats being disabled on purpose for release. The message line
+is also unreachable in a single-player game: only Alt+1 to Alt+4 open it
+(`process_game_keys`), and they need a second player, while `cheat_mode`
+is called only with one. The port has no message-line cheats.
 
 ### drug_improved (src/research.cpp)
 
@@ -196,6 +199,29 @@ litter scores the same as one with 11.
 The emergency award needs `award_counts.emergencies > 2`, but nothing writes
 that field or `emergency_saved_pct` apart from the yearly reset to 0. The
 emergency award and its poor counterpart are never given.
+
+### year_end (src/finance.cpp)
+
+**Bug** · `0x51d98`
+
+It copies each hospital's `visitors` into `year_start_visitors` before it
+calls `check_trophies_won` and `check_awards_won`, which measure the year's
+new visitors as `visitors - year_start_visitors`. That is always 0 there, so
+the cures and deaths awards (`check_awards_won` cases 1 and 2), the
+cures-versus-deaths award's no-deaths branch (case 4) and the first branch of
+the cures trophy (`check_trophies_won` case 0) are never reached. Only the
+trophy's else branch, `visitors == cures`, can fire.
+
+### check_training_command (src/training.cpp)
+
+**Bug** · `0x42ff0`
+
+The ORD_TRAIN order sent by the staff window's training button is acted on
+only here, and `check_training_command` has two callers, `doctor_is_trained`
+(`0x42a10`) and `consultant_trains` (`0x42c90`). Each clears ORD_TRAIN in
+`orders` on its first line, so the test `orders & ORD_TRAIN` can never hold:
+a doctor or consultant in a training room is never sent to another one by
+the order, and the order is dropped. The branch that sends them is dead.
 
 ### replace_machine (src/objects.cpp)
 
@@ -415,6 +441,20 @@ but compares the mouse position with the saved sprite position, which is
 offset by the pointer's hotspot. With a hotspot set the two rarely agree, so
 the pointer is erased and redrawn even when it has not moved. Only a cost
 in work, and the comparison may be deliberate.
+
+### process_game_keys, J over a chart (src/keyboard.cpp)
+
+**Potential bug** · `0x7424c`
+
+`game` runs `process_keys` in `DM_CHARTS` as in `DM_GAME`, so J queues
+`EV_OPEN_JUKEBOX` over a full-screen chart. `process_turn` opens the
+jukebox requester behind it (`crequester`, `close_irequesters`,
+`pmenu.disabled`), though `do_charts` draws and processes no requester. The
+player sees nothing until the chart is left by its close button or another
+way that keeps `crequester`; the jukebox is then open over the hospital.
+Escape closes it with the chart (`setup_abort_all_requesters`). It may be
+deliberate leniency, but nothing on the chart shows that the key did
+anything.
 
 ## Memory & data layout
 

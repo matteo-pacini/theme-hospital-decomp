@@ -55,7 +55,7 @@ static_assert(sizeof(Building) == 224, "Building changed: list its new fields in
 static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Balance) == 3816, "Balance changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp and bump kSaveFormat");
-static_assert(sizeof(Game) == 341848, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Game) == 341856, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 #endif
 
 class Writer
@@ -350,6 +350,7 @@ template <typename IO, typename G> void game_fields(IO &io, G &g)
     io(g.date);
     io(g.turn_count);
     io(g.paused);
+    io(g.safeseed);
     io(g.opening_countdown);
     io(g.open_countdown);
     io(g.open);
@@ -367,6 +368,8 @@ template <typename IO, typename G> void game_fields(IO &io, G &g)
     io(g.fax_screen);
     io(g.fax_pointer);
     io(g.fax_key);
+    io(g.cheats_enabled);
+    io(g.force_bonus_level);
     io(g.command_log);
     io(g.events.enabled);
     io(g.events.rand);

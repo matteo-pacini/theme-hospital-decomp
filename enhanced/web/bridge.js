@@ -1,6 +1,6 @@
 // The browser side of th_enhanced (linked with --pre-js): the IndexedDB
-// storage under /persist, the file pickers and the report download. The C++
-// side is src/app/web.cpp.
+// storage under /persist, the file pickers and the downloads (reports and
+// screen shots). The C++ side is src/app/web.cpp.
 
 // The user's folders (src/app/paths.cpp) live in IndexedDB. The program does
 // not start until they are loaded: it reads its settings and the installed
@@ -38,6 +38,8 @@ async function thFetchServerData() {
       await thWriteStream(response.body, '/pick/data/' + names[i]);
     }
     Module.arguments.push('--drop', '/pick/data');
+    // The upscaling the setup screen starts with; the player can change it.
+    if (window.thUpscale) Module.arguments.push('--upscale', window.thUpscale);
   } catch (e) {
     console.warn('game files not loaded from the server: ' + e);
   }
@@ -163,6 +165,23 @@ Module.thPick = function (folder) {
   input.click();
 };
 
+// Saves `blob` as the file `name` through a temporary link.
+function thSaveBlob(blob, name) {
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+}
+
+// One file of the in-memory file system (a screen shot), downloaded.
+Module.thDownloadFile = function (path) {
+  thSaveBlob(new Blob([FS.readFile(path)]), path.substring(path.lastIndexOf('/') + 1));
+};
+
 // A debug report folder as one uncompressed ustar archive, downloaded.
 Module.thDownloadTar = function (dir) {
   var encoder = new TextEncoder();
@@ -197,14 +216,7 @@ Module.thDownloadTar = function (dir) {
     if (pad) blocks.push(new Uint8Array(pad));
   });
   blocks.push(new Uint8Array(1024));
-  var url = URL.createObjectURL(new Blob(blocks, { type: 'application/x-tar' }));
-  var link = document.createElement('a');
-  link.href = url;
-  link.download = base + '.tar';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  thSaveBlob(new Blob(blocks, { type: 'application/x-tar' }), base + '.tar');
 };
 
 // The program has quit: SDL's main loop is gone, and the page says so.

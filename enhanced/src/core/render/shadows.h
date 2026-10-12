@@ -60,8 +60,15 @@ class ShadowSprites
         std::vector<uint8_t> data;
         int width = 0;
         int height = 0;
+        // The same sprite from the upscaled blocks, when the sheet has them
+        // (HiSprite coding); empty otherwise.
+        std::vector<uint8_t> hi;
+        int hi_width = 0;
+        int hi_height = 0;
+        int factor = 1;
     };
 
+    static Shaded make_shaded(const Sprite &s, const Sprite &shadow, std::span<const uint8_t> ghost);
     Sprite base(uint8_t id) const;
     Sprite shaded(const std::vector<Shaded> &sprites, uint8_t id) const;
 

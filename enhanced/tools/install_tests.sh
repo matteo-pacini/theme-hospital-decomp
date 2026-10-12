@@ -46,6 +46,13 @@ check drop "dropped folder installs and starts" $?
 run title "$base/h-drop" --user-data
 check drop "second start finds the install" $?
 
+# The setup screen's upscaling choice (here preselected by --upscale): the
+# install builds the cache of upscaled sprites, and the game starts with it.
+run title "$base/h-up" --user-data --upscale xbrz:2 --drop "$orig"
+check upscale "dropped folder installs and starts upscaled" $?
+[ -s "$base/out-title-h-up/upscale/xbrz-2.thup" ]
+check upscale "the install builds the cache" $?
+
 # --install-from, with a driven run; then a start without it.
 run title "$base/h-cli" --install-from "$orig"
 check install-from "installs, then drives" $?
@@ -78,6 +85,6 @@ rm "$base/h-cli/.local/share/ThemeHospitalEnhanced/game/install.ok"
 run incomplete_verify "$base/h-cli" --user-data --size 640x480
 check incomplete "setup screen and verify" $?
 
-rm -rf "$base/h-drop" "$base/h-cli" "$base/h-empty" "$base/h-bad" "$base/src"
+rm -rf "$base/h-drop" "$base/h-up" "$base/h-cli" "$base/h-empty" "$base/h-bad" "$base/src"
 [ "$failed" = 0 ] && rm -rf "$base"
 exit "$failed"

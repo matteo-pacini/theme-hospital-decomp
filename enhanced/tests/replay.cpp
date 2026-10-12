@@ -62,6 +62,7 @@ void test_snapshot_round_trip(const char *dir)
     for (int i = 0; i < 1500; i++)
         g.turn();
 
+    g.safeseed = 0x2c4f81d3;
     std::vector<uint8_t> bytes;
     CHECK(th::save_snapshot(g, bytes));
     auto copy = std::make_unique<th::Game>();
@@ -69,6 +70,7 @@ void test_snapshot_round_trip(const char *dir)
     CHECK(th::load_snapshot(*copy, bytes, f.gd, &error));
     if (!error.empty())
         std::fprintf(stderr, "%s\n", error.c_str());
+    CHECK(copy->safeseed == g.safeseed);
     copy->skipped_calls = g.skipped_calls;
     CHECK(copy->turn_count == g.turn_count && copy->level_number() == 1);
     int differs = -1;

@@ -120,6 +120,13 @@ bool GameData::load(const std::filesystem::path &dir, std::string *error, std::o
     return true;
 }
 
+void GameData::attach_hires(HiresSheet blocks, HiresSheet sprites, HiresSheet money)
+{
+    blocks_.attach_hires(std::move(blocks));
+    sprites_.attach_hires(std::move(sprites));
+    money_.attach_hires(std::move(money));
+}
+
 std::optional<Level> GameData::load_level(int number, std::string *error) const
 {
     std::string rel = "levels/level.l" + std::to_string(number);

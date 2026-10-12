@@ -85,27 +85,29 @@ constexpr std::array<KeypadButton, 16> kKeypad = {{
 constexpr uint8_t kKeyClose = 0xc7;
 
 // cheat_numbers (src/choice.cpp): the numbers that dial through, by the
-// keypad buttons pressed.
+// keypad buttons pressed, and what each does (action 1 nothing, 0 toggles
+// Game::cheats_enabled, 2 sets Game::force_bonus_level).
 struct FaxNumber {
     std::array<uint8_t, 5> digits;
     uint8_t count;
+    uint8_t action;
 };
 constexpr std::array<FaxNumber, 15> kCheatNumbers = {{
-    {{0xc2, 0xc2, 0xc2}, 3},
-    {{0xc2, 0xba, 0xba}, 3},
-    {{0xc2, 0xba, 0xbb}, 3},
-    {{0xba, 0xb9, 0xb9}, 3},
-    {{0xba, 0xba, 0xba}, 3},
-    {{0xbb, 0xbb, 0xbb}, 3},
-    {{0xbc, 0xbc, 0xbc}, 3},
-    {{0xbd, 0xbd, 0xbd}, 3},
-    {{0xbe, 0xbe, 0xbe}, 3},
-    {{0xbf, 0xbf, 0xbf}, 3},
-    {{0xc0, 0xc0, 0xc0}, 3},
-    {{0xc1, 0xc1, 0xc1}, 3},
-    {{0xc2, 0xc2, 0xc2}, 3},
-    {{0xc0, 0xbb, 0xc1, 0xc0}, 4},
-    {{0xbb, 0xbd, 0xbc, 0xbb, 0xc1}, 5},
+    {{0xc2, 0xc2, 0xc2}, 3, 1},
+    {{0xc2, 0xba, 0xba}, 3, 1},
+    {{0xc2, 0xba, 0xbb}, 3, 1},
+    {{0xba, 0xb9, 0xb9}, 3, 1},
+    {{0xba, 0xba, 0xba}, 3, 1},
+    {{0xbb, 0xbb, 0xbb}, 3, 1},
+    {{0xbc, 0xbc, 0xbc}, 3, 1},
+    {{0xbd, 0xbd, 0xbd}, 3, 1},
+    {{0xbe, 0xbe, 0xbe}, 3, 1},
+    {{0xbf, 0xbf, 0xbf}, 3, 1},
+    {{0xc0, 0xc0, 0xc0}, 3, 1},
+    {{0xc1, 0xc1, 0xc1}, 3, 1},
+    {{0xc2, 0xc2, 0xc2}, 3, 1},
+    {{0xc0, 0xbb, 0xc1, 0xc0}, 4, 2},
+    {{0xbb, 0xbd, 0xbc, 0xbb, 0xc1}, 5, 0},
 }};
 
 // The answers to the emergency's offer and to the patients' calls
@@ -538,10 +540,28 @@ bool check_choice_buttons(Fax &fax, const UiMouse &m, FaxResult &result, Game &g
     return false;
 }
 
+// The send branch of process_fax_buttons: every kCheatNumbers entry equal to
+// the number dialled does its action. True if one was.
+bool send_number(const Fax &fax, Game &game)
+{
+    bool found = false;
+    for (const FaxNumber &n : kCheatNumbers) {
+        if (n.count != fax.dialled_count ||
+            !std::equal(n.digits.begin(), n.digits.begin() + n.count, fax.dialled.begin()))
+            continue;
+        found = true;
+        if (n.action == 0)
+            game.set_cheats_enabled(!game.cheats_enabled);
+        else if (n.action == 2)
+            game.set_force_bonus_level(true);
+    }
+    return found;
+}
+
 // process_fax_buttons (0xa4384): dials, beeps, sends the number dialled
-// (a cheat's number plays SFX_FAX_YES, any other SFX_FAX_NO; what the
-// cheats do is not ported) or closes a fax that may close itself.
-void process_fax_buttons(Fax &fax, uint8_t id, FaxResult &result)
+// (a cheat's number plays SFX_FAX_YES and does what kCheatNumbers says, any
+// other SFX_FAX_NO) or closes a fax that may close itself.
+void process_fax_buttons(Fax &fax, uint8_t id, FaxResult &result, Game &game)
 {
     if (id >= 0xb9 && id <= 0xc2) {
         if (fax.dialled_count < fax.dialled.size())
@@ -550,11 +570,7 @@ void process_fax_buttons(Fax &fax, uint8_t id, FaxResult &result)
     } else if (id == 0xc3 || id == 0xc4) {
         result.sounds.push_back(kSfxFax0);
     } else if (id == 0xb8 || id == 0xc5 || id == 0xc6) {
-        bool found = std::any_of(kCheatNumbers.begin(), kCheatNumbers.end(), [&](const FaxNumber &n) {
-            return n.count == fax.dialled_count &&
-                   std::equal(n.digits.begin(), n.digits.begin() + n.count, fax.dialled.begin());
-        });
-        result.sounds.push_back(found ? kSfxFaxYes : kSfxFaxNo);
+        result.sounds.push_back(send_number(fax, game) ? kSfxFaxYes : kSfxFaxNo);
         fax.dialled_count = 0;
     } else if (id == kKeyClose && fax.choice.timeout) {
         fax.state = kFaxClose;
@@ -565,7 +581,7 @@ void process_fax_buttons(Fax &fax, uint8_t id, FaxResult &result)
 // check_fax_buttons (0xa374c): the keypad button under a held left button
 // drawn pressed; one under a released one pressed. The close button works
 // only on a fax that may close itself.
-void check_fax_buttons(Fax &fax, const UiMouse &m, FaxResult &result)
+void check_fax_buttons(Fax &fax, const UiMouse &m, FaxResult &result, Game &game)
 {
     for (const KeypadButton &b : kKeypad) {
         if (!over(m.x, m.y, b.box))
@@ -573,7 +589,7 @@ void check_fax_buttons(Fax &fax, const UiMouse &m, FaxResult &result)
         if (b.id == kKeyClose && !fax.choice.timeout)
             break;
         if (m.left_released)
-            process_fax_buttons(fax, b.id, result);
+            process_fax_buttons(fax, b.id, result, game);
         if (m.left_held || m.left_released)
             draw_sprite(fax.surface, b.box.x, b.box.y, fax.sprites.at(b.sprite));
         break;
@@ -585,7 +601,7 @@ void display_choice_up(Fax &fax, const UiMouse &m, bool escape, Game &game, FaxR
 {
     fax.surface = fax.background;
     if (!check_choice_buttons(fax, m, result, game))
-        check_fax_buttons(fax, m, result);
+        check_fax_buttons(fax, m, result, game);
     if (!fax.choice.timeout)
         return;
     if (escape) {

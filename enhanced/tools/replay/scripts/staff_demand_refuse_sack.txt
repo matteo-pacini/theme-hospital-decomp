@@ -1,0 +1,41 @@
+# Level 1: a reception desk and receptionist, a GP's office and its doctor
+# (thing 11, hired at turn 114). The doctor's resignation demand (playercall
+# type 1, turn 13245) is refused at turn 13250 through the requester's answer
+# command (EV_REFUSE_STAFF_DEMAND, 0x6b): resign_count is 1, the sack draw
+# (process_turn) comes out odd, and apply_staff_event_demand sacks them.
+# Turns 13400
+# Expect playercall 13 type=1 subject=11
+# Expect rand process_turn == 1
+# Expect sack_staff 11 mode=1 == 1
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect rand process_turn == 1
+# Expect-not balance 27 amount=-30
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# The demand refused (EV_REFUSE_STAFF_DEMAND, 0x6b), on the doctor (thing 11).
+13250 107 11 0

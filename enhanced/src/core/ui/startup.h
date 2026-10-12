@@ -72,8 +72,8 @@ struct StartupResult {
 // where the difficulty and tutorial are chosen, and the level's area movie
 // before it starts (draw_area_select, src/area.cpp). Load, Continue (there
 // are no saves) and Network are refused as the game refuses Continue
-// without a save. Palette fades, the help tooltips and the screen pointers
-// are not drawn.
+// without a save. The help tooltips and the screen pointers are
+// not drawn; the app fades between the screens (ScreenFader).
 //
 // It draws into an indexed surface with its own palette: 640 x 480, or
 // 320 x 200 for the intro, the main menu and its movies (the game's

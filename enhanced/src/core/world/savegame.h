@@ -31,7 +31,7 @@ inline constexpr int kAutosaveSlot = 8;
 inline constexpr int kMenuSlots = 8;
 // The save header's format: bump this by hand when its fields change (the
 // snapshot's layout has its own hash).
-inline constexpr uint32_t kSaveFormat = 2;
+inline constexpr uint32_t kSaveFormat = 3;
 
 // What a save file carries besides the snapshot: the level, the balance id
 // and tutorial the game continues with, and the view's centre in map pixels

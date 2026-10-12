@@ -1,0 +1,8 @@
+# Level 20 with the NET balance files (NET00.SAM, NET20.SAM: what a two
+# player network game reads), as the original's -L20 -bNET: one player on the
+# map, hospital level 1. The hospital opens at turn 100; no rooms.
+# Expect peep == 1
+# Expect computer_action == 33
+# Balance NET
+# Turns 2000
+100 139 0 0

@@ -5,12 +5,21 @@
 namespace th
 {
 
-void Surface::resize(int width, int height)
+void Surface::resize(int width, int height, int scale)
 {
     width_ = std::max(width, 0);
     height_ = std::max(height, 0);
-    pixels_.assign(size_t(width_) * size_t(height_), 0);
+    scale_ = std::max(scale, 1);
+    pixels_.assign(size_t(pixel_width()) * size_t(pixel_height()), 0);
     reset_clip();
+}
+
+void Surface::put(int x, int y, uint8_t colour)
+{
+    for (int j = 0; j < scale_; j++) {
+        uint8_t *out = row(y * scale_ + j) + x * scale_;
+        std::fill(out, out + scale_, colour);
+    }
 }
 
 void Surface::fill(uint8_t colour)

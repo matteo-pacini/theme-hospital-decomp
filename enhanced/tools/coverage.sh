@@ -20,9 +20,10 @@ report=$build/report
 # kept; its standard error goes to build/coverage/logs.
 if [ "${1:-}" = --replay ]; then
   level=$(sed -n 's/^# Level \([0-9]*\).*/\1/p' "$2" | head -n 1)
+  bal=$(sed -n 's/^# Balance \([A-Za-z0-9_]*\).*/\1/p' "$2" | head -n 1)
   turns=$(sed -n 's/^# Turns \([0-9]*\).*/\1/p' "$2" | head -n 1)
   name=$(basename "$2" .txt)
-  if "$build/th_replay" --level "${level:-1}" --script "$2" --turns "${turns:-18300}" \
+  if "$build/th_replay" --level "${level:-1}${bal:+ -b$bal}" --script "$2" --turns "${turns:-18300}" \
       --rand --advisor --out /dev/null 2>"$build/logs/$name.err"; then
     echo "ok   $name"
   else
