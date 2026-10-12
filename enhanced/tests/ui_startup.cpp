@@ -76,8 +76,8 @@ th::UiMouse startup_still()
     return still;
 }
 
-// From the intro, skipped, through the title and the player's name to the
-// main menu.
+// From the intro, skipped, through the title and the about screen to the main
+// menu.
 void reach_main_menu(StartupDriver &d)
 {
     const th::Startup &s = d.s;
@@ -90,10 +90,10 @@ void reach_main_menu(StartupDriver &d)
     d.run(still, {space});
     CHECK(s.screen() == th::StartupScreen::Title && s.surface().width() == 640);
     d.run(startup_click(5, 5));
-    d.run(still, {}, 60);
-    CHECK(s.screen() == th::StartupScreen::Name);
-    d.run(still, {{th::StartupKey::Letter, 'a'}, {th::StartupKey::Return, 0}}, 3);
-    CHECK(s.player_name() == "A");
+    d.run(still, {}, 100);
+    CHECK(s.screen() == th::StartupScreen::About);
+    d.run(still, {{th::StartupKey::Return, 0}}, 3);
+    CHECK(s.player_name() == "HORZA");
     CHECK(s.screen() == th::StartupScreen::Movie && s.movie() == th::kMovieMainMenu1);
     d.run(still, {space}, 2);
     CHECK(s.screen() == th::StartupScreen::MainMenu && s.surface().width() == 320);
@@ -171,7 +171,7 @@ void test_startup_load_screen(const char *dir)
     std::filesystem::path save_dir = std::filesystem::path("build") / "ui-test-save";
     std::error_code ec;
     std::filesystem::remove_all(save_dir, ec);
-    std::filesystem::path slot = th::save_slot_path(save_dir, "A", 0);
+    std::filesystem::path slot = th::save_slot_path(save_dir, std::string(text.misc(1)), 0);
     CHECK(write_test_save(dir, slot));
     CHECK(th::save_slot_compatible(slot) && th::save_slot_level(slot) == 1);
 

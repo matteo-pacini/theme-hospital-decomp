@@ -57,6 +57,8 @@ class DriveHost
     // Loses the level now, as a failed criterion does: the losing letter
     // follows. A test hook.
     virtual bool drive_lose_level() = 0;
+    // Turns the mouse wheel `notches` (positive away from the user).
+    virtual bool drive_wheel(int notches) = 0;
 };
 
 // Waits for one of `max` slots in `dir` (enhanced/tools/slot.sh's files,
@@ -78,6 +80,8 @@ bool hold_slot(const std::filesystem::path &dir, int max, const std::string &inf
 //   thing ID            the pointer onto thing ID
 //   down [left|right]   press a mouse button where the pointer is
 //   up [left|right]     release it
+//   wheel N             turn the mouse wheel N notches (negative toward the
+//                       user)
 //   click X Y [button]  move, a frame, press, 4 frames, release, 2 frames
 //   click-cell C R [b]  the same on a map cell
 //   click-thing ID [b]  the same on a thing

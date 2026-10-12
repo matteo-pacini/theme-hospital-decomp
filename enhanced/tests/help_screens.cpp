@@ -211,7 +211,7 @@ void test_help_town_map_screen(const char *dir)
 namespace
 {
 
-// From the intro, skipped, through the title and the player's name to the
+// From the intro, skipped, through the title and the about screen to the
 // main menu (test_startup_new_game's path).
 bool reach_main_menu(th::Startup &s)
 {
@@ -224,8 +224,8 @@ bool reach_main_menu(th::Startup &s)
     run(still, {}, 1);
     run(still, {{th::StartupKey::Space, 0}}, 1);
     run({5, 5, false, false, true, false, true, false}, {}, 1);
-    run(still, {}, 60);
-    run(still, {{th::StartupKey::Letter, 'a'}, {th::StartupKey::Return, 0}}, 3);
+    run(still, {}, 100);
+    run(still, {{th::StartupKey::Return, 0}}, 3);
     run(still, {{th::StartupKey::Space, 0}}, 2);
     return s.screen() == th::StartupScreen::MainMenu;
 }

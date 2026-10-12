@@ -104,6 +104,10 @@ void test_queue_bar_names(const char *dir);
 void test_pie_render_plan();
 void test_main_menu_art(const char *dir);
 void test_startup_new_game(const char *dir);
+void test_changelog_text(const char *dir);
+void test_changelog_wrap(const char *dir);
+void test_startup_about_screen(const char *dir);
+void test_startup_about_skip(const char *dir);
 void test_startup_load_screen(const char *dir);
 void test_town_map(const char *dir);
 void test_jukebox(const char *dir);
@@ -374,6 +378,10 @@ const DataTest kDataTests[] = {
     TEST(test_smacker_intro),
     TEST(test_main_menu_art),
     TEST(test_startup_new_game),
+    TEST(test_changelog_text),
+    TEST(test_changelog_wrap),
+    TEST(test_startup_about_screen),
+    TEST(test_startup_about_skip),
     TEST(test_startup_load_screen),
     TEST(test_music),
     TEST(test_announcer),

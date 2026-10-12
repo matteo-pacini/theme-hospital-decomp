@@ -252,13 +252,17 @@ void App::mouse_motion(const SDL_MouseMotionEvent &motion)
     scroll_y_ -= motion.yrel * density / float(zoom());
 }
 
-// The wheel zooms. render() keeps the view centred when the surface changes
-// size.
+// The wheel zooms the view, or scrolls the start-up screens' changelog.
+// render() keeps the view centred when the surface changes size.
 void App::mouse_wheel(const SDL_MouseWheelEvent &wheel)
 {
     if (!data_ || quick_.open)
         return;
     int step = wheel.y > 0 ? 1 : wheel.y < 0 ? -1 : 0;
+    if (in_startup_) {
+        startup_wheel_ += step;
+        return;
+    }
     zoom_ = std::clamp(zoom() + step, 1, 4);
 }
 

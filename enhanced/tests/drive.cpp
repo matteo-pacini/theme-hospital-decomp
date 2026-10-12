@@ -61,6 +61,11 @@ class FakeHost : public th::DriveHost
     bool drive_staff_demand(uint16_t id) override { return id != 0; }
     bool drive_win_level() override { return true; }
     bool drive_lose_level() override { return true; }
+    bool drive_wheel(int notches) override
+    {
+        calls.push_back(std::format("{} wheel {}", frame, notches));
+        return true;
+    }
 
     std::string report_dir;
 };

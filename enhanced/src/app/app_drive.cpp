@@ -239,4 +239,15 @@ bool App::drive_lose_level()
     return true;
 }
 
+bool App::drive_wheel(int notches)
+{
+    SDL_Event e{};
+    e.type = SDL_EVENT_MOUSE_WHEEL;
+    e.wheel.windowID = SDL_GetWindowID(window_);
+    e.wheel.y = float(notches);
+    e.wheel.integer_y = notches;
+    SDL_PushEvent(&e);
+    return true;
+}
+
 } // namespace th

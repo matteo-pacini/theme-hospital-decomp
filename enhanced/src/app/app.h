@@ -163,6 +163,7 @@ class App : public DriveHost
     bool drive_staff_demand(uint16_t id) override;
     bool drive_win_level() override;
     bool drive_lose_level() override;
+    bool drive_wheel(int notches) override;
 
     bool try_load_data(const std::filesystem::path &dir);
     // Sets upscale_ from --upscale, else the settings file.
@@ -408,6 +409,7 @@ class App : public DriveHost
     // debug_state's hospital lines: the level, saves, camera, panel, date,
     // money, the last command and the sounds played.
     std::string debug_state_hospital(const Game &g) const;
+    std::string debug_state_startup() const;
     // debug_state's fax icons and open fax.
     std::string debug_state_calls(const Game &g) const;
     void open_town_map();
@@ -563,6 +565,8 @@ class App : public DriveHost
     // until they start a level; skipped with --level.
     Startup startup_;
     std::vector<StartupKey> startup_keys_; // keys pressed since the last frame
+    // Wheel notches since the last start-up frame, positive away from the user.
+    int startup_wheel_ = 0;
     SDL_Texture *startup_tex_ = nullptr;
     SDL_AudioStream *movie_stream_ = nullptr;
     // The win/lose movie: its frames (into winlose_movie_surface_) and audio,

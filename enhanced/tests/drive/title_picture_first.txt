@@ -1,0 +1,20 @@
+# After the title click the title picture shows bare for two seconds, and
+# then the credits' box zooms up over it.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 10
+screenshot title_bare
+dump bare
+expect startup screen: 2
+expect title box: hidden
+wait 60
+expect title box: hidden
+wait 60
+expect title box: shown
+wait 80
+screenshot title_box
+expect changelog: closed

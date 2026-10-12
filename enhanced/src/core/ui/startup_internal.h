@@ -15,11 +15,10 @@ enum class Startup::State {
     Intro,
     TitleEnter,
     Title,
-    NameEnter,
-    NameDelay,
-    NameZoom,
-    NameEntry,
-    NameDone,
+    AboutEnter,
+    AboutDelay,
+    AboutZoom,
+    AboutEntry,
     MenuEnter,
     Menu,
     LoadEnter,
@@ -77,9 +76,9 @@ struct GlassBox {
     int steps, delay, origin;
 };
 
-// Glass screen 10 (display bit 1, the preferences) and 11 (bit 2, the name
-// box): hiresglass[310..321] and [341], less the screen-resolution row
-// (hiresglass[314], [317], [318]), which has no use here.
+// Glass screen 10 (display bit 1, the preferences): hiresglass[310..321], less
+// the screen-resolution row (hiresglass[314], [317], [318]), which has no use
+// here.
 constexpr std::array<GlassBox, 9> kPrefsGlass = {{
     {124, 30, 515, 449, 0, false, 7, 0, 0},
     {149, 55, 490, 424, 1, false, 7, 0, 0},
@@ -91,7 +90,34 @@ constexpr std::array<GlassBox, 9> kPrefsGlass = {{
     {441, 72, 474, 105, 3, true, 7, 0, 0},
     {441, 138, 474, 171, 3, true, 7, 0, 0},
 }};
-constexpr std::array<GlassBox, 1> kNameGlass = {{{90, 422, 549, 466, -1, false, 7, 0, 1}}};
+
+// The about screen (display bit 2): the credits' frame and panel, and the
+// CHANGELOG and CONTINUE buttons; and the changelog's (display bit 4): its
+// panel, the scroll up and down buttons and CLOSE. The original has no such
+// screens; the boxes are drawn as its preferences screen's are.
+constexpr std::array<GlassBox, 4> kAboutGlass = {{
+    {15, 40, 624, 439, 0, false, 7, 0, 0},
+    {35, 60, 604, 419, 1, false, 7, 0, 0},
+    {160, 364, 309, 397, 2, true, 7, 0, 0},
+    {330, 364, 479, 397, 2, true, 7, 0, 0},
+}};
+enum : int { kAboutChangelogButton = 2, kAboutContinueButton = 3 };
+constexpr std::array<GlassBox, 4> kChangelogGlass = {{
+    {40, 12, 599, 467, 1, false, 7, 0, 0},
+    {553, 36, 586, 69, 2, true, 7, 0, 0},
+    {553, 360, 586, 393, 2, true, 7, 0, 0},
+    {235, 418, 404, 451, 2, true, 7, 0, 0},
+}};
+enum : int { kChangelogUpButton = 1, kChangelogDownButton = 2, kChangelogCloseButton = 3 };
+// The text of the changelog is drawn in this window of its panel, 17 lines of
+// the glass font (21 pixels) tall so that no line is cut.
+constexpr Rect kChangelogView = {62, 36, 482, 357};
+
+// The rectangle of box `g`.
+constexpr Rect box_rect(const GlassBox &g)
+{
+    return {g.x, g.y, g.x1 - g.x + 1, g.y1 - g.y + 1};
+}
 
 // Glass screen 12 (display bit 0x2000, the load game screen): the two panels
 // and the nine save-slot buttons (hiresglass, src/scoords.cpp).
@@ -128,8 +154,8 @@ constexpr std::array<ScreenButton, 6> kPrefsButtons = {{
 }};
 
 // Font cache slots in Startup::fonts_.
-enum : int { kFontGlass, kFontGlassHi, kFontName, kFontSlotCount };
-constexpr std::array<int, kFontSlotCount> kStartupFonts = {0x21, 0x22, 0x23};
+enum : int { kFontGlass, kFontGlassHi, kFontTitle, kFontSlotCount };
+constexpr std::array<int, kFontSlotCount> kStartupFonts = {0x21, 0x22, 0x2a};
 
 // Whether (mx, my) is in the w x h box at (x, y).
 bool over(int mx, int my, int x, int y, int w, int h);

@@ -8,8 +8,7 @@ wait 60
 key Space
 wait 20
 click 5 5
-wait 140
-key a
+wait 260
 key Return
 wait 20
 key Space

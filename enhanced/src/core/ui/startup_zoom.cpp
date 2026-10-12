@@ -22,42 +22,47 @@ void Startup::init_zoom_boxes(int mask)
 {
     current_display_ = desired_display_ = 0;
     zoom_ = {};
-    for (int bit : {1, 2, 0x2000}) {
-        if (!(mask & bit))
-            continue;
-        // add_glass_frame and add_glass_box.
-        std::span<const GlassBox> frames = bit == 1   ? std::span<const GlassBox>(kPrefsGlass)
-                                           : bit == 2 ? std::span<const GlassBox>(kNameGlass)
-                                                      : std::span<const GlassBox>(kLoadGlass);
-        for (const GlassBox &g : frames) {
-            auto slot = std::find_if(zoom_.begin(), zoom_.end(), [](const ZoomBox &z) { return !z.active; });
-            if (slot == zoom_.end())
-                break;
-            ZoomBox &z = *slot;
-            z.active = true;
-            if (g.x == z.to[0] && g.y == z.to[1] && g.x1 - g.x + 1 == z.to[2] && g.y1 - g.y + 1 == z.to[3])
-                continue;
-            z.step = 0;
-            z.steps = g.steps;
-            z.id = bit;
-            z.type = g.type;
-            z.button = g.button;
-            z.open_delay = z.close_delay = g.delay;
-            switch (g.origin) {
-            case 1:
-                z.from = {g.x + (g.x1 - g.x) / 2, g.y, 0, g.y1 - g.y + 1};
-                break;
-            case 0:
-                z.from = {g.x + (g.x1 - g.x) / 2, g.y + (g.y1 - g.y) / 2, 0, 0};
-                break;
-            case 2:
-                z.from = {kUiWidth / 2, kUiHeight / 2, 0, 0};
-                break;
-            }
-            z.to = {g.x, g.y, g.x1 - g.x + 1, g.y1 - g.y + 1};
-        }
-        desired_display_ |= bit;
+    for (int bit : {1, 2, 4, 0x2000}) {
+        if (mask & bit)
+            add_zoom_boxes(bit);
     }
+}
+
+void Startup::add_zoom_boxes(int bit)
+{
+    // add_glass_frame and add_glass_box.
+    std::span<const GlassBox> frames = bit == 1   ? std::span<const GlassBox>(kPrefsGlass)
+                                       : bit == 2 ? std::span<const GlassBox>(kAboutGlass)
+                                       : bit == 4 ? std::span<const GlassBox>(kChangelogGlass)
+                                                  : std::span<const GlassBox>(kLoadGlass);
+    for (const GlassBox &g : frames) {
+        auto slot = std::find_if(zoom_.begin(), zoom_.end(), [](const ZoomBox &z) { return !z.active; });
+        if (slot == zoom_.end())
+            break;
+        ZoomBox &z = *slot;
+        z.active = true;
+        if (g.x == z.to[0] && g.y == z.to[1] && g.x1 - g.x + 1 == z.to[2] && g.y1 - g.y + 1 == z.to[3])
+            continue;
+        z.step = 0;
+        z.steps = g.steps;
+        z.id = bit;
+        z.type = g.type;
+        z.button = g.button;
+        z.open_delay = z.close_delay = g.delay;
+        switch (g.origin) {
+        case 1:
+            z.from = {g.x + (g.x1 - g.x) / 2, g.y, 0, g.y1 - g.y + 1};
+            break;
+        case 0:
+            z.from = {g.x + (g.x1 - g.x) / 2, g.y + (g.y1 - g.y) / 2, 0, 0};
+            break;
+        case 2:
+            z.from = {kUiWidth / 2, kUiHeight / 2, 0, 0};
+            break;
+        }
+        z.to = {g.x, g.y, g.x1 - g.x + 1, g.y1 - g.y + 1};
+    }
+    desired_display_ |= bit;
 }
 
 void Startup::zoom_levels(int &lo, int &hi, bool &incomplete) const

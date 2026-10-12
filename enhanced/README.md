@@ -8,6 +8,15 @@ is its reference: behaviour is ported from it function by function.
 It contains no game files. At start-up it looks for the game data and, if it
 finds none, says what it needs and lets you pick the folder.
 
+## Version and changelog
+
+The version is the `VERSION` of `project()` in `CMakeLists.txt`, the one
+source: CMake generates `th_version.h` from it, which the about screen, the
+debug report's `version:` line and the browser page (`web/shell.html`, through
+the configured copy in the build folder) show. `CHANGELOG.md` is embedded the
+same way (`th_changelog.h`) and shown by the about screen; edit it when the
+version changes. Its entries are `## vX.Y.Z` headings with `- ` bullets.
+
 ## Status
 
 Milestone 1, the map at any resolution:
@@ -77,9 +86,18 @@ Milestone 3b, people:
 
 Milestone 4 so far, the game's interface:
 
-- the start-up flow: the intro, title and name, main menu, difficulty and
-  tutorial choice, and the level's area movie (Smacker movies with their
-  sound); `--level N` skips it and starts level N at once;
+- the start-up flow: the intro, the title picture, an about screen, main
+  menu, difficulty and tutorial choice, and the level's area movie (Smacker
+  movies with their sound); `--level N` skips it and starts level N at once.
+  The about screen takes the place of the original's name screen: after two
+  seconds of the bare title picture (a key or click brings it at once) a glass
+  box shows the credits and the version, with CHANGELOG and CONTINUE buttons
+  (Enter or Space continue, C opens the changelog, Escape does nothing). The
+  changelog, the text of `CHANGELOG.md` embedded at build time, opens in a
+  second box over the first and scrolls by whole lines (the wheel, the arrow
+  buttons and keys, Page Up and Down); Escape or CLOSE closes it. There is no
+  name entry: the player is always called as the language's default (HORZA in
+  English) for the hospital, the saves, the `.hdt` file and the hall of fame;
 - the special levels: the training level (5: three consultants placed by
   `training_builder`) and the two rat bonus levels (13 and 14, which `--level`
   also starts: litter, rat holes and handymen from `rat_fest_builder`, the
@@ -398,7 +416,8 @@ th_replay and puts its end state in slot 1. `type TEXT` types into a focused
 text field, `key [MOD+]NAME` presses a key with Shift, Ctrl or Alt held
 (`keydown` and `keyup` hold one, as for W and Tab; spaces in a name are
 written `_`: `Keypad_8`), and `screenshot-ui` captures after the ImGui
-layer (the tools and the quick report's note box).
+layer (the tools and the quick report's note box). `wheel N` turns the
+mouse wheel N notches (negative toward the user).
 
 The tools window (F12) has a debug report: Save report
 writes `debug-reports/<time>/` (under the folder the game was started from when the data came from the

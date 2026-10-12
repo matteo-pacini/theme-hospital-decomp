@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(theme_hospital_enhanced LANGUAGES CXX)
+project(theme_hospital_enhanced VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -82,6 +82,7 @@ add_library(th_core STATIC
   src/core/ui/buy_objects.cpp
   src/core/ui/fade.cpp
   src/core/ui/fax.cpp
+  src/core/ui/changelog.cpp
   src/core/ui/charts.cpp
   src/core/ui/charts_bank.cpp
   src/core/ui/charts_casebook.cpp
@@ -104,6 +105,7 @@ add_library(th_core STATIC
   src/core/ui/popups.cpp
   src/core/ui/queue_window.cpp
   src/core/ui/startup.cpp
+  src/core/ui/startup_about.cpp
   src/core/ui/startup_briefing.cpp
   src/core/ui/startup_menu.cpp
   src/core/ui/startup_prefs.cpp
@@ -215,7 +217,13 @@ add_custom_command(OUTPUT ${TH_SNAPSHOT_ID}
   DEPENDS ${TH_SNAPSHOT_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/snapshot_id.cmake
   VERBATIM)
 target_sources(th_core PRIVATE ${TH_SNAPSHOT_ID})
-target_include_directories(th_core PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+# th_version.h and th_changelog.h come from the project version and CHANGELOG.md
+# at configure time.
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md TH_CHANGELOG)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md)
+configure_file(cmake/version.h.in generated/th_version.h @ONLY)
+configure_file(cmake/changelog.h.in generated/th_changelog.h @ONLY)
+target_include_directories(th_core PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(th_core PUBLIC src)
 target_compile_options(th_core PRIVATE ${TH_WARNINGS})
 target_link_libraries(th_core PRIVATE th_ymfm th_miniz th_xbrz)
@@ -262,14 +270,16 @@ endif()
 # thread pool holds the install thread and the audio threads SDL may start.
 if (EMSCRIPTEN)
   set(TH_WEB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/web)
+  # The shell page shows the project version (@PROJECT_VERSION@ in it).
+  configure_file(${TH_WEB_DIR}/shell.html ${CMAKE_BINARY_DIR}/shell.html @ONLY)
   target_sources(th_enhanced PRIVATE src/app/web.cpp)
   set_target_properties(th_enhanced PROPERTIES
     OUTPUT_NAME index
     SUFFIX ".html"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
-    LINK_DEPENDS "${TH_WEB_DIR}/shell.html;${TH_WEB_DIR}/bridge.js")
+    LINK_DEPENDS "${CMAKE_BINARY_DIR}/shell.html;${TH_WEB_DIR}/bridge.js")
   target_link_options(th_enhanced PRIVATE
-    --shell-file ${TH_WEB_DIR}/shell.html
+    --shell-file ${CMAKE_BINARY_DIR}/shell.html
     --pre-js ${TH_WEB_DIR}/bridge.js
     -lidbfs.js
     -sEXPORTED_RUNTIME_METHODS=FS,ccall
@@ -338,6 +348,7 @@ if (BUILD_TESTING)
     tests/ui_fax.cpp
     tests/ui_pie.cpp
     tests/ui_startup.cpp
+    tests/changelog.cpp
     tests/ui_windows.cpp
     tests/upscale.cpp
     tests/yearend.cpp)

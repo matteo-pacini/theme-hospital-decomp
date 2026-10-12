@@ -1,0 +1,16 @@
+# Enter on the title screen is CONTINUE, as Space is.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 260
+expect startup screen: 2
+key Return
+wait 10
+expect startup screen: 0
+expect-not startup screen: 2
+key Space
+wait 10
+expect startup screen: 3

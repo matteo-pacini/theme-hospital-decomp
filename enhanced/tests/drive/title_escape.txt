@@ -1,0 +1,20 @@
+# Escape on the title screen does nothing: it quit the original's name screen.
+# The screen stays, and Space still continues.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 260
+expect startup screen: 2
+key Escape
+wait 20
+key Escape
+wait 20
+screenshot after_escape
+expect startup screen: 2
+expect changelog: closed
+key Space
+wait 10
+expect startup screen: 0

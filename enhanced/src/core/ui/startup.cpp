@@ -27,10 +27,8 @@ constexpr double kGameFrame = 0.04; // limit_framerate: 40 timer ticks
 constexpr int kAttractFrames = 0x3e8;
 
 // play_sound's sfx numbers (include/enums.h).
-constexpr uint8_t kSfxEnterName = 0x0c;  // SFX_ENTANAME
-constexpr uint8_t kSfxDeleteName = 0x10; // SFX_DELANAME
-constexpr uint8_t kSfxDice = 0xd2;       // SFX_DICEYFIN
-constexpr uint8_t kSfxDiceLate = 0xdc;   // SFX_DICE122M, for levels 12 and up
+constexpr uint8_t kSfxDice = 0xd2;     // SFX_DICEYFIN
+constexpr uint8_t kSfxDiceLate = 0xdc; // SFX_DICE122M, for levels 12 and up
 
 int sqr(int v)
 {
@@ -155,6 +153,7 @@ bool Startup::load(const std::filesystem::path &dir, const LanguageText &text, i
 {
     dir_ = dir;
     text_ = &text;
+    name_ = std::string(text.misc(1));
     language_ = language;
     if (!load_picture(dir, "title01v", kUiWidth, kUiHeight, title_, error) ||
         !load_picture(dir, "main01m", 320, 200, main_menu_, error) ||
@@ -205,7 +204,9 @@ StartupResult Startup::frame(const UiMouse &mouse, std::span<const StartupKey> k
 {
     UiMouse &m = pending_mouse_;
     bool lp = m.left_pressed, rp = m.right_pressed, lr = m.left_released, rr = m.right_released;
+    const int wheel = m.wheel;
     m = mouse;
+    m.wheel += wheel;
     m.left_pressed |= lp;
     m.right_pressed |= rp;
     m.left_released |= lr;
@@ -222,6 +223,7 @@ StartupResult Startup::frame(const UiMouse &mouse, std::span<const StartupKey> k
         // hosp_play_smk clears the buttons after a movie; the keys that
         // skipped it are spent too.
         m.left_pressed = m.right_pressed = m.left_released = m.right_released = false;
+        m.wheel = 0;
         pending_keys_.clear();
         advance_movie(seconds, skip);
         if (movie_index_ >= 0)
@@ -234,6 +236,7 @@ StartupResult Startup::frame(const UiMouse &mouse, std::span<const StartupKey> k
         frame_time_ -= kGameFrame;
         tick(m, pending_keys_);
         m.left_pressed = m.right_pressed = m.left_released = m.right_released = false;
+        m.wheel = 0;
         pending_keys_.clear();
     }
     frame_time_ = std::min(frame_time_, kGameFrame);
@@ -316,28 +319,21 @@ void Startup::tick(const UiMouse &mouse, std::span<const StartupKey> keys)
     case State::Title:
         attract(mouse, keys);
         break;
-    case State::NameEnter:
-        enter_name();
+    case State::AboutEnter:
+        enter_about();
         break;
-    case State::NameDelay:
-        zoom_after_delay(title_, 2, State::NameZoom);
+    case State::AboutDelay:
+        about_wait(mouse, keys);
         break;
-    case State::NameZoom:
-    case State::NameEntry:
-        name_screen(keys);
-        break;
-    case State::NameDone:
-        // draw_nickname state 1.
-        if (name_.empty())
-            name_ = std::string(text_->misc(1));
-        name_confirmed_ = true;
-        state_ = State::MenuEnter;
+    case State::AboutZoom:
+    case State::AboutEntry:
+        about_screen(mouse, keys);
         break;
     case State::MenuEnter:
         enter_menu();
         break;
     default:
-        // The main menu on, after the name screen.
+        // The main menu on, after the about screen.
         tick_menu(mouse, keys);
         break;
     }
@@ -406,10 +402,11 @@ void Startup::enter_title()
 
 void Startup::attract(const UiMouse &mouse, std::span<const StartupKey> keys)
 {
-    // MMS_ATTRACT: any click or key goes on to the name screen; after 1000
-    // frames the attract and intro movies take turns.
+    // MMS_ATTRACT: any click or key goes on to the about screen (the
+    // original's name screen); after 1000 frames the attract and intro
+    // movies take turns.
     if (mouse.left_pressed || mouse.right_pressed || !keys.empty()) {
-        state_ = State::NameEnter;
+        state_ = State::AboutEnter;
         return;
     }
     show(title_);
@@ -417,17 +414,6 @@ void Startup::attract(const UiMouse &mouse, std::span<const StartupKey> keys)
         attract_count_++;
         play_movie(attract_count_ % 2 == 1 ? kMovieAttract : kMovieIntroSm4, State::TitleEnter);
     }
-}
-
-void Startup::enter_name()
-{
-    // draw_nickname state 0.
-    name_.clear();
-    show(title_);
-    calculate_grey(title_);
-    screen_ = StartupScreen::Name;
-    timer_ = kDelay800ms;
-    state_ = State::NameDelay;
 }
 
 void Startup::enter_menu()
@@ -570,55 +556,6 @@ void Startup::zoom_after_delay(const Picture &picture, int mask, State next)
     if (--timer_ <= 0) {
         init_zoom_boxes(mask);
         state_ = next;
-    }
-}
-
-void Startup::name_screen(std::span<const StartupKey> keys)
-{
-    show(title_);
-    if (state_ == State::NameZoom) {
-        // draw_nickname state 7.
-        if (current_display_ == desired_display_)
-            state_ = State::NameEntry;
-        draw_zoom_boxes();
-        return;
-    }
-    // State 2, display_nick_name_screen.
-    draw_zoom_boxes();
-    const Font &font = fonts_[kFontName];
-    std::string_view prompt = text_->at(TextSection::Nickname, 0);
-    std::string line = std::string(prompt) + " : " + name_ + "*";
-    int ch = font.glyph('A').height;
-    int y = ((0x2c - ch) >> 1) + 0x1a6;
-    int x = ((0x1cb - text_width(font, prompt) - 0x70) >> 1) + 0x5a;
-    draw_text(surface_, font, x, y, line, {{0, 0, surface_.width()}, {0, 0, surface_.width(), surface_.height()}});
-
-    // process_keys_nickname state 2.
-    for (const StartupKey &k : keys) {
-        switch (k.code) {
-        case StartupKey::Escape:
-            sound(kSfxNo);
-            state_ = State::Quit;
-            return;
-        case StartupKey::Return:
-            sound(kSfxYes);
-            state_ = State::NameDone;
-            return;
-        case StartupKey::Backspace:
-            if (!name_.empty()) {
-                sound(kSfxDeleteName);
-                name_.pop_back();
-            }
-            break;
-        case StartupKey::Letter:
-            if (name_.size() < 8 && std::isalpha(uint8_t(k.letter))) {
-                name_ += char(std::toupper(uint8_t(k.letter)));
-                sound(kSfxEnterName);
-            }
-            break;
-        default:
-            break;
-        }
     }
 }
 

@@ -5,8 +5,7 @@ wait 3
 key Space
 wait 3
 click 5 5
-wait 90
-key a
+wait 210
 key Return
 wait 10
 key Space

@@ -49,7 +49,7 @@ class PaletteFade
 // The screens a fade lies between, as far as the game fades them.
 enum class FadeScreen {
     Setup,    // the game data setup screen (not the game's)
-    Startup,  // a start-up screen: title, name, main menu, load game, ...
+    Startup,  // a start-up screen: title, about, main menu, load game, ...
     Movie,    // a start-up movie
     Hospital, // the hospital view
     Chart,    // a full-screen chart (`sub` says which)

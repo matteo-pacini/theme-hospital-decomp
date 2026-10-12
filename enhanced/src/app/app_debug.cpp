@@ -5,6 +5,7 @@
 #include "app/web.h"
 #include "core/data/gamedata.h"
 #include "core/world/debug_dump.h"
+#include "th_version.h"
 
 #include <algorithm>
 #include <ctime>
@@ -189,6 +190,21 @@ std::string App::screen_name() const
     return "hospital";
 }
 
+// The start-up screens' lines of the state text.
+std::string App::debug_state_startup() const
+{
+    std::string s = std::format("startup screen: {}\n", int(startup_.screen()));
+    if (startup_.screen() == StartupScreen::About) {
+        s += std::format("title box: {}\n", startup_.about_box_shown() ? "shown" : "hidden");
+        const bool open = startup_.changelog_open();
+        const bool end = open && startup_.changelog_scroll() == startup_.changelog_scroll_max();
+        s += std::format("changelog: {}, scroll {} of {}{}\n", open ? "open" : "closed", startup_.changelog_scroll(),
+                         startup_.changelog_scroll_max(), end ? " (end)" : "");
+    }
+    s += std::format("continue save: {}\n", save_slot_exists(save_path(kContinueSlot)) ? "yes" : "no");
+    return s;
+}
+
 std::string App::debug_state() const
 {
     int w = 0, h = 0;
@@ -196,6 +212,7 @@ std::string App::debug_state() const
     float mx, my;
     SDL_GetMouseState(&mx, &my);
     std::string s = "# Theme Hospital Enhanced debug report\n";
+    s += std::format("version: {}\n", kVersion);
     s += std::format("data: {}\n", data_ ? data_->dir().string() : "");
     s += std::format("window: {}x{} px, zoom {}, UI scale {}\n", w, h, zoom(), ui_scale());
     s += std::format("screen: {}", screen_name());
@@ -225,10 +242,8 @@ std::string App::debug_state() const
                      info_.machine, pointer_sprite_, charts_.slist_staff);
     s += std::format("quick report: {}, last report: {}\n", quick_.open ? "open" : "closed",
                      quick_.last_report.empty() ? "(none)" : quick_.last_report);
-    if (in_startup_) {
-        s += std::format("startup screen: {}\n", int(startup_.screen()));
-        s += std::format("continue save: {}\n", save_slot_exists(save_path(kContinueSlot)) ? "yes" : "no");
-    }
+    if (in_startup_)
+        s += debug_state_startup();
     if (!data_) {
         s += std::format("setup: game folder {}, {}, notice \"{}\", error \"{}\"\n",
                          game_dir_exists_ ? (game_dir_incomplete_ ? "incomplete" : "complete") : "absent",

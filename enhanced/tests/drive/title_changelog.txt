@@ -1,0 +1,63 @@
+# The changelog over the title screen: opened by its button, scrolled by the
+# arrow keys, the wheel, the glass buttons and Page Down to its end, closed by
+# CLOSE; opened again by C and closed by Escape, which leaves the title screen
+# up.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 260
+click 235 380
+wait 60
+screenshot changelog_top
+dump changelog_top
+expect startup screen: 2
+expect changelog: open, scroll 0 of
+expect-not (end)
+key Down
+wait 5
+expect changelog: open, scroll 21 of
+wheel -1
+wait 5
+expect changelog: open, scroll 84 of
+click 569 52
+wait 5
+expect changelog: open, scroll 63 of
+click 569 376
+wait 5
+expect changelog: open, scroll 84 of
+key PageUp
+wait 5
+expect changelog: open, scroll 0 of
+key PageDown
+wait 5
+expect changelog: open, scroll 336 of
+screenshot changelog_middle
+key PageDown
+key PageDown
+key PageDown
+key PageDown
+key PageDown
+key PageDown
+wait 5
+dump changelog_end
+expect (end)
+screenshot changelog_end
+key Down
+wait 5
+expect (end)
+click 320 434
+wait 60
+dump changelog_closed
+expect startup screen: 2
+expect changelog: closed
+key c
+wait 60
+expect changelog: open, scroll 0 of
+key Escape
+wait 60
+screenshot changelog_escaped
+expect startup screen: 2
+expect changelog: closed

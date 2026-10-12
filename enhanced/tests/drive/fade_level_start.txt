@@ -9,8 +9,7 @@ wait 400
 key Space
 wait 100
 click 5 5
-wait 300
-key a
+wait 420
 key Return
 wait 100
 key Space

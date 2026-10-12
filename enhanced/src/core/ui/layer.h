@@ -72,6 +72,8 @@ struct UiMouse {
     bool right_pressed = false;
     bool left_released = false;
     bool right_released = false;
+    // Wheel notches since the previous frame, positive away from the user.
+    int wheel = 0;
 };
 
 // The modifier keys held, as the interface sees them.

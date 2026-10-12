@@ -1,0 +1,16 @@
+# A click during the picture's wait brings the credits' box up at once; it
+# lands on CONTINUE's place and is not CONTINUE: the screen stays.
+# Size 640x480
+# NoLevel
+wait 60
+key Space
+wait 20
+click 5 5
+wait 5
+expect title box: hidden
+click 405 380
+wait 5
+expect title box: shown
+wait 60
+expect startup screen: 2
+expect changelog: closed

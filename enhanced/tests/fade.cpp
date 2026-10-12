@@ -56,16 +56,16 @@ void test_fade_between()
     CHECK(fade_between(hospital, hospital).out_steps == 0);
 
     // A movie sets its own palette; the letter reuses the movie's picture; the
-    // name box is drawn over the title.
+    // about screen is drawn over the title.
     FadePlan movie = fade_between(hospital, id(FadeScreen::WinLoseMovie));
     CHECK(movie.out_steps == 10 && movie.in_steps == 0);
     FadePlan letter = fade_between(id(FadeScreen::WinLoseMovie), id(FadeScreen::WinLoseLetter));
     CHECK(letter.out_steps == 0 && letter.in_steps == 0);
     ScreenId title = id(FadeScreen::Startup, int(StartupScreen::Title));
-    ScreenId name = id(FadeScreen::Startup, int(StartupScreen::Name));
+    ScreenId about = id(FadeScreen::Startup, int(StartupScreen::About));
     ScreenId menu = id(FadeScreen::Startup, int(StartupScreen::MainMenu));
-    CHECK(fade_between(title, name).out_steps == 0);
-    CHECK(fade_between(name, menu).out_steps == 10);
+    CHECK(fade_between(title, about).out_steps == 0);
+    CHECK(fade_between(about, menu).out_steps == 10);
     CHECK(fade_between(id(FadeScreen::Setup), hospital).out_steps == 0);
 }
 

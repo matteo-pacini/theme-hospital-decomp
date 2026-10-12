@@ -45,10 +45,10 @@ FadePlan fade_between(const ScreenId &from, const ScreenId &to)
 {
     if (from == to || from.kind == FadeScreen::Setup || to.kind == FadeScreen::Setup)
         return {};
-    // The name box is drawn over the title picture, without a reload.
+    // The about screen is drawn over the title picture, without a reload.
     if (from.kind == FadeScreen::Startup && to.kind == FadeScreen::Startup) {
-        const int title = int(StartupScreen::Title), name = int(StartupScreen::Name);
-        if ((from.sub == title && to.sub == name) || (from.sub == name && to.sub == title))
+        const int title = int(StartupScreen::Title), about = int(StartupScreen::About);
+        if ((from.sub == title && to.sub == about) || (from.sub == about && to.sub == title))
             return {};
     }
     if (from.kind == FadeScreen::WinLoseMovie && to.kind == FadeScreen::WinLoseLetter)

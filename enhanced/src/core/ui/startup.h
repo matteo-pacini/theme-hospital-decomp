@@ -5,6 +5,7 @@
 #include "core/data/sprites.h"
 #include "core/data/text.h"
 #include "core/render/surface.h"
+#include "core/ui/changelog.h"
 #include "core/ui/layer.h"
 
 #include <array>
@@ -27,9 +28,12 @@ struct StartupKey {
         Other,
         Letter, // `letter` is 'A' to 'Z'
         Escape,
-        Return,    // Return or keypad Enter
-        Backspace, // Backspace or keypad '.'
+        Return, // Return or keypad Enter
         Space,
+        Up,
+        Down,
+        PageUp,
+        PageDown,
     };
     Code code = Other;
     char letter = 0;
@@ -39,7 +43,7 @@ struct StartupKey {
 enum class StartupScreen {
     Movie,       // a movie (movie() says which)
     Title,       // TITLE01V, waiting for a click or key; the attract movies play after a while
-    Name,        // the player's name typed over the title
+    About,       // the credits and version in a glass box over the title; the changelog over that
     MainMenu,    // MAIN01M, 320 x 200
     LoadGame,    // PREF01V with the save slots' list (src/loadscr.cpp)
     Preferences, // PREF01V: difficulty and tutorial
@@ -67,8 +71,9 @@ struct StartupResult {
 // runs it without debug.direct_start (display_mode DM_MAIN_MENU, mainmenu
 // state MMS_INTRO): the intro movie (draw_main_menu, play_intro: INTRO.SM4,
 // the better of the two), the title screen with the attract movies, the
-// name screen (draw_nickname, src/name.cpp), the main menu with its
-// opening and closing movies (src/mainmenu.cpp), the preferences screen
+// about screen (the credits and version, and the changelog over them; in the
+// place of the original's name screen, draw_nickname in src/name.cpp), the
+// main menu with its opening and closing movies (src/mainmenu.cpp), the preferences screen
 // where the difficulty and tutorial are chosen, and the level's area movie
 // before it starts (draw_area_select, src/area.cpp). Load, Continue (there
 // are no saves) and Network are refused as the game refuses Continue
@@ -120,6 +125,14 @@ class Startup
     }
 
     StartupScreen screen() const { return screen_; }
+    // The about screen's changelog: whether it is open, how far down it is
+    // scrolled and the furthest it scrolls, in pixels.
+    bool changelog_open() const { return changelog_open_; }
+    int changelog_scroll() const { return changelog_scroll_; }
+    int changelog_scroll_max() const;
+    // Whether the credits' box is up or coming up (the title picture shows
+    // bare before).
+    bool about_box_shown() const;
     // Whether the load screen's panels are fully open (its buttons work).
     bool load_ready() const { return (current_display_ & 0x2000) != 0; }
     // The movie playing (a MovieIndex), -1 if none.
@@ -139,10 +152,10 @@ class Startup
     // SNDSRC_GENERAL; SFX_* numbers in include/enums.h), in order.
     std::vector<uint8_t> take_sounds();
 
-    // The name typed on the name screen (myplayer.name; misc_text[1] if
-    // none was typed).
+    // The player's name (myplayer.name): the language's default, misc_text[1].
+    // The original asks for it on the name screen; there is no entry here.
     const std::string &player_name() const { return name_; }
-    // Whether the name screen finished since the last call (draw_nickname
+    // Whether the about screen was left since the last call (draw_nickname
     // state 1, where the game loads the player's details).
     bool take_name_confirmed()
     {
@@ -181,7 +194,7 @@ class Startup
     void tick_menu(const UiMouse &mouse, std::span<const StartupKey> keys);
     void attract(const UiMouse &mouse, std::span<const StartupKey> keys);
     void enter_title();
-    void enter_name();
+    void enter_about();
     void enter_menu();
     void enter_preferences();
     void enter_area();
@@ -212,7 +225,28 @@ class Startup
     void load_button(const UiMouse &mouse, int slot, bool back, State &next);
     // Whether slot `slot` holds a save readable by this build.
     bool load_slot_used(int slot) const;
-    void name_screen(std::span<const StartupKey> keys);
+    // The about screen, startup_about.cpp: the credits and version with their
+    // two buttons, and the changelog over them while it is open.
+    // The title picture alone, until the delay is over or a key or click.
+    void about_wait(const UiMouse &mouse, std::span<const StartupKey> keys);
+    void about_screen(const UiMouse &mouse, std::span<const StartupKey> keys);
+    void about_keys(std::span<const StartupKey> keys);
+    void about_mouse(const UiMouse &mouse);
+    void about_continue();
+    void about_open_changelog();
+    void about_close_changelog();
+    // Moves the changelog `pixels` down (up when negative), within its text.
+    void about_scroll(int pixels);
+    void draw_about(const UiMouse &mouse);
+    void draw_changelog(const UiMouse &mouse);
+    // Draws `label` centred in `box`, in the highlighted font while the
+    // pointer is over it and sunken while it is held.
+    void draw_box_label(const UiMouse &mouse, const Rect &box, std::string_view label);
+    // The changelog text wrapped for its window.
+    void wrap_changelog();
+    // Adds the glass boxes of display bit `bit`, as init_zoom_boxes does for
+    // each bit of its mask, and wants them shown.
+    void add_zoom_boxes(int bit);
     void preferences(const UiMouse &mouse, std::span<const StartupKey> keys);
     void draw_new_prefs_screen(const UiMouse &mouse, bool several);
     // process_mouse_nickname's preferences button `i`, setting the state
@@ -281,6 +315,13 @@ class Startup
     int menu_state_ = 0; // mainmenu.state
     std::string name_;
     bool name_confirmed_ = false;
+    // The about screen's changelog: whether it is wanted open, the pixel
+    // offset of its first line, its text wrapped to its window, and the
+    // frames its scroll button has been held.
+    bool changelog_open_ = false;
+    int changelog_scroll_ = 0;
+    std::vector<ChangelogLine> changelog_lines_;
+    int scroll_hold_ = 0;
     std::filesystem::path save_dir_;
     // The load game screen's slot under the mouse and the one last chosen
     // (loadgame.value).

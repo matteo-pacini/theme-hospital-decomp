@@ -24,10 +24,16 @@ StartupKey startup_key(SDL_Keycode key)
         k.code = StartupKey::Escape;
     } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
         k.code = StartupKey::Return;
-    } else if (key == SDLK_BACKSPACE || key == SDLK_KP_PERIOD) {
-        k.code = StartupKey::Backspace;
     } else if (key == SDLK_SPACE) {
         k.code = StartupKey::Space;
+    } else if (key == SDLK_UP) {
+        k.code = StartupKey::Up;
+    } else if (key == SDLK_DOWN) {
+        k.code = StartupKey::Down;
+    } else if (key == SDLK_PAGEUP) {
+        k.code = StartupKey::PageUp;
+    } else if (key == SDLK_PAGEDOWN) {
+        k.code = StartupKey::PageDown;
     }
     return k;
 }
@@ -319,6 +325,7 @@ void App::startup_step(int out_w, int out_h)
     const Surface &src = startup_.surface();
     SDL_FRect at = fit_rect(src, out_w, out_h);
     UiMouse mouse = fitted_mouse(at, src);
+    mouse.wheel = std::exchange(startup_wheel_, 0);
     help_mouse_ = mouse;
     help_context();
     StartupResult r = startup_.frame(mouse, startup_keys_, frame_seconds_);
