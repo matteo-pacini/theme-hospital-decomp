@@ -95,7 +95,7 @@ void test_computer_money(const char *dir);
 void test_computer_staff(const char *dir);
 void test_computer_peep();
 
-// ui.cpp
+// ui.cpp, ui_*.cpp
 void test_menu_bar(const char *dir);
 void test_requester_art(const char *dir);
 void test_panel_buttons(const char *dir);
@@ -180,7 +180,7 @@ void test_advisor_advice(const char *dir);
 void test_carried_score(const char *dir);
 void test_advisor_counts(const char *dir);
 
-// rooms.cpp
+// rooms.cpp, rooms_*.cpp
 void test_furnish_corridor(const char *dir);
 void test_queue_lists();
 void test_entrance_rooms_level1(const char *dir);

@@ -77,7 +77,7 @@ struct MapHover {
 // otherwise a patient or member of staff (their pointers), a VIP or the
 // inspector (the pointer kept), a door of a room with a queue (the queue
 // pointer). Rats are not tested. The epidemic's vaccination pointer is set by the interface
-// (app/main.cpp), not here.
+// (app/app_interface_map.cpp), not here.
 MapHover map_hover(const World &world, uint16_t pointed);
 
 // process_left_button's left click on the map in the normal mouse mode with

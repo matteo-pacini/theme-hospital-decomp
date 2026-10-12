@@ -49,6 +49,9 @@ endif()
 # The engine: data loading and drawing, with no SDL dependency.
 add_library(th_core STATIC
   src/core/audio/music.cpp
+  src/core/audio/music_opl.cpp
+  src/core/audio/music_sequencer.cpp
+  src/core/audio/music_xmi.cpp
   src/core/audio/sounds.cpp
   src/core/data/anims.cpp
   src/core/data/balance.cpp
@@ -80,6 +83,13 @@ add_library(th_core STATIC
   src/core/ui/fade.cpp
   src/core/ui/fax.cpp
   src/core/ui/charts.cpp
+  src/core/ui/charts_bank.cpp
+  src/core/ui/charts_casebook.cpp
+  src/core/ui/charts_draw.cpp
+  src/core/ui/charts_graphs.cpp
+  src/core/ui/charts_policy.cpp
+  src/core/ui/charts_staff.cpp
+  src/core/ui/charts_status.cpp
   src/core/ui/pie.cpp
   src/core/ui/helpmsg.cpp
   src/core/ui/helpmsg_callbacks.cpp
@@ -94,15 +104,32 @@ add_library(th_core STATIC
   src/core/ui/popups.cpp
   src/core/ui/queue_window.cpp
   src/core/ui/startup.cpp
+  src/core/ui/startup_briefing.cpp
+  src/core/ui/startup_menu.cpp
+  src/core/ui/startup_prefs.cpp
+  src/core/ui/startup_zoom.cpp
   src/core/ui/staff_demand.cpp
   src/core/ui/town_map.cpp
   src/core/ui/windows.cpp
   src/core/ui/yearend.cpp
   src/core/ui/winlose.cpp
   src/core/world/advisor.cpp
+  src/core/world/advisor_advice.cpp
+  src/core/world/advisor_situations.cpp
+  src/core/world/advisor_tutorial.cpp
   src/core/world/arrivals.cpp
   src/core/world/build.cpp
+  src/core/world/build_blueprint.cpp
+  src/core/world/build_door.cpp
+  src/core/world/build_events.cpp
+  src/core/world/build_place.cpp
+  src/core/world/build_room.cpp
+  src/core/world/build_walls.cpp
   src/core/world/complex.cpp
+  src/core/world/complex_steps.cpp
+  src/core/world/complex_treatment.cpp
+  src/core/world/complex_turn.cpp
+  src/core/world/complex_walk.cpp
   src/core/world/computer.cpp
   src/core/world/computer_month.cpp
   src/core/world/computer_staff.cpp
@@ -130,10 +157,25 @@ add_library(th_core STATIC
   src/core/world/reputation.cpp
   src/core/world/research.cpp
   src/core/world/rooms.cpp
+  src/core/world/rooms_diagnosis.cpp
+  src/core/world/rooms_expertise.cpp
+  src/core/world/rooms_pager.cpp
+  src/core/world/rooms_treatment.cpp
   src/core/world/savegame.cpp
   src/core/world/snapshot.cpp
   src/core/world/staff.cpp
   src/core/world/staff_complex.cpp
+  src/core/world/staff_complex_actions.cpp
+  src/core/world/staff_doctor.cpp
+  src/core/world/staff_events.cpp
+  src/core/world/staff_examine.cpp
+  src/core/world/staff_handyman.cpp
+  src/core/world/staff_hire.cpp
+  src/core/world/staff_interrupt.cpp
+  src/core/world/staff_nurse.cpp
+  src/core/world/staff_reception.cpp
+  src/core/world/staff_room.cpp
+  src/core/world/staff_theatre.cpp
   src/core/world/trace.cpp
   src/core/world/training.cpp
   src/core/world/vaccine.cpp
@@ -182,6 +224,19 @@ target_link_options(th_core INTERFACE ${TH_COVERAGE_FLAGS})
 
 add_executable(th_enhanced
   src/app/main.cpp
+  src/app/app_debug.cpp
+  src/app/app_draw.cpp
+  src/app/app_drive.cpp
+  src/app/app_frame.cpp
+  src/app/app_input.cpp
+  src/app/app_interface.cpp
+  src/app/app_interface_map.cpp
+  src/app/app_level.cpp
+  src/app/app_save.cpp
+  src/app/app_screens.cpp
+  src/app/app_setup.cpp
+  src/app/app_start.cpp
+  src/app/app_winlose.cpp
   src/app/audio/mixer.cpp
   src/app/datadir.cpp
   src/app/drive.cpp
@@ -270,10 +325,20 @@ if (BUILD_TESTING)
     tests/replay.cpp
     tests/research.cpp
     tests/rooms.cpp
+    tests/rooms_build.cpp
+    tests/rooms_diagnosis.cpp
+    tests/rooms_disasters.cpp
+    tests/rooms_emergency.cpp
+    tests/rooms_staff_room.cpp
     tests/sim_yearend.cpp
     tests/staff.cpp
     tests/staff_demand.cpp
     tests/ui.cpp
+    tests/ui_charts.cpp
+    tests/ui_fax.cpp
+    tests/ui_pie.cpp
+    tests/ui_startup.cpp
+    tests/ui_windows.cpp
     tests/upscale.cpp
     tests/yearend.cpp)
   target_link_libraries(th_tests PRIVATE th_core)
