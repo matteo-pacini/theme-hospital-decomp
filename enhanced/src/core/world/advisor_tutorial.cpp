@@ -31,7 +31,7 @@ struct Tutorial {
 
     void message(int i)
     {
-        a.text = in.text->at(TextSection::Advisor, i);
+        say(a, in.text->at(TextSection::Advisor, i));
         a.rewrap = true;
         a.line_count = 0;
         a.extra_segments = 0;
