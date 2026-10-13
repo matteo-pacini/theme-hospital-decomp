@@ -283,7 +283,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: port-build
-          path: build
+          path: build/enhanced
       - name: Tests
         env:
           STEPS: ${{ matrix.shard == 0 && 'th_tests drive_tests install_tests' || 'drive_tests' }}
@@ -331,9 +331,13 @@ jobs:
         run: nix shell github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#awscli2 github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#zstd -c enhanced/tools/ci/data_fetch.sh
       - uses: actions/download-artifact@v8
         with:
-          pattern: "*-build"
-          merge-multiple: true
-          path: build
+          name: port-build
+          path: build/enhanced
+      - uses: actions/download-artifact@v8
+        if: ${{ inputs.web }}
+        with:
+          name: web-build
+          path: build/web
       - name: Decompilation objects (build/base) and the trace key
         id: key
         run: |
