@@ -18,6 +18,8 @@
 # folder per run so that two runs in one tree do not clash; it is removed
 # when every script passes and kept, with its logs, when one fails. A
 # script whose seed script or seed replay fails fails without its own run.
+# DRIVE_SHARD=I/N: only the scripts whose place in the sorted list is I modulo
+# N (I from 0), so that N runs with I = 0 .. N-1 cover the list once.
 set -u
 build=${DRIVE_BUILD:-build/enhanced}
 dir=enhanced/tests/drive
@@ -84,6 +86,9 @@ compare_run() {
 }
 
 [ $# -eq 0 ] && set -- $dir/*.txt
+if [ -n "${DRIVE_SHARD:-}" ]; then
+  set -- $(printf '%s\n' "$@" | sort | awk -v i="${DRIVE_SHARD%/*}" -v n="${DRIVE_SHARD#*/}" '(NR - 1) % n == i')
+fi
 failed=0
 mkdir -p "$base"
 for script in "$@"; do

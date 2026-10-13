@@ -1,5 +1,7 @@
 # The gate (enhanced/tools/check.sh) on GitHub-hosted runners, sharded: one
-# build, lint, the data tests, and the replays split into shards by script.
+# native build and one WebAssembly build (their binaries go to the other jobs
+# as artifacts), tidy and the drive tests in 3 shards each, and the replays
+# split into shards by script.
 # Called by ci.yml, or run by hand. The game data comes from the private R2
 # bucket of the `ci` environment and never leaves the runner's workspace:
 # caches and artifacts hold only the original's traces (numbers) and text
@@ -129,8 +131,8 @@ jobs:
           cat "$RUNNER_TEMP/matrix.json"
           echo "matrix=$(cat "$RUNNER_TEMP/matrix.json")" >> "$GITHUB_OUTPUT"
 
-  # The port (native and, with web, WebAssembly): zero warnings. Its binaries
-  # go to the shards as an artifact (no game data in them).
+  # The native port: zero warnings, and clang-format. Its binaries go to the
+  # test and replay jobs as an artifact (no game data in them).
   build:
     name: Build
     runs-on: ubuntu-24.04
@@ -149,7 +151,7 @@ jobs:
           attic-token: ${{ secrets.ATTIC_TOKEN }}
       - name: Build
         env:
-          STEPS: ${{ inputs.web && 'build web_build' || 'build' }}
+          STEPS: build format
           NO_DATA: "1"
           CMAKE_BUILD_PARALLEL_LEVEL: "4"
         run: enhanced/tools/check.sh
@@ -174,14 +176,15 @@ jobs:
           if-no-files-found: error
           path: |
             build/enhanced/th_replay
+            build/enhanced/th_enhanced
+            build/enhanced/th_tests
             build/enhanced/CMakeCache.txt
-            build/web/th_replay.js
-            build/web/th_replay.wasm
-            build/web/CMakeCache.txt
 
-  # clang-tidy and clang-format; and the data-free WebAssembly checks.
-  lint:
-    name: Lint
+  # The WebAssembly port: zero warnings, and the data-free web checks. Its
+  # binaries go to the replay jobs as an artifact.
+  web:
+    name: Web build
+    if: ${{ inputs.web }}
     runs-on: ubuntu-24.04
     environment: ${{ inputs.data && 'ci' || null }}
     steps:
@@ -194,27 +197,71 @@ jobs:
           attic-url: ${{ vars.ATTIC_CACHE_URL }}
           attic-cache: ${{ vars.ATTIC_CACHE }}
           attic-token: ${{ secrets.ATTIC_TOKEN }}
-      - name: tidy, format, and the data-free web checks
+      - name: Build and check
         env:
-          STEPS: ${{ inputs.web && 'build tidy format web_build web_th_tests web_tidy' || 'build tidy format' }}
+          STEPS: web_build web_th_tests web_tidy
           NO_DATA: "1"
           CMAKE_BUILD_PARALLEL_LEVEL: "4"
           TIDY_JOBS: "4"
+        run: enhanced/tools/check.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-build
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            build/web/th_replay.js
+            build/web/th_replay.wasm
+            build/web/CMakeCache.txt
+
+  # clang-tidy over one third of the files (it needs the build's generated
+  # headers, so each shard builds).
+  lint:
+    name: Lint ${{ matrix.shard }}
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.data && 'ci' || null }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/nix
+        with:
+          attic-url: ${{ vars.ATTIC_CACHE_URL }}
+          attic-cache: ${{ vars.ATTIC_CACHE }}
+          attic-token: ${{ secrets.ATTIC_TOKEN }}
+      - name: tidy
+        env:
+          STEPS: build tidy
+          NO_DATA: "1"
+          CMAKE_BUILD_PARALLEL_LEVEL: "4"
+          TIDY_JOBS: "4"
+          TIDY_SHARD: ${{ matrix.shard }}/3
         run: enhanced/tools/check.sh
       - name: Logs of a failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: lint-logs
+          name: lint-logs-${{ matrix.shard }}
           retention-days: 7
           path: build/check-*/*.log
 
-  # th_tests, the drive tests and the install tests, with the game data.
+  # The drive tests in 3 shards, with the game data and the build's binaries;
+  # shard 0 also runs th_tests and the install tests.
   tests:
-    name: Tests
+    name: Tests ${{ matrix.shard }}
     if: ${{ inputs.data }}
+    needs: [build]
     runs-on: ubuntu-24.04
     environment: ci
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
     env:
       R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
       R2_BUCKET: ${{ vars.R2_BUCKET }}
@@ -233,16 +280,22 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: nix shell github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#awscli2 github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#zstd -c enhanced/tools/ci/data_fetch.sh
+      - uses: actions/download-artifact@v8
+        with:
+          name: port-build
+          path: build
       - name: Tests
         env:
-          STEPS: build th_tests drive_tests install_tests
-          CMAKE_BUILD_PARALLEL_LEVEL: "4"
-        run: enhanced/tools/check.sh
+          STEPS: ${{ matrix.shard == 0 && 'th_tests drive_tests install_tests' || 'drive_tests' }}
+          DRIVE_SHARD: ${{ matrix.shard }}/3
+        run: |
+          chmod +x build/enhanced/th_replay build/enhanced/th_enhanced build/enhanced/th_tests
+          enhanced/tools/check.sh
       - name: Logs of a failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: tests-logs
+          name: tests-logs-${{ matrix.shard }}
           retention-days: 7
           path: build/check-*/*.log
 
@@ -250,8 +303,8 @@ jobs:
   # else DOSBox), natively and, with web, in WebAssembly.
   replays:
     name: Replays ${{ matrix.shard }}
-    if: ${{ inputs.data }}
-    needs: [prepare, build]
+    if: ${{ !cancelled() && inputs.data && needs.prepare.result == 'success' && needs.build.result == 'success' && needs.web.result != 'failure' && needs.web.result != 'cancelled' }}
+    needs: [prepare, build, web]
     runs-on: ubuntu-24.04
     environment: ci
     timeout-minutes: 345
@@ -278,7 +331,8 @@ jobs:
         run: nix shell github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#awscli2 github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#zstd -c enhanced/tools/ci/data_fetch.sh
       - uses: actions/download-artifact@v8
         with:
-          name: port-build
+          pattern: "*-build"
+          merge-multiple: true
           path: build
       - name: Decompilation objects (build/base) and the trace key
         id: key
@@ -296,6 +350,14 @@ jobs:
           path: build/replay-cache
           key: traces-${{ steps.key.outputs.exe }}-${{ github.run_id }}-${{ matrix.shard }}
           restore-keys: traces-${{ steps.key.outputs.exe }}-
+      # Saved on its own (small), so that a run with new port verdicts and no
+      # new original does not store the traces again; it is the newer of the two.
+      - name: Restore the port verdicts
+        uses: actions/cache/restore@v6
+        with:
+          path: build/replay-cache/port
+          key: port-verdicts-${{ github.run_id }}-${{ matrix.shard }}
+          restore-keys: port-verdicts-
       - name: Mark the restored cache
         run: |
           mkdir -p build/replay-cache/traces build/replay-cache/port
@@ -348,8 +410,10 @@ jobs:
             build/check-*/replay_all.full
             build/replay-all-*/**/*.zst
 
-  # Master only: one cache entry with the traces of this key (restored ones
-  # and the shards' new ones).
+  # Master only. The traces of this key (restored ones and the shards' new
+  # ones) are one cache entry of 170 MiB, saved only when a shard recorded a
+  # new original trace; the port verdicts (a few KiB each) are another, saved
+  # when a shard produced a new one. A run with neither saves nothing.
   save-cache:
     name: Save the trace cache
     if: ${{ inputs.data && inputs.save_cache && !cancelled() && needs.replays.result != 'skipped' }}
@@ -365,34 +429,50 @@ jobs:
         id: key
         run: |
           echo "exe=$(cat build/new-cache/exe_key)" >> "$GITHUB_OUTPUT"
-          echo "new=$(find build/new-cache -type f ! -name exe_key | wc -l)" >> "$GITHUB_OUTPUT"
+          traces=$(find build/new-cache/traces -type f 2>/dev/null | wc -l)
+          verdicts=$(find build/new-cache/port -type f 2>/dev/null | wc -l)
+          echo "traces=$traces" >> "$GITHUB_OUTPUT"
+          echo "verdicts=$verdicts" >> "$GITHUB_OUTPUT"
+          echo "new original traces: $traces: trace entry $([ "$traces" != 0 ] && echo saved || echo skipped)"
+          echo "new port verdicts: $verdicts: verdict entry $([ "$verdicts" != 0 ] && echo saved || echo skipped)"
       - uses: actions/cache/restore@v6
-        if: ${{ steps.key.outputs.new != '0' }}
+        if: ${{ steps.key.outputs.traces != '0' || steps.key.outputs.verdicts != '0' }}
         with:
           path: build/replay-cache
           key: traces-${{ steps.key.outputs.exe }}-restore
           restore-keys: traces-${{ steps.key.outputs.exe }}-
+      - uses: actions/cache/restore@v6
+        if: ${{ steps.key.outputs.traces != '0' || steps.key.outputs.verdicts != '0' }}
+        with:
+          path: build/replay-cache/port
+          key: port-verdicts-restore
+          restore-keys: port-verdicts-
       - name: Merge
-        if: ${{ steps.key.outputs.new != '0' }}
+        if: ${{ steps.key.outputs.traces != '0' || steps.key.outputs.verdicts != '0' }}
         env:
           EXE_KEY: ${{ steps.key.outputs.exe }}
         run: |
-          mkdir -p build/replay-cache
+          mkdir -p build/replay-cache/traces build/replay-cache/port
           cp -rn build/new-cache/traces build/new-cache/port build/replay-cache/ 2>/dev/null || true
           find build/replay-cache/traces -type f ! -name "$EXE_KEY-*" -delete
           find build/replay-cache/port -type f -mtime +14 -delete
           du -sh build/replay-cache
       - uses: actions/cache/save@v6
-        if: ${{ steps.key.outputs.new != '0' }}
+        if: ${{ steps.key.outputs.traces != '0' }}
         with:
           path: build/replay-cache
           key: traces-${{ steps.key.outputs.exe }}-${{ github.run_id }}
+      - uses: actions/cache/save@v6
+        if: ${{ steps.key.outputs.verdicts != '0' }}
+        with:
+          path: build/replay-cache/port
+          key: port-verdicts-${{ github.run_id }}
 
   # The one check the master ruleset requires.
   gate:
     name: gate
     if: ${{ always() }}
-    needs: [prepare, build, lint, tests, replays]
+    needs: [prepare, build, web, lint, tests, replays]
     runs-on: ubuntu-24.04
     steps:
       - name: Every job passed

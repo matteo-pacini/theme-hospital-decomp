@@ -5,6 +5,8 @@
 # build tree in TIDY_BUILD). TIDY_JOBS clang-tidy processes run at once
 # (default: one per core). TIDY_EXTRA: space-separated compiler arguments
 # added to every file's (the WebAssembly build's target and sysroot, for check.sh's WEB=1).
+# TIDY_SHARD=I/N: only the files whose place in the sorted list is I modulo N
+# (I from 0), so that N runs with I = 0 .. N-1 cover the list once.
 # Exits non-zero when clang-tidy reports any warning.
 set -e
 db=${TIDY_BUILD:-build/enhanced}
@@ -14,6 +16,9 @@ if [ ! -f "$db/compile_commands.json" ]; then
 fi
 if [ $# -eq 0 ]; then
   set -- $(grep -o '"file": "[^"]*/enhanced/\(src\|tests\|tools\)/[^"]*"' "$db/compile_commands.json" | cut -d'"' -f4)
+fi
+if [ -n "${TIDY_SHARD:-}" ]; then
+  set -- $(printf '%s\n' "$@" | sort | awk -v i="${TIDY_SHARD%/*}" -v n="${TIDY_SHARD#*/}" '(NR - 1) % n == i')
 fi
 extra=
 for arg in ${TIDY_EXTRA:-}; do extra="$extra --extra-arg=$arg"; done

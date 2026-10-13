@@ -46,6 +46,9 @@
 #   CROSS_LOAD  the cross-load test's SCRIPT:TURN items, the turn the snapshot
 #               is taken at (default: rival_two_years:18000 win_level1:9000
 #               tutorial:9000)
+#   TIDY_SHARD, DRIVE_SHARD
+#               I/N: tidy and the drive tests run only the I-th of N parts of
+#               their file lists (tidy.sh, drive_tests.sh), for the sharded CI
 #   CMAKE_BUILD_PARALLEL_LEVEL, TIDY_JOBS, JOBS
 #               job caps of the build, tidy and replays (default 2, 2, 1, for
 #               a machine shared with other agents; 4, 4, 4 alone)

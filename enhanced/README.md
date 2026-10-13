@@ -724,22 +724,38 @@ prints the command; nothing is sent.
 ## CI
 
 `.github/workflows/ci.yml` runs `gate.yml` on every pull request, push to
-master and by hand. The jobs (check names `gate / Build`, `gate / Lint`,
-`gate / Tests`, `gate / Replays N`, and `gate / gate`, which needs all of
-them and is the one the master ruleset requires):
+master and by hand. The jobs (check names `gate / Build`, `gate / Web build`,
+`gate / Lint N`, `gate / Tests N`, `gate / Replays N`, and `gate / gate`,
+which needs all of them and is the one the master ruleset requires):
 
-- Build: `check.sh` with `STEPS="build web_build" NO_DATA=1`; the binaries go
-  to the replay shards as an artifact.
-- Lint: build, tidy, clang-format and the data-free web checks.
-- Tests: th_tests, drive tests and install tests with the game data.
+- Build: `check.sh` with `STEPS="build format" NO_DATA=1`; the native
+  binaries (th_replay, th_enhanced, th_tests) go to the tests and replay
+  shards as an artifact, so no other job builds them.
+- Web build: `STEPS="web_build web_th_tests web_tidy" NO_DATA=1`; the
+  WebAssembly binaries go to the replay shards as an artifact.
+- Lint 0..2: build and tidy over a third of the files each (`TIDY_SHARD=I/3`:
+  the sorted list, every third file).
+- Tests 0..2: the drive tests over a third of the scripts each
+  (`DRIVE_SHARD=I/3`) with the game data and Build's binaries; shard 0 also
+  runs th_tests and the install tests.
 - Replays: the scripts split into shards (longest first); each shard restores
-  the trace cache, runs `STEPS="replays web_replays"` and uploads its new
-  original traces; shard 0 also runs the cross-load test.
-- Pull requests from forks have no secrets and no data: only Build and Lint
-  run, with `NO_DATA=1` (th_tests exit 77 passes).
+  the trace cache and the port verdicts, runs `STEPS="replays web_replays"`
+  and uploads its new original traces and verdicts; shard 0 also runs the
+  cross-load test.
+- Save the trace cache (master only): the traces entry (about 170 MiB) is
+  saved only when a shard recorded a new original trace; the port verdicts
+  (a few KiB) are a separate entry, saved when a shard produced a new one. A
+  run with neither saves nothing; the job's log says which.
+- Pull requests from forks have no secrets and no data: only Build, Web
+  build and Lint run, with `NO_DATA=1` (th_tests exit 77 passes).
+
+A warm gate takes about 9 minutes, the length of the Web build plus a replay
+shard. A gate runs 9 jobs at once (Build, Web build, 3 Lint, 3 Tests, Shards)
+and then the 6 replay shards, so two gates fit in GitHub's 20 concurrent
+jobs; a third queues.
 
 `check.sh` takes `STEPS` (a subset of its steps; a phase with none is not
-entered) and `NO_DATA=1`; see its header.
+entered), `NO_DATA=1`, `TIDY_SHARD` and `DRIVE_SHARD`; see its header.
 
 The game data is a plain tar.zst of ANIMS DATA DATAM INTRO LEVELS QDATA QDATAM
 SOUND, HOSPITAL.CFG, MODEM.INI and DOS4GW.EXE in the private R2 bucket
