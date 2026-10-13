@@ -199,7 +199,7 @@ jobs:
           attic-token: ${{ secrets.ATTIC_TOKEN }}
       - name: Build and check
         env:
-          STEPS: web_build web_th_tests web_tidy
+          STEPS: web_build web_tidy
           NO_DATA: "1"
           CMAKE_BUILD_PARALLEL_LEVEL: "4"
           TIDY_JOBS: "4"
@@ -212,6 +212,8 @@ jobs:
           path: |
             build/web/th_replay.js
             build/web/th_replay.wasm
+            build/web/th_tests.js
+            build/web/th_tests.wasm
             build/web/CMakeCache.txt
 
   # clang-tidy over one third of the files (it needs the build's generated
@@ -251,11 +253,12 @@ jobs:
           path: build/check-*/*.log
 
   # The drive tests in 3 shards, with the game data and the build's binaries;
-  # shard 0 also runs th_tests and the install tests.
+  # shard 0 also runs th_tests, the install tests and (with web) the wasm
+  # th_tests, which need the data and so cannot run in the Web build job.
   tests:
     name: Tests ${{ matrix.shard }}
-    if: ${{ inputs.data }}
-    needs: [build]
+    if: ${{ !cancelled() && inputs.data && needs.build.result == 'success' && needs.web.result != 'failure' && needs.web.result != 'cancelled' }}
+    needs: [build, web]
     runs-on: ubuntu-24.04
     environment: ci
     strategy:
@@ -284,9 +287,14 @@ jobs:
         with:
           name: port-build
           path: build/enhanced
+      - uses: actions/download-artifact@v8
+        if: ${{ inputs.web }}
+        with:
+          name: web-build
+          path: build/web
       - name: Tests
         env:
-          STEPS: ${{ matrix.shard == 0 && 'th_tests drive_tests install_tests' || 'drive_tests' }}
+          STEPS: ${{ matrix.shard == 0 && (inputs.web && 'th_tests drive_tests install_tests web_th_tests' || 'th_tests drive_tests install_tests') || 'drive_tests' }}
           DRIVE_SHARD: ${{ matrix.shard }}/3
         run: |
           chmod +x build/enhanced/th_replay build/enhanced/th_enhanced build/enhanced/th_tests

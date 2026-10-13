@@ -731,13 +731,15 @@ which needs all of them and is the one the master ruleset requires):
 - Build: `check.sh` with `STEPS="build format" NO_DATA=1`; the native
   binaries (th_replay, th_enhanced, th_tests) go to the tests and replay
   shards as an artifact, so no other job builds them.
-- Web build: `STEPS="web_build web_th_tests web_tidy" NO_DATA=1`; the
-  WebAssembly binaries go to the replay shards as an artifact.
+- Web build: `STEPS="web_build web_tidy" NO_DATA=1`; the
+  WebAssembly binaries (th_replay and th_tests) go to the tests and replay
+  shards as an artifact.
 - Lint 0..2: build and tidy over a third of the files each (`TIDY_SHARD=I/3`:
   the sorted list, every third file).
 - Tests 0..2: the drive tests over a third of the scripts each
   (`DRIVE_SHARD=I/3`) with the game data and Build's binaries; shard 0 also
-  runs th_tests and the install tests.
+  runs th_tests, the install tests and the wasm th_tests (`web_th_tests`,
+  which needs the data, so it is not in Web build).
 - Replays: the scripts split into shards (longest first); each shard restores
   the trace cache and the port verdicts, runs `STEPS="replays web_replays"`
   and uploads its new original traces and verdicts; shard 0 also runs the
