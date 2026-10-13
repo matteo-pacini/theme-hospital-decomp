@@ -1,0 +1,43 @@
+# Level 5: all five plots for sale on level 5 are bought one after the other
+# (EV_BUY_LAND 0x36, plots 2 to 6 at turns 10-18: 305, 253, 252, 180 and 216
+# tiles at 25 each, TX_BUY_LAND 6), each with its own things (kind 58 and 59
+# objects, in several facings) placed on the map and the partition walls
+# between plots redone each time; the hospital's area is then 616 + 1206 =
+# 1822 tiles at the month end (turn 1550). A GP's office (77,50)-(81,54) with
+# its door above (cell 6351), a desk and a cabinet is built and opened on
+# plot 4, which the player does not otherwise own.
+# Expect balance 6 amount=-7625 arg=0
+# Expect balance 6 amount=-6325 arg=0
+# Expect balance 6 amount=-6300 arg=0
+# Expect balance 6 amount=-4500 arg=0
+# Expect balance 6 amount=-5400 arg=0
+# Expect balance 6 amount= == 5
+# Expect place_object 31 kind=58 tile=6189 dir=1 owner=0
+# Expect place_object 41 kind=58 tile=5039 dir=2 owner=0
+# Expect blueprint x0=77 y0=50 x1=81 y1=54 drag=1
+# Expect commit_blueprint
+# Expect open_room
+# Expect area 1822
+# Expect-not blueprint_invalid
+# Expect-not blueprint_blocked
+# Expect-not door_invalid
+# Expect-not door_blocked
+# Turns 1700
+10 54 2 0
+12 54 3 0
+14 54 4 0
+16 54 5 0
+18 54 6 0
+101 55 0 0
+102 53 7 7
+103 2 6477 0
+104 2 6993 0
+105 8 6993 0
+106 18 0 0
+107 26 6351 0
+108 3 0 0
+109 4 7 0
+110 7 6735 1
+111 7 6481 2
+112 7 6734 6
+113 1 0 0

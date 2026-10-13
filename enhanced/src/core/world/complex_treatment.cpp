@@ -4,6 +4,7 @@
 #include "core/world/complex_internal.h"
 
 #include "core/world/game.h"
+#include "core/world/icons.h"
 #include "core/world/nav.h"
 #include "core/world/reception.h"
 #include "core/world/reputation.h"
@@ -211,6 +212,7 @@ bool waits_for_decision_diagnosis(const Run &r, uint16_t id, uint16_t waited)
     if (!done && waited < 1500)
         return false;
     p.person_flags &= ~kPfAwaitingDecision;
+    reset_icon_value(p, kIconAwaitingDecision);
     if (!(p.person_flags & kPfWaitingForRoom)) {
         get_playercall(world, 8, p.playercall, p.owner);
         p.playercall = 0;
@@ -239,6 +241,7 @@ bool waits_for_decision_treatment(const Run &r, uint16_t id, uint16_t waited)
     if (!done && waited < 1500)
         return false;
     p.person_flags &= ~kPfAwaitingDecision;
+    reset_icon_value(p, kIconAwaitingDecision);
     if (!(p.person_flags & kPfWaitingForRoom)) {
         go_home(r, id);
         p.person_flags |= kPfNoTreatment;

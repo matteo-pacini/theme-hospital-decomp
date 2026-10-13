@@ -1,0 +1,41 @@
+# Level 3: the player buys land (EV_BUY_LAND 0x36). Level 3's plots 3 (368
+# tiles, (63,83)-(79,106)) and 4 (195 tiles, (36,97)-(50,109)) are public land
+# for sale, away from the hospital's own plot 1 (levels 2 to 5 have no
+# neighbour rule); each costs gbv.land_cost_per_tile (25) a tile, charged as
+# TX_BUY_LAND (6), the plot's own things (two kind 58 and 59 objects each)
+# placed with it, the hospital's area counted from then on at month end (444
+# own tiles + 368 + 195 = 1007). A GP's office (66,90)-(70,94) is then built
+# on plot 3 with its door above (cell 11460), a desk and a cabinet, and
+# opened: it is accepted only because the land is the player's.
+# Two month ends (turns 1550 and 3100) pass in the 3200 turns.
+# Expect balance 6 amount=-9200 arg=0
+# Expect balance 6 amount=-4875 arg=0
+# Expect balance 6 amount= == 2
+# Expect place_object 28 kind=58 tile=11329 dir=0 owner=0
+# Expect place_object 30 kind=58 tile=12585 dir=0 owner=0
+# Expect blueprint x0=66 y0=90 x1=70 y1=94 drag=1
+# Expect commit_blueprint
+# Expect commit_doors
+# Expect open_room
+# Expect area 1007
+# Expect-not blueprint_invalid
+# Expect-not blueprint_blocked
+# Expect-not door_invalid
+# Expect-not door_blocked
+# Expect-not delete_blueprint_room
+# Turns 3200
+10 54 3 0
+12 54 4 0
+101 55 0 0
+102 53 7 7
+103 2 11586 0
+104 2 12102 0
+105 8 12102 0
+106 18 0 0
+107 26 11460 0
+108 3 0 0
+109 4 7 0
+110 7 11844 1
+111 7 11590 2
+112 7 11843 6
+113 1 0 0

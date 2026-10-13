@@ -1,0 +1,57 @@
+# Level 1: gp_office.txt's hospital (receptionist 22, a GP's office with
+# doctor 11), no staff room. The doctor is ordered to rest (EV_ORDER_REST) at
+# turn 400: with no staff room the order stays pending. At 600 EV_ORDER_TRAIN
+# (0x5f) replaces it: the order commands set the low four bits of the orders
+# (orders = orders & 0xf0 | ORD_TRAIN, io.cpp:1176), and nothing outside a
+# training room reads ORD_TRAIN (doctor_is_trained and consultant_trains
+# clear it themselves before check_training_command). A staff room
+# (58,52)-(62,56) is built and opened at 900-915: the doctor does not take
+# the break. The same script without the 600 command has the doctor rest at
+# 915 (take_a_break 11); staff_orders_unnamed.txt does the same with 0x60.
+# Expect cmd type=94 value=11
+# Expect cmd type=95 value=11
+# Expect open_room == 2
+# Expect-not take_a_break
+# Expect-not staff_room
+# Expect-not rest_staff
+# Turns 3000
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+200 113 4 300
+400 94 11 0
+600 95 11 0
+900 55 0 0
+901 53 25 25
+902 2 6714 0
+903 2 7230 0
+904 8 7230 0
+905 18 0 0
+906 26 7356 0
+907 3 0 0
+908 4 25 0
+909 37 10 1
+910 37 57 1
+911 43 0 0
+912 7 6973 19
+913 7 6716 10
+914 7 7098 57
+915 1 0 0

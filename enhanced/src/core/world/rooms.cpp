@@ -239,7 +239,22 @@ void send_for_autopsy(Thing &p)
 {
     p.treatment = kIllAutopsy;
     p.person_flags &= ~kPfAwaitingDecision;
+    reset_icon_value(p, kIconAwaitingDecision);
     p.state = kPsGoForTreatment;
+}
+
+// EV_PATIENT_WAITS_FOR_ROOM and the choice screens' wait answers: `id` stops
+// awaiting a decision and waits for a room (the game does not check that
+// the thing is a patient).
+void patient_waits_for_room(Game &game, uint16_t id)
+{
+    if (id >= game.world.things.size())
+        return;
+    Thing &p = game.world.things[id];
+    p.person_flags &= ~kPfAwaitingDecision;
+    reset_icon_value(p, kIconAwaitingDecision);
+    p.person_flags |= kPfWaitingForRoom;
+    p.timer = int16_t(game.turn_count);
 }
 
 // apply_call_event's EV_CHOICE_RESULT for patient `id` awaiting a decision.
@@ -258,15 +273,14 @@ void apply_call_event_decision(Game &game, uint16_t id, uint16_t choice)
         break;
     case kChoiceTreatWait:
     case kChoiceDiagWait:
-        p.person_flags &= ~kPfAwaitingDecision;
-        p.person_flags |= kPfWaitingForRoom;
-        p.timer = int16_t(game.turn_count);
+        patient_waits_for_room(game, id);
         break;
     case kChoiceTreatResearch:
         send_for_autopsy(p);
         break;
     case kChoiceDiagGuess:
         p.person_flags &= ~kPfAwaitingDecision;
+        reset_icon_value(p, kIconAwaitingDecision);
         interrupt_complex(world, game.anims(), complexes, id, game.turn_count);
         best_guess_treatment(world, p);
         next_treatment_now_setup(world, game.anims(), id, false, game.turn_count);
@@ -350,6 +364,9 @@ bool apply_patient_event(Game &game, const Event &event)
     case EV_PATIENT_TO_RESEARCH:
         if (event.value < world.things.size())
             send_for_autopsy(world.things[event.value]);
+        return true;
+    case EV_PATIENT_WAITS_FOR_ROOM:
+        patient_waits_for_room(game, event.value);
         return true;
     case EV_QUEUE_PERSON_TO_NEW_QUEUE:
         queue_person_to_new_queue(world, game.anims(), person_complexes_of(world), event.value, event.arg,

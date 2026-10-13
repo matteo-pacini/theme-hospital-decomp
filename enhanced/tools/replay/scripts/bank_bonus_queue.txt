@@ -1,0 +1,72 @@
+# Level 1: gp_office.txt's hospital (reception desk and receptionist 22, a
+# GP's office with doctor 11), opened at turn 116, and four kinds of player
+# command no script has sent before:
+# - The bank (EV_TAKE_LOAN 0x66, EV_REPAY_LOAN 0x67): two loans of 5000 at
+#   turns 200 and 210 (TX_BANK_LOAN 18) and one repaid at 400
+#   (TX_LOAN_REPAYMENT 19); the 5000 left pays interest at each month end
+#   (TX_LOAN_INTEREST 20) and the advisor speaks of the bank balance.
+# - A staff bonus (EV_PAY_STAFF_BONUS 0x48): value 20 to all staff (arg 0,
+#   TX_GENERAL_BONUS 25, two staff members) at turn 600, and to the
+#   receptionist (arg 22, TX_PERSONAL_BONUS 27) at 610.
+# - The GP office's queue capacity (EV_QUEUE_CAPACITY_UP 0x53 and DOWN 0x54,
+#   room 6, 6 at first): one up at 700, seven down at 1000-1006 (0), six up at
+#   2500-2505. Patient 13 reaches the reception at 2312, is checked in at 2557
+#   and joins the GP's queue at 2663 (2369 and 2475 without these commands).
+#   EV_PATIENT_WAITS_FOR_ROOM (0x7f) on it at 2400 clears its decision and
+#   sets PF_WAITING_FOR_ROOM: when it gives up (4486) person_go_home itself
+#   gets the player calls 8 and 4 (without the command, the diagnosis
+#   branch gets 8 before and 4 is not asked).
+# - EV_STAFF_PICKED_UP (0x69) on the doctor at 3000: staff_picked_up.
+# Expect balance 18 amount=5000 arg=0 == 2
+# Expect balance 19 amount=-5000 arg=0
+# Expect balance 20 amount=-4 arg=0 >= 3
+# Expect balance 25 amount=-40 arg=0
+# Expect balance 27 amount=-20 arg=0
+# Expect staff_picked_up 11
+# Expect join_queue 13 room=6
+# Expect go_home 13 state=68
+# Expect get_playercall 2 type=4 owner=0
+# Turns 4700
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+116 139 0 0
+200 102 0 0
+210 102 0 0
+400 103 0 0
+600 72 20 0
+610 72 20 22
+700 83 6 0
+1000 84 6 0
+1001 84 6 0
+1002 84 6 0
+1003 84 6 0
+1004 84 6 0
+1005 84 6 0
+1006 84 6 0
+2400 127 13 0
+2500 83 6 0
+2501 83 6 0
+2502 83 6 0
+2503 83 6 0
+2504 83 6 0
+2505 83 6 0
+3000 105 11 0
