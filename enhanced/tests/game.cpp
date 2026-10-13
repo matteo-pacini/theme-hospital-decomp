@@ -243,6 +243,16 @@ void check_month_end_lines(th::Finance &fin, int32_t &balance, th::World &w, con
     const th::BankEntry &paid = fin.entries[size_t(fin.entry_count - 1)];
     CHECK(paid.type == th::kTxInsurance && paid.amount == 300 && paid.extra == 7);
     CHECK(w.hospital->insurance_claims[1][2] == 0);
+
+    // An overdraft so deep that the original's 32-bit product wraps: the
+    // interest is what the wrapped product gives, with no signed overflow.
+    const int32_t deep = -2000000000;
+    balance = deep;
+    th::month_end(fin, balance, w, settings, 1, {30, 3, 0, 500});
+    const th::BankEntry &wrapped_line = fin.entries[size_t(fin.entry_count - 1)];
+    const int32_t wrapped = int32_t(uint32_t(rate) * uint32_t(deep) * 2u) / 10000 / 12;
+    CHECK(wrapped != int32_t(int64_t(rate) * deep * 2 / 10000 / 12));
+    CHECK(wrapped_line.type == th::kTxOverdraftInterest && wrapped_line.amount == wrapped);
 }
 
 void check_statement_merging(const th::Balance &settings)
