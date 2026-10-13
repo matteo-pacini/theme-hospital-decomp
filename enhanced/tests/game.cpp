@@ -243,6 +243,16 @@ void check_month_end_lines(th::Finance &fin, int32_t &balance, th::World &w, con
     const th::BankEntry &paid = fin.entries[size_t(fin.entry_count - 1)];
     CHECK(paid.type == th::kTxInsurance && paid.amount == 300 && paid.extra == 7);
     CHECK(w.hospital->insurance_claims[1][2] == 0);
+
+    // An overdraft so deep that the original's 32-bit product wraps: the
+    // interest is what the wrapped product gives, with no signed overflow.
+    const int32_t deep = -2000000000;
+    balance = deep;
+    th::month_end(fin, balance, w, settings, 1, {30, 3, 0, 500});
+    const th::BankEntry &wrapped_line = fin.entries[size_t(fin.entry_count - 1)];
+    const int32_t wrapped = int32_t(uint32_t(rate) * uint32_t(deep) * 2u) / 10000 / 12;
+    CHECK(wrapped != int32_t(int64_t(rate) * deep * 2 / 10000 / 12));
+    CHECK(wrapped_line.type == th::kTxOverdraftInterest && wrapped_line.amount == wrapped);
 }
 
 void check_statement_merging(const th::Balance &settings)
@@ -1293,6 +1303,63 @@ void check_advice_mayor(AdvisorFixture &a)
 
 } // namespace
 
+// What the original's sprintf makes of a language text said with no
+// argument: "%%" is one "%".
+std::string without_percent_pairs(std::string_view s)
+{
+    std::string out;
+    for (size_t i = 0; i < s.size(); ++i) {
+        out += s[i];
+        if (s[i] == '%' && i + 1 < s.size() && s[i + 1] == '%')
+            ++i;
+    }
+    return out;
+}
+
+// The promotions said in one language: the texts keep their words, and a
+// "%s" in one (French 0x16) is the rank reached.
+void check_promotions_in_language(AdvisorFixture &a, const th::LanguageText &text)
+{
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    std::string said;
+    const std::array<std::array<int, 3>, 2> promoted = {{{0x0d, 0x89, 7}, {0x0a, 0x16, 4}}};
+    for (const auto &[kind, id, rank] : promoted) {
+        std::string expected = without_percent_pairs(text.advisor(id));
+        const size_t at = expected.find("%s");
+        if (at != std::string::npos)
+            expected.replace(at, 2, text.at(th::TextSection::SkillNames, rank));
+        a.f.game->world.announce[size_t(kind)][0] = 1;
+        CHECK(first_advice(a, calm, &said) == id && said == expected);
+    }
+}
+
+// The advice said in every language: a text with "%%" shows one "%".
+void check_advice_in_languages(AdvisorFixture &a, const char *dir)
+{
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    std::string said;
+    for (int language = th::kEnglish; language <= th::kSwedish; ++language) {
+        th::LanguageText text;
+        CHECK(th::load_language(dir, language, text));
+        a.in.text = &text;
+        a.in.level = 3;
+        a.in.month = 8;
+        for (int i = 0; i < 4; ++i) {
+            const bool lose = i >= 2;
+            const int id = std::array{0x71, 0x70, 0x74, 0x73}[size_t(i)];
+            a.in.win_progress = lose ? 0 : (i == 0 ? 60 : 80);
+            a.in.lose_progress = lose ? (i == 2 ? 70 : 90) : 0;
+            CHECK(first_advice(a, calm, &said) == (lose ? 0x72 : 0x6f));
+            CHECK(said == without_percent_pairs(text.advisor(id)));
+        }
+        a.in.win_progress = a.in.lose_progress = 0;
+        check_promotions_in_language(a, text);
+    }
+    a.in.text = &a.f.gd.text();
+    a.in.level = 1;
+    a.in.month = 0;
+}
+
 // The advice of the statistics pass (World::counts) and of what the
 // hospital holds, each as the game gives it in its situation, alone.
 void test_advisor_counts(const char *dir)
@@ -1316,6 +1383,7 @@ void test_advisor_counts(const char *dir)
     check_advisor_toggle(a);
     check_advice_mayor(a);
     check_advice_plants(a);
+    check_advice_in_languages(a, dir);
 }
 
 // With the game data: the score a level starts with (init_player): 10000 on

@@ -50,7 +50,7 @@ void forced_advice(Advisor &a, const AdvisorInputs &in)
     const LanguageText &text = *in.text;
     if (a.forced_advice_id == 8) {
         if (!a.given[7]) {
-            a.text = text.at(TextSection::AdvisorSituations, 8);
+            say(a, text.at(TextSection::AdvisorSituations, 8));
             a.given[7] = 1;
         } else {
             say(a, text.at(TextSection::ForcedAdvice, 8),

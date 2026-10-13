@@ -1,0 +1,38 @@
+# Level 6: the staff list shows a doctor's psychiatry and research training
+# progress. The seed is the training_psych replay at turn 7000, where the
+# consultant is teaching a doctor who has partial progress towards both
+# qualifications: the help texts of the faded psychiatrist and researcher
+# icons give the percentages (slist_help_if_shrink,
+# slist_help_if_researcher; src/slist.cpp).
+# SeedReplay 6 enhanced/tools/replay/scripts/training_psych.txt 7000
+# Size 640x480
+wait 60
+# File > Load > Game 1.
+move 10 3
+down
+wait 2
+move 50 21
+wait 2
+move 150 21
+wait 2
+up
+wait 8
+key Escape
+wait 10
+key F6
+wait 30
+# Select the first row, B. Milbury (the doctor in training).
+click 115 95
+wait 20
+dump selected
+expect staff list: filter 1, page 0, member 18
+move 248 430
+wait 150
+screenshot hover_shrink
+dump hover_shrink
+expect 50% trained towards becoming a Psychiatrist
+move 288 430
+wait 150
+screenshot hover_researcher
+dump hover_researcher
+expect 66% trained towards becoming a Researcher

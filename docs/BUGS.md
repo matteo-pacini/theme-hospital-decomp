@@ -166,6 +166,11 @@ A corrected `LANG-1.DAT` or turning the advisor off avoids it. Case 0x89
 (doctor to consultant) has the same pattern, but its French text has no
 conversion.
 
+The Enhanced port fills the `%s` with the rank reached (the language file's
+skill names section's Doctor or Consultant entry) instead of a stray stack value.
+The same call shows a `%%` in a text (Spanish 0x70, 0x71, 0x73, 0x74) as one
+`%`, as `sprintf` does; the port says every such text the same way.
+
 ### advisor_staff_tired (src/advisor.cpp)
 
 **Potential bug** · `0x619bc`
