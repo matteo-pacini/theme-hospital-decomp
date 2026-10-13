@@ -20,8 +20,10 @@ layout, briefs, worktrees, messaging).
 - Work on `master`. Changes to `src/`, `include/`, the root `tools/`,
   `config/` and `configure.py` are not made here: they come from the
   `decomp` branch by merge.
-- Game files are never committed. The only game-derived files allowed in the
-  repository are the README screenshots in `docs/images/`.
+- Game files are never committed or made public. The only game-derived files
+  allowed in the repository are the README screenshots in `docs/images/`. A
+  private copy of the game data may live in the project's R2 bucket, for CI
+  only.
 - Commit only when asked; stage by path; no `commit -a`, no
   `git checkout <file>` to undo, no push unless asked.
 - After each feature is committed to `master`, redeploy the public browser
@@ -31,18 +33,28 @@ layout, briefs, worktrees, messaging).
   as a push.
 
 ## Gate
-Work is done when the gate passes:
+Work is done when the gate passes on GitHub Actions, run from the committed
+HEAD of your checkout:
+
+    enhanced/tools/ci_run.sh [--scripts "NAME ..."] [--shards N] [--cache M]
+                             [--fresh-max N] [--no-web] [--no-wait]
+
+It runs `enhanced/tools/check.sh` sharded on the runners (the build with zero
+warnings, `th_tests`, `tidy.sh`, clang-format, the drive tests, the install
+tests, every replay script against the original, and the WebAssembly build
+and its checks), prints one line per job, brings the new original traces back
+into `build/replay-cache/traces` and exits 0 only when everything passed. See
+"Remote gate" below.
+
+The same script runs locally and is for checking as you go, not for done:
 
     enhanced/tools/check.sh [SCRIPT ...]
 
-It enters the dev shells itself and stops at the first failure: the build
-with zero warnings, `th_tests`, `tidy.sh`, clang-format, the drive tests,
-the install tests, then every replay script (or the ones named) against the
-original. `CACHE=only` compares with cached originals only and never starts
-DOSBox, for checking as you go; it exits 3 when a script has no cache entry,
-so it never counts as a pass. `WEB=1` adds the WebAssembly build and its
-checks; use it when a change touches the browser build. Settings and
-timings: enhanced/README.md.
+It enters the dev shells itself and stops at the first failure. `CACHE=only`
+compares with cached originals only and never starts DOSBox; it exits 3 when
+a script has no cache entry, so it never counts as a pass. `STEPS="build
+th_tests"` runs a subset of the steps (names in its header); `WEB=1` adds the
+WebAssembly build. Settings and timings: enhanced/README.md.
 
 Code must also meet what tidy enforces: functions of at most 60 lines, 50
 statements, 15 branches, 6 parameters, nesting 4 and cognitive complexity
@@ -79,6 +91,18 @@ real interface (commands in `enhanced/src/app/drive.h`):
 - Explore with screenshots to find coordinates, then keep the script as a
   test in `enhanced/tests/drive/` (header lines: enhanced/README.md). Fix
   interface bugs with one of these first, failing.
+
+## Remote gate (GitHub Actions)
+The gate runs on GitHub-hosted runners with the game data from the private R2
+bucket (enhanced/README.md, "CI"); every heavy run goes there, not to the
+local machine. `ci_run.sh` pushes HEAD (force) to `ci/<this folder>`, a branch
+only it uses, and dispatches `gate.yml` on it: that push is allowed without
+asking, no other branch is pushed. Commit first: it checks HEAD, not the
+working tree. A run takes about 20 minutes with a warm cache. Changes to
+`src/`, `include/` or `instrument.py` make every original fresh: pass
+`--shards 12 --fresh-max 25` (or a script subset) so no shard stops at its
+limit; a refill on master saves them for the next runs. Run one at a time per
+folder; a failed run's logs are in `build/ci-run-<id>/logs`.
 
 ## Replays
 A replay script drives the same player actions through the instrumented

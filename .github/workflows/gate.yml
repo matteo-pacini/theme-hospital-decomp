@@ -1,0 +1,405 @@
+# The gate (enhanced/tools/check.sh) on GitHub-hosted runners, sharded: one
+# build, lint, the data tests, and the replays split into shards by script.
+# Called by ci.yml, or run by hand. The game data comes from the private R2
+# bucket of the `ci` environment and never leaves the runner's workspace:
+# caches and artifacts hold only the original's traces (numbers) and text
+# logs.
+name: Gate
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Commit to check (default: the triggering one)"
+        type: string
+        default: ""
+      data:
+        description: "The game data is available (environment ci); false runs only the data-free steps"
+        type: boolean
+        default: true
+      web:
+        description: "Include the WebAssembly build and its checks"
+        type: boolean
+        default: true
+      scripts:
+        description: "Replay scripts to run, space separated (default all)"
+        type: string
+        default: ""
+      shards:
+        description: "Number of replay shards"
+        type: number
+        default: 6
+      cache:
+        description: "Original trace cache mode of check.sh (use, only or refresh)"
+        type: string
+        default: use
+      fresh_max:
+        description: "Most fresh originals one shard accepts with cache=use"
+        type: number
+        default: 10
+      push_nix:
+        description: "Push the dev shells to the Attic cache"
+        type: boolean
+        default: false
+      save_cache:
+        description: "Save the original traces to the Actions cache (master only)"
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit to check (default: the branch the run is started on)"
+        type: string
+        default: ""
+      data:
+        description: "The game data is available (environment ci)"
+        type: boolean
+        default: true
+      web:
+        description: "Include the WebAssembly build and its checks"
+        type: boolean
+        default: true
+      scripts:
+        description: "Replay scripts to run, space separated (default all)"
+        type: string
+        default: ""
+      shards:
+        description: "Number of replay shards"
+        type: number
+        default: 6
+      cache:
+        description: "Original trace cache mode of check.sh (use, only or refresh)"
+        type: string
+        default: use
+      fresh_max:
+        description: "Most fresh originals one shard accepts with cache=use"
+        type: number
+        default: 10
+      push_nix:
+        description: "Push the dev shells to the Attic cache"
+        type: boolean
+        default: true
+      save_cache:
+        description: "Save the original traces to the Actions cache (master only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CACHE: ${{ inputs.cache }}
+  FRESH_MAX: ${{ inputs.fresh_max }}
+  WEB: ${{ inputs.web && '1' || '0' }}
+
+jobs:
+  # Splits the scripts into shards of about equal length (the longest first,
+  # dealt round robin).
+  prepare:
+    name: Shards
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.split.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - id: split
+        env:
+          SCRIPTS: ${{ inputs.scripts }}
+          SHARDS: ${{ inputs.shards }}
+        run: |
+          cd enhanced/tools/replay/scripts
+          [ -n "$SCRIPTS" ] || SCRIPTS=$(find . -name '*.txt' -printf '%f\n' | sed 's|\.txt$||' | sort)
+          for s in $SCRIPTS; do
+            [ -f "$s.txt" ] || { echo "::error::no replay script $s"; exit 1; }
+            t=$(sed -n 's/^# Turns \([0-9]*\).*/\1/p' "$s.txt" | head -n 1)
+            echo "${t:-18300} $s"
+          done | sort -rn | awk -v n="$SHARDS" '
+            { s[(NR - 1) % n] = s[(NR - 1) % n] " " $2 }
+            END {
+              printf "{\"include\":["
+              c = 0
+              for (i = 0; i < n; i++) if (s[i] != "") {
+                printf "%s{\"shard\":%d,\"scripts\":\"%s\"}", (c++ ? "," : ""), i, substr(s[i], 2)
+              }
+              printf "]}\n"
+            }' > "$RUNNER_TEMP/matrix.json"
+          cat "$RUNNER_TEMP/matrix.json"
+          echo "matrix=$(cat "$RUNNER_TEMP/matrix.json")" >> "$GITHUB_OUTPUT"
+
+  # The port (native and, with web, WebAssembly): zero warnings. Its binaries
+  # go to the shards as an artifact (no game data in them).
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.data && 'ci' || null }}
+    env:
+      ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/nix
+        with:
+          attic-url: ${{ vars.ATTIC_CACHE_URL }}
+          attic-cache: ${{ vars.ATTIC_CACHE }}
+          attic-token: ${{ secrets.ATTIC_TOKEN }}
+      - name: Build
+        env:
+          STEPS: ${{ inputs.web && 'build web_build' || 'build' }}
+          NO_DATA: "1"
+          CMAKE_BUILD_PARALLEL_LEVEL: "4"
+        run: enhanced/tools/check.sh
+      - name: Push the dev shells to Attic
+        if: ${{ inputs.push_nix && env.ATTIC_TOKEN != '' }}
+        uses: nick-fields/retry@v4
+        env:
+          ATTIC_CACHE: ${{ vars.ATTIC_CACHE }}
+        with:
+          timeout_minutes: 60
+          max_attempts: 5
+          retry_on: error
+          command: |
+            for s in default enhanced web; do
+              nix build "path:./nix#devShells.x86_64-linux.$s" --out-link "build/shell-$s" --fallback
+            done
+            nix run nixpkgs#attic-client -- push "$ATTIC_CACHE" build/shell-default build/shell-enhanced build/shell-web -j 3
+      - uses: actions/upload-artifact@v7
+        with:
+          name: port-build
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            build/enhanced/th_replay
+            build/enhanced/CMakeCache.txt
+            build/web/th_replay.js
+            build/web/th_replay.wasm
+            build/web/CMakeCache.txt
+
+  # clang-tidy and clang-format; and the data-free WebAssembly checks.
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.data && 'ci' || null }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/nix
+        with:
+          attic-url: ${{ vars.ATTIC_CACHE_URL }}
+          attic-cache: ${{ vars.ATTIC_CACHE }}
+          attic-token: ${{ secrets.ATTIC_TOKEN }}
+      - name: tidy, format, and the data-free web checks
+        env:
+          STEPS: ${{ inputs.web && 'build tidy format web_build web_th_tests web_tidy' || 'build tidy format' }}
+          NO_DATA: "1"
+          CMAKE_BUILD_PARALLEL_LEVEL: "4"
+          TIDY_JOBS: "4"
+        run: enhanced/tools/check.sh
+      - name: Logs of a failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-logs
+          retention-days: 7
+          path: build/check-*/*.log
+
+  # th_tests, the drive tests and the install tests, with the game data.
+  tests:
+    name: Tests
+    if: ${{ inputs.data }}
+    runs-on: ubuntu-24.04
+    environment: ci
+    env:
+      R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/nix
+        with:
+          attic-url: ${{ vars.ATTIC_CACHE_URL }}
+          attic-cache: ${{ vars.ATTIC_CACHE }}
+          attic-token: ${{ secrets.ATTIC_TOKEN }}
+      - name: Game data
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: nix shell github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#awscli2 github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#zstd -c enhanced/tools/ci/data_fetch.sh
+      - name: Tests
+        env:
+          STEPS: build th_tests drive_tests install_tests
+          CMAKE_BUILD_PARALLEL_LEVEL: "4"
+        run: enhanced/tools/check.sh
+      - name: Logs of a failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: tests-logs
+          retention-days: 7
+          path: build/check-*/*.log
+
+  # The replays of one shard of scripts against the original (cached trace,
+  # else DOSBox), natively and, with web, in WebAssembly.
+  replays:
+    name: Replays ${{ matrix.shard }}
+    if: ${{ inputs.data }}
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    environment: ci
+    timeout-minutes: 345
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/nix
+        with:
+          attic-url: ${{ vars.ATTIC_CACHE_URL }}
+          attic-cache: ${{ vars.ATTIC_CACHE }}
+          attic-token: ${{ secrets.ATTIC_TOKEN }}
+      - name: Game data
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: nix shell github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#awscli2 github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#zstd -c enhanced/tools/ci/data_fetch.sh
+      - uses: actions/download-artifact@v8
+        with:
+          name: port-build
+          path: build
+      - name: Decompilation objects (build/base) and the trace key
+        id: key
+        run: |
+          chmod +x build/enhanced/th_replay
+          # shellcheck disable=SC2016
+          nix develop path:./nix -c sh -c '
+            python3 configure.py && ninja base-objects >/dev/null
+            echo "exe=$(enhanced/tools/replay/exe_cache_key.sh "$PWD" enhanced/tools/replay/instrument.py)" >> "$GITHUB_OUTPUT"
+          '
+      - name: Restore the trace cache
+        id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: build/replay-cache
+          key: traces-${{ steps.key.outputs.exe }}-${{ github.run_id }}-${{ matrix.shard }}
+          restore-keys: traces-${{ steps.key.outputs.exe }}-
+      - name: Mark the restored cache
+        run: |
+          mkdir -p build/replay-cache/traces build/replay-cache/port
+          touch "$RUNNER_TEMP/cache-mark"
+          find build/replay-cache/traces -type f | wc -l
+          find build/replay-cache/port -type f | wc -l
+      - name: Replays
+        env:
+          STEPS: ${{ inputs.web && 'replays web_replays' || 'replays' }}
+          JOBS: "3"
+          WATCHDOG: "10"
+          SCRIPTS: ${{ matrix.scripts }}
+        run: |
+          # shellcheck disable=SC2086
+          enhanced/tools/check.sh $SCRIPTS
+      - name: Cross-load (first shard)
+        if: ${{ inputs.web && matrix.shard == 0 }}
+        env:
+          STEPS: replays web_cross_load
+          SCRIPTS: ${{ matrix.scripts }}
+          JOBS: "3"
+        run: |
+          # shellcheck disable=SC2086
+          enhanced/tools/check.sh $SCRIPTS
+      - name: New original traces and port verdicts
+        if: ${{ always() }}
+        env:
+          EXE_KEY: ${{ steps.key.outputs.exe }}
+        run: |
+          mkdir -p build/new-cache
+          echo "$EXE_KEY" > build/new-cache/exe_key
+          cd build/replay-cache
+          find traces port -type f -newer "$RUNNER_TEMP/cache-mark" -exec cp --parents -t ../new-cache {} +
+          find ../new-cache -type f | wc -l
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: traces-${{ matrix.shard }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: build/new-cache
+      - name: Logs of a failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: replay-logs-${{ matrix.shard }}
+          retention-days: 7
+          path: |
+            build/check-*/*.log
+            build/check-*/replay_all.full
+            build/replay-all-*/**/*.zst
+
+  # Master only: one cache entry with the traces of this key (restored ones
+  # and the shards' new ones).
+  save-cache:
+    name: Save the trace cache
+    if: ${{ inputs.data && inputs.save_cache && !cancelled() && needs.replays.result != 'skipped' }}
+    needs: [replays]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: traces-*
+          path: build/new-cache
+          merge-multiple: true
+      - name: Key
+        id: key
+        run: |
+          echo "exe=$(cat build/new-cache/exe_key)" >> "$GITHUB_OUTPUT"
+          echo "new=$(find build/new-cache -type f ! -name exe_key | wc -l)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        if: ${{ steps.key.outputs.new != '0' }}
+        with:
+          path: build/replay-cache
+          key: traces-${{ steps.key.outputs.exe }}-restore
+          restore-keys: traces-${{ steps.key.outputs.exe }}-
+      - name: Merge
+        if: ${{ steps.key.outputs.new != '0' }}
+        env:
+          EXE_KEY: ${{ steps.key.outputs.exe }}
+        run: |
+          mkdir -p build/replay-cache
+          cp -rn build/new-cache/traces build/new-cache/port build/replay-cache/ 2>/dev/null || true
+          find build/replay-cache/traces -type f ! -name "$EXE_KEY-*" -delete
+          find build/replay-cache/port -type f -mtime +14 -delete
+          du -sh build/replay-cache
+      - uses: actions/cache/save@v6
+        if: ${{ steps.key.outputs.new != '0' }}
+        with:
+          path: build/replay-cache
+          key: traces-${{ steps.key.outputs.exe }}-${{ github.run_id }}
+
+  # The one check the master ruleset requires.
+  gate:
+    name: gate
+    if: ${{ always() }}
+    needs: [prepare, build, lint, tests, replays]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Every job passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for r in $RESULTS; do
+            case $r in success|skipped) ;; *) exit 1 ;; esac
+          done

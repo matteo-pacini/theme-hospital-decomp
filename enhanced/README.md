@@ -739,6 +739,52 @@ the Vercel project (default `theme-hospital-enhanced`).
 - `--preview`: the same preview and checks without the data.
 - `--dry-run` assembles the folder and prints the commands; nothing is sent.
 
+## CI
+
+`.github/workflows/ci.yml` runs `gate.yml` on every pull request, push to
+master and by hand. The jobs (check names `gate / Build`, `gate / Lint`,
+`gate / Tests`, `gate / Replays N`, and `gate / gate`, which needs all of
+them and is the one the master ruleset requires):
+
+- Build: `check.sh` with `STEPS="build web_build" NO_DATA=1`; the binaries go
+  to the replay shards as an artifact.
+- Lint: build, tidy, clang-format and the data-free web checks.
+- Tests: th_tests, drive tests and install tests with the game data.
+- Replays: the scripts split into shards (longest first); each shard restores
+  the trace cache, runs `STEPS="replays web_replays"` and uploads its new
+  original traces; shard 0 also runs the cross-load test.
+- Pull requests from forks have no secrets and no data: only Build and Lint
+  run, with `NO_DATA=1` (th_tests exit 77 passes).
+
+`check.sh` takes `STEPS` (a subset of its steps; a phase with none is not
+entered) and `NO_DATA=1`; see its header.
+
+The game data is a plain tar.zst of ANIMS DATA DATAM INTRO LEVELS QDATA QDATAM
+SOUND, HOSPITAL.CFG, MODEM.INI and DOS4GW.EXE in the private R2 bucket
+`theme-hospital-enhanced` (key `theme-hospital-data.tar.zst`). Environment
+`ci` holds `R2_ENDPOINT`, `R2_BUCKET`, `ATTIC_CACHE_URL`, `ATTIC_CACHE` (variables)
+and `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (read-only token), `ATTIC_TOKEN`
+(secrets). Upload after the game folder changes:
+
+    nix shell nixpkgs#awscli2 nixpkgs#zstd -c enhanced/tools/ci/data_upload.sh
+
+with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` of a write token in the
+shell; it checks the files against the install manifest and prints their
+SHA-256. The files never enter caches, artifacts or logs: the original's
+traces (numbers only) go in the Actions cache (saved only by pushes to
+master; pull requests restore) and in artifacts, with the text logs of a
+failure.
+
+The trace key (`replay/exe_cache_key.sh`) hashes the decompilation's `.o`
+files, not the OMF `.obj` ones (those hold the build folder and the sources'
+timestamps), and sorts in the C locale, so a runner and a local checkout get
+the same key. The Nix dev shells come from the project's Attic cache when
+`ATTIC_TOKEN` is set (pushes to master and dispatch runs fill it); without it
+the replay shell builds open-watcom from source (about 11 minutes).
+
+`enhanced/tools/ci_run.sh` runs the gate remotely from a checkout
+(AGENTS.md, "Remote gate").
+
 ## Bugs in the original
 
 `init_edit_room`'s `u8` overflow for an empty room is in

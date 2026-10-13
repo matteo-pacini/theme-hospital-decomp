@@ -1,0 +1,35 @@
+name: Nix
+description: Frees disk space, installs Nix and, with a token, points it at the project's Attic cache. Run actions/checkout first.
+inputs:
+  attic-url:
+    description: URL of the Attic server
+    default: ""
+  attic-cache:
+    description: Name of the Attic cache
+    default: ""
+  attic-token:
+    description: Token of the Attic cache; without one the cache is not used
+    default: ""
+runs:
+  using: composite
+  steps:
+    - uses: wimpysworld/nothing-but-nix@v10
+      with:
+        hatchet-protocol: "rampage"
+        witness-carnage: true
+        nix-permission-edict: true
+    - uses: nixbuild/nix-quick-install-action@v35
+      with:
+        nix_conf: |
+          keep-outputs = true
+          build-dir = /nix/build
+    - name: Configure Attic cache
+      if: ${{ inputs.attic-token != '' && inputs.attic-url != '' && inputs.attic-cache != '' }}
+      shell: bash
+      env:
+        ATTIC_URL: ${{ inputs.attic-url }}
+        ATTIC_CACHE: ${{ inputs.attic-cache }}
+        ATTIC_TOKEN: ${{ inputs.attic-token }}
+      run: |
+        nix run nixpkgs#attic-client -- login nexus "$ATTIC_URL" "$ATTIC_TOKEN"
+        nix run nixpkgs#attic-client -- use "$ATTIC_CACHE"

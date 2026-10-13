@@ -1,0 +1,27 @@
+# The gate on every pull request, push to master and by hand. Same-repo runs
+# have the game data (environment ci) and run the whole gate; a pull request
+# from a fork has no secrets and runs the data-free steps only.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gate:
+    uses: ./.github/workflows/gate.yml
+    with:
+      fresh_max: 40
+      data: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+      push_nix: ${{ github.event_name != 'pull_request' }}
+      save_cache: ${{ github.ref == 'refs/heads/master' }}
+    secrets: inherit

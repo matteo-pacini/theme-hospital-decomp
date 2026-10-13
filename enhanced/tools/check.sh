@@ -24,6 +24,15 @@
 #             without any, every script in tools/replay/scripts.
 #
 # Environment:
+#   STEPS       the steps to run, space or comma separated, of: build th_tests
+#               tidy format drive_tests install_tests replays web_build
+#               web_th_tests web_tidy web_replays web_cross_load (default: all;
+#               the web ones only with WEB=1, or when named here). A phase with
+#               no step selected is not entered. Naming a web replay step also
+#               runs the replay phase's native verdict keys, which it reads.
+#   NO_DATA     1: th_tests and web_th_tests run without a data folder and an
+#               exit code 77 (all tests skipped) passes; for a checkout with
+#               no game files, where only the data-free steps are meaningful
 #   CACHE       use|only|refresh, passed to replay_all.sh (default use);
 #               refresh also runs the port side of every replay again
 #   PORT_CACHE  use|off (default use): off runs the port side of every replay
@@ -55,6 +64,20 @@ export JOBS="${JOBS:-1}"
 CACHE=${CACHE:-use}
 export CACHE
 
+all_steps="build th_tests tidy format drive_tests install_tests replays web_build web_th_tests web_tidy web_replays web_cross_load"
+
+# want NAME: whether STEPS (default: every step) selects the step.
+want()
+{
+  [ -z "${STEPS:-}" ] && return 0
+  case " $(printf '%s' "$STEPS" | tr ',' ' ') " in *" $1 "*) return 0 ;; esac
+  return 1
+}
+
+for s in $(printf '%s' "${STEPS:-}" | tr ',' ' '); do
+  case " $all_steps " in *" $s "*) ;; *) echo "check.sh: unknown step $s in STEPS (steps: $all_steps)" >&2; exit 2 ;; esac
+done
+
 # Outside the dev shells: run each phase inside its shell (the enhanced one
 # for build and tests, the decomposition's for the replays, which need
 # python3 and dosbox-x, the web one with WEB=1), and stop at the first
@@ -68,14 +91,29 @@ if [ -z "${TH_CHECK_PHASE:-}" ]; then
   export TH_CHECK_STATE
   mkdir -p "$TH_CHECK_STATE"
   trap 'rm -rf "$TH_CHECK_STATE"' EXIT
-  nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=enhanced \
-    nix develop path:./nix#enhanced -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@" || exit $?
-  nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=replay \
-    nix develop path:./nix -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@" || exit $?
-  [ "${WEB:-0}" = 1 ] || exit 0
-  nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=web \
-    nix develop path:./nix#web -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@"
-  exit $?
+  for s in build th_tests tidy format drive_tests install_tests; do
+    if want $s; then
+      nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=enhanced \
+        nix develop path:./nix#enhanced -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@" || exit $?
+      break
+    fi
+  done
+  if want replays || { [ -n "${STEPS:-}" ] && { want web_replays || want web_cross_load; }; } ||
+    { [ -z "${STEPS:-}" ] && [ "${WEB:-0}" = 1 ]; }; then
+    nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=replay \
+      nix develop path:./nix -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@" || exit $?
+  fi
+  if [ -z "${STEPS:-}" ]; then
+    [ "${WEB:-0}" = 1 ] || exit 0
+  fi
+  for s in web_build web_th_tests web_tidy web_replays web_cross_load; do
+    if want $s; then
+      nice -n 19 ionice -c 3 env -u LD_LIBRARY_PATH TH_CHECK_PHASE=web \
+        nix develop path:./nix#web -c sh -c 'unset LD_LIBRARY_PATH; exec "$0" "$@"' "$self" "$@"
+      exit $?
+    fi
+  done
+  exit 0
 fi
 
 logs=$root/build/check-$$
@@ -99,6 +137,16 @@ step()
     tail -n 20 "$logs/$name.log"
     exit 1
   fi
+}
+
+# tests_ok CMD ARG ...: runs a test binary; with NO_DATA=1 its exit code 77
+# (every test skipped: no data folder) is a pass.
+tests_ok()
+{
+  "$@"
+  code=$?
+  [ "${NO_DATA:-0}" = 1 ] && [ "$code" = 77 ] && code=0
+  return "$code"
 }
 
 # build: configure when needed (Release: the replays run th_replay), then
@@ -379,23 +427,23 @@ web_cross_load()
   return 0
 }
 if [ "$TH_CHECK_PHASE" = enhanced ]; then
-  step build build
-  step th_tests env TH_TEST_DATA_DIR=orig build/enhanced/th_tests
-  step tidy enhanced/tools/tidy.sh
-  step format format
-  step drive_tests enhanced/tools/drive_tests.sh
-  step install_tests enhanced/tools/install_tests.sh
+  want build && step build build
+  want th_tests && step th_tests tests_ok env TH_TEST_DATA_DIR=orig build/enhanced/th_tests
+  want tidy && step tidy enhanced/tools/tidy.sh
+  want format && step format format
+  want drive_tests && step drive_tests enhanced/tools/drive_tests.sh
+  want install_tests && step install_tests enhanced/tools/install_tests.sh
 elif [ "$TH_CHECK_PHASE" = web ]; then
-  step web_build web_build
-  step web_th_tests env TH_TEST_DATA_DIR="$(readlink -f orig)" node build/web/th_tests.js
-  step web_tidy web_tidy
-  step web_replays web_replays "$@"
-  step web_cross_load web_cross_load
+  want web_build && step web_build web_build
+  want web_th_tests && step web_th_tests tests_ok env TH_TEST_DATA_DIR="$(readlink -f orig)" node build/web/th_tests.js
+  want web_tidy && step web_tidy web_tidy
+  want web_replays && step web_replays web_replays "$@"
+  want web_cross_load && step web_cross_load web_cross_load
 else
   # Before the replays: with CACHE=use a script without a cached original
   # runs DOSBox, so many of them stop the gate rather than start a long run
   # unasked (CACHE=only never runs DOSBox; CACHE=refresh asks for it).
-  if [ "$CACHE" = use ]; then
+  if want replays && [ "$CACHE" = use ]; then
     missing=$(enhanced/tools/replay/trace_cache.sh missing "$@") || exit 1
     fresh=$(printf '%s\n' "$missing" | grep -c . || true)
     echo "$fresh fresh originals"
@@ -406,7 +454,9 @@ else
       exit 1
     fi
   fi
-  enhanced/tools/replay/trace_cache.sh native-keys "$@" >"$TH_CHECK_STATE/native_keys" || exit 1
-  step replays replays "$@"
+  if want web_replays || want web_cross_load; then
+    enhanced/tools/replay/trace_cache.sh native-keys "$@" >"$TH_CHECK_STATE/native_keys" || exit 1
+  fi
+  want replays && step replays replays "$@"
 fi
 rm -rf "$logs"
