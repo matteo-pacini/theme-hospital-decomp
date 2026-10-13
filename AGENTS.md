@@ -97,7 +97,7 @@ bucket (enhanced/README.md, "CI"); every heavy run goes there, not to the
 local machine. `ci_run.sh` pushes HEAD (force) to `ci/<this folder>`, a branch
 only it uses, and dispatches `gate.yml` on it: that push is allowed without
 asking, no other branch is pushed. Commit first: it checks HEAD, not the
-working tree. A run takes about 20 minutes with a warm cache. Changes to
+working tree. A run takes about 10 minutes with a warm cache. Changes to
 `src/`, `include/` or `instrument.py` make every original fresh: pass
 `--shards 12 --fresh-max 25` (or a script subset) so no shard stops at its
 limit; a refill on master saves them for the next runs. Run one at a time per
