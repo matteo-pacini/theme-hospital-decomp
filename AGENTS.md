@@ -27,9 +27,8 @@ layout, briefs, worktrees, messaging).
 - Commit only when asked; stage by path; no `commit -a`, no
   `git checkout <file>` to undo, no push unless asked.
 - After each feature is committed to `master`, redeploy the public browser
-  build with `enhanced/tools/web_deploy.sh` (code only: never `--with-data`
-  to production; the protected data preview only when the user asks), then
-  check that the site loads. A deploy publishes, so it needs the same go-ahead
+  build with `enhanced/tools/web_deploy.sh` (code only), then check that the
+  site loads. A deploy publishes, so it needs the same go-ahead
   as a push.
 
 ## Gate

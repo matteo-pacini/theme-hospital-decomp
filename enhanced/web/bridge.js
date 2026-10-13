@@ -12,39 +12,9 @@ Module.preRun.push(function () {
   FS.mount(IDBFS, {}, '/persist');
   FS.syncfs(true, function (err) {
     if (err) console.warn('storage not available, nothing is kept: ' + err);
-    thFetchServerData().then(function () {
-      removeRunDependency('persist');
-    });
+    removeRunDependency('persist');
   });
 });
-
-// A page deployed with its game files (tools/web_deploy.sh --with-data, which
-// sets thWithData) lists them in data/files.txt, one path per line. With no
-// install in /persist/game they are fetched into /pick/data and the program
-// is told to install from that folder (--drop, the event a dropped folder
-// sends), so the setup screen's folder install runs instead of the picker.
-// Whatever goes wrong leaves the setup screen as it is.
-async function thFetchServerData() {
-  if (!window.thWithData || FS.analyzePath('/persist/game/install.ok').exists) return;
-  try {
-    var list = await fetch('data/files.txt', { cache: 'no-cache' });
-    if (!list.ok) return;
-    var names = (await list.text()).split('\n').filter(Boolean);
-    for (var i = 0; i < names.length; i++) {
-      thStatus('Downloading ' + (i + 1) + ' of ' + names.length + ' files');
-      var url = 'data/' + names[i].split('/').map(encodeURIComponent).join('/');
-      var response = await fetch(url);
-      if (!response.ok) throw new Error(names[i] + ': ' + response.status);
-      await thWriteStream(response.body, '/pick/data/' + names[i]);
-    }
-    Module.arguments.push('--drop', '/pick/data');
-    // The upscaling the setup screen starts with; the player can change it.
-    if (window.thUpscale) Module.arguments.push('--upscale', window.thUpscale);
-  } catch (e) {
-    console.warn('game files not loaded from the server: ' + e);
-  }
-  thStatus('');
-}
 
 // Writes /persist back. One write runs at a time; a request made meanwhile
 // runs once more when it ends.

@@ -15,7 +15,7 @@ const upscale = process.env.SMOKE_UPSCALE || 'xbrz:4';
 const upscaleQuery = '?upscale=' + upscale;
 // The setup screen's buttons sit lower with the upscaling options open.
 const buttonsY = upscale === 'off' ? 109 : 176;
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm', '.txt': 'text/plain' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm' };
 
 // A folder from web_deploy.js has the vercel.json that Vercel serves it with:
 // its header rules are applied here, the sources as path-to-regexp patterns
@@ -28,8 +28,6 @@ const rules = (config ? config.headers : []).map((rule) => {
     : rule.source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return { match: new RegExp('^' + source + '$'), headers: rule.headers };
 });
-// A folder with data/files.txt installs the game by itself.
-const withData = fs.existsSync(path.join(dist, 'data', 'files.txt'));
 
 function responseHeaders(name, file) {
   const headers = { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' };
@@ -83,7 +81,7 @@ const sync = () => new Promise((resolve) => Module.FS.syncfs(false, resolve));
 
 // What a deploy folder's vercel.json promises, as the requests of the page
 // saw it: the isolation headers everywhere, the hashed build cached for good,
-// the page and the data not.
+// the page not.
 function checkHeaders(seen) {
   const want = (pathname, key, value) => {
     const got = (seen[pathname] || {})[key.toLowerCase()];
@@ -99,7 +97,6 @@ function checkHeaders(seen) {
   }
   want('/index.html', 'Cache-Control', 'no-cache');
   for (const p of hashed) want(p, 'Cache-Control', 'public, max-age=31536000, immutable');
-  if (withData) want('/data/files.txt', 'Cache-Control', 'no-cache');
 }
 
 async function main() {
@@ -120,32 +117,24 @@ async function main() {
   page.on('response', (r) => {
     seen[new URL(r.url()).pathname] = r.headers();
   });
-  if (withData) page.on('filechooser', () => fail('the picker was asked for in a folder with data/'));
 
   try {
-    if (withData) {
-      // The folder holds the game: it installs by itself, no picker.
-      await page.goto(base);
-      await waitFor(page, 'runtime started', ready, null, 120000);
-      await waitFor(page, 'install finished by itself (install.ok in /persist/game)', installed);
-    } else {
-      // No data yet: the setup screen; its Quit button shows the closed page.
-      await page.goto(base + upscaleQuery);
-      await waitFor(page, 'runtime started', ready, null, 60000);
-      await page.waitForTimeout(2000);
-      await page.screenshot({ path: path.join(out, 'setup.png') });
-      await page.mouse.click(478, buttonsY);
-      await waitFor(page, 'quit shows the closed page', () => getComputedStyle(document.getElementById('closed')).display === 'block');
+    // No data yet: the setup screen; its Quit button shows the closed page.
+    await page.goto(base + upscaleQuery);
+    await waitFor(page, 'runtime started', ready, null, 60000);
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: path.join(out, 'setup.png') });
+    await page.mouse.click(478, buttonsY);
+    await waitFor(page, 'quit shows the closed page', () => getComputedStyle(document.getElementById('closed')).display === 'block');
 
-      // Install from the game folder through the picker.
-      await page.goto(base + upscaleQuery);
-      await waitFor(page, 'runtime started again', ready, null, 60000);
-      await page.waitForTimeout(2000);
-      const chooser = page.waitForEvent('filechooser', { timeout: 30000 });
-      await page.mouse.click(Number(process.env.SMOKE_FOLDER_X || 346), Number(process.env.SMOKE_FOLDER_Y || buttonsY));
-      await (await chooser).setFiles(orig);
-      await waitFor(page, 'install finished (install.ok in /persist/game)', installed);
-    }
+    // Install from the game folder through the picker.
+    await page.goto(base + upscaleQuery);
+    await waitFor(page, 'runtime started again', ready, null, 60000);
+    await page.waitForTimeout(2000);
+    const chooser = page.waitForEvent('filechooser', { timeout: 30000 });
+    await page.mouse.click(Number(process.env.SMOKE_FOLDER_X || 346), Number(process.env.SMOKE_FOLDER_Y || buttonsY));
+    await (await chooser).setFiles(orig);
+    await waitFor(page, 'install finished (install.ok in /persist/game)', installed);
     if (upscale !== 'off') {
       const file = '/persist/upscale/' + upscale.replace(':', '-') + '.thup';
       await waitFor(page, 'upscaled sprites cached (' + file + ')', (f) => Module.FS.analyzePath(f).exists, file);
