@@ -1,0 +1,71 @@
+# Level 1
+# Turns 1500
+# The advisor's remark about staff put down where they cannot work
+# (advise_new_staff, situation 0x7b): psychiatry.txt's hospital (a GP's
+# office with its doctor, a psychiatry room with its psychiatrist, the
+# reception desk and receptionist) with treatment.txt's pharmacy and nurse.
+# A doctor without the psychiatrist's skill (applicant 13, hired at turn
+# 200) is put down in the psychiatry room: the advisor says that a doctor
+# without psychiatric training cannot work there. A second doctor (applicant
+# 14, turn 400) is put down in the pharmacy, which wants nurses: the advisor
+# names the room. The first applicant of the list (12) has the skill and is
+# not used. The advice text is not in the trace: the branches are those of
+# th_replay's run, and `# advice` lines agree turn by turn. (A receptionist
+# put down in a room is refused by the hire screen and, as the original
+# stands, would not set the advice either: staff_states has SS_EVACUATE for
+# no receptionist.)
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect advice 0x7b == 2
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+130 55 0 0
+131 53 8 8
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 8 0
+139 7 7859 530
+140 7 8119 16
+141 7 7733 61
+142 1 0 0
+143 48 1 15
+144 5 10044 15
+160 55 0 0
+161 53 11 11
+162 2 7737 0
+163 2 8124 0
+164 8 8124 0
+165 18 0 0
+166 26 8250 0
+167 3 0 0
+168 4 11 0
+169 7 7740 39
+170 1 0 0
+171 48 0 3
+172 5 10044 3
+200 48 1 13
+201 5 7990 13
+400 48 1 14
+401 5 7994 14

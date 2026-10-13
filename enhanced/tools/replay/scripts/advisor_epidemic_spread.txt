@@ -1,0 +1,91 @@
+# Level 6
+# Turns 24400
+# The advisor's remark on an epidemic spreading (advise_epidemic, situation
+# 0xd: the patients it has spread to, four or more): the hospital of
+# epidemic_verdicts_many.txt run to the epidemic's first weeks. The advisor
+# gives its first word on the epidemic when it starts (0x8d, turn 23867, the
+# event forgotten); the event is raised again at turn 24000 (`@advisor_event
+# 8`, as a further epidemic would) and, with the spread over four, the
+# advisor gives its word on the epidemic spreading (0xd, turn 24069). The
+# advice text is not in the trace: `# advice` lines agree turn by turn.
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect advice 0x8d == 1
+# Expect advice 0x0d == 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+10 48 3 33
+11 5 7735 33
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+114 48 1 18
+115 5 6969 18
+130 55 0 0
+131 53 12 12
+132 2 6196 0
+133 2 6583 0
+134 8 6583 0
+135 18 0 0
+136 26 6069 0
+137 3 0 0
+138 4 12 0
+139 7 6454 13
+140 7 6452 272
+141 1 0 0
+142 48 1 19
+143 5 6970 19
+144 48 2 28
+145 5 6841 28
+3102 111 70 2
+3103 111 70 3
+3104 111 70 4
+3105 111 70 5
+3106 111 70 6
+3107 111 70 7
+3108 111 70 8
+3109 111 70 9
+3110 111 70 10
+3111 111 70 11
+3112 111 70 12
+3113 111 70 13
+3114 111 70 14
+3115 111 70 15
+3116 111 70 16
+3117 111 70 17
+3118 111 70 18
+3119 111 70 19
+3120 111 70 20
+3121 111 70 21
+3122 111 70 22
+3123 111 70 23
+3124 111 70 24
+3125 111 70 25
+3126 111 70 26
+3127 111 70 27
+3128 111 70 28
+3129 111 70 29
+3130 111 70 30
+3131 111 70 31
+3132 111 70 32
+3133 111 70 33
+3134 111 70 34
+3135 111 70 35
+5108 48 1 20
+5109 5 6840 20
+7136 48 0 14
+7137 5 6841 14
+23906 10 3 0
+23907 125 11 0
+24000 @advisor_event 8

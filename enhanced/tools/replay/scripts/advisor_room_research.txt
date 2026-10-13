@@ -1,0 +1,46 @@
+# Level 3
+# Turns 1000
+# The advisor's remark on a research room built with no researcher
+# (advise_room_built, situations 0x8c and 0x53): xray.txt's reception desk,
+# receptionist, handyman and staff order, the hospital opened at turn 20
+# (EV_OPEN_HOSPITAL) and research_default.txt's research room, opened at 113
+# (the advice for the first research room, 0x8c, which the game gives once),
+# and a second research room at 412 with no researcher: the advice for a
+# research room with none (0x53). The advice text is not in the trace:
+# `# advice` lines agree turn by turn.
+# Desk: furnish the corridor, buy one, place it at cell 9771 facing 0.
+# Expect advice 0x8c == 1
+# Expect advice 0x53 == 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9771 11
+10 48 3 24
+11 5 9906 24
+20 139 0 0
+101 55 0 0
+102 53 28 28
+103 2 8876 0
+104 2 9392 0
+105 8 9392 0
+106 18 0 0
+107 26 8750 0
+108 3 0 0
+109 4 28 0
+110 7 9260 55
+111 7 9264 257
+112 7 8880 258
+113 1 0 0
+400 55 0 0
+401 53 28 28
+402 2 8884 0
+403 2 9400 0
+404 8 9400 0
+405 18 0 0
+406 26 8758 0
+407 3 0 0
+408 4 28 0
+409 7 9268 55
+410 7 9272 257
+411 7 8888 258
+412 1 0 0

@@ -1,0 +1,33 @@
+# Level 6
+# Turns 1000
+# The advisor's remark on a training room built with no consultant
+# (advise_room_built, situation 0x50): cardiogram.txt's reception desk and
+# receptionist, the hospital opened at turn 20 (EV_OPEN_HOSPITAL) so that
+# patients are in it, and training.txt's training room (a projector, two
+# lecture chairs, a bookcase and a skeleton) with no consultant: the advice
+# is given once the room is open (turn 385). The advice text is not in the
+# trace: `# advice` lines agree turn by turn.
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect advice 0x50 == 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+10 48 3 33
+11 5 7735 33
+20 139 0 0
+101 55 0 0
+102 53 22 22
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 22 0
+110 7 6445 37
+111 7 6188 36
+112 7 6318 36
+113 7 6191 56
+114 7 6316 60
+115 1 0 0

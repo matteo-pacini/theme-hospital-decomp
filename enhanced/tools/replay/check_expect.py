@@ -11,6 +11,9 @@ to what it checks):
                                is one of >=, == or <=; without it, >= 1
   # Expect-not <text>          no such event line occurs
 
+The advisor's advice given also counts, as `advice 0xNN` (NN the situation in
+two hex digits, the `# advice N` comment lines of the traces).
+
 Usage: check_expect.py SCRIPT TRACE [TRACE ...]
   Checks every trace and exits 0 when all of them satisfy the script's
   expectations, 1 when one fails, 2 when a header line looks like an Expect
@@ -57,13 +60,23 @@ def parse_expectations(path):
     return out, errors
 
 
+ADVICE_LINE = re.compile(r"^# advice (\d+)(?: seed=[0-9a-fA-F]+)?\s*$")
+
+
 def event_counts(path):
-    """{event text: count} over the "E " lines of a trace."""
+    """{event text: count} over the "E " lines of a trace, and over its
+    "# advice N" comment lines (the advisor's situation N given), counted as
+    events "advice 0xNN" so that `# Expect advice 0x5a` can check them."""
     counts = {}
     with open(path, encoding="ascii", errors="replace", newline=None) as f:
         for line in f:
             if line.startswith("E "):
                 text = line[2:].rstrip("\r\n")
+                counts[text] = counts.get(text, 0) + 1
+                continue
+            m = ADVICE_LINE.match(line)
+            if m:
+                text = f"advice 0x{int(m.group(1)):02x}"
                 counts[text] = counts.get(text, 0) + 1
     return counts
 

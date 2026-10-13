@@ -1,0 +1,102 @@
+# Level 1
+# Turns 16000
+# The advisor's account of the benches (advisor_benches, situation 0x4b):
+# treatment.txt's hospital (a GP's office, a general diagnosis room, a
+# pharmacy, an inflation room, three doctors and a nurse, the policy sending
+# patients home at 0% and guessing cures from 10%) with benches in the
+# corridor where the GP's patients wait, bought and placed in three waves:
+# 6 at turn 250, 3 more at 9500 and 3 more at 14500. The advisor gives the
+# bench advice three times, each time more than five patients are in the
+# hospital and its repeat delay has run out, by the arm for more than four
+# benches with six (turn 8865), for more than eight benches and a negative
+# shortage with nine (10914), and for more than level + 8 benches and a
+# shortage below -0x1400 per patient with twelve (15081). The advice text is
+# not in the trace: the branches are those of th_replay's run, and `# advice`
+# lines agree turn by turn.
+# Desk: furnish the corridor, buy one, place it at cell 9534 facing 0.
+# Expect advice 0x4b == 3
+# Expect cure
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+142 48 1 18
+143 5 10044 18
+160 55 0 0
+161 53 11 11
+162 2 7737 0
+163 2 8124 0
+164 8 8124 0
+165 18 0 0
+166 26 8250 0
+167 3 0 0
+168 4 11 0
+169 7 7740 39
+170 1 0 0
+171 48 0 3
+172 5 10044 3
+190 55 0 0
+191 53 17 17
+192 2 8388 0
+193 2 8775 0
+194 8 8775 0
+195 18 0 0
+196 26 8515 0
+197 3 0 0
+198 4 17 0
+199 7 8518 9
+200 1 0 0
+201 48 1 12
+202 5 10044 12
+220 113 1 0
+221 113 2 10
+250 98 0 0
+251 37 4 6
+252 43 0 0
+260 7 8378 4
+261 7 8379 4
+262 7 8380 4
+263 7 8381 4
+264 7 8506 4
+265 7 8507 4
+9500 98 0 0
+9501 37 4 3
+9502 43 0 0
+9510 7 8508 4
+9511 7 8509 4
+9512 7 8634 4
+14500 98 0 0
+14501 37 4 3
+14502 43 0 0
+14510 7 8635 4
+14511 7 8636 4
+14512 7 8637 4

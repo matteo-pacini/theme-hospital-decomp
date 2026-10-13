@@ -1,0 +1,75 @@
+# Level 6
+# Turns 18000
+# The advisor's remarks on the deaths (advise_deaths_limit, situation 0x41,
+# and find_advice_deaths, 0x4c): emergency_fail.txt's hospital (an emergency
+# accepted at turn 6201 and its patients left to die in an inflation room
+# with no doctor: six deaths in all, by turn 8907) with the death event
+# raised again every 250 turns from 9000 (`@advisor_event 128`, as the
+# deaths of a further emergency would). The advisor warns that the deaths
+# near the level's limit of 30% of the visitors (0x41: at the first death,
+# 1 of 12, with its words for a margin of less than 25; at 10752 and 14849,
+# 6 of 14 and 6 of 25, with those for a margin under 10) and gives the
+# number of the deaths (0x4c: at turns 8907, 11000 and 15099, and in each of
+# the two ways the game has of saying it). The advice text is not in the
+# trace: the branches are those of th_replay's run, and `# advice` lines
+# agree turn by turn.
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect emergency_accept
+# Expect emergency_dies >= 6
+# Expect advice 0x41 == 3
+# Expect advice 0x4c == 3
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+10 48 3 33
+11 5 7735 33
+130 55 0 0
+131 53 17 17
+132 2 6196 0
+133 2 6583 0
+134 8 6583 0
+135 18 0 0
+136 26 6069 0
+137 3 0 0
+138 4 17 0
+139 7 6454 9
+140 1 0 0
+6200 10 2 0
+6201 125 31 0
+9000 @advisor_event 128
+9250 @advisor_event 128
+9500 @advisor_event 128
+9750 @advisor_event 128
+10000 @advisor_event 128
+10250 @advisor_event 128
+10500 @advisor_event 128
+10750 @advisor_event 128
+11000 @advisor_event 128
+11250 @advisor_event 128
+11500 @advisor_event 128
+11750 @advisor_event 128
+12000 @advisor_event 128
+12250 @advisor_event 128
+12500 @advisor_event 128
+12750 @advisor_event 128
+13000 @advisor_event 128
+13250 @advisor_event 128
+13500 @advisor_event 128
+13750 @advisor_event 128
+14000 @advisor_event 128
+14250 @advisor_event 128
+14500 @advisor_event 128
+14750 @advisor_event 128
+15000 @advisor_event 128
+15250 @advisor_event 128
+15500 @advisor_event 128
+15750 @advisor_event 128
+16000 @advisor_event 128
+16250 @advisor_event 128
+16500 @advisor_event 128
+16750 @advisor_event 128
+17000 @advisor_event 128
+17250 @advisor_event 128
+17500 @advisor_event 128
+17750 @advisor_event 128

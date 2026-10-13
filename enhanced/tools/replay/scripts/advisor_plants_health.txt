@@ -1,0 +1,51 @@
+# Level 1
+# Turns 16000
+# The advisor's account of the plants' condition (advisor_dead_plants,
+# situation 0x5a) with no handyman: 21 plants in the clear land north of the
+# corridor, a reception desk and receptionist, and the hospital opened at
+# turn 100 (EV_OPEN_HOSPITAL) so that patients are in it from the first
+# months. The plants wilt unwatered; the situation is given five times, each
+# when its repeat delay has run out, as the average health crosses the bands:
+# healthy (above 52 of 55: 21 plants, not 20, are the fewest that average
+# above it as the game computes it), healthy again, between 22 and 38, between
+# 8 and 22, and again between 8 and 22 (health out of 55). 22 to 24 plants
+# would do as well; more than 24 wrap the game's 32-bit product
+# (plant_health_scaled) and advisor_plants_wrap.txt uses that. The advice
+# text is not in the trace: the bands are those of th_replay's run, and
+# `# advice` lines agree turn by turn.
+# Plants: furnish the corridor, buy 21, place them from cell 6457 (57,50).
+# Expect plant_thirsty
+# Expect advice 0x5a == 5
+# Expect advice 0x5c == 4
+# Expect-not watered
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+30 98 0 0
+31 37 45 21
+32 43 0 0
+40 7 6457 45
+41 7 6458 45
+42 7 6459 45
+43 7 6460 45
+44 7 6461 45
+45 7 6462 45
+46 7 6463 45
+47 7 6464 45
+48 7 6465 45
+49 7 6466 45
+50 7 6467 45
+51 7 6468 45
+52 7 6585 45
+53 7 6586 45
+54 7 6587 45
+55 7 6588 45
+56 7 6589 45
+57 7 6590 45
+58 7 6591 45
+59 7 6592 45
+60 7 6593 45
+100 139 0 0

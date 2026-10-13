@@ -1,0 +1,67 @@
+# Level 1
+# Turns 5200
+# The advisor's account of the plants' condition (advisor_dead_plants,
+# situation 0x5a) with more plants than the game's 32-bit arithmetic keeps
+# straight: 36 plants, all healthy (sum of health 1925), and its product with
+# 0x190000 passes 2^31, so the "average" the advisor tests is negative and
+# reads as the plants dying. With no handyman the situation is given as the
+# plants dying (turn 513); two handymen (applicants 19 and 20, hired at
+# turn 600) water the plants as they thirst, and the same figure gives the
+# advice for several handymen (turn 2050, and again at 5123). A reception
+# desk and receptionist, and the hospital opened at turn 100 so that patients
+# are in it. The advice text is not in the trace: the bands are those of
+# th_replay's run, and `# advice` lines agree turn by turn.
+# Plants: furnish the corridor, buy 36, place them from cell 6457 (57,50).
+# Expect advice 0x5a == 3
+# Expect advice 0x5c == 1
+# Expect watered
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+30 98 0 0
+31 37 45 36
+32 43 0 0
+40 7 6457 45
+41 7 6458 45
+42 7 6459 45
+43 7 6460 45
+44 7 6461 45
+45 7 6462 45
+46 7 6463 45
+47 7 6464 45
+48 7 6465 45
+49 7 6466 45
+50 7 6467 45
+51 7 6468 45
+52 7 6585 45
+53 7 6586 45
+54 7 6587 45
+55 7 6588 45
+56 7 6589 45
+57 7 6590 45
+58 7 6591 45
+59 7 6592 45
+60 7 6593 45
+61 7 6594 45
+62 7 6595 45
+63 7 6596 45
+64 7 6713 45
+65 7 6714 45
+66 7 6715 45
+67 7 6716 45
+68 7 6717 45
+69 7 6718 45
+70 7 6719 45
+71 7 6720 45
+72 7 6721 45
+73 7 6722 45
+74 7 6723 45
+75 7 6724 45
+100 139 0 0
+600 48 2 19
+601 5 10044 19
+603 48 2 20
+604 5 10044 20

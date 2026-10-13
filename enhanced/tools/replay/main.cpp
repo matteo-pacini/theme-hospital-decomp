@@ -439,19 +439,41 @@ th::Event script_command(const std::string &line)
     return {uint8_t(type), uint16_t(value), 0, uint16_t(arg)};
 }
 
+// Where the run is in the script: the next line due, and whether the original's
+// display_mode is the full-screen charts (EV_OPEN_SCREEN, unless an edited room
+// is emptying, io.cpp:824), where its frame has no display_advisor, until one
+// of the events that set display_mode to DM_GAME.
+struct ScriptPos {
+    size_t next = 0;
+    bool charts_open = false;
+};
+
+// Follows `e` in `pos.charts_open`.
+void follow_display_mode(const th::Game &game, const th::Event &e, ScriptPos &pos)
+{
+    if (e.type == th::EV_OPEN_SCREEN && game.world.building.mouse != th::BuildMouse::EditRoomWait)
+        pos.charts_open = true;
+    else if (e.type == th::EV_CLOSE_SCREEN || e.type == th::EV_RETURN_FROM_SCREEN ||
+             e.type == th::EV_REFUSE_STAFF_DEMAND || e.type == th::EV_RAISE_STAFF_SALARY ||
+             e.type == th::EV_GIVE_STAFF_BONUS || e.type == th::EV_CLOSE_QUEUE_WINDOW)
+        pos.charts_open = false;
+}
+
 // Carries out the script's commands due before turn `turn`, in order, and
 // leaves the last command's event in `command` (the one the original's
-// process_turn leaves in old_packet). False, reported on standard error,
-// when one cannot be carried out.
-bool apply_script_commands(th::Game &game, const Options &o, const std::vector<ScriptLine> &script, size_t &next,
+// process_turn leaves in old_packet). False, reported on standard error, when
+// one cannot be carried out.
+bool apply_script_commands(th::Game &game, const Options &o, const std::vector<ScriptLine> &script, ScriptPos &pos,
                            uint32_t turn, th::Event &command)
 {
     std::string error;
-    for (; next < script.size() && script[next].turn <= turn; next++) {
+    for (size_t &next = pos.next; next < script.size() && script[next].turn <= turn; next++) {
         if (script[next].turn != turn)
             continue;
-        if (th::Event e = script_command(script[next].input); e.type)
+        if (th::Event e = script_command(script[next].input); e.type) {
             command = e;
+            follow_display_mode(game, e, pos);
+        }
         if (!game.replay_input(script[next].input, &error)) {
             std::fprintf(stderr, "%s: %s\n", o.script_path, error.c_str());
             return false;
@@ -475,10 +497,10 @@ bool script_moves_cursor(const std::vector<ScriptLine> &script, uint32_t turn)
 bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &script, uint32_t last_turn,
                std::FILE *out, const th::GameData &data)
 {
-    size_t next = 0;
+    ScriptPos pos;
     while (game.turn_count < last_turn) {
         th::Event command{};
-        if (!apply_script_commands(game, o, script, next, game.turn_count + 1, command))
+        if (!apply_script_commands(game, o, script, pos, game.turn_count + 1, command))
             return false;
         if (game.paused) {
             std::fprintf(stderr, "the script leaves the game paused before turn %u\n", game.turn_count + 1);
@@ -495,8 +517,9 @@ bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &
             // it as the last command, with none pending.
             // A win or loss decided this turn leaves the game screen, so the
             // next frame has no display_advisor; nor has a frame with a fax up
-            // (display_mode DM_CHOICE).
-            if (game.progress.winlose_result == 0 && !game.progress.rat_game_over && !game.fax_screen.open)
+            // (display_mode DM_CHOICE) or the charts screen's.
+            if (game.progress.winlose_result == 0 && !game.progress.rat_game_over && !game.fax_screen.open &&
+                !pos.charts_open)
                 run_advisor(game, data, out, command, {}, script_moves_cursor(script, game.turn_count));
             game.run_things();
         }

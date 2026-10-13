@@ -1,0 +1,52 @@
+# Level 6
+# Turns 1500
+# The advisor's remark after an operating theatre is built when its two
+# surgeons are already hired (advise_theatre_built, situation 0x56, the
+# default arm): theatre.txt's hospital (reception desk and receptionist, a
+# GP's office and its doctor, an operating theatre and its table, sinks and
+# X-ray viewer) with the two surgeons (applicants 17 and 20) hired and put
+# down in the corridor at turn 118, before the theatre is built. With the
+# surgeons there and no ward, the advisor gives the arm of its advice for a
+# theatre built that needs a ward only (turn 142, as the theatre opens). The
+# advice text is not in the trace: `# advice` lines agree turn by turn.
+# Desk: furnish the corridor, buy one, place it at cell 7481 facing 0.
+# Expect advice 0x56 == 1
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+10 48 3 33
+11 5 7735 33
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+114 48 1 18
+115 5 5934 18
+118 48 1 17
+119 5 5934 17
+120 48 1 20
+121 5 5934 20
+130 55 0 0
+131 53 10 10
+132 2 6194 0
+133 2 6843 0
+134 8 6843 0
+135 18 0 0
+136 26 6071 0
+137 3 0 0
+138 4 10 0
+139 7 6584 30
+140 7 6331 33
+141 7 6715 29
+142 1 0 0
+143 7 6708 35

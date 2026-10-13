@@ -492,10 +492,11 @@ draws (`old_newrand(seed, "name")`). See the scripts for their arguments.
 both sides, checks that each agrees and satisfies the `# Expect` lines in its
 header (`# Expect <text> [<op> <n>]`: an event line whose text after `E `
 starts with `<text>` occurs `<op> <n>` times, `op` one of `>= == <=`, default
-`>= 1`; `# Expect-not <text>`: no such event), and prints one line per script
-and a summary; `check_expect.py` does the checking on both traces. It runs
-`JOBS` scripts at once (default `TH_REPLAY_SLOTS`, else 10) with the
-th_replay of `BUILD` (default build/enhanced). Its settings are `BUILD`,
+`>= 1`; `# Expect-not <text>`: no such event; the advisor's `# advice N` lines
+count as events `advice 0xNN`, NN the situation in two hex digits), and prints
+one line per script and a summary; `check_expect.py` does the checking on both
+traces. It runs `JOBS` scripts at once (default `TH_REPLAY_SLOTS`, else 10)
+with the th_replay of `BUILD` (default build/enhanced). Its settings are `BUILD`,
 `JOBS`, `TURNS` (the last turn of a script without `# Turns`), `RAND`,
 `TRACE_DRAW`, `CACHE` and `PORT_CACHE` (below), `KEEP` (keep every trace; otherwise a
 failing script's two traces are kept, zstd-compressed), `WATCHDOG` and
