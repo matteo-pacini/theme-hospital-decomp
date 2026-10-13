@@ -9,7 +9,7 @@ No game files are included. You need your own copy.
 
 This branch, `decomp`, is the matching decompilation and its tooling. The
 playable port built from it, Theme Hospital Enhanced, lives on the
-[`master`](https://github.com/matteo-pacini/theme-hospital-decomp/tree/master)
+[`master`](https://github.com/matteo-pacini/theme-hospital-enhanced/tree/master)
 branch. Fixes to `src/` and `include/` are made here and merged into `master`,
 never the other way.
 
