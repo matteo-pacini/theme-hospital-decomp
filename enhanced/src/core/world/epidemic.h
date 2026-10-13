@@ -45,10 +45,11 @@ constexpr uint8_t kSfxVaccin = 0xde;
 constexpr uint8_t kSfxDeVaccin = 0xdf;
 
 // alert_epidemic (0xa0414): starts an epidemic of `illness` in `owner`'s
-// hospital unless one or an emergency is already running: withdraws any
-// emergency call (get_playercall 2) and raises the epidemic call (type 3,
-// subject 1, expiring after 20 days). For the player's hospital the advisor
-// is told (kAdvisorEventEpidemic); the announcement is the interface's.
+// hospital unless one or an emergency is already running or the emergency
+// fax is up (Game::fax_screen): withdraws any emergency call (get_playercall
+// 2) and raises the epidemic call (type 3, subject 1, expiring after 20
+// days). For the player's hospital the advisor is told
+// (kAdvisorEventEpidemic); the announcement is the interface's.
 void alert_epidemic(World &world, uint8_t illness, uint8_t owner);
 
 // count_and_flag_contagious_peeps (0xa04e4): goes over `owner`'s patients

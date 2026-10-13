@@ -1,0 +1,66 @@
+# Level 3: two emergencies refused in king_complex.txt's hospital: four
+# patients with an uncommon cold (illness 16, $400 each), offered at turn 7300,
+# and five with heaped piles (illness 32, $500 each), offered at 14200. Each
+# offer's call is answered (EV_ANSWER_PLAYERCALL 2, the fax) and refused
+# (EV_CHOICE_RESULT CH_EMERGENCY_REFUSE) two turns after it is raised: no
+# helicopter comes for either and no patient arrives. The psychiatry cure of
+# king_complex.txt (patient 40) is unaffected.
+# Expect emergency_refuse 7
+# Expect emergency_refuse 25
+# Expect cure 40 illness=4 == 1
+# Expect-not emergency_accept
+# Expect-not emergency_start
+# Expect-not heli
+# Turns 18300
+# Desk: furnish the corridor, buy one, place it at cell 9771 facing 0.
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9771 11
+# Receptionist: hire applicant 24, place at cell 9906.
+10 48 3 24
+11 5 9906 24
+# The GP's office (50,69)-(54,73), its door above it, desk, cabinet and
+# chair; opened; a consultant (applicant 18) in the corridor.
+60 55 0 0
+61 53 7 7
+62 2 8882 0
+63 2 9398 0
+64 8 9398 0
+65 18 0 0
+66 26 8756 0
+67 3 0 0
+68 4 7 0
+69 7 9140 1
+70 7 8886 2
+71 7 9141 6
+72 1 0 0
+73 48 1 18
+74 5 9908 18
+# A psychiatry room (55,73)-(60,78), its door above it, a couch (cell 9786
+# facing 2), a screen (cell 9660) and a comfy chair (cell 9784); opened; a
+# psychiatrist (applicant 14, a doctor with the skill) in the corridor.
+130 55 0 0
+131 53 8 8
+132 2 9399 0
+133 2 10044 0
+134 8 10044 0
+135 18 0 0
+136 26 9273 0
+137 3 0 0
+138 4 8 0
+139 7 9786 530
+140 7 9660 16
+141 7 9784 61
+142 1 0 0
+143 48 1 14
+144 5 9910 14
+# Policy (EV_SET_POLICY): send home at 0%, guess a cure from 10%.
+220 113 1 0
+221 113 2 10
+# The uncommon cold emergency (call 7) answered and refused.
+7301 10 2 0
+7302 125 30 0
+# The heaped piles emergency (call 25) answered and refused.
+14201 10 2 0
+14202 125 30 0

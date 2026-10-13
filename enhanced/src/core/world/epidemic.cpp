@@ -131,6 +131,8 @@ uint8_t inspector_verdict(World &world, uint32_t contagious)
 
 void alert_epidemic(World &world, uint8_t illness, uint8_t owner)
 {
+    if (world.game && world.game->fax_screen.open && world.game->fax_screen.kind == kFaxEmergency)
+        return;
     if (owner != 0 || world.epidemic.illness != 0 || world.emergency.state != 0)
         return;
     get_playercall(world, 2, 0, owner);

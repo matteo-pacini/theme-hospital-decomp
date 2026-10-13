@@ -1,0 +1,73 @@
+# Level 6
+# Turns 28000
+# epidemic_vaccinate.txt's epidemic (covered up at 23753, illness 32) with
+# the reception desk (thing 39) picked up at 23760 (EV_PICK_UP_OBJECT) and
+# never placed again, so that the hospital has no reception desk when the
+# cover-up ends and the health inspector is made (create_inspector): with no
+# desk to inspect at, the inspector walks straight back out of an entrance
+# and is gone, without a verdict: no fine, no compensation and no
+# reputation change, and no result call for the epidemic.
+# Expect cmd type=68 value=39
+# Expect epidemic_cover_up
+# Expect remove_thing 9 type=22
+# Expect-not balance 30
+# Expect-not balance 31
+# Expect-not rep 0 event=15
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair (arg: kind | facing << 8); opened.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+# Its doctor: hire applicant 18, place at cell 6969.
+114 48 1 18
+115 5 6969 18
+# A cardiogram room (52,48)-(55,51), its door above it, a cardiogram (cell
+# 6454 facing 0) and a screen (cell 6452 facing 1); opened.
+130 55 0 0
+131 53 12 12
+132 2 6196 0
+133 2 6583 0
+134 8 6583 0
+135 18 0 0
+136 26 6069 0
+137 3 0 0
+138 4 12 0
+139 7 6454 13
+140 7 6452 272
+141 1 0 0
+# A second doctor: hire applicant 19, place at cell 6970.
+142 48 1 19
+143 5 6970 19
+# A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
+144 48 2 28
+145 5 6841 28
+# A second GP doctor (applicant 20, cell 6840) hired late and a nurse
+# (applicant 14, cell 6841): a contagious patient is diagnosed (the epidemic
+# call, type 3, is raised at 23712) with others of the same illness inside.
+# The fax opens only while contagious patients are inside, so the answer
+# comes after the call.
+5108 48 1 20
+5109 5 6840 20
+7575 48 0 14
+7576 5 6841 14
+23752 10 3 0
+23753 125 11 0
+# The reception desk picked up.
+23760 68 39 0

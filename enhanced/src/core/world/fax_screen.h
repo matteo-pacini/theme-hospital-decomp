@@ -13,10 +13,10 @@ namespace th
 // the fax replaced is back. The interface's fax draws the screen; this keeps
 // the state the colours follow, a turn at a time.
 
-// display_choice_screen (0xa410c): a fax of `timeout` turns without the
-// pointer moving (0: it must be answered) is called up over what is shown; the
-// frame after draws it.
-void fax_open(Game &game, int16_t timeout);
+// display_choice_screen (0xa410c): a fax of kind `kind` (kFax*) and of
+// `timeout` turns without the pointer moving (0: it must be answered) is
+// called up over what is shown; the frame after draws it.
+void fax_open(Game &game, uint8_t kind, int16_t timeout);
 
 // restore_display_screen (0xa4208), after an answer: the fax closes, and the
 // screen under it, another fax or the game, is back.

@@ -35,13 +35,15 @@ void fax_up(Game &game)
 }
 } // namespace
 
-void fax_open(Game &game, int16_t timeout)
+void fax_open(Game &game, uint8_t kind, int16_t timeout)
 {
     Game::FaxScreen &fax = game.fax_screen;
     // save_display_screen.
     fax.backup_open = fax.open;
     fax.backup_timeout = fax.timeout;
+    fax.backup_kind = fax.kind;
     fax.open = true;
+    fax.kind = kind;
     fax.state = kShowing;
     fax.timeout = timeout;
     game.fax_key = false;
@@ -52,6 +54,7 @@ void fax_restore(Game &game)
     Game::FaxScreen &fax = game.fax_screen;
     fax.open = fax.backup_open;
     fax.timeout = fax.backup_timeout;
+    fax.kind = fax.backup_kind;
     fax.backup_open = false;
     if (fax.open)
         fax.state = kShowing;

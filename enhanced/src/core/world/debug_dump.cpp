@@ -1172,10 +1172,10 @@ void dump_game_map(std::string &out, const World &w, int focus, int radius)
 void dump_game_fax(std::string &out, const Game &game)
 {
     const Game::FaxScreen &fax = game.fax_screen;
-    out += std::format("fax_screen open={} state={:#x} timeout={} backup_open={} backup_timeout={} fade={} since={} "
-                       "pointer={} fax_pointer={} fax_key={} fax_palette={}\n",
-                       fax.open, fax.state, fax.timeout, fax.backup_open, fax.backup_timeout, fax.fade, fax.since,
-                       fax.pointer, game.fax_pointer, game.fax_key, game.world.fax_palette);
+    out += std::format("fax_screen open={} state={:#x} timeout={} backup_open={} backup_timeout={} fade={} "
+                       "kind={} backup_kind={} since={} pointer={} fax_pointer={} fax_key={} fax_palette={}\n",
+                       fax.open, fax.state, fax.timeout, fax.backup_open, fax.backup_timeout, fax.fade, fax.kind,
+                       fax.backup_kind, fax.since, fax.pointer, game.fax_pointer, game.fax_key, game.world.fax_palette);
 }
 
 } // namespace

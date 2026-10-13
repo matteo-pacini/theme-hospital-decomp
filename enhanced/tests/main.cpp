@@ -178,6 +178,7 @@ void test_applicant_expiry();
 // game.cpp
 void test_game_clock(const char *dir);
 void test_fax_palette(const char *dir);
+void test_fax_holds_epidemic(const char *dir);
 void test_open_hospital(const char *dir);
 void test_hospital_level(const char *dir);
 void test_overview_log(const char *dir);
@@ -364,6 +365,7 @@ const DataTest kDataTests[] = {
     TEST(test_panel_image),
     TEST(test_game_clock),
     TEST(test_fax_palette),
+    TEST(test_fax_holds_epidemic),
     TEST(test_open_hospital),
     TEST(test_hospital_level),
     TEST(test_overview_log),

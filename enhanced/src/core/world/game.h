@@ -193,6 +193,11 @@ class Game
         // othervar.fade_palette: the palette to take on at the end of the
         // frame, 0 for none, 1 the hospital's, 2 the fax picture's.
         uint8_t fade = 0;
+        // The kind (kFax*) of the fax up (choice.value) and of the screen
+        // saved under it (choice_backup): alert_epidemic and
+        // check_emergency_criteria read it.
+        uint8_t kind = 0;
+        uint8_t backup_kind = 0;
         // The turn the pointer last moved (choice_actual_game_turn) and where
         // (choice_mouse_position, x + y).
         uint32_t since = 0;

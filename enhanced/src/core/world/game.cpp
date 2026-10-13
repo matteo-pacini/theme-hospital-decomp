@@ -454,7 +454,7 @@ void Game::process_turn()
     fax_event(*this, e);
     carry_out(e);
     if (choice_screen.type)
-        fax_open(*this, choice_screen.timeout);
+        fax_open(*this, choice_screen.type, choice_screen.timeout);
     advisor.event_flags |= std::exchange(world.advisor_events, 0);
     remember_inputs();
 }

@@ -85,7 +85,7 @@ void test_fax_palette(const char *dir)
         return;
     th::Game &g = *f.game;
     const uint32_t opened = g.turn_count;
-    th::fax_open(g, 400);
+    th::fax_open(g, th::kFaxNewIllness, 400);
     uint32_t on = 0, off = 0;
     for (int i = 0; i < 420; i++) {
         bool before = g.world.fax_palette;
@@ -97,7 +97,7 @@ void test_fax_palette(const char *dir)
     CHECK(th::colour_red(g.world) == th::kColourRed && th::colour_dark_blue(g.world) == th::kColourDarkBlue);
 
     // Answered with a button: the next turn has the hospital's colours back.
-    th::fax_open(g, 400);
+    th::fax_open(g, th::kFaxNewIllness, 400);
     g.turn();
     g.turn();
     CHECK(g.world.fax_palette && th::colour_red(g.world) == th::kFaxColourRed);
@@ -105,6 +105,30 @@ void test_fax_palette(const char *dir)
     g.process_turn();
     g.turn();
     CHECK(!g.world.fax_palette && !g.fax_screen.open);
+}
+
+// The emergency fax on the screen holds back an epidemic (alert_epidemic does
+// nothing, as the game's choice.value 2 check): once it is closed, the same
+// alert starts it. A fax of another kind does not.
+void test_fax_holds_epidemic(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &g = *f.game;
+    th::fax_open(g, th::kFaxEmergency, 0);
+    th::alert_epidemic(g.world, 5, 0);
+    CHECK(g.world.epidemic.illness == 0);
+    th::fax_restore(g);
+    CHECK(!g.fax_screen.open);
+    th::alert_epidemic(g.world, 5, 0);
+    CHECK(g.world.epidemic.illness == 5);
+
+    g.world.epidemic = {};
+    th::fax_open(g, th::kFaxNewIllness, 0);
+    th::alert_epidemic(g.world, 5, 0);
+    CHECK(g.world.epidemic.illness == 5);
 }
 
 // The panel's watch, clicked while the countdown runs: process_turn's

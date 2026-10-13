@@ -464,7 +464,8 @@ following, from the level's start (a snapshot or command log keeps its own
 choice); the replay check needs wall following, the default.
 
 With `--advisor`, th_replay also runs the advisor in each turn, as the
-game's frame does, and notes each advice given as a comment line
+game's frame does (not while a fax is up: its frame has no advisor), and
+notes each advice given as a comment line
 (`# advice <situation>`), which the instrumented original writes too,
 followed by the seed. compare.py ignores them; `replay_all.sh` runs the
 port with `--advisor` and compares them with the original's (the seed left

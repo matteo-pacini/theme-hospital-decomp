@@ -46,11 +46,14 @@ uint32_t month_of(const Date &date)
     return uint32_t(date.year * 12 + date.month);
 }
 
-// check_emergency_criteria (0xaf118) for a one-player game. The epidemic
-// fax being shown is the interface's; an epidemic running counts.
+// check_emergency_criteria (0xaf118) for a one-player game: no emergency is
+// offered while the epidemic fax is up (Game::fax_screen); an epidemic running
+// counts.
 bool check_emergency_criteria(const Disasters &d, const World &world, const Balance &settings, bool open,
                               uint32_t game_turn)
 {
+    if (world.game && world.game->fax_screen.open && world.game->fax_screen.kind == kFaxEpidemic)
+        return false;
     if (game_turn < d.next_emergency_turn || !d.emergency_pending)
         return false;
     if (check_playercall(world, kCallEpidemic, 0, 0) || world.epidemic.active != 0 || world.emergency.state != 0 ||

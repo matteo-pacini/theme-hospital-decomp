@@ -494,8 +494,9 @@ bool run_turns(th::Game &game, const Options &o, const std::vector<ScriptLine> &
             // frame before the one it is for, so the advisor of turn N sees
             // it as the last command, with none pending.
             // A win or loss decided this turn leaves the game screen, so the
-            // next frame has no display_advisor.
-            if (game.progress.winlose_result == 0 && !game.progress.rat_game_over)
+            // next frame has no display_advisor; nor has a frame with a fax up
+            // (display_mode DM_CHOICE).
+            if (game.progress.winlose_result == 0 && !game.progress.rat_game_over && !game.fax_screen.open)
                 run_advisor(game, data, out, command, {}, script_moves_cursor(script, game.turn_count));
             game.run_things();
         }

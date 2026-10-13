@@ -1,0 +1,51 @@
+# Level 6: an epidemic cover-up with no contagious patient to hide, and the
+# result call answered. emergency_refuse.txt's reception desk, receptionist,
+# GP's office and doctor; the emergency offered at turn 6150 is answered
+# (EV_ANSWER_PLAYERCALL 2, its fax is up) and the fax then closed with the
+# cover-up answer (EV_CHOICE_RESULT CH_EPIDEMIC_COVER_UP) at 6201, with no
+# contagious patient in the hospital: the next epidemic_status finds none
+# (contagious_count 0) and ends the cover-up on its own, with the epidemic's
+# end sound and the forced advice, rather than at the timer. The health
+# inspector is sent (generate_inspector), finds nothing and pays
+# compensation (verdict 0, kTxGovernmentCompensation), and the result call
+# (kCallEmergencyOver, subject 3) is answered (EV_ANSWER_PLAYERCALL 5), which
+# opens the epidemic's result fax.
+# Expect epidemic_cover_up
+# Expect balance 31
+# Expect get_playercall 0 type=5
+# Expect-not balance 30
+# Expect-not rep 0 event=15
+# Expect-not emergency_accept
+# Expect-not emergency_refuse
+# Level 6
+# Turns 8000
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair (arg: kind | facing << 8); opened.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+# Its doctor: hire applicant 18, place at cell 6969.
+114 48 1 18
+115 5 6969 18
+6200 10 2 0
+# The cover-up answer closes the fax.
+6201 125 11 0
+# The inspector's result call (raised at 6715) answered.
+6716 10 5 0

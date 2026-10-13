@@ -1,0 +1,88 @@
+# Level 6
+# Turns 25500
+# epidemic_vaccinate.txt with a pharmacy built late (turn 23000, no nurse
+# hired for it): the corridor nurse (applicant 14) is sent into it at 23204
+# (room 8) and is the only nurse, so none is idle. The epidemic (the call
+# raised at 23660, illness 32, covered up at 23701) then has its two
+# contagious patients, 12 and 15, queued for vaccination
+# (EV_TOGGLE_VACCINATION): the nurse working the pharmacy's cabinet finds a
+# queued patient she could reach with no other nurse idle and leaves the room
+# at 23723 (room_move 14 from=8 to=0), vaccinates them one after the other
+# (kTxVaccination) and goes back to the pharmacy at 23938.
+# Expect room_move 14 from=0 to=8 >= 2
+# Expect room_move 14 from=8 to=0
+# Expect vaccine_cancel 12 requests=1
+# Expect vaccine_cancel 15 requests=0
+# Expect balance 29 >= 2
+# Expect cure 15 illness=32
+# Expect epidemic_cover_up
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 7481 11
+# Receptionist: hire applicant 33, place at cell 7735.
+10 48 3 33
+11 5 7735 33
+# The GP's office (44,48)-(48,52), its door above it, desk, cabinet and
+# chair (arg: kind | facing << 8); opened.
+101 55 0 0
+102 53 7 7
+103 2 6188 0
+104 2 6704 0
+105 8 6704 0
+106 18 0 0
+107 26 6062 0
+108 3 0 0
+109 4 7 0
+110 7 6446 1
+111 7 6192 2
+112 7 6447 6
+113 1 0 0
+# Its doctor: hire applicant 18, place at cell 6969.
+114 48 1 18
+115 5 6969 18
+# A cardiogram room (52,48)-(55,51), its door above it, a cardiogram (cell
+# 6454 facing 0) and a screen (cell 6452 facing 1); opened.
+130 55 0 0
+131 53 12 12
+132 2 6196 0
+133 2 6583 0
+134 8 6583 0
+135 18 0 0
+136 26 6069 0
+137 3 0 0
+138 4 12 0
+139 7 6454 13
+140 7 6452 272
+141 1 0 0
+# A second doctor: hire applicant 19, place at cell 6970.
+142 48 1 19
+143 5 6970 19
+# A handyman to repair the cardiogram: hire applicant 28, place at cell 6841.
+144 48 2 28
+145 5 6841 28
+# A second GP doctor (applicant 20, cell 6840) and a nurse (applicant 14,
+# cell 6841), hired late.
+5108 48 1 20
+5109 5 6840 20
+7575 48 0 14
+7576 5 6841 14
+# A pharmacy (60,48)-(63,51), its door above it, a cabinet (cell 6333);
+# opened. Nobody is hired for it.
+23000 55 0 0
+23001 53 11 11
+23002 2 6204 0
+23003 2 6591 0
+23004 8 6591 0
+23005 18 0 0
+23006 26 6077 0
+23007 3 0 0
+23008 4 11 0
+23009 7 6333 39
+23010 1 0 0
+# The epidemic call (type 3, raised at 23660) answered and covered up; its
+# two contagious patients queued for vaccination.
+23700 10 3 0
+23701 125 11 0
+23702 130 12 0
+23703 130 15 0

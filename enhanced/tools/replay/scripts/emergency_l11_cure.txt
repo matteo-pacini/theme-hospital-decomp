@@ -1,0 +1,118 @@
+# Level 11: the first emergency of the level accepted in cure_l11.txt's
+# hospital: four patients with multiple TV personalities (illness 22, 75% to
+# cure, $800 each), offered at turn 5800 and accepted at 5802 (its call
+# answered, EV_ANSWER_PLAYERCALL 2, then EV_CHOICE_RESULT
+# CH_EMERGENCY_ACCEPT). The helicopter lands at 6150 and the four patients,
+# who need the psychiatry room, are all cured there, so the emergency is won
+# and its bonus paid at its end.
+# Expect emergency_accept 1 illness=22
+# Expect emergency_cure == 4
+# Expect emergency_over cured=4 patients=4 bonus=3200
+# Expect-not emergency_leaves
+# Expect-not emergency_dies
+# Level 11
+# Turns 11000
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9284 11
+10 48 3 26
+11 5 9538 26
+100 55 0 0
+101 53 7 7
+102 2 7480 0
+103 2 7996 0
+104 8 7996 0
+105 18 0 0
+106 26 7354 0
+107 3 0 0
+108 4 7 0
+109 7 7738 1
+110 7 7484 2
+111 7 7739 6
+112 1 0 0
+160 55 0 0
+161 53 27 27
+162 2 7486 0
+163 2 8002 0
+164 8 8002 0
+165 18 0 0
+166 26 8128 0
+167 3 0 0
+168 4 27 0
+169 7 7615 20
+170 7 7874 16
+171 1 0 0
+220 55 0 0
+221 53 12 12
+222 2 7492 0
+223 2 8008 0
+224 8 8008 0
+225 18 0 0
+226 26 7366 0
+227 3 0 0
+228 4 12 0
+229 7 7750 13
+230 7 7749 272
+231 1 0 0
+340 55 0 0
+341 53 9 9
+342 2 8259 0
+343 2 8904 0
+344 8 8904 0
+345 18 0 0
+346 26 8132 0
+347 3 0 0
+348 4 9 0
+349 7 8388 264
+350 7 8644 264
+351 7 8900 264
+352 7 8647 1
+353 1 0 0
+420 55 0 0
+421 53 10 10
+422 2 8248 0
+423 2 8897 0
+424 8 8897 0
+425 18 0 0
+426 26 8125 0
+427 3 0 0
+428 4 10 0
+429 7 8638 30
+430 7 8385 33
+431 7 8769 29
+432 1 0 0
+433 7 8762 35
+600 48 2 18
+601 5 8124 18
+602 48 0 5
+603 5 8262 5
+604 48 1 12
+605 5 7482 12
+606 48 1 16
+607 5 8000 16
+608 48 1 17
+609 5 7494 17
+610 48 1 15
+611 5 8254 15
+1800 55 0 0
+1801 53 8 8
+1802 2 7498 0
+1803 2 8014 0
+1804 8 8014 0
+1805 18 0 0
+1806 26 8140 0
+1807 3 0 0
+1808 4 8 0
+1809 7 7626 530
+1810 7 7886 16
+1811 7 7500 61
+1812 1 0 0
+1856 48 1 54
+1857 5 8012 54
+1858 48 1 58
+1859 5 8508 58
+1900 139 0 0
+# The emergency (call 1) answered and accepted.
+5801 10 2 0
+5802 125 31 0
