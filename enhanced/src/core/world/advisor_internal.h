@@ -27,11 +27,18 @@ constexpr uint16_t kCriterionValue = 6;
 // The game's OBJ_RECEPTION_DESK.
 constexpr uint8_t kObjectReceptionDesk = 11;
 
-// sprintf(advisor.text, format, ...) with a string of the language file.
+// sprintf(advisor.text, format, ...) with a string of the language file. With
+// no argument only "%%" is converted, as sprintf does; a lone conversion has
+// no defined value and is left as written.
 template <typename... Args> void say(Advisor &a, std::string_view format, Args... args)
 {
     if constexpr (sizeof...(args) == 0) {
-        a.text = format;
+        a.text.clear();
+        for (size_t i = 0; i < format.size(); ++i) {
+            a.text += format[i];
+            if (format[i] == '%' && i + 1 < format.size() && format[i + 1] == '%')
+                ++i;
+        }
     } else {
         char buf[270];
         std::snprintf(buf, sizeof buf, std::string(format).c_str(), args...);

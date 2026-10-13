@@ -716,7 +716,15 @@ bool advise_promotion(Situation &s, uint16_t situation)
     if (!value)
         return false;
     if (situation != 0x44) {
-        say(s.a, s.text(situation));
+        // The original passes no argument: a "%s" in the text (French 0x16)
+        // takes a stray stack value, shown here as the rank reached.
+        const std::string_view text = s.text(situation);
+        if (text.find("%s") != std::string_view::npos) {
+            const int rank = situation == 0x16 ? 4 : 7;
+            say(s.a, text, std::string(s.in.text->at(TextSection::SkillNames, rank)).c_str());
+        } else {
+            say(s.a, text);
+        }
     } else if (value == kPromotedSurgeon || value == kPromotedPsychiatrist || value == kPromotedResearcher) {
         const int help = value == kPromotedSurgeon ? 0x3f : value == kPromotedPsychiatrist ? 0x40 : 0x41;
         say(s.a, s.text(0x44), std::string(s.in.text->at(TextSection::Help, help)).c_str());
