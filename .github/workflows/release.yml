@@ -45,7 +45,7 @@ jobs:
         run: |
           printf '%s\n' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' ||
             { echo "::error::tag '$TAG' is not of the form vX.Y.Z"; exit 1; }
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.dry_run && inputs.tag || format('refs/tags/{0}', inputs.tag) }}
           persist-credentials: false
@@ -86,7 +86,7 @@ jobs:
             echo "::error::a release for $TAG exists already"
             exit 1
           fi
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: actions/upload-artifact@v7
         with:
           name: release-notes
           path: notes.md
@@ -98,13 +98,13 @@ jobs:
     needs: verify
     runs-on: ubuntu-24.04
     steps:
-      - uses: wimpysworld/nothing-but-nix@687c797a730352432950c707ab493fcc951818d7 # v10
+      - uses: wimpysworld/nothing-but-nix@v10
         with:
           hatchet-protocol: "rampage"
           witness-carnage: true
           nix-permission-edict: true
-      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: nixbuild/nix-quick-install-action@v35
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.verify.outputs.sha }}
           persist-credentials: false
@@ -130,7 +130,7 @@ jobs:
           - { id: windows-arm64, os: windows-11-arm, kind: windows, arch: arm64, msystem: CLANGARM64, msys_cache: false }
           - { id: macos-arm64, os: macos-14, kind: macos, arch: arm64 }
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.verify.outputs.sha }}
           persist-credentials: false
@@ -168,7 +168,7 @@ jobs:
       # --- Windows: MSYS2 (UCRT64 GCC on x86_64, CLANGARM64 clang on arm64).
       - name: MSYS2
         if: ${{ matrix.kind == 'windows' }}
-        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
+        uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.msystem }}
           # setup-msys2 cannot save its cache on windows-11-arm (no paccache).
@@ -209,7 +209,7 @@ jobs:
         run: |
           cd dist
           { echo '```'; if command -v sha256sum > /dev/null; then sha256sum -- *; else shasum -a 256 -- *; fi; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.id }}
           path: dist/*
@@ -225,11 +225,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.verify.outputs.sha }}
           persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: actions/download-artifact@v8
         with:
           pattern: release-*
           path: files
@@ -262,13 +262,13 @@ jobs:
     runs-on: ubuntu-24.04
     environment: production
     steps:
-      - uses: wimpysworld/nothing-but-nix@687c797a730352432950c707ab493fcc951818d7 # v10
+      - uses: wimpysworld/nothing-but-nix@v10
         with:
           hatchet-protocol: "rampage"
           witness-carnage: true
           nix-permission-edict: true
-      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: nixbuild/nix-quick-install-action@v35
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.verify.outputs.sha }}
           persist-credentials: false
