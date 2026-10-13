@@ -4,7 +4,7 @@ Theme Hospital Enhanced @VERSION@
 A new engine for Theme Hospital, for Windows, macOS and Linux. It runs the
 whole single-player game from the data of your own copy, at any resolution
 and aspect ratio. It is free software (GPL v3): the source is at
-https://github.com/matteo-pacini/theme-hospital-decomp/tree/v@VERSION@
+https://github.com/matteo-pacini/theme-hospital-enhanced/tree/v@VERSION@
 
 NO GAME FILES ARE INCLUDED. You need your own copy of Theme Hospital: either
 GOG's installer (setup_theme_hospital_*.exe) or a folder with the installed

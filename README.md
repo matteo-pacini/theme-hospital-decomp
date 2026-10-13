@@ -110,9 +110,9 @@ against the original, the debug reports, the browser build and its deploy.
 The port is built from a matching decompilation of the game: C++ that, compiled
 with the original Watcom toolchain, reproduces `HOSPITAL.EXE` byte for byte.
 That work, with its own README, its techniques
-([docs/MATCHING.md](https://github.com/matteo-pacini/theme-hospital-decomp/blob/decomp/docs/MATCHING.md))
+([docs/MATCHING.md](https://github.com/matteo-pacini/theme-hospital-enhanced/blob/decomp/docs/MATCHING.md))
 and its tooling, lives on the
-[`decomp`](https://github.com/matteo-pacini/theme-hospital-decomp/tree/decomp)
+[`decomp`](https://github.com/matteo-pacini/theme-hospital-enhanced/tree/decomp)
 branch. `src/` and `include/` here are its read-only reference for the replay
 checks; fixes to them are made on `decomp` and merged into `master`.
 
@@ -120,7 +120,7 @@ checks; fixes to them are made on `decomp` and merged into `master`.
 
 Original game by Bullfrog Productions. Published by Electronic Arts (1997).
 Decompiled and enhanced by Matteo Pacini,
-[github.com/matteo-pacini/theme-hospital-decomp](https://github.com/matteo-pacini/theme-hospital-decomp).
+[github.com/matteo-pacini/theme-hospital-enhanced](https://github.com/matteo-pacini/theme-hospital-enhanced).
 
 Theme Hospital is a trademark of Electronic Arts. This project is not
 affiliated with or endorsed by EA, Bullfrog Productions, RAD Game Tools or

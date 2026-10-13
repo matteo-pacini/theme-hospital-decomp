@@ -28,7 +28,7 @@ constexpr std::array<std::string_view, 8> kCredits = {
     "Published by Electronic Arts (1997)",
     "",
     "Decompiled and enhanced by Matteo Pacini",
-    "github.com/matteo-pacini/theme-hospital-decomp",
+    "github.com/matteo-pacini/theme-hospital-enhanced",
     "",
     "Theme Hospital is a trademark of Electronic Arts.",
     "This project is not affiliated with or endorsed by EA.",
