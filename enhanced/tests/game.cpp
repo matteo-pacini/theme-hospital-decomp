@@ -1306,9 +1306,24 @@ std::string without_percent_pairs(std::string_view s)
     return out;
 }
 
-// The advice said in every language: a text with "%%" shows one "%"; the
-// promotions' texts keep their words, and a "%s" in one (French 0x16) is
-// the rank reached.
+// The promotions said in one language: the texts keep their words, and a
+// "%s" in one (French 0x16) is the rank reached.
+void check_promotions_in_language(AdvisorFixture &a, const th::LanguageText &text)
+{
+    auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
+    std::string said;
+    const std::array<std::array<int, 3>, 2> promoted = {{{0x0d, 0x89, 7}, {0x0a, 0x16, 4}}};
+    for (const auto &[kind, id, rank] : promoted) {
+        std::string expected = without_percent_pairs(text.advisor(id));
+        const size_t at = expected.find("%s");
+        if (at != std::string::npos)
+            expected.replace(at, 2, text.at(th::TextSection::SkillNames, rank));
+        a.f.game->world.announce[size_t(kind)][0] = 1;
+        CHECK(first_advice(a, calm, &said) == id && said == expected);
+    }
+}
+
+// The advice said in every language: a text with "%%" shows one "%".
 void check_advice_in_languages(AdvisorFixture &a, const char *dir)
 {
     auto calm = [](th::World &, th::AdCounts &c) { calm_patients(c, 12); };
@@ -1328,15 +1343,7 @@ void check_advice_in_languages(AdvisorFixture &a, const char *dir)
             CHECK(said == without_percent_pairs(text.advisor(id)));
         }
         a.in.win_progress = a.in.lose_progress = 0;
-        const std::array<std::array<int, 3>, 2> promoted = {{{0x0d, 0x89, 7}, {0x0a, 0x16, 4}}};
-        for (const auto &[kind, id, rank] : promoted) {
-            std::string expected = without_percent_pairs(text.advisor(id));
-            const size_t at = expected.find("%s");
-            if (at != std::string::npos)
-                expected.replace(at, 2, text.at(th::TextSection::SkillNames, rank));
-            a.f.game->world.announce[size_t(kind)][0] = 1;
-            CHECK(first_advice(a, calm, &said) == id && said == expected);
-        }
+        check_promotions_in_language(a, text);
     }
     a.in.text = &a.f.gd.text();
     a.in.level = 1;
