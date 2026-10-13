@@ -40,7 +40,7 @@ while [ $# -gt 0 ]; do
     *) echo "ci_run.sh: unknown argument $1" >&2; exit 2 ;;
   esac
 done
-for tool in gh git jq; do
+for tool in gh git; do
   command -v "$tool" >/dev/null 2>&1 || { echo "ci_run.sh: $tool is not on PATH" >&2; exit 2; }
 done
 

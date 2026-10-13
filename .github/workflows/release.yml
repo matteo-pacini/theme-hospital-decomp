@@ -98,11 +98,6 @@ jobs:
     needs: verify
     runs-on: ubuntu-24.04
     steps:
-      - uses: wimpysworld/nothing-but-nix@v10
-        with:
-          hatchet-protocol: "rampage"
-          witness-carnage: true
-          nix-permission-edict: true
       - uses: nixbuild/nix-quick-install-action@v35
       - uses: actions/checkout@v7
         with:
@@ -262,11 +257,6 @@ jobs:
     runs-on: ubuntu-24.04
     environment: production
     steps:
-      - uses: wimpysworld/nothing-but-nix@v10
-        with:
-          hatchet-protocol: "rampage"
-          witness-carnage: true
-          nix-permission-edict: true
       - uses: nixbuild/nix-quick-install-action@v35
       - uses: actions/checkout@v7
         with:
