@@ -5,6 +5,12 @@
 # executable cache directory with it and the trace cache names its entries
 # with it, so both share one definition.
 #
+# The decompilation's objects enter as their ELF `.o` files only. The OMF
+# `.obj` files carry the source path and the sources' timestamps, so they
+# differ between two checkouts that build the same executable; a key over them
+# would never match across machines (CI). Paths are sorted in the C locale,
+# so the key does not depend on the caller's locale.
+#
 # instrument.py goes in as its parsed syntax tree without docstrings
 # (`normalized` below), so editing its comments, docstrings, blank lines or
 # layout keeps the key, while any change to its code, its EVENTS tables or the
@@ -55,7 +61,7 @@ cd "$root"
 # Computed first: a failing parse stops the script instead of hashing nothing.
 norm=$(normalized "$instrument")
 {
-  find -H src include tools config build/base -type f ! -path '*/__pycache__/*' -print0 | sort -z | xargs -0 sha256sum
+  find -H src include tools config build/base -type f ! -path '*/__pycache__/*' ! -name '*.obj' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
   sha256sum configure.py
   printf '%s\n' "$norm" | sha256sum
 } | sha256sum | cut -c1-16
