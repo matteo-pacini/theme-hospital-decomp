@@ -1,0 +1,13 @@
+# Level 3 with the EASY balance files (levels/EASY00.sam, EASY03.sam), as
+# balance_easy_l03.txt but run on to turn 15500, past the months in which
+# EASY03.sam's WhenAvail items become available: auto_available (called by
+# month_end) makes each of them available, announced to the player: the
+# computer (object 40) at the month end of turn 10600 and the object 13 (the
+# cardiogram) at that of turn 15200. The hospital opens at turn 100 with no
+# rooms. Neither FULL nor HARD has any WhenAvail item.
+# Expect available 40
+# Expect available 13
+# Expect available == 2
+# Balance EASY
+# Turns 15500
+100 139 0 0

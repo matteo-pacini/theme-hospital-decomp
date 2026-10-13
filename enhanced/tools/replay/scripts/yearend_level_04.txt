@@ -1,0 +1,13 @@
+# Level 4: the hospital opened at turn 100 (EV_OPEN_HOSPITAL 139) and
+# nothing built, run through the first year end (18250). The player's hospital
+# has no reception, so no patient enters it: no award or trophy is decided;
+# what the year covers is level 4's three computer hospitals over a whole
+# year (rival_open, their building, hiring, loans and land purchases) and
+# their year-end value and score (computer_year, calculate_value and
+# calculate_score for owners 1-3) with level 4's criteria, which the
+# balance_*_l04.txt scripts (4700 turns) never reach.
+# Expect computer_year >= 3
+# Expect computer_action >= 100
+# Expect rival_open == 3
+# Turns 18300
+100 139 0 0

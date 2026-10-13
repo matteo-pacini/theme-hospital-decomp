@@ -1,0 +1,146 @@
+# Level 1: as yearend_rat_pct_only.txt (8 rats hit in the second year) but
+# with 90 more shots that hit nothing (EV_SHOOT_RAT 106 value 0, no hit flag),
+# turns 27000-27089: 98 shots for 8 kills, a hit rate of 8% under level 1's
+# 11%, so trophy 6 is not won though the kills pass half of the absolute 10;
+# neither is trophy 5. No rat trophy at the second year end.
+# Expect shoot_rat 12 killed=1 powerup=0 shots=8 kills=7
+# Expect shoot_rat 0 killed=0 powerup=0 shots=98 kills=8
+# Expect-not rep 0 event=23
+# Expect-not balance 35 amount=5000
+# Turns 36500
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# Furnish the corridor: a drinks machine (cell 9658) and three radiators
+# (9276, 9410, 10047) round the reception desk; the heating at its highest
+# (EV_SET_HEATING 10), so that waiting patients are thirsty and drink.
+160 98 0 0
+161 37 7 1
+162 37 44 3
+163 43 0 0
+164 7 9658 7
+165 7 9276 44
+166 7 9410 44
+167 7 10047 44
+170 79 10 0
+# Rats shot (the rat's id, hit).
+19903 106 14 256
+20053 106 14 256
+20553 106 3 256
+21403 106 9 256
+21903 106 9 256
+22553 106 11 256
+22603 106 11 256
+23803 106 12 256
+# Ninety shots at no rat.
+27000 106 0 0
+27001 106 0 0
+27002 106 0 0
+27003 106 0 0
+27004 106 0 0
+27005 106 0 0
+27006 106 0 0
+27007 106 0 0
+27008 106 0 0
+27009 106 0 0
+27010 106 0 0
+27011 106 0 0
+27012 106 0 0
+27013 106 0 0
+27014 106 0 0
+27015 106 0 0
+27016 106 0 0
+27017 106 0 0
+27018 106 0 0
+27019 106 0 0
+27020 106 0 0
+27021 106 0 0
+27022 106 0 0
+27023 106 0 0
+27024 106 0 0
+27025 106 0 0
+27026 106 0 0
+27027 106 0 0
+27028 106 0 0
+27029 106 0 0
+27030 106 0 0
+27031 106 0 0
+27032 106 0 0
+27033 106 0 0
+27034 106 0 0
+27035 106 0 0
+27036 106 0 0
+27037 106 0 0
+27038 106 0 0
+27039 106 0 0
+27040 106 0 0
+27041 106 0 0
+27042 106 0 0
+27043 106 0 0
+27044 106 0 0
+27045 106 0 0
+27046 106 0 0
+27047 106 0 0
+27048 106 0 0
+27049 106 0 0
+27050 106 0 0
+27051 106 0 0
+27052 106 0 0
+27053 106 0 0
+27054 106 0 0
+27055 106 0 0
+27056 106 0 0
+27057 106 0 0
+27058 106 0 0
+27059 106 0 0
+27060 106 0 0
+27061 106 0 0
+27062 106 0 0
+27063 106 0 0
+27064 106 0 0
+27065 106 0 0
+27066 106 0 0
+27067 106 0 0
+27068 106 0 0
+27069 106 0 0
+27070 106 0 0
+27071 106 0 0
+27072 106 0 0
+27073 106 0 0
+27074 106 0 0
+27075 106 0 0
+27076 106 0 0
+27077 106 0 0
+27078 106 0 0
+27079 106 0 0
+27080 106 0 0
+27081 106 0 0
+27082 106 0 0
+27083 106 0 0
+27084 106 0 0
+27085 106 0 0
+27086 106 0 0
+27087 106 0 0
+27088 106 0 0
+27089 106 0 0

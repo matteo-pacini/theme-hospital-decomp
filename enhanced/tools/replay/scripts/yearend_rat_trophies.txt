@@ -1,0 +1,65 @@
+# Level 1: rats.txt's messy hospital (no toilets: patients wet themselves, the
+# litter makes rat holes and rats come out from turn 19900), run through the
+# second year end (36500) with the player hitting 14 rats in that year
+# (EV_SHOOT_RAT 106, value the rat's id, arg 256: a hit with no weapon), each
+# a turn or three after a rat is sent out: rats 14 (19903, 20053), 3, 9 (21403,
+# 21903), 11 (22553, 22603), 12, 4 (25103, 25453), 5, 14 (25953), 8 (26003,
+# 26053). Level 1's trophies want more than 10 rats killed in the year (trophy
+# 5, a reputation bonus, trophy 23's rep event) and more than 5 killed with a
+# hit rate over 11% (trophy 6, 5000); with 14 hits of 14 shots both are won at
+# the second year end (the first year saw no rat), where the run ends lost.
+# Expect shoot_rat 8 killed=1 powerup=0 shots=14 kills=13
+# Expect rep 0 event=23 amount=5
+# Expect balance 35 amount=5000
+# Turns 36500
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# Furnish the corridor: a drinks machine (cell 9658) and three radiators
+# (9276, 9410, 10047) round the reception desk; the heating at its highest
+# (EV_SET_HEATING 10), so that waiting patients are thirsty and drink.
+160 98 0 0
+161 37 7 1
+162 37 44 3
+163 43 0 0
+164 7 9658 7
+165 7 9276 44
+166 7 9410 44
+167 7 10047 44
+170 79 10 0
+# Rats shot (the rat's id, hit).
+19903 106 14 256
+20053 106 14 256
+20553 106 3 256
+21403 106 9 256
+21903 106 9 256
+22553 106 11 256
+22603 106 11 256
+23803 106 12 256
+25103 106 4 256
+25453 106 4 256
+25703 106 5 256
+25953 106 14 256
+26003 106 8 256
+26053 106 8 256

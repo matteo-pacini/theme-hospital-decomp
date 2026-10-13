@@ -1,0 +1,37 @@
+# Level 1: gp_office.txt (reception, a GP's office with one doctor) with the
+# GP consultation priced at the casebook's 200% from turn 200
+# (EV_PRICE_UP 110, value 100 percent, arg illness 1), so that few patients
+# come to the player's hospital: never more than three are inside at a month
+# end (the statistics pass), 1 or 2 all year. A month with 3 or fewer patients
+# stores happiness 0, so every month's peep happiness is under the poor limit
+# 25: the peep-happiness award is lost (reputation -9%), the one outcome of
+# award_peep_happiness's two that can happen: its good arm needs the year's
+# 12 monthly values (index 0 included, which month_end never writes) over 75.
+# The hospital is lost at the year end (reputation), ending the run there.
+# Expect rep 0 event=24 amount=-9
+# Expect-not rep 0 event=24 amount=4
+# Expect winlose lose
+# Turns 18300
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+# GP consultation to 200% of its price.
+200 110 100 1
