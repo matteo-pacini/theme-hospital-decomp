@@ -725,21 +725,23 @@ prints the command; nothing is sent.
 
 `.github/workflows/ci.yml` runs `gate.yml` on every pull request, push to
 master and by hand. The jobs (check names `gate / Build`, `gate / Web build`,
-`gate / Lint N`, `gate / Tests N`, `gate / Replays N`, and `gate / gate`,
-which needs all of them and is the one the master ruleset requires):
+`gate / Web tests`, `gate / Lint N`, `gate / Tests N`, `gate / Replays N`, and
+`gate / gate`, which needs all of them and is the one the master ruleset
+requires):
 
 - Build: `check.sh` with `STEPS="build format" NO_DATA=1`; the native
   binaries (th_replay, th_enhanced, th_tests) go to the tests and replay
   shards as an artifact, so no other job builds them.
-- Web build: `STEPS="web_build web_tidy" NO_DATA=1`; the
-  WebAssembly binaries (th_replay and th_tests) go to the tests and replay
-  shards as an artifact.
+- Web build: `STEPS="web_build web_tidy" NO_DATA=1`; the WebAssembly binaries
+  (th_replay and th_tests) go to Web tests and the replay shards as an
+  artifact.
 - Lint 0..2: build and tidy over a third of the files each (`TIDY_SHARD=I/3`:
   the sorted list, every third file).
 - Tests 0..2: the drive tests over a third of the scripts each
   (`DRIVE_SHARD=I/3`) with the game data and Build's binaries; shard 0 also
-  runs th_tests, the install tests and the wasm th_tests (`web_th_tests`,
-  which needs the data, so it is not in Web build).
+  runs th_tests and the install tests.
+- Web tests: `STEPS=web_th_tests` (th_tests under node) with the game data,
+  which Web build does not have.
 - Replays: the scripts split into shards (longest first); each shard restores
   the trace cache and the port verdicts, runs `STEPS="replays web_replays"`
   and uploads its new original traces and verdicts; shard 0 also runs the
@@ -751,10 +753,10 @@ which needs all of them and is the one the master ruleset requires):
 - Pull requests from forks have no secrets and no data: only Build, Web
   build and Lint run, with `NO_DATA=1` (th_tests exit 77 passes).
 
-A warm gate takes about 9 minutes, the length of the Web build plus a replay
-shard. A gate runs 9 jobs at once (Build, Web build, 3 Lint, 3 Tests, Shards)
-and then the 6 replay shards, so two gates fit in GitHub's 20 concurrent
-jobs; a third queues.
+A warm gate takes about 10 minutes: the Web build, then a replay shard. A gate
+runs 9 jobs at once (Build, Web build, 3 Lint, 3 Tests, Shards), then 10 (6
+replay shards, 3 Tests, Web tests), so two gates fit in GitHub's 20
+concurrent jobs; a third queues.
 
 `check.sh` takes `STEPS` (a subset of its steps; a phase with none is not
 entered), `NO_DATA=1`, `TIDY_SHARD` and `DRIVE_SHARD`; see its header.

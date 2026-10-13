@@ -253,12 +253,11 @@ jobs:
           path: build/check-*/*.log
 
   # The drive tests in 3 shards, with the game data and the build's binaries;
-  # shard 0 also runs th_tests, the install tests and (with web) the wasm
-  # th_tests, which need the data and so cannot run in the Web build job.
+  # shard 0 also runs th_tests and the install tests.
   tests:
     name: Tests ${{ matrix.shard }}
-    if: ${{ !cancelled() && inputs.data && needs.build.result == 'success' && needs.web.result != 'failure' && needs.web.result != 'cancelled' }}
-    needs: [build, web]
+    if: ${{ inputs.data }}
+    needs: [build]
     runs-on: ubuntu-24.04
     environment: ci
     strategy:
@@ -287,14 +286,9 @@ jobs:
         with:
           name: port-build
           path: build/enhanced
-      - uses: actions/download-artifact@v8
-        if: ${{ inputs.web }}
-        with:
-          name: web-build
-          path: build/web
       - name: Tests
         env:
-          STEPS: ${{ matrix.shard == 0 && (inputs.web && 'th_tests drive_tests install_tests web_th_tests' || 'th_tests drive_tests install_tests') || 'drive_tests' }}
+          STEPS: ${{ matrix.shard == 0 && 'th_tests drive_tests install_tests' || 'drive_tests' }}
           DRIVE_SHARD: ${{ matrix.shard }}/3
         run: |
           chmod +x build/enhanced/th_replay build/enhanced/th_enhanced build/enhanced/th_tests
@@ -304,6 +298,47 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tests-logs-${{ matrix.shard }}
+          retention-days: 7
+          path: build/check-*/*.log
+
+  # The WebAssembly th_tests with the game data (Web build has none).
+  web-tests:
+    name: Web tests
+    if: ${{ inputs.data && inputs.web }}
+    needs: [web]
+    runs-on: ubuntu-24.04
+    environment: ci
+    env:
+      R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/nix
+        with:
+          attic-url: ${{ vars.ATTIC_CACHE_URL }}
+          attic-cache: ${{ vars.ATTIC_CACHE }}
+          attic-token: ${{ secrets.ATTIC_TOKEN }}
+      - name: Game data
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: nix shell github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#awscli2 github:NixOS/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8#zstd -c enhanced/tools/ci/data_fetch.sh
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-build
+          path: build/web
+      - name: web_th_tests
+        env:
+          STEPS: web_th_tests
+        run: enhanced/tools/check.sh
+      - name: Logs of a failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-tests-logs
           retention-days: 7
           path: build/check-*/*.log
 
@@ -484,7 +519,7 @@ jobs:
   gate:
     name: gate
     if: ${{ always() }}
-    needs: [prepare, build, web, lint, tests, replays]
+    needs: [prepare, build, web, lint, tests, web-tests, replays]
     runs-on: ubuntu-24.04
     steps:
       - name: Every job passed

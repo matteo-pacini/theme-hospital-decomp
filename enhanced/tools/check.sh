@@ -66,6 +66,7 @@ export TIDY_JOBS="${TIDY_JOBS:-2}"
 export JOBS="${JOBS:-1}"
 CACHE=${CACHE:-use}
 export CACHE
+cross_load=${CROSS_LOAD:-rival_two_years:18000 win_level1:9000 tutorial:9000}
 
 all_steps="build th_tests tidy format drive_tests install_tests replays web_build web_th_tests web_tidy web_replays web_cross_load"
 
@@ -423,7 +424,7 @@ run_th_replay()
 web_cross_load()
 {
   web_cache_init
-  for item in ${CROSS_LOAD:-rival_two_years:18000 win_level1:9000 tutorial:9000}; do
+  for item in $cross_load; do
     cross_one "${item%%:*}" "${item##*:}" || return 1
   done
   rmdir build/web-cross 2>/dev/null
@@ -458,7 +459,14 @@ else
     fi
   fi
   if want web_replays || want web_cross_load; then
-    enhanced/tools/replay/trace_cache.sh native-keys "$@" >"$TH_CHECK_STATE/native_keys" || exit 1
+    # The cross-load test reads the native key of its scripts too, which a
+    # shard's list need not hold.
+    keys_for=
+    if [ $# -gt 0 ] && want web_cross_load; then
+      for item in $cross_load; do keys_for="$keys_for ${item%%:*}"; done
+    fi
+    # shellcheck disable=SC2086
+    enhanced/tools/replay/trace_cache.sh native-keys "$@" $keys_for >"$TH_CHECK_STATE/native_keys" || exit 1
   fi
   want replays && step replays replays "$@"
 fi
