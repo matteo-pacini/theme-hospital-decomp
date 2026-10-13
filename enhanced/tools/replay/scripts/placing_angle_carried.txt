@@ -1,0 +1,34 @@
+# Level 1: a ward (50,59)-(55,64) with its double door below it, its desk and
+# its bed (cell 7731 facing 1), opened. The bed is lifted (EV_PICK_UP_OBJECT:
+# the placing angle becomes its facing, 1) and put back, then a plant is
+# bought from the corridor requester and put on the cursor: no shape of the
+# plant's has a facing of 1, so init_place_object's change of angle goes to
+# 0 (place_object_change_angle, no shape for the angle) and the cursor's
+# placement check reports the plant facing 0 (the lifted bed was reported
+# facing 1 before it).
+# Expect place_cursor ok=0 tile=15463 kind=8 dir=1
+# Expect place_cursor ok=1 tile=9407 kind=45 dir=0
+# Expect cmd type=68 value=32 arg=0
+# Expect open_room
+# Turns 300
+101 55 0 0
+102 53 9 9
+103 2 7602 0
+104 2 8247 0
+105 8 8247 0
+106 18 0 0
+107 26 8371 0
+108 3 0 0
+109 4 9 0
+110 7 7731 264
+111 7 7990 1
+112 1 0 0
+120 68 32 0
+121 @cursor 7731
+122 @cursor 7732
+123 7 7731 264
+124 98 0 0
+125 37 45 1
+126 43 0 0
+127 @cursor 9407
+128 7 9407 45

@@ -1,0 +1,29 @@
+# Level 1: a plant put in the corridor at (64,64), then a GP's blueprint
+# (62,65)-(66,69) under it committed and its door asked for at the wall cell
+# below the plant (temp_place_door: the door's pieces on the plant's cell
+# fail can_place_door, so the piece is marked and the door refused:
+# door_invalid) and at a wall cell clear of it, where it is placed; the room
+# is built and opened.
+# Expect door_invalid >= 1
+# Expect commit_doors
+# Expect open_room
+# Turns 300
+5 98 0 0
+6 37 45 1
+7 43 0 0
+8 7 8256 45
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 26 8385 0
+110 3 0 0
+111 4 7 0
+112 7 8640 1
+113 7 8386 2
+114 7 8641 6
+115 1 0 0

@@ -1,0 +1,80 @@
+# Level 1: gp_office.txt's GP's office (62,65)-(66,69) with its doctor and,
+# at turn 1200, a patient in it, the hospital opened and a radiator (thing
+# 34) put in it from the corridor furnish requester. The radiator is lifted
+# (EV_PICK_UP_OBJECT, a movable object: objects[].flags 8) with doctor 11 at
+# his desk and patient 24 in the chair, and the cursor is moved over each
+# cell of the room and the door cell: corridor_object_room_nav_check marks the
+# radiator's cell and walks the room's people (the doctor at (64,67), the
+# patient at (65,67): their cells and the objects they use) to see that each
+# can still reach the door's inside cell, so the cells that wall someone in
+# or block the door's way are refused; the radiator is then put back.
+# The cursor's mouse cell is set by a plant on the cursor first (a pick-up
+# takes its offset from it).
+# Expect place_cursor ok=1 tile=8382 kind=44 dir=0
+# Expect place_cursor ok=0 tile=8384 kind=44 dir=0
+# Expect place_cursor ok=1 tile=8769 kind=44 dir=0
+# Expect place_cursor ok=0 tile=8770 kind=44 dir=0
+# Expect place_cursor ok=0 tile=8256 kind=44 dir=0
+# Expect cmd type=68 value=34 arg=0
+# Expect open_room
+# Turns 1300
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+120 98 0 0
+121 37 44 1
+122 43 0 0
+123 7 8383 44
+140 139 0 0
+1190 98 0 0
+1191 37 45 1
+1192 43 0 0
+1193 @cursor 8383
+1194 100 0 0
+1195 38 0 0
+1200 68 34 0
+1201 @cursor 8382
+1202 @cursor 8383
+1203 @cursor 8384
+1204 @cursor 8385
+1205 @cursor 8386
+1206 @cursor 8510
+1207 @cursor 8511
+1208 @cursor 8512
+1209 @cursor 8513
+1210 @cursor 8514
+1211 @cursor 8638
+1212 @cursor 8639
+1213 @cursor 8640
+1214 @cursor 8641
+1215 @cursor 8642
+1216 @cursor 8766
+1217 @cursor 8767
+1218 @cursor 8768
+1219 @cursor 8769
+1220 @cursor 8770
+1221 @cursor 8894
+1222 @cursor 8895
+1223 @cursor 8896
+1224 @cursor 8897
+1225 @cursor 8898
+1226 @cursor 8256
+1230 7 8383 44

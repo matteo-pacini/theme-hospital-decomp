@@ -1,0 +1,33 @@
+# Level 1: a GP's blueprint (62,65)-(66,69) dragged out and, while it is on
+# the map, the hire staff requester opened (EV_OPEN_HIRE_STAFF closes the
+# build room requester), a doctor hired and placed (EV_MARK_EMPLOYING,
+# EV_PLACE_STAFF: the mouse goes back to normal), after which the blueprint
+# is committed and finished as usual; then a second hiring while the door is
+# being placed, and a third with the office waiting for its floor to clear.
+# Expect place_staff == 3
+# Expect commit_blueprint
+# Expect commit_doors
+# Expect open_room
+# Turns 600
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+110 46 0 0
+111 48 1 11
+112 5 10044 11
+120 18 0 0
+121 26 8256 0
+130 46 0 0
+131 48 1 13
+132 5 10045 13
+133 3 0 0
+140 46 0 0
+141 48 1 14
+142 5 10046 14
+143 4 7 0
+150 7 8640 1
+151 7 8386 2
+152 7 8641 6
+153 1 0 0

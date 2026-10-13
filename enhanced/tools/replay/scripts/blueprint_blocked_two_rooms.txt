@@ -1,0 +1,39 @@
+# Level 1: two GP's offices side by side, (58,65)-(61,69) and (62,65)-(66,69),
+# each with its door on the north wall ((59,65) and (64,65)), built; then a
+# blueprint (57,70)-(70,73) across the whole width of the corridor south of
+# them, which cuts both rooms off the entrance
+# (check_room_access_with_blueprint: blueprint_blocked at the first of them,
+# advice 5); its west edge is dragged in to column 62, leaving a way round,
+# and it is committed.
+# Expect blueprint_blocked == 1
+# Expect commit_blueprint == 4
+# Expect commit_doors == 2
+# Turns 300
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+120 55 0 0
+121 53 7 7
+122 2 8378 0
+123 2 8893 0
+124 8 8893 0
+125 18 0 0
+126 26 8251 0
+127 3 0 0
+128 4 7 0
+130 55 0 0
+131 53 7 7
+132 2 9017 0
+133 2 9414 0
+134 8 9414 0
+135 18 0 0
+136 2 9145 0
+137 2 9150 0
+138 8 9150 0
+139 18 0 0

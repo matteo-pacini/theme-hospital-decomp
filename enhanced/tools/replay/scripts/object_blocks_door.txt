@@ -1,0 +1,40 @@
+# Level 1: a GP's office (62,65)-(66,69) with its door at (64,64), opened, and
+# plants put in the corridor round that door cell: (63,64), (65,64) and
+# (63,63) are accepted, the plant at (64,63) is refused (place_object: with it
+# marked, check_room_access finds the office's door cut off from the entrance,
+# forced advice 7) and (65,63) accepted; the plant at (63,64) is then lifted
+# (EV_PICK_UP_OBJECT) and the refused cell asked for again: it now fits and
+# the lifted plant (thing 22) is put there, with no new object made.
+# Expect place_object 22 kind=45 tile=8255 dir=0
+# Expect place_object 35 kind=45 tile=8129 dir=0
+# Expect place_object == 7
+# Expect cmd type=7 value=8128 arg=45 == 2
+# Expect open_room
+# Turns 400
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+200 98 0 0
+201 37 45 1
+202 37 45 1
+203 37 45 1
+204 37 45 1
+205 37 45 1
+206 43 0 0
+210 7 8255 45
+211 7 8257 45
+212 7 8127 45
+213 7 8128 45
+214 7 8129 45
+220 68 22 0
+221 7 8128 45

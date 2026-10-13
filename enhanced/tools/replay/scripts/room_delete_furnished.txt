@@ -1,0 +1,40 @@
+# Level 1: a GP's office (62,65)-(66,69) with a radiator and a plant put in it
+# besides its desk, cabinet and chair, opened and left until the plant has
+# wilted below 0 (health -21 at turn 14200, no handyman: plant_thirsty to
+# priority 4, not yet dead), then taken back to a blueprint (EV_INIT_EDIT_ROOM,
+# EV_EDIT_BLUEPRINT: the lifted objects through remove_object_from_map --
+# the thirsty plant leaves World::thirsty_plants, the radiator
+# RoomInfo::radiators -- delete_room taking the door down, remove_object 30)
+# and abandoned (EV_DELETE_ROOM -> delete_blueprint_room).
+# Expect plant_thirsty >= 4
+# Expect-not plant_dead
+# Expect delete_room
+# Expect delete_blueprint_room
+# Expect remove_object == 1
+# Turns 15000
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# a radiator and a plant into the room, from the corridor furnish requester
+120 98 0 0
+121 37 44 1
+122 43 0 0
+123 7 8383 44
+124 98 0 0
+125 37 45 1
+126 43 0 0
+127 7 8894 45
+# Edited back to a blueprint and abandoned: the plant at health -21.
+14200 70 5 0
+14201 69 0 0
+14202 121 0 0

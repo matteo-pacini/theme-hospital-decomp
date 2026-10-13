@@ -1,0 +1,59 @@
+# Level 1: gp_office.txt's GP's office (62,65)-(66,69) with windows put on
+# its walls after the door: a window on the west wall at (62,66) and (62,67),
+# the second clicked again (place_bp_door on a window: the click sound is the
+# wrong one but the window piece goes on and room.windows counts it), taken
+# out with the swap (EV_PLACE_BP_DOOR value 1), a swap where no window stands
+# (nothing happens), three windows on the east wall, and the door's own tile
+# clicked as a window (temp_place_door's blocked test: door_invalid, the
+# click refused). Five windows end up counted; calc_room_value adds half of
+# them to every diagnosis of the doctor in the office (treat.cpp:526).
+# Expect door_invalid == 1
+# Expect commit_doors
+# Expect open_room
+# Expect diagnose
+# Turns 4000
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+# west wall (62,66), (62,67), (62,67) again, swapped out, (62,68) swapped
+# with no window there
+109 26 8510 0
+110 3 0 0
+111 26 8638 0
+112 3 0 0
+113 26 8638 0
+114 3 0 0
+115 26 8638 0
+116 3 1 0
+117 26 8766 0
+118 3 1 0
+# east wall (67,66), (67,67), (67,68)
+119 26 8515 0
+120 3 0 0
+121 26 8643 0
+122 3 0 0
+123 26 8771 0
+124 3 0 0
+# the door's own tile as a window: refused
+125 26 8256 0
+126 3 0 0
+127 4 7 0
+130 7 8640 1
+131 7 8386 2
+132 7 8641 6
+133 1 0 0
+134 48 1 11
+135 5 10044 11
+# The hospital opened so patients come to the doctor.
+140 139 0 0

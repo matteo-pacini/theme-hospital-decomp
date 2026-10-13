@@ -68,6 +68,18 @@ bool put_back_held_staff(Game &game)
 namespace
 {
 
+// apply_staff_event's EV_MARK_EMPLOYING: req2_mark_employing (the advisor's
+// staff happiness total is not ported) and set_mouse_mode(MM_PLACE_STAFF),
+// which leaves a room-edit wait.
+void apply_staff_event_mark_employing(World &world, const Event &event)
+{
+    if (!event.arg || event.arg >= world.things.size())
+        return;
+    if (world.things[event.arg].state != kPsWaitsForDecision)
+        world.building.mouse = BuildMouse::None;
+    world.things[event.arg].state = kStaffHeld;
+}
+
 // apply_staff_event's EV_PLACE_STAFF: member of staff event.arg placed on
 // cell event.value, a new hire paid for.
 void apply_staff_event_place(Game &game, const Event &event)
@@ -78,6 +90,9 @@ void apply_staff_event_place(Game &game, const Event &event)
     bool hiring = world.held_staff == 0;
     if (place_staff_on_map(world, {game.anims(), game.settings(), game.turn_count}, event.value, event.arg, false)) {
         world.building.sounds.push_back(kSfxPlaceStaff);
+        // set_mouse_mode(MM_NORMAL): a room waiting to be emptied for
+        // editing is then cancelled by the end of the turn's check.
+        world.building.mouse = BuildMouse::None;
         if (hiring)
             change_balance(game.finance, game.balance, game.date.day, game.date.month,
                            {kTxHireStaff, -(s.salary * 12) / 10});
@@ -151,10 +166,7 @@ bool apply_staff_event(Game &game, const Event &event)
     World &world = game.world;
     switch (event.type) {
     case EV_MARK_EMPLOYING:
-        // req2_mark_employing; the advisor's staff happiness total is not
-        // ported.
-        if (is_staff_event_thing(world, event.arg))
-            world.things[event.arg].state = kStaffHeld;
+        apply_staff_event_mark_employing(world, event);
         return true;
     case EV_PLACE_STAFF:
         if (is_staff_event_thing(world, event.arg))
@@ -183,6 +195,7 @@ bool apply_staff_event(Game &game, const Event &event)
     case EV_SACK_STAFF:
         if (is_staff_event_thing(world, event.value))
             sack_staff(world, game.anims(), event.value, uint8_t(event.arg), game.turn_count);
+        world.building.mouse = BuildMouse::None;
         return true;
     case EV_ADJUST_HANDYMAN_VALUES:
         // The game's argb[0].

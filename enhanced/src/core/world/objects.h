@@ -62,9 +62,10 @@ struct ObjectPlacing {
     uint16_t tile = 0;
     bool ok = false;
     bool redraw = false;
-    // The pointer's cell update_placement last saw (othervar.prev_mouse_cell),
-    // -1 for none.
-    int mouse_cell = -1;
+    // The pointer's cell as last given to Game::update_placement, placing or
+    // not (othervar.mouse_cell, 0 at the start); a lifted object's offset is
+    // taken from it.
+    int mouse_cell = 0;
 
     ObjectRequester requester = ObjectRequester::None;
     // crequester.kind: the room type furnished or built (kRoomCorridor for

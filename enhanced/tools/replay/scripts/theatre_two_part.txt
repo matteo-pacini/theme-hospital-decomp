@@ -1,0 +1,68 @@
+# Level 6: an operating theatre (50,48)-(59,53), its door above it, and its
+# two-part objects: the operating table (kind 30, its lamp made with it) and
+# the sink (kind 33, its second sink made with it), placed after the X-ray
+# viewer (the order the buy list offers them). The cursor is moved over the
+# room, its corners and outside before the table and over each of the four
+# walls before the sink, so that place_object_restrict_to_room clamps the
+# table with its lamp, place_object_wall_hug takes the sink to each wall with
+# its second part (the second part's clamp) and the placement check runs over
+# both parts (place_object_nav_check). The theatre is then taken for editing
+# and each half of both pairs picked up with EV_PICK_UP_OBJECT both: the lamp
+# (the table's second half), the table, and the second sink; each time the
+# whole pair is lifted, the object with the next part goes on the cursor
+# (pick_up_object) and is put back.
+# Expect place_cursor ok=1 tile=6584 kind=30 dir=0
+# Expect place_cursor ok=0 tile=6842 kind=30 dir=0
+# Expect place_cursor ok=0 tile=6200 kind=29 dir=1
+# Expect place_object 42 kind=30 tile=6584
+# Expect cmd type=68 value=43 arg=1
+# Expect cmd type=68 value=44 arg=1
+# Expect place_object 33 kind=33 tile=6331
+# Expect place_cursor ok=1 tile=6203 kind=33 dir=1
+# Expect commit_doors
+# Expect open_room
+# Turns 400
+101 55 0 0
+102 53 10 10
+103 2 6194 0
+104 2 6843 0
+105 8 6843 0
+106 18 0 0
+107 26 6071 0
+108 3 0 0
+109 4 10 0
+110 @cursor 6578
+111 @cursor 6194
+112 @cursor 6200
+113 @cursor 6843
+114 7 6715 29
+115 @cursor 6584
+116 @cursor 6194
+117 @cursor 6200
+118 @cursor 6843
+119 @cursor 6890
+120 7 6584 30
+121 @cursor 6331
+122 @cursor 6199
+123 @cursor 6450
+124 @cursor 6842
+125 @cursor 6584
+126 @cursor 6331
+127 7 6331 33
+128 7 6708 35
+129 1 0 0
+# the theatre taken for editing; the lamp (thing 43, the table's second half)
+# lifted with the pair, the table put back with its lamp; then the table
+# itself (42) lifted both and put back, and the second sink (44) lifted both
+# and the sink (33) put back at its cell
+140 70 5 0
+141 68 43 1
+142 @cursor 6584
+143 7 6584 30
+144 68 42 1
+145 @cursor 6584
+146 7 6584 30
+147 68 44 1
+148 @cursor 6331
+149 7 6331 33
+150 1 0 0

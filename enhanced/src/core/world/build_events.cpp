@@ -410,6 +410,9 @@ bool apply_build_event(Game &game, const Event &event)
     case EV_CANCEL_BUILD:
         cancel_build(game);
         return false;
+    case EV_CLOSE_QUEUE_WINDOW: // set_mouse_mode(MM_NORMAL)
+        bd.mouse = BuildMouse::None;
+        return false;
     default:
         return false;
     }

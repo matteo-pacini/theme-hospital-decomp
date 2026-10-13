@@ -1,0 +1,53 @@
+# Level 1: blueprints beside the half-height walls of the entrance building
+# (the north walls at (63,79) and (65,79), blocks 0xd6 and 0xd4) and resized
+# by their edges and corners. A GP's blueprint (65,74)-(69,78) whose bottom
+# row stands over the wall at (65,79) is refused at commit (is_valid_room,
+# is_tile_near_half_wall: blueprint_invalid); its west edge dragged in a column
+# (the picked x edge: modify_blueprint_drag_edge's second case) clears the
+# wall and the commit is accepted; the door is placed and the room built. A
+# second blueprint (58,70)-(62,73) is resized by pulling each of its four
+# corners (to (58,69)-(62,73) in the end) and committed.
+# Expect blueprint_invalid == 1
+# Expect commit_blueprint == 3
+# Expect blueprint x0=65 y0=74 x1=69 y1=78 drag=0
+# Expect blueprint x0=65 y0=74 x1=69 y1=78 drag=2
+# Expect blueprint x0=57 y0=69 x1=63 y1=74 drag=0
+# Expect commit_doors
+# Turns 600
+101 55 0 0
+102 53 7 7
+103 2 9537 0
+104 2 10053 0
+105 8 10053 0
+106 18 0 0
+# west edge (65,76) dragged to (66,76)
+107 2 9793 0
+108 2 9794 0
+109 8 9794 0
+110 18 0 0
+111 26 9540 0
+112 3 0 0
+113 4 7 0
+# a second blueprint (58,70)-(62,73)
+120 55 0 0
+121 53 7 7
+122 2 9018 0
+123 2 9406 0
+124 8 9406 0
+# corner (58,70) pulled to (57,69)
+125 2 9018 0
+126 2 8889 0
+127 8 8889 0
+# corner (62,73) pulled to (63,74)
+128 2 9406 0
+129 2 9535 0
+130 8 9535 0
+# corner (63,69), the north-east one, pulled to (62,69)
+131 2 8895 0
+132 2 8894 0
+133 8 8894 0
+# corner (57,74), the south-west one, pulled to (58,73)
+134 2 9529 0
+135 2 9402 0
+136 8 9402 0
+137 18 0 0

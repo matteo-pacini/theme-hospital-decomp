@@ -1,0 +1,37 @@
+# Level 1: a GP's office (62,65)-(66,69) with its door, desk, cabinet and
+# chair, opened. The corridor furnish requester is asked for while the build
+# room requester is open (EV_OPEN_FURNISH_CORRIDOR closes it first) and a
+# bench bought and placed. The office is then taken for editing, its desk
+# lifted (EV_PICK_UP_OBJECT both) and the furnish requester opened
+# (EV_FURNISH_EDITED_ROOM): the room lacks a compulsory object, so the desk
+# comes off the shopping list's count and is added to shop_adjust
+# (adjust_build_palette_for_shop); the requester is left (EV_BACK_TO_PLACE_OBJECT
+# without restore) and the desk put back and the room opened.
+# Expect place_object 34 kind=4 tile=9534 dir=0
+# Expect cmd type=91
+# Expect open_room == 2
+# Turns 400
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+120 55 0 0
+121 98 0 0
+122 37 4 1
+123 43 0 0
+124 7 9534 4
+130 70 5 0
+131 68 31 1
+132 91 0 0
+133 92 0 0
+134 7 8640 1
+135 1 0 0

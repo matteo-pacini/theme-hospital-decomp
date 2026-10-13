@@ -1,0 +1,63 @@
+# Level 1: a GP's office blueprint (62,65)-(66,69) abandoned at each stage
+# of building it with EV_DELETE_ROOM (delete_blueprint_room): while dragged
+# (draw_mode 1, nothing to uncommit), committed with no door yet, with its
+# door and a window placed, and after commit_doors with the walls built and
+# an object put in (the walls and the object stay on the map). A fifth
+# blueprint (58,70)-(61,73) is dragged and EV_CANCEL_BUILD sent alone, then
+# committed and EV_CANCEL_BUILD sent again: it refunds lifted objects and
+# frees the mouse and leaves the blueprint where it is (no
+# delete_blueprint_room).
+# Expect delete_blueprint_room == 4
+# Expect uncommit_blueprint == 3
+# Expect commit_blueprint == 4
+# Expect commit_doors == 1
+# Expect blueprint_invalid == 0
+# Turns 900
+# dragged, abandoned
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 121 0 0
+# committed, abandoned
+110 55 0 0
+111 53 7 7
+112 2 8382 0
+113 2 8898 0
+114 8 8898 0
+115 18 0 0
+116 121 0 0
+# committed, door and window placed, abandoned
+120 55 0 0
+121 53 7 7
+122 2 8382 0
+123 2 8898 0
+124 8 8898 0
+125 18 0 0
+126 26 8256 0
+127 3 0 0
+128 26 8510 0
+129 3 0 0
+130 121 0 0
+# committed, door placed, walls built, an object put in, abandoned
+140 55 0 0
+141 53 7 7
+142 2 8382 0
+143 2 8898 0
+144 8 8898 0
+145 18 0 0
+146 26 8256 0
+147 3 0 0
+148 4 7 0
+149 7 8640 1
+150 121 0 0
+# EV_CANCEL_BUILD alone: dragged, then committed
+160 55 0 0
+161 53 7 7
+162 2 9018 0
+163 2 9405 0
+164 8 9405 0
+165 56 0 0
+166 18 0 0
+167 56 0 0

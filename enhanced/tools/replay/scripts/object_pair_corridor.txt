@@ -1,0 +1,40 @@
+# Level 6: the operating theatre (50,48)-(59,53) built and opened as in
+# theatre_two_part.txt, its operating table (thing 42) then lifted alone
+# (EV_PICK_UP_OBJECT, both 0) while its lamp (43) stays in the room, and
+# asked for at corridor cells: refused at (57,47) and (61,47) (can_place_object:
+# its footprint or use cells meet the theatre's north wall) and put at (49,47)
+# facing 1, where place_existing_object makes its second part with
+# place_object (a new lamp, thing 33, bought at 2000: TX_BUY_OBJECT) at
+# (48,48), outside any room. Both are then lifted as a pair through the new
+# lamp (both 1) and the table asked for back in the theatre: it goes, but the
+# lamp it makes lands where lamp 43 still stands, so the second part is
+# refused (can_place_object in place_existing_object_next_part) and lamp 33
+# stays lifted.
+# Expect place_object 42 kind=30 tile=6584 dir=0
+# Expect place_object 33 kind=31 tile=6192 dir=1
+# Expect balance 3 amount=-2000
+# Expect cmd type=68 value=42 arg=0
+# Expect cmd type=68 value=33 arg=1
+# Expect commit_doors
+# Expect open_room
+# Turns 400
+101 55 0 0
+102 53 10 10
+103 2 6194 0
+104 2 6843 0
+105 8 6843 0
+106 18 0 0
+107 26 6071 0
+108 3 0 0
+109 4 10 0
+110 7 6715 29
+111 7 6584 30
+112 7 6331 33
+113 7 6708 35
+114 1 0 0
+200 68 42 0
+201 7 6073 30
+202 7 6077 286
+203 7 6065 286
+204 68 33 1
+205 7 6584 30

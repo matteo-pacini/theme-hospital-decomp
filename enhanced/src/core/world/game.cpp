@@ -630,10 +630,15 @@ void Game::overview_frame(uint8_t hospital)
 void Game::update_placement(int cell)
 {
     ObjectPlacing &p = world.placing;
-    if (!p.placing || (cell == p.mouse_cell && !p.redraw))
+    if (cell == p.mouse_cell && !(p.placing && p.redraw))
         return;
     log_inputs();
     log_line(std::format("@cursor {}", cell));
+    if (!p.placing) {
+        p.mouse_cell = cell;
+        remember_inputs();
+        return;
+    }
     // The check's event belongs to the turn the command runs before.
     EventScope scope(&events, turn_count + 1);
     th::update_placement(world, p, cell);

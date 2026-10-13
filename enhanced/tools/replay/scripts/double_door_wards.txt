@@ -1,0 +1,45 @@
+# Level 1: two wards, 6x6, each with a double door on a side wall: the first
+# (50,59)-(55,64) with its door on the west wall at (50,61), the second
+# (58,59)-(63,64) on the east wall at (63,61). commit_doors calls
+# init_double_doors for the vertical doors (facing 1 and 3: the cell below
+# each half's flag 0x20) as it does for the horizontal one of ward.txt. Each
+# ward gets its bed and desk and is opened, then both are taken back to
+# blueprints (EV_INIT_EDIT_ROOM, EV_EDIT_BLUEPRINT: delete_room with the two
+# halves of the double door to take down and the objects lifted) and
+# abandoned (EV_DELETE_ROOM).
+# Expect commit_doors == 2
+# Expect open_room == 2
+# Expect delete_room == 2
+# Expect delete_blueprint_room == 2
+# Expect remove_object == 4
+# Turns 600
+101 55 0 0
+102 53 9 9
+103 2 7602 0
+104 2 8247 0
+105 8 8247 0
+106 18 0 0
+107 26 7810 0
+108 3 0 0
+109 4 9 0
+110 7 7731 264
+111 7 7990 1
+112 1 0 0
+120 55 0 0
+121 53 9 9
+122 2 7610 0
+123 2 8255 0
+124 8 8255 0
+125 18 0 0
+126 26 7871 0
+127 3 0 0
+128 4 9 0
+129 7 7739 264
+130 7 7998 1
+131 1 0 0
+200 70 5 0
+201 69 0 0
+202 121 0 0
+210 70 6 0
+211 69 0 0
+212 121 0 0

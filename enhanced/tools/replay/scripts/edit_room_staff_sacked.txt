@@ -1,0 +1,42 @@
+# Level 1: gp_office.txt's GP's office with its doctor and a patient inside
+# it, the hospital opened, a handyman (applicant 20) hired and placed in the
+# corridor, then the office taken for editing at turn 1150 while occupied
+# (EV_INIT_EDIT_ROOM: the mouse waits, MM_EDIT_ROOM_WAIT) and the handyman
+# sacked (EV_SACK_STAFF: the game sets MM_NORMAL). Once the doctor has left,
+# the room is empty with the mouse no longer waiting, so game.cpp's
+# end-of-turn check cancels the edit (EV_CANCEL_EDIT_ROOM) instead of going
+# on to place objects: the doctor is paged to the room again (check_pager).
+# Expect cmd type=71 value=20 arg=0
+# Expect sack_staff 20 mode=0
+# Expect check_pager 11 room=6 >= 2
+# Turns 2500
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+114 48 1 11
+115 5 10044 11
+120 98 0 0
+121 37 44 1
+122 43 0 0
+123 7 8383 44
+140 139 0 0
+130 48 2 20
+131 5 10044 20
+1150 70 6 0
+1152 71 20 0

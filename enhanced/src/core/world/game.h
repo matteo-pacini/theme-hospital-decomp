@@ -220,7 +220,8 @@ class Game
     //   @overview <hospital>          overview_frame;
     //   @advisor_event <bits>         raise_advisor_event;
     //   @cursor <cell>                update_placement, when it would look
-    //                                 again (the pointer moved or a redraw);
+    //                                 again (the pointer moved or a redraw;
+    //                                 not placing, it notes the cell only);
     // and what the interface changes in place, outside commands, found by
     // comparing with what it was after the last turn, command or line above
     // (the first comparison after start() records all of it):
@@ -240,7 +241,8 @@ class Game
     // with the reason in `error`, for a line it does not know.
     bool replay_input(std::string_view line, std::string *error = nullptr);
     // update_placement (core/world/objects.h) on world.placing for the
-    // pointer on map cell `cell`, recorded in command_log.
+    // pointer on map cell `cell`, recorded in command_log; while nothing is
+    // being placed it only notes the cell (a lifted object's offset).
     void update_placement(int cell);
 
     // The events of the turns run and commands carried out
