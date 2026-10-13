@@ -52,8 +52,12 @@ For a session where a lead agent briefs worker agents in herdr panes
   narrow the task quietly or report done with items left out.
 - "It can't happen" needs proof: the original's code and the data, ideally a
   run of the instrumented original showing it. Otherwise write the scenario.
-- Gate: `enhanced/tools/check.sh` in your worktree (AGENTS.md, "Gate"),
-  green before you report.
+- Gate: `enhanced/tools/ci_run.sh` from your worktree (AGENTS.md, "Gate"
+  and "Remote gate"), green before you report. Everything heavy runs there:
+  the full `check.sh`, tidy, the drive-test suite, the web build and every
+  run of the original. Locally only your build, `th_tests`, single drive
+  scripts or `th_replay` runs, and `CACHE=only` checks; a new script's
+  original is recorded with `ci_run.sh --scripts`.
 - A replay that agrees proves nothing if nothing happened in it: check that
   each command in your scripts changes something in both traces.
 - Shared files take small edits on top of what is there now. Never write a
@@ -80,7 +84,11 @@ For a session where a lead agent briefs worker agents in herdr panes
   - Waiting on a background run: use its PID (`kill -0`) or its output file;
     `pgrep -f` with a pattern your own command line contains matches itself
     and never ends.
-- No git commands. No broad `pkill`/`kill`: stop only processes you started.
+- Git only in your own worktree, on its branch: status, diff, log,
+  `git add` by path, `git commit` (ci_run.sh checks the committed HEAD) and
+  `git rebase` onto the lead's branch. Never push (ci_run.sh pushes its own
+  `ci/<folder>` branch), touch another branch, reset or restore files.
+- No broad `pkill`/`kill`: stop only processes you started.
 - Delete a named folder whole (`rm -rf build/replay-01`), never a glob
   (`rm -rf dir/*`): a glob after a `cd` is flagged as an unresolvable target
   and blocks you on a permission dialog that is then denied.
@@ -135,10 +143,11 @@ For a session where a lead agent briefs worker agents in herdr panes
   branch `<tag>`; linked as in "Workspaces and worktrees") or works in the
   lead's tree with its own build folder and `REPLAY_DIR`: its own worktree
   when workers would edit the same files, the shared tree for small,
-  separate tasks. Workers never commit; the lead merges verified worktrees
-  into its branch (through an integration worktree for a large batch), runs
-  the combined check there and commits when the user asks.
-- Finish a batch with `check.sh` on the merged tree. Then remove the batch's
+  separate tasks. Workers commit only on their own worktree's branch;
+  the lead merges verified branches into its branch (through an integration
+  worktree for a large batch), runs the combined check there with
+  `ci_run.sh` and commits when the user asks.
+- Finish a batch with `ci_run.sh` on the merged tree. Then remove the batch's
   traces, verification folders and stale `build/replay-*` folders, and check
   free space on `/` (`/tmp` lives there).
 - Wait for workers going idle or blocked (`herdr agent get`), not for their
