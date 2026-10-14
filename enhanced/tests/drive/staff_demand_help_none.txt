@@ -1,0 +1,19 @@
+# Level 1: the staff demand requester's qualification tooltip for a member of
+# staff who lacks the qualification (req12_help_if_doctor): a nurse is not a
+# doctor, so the pointer resting on the doctor qualification shows no tooltip.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 139            # the nurse kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 60 68         # place the nurse (thing 11)
+wait 20
+demand 11
+wait 10
+move 175 225             # the doctor qualification
+wait 150
+dump help
+expect interface: requester 12,
+expect last tooltip ""

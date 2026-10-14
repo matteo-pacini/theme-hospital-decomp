@@ -1,0 +1,19 @@
+# Level 1: the staff demand requester's qualification tooltip (req12_help_if_doctor).
+# A doctor is hired and the demand window opened for them; the pointer rests
+# on the doctor qualification and its tooltip shows.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 60 68         # place the doctor (thing 11)
+wait 20
+demand 11
+wait 10
+move 175 225             # the doctor qualification
+wait 150
+dump help
+expect interface: requester 12,
+expect-not last tooltip ""
