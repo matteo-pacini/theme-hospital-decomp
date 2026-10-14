@@ -17,6 +17,7 @@
 #include "core/world/trace.h"
 
 #include <algorithm>
+#include <bit>
 #include <cstdlib>
 
 namespace th
@@ -35,6 +36,36 @@ constexpr int8_t kRoomStateOpen = 0;
 constexpr int8_t kRoomStateInUse = 1;
 
 constexpr int8_t kRoomEdited = 4;
+
+// The announcements (play_ambient's Ambients indexes) of the epidemic call
+// and the inspector's result: a base plus a draw from 0 to 2.
+constexpr uint8_t kAnnounceEpidemic = 0xaf;
+constexpr uint8_t kAnnounceInspector = 0xb2;
+constexpr uint16_t kInspectorSubject = 3;
+
+// The last room type a page announces (play_ambient(room->type)).
+constexpr uint8_t kLastPagedRoomType = 0x1e;
+
+// make_a_playercall's announcement of an epidemic or of the inspector's
+// result for the player. The draw comes from saferand, the generator the
+// shell shares (Game::safeseed), and is made whether or not the sound plays.
+void announce_playercall(World &world, uint16_t type, uint16_t subject, uint8_t owner)
+{
+    uint8_t base = kAnnounceEpidemic;
+    if (type == kCallEpidemicOver && subject == kInspectorSubject)
+        base = kAnnounceInspector;
+    else if (type != kCallEpidemic)
+        return;
+    if (owner != 0)
+        return;
+    uint16_t pick = 0;
+    if (world.game) {
+        uint32_t &seed = world.game->safeseed;
+        seed = std::rotr(seed * 0x24a1u + 0x24dfu, 13);
+        pick = uint16_t(uint16_t(seed) % 3);
+    }
+    world.machine_announcements.push_back(uint8_t(base + pick));
+}
 
 // page_member_of_staff: counts the staff with a skill in `skill_mask` already
 // in the room off `wanted`. True when no more are wanted.
@@ -82,6 +113,8 @@ bool page_member_of_staff(World &world, uint16_t skill_mask, uint16_t room_id, b
     }
     if (free_pager) {
         *free_pager = {skill_mask, room_id, 0, 0, owner};
+        if (owner == 0 && world.rooms[room_id].type <= kLastPagedRoomType)
+            world.machine_announcements.push_back(world.rooms[room_id].type);
         if (wanted > 1)
             return page_member_of_staff(world, skill_mask, room_id, count_present, int8_t(wanted - 1), owner);
     }
@@ -185,6 +218,7 @@ uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_
     for (size_t i = 1; i < world.calls.size(); i++) {
         World::PlayerCall &call = world.calls[i];
         if (call.type == 0) {
+            announce_playercall(world, type, subject, owner);
             // The panel slot and slide step are left as they were until
             // add_panel_popup sets them, as in the game.
             call.type = type;

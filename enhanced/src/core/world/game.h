@@ -122,7 +122,9 @@ class Game
     // leaves it: the special levels' builders draw from it. The shell draws
     // from it between turns (the advisor among them), either directly or
     // through a copy it writes back here before it saves a snapshot, so a
-    // loaded game continues from the same draw.
+    // loaded game continues from the same draw; the turns draw from it too
+    // (the epidemic and inspector announcements), the shell's copy going in
+    // and coming back around each.
     uint32_t safeseed = kLevelStartSeed;
     // Turns until the hospital opens to patients; 0 once it is open.
     int opening_countdown = 0;

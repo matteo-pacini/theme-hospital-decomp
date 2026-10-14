@@ -132,7 +132,8 @@ void room_deleted_update_listhead(World &world, uint16_t room);
 // `skill_mask` (one page per skill) to room `room` for hospital `owner`,
 // unless `wanted` of them are there already (with `count_present`) or
 // paged; posts up to `wanted` pages. Never pages to a reception. Returns
-// whether no new page was needed. The page's sound is not played.
+// whether no new page was needed. For the player's hospital a new page queues
+// its room's announcement (World::machine_announcements).
 bool page_member_of_staff(World &world, uint16_t skill_mask, uint16_t room, bool count_present, int8_t wanted,
                           uint8_t owner);
 
@@ -162,6 +163,9 @@ void staff_abandon_pager_response(World &world, uint16_t id);
 // `owner`, expiring after `timeout` days (expire_playercalls), never if 0.
 // Returns its id (World::next_call_id, from 1), or 0 if the table is full or
 // in the rat game.
+// For the player's hospital an epidemic call (type 3) and the inspector's
+// result (type 5, subject 3) queue their announcement's variant, drawn from
+// Game::safeseed, even when no sound will play.
 // Its fax icon goes on the panel (add_panel_popup), and it becomes its
 // kind's head call (World::first_call) if the kind has none.
 uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_t timeout, uint8_t owner);
