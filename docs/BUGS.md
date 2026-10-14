@@ -461,6 +461,33 @@ Escape closes it with the chart (`setup_abort_all_requesters`). It may be
 deliberate leniency, but nothing on the chart shows that the key did
 anything.
 
+### process_right_button, the epidemic watch (src/mouse.cpp)
+
+**Bug** · `0x5b95c`
+
+A right click on the epidemic watch picks the next contagious patient with
+`find_next_emergency_person(othervar.emergency_patient, 0x20)`: the search
+starts from the emergency patient last picked, not from
+`othervar.epidemic_patient`, which it only stores to. Only a click on the
+emergency watch moves `emergency_patient`, so repeated clicks on the epidemic
+watch find the same patient every time instead of cycling through them. The
+Enhanced port starts from `emergency_patient` too, and the replay agrees
+with the original.
+
+### find_next_emergency_person, none found (src/req3.cpp)
+
+**Bug** · `0x73e64`
+
+When no patient matches, the loops end with `person == end_things` and the
+function returns `person - thing`, the number of things, not 0. The callers
+in `process_right_button` (`0x5b95c`) test the result for zero to play
+`SFX_WRONG2` and send `EV_CLOSE_QUERY`; that branch is reached only when
+thing 0 matched, which it cannot (thing 0 is never a patient). The game
+instead sends `EV_OPEN_THING_WINDOW` for `thing[count]`, one past the
+things table, and plays `SFX_CAMCLICK`; `open_new_window` then reads whatever
+follows the table in memory. The Enhanced port keeps the test and the sound,
+and opens nothing for an index outside its things table.
+
 ## Memory & data layout
 
 ### init_edit_room (src/build.cpp)
