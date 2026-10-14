@@ -1,0 +1,55 @@
+# Level 1: cancelling while a finished room is edited asks yesno_text[4]; No
+# keeps the room and goes back to the blueprint (MM_BLUEPRINT).
+wait 60
+click 228 453            # panel: build room
+wait 10
+click 240 130            # Clinics
+wait 10
+click 380 85             # the room (Inflation, kind 17)
+wait 10
+cell 56 64
+wait 5
+down left
+wait 5
+cell 60 68
+wait 10
+up left
+wait 10
+click 580 148            # confirm the blueprint
+wait 10
+click-cell 56 66         # the door
+wait 10
+click 580 148            # no windows: confirm
+wait 30
+click-cell 58 65
+wait 10
+click 505 189            # the object in the list
+wait 10
+click-cell 57 67
+wait 10
+click 580 148            # confirm the room
+wait 30
+key Escape               # close the room's first help page
+wait 10
+click 298 453            # panel: edit room
+wait 10
+dump edit_mode
+expect build mouse 4
+click-cell 58 65         # the room
+wait 10
+dump edit_room
+expect interface: requester 5,
+key Escape               # back to the blueprint (EV_EDIT_BLUEPRINT)
+wait 10
+dump blueprint
+expect build mouse 1
+click 455 148            # req14's cancel button: asks
+wait 5
+dump ask
+expect requester 4, modal true
+click 282 281            # req13: No
+wait 10
+dump kept
+expect modal false
+expect interface: requester 5,
+expect build mouse 1
