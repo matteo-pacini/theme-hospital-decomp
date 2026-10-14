@@ -918,8 +918,8 @@ InfoWindowResult info_window_frame(InfoWindows &info, Interface &ui, const Inter
         return r;
     const uint16_t tracked = patient ? info.patient : info.staff;
     const Thing *tt = shown(context.world, tracked, patient ? kThingPatient : kThingStaff);
-    if (!tt || beyond_scroll_limit(info_centre(context.world, tracked), context.scroll.min_cell,
-                                   context.scroll.max_cell, 10))
+    if (!tt ||
+        beyond_scroll_limit(info_centre(context.world, tracked), context.scroll.min_cell, context.scroll.max_cell, 10))
         close_irequesters(ui);
     return r;
 }
