@@ -57,6 +57,11 @@ class DriveHost
     // Loses the level now, as a failed criterion does: the losing letter
     // follows. A test hook.
     virtual bool drive_lose_level() = 0;
+    // Starts an emergency (`epidemic` false; its patients come from the
+    // helicopter), or covers up an epidemic with every patient contagious,
+    // so the panel's watch has patients to cycle through. A test hook: both
+    // need a long, built-up game.
+    virtual bool drive_watch(bool epidemic) = 0;
     // Turns the mouse wheel `notches` (positive away from the user).
     virtual bool drive_wheel(int notches) = 0;
 };
@@ -95,6 +100,9 @@ bool hold_slot(const std::filesystem::path &dir, int max, const std::string &inf
 //                       test hook; the window normally needs a resignation)
 //   win                 win the level now (a test hook; the letter follows)
 //   lose                lose the level now (a test hook; the letter follows)
+//   watch emergency|epidemic
+//                       start an emergency, or an epidemic's cover-up with
+//                       every patient contagious (a test hook)
 //   screenshot NAME     save the next frame as OUT/NAME.png (the game, no
 //                       tools)
 //   screenshot-ui NAME  the same after the tools and note box are drawn

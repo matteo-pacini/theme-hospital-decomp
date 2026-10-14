@@ -306,12 +306,12 @@ int Driver::run(DriveHost &host, const Command &c)
     if (verb == "click" || verb == "click-cell" || verb == "click-thing" || verb == "key" || verb == "keydown" ||
         verb == "keyup")
         return run_click(host, c);
-    if (verb == "demand" || verb == "win" || verb == "lose" || verb == "type" || verb == "wheel")
+    if (verb == "demand" || verb == "win" || verb == "lose" || verb == "watch" || verb == "type" || verb == "wheel")
         return run_hook(host, c);
     return run_output(host, c);
 }
 
-// The commands that call a hook of the host: demand, win, lose, type and
+// The commands that call a hook of the host: demand, win, lose, watch, type and
 // wheel.
 int Driver::run_hook(DriveHost &host, const Command &c)
 {
@@ -324,6 +324,9 @@ int Driver::run_hook(DriveHost &host, const Command &c)
         ok = host.drive_win_level();
     } else if (verb == "lose") {
         ok = host.drive_lose_level();
+    } else if (verb == "watch") {
+        ok = c.words.size() == 2 && (c.words[1] == "emergency" || c.words[1] == "epidemic") &&
+             host.drive_watch(c.words[1] == "epidemic");
     } else if (verb == "wheel") {
         int notches = 0;
         ok = number(c.words, 1, notches) && host.drive_wheel(notches);

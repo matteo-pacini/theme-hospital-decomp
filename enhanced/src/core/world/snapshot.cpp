@@ -50,12 +50,12 @@ static_assert(kLayoutHash == 0x75417a56a182e5a5ull, "a raw struct's size changed
 // strings, a deque and pointers, so they depend on the standard library and
 // the pointer width: only that build checks them.
 #if defined(__GLIBCXX__) && defined(__x86_64__)
-static_assert(sizeof(World) == 163640, "World changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(World) == 163648, "World changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Building) == 224, "Building changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Advisor) == 1160, "Advisor changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(Balance) == 3816, "Balance changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 static_assert(sizeof(EventLog) == 96, "EventLog changed: list its new fields in snapshot.cpp and bump kSaveFormat");
-static_assert(sizeof(Game) == 341856, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
+static_assert(sizeof(Game) == 341864, "Game changed: list its new fields in snapshot.cpp and bump kSaveFormat");
 #endif
 
 class Writer
@@ -229,6 +229,14 @@ template <typename IO, typename B> void building_fields(IO &io, B &b)
     io(b.sounds);
 }
 
+// World's epidemic and the patients the panel's watch last picked.
+template <typename IO, typename W> void world_epidemic_fields(IO &io, W &w)
+{
+    io(w.epidemic);
+    io(w.emergency_patient);
+    io(w.epidemic_patient);
+}
+
 // The sound-effect queues the interface plays and clears.
 template <typename IO, typename W> void world_sound_fields(IO &io, W &w)
 {
@@ -315,7 +323,7 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.plant_pager);
     io(w.emergency);
     io(w.mayor);
-    io(w.epidemic);
+    world_epidemic_fields(io, w);
     world_sound_fields(io, w);
     world_disaster_fields(io, w);
     world_research_fields(io, w);

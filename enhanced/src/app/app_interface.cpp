@@ -142,13 +142,18 @@ InfoWindowResult App::interface_requesters(Game &game, const InterfaceEvents &ev
         game.event = info.event;
     if (info.slist_staff)
         charts_.slist_staff = info.slist_staff;
-    if (info.centre_on) {
-        // process_tracking_windows' othervar.center_on_slot.
-        Point p = info_centre(game.world, info.centre_on);
-        if (!beyond_scroll_limit(p, scroll_min_, scroll_max_))
-            camera_ = {p.x - surface_.width() / 2, p.y - surface_.height() / 2};
-    }
+    if (info.centre_on)
+        centre_view_on(game.world, info.centre_on);
     return info;
+}
+
+// process_tracking_windows' othervar.center_on_slot: the view centres on thing
+// `id` unless it is beyond the scroll limit.
+void App::centre_view_on(const World &world, uint16_t id)
+{
+    Point p = info_centre(world, id);
+    if (!beyond_scroll_limit(p, scroll_min_, scroll_max_))
+        camera_ = {p.x - surface_.width() / 2, p.y - surface_.height() / 2};
 }
 
 void App::interface_jukebox_input(Game &game, const InterfaceEvents &events, const UiMouse &mouse)
@@ -303,14 +308,15 @@ void App::interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, boo
     } else if (mouse.right_pressed && on_map && !game.world.rats.fest_level &&
                !advisor_hit(game.advisor, mouse.x, mouse.y) &&
                (interface_.requester() == Requester::None || interface_.requester() == Requester::EditRoom)) {
-        if (Event e = interface_map_right(game, placing); e.type)
+        if (Event e = interface_map_right(game, mouse, placing); e.type)
             game.event = e;
     }
 }
 
-// process_right_button on the map: the edit-room modes, picking up an object
-// or member of staff, or cancelling. Returns the command, EV_NONE for none.
-Event App::interface_map_right(Game &game, bool placing)
+// process_right_button on the map: the watch's patient, the edit-room modes,
+// picking up an object or member of staff, or cancelling. Returns the
+// command, EV_NONE for none.
+Event App::interface_map_right(Game &game, const UiMouse &mouse, bool placing)
 {
     BuildMouse mode = game.world.building.mouse;
     if (mode == BuildMouse::EditRoomWait)
@@ -321,6 +327,8 @@ Event App::interface_map_right(Game &game, bool placing)
     }
     if (mode != BuildMouse::None || placing || build_tool_busy(game))
         return {};
+    if (Event e = interface_watch_right(game, mouse); e.type)
+        return e;
     if (game.world.building.build.room)
         return check_object_right_click_in_room_edit(game.world, pointed_.thing);
     if (interface_.window_count() > 0)

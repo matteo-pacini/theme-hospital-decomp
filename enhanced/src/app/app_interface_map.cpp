@@ -28,6 +28,15 @@ MapHover game_map_hover(const World &world, uint16_t pointed)
 // OBJ_RECEPTION_DESK (include/enums.h).
 constexpr uint8_t kObjReceptionDesk = 11;
 
+// SFX_CAMCLICK: the watch's patient picked.
+constexpr uint8_t kSfxCamClick = 0xbb;
+
+// over_hotspot for the sprite `s` drawn at (x, y).
+bool over_sprite(const UiMouse &mouse, int x, int y, const Sprite &s)
+{
+    return mouse.x >= x && mouse.x < x + s.width && mouse.y >= y && mouse.y < y + s.height;
+}
+
 } // namespace
 
 inline namespace app_detail
@@ -48,34 +57,104 @@ bool has_receptionist(const World &world)
 // The watch's buttons over the panel (process_left_button): a left click on
 // the epidemic's vaccination button toggles the MM_VACCINATE pointer; on the
 // opening countdown's it opens the hospital at once (EV_OPEN_HOSPITAL) with
-// its fanfare. The game uses watch[14] for both hotspots. True when one took
-// the click.
+// its fanfare. The game uses watch[14] for both hotspots. On the watch's body
+// (watch[13], at the button for the epidemic and at the watch for the
+// emergency) it centres the view on the patient a right click picked. While
+// the button stays held (process_mleft_button) the epidemic's pressed sprite
+// is drawn (watch_pressed_) and the emergency's centring repeats. True when
+// one took the click.
 bool App::interface_watch_buttons(Game &game, const UiMouse &mouse)
 {
-    if (!mouse.left_pressed)
+    const bool held = mouse.left_held && !mouse.left_pressed;
+    if (!mouse.left_pressed && !held)
         return false;
-    Sprite button = data_->watch().at(14);
-    if (mouse.x < kPanelWatchButtonX || mouse.x >= kPanelWatchButtonX + button.width || mouse.y < kPanelWatchButtonY ||
-        mouse.y >= kPanelWatchButtonY + button.height)
-        return false;
-    if (game.world.epidemic.timer > 0) {
-        // MM_VACCINATE, with SFX_SELECTX (mouse.cpp:317).
-        vaccinate_ = !vaccinate_;
-        sounds_.play_sound(kSourceGeneral, kSfxSelectX);
-        return true;
+    const SpriteSheet &watch = data_->watch();
+    const World &world = game.world;
+    const bool on_button = over_sprite(mouse, kPanelWatchButtonX, kPanelWatchButtonY, watch.at(14));
+    if (world.epidemic.timer > 0) {
+        if (on_button) {
+            if (!held) {
+                // MM_VACCINATE, with SFX_SELECTX (mouse.cpp:317).
+                vaccinate_ = !vaccinate_;
+                sounds_.play_sound(kSourceGeneral, kSfxSelectX);
+                return true;
+            }
+            watch_pressed_ = true;
+        } else if (!held && over_sprite(mouse, kPanelWatchButtonX, kPanelWatchButtonY, watch.at(13))) {
+            centre_on_watch_patient(game, world.epidemic_patient, true);
+            return true;
+        }
     }
-    if (game.opening_countdown > 0) {
+    if (held)
+        return held_emergency_watch(game, mouse);
+    if (game.opening_countdown > 0 && on_button) {
         game.event = {EV_OPEN_HOSPITAL};
         sounds_.play_sound(kSourceGeneral, kSfxFanfare);
         return true;
     }
+    if (world.emergency.timer > 0 && over_sprite(mouse, kPanelWatchX, kPanelWatchY, watch.at(13))) {
+        centre_on_watch_patient(game, world.emergency_patient, true);
+        return true;
+    }
     return false;
+}
+
+// process_mleft_button's emergency watch: while the button is held on it, the
+// view keeps centring on the emergency patient, silently.
+bool App::held_emergency_watch(Game &game, const UiMouse &mouse)
+{
+    if (game.world.emergency.timer <= 0 || !over_sprite(mouse, kPanelWatchX, kPanelWatchY, data_->watch().at(13)))
+        return false;
+    centre_on_watch_patient(game, game.world.emergency_patient, false);
+    return true;
+}
+
+// othervar.center_on_slot = 1 with the watch's picked patient `id`: the view
+// centres on them (as process_tracking_windows does) with SFX_CAMCLICK when
+// `click`. Nothing happens while none is picked.
+void App::centre_on_watch_patient(const Game &game, uint16_t id, bool click)
+{
+    if (!id)
+        return;
+    centre_view_on(game.world, id);
+    if (click)
+        sounds_.play_sound(kSourceGeneral, kSfxCamClick);
+}
+
+// The right click on the watch (process_right_button's 0x27 case): the
+// emergency's or epidemic's next patient, from the emergency patient for
+// both as the game does, and its window opened with SFX_CAMCLICK. The game
+// closes the query with SFX_WRONG2 only for thing 0; a search that finds none
+// returns the things table's size, which opens nothing.
+Event App::interface_watch_right(Game &game, const UiMouse &mouse)
+{
+    World &world = game.world;
+    const SpriteSheet &watch = data_->watch();
+    uint16_t *picked = nullptr;
+    uint32_t flags = 0;
+    if (world.epidemic.timer > 0 && over_sprite(mouse, kPanelWatchButtonX, kPanelWatchButtonY, watch.at(13))) {
+        picked = &world.epidemic_patient;
+        flags = kPfContagious;
+    } else if (world.emergency.timer > 0 && over_sprite(mouse, kPanelWatchX, kPanelWatchY, watch.at(13))) {
+        picked = &world.emergency_patient;
+        flags = kPfEmergency;
+    } else {
+        return {};
+    }
+    *picked = find_next_emergency_person(world, world.emergency_patient, flags, {scroll_min_, scroll_max_});
+    if (*picked) {
+        sounds_.play_sound(kSourceGeneral, kSfxCamClick);
+        return {EV_OPEN_THING_WINDOW, *picked};
+    }
+    sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+    return {EV_CLOSE_QUERY, 1};
 }
 
 // The watch button's highlight (draw_emergency's othervar.watch_hovered): its
 // sound plays once on entering it, when the button is drawn.
 void App::interface_watch_hover(Game &game, const UiMouse &mouse)
 {
+    watch_pressed_ = false;
     // The button is drawn only in the epidemic branch or, past an emergency
     // and with the tutorial flag clear, in the opening-countdown branch
     // (draw_emergency, panel.cpp:593).

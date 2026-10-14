@@ -4,6 +4,7 @@
 #include "app/app.h"
 #include "core/data/gamedata.h"
 #include "core/render/shadows.h"
+#include "core/world/queue.h"
 
 #include <algorithm>
 #include <fstream>
@@ -236,6 +237,32 @@ bool App::drive_lose_level()
     s.level_won = 0;
     s.year_end_type = 7;
     s.winlose_result = 2;
+    return true;
+}
+
+bool App::drive_watch(bool epidemic)
+{
+    if (!map_ || in_startup_)
+        return false;
+    Game &game = map_->game;
+    World &world = game.world;
+    if (!epidemic) {
+        World::Emergency &e = world.emergency;
+        e.illness = 2;
+        e.patients = 3;
+        e.to_spawn = 3;
+        e.win_percent = 50;
+        game.event = {EV_START_EMERGENCY};
+        return true;
+    }
+    // The cover-up takes the watch over from the emergency.
+    world.emergency.timer = 0;
+    world.epidemic.illness = 2;
+    world.epidemic.timer = 100;
+    world.epidemic.active = 1;
+    for (Thing &t : world.things)
+        if (t.type == kThingPatient)
+            t.person_flags |= kPfContagious;
     return true;
 }
 

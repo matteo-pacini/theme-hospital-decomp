@@ -1051,6 +1051,8 @@ void dump_game_emergency(std::string &out, const World &w)
     F(e, heli);
     F(e, heli_landed);
     F(e, heli_pad_tile);
+    F(w, emergency_patient);
+    F(w, epidemic_patient);
     out += '\n';
 }
 

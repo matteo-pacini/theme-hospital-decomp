@@ -64,8 +64,9 @@ bool check_emergency_criteria(const Disasters &d, const World &world, const Bala
 
 // setup_emergency_stats (0xaf448) for the player's offer, in a free slot
 // (one is, with fewer than four offers outstanding).
-void setup_emergency_stats(Disasters &d, uint16_t call)
+void setup_emergency_stats(World &world, Disasters &d, uint16_t call)
 {
+    world.emergency_patient = 0;
     trace_event("emergency_offer %u illness=%u count=%u bonus=%u win=%u", unsigned(call), unsigned(d.emergency_illness),
                 unsigned(d.emergency_patients), unsigned(d.emergency_bonus), unsigned(d.emergency_win_percent));
     for (Disasters::Offer &offer : d.offers) {
@@ -286,7 +287,7 @@ void try_to_generate_emergency(Game &game)
         try_to_generate_emergency_summon(world, game.anims());
     if (check_emergency_criteria(d, world, game.settings(), game.open, game.turn_count)) {
         if (world.hospital && world.hospital->illnesses[d.emergency_illness % kIllnessCount].discovered == 1)
-            setup_emergency_stats(d, make_a_playercall(world, kCallEmergency, 0, 0x14, 0));
+            setup_emergency_stats(world, d, make_a_playercall(world, kCallEmergency, 0, 0x14, 0));
         setup_next_emergency(d, world, game.settings(), game.date);
     }
     if (world.emergency.state > kEmergencySummon)
