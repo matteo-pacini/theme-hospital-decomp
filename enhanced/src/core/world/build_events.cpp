@@ -308,6 +308,14 @@ void build_turn(Game &game)
 namespace
 {
 
+// apply_build_event on EV_CLOSE_YES_NO: set_mouse_mode(arg) for the no event
+// of an edited room's question, which names MM_BLUEPRINT.
+void apply_build_event_close_yes_no(World &w, const Event &event)
+{
+    if (event.arg == uint16_t(BuildMouse::Blueprint))
+        w.building.mouse = BuildMouse::Blueprint;
+}
+
 // apply_build_event on the requester and object placing events: what
 // apply_build_event returns for them, or nothing for other events.
 std::optional<bool> apply_build_event_requesters(Game &game, const Event &event)
@@ -338,6 +346,9 @@ std::optional<bool> apply_build_event_requesters(Game &game, const Event &event)
     case EV_FURNISH_EDITED_ROOM:
         apply_build_event_furnish_edited_room(game);
         return true;
+    case EV_CLOSE_YES_NO:
+        apply_build_event_close_yes_no(w, event);
+        return false;
     case EV_BACK_TO_PLACE_OBJECT:
         apply_build_event_back_to_place_object(w, event.value != 0);
         return true;
@@ -409,10 +420,6 @@ bool apply_build_event(Game &game, const Event &event)
         return true;
     case EV_CANCEL_BUILD:
         cancel_build(game);
-        return false;
-    case EV_CLOSE_YES_NO: // set_mouse_mode(arg) when the no event names one
-        if (event.arg == uint16_t(BuildMouse::Blueprint))
-            bd.mouse = BuildMouse::Blueprint;
         return false;
     case EV_CLOSE_QUEUE_WINDOW: // set_mouse_mode(MM_NORMAL)
         bd.mouse = BuildMouse::None;

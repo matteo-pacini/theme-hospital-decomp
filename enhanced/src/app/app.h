@@ -447,6 +447,9 @@ class App : public DriveHost
     // Carries out the frame's command (Game::event): the interface's part,
     // then the game's (process_turn).
     void run_command(Game &game);
+    // The yes/no requester of an edited room's cancel (the EV_OPEN_YES_NO
+    // object_escape sets) and its yes answer, EV_DELETE_ROOM.
+    void edited_room_question(Game &game);
     // The mouse in `src` drawn at `at` (from fit_rect).
     UiMouse fitted_mouse(const SDL_FRect &at, const Surface &src) const;
     // Draws `src` in `palette` into `dst` of the window through `tex`, or

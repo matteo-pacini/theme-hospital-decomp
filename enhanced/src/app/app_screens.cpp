@@ -87,16 +87,11 @@ void App::town_step(int out_w, int out_h)
     draw_fitted(src, town_.palette(), town_tex_, at);
 }
 
-void App::run_command(Game &game)
+// setup_abort_all_requesters' question over an edited room: yes deletes it
+// (the requester closes with the room), no goes back to the blueprint.
+void App::edited_room_question(Game &game)
 {
-    // EV_OPEN_SCREEN is refused while an edited room empties (io.cpp:824).
-    if (game.event.type == EV_OPEN_SCREEN && game.world.building.mouse == BuildMouse::EditRoomWait) {
-        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
-        game.event = {};
-    }
     if (game.event.type == EV_OPEN_YES_NO) {
-        // setup_abort_all_requesters' question over an edited room: yes
-        // deletes it, no goes back to the blueprint.
         interface_.open_yes_no(data_->text().at(TextSection::YesNo, game.event.value));
         yes_event_ = {EV_DELETE_ROOM, 0, 0, 0};
         no_event_ = {EV_CLOSE_YES_NO, 1, 0, uint16_t(BuildMouse::Blueprint)};
@@ -104,6 +99,16 @@ void App::run_command(Game &game)
     }
     if (game.event.type == EV_DELETE_ROOM)
         interface_.close_yes_no(false);
+}
+
+void App::run_command(Game &game)
+{
+    // EV_OPEN_SCREEN is refused while an edited room empties (io.cpp:824).
+    if (game.event.type == EV_OPEN_SCREEN && game.world.building.mouse == BuildMouse::EditRoomWait) {
+        sounds_.play_sound(kSourceGeneral, kSfxWrong2);
+        game.event = {};
+    }
+    edited_room_question(game);
     bool restart = game.event.type == EV_RESTART_LEVEL;
     // Answering a member of staff's resignation call opens the staff demand
     // requester once the command has removed the call (io.cpp's
