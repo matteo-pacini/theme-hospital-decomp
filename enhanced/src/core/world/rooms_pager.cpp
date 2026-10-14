@@ -218,7 +218,7 @@ uint16_t make_a_playercall(World &world, uint16_t type, uint16_t subject, int16_
     for (size_t i = 1; i < world.calls.size(); i++) {
         World::PlayerCall &call = world.calls[i];
         if (call.type == 0) {
-            // announce_playercall(world, type, subject, owner);
+            announce_playercall(world, type, subject, owner);
             // The panel slot and slide step are left as they were until
             // add_panel_popup sets them, as in the game.
             call.type = type;
