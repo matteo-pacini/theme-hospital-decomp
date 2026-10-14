@@ -158,7 +158,7 @@ void App::run_turns(float dt)
     // At most a few frames' worth of turns after a stall.
     turn_clock_ = std::min(turn_clock_ + dt * rate, 8.0);
     for (; turn_clock_ >= 1; turn_clock_ -= 1)
-        map_->game.turn();
+        play_turn_on_seed(map_->game, sounds_.safeseed, &Game::turn);
 }
 
 // move_windows (src/cakewin.cpp): the scroll direction `dir` accelerates the

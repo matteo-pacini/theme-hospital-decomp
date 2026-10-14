@@ -47,6 +47,16 @@ SDL_FRect fit_rect(const Surface &src, int out_w, int out_h);
 // saferand (src/rand.cpp), for the year-end presentation's letter variants.
 uint16_t saferand(uint32_t &seed);
 
+// Plays one of the game's turns (Game::turn or Game::process_turn) on the
+// shell's presentation seed: the original has one safeseed, which the turn
+// draws from as the shell does, so the seed goes in and comes back.
+inline void play_turn_on_seed(Game &game, uint32_t &seed, void (Game::*turn)())
+{
+    game.safeseed = seed;
+    (game.*turn)();
+    seed = game.safeseed;
+}
+
 // A key pressed in the start-up screens, which read keys as lbInkey.
 StartupKey startup_key(SDL_Keycode key);
 

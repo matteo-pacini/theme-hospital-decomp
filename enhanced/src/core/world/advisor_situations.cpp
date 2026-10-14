@@ -4,10 +4,12 @@
 
 #include "core/world/advisor_internal.h"
 
+#include "core/world/game.h"
 #include "core/world/queue.h"
 #include "core/world/research.h"
 #include "core/world/rooms.h"
 #include "core/world/staff.h"
+#include "core/world/trace.h"
 #include "core/world/world.h"
 
 #include <cstdlib>
@@ -38,6 +40,17 @@ constexpr uint32_t kPromotedResearcher = 8;
 constexpr uint8_t kAmbientLitter = 0xd7;
 constexpr uint8_t kAmbientTooCold = 0xd8;
 constexpr uint8_t kAmbientTooHot = 0xd9;
+
+// The text index of a variant, base + saferand % count. Once a script has
+// set the seed (Game::seed_traced), the seed it draws from is traced first,
+// so a replay shows where the presentation generator of the original and of
+// the port part.
+uint16_t advice_variant(Situation &s, uint16_t base, uint16_t count)
+{
+    if (s.world.game && s.world.game->seed_traced)
+        trace_event("advice_variant %u seed=%08x", unsigned(base), unsigned(s.safeseed));
+    return uint16_t(base + saferand(s.safeseed) % count);
+}
 
 // Hospital 0's objects of `kind` (listhead.objects' lists, which the game
 // counts as NRAdcounts.benches as they are placed; it never uncounts a
@@ -581,7 +594,7 @@ bool advise_hospital(Situation &s, int id, uint16_t situation)
         int open = s.world.counts.open_rooms;
         if (open <= 2 || open >= 7)
             return false;
-        say(s.a, s.text(0x6b + saferand(s.safeseed) % 3));
+        say(s.a, s.text(advice_variant(s, 0x6b, 3)));
         return true;
     }
     case 0x75:
@@ -671,13 +684,13 @@ bool advise_new_staff(Situation &s)
         else if (room == kRoomTheatre)
             say(s.a, s.text(0x7c));
         else if (room != kRoomToilets)
-            say(s.a, s.text(0x7e + saferand(s.safeseed) % 2), room_name().c_str());
+            say(s.a, s.text(advice_variant(s, 0x7e, 2)), room_name().c_str());
         else
             return false;
         return true;
     }
     if (kind == kStaffNurse && room != kRoomToilets) {
-        say(s.a, s.text(0x80 + saferand(s.safeseed) % 2), room_name().c_str());
+        say(s.a, s.text(advice_variant(s, 0x80, 2)), room_name().c_str());
         return true;
     }
     if (kind != kStaffReceptionist)

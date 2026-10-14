@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cstdint>
 #include <cstdio>
 #include <functional>
@@ -283,6 +284,36 @@ void test_new_illness_call(const char *dir)
     g.event = {th::EV_ANSWER_PLAYERCALL, 4, 0, 0};
     g.process_turn();
     CHECK(g.choice_screen.type == 0);
+}
+
+// The epidemic call and the inspector's result announce themselves for the
+// player, each drawing once from Game::safeseed (make_a_playercall's
+// play_ambient(saferand() % 3 + 0xaf or 0xb2)); another hospital's call
+// neither announces nor draws.
+void test_playercall_announcements(const char *dir)
+{
+    ScriptedGame s;
+    CHECK(s.start(dir, 1, "1 0 0 0"));
+    if (!s.game)
+        return;
+    th::Game &g = *s.game;
+    g.safeseed = 0x546b2;
+    uint32_t expect = g.safeseed;
+    auto draw = [&] {
+        expect = std::rotr(expect * 0x24a1u + 0x24dfu, 13);
+        return uint16_t(uint16_t(expect) % 3);
+    };
+    g.world.machine_announcements.clear();
+    th::make_a_playercall(g.world, 3, 1, 0x14, 0);
+    const uint16_t epidemic = draw();
+    th::make_a_playercall(g.world, 5, 3, 0x14, 0);
+    const uint16_t inspector = draw();
+    const std::vector<uint8_t> expected = {uint8_t(0xaf + epidemic), uint8_t(0xb2 + inspector)};
+    CHECK(g.world.machine_announcements == expected);
+    CHECK(g.safeseed == expect);
+    th::make_a_playercall(g.world, 3, 1, 0x14, 1);
+    CHECK(g.world.machine_announcements == expected);
+    CHECK(g.safeseed == expect);
 }
 
 namespace

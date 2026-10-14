@@ -208,6 +208,7 @@ void test_emergency_fail_level6(const char *dir);
 void test_decisions_diagnosis_level1(const char *dir);
 void test_decisions_treatment_level1(const char *dir);
 void test_new_illness_call(const char *dir);
+void test_playercall_announcements(const char *dir);
 void test_ward_level1(const char *dir);
 void test_psychiatry_level1(const char *dir);
 void test_treatment_level1(const char *dir);
@@ -442,6 +443,7 @@ const DataTest kDataTests[] = {
     TEST(test_decisions_diagnosis_level1),
     TEST(test_decisions_treatment_level1),
     TEST(test_new_illness_call),
+    TEST(test_playercall_announcements),
     TEST(test_panel_popups),
     TEST(test_fax),
     TEST(test_ward_level1),

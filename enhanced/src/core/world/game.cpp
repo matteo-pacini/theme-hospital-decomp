@@ -547,6 +547,14 @@ void Game::raise_advisor_event(uint32_t bits)
     advisor.event_flags |= bits;
 }
 
+void Game::set_safeseed(uint32_t seed)
+{
+    log_inputs();
+    log_line(std::format("@safeseed {}", seed));
+    safeseed = seed;
+    seed_traced = true;
+}
+
 void Game::set_cheats_enabled(bool on)
 {
     log_inputs();
@@ -720,6 +728,20 @@ bool replay_input_command(Game &g, std::string_view line, std::string *error)
     return true;
 }
 
+// Game::replay_input's @advisor_event <bits> and @safeseed <n>.
+bool replay_input_state(Game &g, const std::string &name, std::istream &in, std::string_view line, std::string *error)
+{
+    const bool seed = name == "@safeseed";
+    auto v = seed ? replay_input_value(in, 0, 0xffffff) : replay_input_value(in, 1, 0xffff);
+    if (!v)
+        return replay_input_fail(line, error, seed ? "bad seed" : "bad bits");
+    if (seed)
+        g.set_safeseed(uint32_t(*v));
+    else
+        g.raise_advisor_event(uint32_t(*v));
+    return true;
+}
+
 // Game::replay_input's @paused, @tutorial, @path_finder and @build_mouse.
 bool replay_input_setting(Game &g, const std::string &name, std::istream &in, std::string_view line, std::string *error)
 {
@@ -808,13 +830,8 @@ bool Game::replay_input(std::string_view line, std::string *error)
         send_walker(uint16_t(*id), int(*cell));
         return true;
     }
-    if (name == "@advisor_event") {
-        auto bits = replay_input_value(in, 1, 0xffff);
-        if (!bits)
-            return replay_input_fail(line, error, "bad bits");
-        raise_advisor_event(uint32_t(*bits));
-        return true;
-    }
+    if (name == "@advisor_event" || name == "@safeseed")
+        return replay_input_state(*this, name, in, line, error);
     if (name == "@overview") {
         auto hospital = replay_input_value(in, 0, kHospitalCount - 1);
         if (!hospital)

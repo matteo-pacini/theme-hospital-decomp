@@ -118,11 +118,17 @@ class Game
     // The admin calls left out, the replay check's SKIP (kSkip*); not part of
     // a saved game.
     uint8_t skipped_calls = 0;
+    // Whether a script has set safeseed (@safeseed): the seed is then
+    // traced where the advisor draws a text variant; not part of a saved
+    // game.
+    bool seed_traced = false;
     // The presentation generator (the game's safeseed) as the level's start
     // leaves it: the special levels' builders draw from it. The shell draws
     // from it between turns (the advisor among them), either directly or
     // through a copy it writes back here before it saves a snapshot, so a
-    // loaded game continues from the same draw.
+    // loaded game continues from the same draw; the turns draw from it too
+    // (the epidemic and inspector announcements), the shell's copy going in
+    // and coming back around each.
     uint32_t safeseed = kLevelStartSeed;
     // Turns until the hospital opens to patients; 0 once it is open.
     int opening_countdown = 0;
@@ -224,6 +230,7 @@ class Game
     //   @walker_send <id> <cell>      send_walker;
     //   @overview <hospital>          overview_frame;
     //   @advisor_event <bits>         raise_advisor_event;
+    //   @safeseed <n>                set_safeseed;
     //   @cursor <cell>                update_placement, when it would look
     //                                 again (the pointer moved or a redraw;
     //                                 not placing, it notes the cell only);
@@ -273,6 +280,11 @@ class Game
     // button of the game's does outside the commands. Recorded in
     // command_log.
     void raise_advisor_event(uint32_t bits);
+    // Sets the presentation generator (safeseed) to `seed`: a replay script
+    // puts the generator where the instrumented original's is, so that the
+    // draws after it can be compared without the ones before. Recorded in
+    // command_log.
+    void set_safeseed(uint32_t seed);
     // Path finding tool: sends person `id` to `cell`. A patient on an action
     // sequence leaves it and only walks from then on. Recorded in
     // command_log.

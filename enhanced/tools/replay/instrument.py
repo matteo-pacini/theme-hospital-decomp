@@ -63,6 +63,7 @@ static int trace_events_lost;
 static int trace_rand_on;
 extern "C" const char *trace_rand_caller = "?";
 extern "C" int trace_draw_on = 0;
+extern "C" int trace_seed_on = 0;
 
 static void trace_line(int len)
 {
@@ -280,6 +281,21 @@ static void script_load(void)
             script[script_count][2] = bits;
             script[script_count][3] = 0;
             script_count++;
+        } else if (field >= 1 && p[0] == '@' && p[1] == 's' && p[2] == 'a' && p[3] == 'f' && p[4] == 'e' &&
+                   p[5] == 's' && p[6] == 'e' && p[7] == 'e' && p[8] == 'd') {
+            // The port's "@safeseed <n>": the presentation generator set to
+            // n, so a later draw compares without the drift before it.
+            u32 seed = 0;
+            p += 9;
+            while (*p == ' ' || *p == '\t')
+                p++;
+            while (*p >= '0' && *p <= '9')
+                seed = seed * 10 + (*p++ - '0');
+            script[script_count][0] = v[0];
+            script[script_count][1] = 0x1003;
+            script[script_count][2] = seed;
+            script[script_count][3] = 0;
+            script_count++;
         } else if (field == 4) {
             for (i = 0; i < 4; i++)
                 script[script_count][i] = v[i];
@@ -315,6 +331,9 @@ static void script_run(void)
                 advisor.tutorial_step = 0x1d;
             } else if (script[script_next][1] == 0x1002) {
                 advisor.event_flags_u32 |= script[script_next][2];
+            } else if (script[script_next][1] == 0x1003) {
+                safeseed = script[script_next][2];
+                trace_seed_on = 1;
             } else {
                 player_events[0].type = (u8)script[script_next][1];
                 player_events[0].value = (u16)script[script_next][2];
@@ -641,9 +660,16 @@ EVENTS = {
         ("entry", "effect_illness",
          f'if (cured == 1) trace_event("cure %u illness=%u", {ID.format("patient")}, (unsigned)patient->illness);'),
     ],
-    # Not an event: a comment line (compare.py ignores it), as th_replay
-    # --advisor writes it.
     "advisor.cpp": [
+        (("before", "sprintf(advisor.text, advisor_text[0x6b + saferand() % 3]);"), "find_advice",
+         'if (trace_seed_on) trace_event("advice_variant %u seed=%08x", 0x6bu, (unsigned)safeseed);'),
+        (("before", "sprintf(advisor.text, advisor_text[0x7e + saferand() % 2],"), "find_advice",
+         'if (trace_seed_on) trace_event("advice_variant %u seed=%08x", 0x7eu, (unsigned)safeseed);'),
+        (("before", "sprintf(advisor.text, advisor_text[0x80 + saferand() % 2],"), "find_advice",
+         'if (trace_seed_on) trace_event("advice_variant %u seed=%08x", 0x80u, (unsigned)safeseed);'),
+        # Not an event: a comment line (compare.py ignores it), as th_replay
+        # --advisor writes it. The wrapper renames find_advice, so it comes after
+        # the events inside it.
         ("exit", "find_advice",
          'if (r == 1) { static char note[24]; sprintf(note, "advice %u", (unsigned)advice[id].id); '
          'trace_note(note); }'),
@@ -1070,6 +1096,7 @@ extern "C" void trace_note(const char *label);
 extern "C" unsigned long trace_newrand(const char *caller);
 extern "C" unsigned long trace_normal_rand(const char *caller, unsigned long low, unsigned long high);
 extern "C" int trace_draw_on;
+extern "C" int trace_seed_on;
 '''
 
 
