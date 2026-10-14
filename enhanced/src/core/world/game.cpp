@@ -552,6 +552,7 @@ void Game::set_safeseed(uint32_t seed)
     log_inputs();
     log_line(std::format("@safeseed {}", seed));
     safeseed = seed;
+    seed_traced = true;
 }
 
 void Game::set_cheats_enabled(bool on)

@@ -224,7 +224,8 @@ void trace_rand(const char *function, uint32_t seed);
 //                                          variant of advice text 0x6b, 0x7e or
 //                                          0x80 from the presentation
 //                                          generator (safeseed), with its
-//                                          value before the draw
+//                                          value before the draw; only once a
+//                                          script has set it (@safeseed)
 //   emergency_offer <call> illness=<n> count=<n> bonus=<n> win=<n>
 //                                          setup_emergency_stats: an
 //                                          emergency offered (bonus per

@@ -63,6 +63,7 @@ static int trace_events_lost;
 static int trace_rand_on;
 extern "C" const char *trace_rand_caller = "?";
 extern "C" int trace_draw_on = 0;
+extern "C" int trace_seed_on = 0;
 
 static void trace_line(int len)
 {
@@ -322,6 +323,7 @@ static void script_run(void)
                 script_mouse_cell = script[script_next][2];
             } else if (script[script_next][1] == 0x1003) {
                 safeseed = script[script_next][2];
+                trace_seed_on = 1;
                 othervar.mouse_cell = (u16)script_mouse_cell;
                 if (gamevar.mouse_mode == MM_PLACE_OBJECT)
                     draw_object_cursor();
@@ -659,11 +661,11 @@ EVENTS = {
     ],
     "advisor.cpp": [
         (("before", "sprintf(advisor.text, advisor_text[0x6b + saferand() % 3]);"), "find_advice",
-         'trace_event("advice_variant %u seed=%08x", 0x6bu, (unsigned)safeseed);'),
+         'if (trace_seed_on) trace_event("advice_variant %u seed=%08x", 0x6bu, (unsigned)safeseed);'),
         (("before", "sprintf(advisor.text, advisor_text[0x7e + saferand() % 2],"), "find_advice",
-         'trace_event("advice_variant %u seed=%08x", 0x7eu, (unsigned)safeseed);'),
+         'if (trace_seed_on) trace_event("advice_variant %u seed=%08x", 0x7eu, (unsigned)safeseed);'),
         (("before", "sprintf(advisor.text, advisor_text[0x80 + saferand() % 2],"), "find_advice",
-         'trace_event("advice_variant %u seed=%08x", 0x80u, (unsigned)safeseed);'),
+         'if (trace_seed_on) trace_event("advice_variant %u seed=%08x", 0x80u, (unsigned)safeseed);'),
         # Not an event: a comment line (compare.py ignores it), as th_replay
         # --advisor writes it. The wrapper renames find_advice, so it comes after
         # the events inside it.
@@ -1093,6 +1095,7 @@ extern "C" void trace_note(const char *label);
 extern "C" unsigned long trace_newrand(const char *caller);
 extern "C" unsigned long trace_normal_rand(const char *caller, unsigned long low, unsigned long high);
 extern "C" int trace_draw_on;
+extern "C" int trace_seed_on;
 '''
 
 

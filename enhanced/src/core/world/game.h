@@ -118,6 +118,10 @@ class Game
     // The admin calls left out, the replay check's SKIP (kSkip*); not part of
     // a saved game.
     uint8_t skipped_calls = 0;
+    // Whether a script has set safeseed (@safeseed): the seed is then
+    // traced where the advisor draws a text variant; not part of a saved
+    // game.
+    bool seed_traced = false;
     // The presentation generator (the game's safeseed) as the level's start
     // leaves it: the special levels' builders draw from it. The shell draws
     // from it between turns (the advisor among them), either directly or
