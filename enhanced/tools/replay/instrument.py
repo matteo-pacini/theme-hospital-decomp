@@ -740,6 +740,8 @@ EVENTS = {
          'which_room(tile) ? (unsigned)(which_room(tile) - room_info) : 0u);'),
     ],
     "environ.cpp": [
+        (("before", "if (~person->flags32 & PF_COUNTED_VISITOR) {"), "person_count",
+         f'if (!(~person->flags32 & PF_COUNTED_VISITOR)) {{}} else trace_event("vc %u", {ID.format("person")});'),
         (("before", "change_health(person, -1000);"), "modify_person",
          f'trace_event("emergency_dies %u", {ID.format("person")});'),
         (("before", "reset_icon_value(peep, ICON_TOILET);"), "do_reaction",
