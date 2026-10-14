@@ -326,8 +326,7 @@ void update_monthly_award_counts(YearEnd &state, const World &world, int month, 
     AwardCounts &ac = state.award_counts;
     const int staff = player_staff(world);
     ac.staff_happiness[size_t(month)] = staff > 3 ? (int32_t(int16_t(c.staff_happiness_sum)) << 8) / staff : 0;
-    trace_event("award_staff_happiness sum=%u staff=%u value=%ld", unsigned(c.staff_happiness_sum), unsigned(staff),
-                long(ac.staff_happiness[size_t(month)]));
+    trace_event("award_staff_happiness sum=%u", unsigned(c.staff_happiness_sum));
     if (c.patients > 3) {
         ac.peep_happiness[size_t(month)] = (int32_t(c.happiness_sum) << 8) / c.patients;
         ac.waiting_times[size_t(month)] = (c.waiting_sum << 8) / c.patients;
