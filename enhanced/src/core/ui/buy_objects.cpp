@@ -406,6 +406,7 @@ void sync_object_requesters(Interface &ui, const Game &game)
         if (want == mine && !open) {
             if (ui.requester() != Requester::None)
                 ui.close_requester(ui.requester());
+            close_irequesters(ui);
             ui.open_requester(id);
         } else if (want != mine && open) {
             if (ui.requester() == id)

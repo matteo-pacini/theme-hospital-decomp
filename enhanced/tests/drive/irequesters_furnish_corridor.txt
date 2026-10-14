@@ -1,0 +1,20 @@
+# Level 1: opening the buy objects requester closes the query windows over the
+# view (EV_OPEN_FURNISH_CORRIDOR's close_irequesters, src/io.cpp): a hired doctor's
+# staff window is open, then the panel's furnish corridor button is clicked.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 60 68         # place the doctor (thing 11)
+wait 20
+click-thing 11           # the staff window
+wait 10
+dump staff_open
+expect staff true (thing 11)
+click 268 453            # panel: furnish corridor
+wait 10
+dump build_open
+expect staff false (thing 11)
