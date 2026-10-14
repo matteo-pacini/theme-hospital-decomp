@@ -181,6 +181,7 @@ void sync_build_requester(Interface &ui, const Game &game)
     if (want && !open) {
         if (ui.requester() != Requester::None)
             ui.close_requester(ui.requester());
+        close_irequesters(ui);
         ui.open_requester(Requester::BuildRoom);
     } else if (!want && open) {
         if (ui.requester() == Requester::BuildRoom)
