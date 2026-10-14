@@ -1,0 +1,13 @@
+# Level 1: leaving a chart by its close button switches the edit-room mouse
+# mode off (return_from_screen's set_mouse_mode(MM_NORMAL), src/screens.cpp).
+wait 60
+click 298 453            # panel: edit room
+wait 10
+dump edit_mode
+expect build mouse 4
+key F1
+wait 40
+click 614 456            # the chart's close button
+wait 40
+dump after_chart
+expect build mouse 0

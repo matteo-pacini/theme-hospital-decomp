@@ -447,6 +447,7 @@ class App : public DriveHost
     // Carries out the frame's command (Game::event): the interface's part,
     // then the game's (process_turn).
     void run_command(Game &game);
+    void screen_event(const Event &event);
     // The yes/no requester of an edited room's cancel (the EV_OPEN_YES_NO
     // object_escape sets) and its yes answer, EV_DELETE_ROOM.
     void edited_room_question(Game &game);

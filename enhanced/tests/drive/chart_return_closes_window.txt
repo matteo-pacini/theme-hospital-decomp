@@ -1,0 +1,22 @@
+# Level 1: leaving a chart closes the query windows opened before it
+# (return_from_screen's close_irequesters, src/screens.cpp). A hired doctor's
+# staff window is open, F1 opens the bank chart, its close button leaves it.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 60 68         # place the doctor (thing 11)
+wait 20
+click-thing 11           # the staff window
+wait 10
+dump before_chart
+expect staff true (thing 11)
+key F1
+wait 40
+click 614 456            # the chart's close button
+wait 40
+dump after_chart
+expect staff false (thing 11)

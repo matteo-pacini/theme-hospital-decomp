@@ -1,0 +1,23 @@
+# Level 1: the member's view in the staff list sends EV_RETURN_TO_THING_WINDOW:
+# return_from_screen closes the query windows, then the window of the member
+# reopens (src/io.cpp). The face in the staff window opens the list.
+wait 60
+click 348 453            # panel: hire staff
+wait 10
+click 224 60             # the doctor kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 60 68         # place the doctor (thing 11)
+wait 20
+click-thing 11           # the staff window
+wait 10
+expect staff true (thing 11)
+click 475 110            # the face: the staff list, centred on this member
+wait 40
+expect screen: chart 5
+click 538 413            # the member's view: EV_RETURN_TO_THING_WINDOW
+wait 40
+expect screen: hospital
+dump after_list
+expect staff true (thing 11)
