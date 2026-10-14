@@ -305,6 +305,7 @@ void App::open_year_end()
     year_end_phase_ = 0;
     year_end_showing_ = true;
     game.paused = true;
+    sounds_.stop_all();
 }
 
 // One frame of the year-end screens, drawn aspect-fit in the window; the
@@ -337,7 +338,7 @@ void App::year_end_step(int out_w, int out_h)
         if (r.charts_done) {
             year_end_.close();
             year_end_showing_ = false;
-            game.paused = false;
+            set_paused(false);
         }
     }
     for (uint8_t sfx : r.sounds)

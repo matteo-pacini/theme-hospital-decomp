@@ -112,11 +112,11 @@ void App::draw_panel(const Game *game, const PanelFigures &figures)
     }
 }
 
-// The panel's information bar: the special message while one is up, else
-// the thing under the pointer.
+// The panel's information bar: the paused caption or the special message
+// while one is up, else the thing under the pointer.
 void App::draw_panel_bar(const Game &game)
 {
-    if (panel_message_.empty()) {
+    if (panel_message_.empty() && !game.paused) {
         panel_info_drawn_ = draw_panel_info({ui_, panel_top(*data_), requester_art_.font(), panel_state_.raised},
                                             panel_info_, panel_thing_, game, *data_);
     } else {
@@ -125,17 +125,27 @@ void App::draw_panel_bar(const Game &game)
     }
 }
 
-// display_panel_special_info: the saved/cannot-save/load-failed message on
-// the panel's information bar, for its remaining frames. The pointer over the
-// panel clears it at once, unless the game is paused (panel.cpp:1558-1560).
+// display_panel_special_info: the paused caption (misc_text[21]) or the
+// saved/cannot-save/load-failed message on the panel's information bar, for
+// its remaining frames. The pointer over the panel clears the message at
+// once, unless the game is paused or the hold set by a pause or unpause is
+// still counting down (panel.cpp:1558-1564).
 void App::draw_panel_special_info()
 {
-    if (map_ && !map_->game.paused && help_mouse_.y >= panel_top(*data_)) {
+    bool paused = map_ && map_->game.paused;
+    if (panel_info_hold_ > 0) {
+        panel_info_hold_--;
+    } else if (map_ && !paused && help_mouse_.y >= panel_top(*data_)) {
         panel_message_.clear();
         panel_message_time_ = 0;
         return;
     }
-    draw_panel_message({ui_, panel_top(*data_), requester_art_.font()}, panel_message_, *data_);
+    PanelInfoView view{ui_, panel_top(*data_), requester_art_.font(), false};
+    if (paused) {
+        draw_panel_message(view, data_->text().at(TextSection::Misc, 21), *data_);
+        return;
+    }
+    draw_panel_message(view, panel_message_, *data_);
     if (panel_message_time_ > 0 && --panel_message_time_ == 0)
         panel_message_.clear();
 }

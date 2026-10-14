@@ -1,0 +1,19 @@
+# Level 1
+# The win or lose sequence neither sets nor clears gamevar.paused (src/winlose.cpp
+# has no write of it; only do_year_end and EV_PAUSE do): a game the player
+# paused is still paused behind the letter and after it is declined, and the
+# turns do not run meanwhile.
+wait 60
+key P
+wait 1
+expect paused true
+lose
+wait 3000
+expect screen: win/lose
+expect paused true
+click 320 240
+wait 100
+click 320 240
+wait 100
+expect screen: hospital
+expect paused true

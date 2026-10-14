@@ -1,0 +1,18 @@
+# Level 1
+# P pauses as EV_PAUSE does (src/io.cpp): every sample stops, the song stops,
+# panel_info_hold becomes 50 frames and the information bar shows
+# misc_text[21] (display_panel_special_info, src/panel.cpp) until unpaused;
+# unpausing holds 50 frames again and resumes the song.
+wait 60
+expect panel hold: 0 frames, caption false
+key P
+wait 1
+expect paused true
+expect panel hold: 43 frames, caption true, music playing false
+screenshot pause_caption
+wait 60
+expect panel hold: 0 frames, caption true
+key P
+wait 1
+expect paused false
+expect panel hold: 50 frames

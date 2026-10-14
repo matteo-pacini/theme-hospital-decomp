@@ -75,7 +75,6 @@ void App::open_winlose()
     winlose_showing_ = true;
     winlose_to_menu_ = !win;
     game.progress.winlose_result = 0;
-    game.paused = true;
     open_winlose_movie(movie);
 }
 
@@ -215,11 +214,10 @@ void App::start_next_level(int next)
 
 // A win letter declined: the game's files reload behind the loading screen
 // (src/winlose.cpp, state 5), and the game runs on.
-void App::decline_win(Game &game, bool win)
+void App::decline_win(bool win)
 {
     if (win)
         fader_.queue_level_start();
-    game.paused = false;
 }
 
 // One frame of the win or lose sequence: its movie, then its letter. Accepting
@@ -272,7 +270,7 @@ void App::winlose_step(int out_w, int out_h)
             // DM_MAIN_MENU: back to the main menu (the game is unloaded).
             return_to_main_menu();
         } else {
-            decline_win(game, view.win);
+            decline_win(view.win);
         }
         winlose_to_menu_ = false;
     }

@@ -205,6 +205,7 @@ class App : public DriveHost
     // information bar for `frames` frames (the timer is one a frame).
     void show_panel_message(uint8_t id, int frames);
     void draw_panel_special_info();
+    void set_paused(bool paused);
     void draw_panel_bar(const Game &game);
     // Saves the Continue slot when the game returns to the main menu
     // (quit_game 1: save_game(0x63)).
@@ -229,7 +230,7 @@ class App : public DriveHost
     // is over (deliver_held_events).
     bool hold_during_fade(const SDL_Event &e);
     bool chart_escape(Game &game);
-    void decline_win(Game &game, bool win);
+    void decline_win(bool win);
     void mouse_motion(const SDL_MouseMotionEvent &motion);
     void mouse_wheel(const SDL_MouseWheelEvent &wheel);
     void deliver_held_events();
@@ -535,6 +536,9 @@ class App : public DriveHost
     // the panel's information bar (display_panel_special_info).
     std::string panel_message_;
     int panel_message_time_ = 0;
+    // othervar.panel_info_hold: frames the information bar keeps its message
+    // after a pause or unpause, whatever the pointer is over.
+    int panel_info_hold_ = 0;
     BuildUi build_ui_;
     Jukebox jukebox_;
     // The help system (tooltips and room help pages), its text font (cache
