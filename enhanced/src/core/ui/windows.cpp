@@ -143,7 +143,8 @@ void Interface::open_yes_no(std::string_view question)
 {
     question_ = question;
     modal_ = true;
-    // close_irequesters (the windows opened over the view are not ported).
+    // close_irequesters: the info windows close here; the view windows belong
+    // to their owning window and close with it.
     for (Requester r : {Requester::Patient, Requester::Staff, Requester::Handyman, Requester::Machine})
         close_window(int(r));
     saved_requester_ = requester_;

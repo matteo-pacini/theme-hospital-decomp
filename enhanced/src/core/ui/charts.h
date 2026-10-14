@@ -103,9 +103,9 @@ void setup_insurances(World &world, uint32_t clock);
 // $5000 in the bank), EV_SET_POLICY, EV_ALTER_RESEARCH,
 // EV_CONCENTRATE_RESEARCH, EV_PRICE_UP and EV_PRICE_DOWN (hospital 0's
 // price_scale and price, in Game::arrivals), EV_INCREASE_STAFF_SALARIES and
-// EV_PAY_STAFF_BONUS (paid only if the balance covers it). EV_OPEN_SCREEN
-// first puts a picked-up member of staff back (put_back_held_staff). Not
-// ported: the discontent a raise clears. Returns whether `event` was one of these.
+// EV_PAY_STAFF_BONUS (paid only if the balance covers it). A raise clears the
+// discontent of the staff it raises. EV_OPEN_SCREEN first puts a picked-up
+// member of staff back (put_back_held_staff). Returns whether `event` was one of these.
 bool apply_chart_event(Game &game, HospitalSettings &settings, const Event &event);
 
 // The keys the charts read: Escape and Space pressed since the last frame
