@@ -1,14 +1,15 @@
 # Level 6: epidemic_inspector.txt's hospital and epidemic, then a nurse put
 # down in the GP's office, where no nurse works: the advisor names the room
 # (advise_new_staff, situation 0x7b) with a text variant drawn from the
-# presentation generator (safeseed). The epidemic call (make_a_playercall
-# type 3) and the inspector's result call (type 5, subject 3) each draw from
-# that generator for their announcement, so the variant, and the seed
-# before it that the advice_variant event carries, agree with the original
-# only when both draws are made.
-# Turns 27300
-# Expect playercall 52 type=3
-# Expect get_playercall 0 type=5
+# presentation generator (safeseed). The inspector's result call
+# (make_a_playercall, type 5, subject 3, raised at turn 26731, left
+# unanswered so that no fax holds the advisor) draws its announcement's
+# variant from the same generator. `@safeseed` sets the generator on both
+# sides before the call, so the seed that the advice_variant event carries,
+# two turns later, differs between the original and the port only if one of
+# them did not make that draw.
+# Turns 26900
+# Expect playercall 57 type=5 subject=3
 # Expect advice_variant 128
 # Expect advice 0x7b == 1
 5 98 0 0
@@ -66,9 +67,9 @@
 5089 5 6840 20
 25481 10 3 0
 25482 125 11 0
-26732 10 5 0
-# The nurse (applicant 22, a nurse at turn 27199) goes in the GP's office once
-# the inspector's verdict fax (open from turn 26733 for 400 turns) is gone,
-# at cell 6318 (46,49), free of its objects.
-27200 48 0 22
-27201 5 6318 22
+# The generator set at turn 26731, that of the call; a nurse (applicant 22,
+# at turn 26731) hired and put down at cell 6318 (46,49) in the GP's office
+# (free of its objects) two turns after.
+26731 @safeseed 9029
+26732 48 0 22
+26733 5 6318 22

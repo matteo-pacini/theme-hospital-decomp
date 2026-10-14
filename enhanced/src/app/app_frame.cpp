@@ -157,13 +157,8 @@ void App::run_turns(float dt)
     }
     // At most a few frames' worth of turns after a stall.
     turn_clock_ = std::min(turn_clock_ + dt * rate, 8.0);
-    // The turn draws from the game's safeseed (Game::safeseed) where the original
-    // draws from its one: the shell's seed goes in and comes back.
-    for (; turn_clock_ >= 1; turn_clock_ -= 1) {
-        map_->game.safeseed = sounds_.safeseed;
-        map_->game.turn();
-        sounds_.safeseed = map_->game.safeseed;
-    }
+    for (; turn_clock_ >= 1; turn_clock_ -= 1)
+        play_turn_on_seed(map_->game, sounds_.safeseed, &Game::turn);
 }
 
 // move_windows (src/cakewin.cpp): the scroll direction `dir` accelerates the

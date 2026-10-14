@@ -134,9 +134,7 @@ void App::run_command(Game &game)
     info_window_event(info_, interface_, game.world, game.event);
     queue_window_event(queue_, interface_, game.world, game.event);
     fax_command(fax_, game.event);
-    game.safeseed = sounds_.safeseed;
-    game.process_turn();
-    sounds_.safeseed = game.safeseed;
+    play_turn_on_seed(game, sounds_.safeseed, &Game::process_turn);
     if (demand_answer) {
         interface_.close_requester(Requester::StaffDemand);
         close_irequesters(interface_);

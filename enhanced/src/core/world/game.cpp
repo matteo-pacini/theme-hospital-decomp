@@ -547,6 +547,13 @@ void Game::raise_advisor_event(uint32_t bits)
     advisor.event_flags |= bits;
 }
 
+void Game::set_safeseed(uint32_t seed)
+{
+    log_inputs();
+    log_line(std::format("@safeseed {}", seed));
+    safeseed = seed;
+}
+
 void Game::set_cheats_enabled(bool on)
 {
     log_inputs();
@@ -813,6 +820,13 @@ bool Game::replay_input(std::string_view line, std::string *error)
         if (!bits)
             return replay_input_fail(line, error, "bad bits");
         raise_advisor_event(uint32_t(*bits));
+        return true;
+    }
+    if (name == "@safeseed") {
+        auto seed = replay_input_value(in, 0, 0xffffff);
+        if (!seed)
+            return replay_input_fail(line, error, "bad seed");
+        set_safeseed(uint32_t(*seed));
         return true;
     }
     if (name == "@overview") {

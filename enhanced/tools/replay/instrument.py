@@ -280,6 +280,21 @@ static void script_load(void)
             script[script_count][2] = bits;
             script[script_count][3] = 0;
             script_count++;
+        } else if (field >= 1 && p[0] == '@' && p[1] == 's' && p[2] == 'a' && p[3] == 'f' && p[4] == 'e' &&
+                   p[5] == 's' && p[6] == 'e' && p[7] == 'e' && p[8] == 'd') {
+            // The port's "@safeseed <n>": the presentation generator set to
+            // n, so a later draw compares without the drift before it.
+            u32 seed = 0;
+            p += 9;
+            while (*p == ' ' || *p == '\t')
+                p++;
+            while (*p >= '0' && *p <= '9')
+                seed = seed * 10 + (*p++ - '0');
+            script[script_count][0] = v[0];
+            script[script_count][1] = 0x1003;
+            script[script_count][2] = seed;
+            script[script_count][3] = 0;
+            script_count++;
         } else if (field == 4) {
             for (i = 0; i < 4; i++)
                 script[script_count][i] = v[i];
@@ -305,6 +320,8 @@ static void script_run(void)
                 // "@cursor <cell>": the cursor move the port's update_placement
                 // makes, without the rest of process_mouse.
                 script_mouse_cell = script[script_next][2];
+            } else if (script[script_next][1] == 0x1003) {
+                safeseed = script[script_next][2];
                 othervar.mouse_cell = (u16)script_mouse_cell;
                 if (gamevar.mouse_mode == MM_PLACE_OBJECT)
                     draw_object_cursor();

@@ -618,7 +618,10 @@ balance files' prefix (EASY, HARD or NET; the game's `-bID`, default FULL: the
 level is then passed to both sides as `N -bID`), `# Turns N` the last
 turn and `# Score N` the score the last level left (init_player keeps it
 above level 1; both sides read the header line itself). `@advisor_event N`
-lines raise advisor.event_flags' bits as the interface's buttons do. The
+lines raise advisor.event_flags' bits as the interface's buttons do. `@safeseed N`
+lines set the presentation generator (`safeseed`) on both sides, so the
+draws after it (the `advice_variant` events) are compared from that value,
+not from a seed that earlier draws the replay does not make have moved. The
 cheats' lines (`@cheats 0|1`, `@force_bonus 0|1`, `@cheat FLAGS`,
 `@cheat_rat`, `@cheat_scroll`) are th_replay's only: the instrumented
 original has no stand-in for them, so no script uses them yet. A script

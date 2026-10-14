@@ -226,6 +226,7 @@ class Game
     //   @walker_send <id> <cell>      send_walker;
     //   @overview <hospital>          overview_frame;
     //   @advisor_event <bits>         raise_advisor_event;
+    //   @safeseed <n>                set_safeseed;
     //   @cursor <cell>                update_placement, when it would look
     //                                 again (the pointer moved or a redraw;
     //                                 not placing, it notes the cell only);
@@ -275,6 +276,11 @@ class Game
     // button of the game's does outside the commands. Recorded in
     // command_log.
     void raise_advisor_event(uint32_t bits);
+    // Sets the presentation generator (safeseed) to `seed`: a replay script
+    // puts the generator where the instrumented original's is, so that the
+    // draws after it can be compared without the ones before. Recorded in
+    // command_log.
+    void set_safeseed(uint32_t seed);
     // Path finding tool: sends person `id` to `cell`. A patient on an action
     // sequence leaves it and only walks from then on. Recorded in
     // command_log.
