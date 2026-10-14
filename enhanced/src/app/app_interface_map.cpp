@@ -103,8 +103,7 @@ bool App::interface_watch_buttons(Game &game, const UiMouse &mouse)
 // view keeps centring on the emergency patient, silently.
 bool App::held_emergency_watch(Game &game, const UiMouse &mouse)
 {
-    if (game.world.emergency.timer <= 0 ||
-        !over_sprite(mouse, kPanelWatchX, kPanelWatchY, data_->watch().at(13)))
+    if (game.world.emergency.timer <= 0 || !over_sprite(mouse, kPanelWatchX, kPanelWatchY, data_->watch().at(13)))
         return false;
     centre_on_watch_patient(game, game.world.emergency_patient, false);
     return true;
@@ -155,6 +154,7 @@ Event App::interface_watch_right(Game &game, const UiMouse &mouse)
 // sound plays once on entering it, when the button is drawn.
 void App::interface_watch_hover(Game &game, const UiMouse &mouse)
 {
+    watch_pressed_ = false;
     // The button is drawn only in the epidemic branch or, past an emergency
     // and with the tutorial flag clear, in the opening-countdown branch
     // (draw_emergency, panel.cpp:593).
@@ -181,7 +181,6 @@ void App::interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, boo
     // (othervar.panel_info_timer).
     if (panel_info_timer_ && --panel_info_timer_ == 0)
         panel_info_ = 0;
-    watch_pressed_ = false;
     interface_watch_hover(game, mouse);
     if (!on_map || placing || build_tool_busy(game) || game.world.building.mouse != BuildMouse::None ||
         interface_.requester() != Requester::None || advisor_hit(game.advisor, mouse.x, mouse.y)) {

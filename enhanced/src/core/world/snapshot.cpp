@@ -229,6 +229,14 @@ template <typename IO, typename B> void building_fields(IO &io, B &b)
     io(b.sounds);
 }
 
+// World's epidemic and the patients the panel's watch last picked.
+template <typename IO, typename W> void world_epidemic_fields(IO &io, W &w)
+{
+    io(w.epidemic);
+    io(w.emergency_patient);
+    io(w.epidemic_patient);
+}
+
 // The sound-effect queues the interface plays and clears.
 template <typename IO, typename W> void world_sound_fields(IO &io, W &w)
 {
@@ -306,10 +314,8 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.repair_pager);
     io(w.plant_pager);
     io(w.emergency);
-    io(w.emergency_patient);
-    io(w.epidemic_patient);
     io(w.mayor);
-    io(w.epidemic);
+    world_epidemic_fields(io, w);
     world_sound_fields(io, w);
     world_disaster_fields(io, w);
     world_research_fields(io, w);

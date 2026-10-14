@@ -15,11 +15,11 @@ watch epidemic
 wait 10
 click 20 345 right       # the watch
 wait 10
-expect watch: emergency_patient=0 epidemic_patient=24
+expect emergency_patient=0 epidemic_patient=24
 expect query window: patient true (thing 24,
 click 20 345 right
 wait 10
-expect watch: emergency_patient=0 epidemic_patient=24
+expect emergency_patient=0 epidemic_patient=24
 move 17 343              # the vaccination button
 down left
 wait 10

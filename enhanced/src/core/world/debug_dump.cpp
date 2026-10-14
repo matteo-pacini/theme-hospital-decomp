@@ -938,10 +938,6 @@ void dump_game_world(std::string &out, const World &w)
     L(w, room_of_type);
     out += '\n';
     dump_game_epidemic(out, w);
-    out += "watch:";
-    F(w, emergency_patient);
-    F(w, epidemic_patient);
-    out += '\n';
     dump_game_mayor(out, w);
     for (size_t i = 0; i < w.first_call.size(); i++) {
         out += std::format("first_call {}", i);
@@ -1048,6 +1044,8 @@ void dump_game_emergency(std::string &out, const World &w)
     F(e, heli);
     F(e, heli_landed);
     F(e, heli_pad_tile);
+    F(w, emergency_patient);
+    F(w, epidemic_patient);
     out += '\n';
 }
 

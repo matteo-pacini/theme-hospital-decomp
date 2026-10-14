@@ -9,24 +9,24 @@ wait 60
 watch emergency
 turns 400
 wait 10
-expect watch: emergency_patient=0 epidemic_patient=0
+expect emergency_patient=0 epidemic_patient=0
 expect query window: patient false
 click 20 360 right       # the watch
 wait 10
-expect watch: emergency_patient=24
+expect emergency_patient=24
 expect query window: patient true (thing 24,
 screenshot watch_emergency_first
 click 20 360 right
 wait 10
-expect watch: emergency_patient=30
+expect emergency_patient=30
 expect query window: patient true (thing 30,
 click 20 360 right
 wait 10
-expect watch: emergency_patient=31
+expect emergency_patient=31
 expect query window: patient true (thing 31,
 click 20 360 right
 wait 10
-expect watch: emergency_patient=24
+expect emergency_patient=24
 expect query window: patient true (thing 24,
 click 20 360             # left: centre on the picked patient
 wait 10
