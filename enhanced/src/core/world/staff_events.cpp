@@ -77,8 +77,7 @@ void apply_staff_event_mark_employing(World &world, const Event &event)
         return;
     if (world.things[event.arg].state != kPsWaitsForDecision)
         world.building.mouse = BuildMouse::None;
-    world.counts.staff_happiness_sum =
-        uint16_t(world.counts.staff_happiness_sum + world.things[event.arg].happiness);
+    world.counts.staff_happiness_sum = uint16_t(world.counts.staff_happiness_sum + world.things[event.arg].happiness);
     world.things[event.arg].state = kStaffHeld;
 }
 
