@@ -938,6 +938,10 @@ void dump_game_world(std::string &out, const World &w)
     L(w, room_of_type);
     out += '\n';
     dump_game_epidemic(out, w);
+    out += "watch:";
+    F(w, emergency_patient);
+    F(w, epidemic_patient);
+    out += '\n';
     dump_game_mayor(out, w);
     for (size_t i = 0; i < w.first_call.size(); i++) {
         out += std::format("first_call {}", i);

@@ -795,6 +795,12 @@ struct World {
         uint16_t heli_pad_tile = 0;
     };
     Emergency emergency;
+    // The patients the watch last picked (othervar.emergency_patient, set by a
+    // right click on the emergency watch and cleared when an offer is made;
+    // othervar.epidemic_patient, by one on the epidemic watch), 0 for none.
+    // A left click on the watch centres the view on them.
+    uint16_t emergency_patient = 0;
+    uint16_t epidemic_patient = 0;
 
     // VIP visits (mayor.cpp)
     // Hospital 0's VIP visit (allhosps[0]'s mayor fields): the thing (0 for

@@ -683,6 +683,24 @@ uint16_t find_next_thing(const World &world, uint16_t from, uint8_t type, int su
     return uint16_t(n);
 }
 
+uint16_t find_next_emergency_person(const World &world, uint16_t from, uint32_t flags, ScrollArea scroll)
+{
+    const size_t n = world.things.size();
+    auto matches = [&](size_t i) {
+        const Thing &t = world.things[i];
+        return t.type == kThingPatient && t.owner == 0 &&
+               beyond_scroll_limit({t.x.tile, t.y.tile}, scroll.min_cell, scroll.max_cell) && (t.person_flags & flags);
+    };
+    size_t i = size_t(from) + 1 < n ? size_t(from) + 1 : 0;
+    for (; i < n; i++)
+        if (matches(i))
+            return uint16_t(i);
+    for (i = 0; i < n; i++)
+        if (matches(i))
+            return uint16_t(i);
+    return uint16_t(n);
+}
+
 Point thing_position(const World &world, uint16_t id)
 {
     const Thing &t = world.things[id];

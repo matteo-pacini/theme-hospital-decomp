@@ -155,6 +155,12 @@ InfoWindowResult info_window_frame(InfoWindows &info, Interface &ui, const Inter
 // passes them: in practice every one). The things table's size if none.
 uint16_t find_next_thing(const World &world, uint16_t from, uint8_t type, int sub1, int sub2, ScrollArea scroll);
 
+// find_next_emergency_person (0x73e64): the next patient after `from` in thing
+// order, wrapping round, that is the player's, has any of `flags` (kPfEmergency,
+// kPfContagious) and passes the scroll limit test as find_next_thing does. The
+// things table's size if none.
+uint16_t find_next_emergency_person(const World &world, uint16_t from, uint32_t flags, ScrollArea scroll);
+
 // Where thing `id` is drawn: the map pixel position of its feet (as
 // draw_world places its frame).
 Point thing_position(const World &world, uint16_t id);

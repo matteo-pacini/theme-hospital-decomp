@@ -107,6 +107,8 @@ void App::draw_panel(const Game *game, const PanelFigures &figures)
     if (map_) {
         draw_popup_icons(ui_, popups_, *data_, panel_state_, &figures);
         draw_emergency(ui_, figures, *data_);
+        if (watch_pressed_)
+            ui_.draw_sprite(kPanelWatchButtonX, kPanelWatchButtonY, data_->watch().at(15));
     }
 }
 

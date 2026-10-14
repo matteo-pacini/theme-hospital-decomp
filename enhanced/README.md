@@ -150,7 +150,9 @@ Milestone 4 so far, the game's interface:
   while one runs), the helicopter and its shadow coming down on the level's
   pad with the announcer naming the illness, its patients going straight
   for their treatment (or home at once with no room for it), the watch
-  above the panel and its clock counting down, and the end: the bonus and
+  above the panel and its clock counting down (a right click on it opens
+  the next emergency patient's window, a left click centres the view on
+  them), and the end: the bonus and
   a better reputation, or a worse one and the patients left dying, and the
   result's fax;
 - the player's calls: their fax icons rising from behind the panel and

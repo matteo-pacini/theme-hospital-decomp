@@ -323,7 +323,17 @@ class App : public DriveHost
     void interface_map_mouse(Game &game, const UiMouse &mouse, bool on_map, bool placing);
     // The map's right button this frame (process_right_button): the edit-room
     // modes, picking up or cancelling. Returns the command, EV_NONE for none.
-    Event interface_map_right(Game &game, bool placing);
+    Event interface_map_right(Game &game, const UiMouse &mouse, bool placing);
+    // The right click on the emergency or epidemic watch: opens the next
+    // such patient's window. EV_NONE when the pointer is not on the watch.
+    Event interface_watch_right(Game &game, const UiMouse &mouse);
+    // The held left button on the emergency watch: keeps centring on its patient.
+    bool held_emergency_watch(Game &game, const UiMouse &mouse);
+    // Centres the view on the watch's picked patient `id` (none: nothing),
+    // with a click sound when `click`.
+    void centre_on_watch_patient(const Game &game, uint16_t id, bool click);
+    // Centres the view on thing `id` unless it is beyond the scroll limit.
+    void centre_view_on(const World &world, uint16_t id);
     void interface_map_hover(Game &game, const UiMouse &mouse, bool on_map, bool placing);
     // process_no_button's MM_NORMAL case: the pointer on a room of the player's
     // or on its reception (desk or receptionist) flags the queue.
@@ -517,6 +527,9 @@ class App : public DriveHost
     // othervar.watch_hovered: the pointer is over the watch button, so the
     // highlight sound plays once on entering it.
     bool watch_hovered_ = false;
+    // The left button is held on the epidemic watch's button: its pressed
+    // sprite is drawn (process_mleft_button).
+    bool watch_pressed_ = false;
     // othervar.panel_message and panel_message_time: the special message on
     // the panel's information bar (display_panel_special_info).
     std::string panel_message_;
