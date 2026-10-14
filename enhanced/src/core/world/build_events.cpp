@@ -410,6 +410,10 @@ bool apply_build_event(Game &game, const Event &event)
     case EV_CANCEL_BUILD:
         cancel_build(game);
         return false;
+    case EV_CLOSE_YES_NO: // set_mouse_mode(arg) when the no event names one
+        if (event.arg == uint16_t(BuildMouse::Blueprint))
+            bd.mouse = BuildMouse::Blueprint;
+        return false;
     case EV_CLOSE_QUEUE_WINDOW: // set_mouse_mode(MM_NORMAL)
         bd.mouse = BuildMouse::None;
         return false;

@@ -85,11 +85,15 @@ void placement_mouse(ObjectUi &oui, Game &game, int cell, const UiMouse &mouse, 
 // these is up, an object is being placed or a room built: while a room is
 // furnished, the buy objects requester goes back to placing
 // (EV_BACK_TO_PLACE_OBJECT, restoring the list); the edit room requester
-// abandons the blueprint (EV_DELETE_ROOM) or takes the room back to one
-// (EV_EDIT_BLUEPRINT); otherwise EV_CANCEL_BUILD, which drops what was
+// abandons the blueprint (EV_DELETE_ROOM; an edited room first asks, as an
+// EV_OPEN_YES_NO of value kDeleteEditedRoomQuestion for the app to open) or
+// takes the room back to one (EV_EDIT_BLUEPRINT); otherwise EV_CANCEL_BUILD, which drops what was
 // bought and not placed. Returns whether it did. EV_CANCEL_BUILD's value is
 // the held staff member, 0 here.
 bool object_escape(Game &game);
+
+// The yesno_text index of the question an edited room's cancel asks.
+constexpr uint16_t kDeleteEditedRoomQuestion = 4;
 
 // After draw_interface: the buy objects requester's own drawing
 // (req11_overdraw: the title, the selected kind's price and picture, the

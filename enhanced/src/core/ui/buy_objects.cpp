@@ -560,8 +560,12 @@ bool object_escape(Game &game)
         return true;
     }
     if (p.requester == ObjectRequester::EditRoom && p.requester_mode == 0) {
-        // The game first asks while a room is edited, which is not ported.
-        game.event = {EV_DELETE_ROOM, 0, 0, 0};
+        // An edited room asks first (yesno_text[4]): the app opens the
+        // requester for this EV_OPEN_YES_NO.
+        if (game.world.editing_room)
+            game.event = {EV_OPEN_YES_NO, kDeleteEditedRoomQuestion, 0, 0};
+        else
+            game.event = {EV_DELETE_ROOM, 0, 0, 0};
         return true;
     }
     if (p.requester == ObjectRequester::EditRoom && p.room_type != kRoomCorridor) {
