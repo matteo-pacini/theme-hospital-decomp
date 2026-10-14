@@ -64,13 +64,13 @@ void App::open_winlose()
             anim = 1; // ANIM_LOSE3 plays ANIM_LOSE2
         movie = anim;
         winlose_pick_ = lose_line_index(anim);
-        // insert_hall_details: the losing score enters the hall of shame.
-        hosp_scores_ = default_hosp_scores();
-        load_highscores(hiscore_path_, hosp_scores_);
-        insert_hall_details(hosp_scores_, startup_.player_name(), game.progress.score);
-        save_highscores(hiscore_path_, hosp_scores_);
-        web::flush_storage();
     }
+    // insert_hall_details: the score enters the hall of fame or of shame.
+    hosp_scores_ = default_hosp_scores();
+    load_highscores(hiscore_path_, hosp_scores_);
+    insert_hall_details(hosp_scores_, startup_.player_name(), game.progress.score);
+    save_highscores(hiscore_path_, hosp_scores_);
+    web::flush_storage();
     winlose_.open(win, game.level_number());
     winlose_showing_ = true;
     winlose_to_menu_ = !win;

@@ -1,0 +1,17 @@
+# Level 1
+# Size 640x480
+# A won level enters its score in the hall of fame or of shame as soon as the
+# win movie starts (insert_hall_details, src/winlose.cpp play_winlose state
+# 1). The first win carries the starting score, which only beats the lowest
+# shame entry; accepting the letter starts level 2 with the next level offer
+# as score, and winning that enters the hall of fame.
+wait 30
+win
+wait 450
+expect hall: fame none, shame 10000
+click 410 419
+wait 60
+expect level: 2 (
+win
+wait 100
+expect hall: fame 1000000, shame 10000

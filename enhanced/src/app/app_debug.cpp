@@ -235,6 +235,14 @@ std::string App::debug_state() const
     std::replace(tooltip.begin(), tooltip.end(), '\n', ' ');
     s += std::format("help: page {}{}, last tooltip \"{}\"\n", page ? "open" : "closed",
                      page ? std::format(" (room type {})", help.sub) : "", tooltip);
+    // The player's entry in each hall as the last win or lose letter left it.
+    auto hall_entry = [&](const std::array<HighScore, 10> &hall) {
+        for (const HighScore &e : hall)
+            if (e.score > 0 && e.name == startup_.player_name())
+                return std::to_string(e.score);
+        return std::string("none");
+    };
+    s += std::format("hall: fame {}, shame {}\n", hall_entry(hosp_scores_.fame), hall_entry(hosp_scores_.shame));
     // The query windows (Requester::Patient, Staff, Handyman, Machine) and
     // what they show.
     s += std::format("query window: patient {} (thing {}, {}, toggle delay {}), staff {} (thing {}), handyman {}, "
