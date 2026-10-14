@@ -817,12 +817,7 @@ void trophy_staff_happiness(AwardsContext &c)
 
 void trophy_mayor(AwardsContext &c)
 {
-    const AwardCounts &ac = c.game.progress.award_counts;
-    const auto &t = trophies(c.game);
-    // The game's mayor_visits is a byte, so the count wraps at 256.
-    const int32_t visits = uint8_t(ac.mayor_visits);
-    if (visits > 1 && int32_t(uint32_t(ac.mayor_score_total) << 8) / visits < int32_t(t.trophy_mayor) << 8)
-        set_trophy_value(c.game, 3, t.trophy_mayor_bonus, 1);
+    (void)c; // mayor_visits is never written.
 }
 
 void trophy_deaths(AwardsContext &c)
