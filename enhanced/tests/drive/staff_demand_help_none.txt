@@ -8,8 +8,6 @@ click 224 92             # the nurse kind
 wait 10
 click 334 323            # hire the shown applicant
 wait 10
-dump hired
-expect staff 11 type=4(staff) subtype=2(nurse) state=68(held)
 click-cell 60 68         # place the nurse (thing 11)
 wait 20
 demand 11

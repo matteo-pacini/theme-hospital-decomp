@@ -111,7 +111,6 @@ for script in "$@"; do
     echo "pass $name"
   else
     echo "FAIL $name (see $out.log)"
-    tail -n 8 "$out.log" >&2
     failed=1
   fi
 done
