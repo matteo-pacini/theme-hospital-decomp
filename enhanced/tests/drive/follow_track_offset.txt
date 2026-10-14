@@ -1,0 +1,39 @@
+# Level 1: a click on the view of a member of staff's window centres the
+# hospital view on them as process_tracking_windows does (src/cakewin.cpp:51):
+# the tile's absolute position plus their place in the tile, the x moved by
+# half a tile (32) and both less the layout's track offset of 30
+# (HiresCoords[171], src/coords.cpp). The receptionist walks in tile (60, 68)
+# when clicked: x = -256 - 8 + 32 - 30 = -262 and y = 2048 + 20 - 30 = 2038,
+# less half of the 1280 x 720 view. Without the offsets the view would be at
+# -904,1684.
+wait 60
+click 268 453            # panel: furnish corridor
+wait 10
+click 328 84             # buy the reception desk (the first entry)
+wait 10
+click 400 300            # accept, and start placing
+wait 10
+click-cell 60 68         # place the desk
+wait 20
+click 348 453            # panel: hire staff
+wait 10
+click 226 298            # the receptionist kind
+wait 10
+click 334 323            # hire the shown applicant
+wait 10
+click-cell 61 70         # place the receptionist on the hospital's land
+wait 20
+keydown Down             # the receptionist clear of the panel
+wait 5
+keyup Down
+wait 3
+click-thing 22           # the receptionist: the staff window
+wait 10
+move 455 268             # the window's view of them
+wait 5
+click 455 268
+wait 10
+dump centred
+expect camera: -902,1678
+screenshot centred
+quit
