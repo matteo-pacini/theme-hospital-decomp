@@ -1,0 +1,16 @@
+# Level 1
+# An unpaused game stays unpaused behind the lose letter (src/winlose.cpp does
+# not write gamevar.paused) and no turn runs while the letter is up
+# (display_mode_control for DM_YEAR_END_WINLOSE).
+wait 60
+lose
+wait 3000
+expect screen: win/lose
+expect paused false
+expect turn=23
+click 320 240
+wait 100
+click 320 240
+wait 100
+expect screen: hospital
+expect paused false

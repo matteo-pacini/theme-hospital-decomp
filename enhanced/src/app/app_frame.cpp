@@ -92,7 +92,7 @@ void App::update(float dt)
         load_level(level_);
         return;
     }
-    if (map_ && !map_->game.paused)
+    if (map_ && !map_->game.paused && !winlose_showing_)
         run_turns(dt);
     if (map_ && map_->game.progress.rat_game_over)
         finish_rat_level();

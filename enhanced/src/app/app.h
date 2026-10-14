@@ -229,7 +229,7 @@ class App : public DriveHost
     // is over (deliver_held_events).
     bool hold_during_fade(const SDL_Event &e);
     bool chart_escape(Game &game);
-    void decline_win(Game &game, bool win);
+    void decline_win(bool win);
     void mouse_motion(const SDL_MouseMotionEvent &motion);
     void mouse_wheel(const SDL_MouseWheelEvent &wheel);
     void deliver_held_events();
