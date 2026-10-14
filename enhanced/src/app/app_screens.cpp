@@ -101,14 +101,16 @@ void App::edited_room_question(Game &game)
         interface_.close_yes_no(false);
 }
 
-// return_from_screen closes the query windows and drops the vaccination tool;
+// The charts' part of a command. Leaving a screen also closes the query
+// windows and drops the vaccination tool (return_from_screen);
 // EV_RETURN_TO_THING_WINDOW's window reopens after that.
-void App::leave_screen(const Event &event)
+void App::screen_event(const Event &event)
 {
-    if (event.type != EV_RETURN_FROM_SCREEN && event.type != EV_RETURN_TO_THING_WINDOW)
-        return;
-    close_irequesters(interface_);
-    vaccinate_ = false;
+    chart_command(charts_, event);
+    if (event.type == EV_RETURN_FROM_SCREEN || event.type == EV_RETURN_TO_THING_WINDOW) {
+        close_irequesters(interface_);
+        vaccinate_ = false;
+    }
 }
 
 void App::run_command(Game &game)
@@ -130,10 +132,9 @@ void App::run_command(Game &game)
     // close_crequester and close_irequesters).
     bool demand_answer = game.event.type == EV_REFUSE_STAFF_DEMAND || game.event.type == EV_RAISE_STAFF_SALARY ||
                          game.event.type == EV_GIVE_STAFF_BONUS;
-    leave_screen(game.event);
     hire_staff_event(hire_, interface_, game.world, game.event);
     jukebox_event(jukebox_, interface_, game.event);
-    chart_command(charts_, game.event);
+    screen_event(game.event);
     // EV_SACK_STAFF and EV_CANCEL_SACK close the yes/no requester that asked.
     if (game.event.type == EV_SACK_STAFF || game.event.type == EV_CANCEL_SACK)
         interface_.close_yes_no(true);
