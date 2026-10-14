@@ -1,9 +1,0 @@
-wait 60
-click 348 453
-wait 10
-click 224 92
-wait 10
-click 334 323
-wait 10
-dump hired
-expect staff 11 type=4(staff) subtype=2(nurse) state=68(held)
