@@ -153,10 +153,12 @@ constexpr uint8_t kCoverColour = 0x7a;
 // The info bar's "cured" (info_bar_text[8]).
 constexpr int kCuredText = 8;
 
-// How far above a person's feet the views centred on them centre: about
-// half a person's height, so that they are seen whole. The game's own
-// offsets (process_tracking_windows' track_offset_x and _y) are not ported.
-constexpr int kTrackLift = 24;
+// ScrollLayout's track_offset_x and _y (HiresCoords[171]): taken off a
+// followed thing's position when a view is centred on it.
+constexpr int kTrackOffset = 30;
+
+// The half tile width process_tracking_windows adds to the thing's x.
+constexpr int kTrackHalfTile = 32;
 
 bool over(int mx, int my, Point at, Rect box)
 {
@@ -691,7 +693,7 @@ Point thing_position(const World &world, uint16_t id)
 Point info_centre(const World &world, uint16_t id)
 {
     Point p = thing_position(world, id);
-    return {p.x, p.y - kTrackLift};
+    return {p.x + kTrackHalfTile - kTrackOffset, p.y - kTrackOffset};
 }
 
 namespace
@@ -916,7 +918,7 @@ InfoWindowResult info_window_frame(InfoWindows &info, Interface &ui, const Inter
         return r;
     const uint16_t tracked = patient ? info.patient : info.staff;
     const Thing *tt = shown(context.world, tracked, patient ? kThingPatient : kThingStaff);
-    if (!tt || beyond_scroll_limit(thing_position(context.world, tracked), context.scroll.min_cell,
+    if (!tt || beyond_scroll_limit(info_centre(context.world, tracked), context.scroll.min_cell,
                                    context.scroll.max_cell, 10))
         close_irequesters(ui);
     return r;
