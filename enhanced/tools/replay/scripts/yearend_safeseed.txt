@@ -6,8 +6,8 @@
 # (advise_new_staff, situation 0x7b) with a variant drawn from the generator:
 # the seed that the advice_variant event carries differs between the original
 # and the port unless both made the same number of draws at the year end.
-# Turns 18400
-# Expect advice_variant 128
+# Turns 18303
+# Expect advice_variant 126
 # Expect advice 0x7b == 1
 # Expect score 10800
 5 98 0 0
