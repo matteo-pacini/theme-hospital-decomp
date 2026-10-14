@@ -14,6 +14,7 @@ class SpriteSheet;
 class Font;
 struct World;
 struct HireStaff;
+struct StaffDemand;
 struct InfoWindows;
 struct Charts;
 struct ObjectPlacing;
@@ -83,6 +84,7 @@ struct HelpContext {
     const LanguageText *text = nullptr;
     Interface *ui = nullptr;
     HireStaff *hire = nullptr;
+    const StaffDemand *demand = nullptr;
     InfoWindows *info = nullptr;
     Charts *charts = nullptr;
     ObjectPlacing *placing = nullptr;

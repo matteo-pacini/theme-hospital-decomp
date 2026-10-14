@@ -6,6 +6,7 @@
 #include "core/data/text.h"
 #include "core/render/surface.h"
 #include "core/ui/helpmsg.h"
+#include "core/ui/hire_staff.h"
 #include "core/ui/layer.h"
 #include "core/ui/menubar.h"
 
@@ -307,12 +308,15 @@ void test_help_callback_wrapped(const char *dir)
     help.set_art(font, bar.sprites);
     th::UiMouse mouse{10, 10, false, false, false, false, false, false};
     th::HelpContext ctx = game_context(&gd.text(), help.box(), mouse);
+    th::HireStaff hire;
+    hire.shown = 1;
+    ctx.hire = &hire;
 
-    // req12's callbacks set their hotspot's plain entry unconditionally (the
-    // demand requester is not ported).
+    // req2_help_if_selected sets its hotspot's plain entry once a member of
+    // staff is shown.
     int idx = -1;
     for (int i = 0; i < th::kHiresHelpCount; i++)
-        if (th::kHiresHelp[i].x0 >= 0 && th::kHiresHelp[i].func == &th::req12_help_if_doctor) {
+        if (th::kHiresHelp[i].x0 >= 0 && th::kHiresHelp[i].func == &th::req2_help_if_selected) {
             idx = i;
             break;
         }
@@ -338,6 +342,7 @@ void test_help_requester_groups()
     CHECK(th::requester_help_group(th::Requester::Handyman) == 0xc);
     CHECK(th::requester_help_group(th::Requester::EditRoom) == 0xd);
     CHECK(th::requester_help_group(th::Requester::Jukebox) == 0x14);
+    CHECK(th::requester_help_group(th::Requester::StaffDemand) == 0x1a);
     CHECK(th::requester_help_group(th::Requester::None) == 0);
 }
 
