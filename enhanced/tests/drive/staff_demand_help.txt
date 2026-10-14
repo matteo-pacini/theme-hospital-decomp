@@ -16,4 +16,4 @@ move 175 225             # the doctor qualification
 wait 150
 dump help
 expect interface: requester 12,
-expect-not last tooltip ""
+expect last tooltip "Qualified
