@@ -1,0 +1,68 @@
+# Level 1
+# Turns 1700
+# The hire's happiness in the staff happiness total (req2_mark_employing adds
+# it to adcounts.staff_happiness_sum, which monthly_update_of_award_counts
+# reads at month end for the staff happiness award figure). advisor_staff.txt's
+# hospital: reception, a GP's office, five doctors and five nurses (more than
+# three staff, so the month's figure is not forced to 0). Three more staff
+# are hired at turns 1540-1545, after the statistics pass at turn 1536 (the
+# sum is recounted from the staff then) and before the first month end near
+# turn 1550: the figure of that month end holds their happiness, which the
+# pass has not counted.
+# Expect award_staff_happiness
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# Five more doctors (applicants 12-16) and five nurses (3-7), each placed at
+# cell 10044.
+120 48 1 12
+121 5 10044 12
+122 48 1 13
+123 5 10044 13
+124 48 1 14
+125 5 10044 14
+126 48 1 15
+127 5 10044 15
+128 48 1 16
+129 5 10044 16
+130 48 0 3
+131 5 10044 3
+132 48 0 4
+133 5 10044 4
+134 48 0 5
+135 5 10044 5
+136 48 0 6
+137 5 10044 6
+138 48 0 7
+139 5 10044 7
+# Hired after the pass at turn 1536: nurses 8 and 9, doctor 18.
+1540 48 0 8
+1541 5 10044 8
+1542 48 0 9
+1543 5 10044 9
+1544 48 1 18
+1545 5 10044 18

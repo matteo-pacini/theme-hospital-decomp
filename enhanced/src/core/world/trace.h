@@ -164,6 +164,9 @@ void trace_rand(const char *function, uint32_t seed);
 //   rathole <tile> owner=<n> side=<n>      try_create_rathole, a hole added
 //   rathole_remove <tile> owner=<n>        remove_rathole
 //   rat <id> owner=<n> from=<tile> to=<tile>  make_a_rat, a rat sent out
+//   award_staff_happiness sum=<n>          monthly_update_of_award_counts, the
+//                                          staff happiness total the month's
+//                                          award figure is made from
 //   shoot_rat <rat> killed=<0 or 1> powerup=<n> shots=<n> kills=<n>
 //                                          process_turn's EV_SHOOT_RAT (shots
 //                                          and kills the year's award counts)
