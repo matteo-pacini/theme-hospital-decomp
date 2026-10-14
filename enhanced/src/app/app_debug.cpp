@@ -283,6 +283,8 @@ std::string App::debug_state_hospital(const Game &g) const
     s += std::format("panel info: kind {}, thing {}, shown {}\n", panel_info_, panel_thing_,
                      panel_info_drawn_ != 0 ? "true" : "false");
     s += std::format("panel message: \"{}\" ({} frames)\n", panel_message_, panel_message_time_);
+    s += std::format("panel hold: {} frames, caption {}, music playing {}\n", panel_info_hold_, g.paused,
+                     music_.playing());
     s += std::format("placing: object {}, staff {}, build mouse {}\n", g.world.placing.placing, hire_.placing(),
                      int(g.world.building.mouse));
     s += std::format("flashing: pickup thing {}, queue thing {}\n", build_ui_.pickup_thing, queue_.hilight);

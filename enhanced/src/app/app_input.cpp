@@ -512,10 +512,29 @@ bool App::cheat_key(const SDL_KeyboardEvent &key)
     return true;
 }
 
+// The local player's EV_PAUSE (io.cpp): pausing stops every sample and the
+// song, unpausing resumes the song when music is on; both hold the
+// information bar's message for 50 frames.
+void App::set_paused(bool paused)
+{
+    map_->game.paused = paused;
+    panel_info_hold_ = 0x32;
+    if (paused) {
+        sounds_.stop_all();
+        if (music_.playing()) {
+            music_.pause_song();
+            music_.set_playing(false);
+        }
+    } else if (music_.music_on() && music_.midi_playing()) {
+        music_.resume_song();
+        music_.set_playing(true);
+    }
+}
+
 void App::game_letter_key(const SDL_KeyboardEvent &key)
 {
     if (key.key == SDLK_P) {
-        map_->game.paused = !map_->game.paused;
+        set_paused(!map_->game.paused);
     } else if (key.key == SDLK_T && charts_.open) {
         // From a chart, T leaves for the town map (DM_TOWN_MAP).
         charts_.open = false;
