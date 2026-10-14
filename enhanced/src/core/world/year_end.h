@@ -99,6 +99,9 @@ struct YearEnd {
     int32_t year_start_staff = 0;
     // gamevar.prev_year_deaths, for the no-deaths trophy.
     int32_t prev_year_deaths = 0;
+    // othervar.plaque_rat_kills: the kills the rat trophy was given for, as a
+    // byte.
+    uint8_t plaque_rat_kills = 0;
     // The rat counters (myhosp->rat_shots/rats_killed_u).
     uint16_t rat_shots = 0;
     uint16_t rats_killed = 0;

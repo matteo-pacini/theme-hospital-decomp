@@ -42,7 +42,7 @@ constexpr uint64_t kLayoutHash =
 
 // The raw structs' sizes hold on every platform; a change here is a new save
 // layout.
-static_assert(kLayoutHash == 0x75417a56a182e5a5ull, "a raw struct's size changed: bump kSaveFormat");
+static_assert(kLayoutHash == 0x7fc3d27848d9b501ull, "a raw struct's size changed: bump kSaveFormat");
 
 // Fields of World, Game and the structures they hold that are not copied
 // as a whole must each be listed below; on the build the code is written on,

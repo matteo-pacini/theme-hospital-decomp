@@ -548,11 +548,23 @@ void YearEndScreen::collect_awards_won()
     }
 }
 
+std::string YearEndScreen::bonus_line(std::string_view bonus, int32_t value)
+{
+    return std::string(bonus) + (value > 0 ? "\n+" : "\n") + std::to_string(value);
+}
+
+std::string YearEndScreen::plaque_text(std::string_view text, int number)
+{
+    std::string out(text);
+    size_t at = out.find("%d");
+    if (at != std::string::npos)
+        out.replace(at, 2, std::to_string(number));
+    return out;
+}
+
 void YearEndScreen::draw_plaque()
 {
     const Font &font = fonts_[2]; // 0x12
-    char text1[252];
-    char text2[20];
     switch (current_display_) {
     case 1:
         for (int i = 0; i < 3; i++)
@@ -564,10 +576,8 @@ void YearEndScreen::draw_plaque()
         const Award &a = awards_won_[size_t(current_award_)];
         std::string_view text =
             text_->at(current_display_ == 1 ? TextSection::GoodAwards : TextSection::BadAwards, a.text_index);
-        std::string_view bonus = text_->at(TextSection::TrophyBonus, a.reward_kind);
-        std::snprintf(text1, sizeof text1, "%.*s", int(text.size()), text.data());
-        std::snprintf(text2, sizeof text2, "%.*s\n%+d", int(bonus.size()), bonus.data(), a.value);
-        draw_text_at(font, 0, 0, text1, 0, {0xee, 0x73, 0x9a, 0xbb});
+        std::string text2 = bonus_line(text_->at(TextSection::TrophyBonus, a.reward_kind), a.value);
+        draw_text_at(font, 0, 0, text, 0, {0xee, 0x73, 0x9a, 0xbb});
         draw_text_at(font, 0, 0, text2, 0, {0xee, 0x12e, 0x9a, 0x26});
         break;
     }
@@ -577,13 +587,11 @@ void YearEndScreen::draw_plaque()
         draw_sprite_at(kPlaqueTrophy[2].x, kPlaqueTrophy[2].y, kSpritePlaqueTrophy[2]);
         const Font &tf = fonts_[1]; // 0x11
         const Trophy &t = trophies_won_[size_t(current_award_)];
-        std::string text1 = std::string(text_->at(TextSection::Trophy, t.text_index));
+        std::string text1(text_->at(TextSection::Trophy, t.text_index));
         if (t.id == 5)
-            text1 = std::string(text_->at(TextSection::Trophy, t.text_index)); // plaque_rat_kills not kept
-        std::snprintf(text2, sizeof text2, "%.*s", int(text_->at(TextSection::TrophyBonus, t.reward_kind).size()),
-                      std::string(text_->at(TextSection::TrophyBonus, t.reward_kind)).data());
-        char text3[12];
-        std::snprintf(text3, sizeof text3, "+%d", t.value);
+            text1 = plaque_text(text1, view_rat_kills_);
+        std::string text2(text_->at(TextSection::TrophyBonus, t.reward_kind));
+        std::string text3 = "+" + std::to_string(t.value);
         draw_text_at(tf, 0, 0, text1, 0, {0xe1, 0x6a, 0xb4, 0xe0});
         draw_text_at(tf, 0, 0, text2, 0, {0xd7, 0x150, 0xce, 0x14});
         draw_text_at(tf, 0, 0, text3, 0, {0xd7, 0x172, 0xce, 0x14});
@@ -734,7 +742,6 @@ void YearEndScreen::set_view(const YearEndView &view)
     view_awards_ = view.awards;
     view_trophies_ = view.trophies;
     view_rat_kills_ = view.plaque_rat_kills;
-    view_rat_pct_ = view.plaque_rat_kill_pct;
 }
 
 void YearEndScreen::charts_input(UiMouse &mouse, YearEndResult &result)

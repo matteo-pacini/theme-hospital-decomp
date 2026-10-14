@@ -334,3 +334,23 @@ void test_level_rival_owner_cells(const char *dir)
         CHECK(rival_only == 0);
     }
 }
+
+// The rat-kill trophy keeps the year's kill count for its plaque
+// (src/awards.cpp:187): the year end clears the counts, a byte as the
+// original's othervar.plaque_rat_kills.
+void test_yearend_plaque_rat_kills(const char *dir)
+{
+    HireFixture f;
+    CHECK(f.start(dir));
+    if (!f.level)
+        return;
+    th::Game &game = *f.game;
+    for (int32_t &visitors : game.finance.history[th::kHistoryVisitors])
+        visitors = 1;
+    game.progress.award_counts.rats_killed = int32_t(game.settings().awards_trophies.rat_kills_absolute) + 1;
+    game.progress.award_counts.rat_shots = game.progress.award_counts.rats_killed;
+    th::year_end_sim(game);
+    CHECK(game.progress.trophies[5].id == 5);
+    CHECK(game.progress.award_counts.rats_killed == 0);
+    CHECK(game.progress.plaque_rat_kills == game.settings().awards_trophies.rat_kills_absolute + 1);
+}
