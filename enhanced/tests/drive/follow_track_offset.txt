@@ -6,7 +6,6 @@
 # when clicked: x = -256 - 8 + 32 - 30 = -262 and y = 2048 + 20 - 30 = 2038,
 # less half of the 1280 x 720 view. Without the offsets the view would be at
 # -904,1684.
-# Size 640x480
 wait 60
 click 268 453            # panel: furnish corridor
 wait 10
