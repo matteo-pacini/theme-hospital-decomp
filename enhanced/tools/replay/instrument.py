@@ -321,9 +321,6 @@ static void script_run(void)
                 // "@cursor <cell>": the cursor move the port's update_placement
                 // makes, without the rest of process_mouse.
                 script_mouse_cell = script[script_next][2];
-            } else if (script[script_next][1] == 0x1003) {
-                safeseed = script[script_next][2];
-                trace_seed_on = 1;
                 othervar.mouse_cell = (u16)script_mouse_cell;
                 if (gamevar.mouse_mode == MM_PLACE_OBJECT)
                     draw_object_cursor();
@@ -334,6 +331,9 @@ static void script_run(void)
                 advisor.tutorial_step = 0x1d;
             } else if (script[script_next][1] == 0x1002) {
                 advisor.event_flags_u32 |= script[script_next][2];
+            } else if (script[script_next][1] == 0x1003) {
+                safeseed = script[script_next][2];
+                trace_seed_on = 1;
             } else {
                 player_events[0].type = (u8)script[script_next][1];
                 player_events[0].value = (u16)script[script_next][2];
