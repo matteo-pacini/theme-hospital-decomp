@@ -101,6 +101,16 @@ void App::edited_room_question(Game &game)
         interface_.close_yes_no(false);
 }
 
+// return_from_screen closes the query windows and drops the vaccination tool;
+// EV_RETURN_TO_THING_WINDOW's window reopens after that.
+void App::leave_screen(const Event &event)
+{
+    if (event.type != EV_RETURN_FROM_SCREEN && event.type != EV_RETURN_TO_THING_WINDOW)
+        return;
+    close_irequesters(interface_);
+    vaccinate_ = false;
+}
+
 void App::run_command(Game &game)
 {
     // EV_OPEN_SCREEN is refused while an edited room empties (io.cpp:824).
@@ -120,12 +130,7 @@ void App::run_command(Game &game)
     // close_crequester and close_irequesters).
     bool demand_answer = game.event.type == EV_REFUSE_STAFF_DEMAND || game.event.type == EV_RAISE_STAFF_SALARY ||
                          game.event.type == EV_GIVE_STAFF_BONUS;
-    // return_from_screen closes the query windows and drops the vaccination
-    // tool before EV_RETURN_TO_THING_WINDOW reopens its window.
-    if (game.event.type == EV_RETURN_FROM_SCREEN || game.event.type == EV_RETURN_TO_THING_WINDOW) {
-        close_irequesters(interface_);
-        vaccinate_ = false;
-    }
+    leave_screen(game.event);
     hire_staff_event(hire_, interface_, game.world, game.event);
     jukebox_event(jukebox_, interface_, game.event);
     chart_command(charts_, game.event);

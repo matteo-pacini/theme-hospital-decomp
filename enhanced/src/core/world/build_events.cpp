@@ -359,6 +359,14 @@ std::optional<bool> apply_build_event_requesters(Game &game, const Event &event)
         if (p.requester == ObjectRequester::EditRoom && p.requester_mode >= 6)
             set_room_requester_mode(w, p.requester_mode);
         return true;
+    case EV_RETURN_FROM_SCREEN:
+    case EV_RETURN_TO_THING_WINDOW:
+        // return_from_screen's set_mouse_mode(MM_NORMAL); the blueprint, door
+        // and pick-up modes come back from the edit-room requester's mode, so
+        // they stay.
+        if (w.building.mouse == BuildMouse::EditRoom || w.building.mouse == BuildMouse::MoveQueuePerson)
+            w.building.mouse = BuildMouse::None;
+        return false;
     default:
         return std::nullopt;
     }
@@ -423,14 +431,6 @@ bool apply_build_event(Game &game, const Event &event)
         return false;
     case EV_CLOSE_QUEUE_WINDOW: // set_mouse_mode(MM_NORMAL)
         bd.mouse = BuildMouse::None;
-        return false;
-    case EV_RETURN_FROM_SCREEN:
-    case EV_RETURN_TO_THING_WINDOW:
-        // return_from_screen's set_mouse_mode(MM_NORMAL); the blueprint, door
-        // and pick-up modes come back from the edit-room requester's mode, so
-        // they stay.
-        if (bd.mouse == BuildMouse::EditRoom || bd.mouse == BuildMouse::MoveQueuePerson)
-            bd.mouse = BuildMouse::None;
         return false;
     default:
         return false;
