@@ -68,15 +68,17 @@ bool put_back_held_staff(Game &game)
 namespace
 {
 
-// apply_staff_event's EV_MARK_EMPLOYING: req2_mark_employing (the advisor's
-// staff happiness total is not ported) and set_mouse_mode(MM_PLACE_STAFF),
-// which leaves a room-edit wait.
+// apply_staff_event's EV_MARK_EMPLOYING: req2_mark_employing (the hire's
+// happiness joins the staff happiness total of the statistics pass) and
+// set_mouse_mode(MM_PLACE_STAFF), which leaves a room-edit wait.
 void apply_staff_event_mark_employing(World &world, const Event &event)
 {
     if (!event.arg || event.arg >= world.things.size())
         return;
     if (world.things[event.arg].state != kPsWaitsForDecision)
         world.building.mouse = BuildMouse::None;
+    world.counts.staff_happiness_sum =
+        uint16_t(world.counts.staff_happiness_sum + world.things[event.arg].happiness);
     world.things[event.arg].state = kStaffHeld;
 }
 
