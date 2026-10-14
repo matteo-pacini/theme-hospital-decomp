@@ -254,7 +254,6 @@ Milestone 4 so far, the game's interface:
   chart too (it shows when the chart is left, and Escape closes it with the
   chart.
 
-Not yet: the DNA fixer.
 Route planning defaults to A*; the game's wall following stays selectable
 in the tools window.
 
