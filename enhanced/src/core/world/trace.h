@@ -220,6 +220,11 @@ void trace_rand(const char *function, uint32_t seed);
 //   expire_call <id> type=<n> subject=<n>  expire_playercalls, a call
 //                                          expiring unanswered (type 2: an
 //                                          emergency offer)
+//   advice_variant <text> seed=<hex>       find_advice, before it draws the
+//                                          variant of advice text 0x6b, 0x7e or
+//                                          0x80 from the presentation
+//                                          generator (safeseed), with its
+//                                          value before the draw
 //   emergency_offer <call> illness=<n> count=<n> bonus=<n> win=<n>
 //                                          setup_emergency_stats: an
 //                                          emergency offered (bonus per
