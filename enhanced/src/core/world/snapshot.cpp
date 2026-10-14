@@ -259,6 +259,16 @@ template <typename IO, typename W> void world_research_fields(IO &io, W &w)
     io(w.rivals);
 }
 
+// The staff of hospital 0 that the interface and the counts keep apart from
+// the things.
+template <typename IO, typename W> void world_staff_fields(IO &io, W &w)
+{
+    io(w.held_staff);
+    io(w.held_staff_tile);
+    io(w.idle_nurses);
+    io(w.staff_count);
+}
+
 template <typename IO, typename W> void world_fields(IO &io, W &w)
 {
     io(w.map);
@@ -288,11 +298,8 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.new_staff);
     io(w.drinks_income);
     io(w.jukebox_income);
-    io(w.held_staff);
     io(w.fax_palette);
-    io(w.held_staff_tile);
-    io(w.idle_nurses);
-    io(w.staff_count);
+    world_staff_fields(io, w);
     building_fields(io, w.building);
     io(w.editing_room);
     io(w.pagers);

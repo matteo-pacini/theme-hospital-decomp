@@ -235,6 +235,7 @@ void test_person_autopsied()
     th::Thing &doctor = w.things[6];
     doctor.type = th::kThingStaff;
     doctor.subtype = th::kStaffDoctor;
+    w.staff_count = 1;
     th::person_autopsied(w, 5);
     CHECK(w.research.illness_research[kIllSlackTongue] == 5000);
     for (uint16_t happiness : {uint16_t(100), uint16_t(0)}) {

@@ -895,6 +895,15 @@ void dump_game_rats(std::string &out, const World &w)
     F(w, rats.fest_rats);
 }
 
+// dump_game_world's staff of hospital 0 kept apart from the things.
+void dump_game_world_staff(std::string &out, const World &w)
+{
+    F(w, held_staff);
+    F(w, held_staff_tile);
+    F(w, idle_nurses);
+    F(w, staff_count);
+}
+
 void dump_game_world(std::string &out, const World &w)
 {
     out += "world:";
@@ -914,11 +923,8 @@ void dump_game_world(std::string &out, const World &w)
     F(w, too_expensive);
     F(w, drinks_income);
     F(w, jukebox_income);
-    F(w, held_staff);
     F(w, editing_room);
-    F(w, held_staff_tile);
-    F(w, idle_nurses);
-    F(w, staff_count);
+    dump_game_world_staff(out, w);
     F(w, next_call_id);
     F(w, litter_count);
     dump_game_rats(out, w);
