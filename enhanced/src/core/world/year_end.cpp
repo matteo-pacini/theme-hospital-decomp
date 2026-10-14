@@ -34,15 +34,10 @@ constexpr Rating kRatings[] = {
     {150, 6200, 700}, {175, 6400, 700}, {200, 6500, 700}, {1000, 6500, 700},
 };
 
-// The player's staff (myhosp->staff_count): hospital 0's hired, not the
-// applicants.
+// The player's staff (myhosp->staff_count).
 int player_staff(const World &world)
 {
-    int n = 0;
-    for (const Thing &t : world.things)
-        if (t.type == kThingStaff && t.owner == 0 && t.state != kStaffApplicant)
-            n++;
-    return n;
+    return world.staff_count;
 }
 
 // The player's current win (mode 0) or lose criterion rows.

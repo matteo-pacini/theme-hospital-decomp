@@ -48,7 +48,8 @@ struct StaffCounts {
     int doctors = 0;       // staff_by_skill[4]
 };
 
-// count_staff: hospital 0's members of staff that are not applicants.
+// count_staff: hospital 0's staff count (World::staff_count) and, from its
+// members of staff that are not applicants, the kinds and skills.
 StaffCounts count_staff(const World &world);
 
 // Advisor::flags bits (advisor.flags).

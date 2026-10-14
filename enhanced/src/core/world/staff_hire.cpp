@@ -348,8 +348,9 @@ namespace
 {
 
 // place_staff_on_map's new hire, hired at `game_turn`: no orders,
-// discontent or resignations yet, and their skills now count
-// (staff_with_skill). The staff counts are not kept.
+// discontent or resignations yet, their skills now count (staff_with_skill)
+// and they join the hospital's staff count (inc_staff_stats; the kind and
+// surgeon counts are derived from the things).
 void place_staff_on_map_hire(World &world, uint16_t id, uint32_t game_turn)
 {
     Thing &s = world.things[id];
@@ -361,6 +362,7 @@ void place_staff_on_map_hire(World &world, uint16_t id, uint32_t game_turn)
     set_applicant_expiry(s, 0);
     s.hire_time = int16_t(game_turn);
     set_expertise_staff(world, id);
+    world.staff_count++;
     if (world.staff_market) {
         world.staff_market->applicant_count--;
         world.staff_market->applicants[s.subtype]--;

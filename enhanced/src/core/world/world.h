@@ -678,6 +678,11 @@ struct World {
     // reset by start_turn), which a nurse in a room leaving to vaccinate and
     // the advisors read.
     uint16_t idle_nurses = 0;
+    // Hospital 0's staff count (allhosps[0].staff_count): a counter, up by
+    // each hire placed (inc_staff_stats) and down by each sacking, so it
+    // follows the original's even where a hire names a thing that is not an
+    // applicant.
+    uint16_t staff_count = 0;
 
     // Building (build.cpp)
     // The room the player builds and the build tool's state.

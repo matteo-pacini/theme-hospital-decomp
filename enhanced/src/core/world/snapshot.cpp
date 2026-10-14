@@ -292,6 +292,7 @@ template <typename IO, typename W> void world_fields(IO &io, W &w)
     io(w.fax_palette);
     io(w.held_staff_tile);
     io(w.idle_nurses);
+    io(w.staff_count);
     building_fields(io, w.building);
     io(w.editing_room);
     io(w.pagers);

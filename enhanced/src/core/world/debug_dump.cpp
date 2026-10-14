@@ -918,6 +918,7 @@ void dump_game_world(std::string &out, const World &w)
     F(w, editing_room);
     F(w, held_staff_tile);
     F(w, idle_nurses);
+    F(w, staff_count);
     F(w, next_call_id);
     F(w, litter_count);
     dump_game_rats(out, w);

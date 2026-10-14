@@ -73,7 +73,7 @@ void mayor_inspects(World &world, const AnimData &anims, uint16_t id)
 namespace
 {
 
-// The staff of hospital 0 (allhosps[0].staff_count, count_staff).
+// The staff of hospital 0 (allhosps[0].staff_count).
 uint16_t hospital_staff_count(const World &world)
 {
     return uint16_t(count_staff(world).total);

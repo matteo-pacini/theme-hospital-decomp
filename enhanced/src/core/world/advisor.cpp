@@ -229,13 +229,13 @@ StaffCounts count_staff(const World &world)
     for (const Thing &t : world.things) {
         if (t.type != kThingStaff || t.owner != 0 || t.state == kStaffApplicant)
             continue;
-        c.total++;
         c.by_kind[t.subtype == kStaffSurgeon ? kStaffDoctor : t.subtype]++;
         if (t.skills & kSkillReceptionist)
             c.receptionists++;
         if (t.skills & kSkillDoctor)
             c.doctors++;
     }
+    c.total = world.staff_count;
     return c;
 }
 

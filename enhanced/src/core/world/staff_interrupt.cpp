@@ -246,6 +246,8 @@ void sack(const Ctx &c, uint16_t id, uint8_t mode)
     s.orders = 0;
     s.discontent = 0;
     clear_peep_icon(s);
+    if (s.owner == 0)
+        world.staff_count--;
     s.owner = kNoOwner;
     if (mode == 2) {
         remove_person_from_room_list(world, id);
