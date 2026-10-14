@@ -5,6 +5,7 @@
 #include "core/ui/charts.h"
 #include "core/ui/hire_staff.h"
 #include "core/ui/info_windows.h"
+#include "core/ui/staff_demand.h"
 #include "core/world/arrivals.h"
 #include "core/world/build.h"
 #include "core/world/finance.h"
@@ -467,19 +468,30 @@ void req11_help_minus(HelpContext &ctx)
 
 void req12_help_if_doctor(HelpContext &ctx)
 {
-    set_plain(ctx);
+    const Thing *s = ctx.demand ? shown_thing(ctx, ctx.demand->staff) : nullptr;
+    if (s && (s->skills & kSkillDoctor))
+        set_plain(ctx);
 }
+
 void req12_help_if_surgeon(HelpContext &ctx)
 {
-    set_plain(ctx);
+    const Thing *s = ctx.demand ? shown_thing(ctx, ctx.demand->staff) : nullptr;
+    if (s && has_skills(s->skills, kSkillDoctor | kSkillSurgeon))
+        set_plain(ctx);
 }
+
 void req12_help_if_shrink(HelpContext &ctx)
 {
-    set_plain(ctx);
+    const Thing *s = ctx.demand ? shown_thing(ctx, ctx.demand->staff) : nullptr;
+    if (s && has_skills(s->skills, kSkillDoctor | kSkillPsychiatrist))
+        set_plain(ctx);
 }
+
 void req12_help_if_research(HelpContext &ctx)
 {
-    set_plain(ctx);
+    const Thing *s = ctx.demand ? shown_thing(ctx, ctx.demand->staff) : nullptr;
+    if (s && has_skills(s->skills, kSkillDoctor | kSkillResearcher))
+        set_plain(ctx);
 }
 
 // ---- Hire staff requester (req2.cpp) ----

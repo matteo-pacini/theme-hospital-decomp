@@ -224,6 +224,7 @@ void App::help_context()
     help_ctx_.text = &data_->text();
     help_ctx_.ui = &interface_;
     help_ctx_.hire = &hire_;
+    help_ctx_.demand = &demand_;
     help_ctx_.info = &info_;
     help_ctx_.charts = &charts_;
     help_ctx_.object_ui = &object_ui_;

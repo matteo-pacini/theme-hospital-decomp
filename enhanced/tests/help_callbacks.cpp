@@ -8,6 +8,7 @@
 #include "core/ui/helpmsg.h"
 #include "core/ui/hire_staff.h"
 #include "core/ui/info_windows.h"
+#include "core/ui/staff_demand.h"
 #include "core/world/arrivals.h"
 #include "core/world/objects.h"
 #include "core/world/queue.h"
@@ -30,6 +31,7 @@ using th::HelpHotspot;
 using th::HireStaff;
 using th::InfoWindows;
 using th::ObjectPlacing;
+using th::StaffDemand;
 using th::TextSection;
 using th::Thing;
 
@@ -235,10 +237,28 @@ void test_help_callbacks_requesters(const char *dir)
     th::req11_help_minus(ctx);
     CHECK(box.msg == help_text(f, 0x2a));
 
-    // The demand requester is not ported: the plain fallback stands.
-    box.msg.clear();
-    th::req12_help_if_doctor(ctx);
-    CHECK(box.msg == help_text(f, 0));
+    // The demand requester's qualification tips need the shown member of
+    // staff to have the skill.
+    StaffDemand demand;
+    demand.staff = 1;
+    ctx.demand = &demand;
+    Thing &staff = f.game->world.things[1];
+    auto check_demand = [&](void (*fn)(HelpContext &), uint16_t skills, bool shown) {
+        staff.skills = skills;
+        box.msg.clear();
+        fn(ctx);
+        CHECK(box.msg == (shown ? help_text(f, 0) : std::string()));
+    };
+    check_demand(th::req12_help_if_doctor, th::kSkillDoctor, true);
+    check_demand(th::req12_help_if_doctor, th::kSkillNurse, false);
+    check_demand(th::req12_help_if_surgeon, th::kSkillDoctor | th::kSkillSurgeon, true);
+    check_demand(th::req12_help_if_surgeon, th::kSkillDoctor, false);
+    check_demand(th::req12_help_if_shrink, th::kSkillDoctor | th::kSkillPsychiatrist, true);
+    check_demand(th::req12_help_if_shrink, th::kSkillDoctor, false);
+    check_demand(th::req12_help_if_research, th::kSkillDoctor | th::kSkillResearcher, true);
+    check_demand(th::req12_help_if_research, th::kSkillDoctor, false);
+    ctx.demand = nullptr;
+    check_demand(th::req12_help_if_doctor, th::kSkillDoctor, false);
 }
 
 void test_help_callbacks_slist(const char *dir)

@@ -156,6 +156,8 @@ uint8_t requester_help_group(Requester requester)
         return 7; // req7
     case Requester::Jukebox:
         return 0x14; // req6
+    case Requester::StaffDemand:
+        return 0x1a; // req12
     default:
         return 0;
     }
