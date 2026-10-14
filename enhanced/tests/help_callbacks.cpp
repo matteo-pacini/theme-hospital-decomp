@@ -30,8 +30,8 @@ using th::HelpContext;
 using th::HelpHotspot;
 using th::HireStaff;
 using th::InfoWindows;
-using th::StaffDemand;
 using th::ObjectPlacing;
+using th::StaffDemand;
 using th::TextSection;
 using th::Thing;
 
