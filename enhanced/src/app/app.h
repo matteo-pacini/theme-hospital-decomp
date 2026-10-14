@@ -164,6 +164,7 @@ class App : public DriveHost
     bool drive_staff_demand(uint16_t id) override;
     bool drive_win_level() override;
     bool drive_lose_level() override;
+    bool drive_watch(bool epidemic) override;
     bool drive_wheel(int notches) override;
 
     bool try_load_data(const std::filesystem::path &dir);

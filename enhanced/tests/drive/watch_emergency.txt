@@ -1,0 +1,34 @@
+# Level 1: the panel's emergency watch. An emergency starts (the `watch`
+# hook) and the helicopter brings three patients (things 24, 30, 31). A right
+# click on the watch (coords[0x84], watch[13]'s size: process_right_button
+# case 0x27) picks the next emergency patient (find_next_emergency_person)
+# and opens their window with EV_OPEN_THING_WINDOW; each further click moves
+# on to the next one, wrapping round to the first. A left click on the watch
+# then centres the view on the picked patient (screenshot).
+wait 60
+watch emergency
+turns 400
+wait 10
+expect watch: emergency_patient=0 epidemic_patient=0
+expect query window: patient false
+click 20 360 right       # the watch
+wait 10
+expect watch: emergency_patient=24
+expect query window: patient true (thing 24,
+screenshot watch_emergency_first
+click 20 360 right
+wait 10
+expect watch: emergency_patient=30
+expect query window: patient true (thing 30,
+click 20 360 right
+wait 10
+expect watch: emergency_patient=31
+expect query window: patient true (thing 31,
+click 20 360 right
+wait 10
+expect watch: emergency_patient=24
+expect query window: patient true (thing 24,
+click 20 360             # left: centre on the picked patient
+wait 10
+screenshot watch_emergency_centred
+quit

@@ -1,0 +1,29 @@
+# Level 1: the panel's epidemic watch. Three emergency patients (things 24,
+# 30, 31) are made contagious under a cover-up (the `watch` hook), which
+# takes the watch over from the emergency. A right click on the watch's
+# button position (coords[0x86], watch[13]'s size) picks the next contagious
+# patient and opens their window. The game searches from othervar.
+# emergency_patient, which only an emergency watch click changes, so the
+# epidemic's picks do not advance: each click finds thing 24 again.
+# Holding the left button on the vaccination button (watch[14]) draws the
+# pressed sprite, watch[15] (screenshot).
+wait 60
+watch emergency
+turns 400
+wait 10
+watch epidemic
+wait 10
+click 20 345 right       # the watch
+wait 10
+expect watch: emergency_patient=0 epidemic_patient=24
+expect query window: patient true (thing 24,
+click 20 345 right
+wait 10
+expect watch: emergency_patient=0 epidemic_patient=24
+move 17 343              # the vaccination button
+down left
+wait 10
+screenshot watch_epidemic_pressed
+up left
+wait 5
+quit
