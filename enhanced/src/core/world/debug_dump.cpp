@@ -770,6 +770,7 @@ void dump_game_progress(std::string &out, const Game &game)
     F(p, rats_killed);
     F(p, level_won);
     F(p, win_declined);
+    F(p, win_declined_count);
     F(p, winlose_result);
     F(p, next_level_offer);
     F(p, bonus_level);

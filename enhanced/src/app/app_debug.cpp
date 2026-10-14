@@ -183,7 +183,8 @@ std::string App::screen_name() const
     if (year_end_showing_)
         return std::format("year end {} (phase {})", int(year_end_.phase()), year_end_phase_);
     if (winlose_showing_)
-        return std::format("win/lose (movie {}{})", winlose_movie_index_, winlose_.has_backdrop() ? ", backdrop" : "");
+        return std::format("win/lose (movie {}{}) letter {}", winlose_movie_index_,
+                           winlose_.has_backdrop() ? ", backdrop" : "", winlose_pick_);
     if (fax_.open)
         return "fax";
     if (charts_.open)

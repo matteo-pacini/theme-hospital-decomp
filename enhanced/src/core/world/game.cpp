@@ -490,6 +490,7 @@ void Game::carry_out(const Event &e)
     // The win/lose screen's decline button (winlose.cpp): the offered win is
     // refused and the game carries on. The replay sends it as EV_DECLINE_WIN.
     if (e.type == EV_DECLINE_WIN) {
+        progress.win_declined_count++;
         progress.win_declined = 1;
         progress.bonus_level = 0;
         return;
