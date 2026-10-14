@@ -120,6 +120,12 @@ void App::run_command(Game &game)
     // close_crequester and close_irequesters).
     bool demand_answer = game.event.type == EV_REFUSE_STAFF_DEMAND || game.event.type == EV_RAISE_STAFF_SALARY ||
                          game.event.type == EV_GIVE_STAFF_BONUS;
+    // return_from_screen closes the query windows and drops the vaccination
+    // tool before EV_RETURN_TO_THING_WINDOW reopens its window.
+    if (game.event.type == EV_RETURN_FROM_SCREEN || game.event.type == EV_RETURN_TO_THING_WINDOW) {
+        close_irequesters(interface_);
+        vaccinate_ = false;
+    }
     hire_staff_event(hire_, interface_, game.world, game.event);
     jukebox_event(jukebox_, interface_, game.event);
     chart_command(charts_, game.event);

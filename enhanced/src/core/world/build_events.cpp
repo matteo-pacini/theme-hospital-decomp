@@ -424,6 +424,14 @@ bool apply_build_event(Game &game, const Event &event)
     case EV_CLOSE_QUEUE_WINDOW: // set_mouse_mode(MM_NORMAL)
         bd.mouse = BuildMouse::None;
         return false;
+    case EV_RETURN_FROM_SCREEN:
+    case EV_RETURN_TO_THING_WINDOW:
+        // return_from_screen's set_mouse_mode(MM_NORMAL); the blueprint, door
+        // and pick-up modes come back from the edit-room requester's mode, so
+        // they stay.
+        if (bd.mouse == BuildMouse::EditRoom || bd.mouse == BuildMouse::MoveQueuePerson)
+            bd.mouse = BuildMouse::None;
+        return false;
     default:
         return false;
     }
