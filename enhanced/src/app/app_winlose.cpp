@@ -55,7 +55,7 @@ void App::open_winlose()
             winlose_pick_ = saferand(sounds_.safeseed) % 4 + 8;
         else {
             winlose_pick_ = saferand(sounds_.safeseed) % 4;
-            if (game.progress.win_declined % 2 == 1)
+            if (game.progress.win_declined_count % 2 == 1)
                 winlose_pick_ += 4;
         }
     } else {
@@ -216,8 +216,11 @@ void App::start_next_level(int next)
 // (src/winlose.cpp, state 5), and the game runs on.
 void App::decline_win(bool win)
 {
-    if (win)
-        fader_.queue_level_start();
+    if (!win)
+        return;
+    fader_.queue_level_start();
+    map_->game.event = {EV_DECLINE_WIN, 0, 0, 0};
+    run_command(map_->game);
 }
 
 // One frame of the win or lose sequence: its movie, then its letter. Accepting

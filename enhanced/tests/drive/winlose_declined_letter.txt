@@ -1,0 +1,24 @@
+# Level 1
+# A win declined on a level makes the level's next win letter one of the
+# second four (src/winlose.cpp play_winlose: pick + 4 when
+# gamevar.win_declined_count is odd); the count is the level's declines, not
+# the quarter's flag.
+wait 30
+win
+wait 3000
+expect screen: win/lose
+expect-not letter 4
+expect-not letter 5
+expect-not letter 6
+expect-not letter 7
+click 345 405
+wait 300
+expect screen: hospital
+win
+wait 3000
+expect screen: win/lose
+expect-not letter 0
+expect-not letter 1
+expect-not letter 2
+expect-not letter 3
+expect win_declined_count=1

@@ -107,8 +107,12 @@ struct YearEnd {
     uint16_t rats_killed = 0;
     // othervar.level_won, win_declined and winlose_result (0 none, 1 win,
     // 2 lose), and the next level's offered score (othervar.next_level_offer).
+    // win_declined is the quarter's flag; win_declined_count
+    // (gamevar.win_declined_count) is the level's declines so far, whose
+    // parity picks the win letter's variant.
     uint8_t level_won = 0;
     uint8_t win_declined = 0;
+    uint8_t win_declined_count = 0;
     uint8_t winlose_result = 0;
     int32_t next_level_offer = 0;
     // othervar.bonus_level / level_after_bonus (try_bonus_level), and the
