@@ -105,12 +105,12 @@ void pay(Game &game, uint8_t type, int32_t amount)
     change_balance(game.finance, game.balance, 1, 0, {type, amount});
 }
 
-// saferand (src/rand.cpp) on Game::safeseed, the generator the shell's
-// presentation shares.
+// The presentation's generator (saferand). Only the awards' text variants
+// read it; the trace does not.
 uint16_t safe_rand(Game &game)
 {
-    game.safeseed = std::rotr(game.safeseed * 0x24a1u + 0x24dfu, 13);
-    return uint16_t(game.safeseed);
+    game.progress.safe_seed = std::rotr(game.progress.safe_seed * 0x24a1u + 0x24dfu, 13);
+    return uint16_t(game.progress.safe_seed);
 }
 
 // Computer player `owner`'s value for award's statistic (general_award).
@@ -145,7 +145,7 @@ void set_award_value(Game &game, int award, int8_t dir, uint8_t tier, int16_t va
     Award &a = game.progress.awards[award];
     a.direction = dir;
     a.id = uint8_t(award);
-    a.text_index = uint8_t(tier + award * 3 + safe_rand(game) % 1 + 1);
+    a.text_index = uint8_t(tier + award * 3 + 1);
     if (type == 2) {
         pay(game, kTxYearEndBonus, value);
         a.value = value;
@@ -165,7 +165,7 @@ void set_award_value(Game &game, int award, int8_t dir, uint8_t tier, int16_t va
             type = 2;
         }
     }
-    a.reward_kind = uint8_t(safe_rand(game) % 1 + type - 1);
+    a.reward_kind = uint8_t(type - 1);
 }
 
 // set_trophy_value (0xb43c0): records trophy `trophy_no`, paying `value` as
@@ -190,7 +190,7 @@ void set_trophy_value(Game &game, int trophy_no, int16_t value, uint8_t type)
         pay(game, kTxTrophyBonus, value);
         t.value = value;
     }
-    t.reward_kind = uint8_t(safe_rand(game) % 1 + type - 1);
+    t.reward_kind = uint8_t(type - 1);
 }
 
 // Whether the player's `value` for award beats each of the three rivals:

@@ -1,0 +1,59 @@
+# Level 1: yearend_level1.txt's hospital and first year end (turn 18250),
+# whose awards and trophies draw their text variants and reward kinds from the
+# presentation generator (set_award_value, set_trophy_value: saferand). `@safeseed`
+# sets the generator on both sides before the year end, then a nurse put down
+# in the GP's office, where no nurse works, makes the advisor name the room
+# (advise_new_staff, situation 0x7b) with a variant drawn from the generator:
+# the seed that the advice_variant event carries differs between the original
+# and the port unless both made the same number of draws at the year end.
+# Turns 18400
+# Expect score 10800
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+# Receptionist: hire applicant 22, place at cell 9788.
+10 48 3 22
+11 5 9788 22
+# The office: open the requester, start a GP's blueprint, drag it out from
+# cell 8382 to 8898 (the hover ends the drag), commit it.
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+# The door, nearest to cell 8256; the walls built.
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+# Desk, cabinet and chair (arg: kind | facing << 8); the room opened.
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+# The doctor: hire applicant 11, place at cell 10044.
+114 48 1 11
+115 5 10044 11
+# A general diagnosis room (51,60)-(55,64), its door below it, a crash
+# trolley (cell 7860) and a screen (cell 8119), both facing 0; opened.
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+# A second doctor: hire applicant 13, place at cell 10044.
+142 48 1 13
+143 5 10044 13
+# The generator is set at turn 18200, before the year end; the nurse
+# (applicant 3) is hired at turn 18300 and put down at cell 8767 in the GP's
+# office (62,65)-(66,69).
+18300 48 0 3
+18301 5 8767 3
