@@ -6,8 +6,8 @@
 # (advise_new_staff, situation 0x7b) with a variant drawn from the generator:
 # the seed that the advice_variant event carries differs between the original
 # and the port unless both made the same number of draws at the year end.
-# Turns 18303
-# Expect advice_variant 126
+# Turns 18400
+# Expect advice_variant 128
 # Expect advice 0x7b == 1
 # Expect score 10800
 5 98 0 0
@@ -55,8 +55,8 @@
 142 48 1 13
 143 5 10044 13
 # The generator is set at turn 18200, before the year end; the nurse
-# (applicant 3) is hired at turn 18300 and put down at cell 8767 in the GP's
+# (applicant 5) is hired at turn 18300 and put down at cell 8767 in the GP's
 # office (62,65)-(66,69).
 18200 @safeseed 9029
-18300 48 0 3
-18301 5 8767 3
+18300 48 0 5
+18301 5 8767 5
