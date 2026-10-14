@@ -215,3 +215,13 @@ void test_winlose_letters(const char *dir)
     CHECK(letter.find("50000") != std::string::npos);
     CHECK(letter.find('\n') != std::string::npos);
 }
+// The plaque's bonus line signs a positive value only (src/annualch.cpp:246-
+// 302), and the trophy text takes the kill count at its %d.
+void test_yearend_plaque_text(const char *)
+{
+    CHECK(th::YearEndScreen::bonus_line("Bonus", 25) == "Bonus\n+25");
+    CHECK(th::YearEndScreen::bonus_line("Bonus", 0) == "Bonus\n0");
+    CHECK(th::YearEndScreen::bonus_line("Bonus", -5) == "Bonus\n-5");
+    CHECK(th::YearEndScreen::plaque_text("Shot %d rats", 42) == "Shot 42 rats");
+    CHECK(th::YearEndScreen::plaque_text("No number", 42) == "No number");
+}

@@ -334,6 +334,7 @@ void App::year_end_step(int out_w, int out_h)
         view.trophies = &game.progress.trophies;
         view.chart = &game.progress.chart;
         view.hospital_names = &charts_.hospital_names;
+        view.plaque_rat_kills = game.progress.plaque_rat_kills;
         r = year_end_.charts_frame(mouse, keys, frame_seconds_, view);
         if (r.charts_done) {
             year_end_.close();

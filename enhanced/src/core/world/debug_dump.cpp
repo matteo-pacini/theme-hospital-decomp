@@ -765,6 +765,7 @@ void dump_game_progress(std::string &out, const Game &game)
     F(p, year_start_deaths);
     F(p, year_start_staff);
     F(p, prev_year_deaths);
+    F(p, plaque_rat_kills);
     F(p, rat_shots);
     F(p, rats_killed);
     F(p, level_won);

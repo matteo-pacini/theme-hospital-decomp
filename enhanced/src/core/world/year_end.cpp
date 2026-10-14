@@ -831,10 +831,15 @@ void trophy_deaths(AwardsContext &c)
 void trophy_rat_kills(AwardsContext &c)
 {
     const auto &t = trophies(c.game);
-    if (int32_t(c.game.progress.award_counts.rats_killed) > t.rat_kills_absolute)
+    if (int32_t(c.game.progress.award_counts.rats_killed) > t.rat_kills_absolute) {
         set_trophy_value(c.game, 5, t.rat_kills_absolute_bonus, 1);
+        c.game.progress.plaque_rat_kills = uint8_t(c.game.progress.award_counts.rats_killed);
+    }
 }
 
+// The plaque keeps no percentage: display_plaque prints it only while
+// award_counts.rat_shots > 0, and annual_update_of_award_counts clears that
+// before the screens open.
 void trophy_rat_pct(AwardsContext &c)
 {
     const auto &t = trophies(c.game);

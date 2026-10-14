@@ -254,6 +254,8 @@ void test_yearend_rivals(const char *dir);
 void test_level_rival_owner_cells(const char *dir);
 void test_yearend_rival_charts(const char *dir);
 void test_yearend_trophy_kept(const char *dir);
+void test_yearend_plaque_rat_kills(const char *dir);
+void test_yearend_plaque_text(const char *dir);
 void test_yearend_drinks_counted(const char *dir);
 void test_yearend_object_value(const char *dir);
 
@@ -494,6 +496,8 @@ const DataTest kDataTests[] = {
     TEST(test_level_rival_owner_cells),
     TEST(test_yearend_rival_charts),
     TEST(test_yearend_trophy_kept),
+    TEST(test_yearend_plaque_rat_kills),
+    TEST(test_yearend_plaque_text),
     TEST(test_yearend_drinks_counted),
     TEST(test_yearend_object_value),
 };

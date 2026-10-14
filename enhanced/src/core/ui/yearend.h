@@ -61,10 +61,9 @@ bool insert_hall_details(HospScores &scores, std::string_view name, int32_t scor
 // The data the league tables and awards draw, from Game::progress and the
 // game (Game::date.year, Game::level_number() and the hospitals' names).
 struct YearEndView {
-    int year = 0;                // mycontrol->year, drawn as year + 1999
-    int level = 0;               // myhosp->level
-    int plaque_rat_kills = 0;    // othervar.plaque_rat_kills
-    int plaque_rat_kill_pct = 0; // othervar.plaque_rat_kill_pct
+    int year = 0;             // mycontrol->year, drawn as year + 1999
+    int level = 0;            // myhosp->level
+    int plaque_rat_kills = 0; // othervar.plaque_rat_kills
     const std::array<Award, 13> *awards = nullptr;
     const std::array<Trophy, 9> *trophies = nullptr;
     const std::array<std::array<ChartEntry, 4>, 11> *chart = nullptr;
@@ -87,6 +86,13 @@ struct YearEndResult {
 class YearEndScreen
 {
   public:
+    // The plaque's bonus line: `bonus`, a newline and `value`, signed with a
+    // + only when positive (display_plaque). Exposed for the test.
+    static std::string bonus_line(std::string_view bonus, int32_t value);
+    // A trophy text with its %d replaced by `number` (display_plaque's
+    // sprintf of the rat trophy). Exposed for the test.
+    static std::string plaque_text(std::string_view text, int number);
+
     // Loads the hall of fame's picture and sprites (fame01v/fame02v) and the
     // awards' (award01v/award02v and award03v), their palettes, the fonts the
     // screens draw with (cache slots 0x10-0x17) and the help text section.
@@ -211,7 +217,6 @@ class YearEndScreen
     // The year's data the charts page draws (charts_frame's view).
     int view_year_ = 0;
     int view_rat_kills_ = 0;
-    int view_rat_pct_ = 0;
     const std::array<Award, 13> *view_awards_ = nullptr;
     const std::array<Trophy, 9> *view_trophies_ = nullptr;
     const std::array<std::array<ChartEntry, 4>, 11> *view_chart_ = nullptr;
