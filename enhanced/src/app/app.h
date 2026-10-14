@@ -425,6 +425,7 @@ class App : public DriveHost
     // money, the last command and the sounds played.
     std::string debug_state_hospital(const Game &g) const;
     std::string debug_state_startup() const;
+    std::string debug_state_hall() const;
     // debug_state's fax icons and open fax.
     std::string debug_state_calls(const Game &g) const;
     void open_town_map();
