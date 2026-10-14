@@ -64,7 +64,7 @@ inline constexpr Point kPopupEmergencyFlash = {10, 9};
 // (panel_popup_coord) and the message bar's shutter, whose closing holds a
 // new icon's slide back; then, every call, the icon under `mouse` (640 x
 // 480 coordinates) as the game tests it in its last frame. Nothing on the
-// rat level, which is not ported.
+// rat level (World::Rats::fest_level).
 void popup_icons_frame(PopupIcons &icons, World &world, const UiMouse &mouse, const GameData &data, double seconds);
 
 // Draws the last game frame's icons into `layer` as draw_popup_icons does:

@@ -1,0 +1,54 @@
+# Level 1: yearend_level1.txt's hospital run through the second year end
+# (36500) with the VIP's visit accepted each time it is offered (turns 7501,
+# 18001, 29951; EV_ANSWER_PLAYERCALL 6, then EV_CHOICE_RESULT CH_VIP_ACCEPT)
+# and each report answered (EV_ANSWER_PLAYERCALL 5). The first year's doctors
+# have resigned by then; two more are hired at turn 17500, so the second
+# year's two visits (mayor_judges_hospital scores 1 and 0) average below the
+# level's trophy_mayor of 1 and the trophy is won at the second year end (a
+# reputation bonus: trophy 23's rep event).
+# Turns 36500
+# Expect rep 0 event=23 amount=5
+5 98 0 0
+6 37 11 1
+7 43 0 0
+8 7 9534 11
+10 48 3 22
+11 5 9788 22
+101 55 0 0
+102 53 7 7
+103 2 8382 0
+104 2 8898 0
+105 8 8898 0
+106 18 0 0
+107 26 8256 0
+108 3 0 0
+109 4 7 0
+110 7 8640 1
+111 7 8386 2
+112 7 8641 6
+113 1 0 0
+130 55 0 0
+131 53 27 27
+132 2 7731 0
+133 2 8247 0
+134 8 8247 0
+135 18 0 0
+136 26 8373 0
+137 3 0 0
+138 4 27 0
+139 7 7860 20
+140 7 8119 16
+141 1 0 0
+7501 10 6 0
+7502 125 20 0
+10520 10 5 0
+17500 48 1 5
+17501 5 10044 5
+17502 48 1 6
+17503 5 10044 6
+18001 10 6 0
+18002 125 20 0
+21200 10 5 0
+22500 10 5 0
+29951 10 6 0
+29952 125 20 0
