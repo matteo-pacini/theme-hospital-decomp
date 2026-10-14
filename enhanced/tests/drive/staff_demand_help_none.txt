@@ -4,7 +4,7 @@
 wait 60
 click 348 453            # panel: hire staff
 wait 10
-click 224 139            # the nurse kind
+click 224 92             # the nurse kind
 wait 10
 click 334 323            # hire the shown applicant
 wait 10
