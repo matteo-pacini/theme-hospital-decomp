@@ -129,9 +129,6 @@ struct YearEnd {
     AwardCounts award_counts;
     // The year-end league tables (chart[11][4]).
     std::array<std::array<ChartEntry, 4>, 11> chart{};
-    // The awards' text variants (a private saferand: the presentation's
-    // safeseed is the app's).
-    uint32_t safe_seed = 0x546b2;
     // The turn the year end (or a quarterly win) is reached: the things do
     // not run, as the game pauses for the year-end screens before
     // process_things (cleared by Game::run_things).
