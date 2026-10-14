@@ -471,8 +471,8 @@ starts from the emergency patient last picked, not from
 `othervar.epidemic_patient`, which it only stores to. Only a click on the
 emergency watch moves `emergency_patient`, so repeated clicks on the epidemic
 watch find the same patient every time instead of cycling through them. The
-Enhanced port starts from `emergency_patient` too, and the replay agrees
-with the original.
+Enhanced port starts from `emergency_patient` too (drive test
+`watch_epidemic`).
 
 ### find_next_emergency_person, none found (src/req3.cpp)
 
