@@ -125,7 +125,6 @@ void person_count(World &world, uint16_t id, uint32_t game_turn)
     if (int8_t(p.contagion) != 0 && p.owner == 0)
         world.epidemic.contagious_count++;
     if (!(p.person_flags & kPfCountedVisitor)) {
-        trace_event("vc %u", unsigned(id));
         // Only hospital 0's history is kept; the game adds every
         // hospital's patients to it.
         if (world.ledger)
