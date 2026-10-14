@@ -640,18 +640,19 @@ EVENTS = {
         ("entry", "effect_illness",
          f'if (cured == 1) trace_event("cure %u illness=%u", {ID.format("patient")}, (unsigned)patient->illness);'),
     ],
-    # The advice note is not an event: a comment line (compare.py ignores it),
-    # as th_replay --advisor writes it.
     "advisor.cpp": [
-        ("exit", "find_advice",
-         'if (r == 1) { static char note[24]; sprintf(note, "advice %u", (unsigned)advice[id].id); '
-         'trace_note(note); }'),
         (("before", "sprintf(advisor.text, advisor_text[0x6b + saferand() % 3]);"), "find_advice",
          'trace_event("advice_variant %u seed=%08x", 0x6bu, (unsigned)safeseed);'),
         (("before", "sprintf(advisor.text, advisor_text[0x7e + saferand() % 2],"), "find_advice",
          'trace_event("advice_variant %u seed=%08x", 0x7eu, (unsigned)safeseed);'),
         (("before", "sprintf(advisor.text, advisor_text[0x80 + saferand() % 2],"), "find_advice",
          'trace_event("advice_variant %u seed=%08x", 0x80u, (unsigned)safeseed);'),
+        # Not an event: a comment line (compare.py ignores it), as th_replay
+        # --advisor writes it. The wrapper renames find_advice, so it comes after
+        # the events inside it.
+        ("exit", "find_advice",
+         'if (r == 1) { static char note[24]; sprintf(note, "advice %u", (unsigned)advice[id].id); '
+         'trace_note(note); }'),
     ],
     "reaper.cpp": [
         ("entry", "summon_the_reaper", f'trace_event("summon_reaper %u", {ID.format("victim")});'),
