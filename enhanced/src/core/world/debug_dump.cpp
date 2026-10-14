@@ -749,6 +749,28 @@ void dump_game_hospitals(std::string &out, const Game &game)
         dump_rival(out, game.world.rivals[i], int(i));
 }
 
+void dump_progress_lists(std::string &out, const YearEnd &p)
+{
+    out += "awards:";
+    for (size_t i = 0; i < p.awards.size(); i++)
+        if (p.awards[i].text_index)
+            out += std::format(" {}={{id={} dir={} value={} kind={} text={}}}", i, p.awards[i].id,
+                               int(p.awards[i].direction), p.awards[i].value, p.awards[i].reward_kind,
+                               p.awards[i].text_index);
+    out += "\ntrophies:";
+    for (size_t i = 0; i < p.trophies.size(); i++)
+        if (p.trophies[i].text_index)
+            out += std::format(" {}={{id={} value={} kind={} text={}}}", i, p.trophies[i].id, p.trophies[i].value,
+                               p.trophies[i].reward_kind, p.trophies[i].text_index);
+    out += '\n';
+    out += "criteria:";
+    for (size_t i = 0; i < p.win_criteria.size(); i++)
+        out += std::format(" {}={{c={} g={} met={} now={} pct={}}}", i, p.win_criteria[i].criterion,
+                           p.win_criteria[i].group, p.win_criteria[i].met, p.win_criteria[i].current,
+                           p.win_criteria[i].progress);
+    out += '\n';
+}
+
 void dump_game_progress(std::string &out, const Game &game)
 {
     const YearEnd &p = game.progress;
@@ -778,24 +800,7 @@ void dump_game_progress(std::string &out, const Game &game)
     F(p, year_end_type);
     F(p, rat_game_over);
     out += '\n';
-    out += "awards:";
-    for (size_t i = 0; i < p.awards.size(); i++)
-        if (p.awards[i].text_index)
-            out += std::format(" {}={{id={} dir={} value={} kind={} text={}}}", i, p.awards[i].id,
-                               int(p.awards[i].direction), p.awards[i].value, p.awards[i].reward_kind,
-                               p.awards[i].text_index);
-    out += "\ntrophies:";
-    for (size_t i = 0; i < p.trophies.size(); i++)
-        if (p.trophies[i].text_index)
-            out += std::format(" {}={{id={} value={} kind={} text={}}}", i, p.trophies[i].id, p.trophies[i].value,
-                               p.trophies[i].reward_kind, p.trophies[i].text_index);
-    out += '\n';
-    out += "criteria:";
-    for (size_t i = 0; i < p.win_criteria.size(); i++)
-        out += std::format(" {}={{c={} g={} met={} now={} pct={}}}", i, p.win_criteria[i].criterion,
-                           p.win_criteria[i].group, p.win_criteria[i].met, p.win_criteria[i].current,
-                           p.win_criteria[i].progress);
-    out += '\n';
+    dump_progress_lists(out, p);
 }
 
 void dump_game_finance(std::string &out, const Game &game)
