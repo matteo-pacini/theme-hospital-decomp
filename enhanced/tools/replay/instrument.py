@@ -561,7 +561,8 @@ ID = "(unsigned)({} - thing)"
 EVENTS = {
     "awards.cpp": [
         (("before", "if (adcounts.patients > 3) {"), "monthly_update_of_award_counts",
-         'trace_event("award_staff_happiness sum=%u", (unsigned)(u16)adcounts.staff_happiness_sum);'),
+         'trace_event("award_staff_happiness sum=%u staff=%u", (unsigned)(u16)adcounts.staff_happiness_sum, '
+         '(unsigned)myhosp->staff_count);'),
     ],
     "finance.cpp": [
         (("before", "if (wages[i] != 0)"), "month_end", 'if (i == 0) trace_event("area %u", (unsigned)allhosps[0].area);'),
