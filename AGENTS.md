@@ -7,8 +7,7 @@ function for function. Read `README.md` for the status and the layout, and
 reproduce it. `docs/BUGS.md` lists original bugs that the source keeps.
 
 ## Git
-- Work on `decomp`. The playable port lives on `master`; this branch is
-  merged into it, never the other way.
+- Work on `master`.
 - Commit only when asked; stage by path; no `commit -a`, no
   `git checkout <file>` to undo, no push unless asked.
 - Never commit game files. `orig/` and `build/` are gitignored; keep it so.
